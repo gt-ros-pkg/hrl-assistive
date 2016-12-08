@@ -561,17 +561,15 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation4/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## param_dict['data_param']['handFeatures'] = ['unimodal_landmarkDist', 'crossmodal_landmarkEEDist', \
-        ##                                             'unimodal_kinJntEff_4', 'unimodal_kinDesEEChange']        
         param_dict['data_param']['handFeatures'] = ['unimodal_kinDesEEChange',\
                                                     ## 'unimodal_kinEEChange',\
                                                     ## 'unimodal_audioWristRMS', \
                                                     ## 'unimodal_audioWristFrontRMS', \
                                                     ## 'unimodal_audioWristAzimuth',\
-                                                    ## 'unimodal_kinJntEff', \
+                                                    'unimodal_kinJntEff', \
                                                     'unimodal_ftForce_delta', \
                                                     'unimodal_ftForce_zero', \
-                                                    'unimodal_ftForce', \
+                                                    ## 'unimodal_ftForce', \
                                                     ## 'unimodal_ftForceX', \
                                                     ## 'unimodal_ftForceY', \
                                                     ## 'unimodal_ftForceZ', \
@@ -634,6 +632,9 @@ if __name__ == '__main__':
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation7/'+\
         ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
 
         ## # 51%
@@ -665,16 +666,11 @@ if __name__ == '__main__':
         ## param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_delta', 'unimodal_kinJntEff_5',\
         ##                                             'crossmodal_landmarkEEAng', 'crossmodal_landmarkEEDist']
 
+        param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_delta', 'unimodal_ftForce_zero',\
+                                                    'crossmodal_landmarkEEDist']
+
 
         #------------------------------------------------------------------------------------------------
-        ## param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_delta', 'unimodal_kinJntEff_3', \
-        ##                                             'unimodal_audioWristRMS',\
-        ##                                             'unimodal_landmarkDist', 'unimodal_kinJntEff_5']
-                                                     
-        ## # 56%
-        ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
-        ##                                             'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
-        ## # 
         ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
         ##                                             'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
         
