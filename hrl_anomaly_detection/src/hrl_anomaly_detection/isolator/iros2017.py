@@ -658,6 +658,8 @@ if __name__ == '__main__':
 
         param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_delta', 'unimodal_kinJntEff_5']
 
+        param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_delta', 'unimodal_kinJntEff_5',\
+                                                    'crossmodal_landmarkEEAng']
         
 
 
