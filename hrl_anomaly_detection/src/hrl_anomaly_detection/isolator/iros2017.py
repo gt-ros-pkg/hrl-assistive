@@ -636,7 +636,7 @@ if __name__ == '__main__':
         ## param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_zero', 'unimodal_kinDesEEChange',\
         ##                                             'crossmodal_landmarkEEAng']
                                                     
-        param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_zero', 'unimodal_kinDesEEChange',\
+        param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_delta', 'unimodal_kinDesEEChange',\
                                                     'crossmodal_landmarkEEAng']
 
         # 64%
