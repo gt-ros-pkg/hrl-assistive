@@ -570,6 +570,7 @@ if __name__ == '__main__':
         param_dict['HMM']['scale'] = 4.0
         param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_zero', 'crossmodal_landmarkEEDist']
         #'crossmodal_landmarkEEDist'        
+        param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.6, 2.3, nPoints)*-1.0
 
         import hrl_anomaly_detection.data_viz as dv        
         dv.vizLikelihoods(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
