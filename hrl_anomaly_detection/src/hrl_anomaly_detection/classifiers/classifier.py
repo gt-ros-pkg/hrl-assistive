@@ -1598,9 +1598,6 @@ def run_classifiers_boost(idx, processed_data_path, task_name, method_list,\
         X_test.append(X_test_flat)
         Y_test.append(Y_test_flat)
 
-
-    print "fitting complete"
-        
     #-----------------------------------------------------------------------------------------
     # classifier # TODO: need to make it efficient!!
     if n_jobs == 1: parallel = True
@@ -1609,6 +1606,8 @@ def run_classifiers_boost(idx, processed_data_path, task_name, method_list,\
     dtc[0] = classifier( method=method_list[0], nPosteriors=nState, nLength=nLength, parallel=parallel )
     dtc[1] = classifier( method=method_list[1], nPosteriors=nState, nLength=nLength, parallel=parallel )
     for j in xrange(nPoints):
+
+        print j
         
         # Training
         for clf_idx in xrange(len(method_list)):
@@ -1627,6 +1626,7 @@ def run_classifiers_boost(idx, processed_data_path, task_name, method_list,\
                 if ret is False: raise ValueError("Classifier fitting error")
             else:
                 raise ValueError("Not available method: "+method_list[clf_idx])
+
 
         # evaluate the classifier
         tp_l = []
@@ -1688,7 +1688,6 @@ def run_classifiers_boost(idx, processed_data_path, task_name, method_list,\
             elif true_y <= 0.0:
                 if anomaly: fp_l.append(1)
                 else: tn_l.append(1)
-
 
         data[method]['tp_l'][j] += tp_l
         data[method]['fp_l'][j] += fp_l

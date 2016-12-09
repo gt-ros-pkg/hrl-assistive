@@ -472,6 +472,8 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
     else: ROC_data = ut.load_pickle(roc_pkl)
     ROC_data = util.reset_roc_data(ROC_data, [method_list[0]], ROC_dict['update_list'], nPoints)
 
+    print "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    # temp
     kFold_list = kFold_list[:8]
 
     # parallelization
