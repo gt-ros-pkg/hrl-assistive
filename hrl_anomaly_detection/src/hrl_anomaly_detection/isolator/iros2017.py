@@ -485,6 +485,8 @@ if __name__ == '__main__':
                  default=False, help='Evaluate with single detector.')
     p.add_option('--eval_double', '--ed', action='store_true', dest='evaluation_double',
                  default=False, help='Evaluate with double detectors.')
+    p.add_option('--eval_single_isol', '--esi', action='store_true', dest='evaluation_single_isolation',
+                 default=False, help='Evaluate anomaly isolation with double detectors.')
     
     opt, args = p.parse_args()
 
@@ -643,6 +645,8 @@ if __name__ == '__main__':
         param_dict['ROC']['methods'] = ['hmmgp', 'hmmgp']
         param_dict['HMM']['scale'] = [6.111, 6.111]
         param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.6, 2.3, nPoints)*-1.0
+        param_dict['SVM']['hmmgp_logp_offset'] = 70.0 #50.0
+        param_dict['SVM']['nugget'] = 10.0
 
 
         save_data_path = os.path.expanduser('~')+\
@@ -681,3 +685,4 @@ if __name__ == '__main__':
                              verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                              find_param=False, data_gen=opt.bDataGen)
 
+    elif opt.evaluation_single_isolation:
