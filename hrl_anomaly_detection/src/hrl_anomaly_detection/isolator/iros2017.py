@@ -131,7 +131,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     ## x_classes = ['Object collision', 'Noisy environment', 'Spoon miss by a user', 'Spoon collision by a user', 'Robot-body collision by a user', 'Aggressive eating', 'Anomalous sound from a user', 'Unreachable mouth pose', 'Face occlusion by a user', 'Spoon miss by system fault', 'Spoon collision by system fault', 'Freeze by system fault']
 
     org_processed_data_path = copy.copy(processed_data_path)
-    for i in xrange(len(success_isol_data)):
+    for i in xrange(len(success_data)):
 
         successData = copy.deepcopy(d['successData'][[10,i]])
         failureData = copy.deepcopy(d['failureData'][[10,i]])
@@ -199,7 +199,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         
     # ---------------- ROC Visualization ----------------------
     ## if detection_rate: sys.exit()
-    for idx in xrange(len(success_isol_data)):
+    for idx in xrange(len(success_data)):
         processed_data_path = os.path.join(org_processed_data_path, str(idx))
         roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
         if os.path.isfile(roc_pkl) is False: continue
