@@ -666,9 +666,13 @@ if __name__ == '__main__':
 
         # TODO: change feature name
         param_dict['ROC']['methods'] = ['hmmgp', 'hmmgp']
+        ## param_dict['data_param']['handFeatures'] = [['audioWristRMS', 'ftForce_z', \
+        ##                                               'landmarkEEDist', 'kinJntEff_1'],
+        ##                                               ['ftForce_mag_integ', 'landmarkEEDist']  ]
         param_dict['data_param']['handFeatures'] = [['audioWristRMS', 'ftForce_z', \
                                                       'landmarkEEDist', 'kinJntEff_1'],
-                                                      ['ftForce_mag_integ', 'landmarkEEDist']  ]
+                                                    ['audioWristRMS', 'ftForce_z', \
+                                                      'landmarkEEDist', 'kinJntEff_1']]
         param_dict['HMM']['scale'] = [6.111, 6.111]
                                                      
         
