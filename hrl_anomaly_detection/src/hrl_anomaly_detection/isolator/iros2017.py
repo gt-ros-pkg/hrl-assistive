@@ -660,19 +660,26 @@ if __name__ == '__main__':
 
     elif opt.evaluation_double:
 
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
         # TODO: change feature name
         param_dict['ROC']['methods'] = ['hmmgp', 'hmmgp']
         ## param_dict['data_param']['handFeatures'] = [['audioWristRMS', 'ftForce_z', \
         ##                                               'landmarkEEDist', 'kinJntEff_1'],
         ##                                               ['ftForce_mag_integ', 'landmarkEEDist']  ]
+        
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         param_dict['data_param']['handFeatures'] = [['audioWristRMS', 'ftForce_z', \
                                                       'landmarkEEDist', 'kinJntEff_1'],
                                                     ['audioWristRMS', 'ftForce_z', \
                                                       'landmarkEEDist', 'kinJntEff_1']]
+
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation7/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        param_dict['data_param']['handFeatures'] = [ ['ftForce_mag_integ', 'landmarkEEDist'],
+                                                     ['ftForce_mag_integ', 'landmarkEEDist']  ]
         param_dict['HMM']['scale'] = [6.111, 6.111]
                                                      
         
