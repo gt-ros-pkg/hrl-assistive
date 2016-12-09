@@ -90,8 +90,6 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         print "CV data exists and no renew"
         d = ut.load_pickle(crossVal_pkl)
         kFold_list = d['kFoldList'] 
-        successData = d['successData']
-        failureData = d['failureData']        
         success_isol_data = d['successIsolData']
         failure_isol_data = d['failureIsolData']        
         success_files = d['success_files']
@@ -107,24 +105,10 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                            cut_data=data_dict['cut_data'], \
                            isolationFeatures=param_dict['data_param']['isolationFeatures'], \
                            data_renew=data_renew, max_time=data_dict['max_time'])
-        successData, failureData, success_files, failure_files, kFold_list \
-          = dm.LOPO_data_index(d['successDataList'], d['failureDataList'],\
+        success_isol_data, failure_isol_data, success_files, failure_files, kFold_list \
+          = dm.LOPO_data_index(d['successIsolDataList'], d['failureIsolDataList'],\
                                d['successFileList'], d['failureFileList'])
 
-        for i in xrange(len(subject_names)):
-            if i==0:
-                success_isol_data = d['successIsolDataList'][i]
-                failure_isol_data = d['failureIsolDataList'][i]
-            else:
-                success_isol_data = np.vstack([ np.swapaxes(success_isol_data,0,1), \
-                                                np.swapaxes(d['successIsolDataList'][i], 0,1)])
-                failure_isol_data = np.vstack([ np.swapaxes(failure_isol_data,0,1), \
-                                                np.swapaxes(d['failureIsolDataList'][i], 0,1)])
-                success_isol_data = np.swapaxes(success_isol_data, 0, 1)
-                failure_isol_data = np.swapaxes(failure_isol_data, 0, 1)
-
-        d['successData']     = successData
-        d['failureData']     = failureData
         d['successIsolData'] = success_isol_data
         d['failureIsolData'] = failure_isol_data
         d['success_files']   = success_files
@@ -248,11 +232,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             fn_ll = ROC_data[method]['fn_l']
 
         
-        ## auc_rates = {}
-        ## tp_ll = ROC_data[method]['tp_l']
         fp_ll = ROC_data[method]['fp_l']
         tn_ll = ROC_data[method]['tn_l']
-        ## fn_ll = ROC_data[method]['fn_l']
 
         tpr_l = []
         fpr_l = []
@@ -262,13 +243,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             fnr_l.append( 100.0 - tpr_l[-1] )
             fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
 
-        ## print tpr_l
-        ## print fpr_l
-
         from sklearn import metrics 
         auc = metrics.auc(fpr_l, tpr_l, True)
-        ## auc_rates[method] = auc
-               
         print idx , auc
 
 
@@ -612,7 +588,7 @@ if __name__ == '__main__':
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
         param_dict['ROC']['methods'] = ['hmmgp']
-        param_dict['HMM']['scale'] = 7.0
+        param_dict['HMM']['scale'] = 6.11
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         evaluation_all(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
                        verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
