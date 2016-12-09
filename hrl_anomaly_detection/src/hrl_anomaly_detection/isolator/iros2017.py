@@ -652,13 +652,13 @@ if __name__ == '__main__':
                                                       'landmarkEEDist', 'kinJntEff_1'],
                                                       ['ftForce_mag_integ', 'landmarkEEDist']  ]
         
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## param_dict['data_param']['handFeatures'] = [['audioWristRMS', 'ftForce_z', \
-        ##                                               'landmarkEEDist', 'kinJntEff_1'],
-        ##                                             ['audioWristRMS', 'ftForce_z', \
-        ##                                               'landmarkEEDist', 'kinJntEff_1']]
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        param_dict['data_param']['handFeatures'] = [['audioWristRMS', 'ftForce_z', \
+                                                      'landmarkEEDist', 'kinJntEff_1'],
+                                                    ['audioWristRMS', 'ftForce_z', \
+                                                      'landmarkEEDist', 'kinJntEff_1']]
 
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation7/'+\
