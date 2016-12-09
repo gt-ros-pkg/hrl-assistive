@@ -1,0 +1,16 @@
+<?xml version="1.0" ?>                                                                              
+<launch>                                                                                            
+    <arg name="camera" default="SR300" />                                                           
+    <arg name="arm" default="r" />                                                                  
+    <arg name="tf_prefix" default="" />                                                             
+                                                                                                    
+    <arg name="pi/2" value="1.5707963267948966" />                                                  
+    <arg name="optical_rotate" value="0 0 0 -$(arg pi/2) 0 -$(arg
+                                      pi/2)" />                         
+                                                                                                    
+    <node pkg="tf" type="static_transform_publisher" name="tf_$(arg
+                                                           camera)_link_broadcaster"       
+          args="0.0 0.0 0.0 0 0 0 base_link $(arg camera)_ir_frame 100"
+          respawn="false"                          
+          output="screen" />                                                                          
+</launch> 

@@ -93,7 +93,8 @@ class MouthPoseDetector:
                 break
             rate.sleep()
         """
-        self.gripper_to_sensor =  [[-0.072,-0.011,-0.068], [0.479, -0.514, 0.464, -0.540]]
+        #self.gripper_to_sensor =  [[-0.072,-0.011,-0.068], [0.479, -0.514, 0.464, -0.540]]
+        self.gripper_to_sensor =  [[-0.044,0.006,-0.058], [-0.488, 0.512, -0.471, 0.527]]
         #if self.gripper_to_sensor is None:
         #    self.gripper_to_sensor = np.array([[ 0.04152687,  0.00870336,  0.99909948,  -0.072        ],\
         #                                       [-0.99300273,  0.11099984,  0.04030652,  -0.011        ],\
@@ -533,6 +534,26 @@ class MouthPoseDetector:
                 #print "image times", data.header.stamp.to_sec(), depth_data.header.stamp.to_sec()
             except:
                 print "failed"
+        """
+        else:
+            print "publishing previous points"
+            temp_pose = tft.quaternion_matrix(qt.quat_normal(orientation))
+            for i in xrange(3):
+                temp_pose[i][3] = position[i]
+            temp_pose = np.array(np.matrix(self.gripper_to_sensor)*np.matrix(temp_pose))
+            temp_pose = np.array(np.matrix(base_to_gripper)*np.matrix(temp_pose))
+            temp_pose = self.make_pose(tft.translation_from_matrix(temp_pose), orientation=tft.quaternion_from_matrix(temp_pose))
+            self.quat_pub.publish(temp_pose.pose.orientation)
+            try:
+                temp_pose.header.stamp = data.header.stamp#rospy.Time.now() #
+                temp_pose.header.frame_id = "torso_lift_link"
+                #temp_pose = self.tf_listnr.transformPose("torso_lift_link", temp_pose)
+                self.mouth_calc_pub.publish(temp_pose)
+                #print "pose time", temp_pose.header.stamp.to_sec()
+                #print "image times", data.header.stamp.to_sec(), depth_data.header.stamp.to_sec()
+            except:
+                print "failed"
+        """
         #self.mouth_pub.publish(best_pose)
         if best_point_set is not None:
             print "best was ", best
