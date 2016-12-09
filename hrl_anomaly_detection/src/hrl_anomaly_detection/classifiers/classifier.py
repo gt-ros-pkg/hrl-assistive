@@ -1607,8 +1607,6 @@ def run_classifiers_boost(idx, processed_data_path, task_name, method_list,\
     dtc[1] = classifier( method=method_list[1], nPosteriors=nState, nLength=nLength, parallel=parallel )
     for j in xrange(nPoints):
 
-        print j
-        
         # Training
         for clf_idx in xrange(len(method_list)):
 
@@ -1649,6 +1647,7 @@ def run_classifiers_boost(idx, processed_data_path, task_name, method_list,\
             # Combine classification result
             anomaly = False
             for jj in xrange(len(est_y[0])): # per time length
+                
                 if est_y[0][jj] > 0.0 or est_y[1][jj] > 0.0:
                     if ll_classifier_test_idx is not None and true_y>0:
                         try:
