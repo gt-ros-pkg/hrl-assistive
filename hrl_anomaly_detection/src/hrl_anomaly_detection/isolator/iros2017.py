@@ -685,4 +685,4 @@ if __name__ == '__main__':
                              verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                              find_param=False, data_gen=opt.bDataGen)
 
-    elif opt.evaluation_single_isolation:
+    ## elif opt.evaluation_single_isolation:
