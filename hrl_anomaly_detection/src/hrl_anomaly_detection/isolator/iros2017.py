@@ -142,8 +142,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
         if os.path.isfile(roc_pkl) and HMM_dict['renew'] is False and SVM_dict['renew'] is False and \
           data_renew is False :
+            print "ppppppppppppppass"
             continue
-
 
         #-----------------------------------------------------------------------------------------    
         # Training HMM, and getting classifier training and testing data
@@ -154,10 +154,11 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                                       success_files=success_files, failure_files=failure_files,\
                                       noise_mag=0.03, verbose=verbose)
         except:
+            ## raise ValueError("hmm induced feature error")
             print "Feature: ", i
             continue
             ## sys.exit()
-        
+
         #-----------------------------------------------------------------------------------------
         if os.path.isfile(roc_pkl) is False or HMM_dict['renew'] or SVM_dict['renew']: ROC_data = {}
         else: ROC_data = ut.load_pickle(roc_pkl)

@@ -2872,9 +2872,9 @@ def saveHMMinducedFeatures(kFold_list, successData, failureData,\
 
         # Training HMM, and getting classifier training and testing data
         if suffix is not None:
-            modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
-        else:
             modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'_c'+suffix+'.pkl')
+        else:
+            modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
             
         if not (os.path.isfile(modeling_pkl) is False or HMM_dict['renew'] or data_renew):
             print idx, " : learned hmm exists"
