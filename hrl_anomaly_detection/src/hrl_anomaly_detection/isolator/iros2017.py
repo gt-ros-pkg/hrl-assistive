@@ -90,8 +90,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         print "CV data exists and no renew"
         d = ut.load_pickle(crossVal_pkl)
         kFold_list = d['kFoldList'] 
-        success_isol_data = d['successIsolData']
-        failure_isol_data = d['failureIsolData']        
+        success_data = d['successData']
+        failure_data = d['failureData']        
         success_files = d['success_files']
         failure_files = d['failure_files']
     else:
@@ -101,16 +101,15 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         d = dm.getDataLOPO(subject_names, task_name, raw_data_path, \
                            processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
                            downSampleSize=data_dict['downSampleSize'],\
-                           handFeatures=data_dict['handFeatures'], \
+                           handFeatures=param_dict['data_param']['isolationFeatures'], \
                            cut_data=data_dict['cut_data'], \
-                           isolationFeatures=param_dict['data_param']['isolationFeatures'], \
                            data_renew=data_renew, max_time=data_dict['max_time'])
-        success_isol_data, failure_isol_data, success_files, failure_files, kFold_list \
-          = dm.LOPO_data_index(d['successIsolDataList'], d['failureIsolDataList'],\
+        success_data, failure_data, success_files, failure_files, kFold_list \
+          = dm.LOPO_data_index(d['successDataList'], d['failureDataList'],\
                                d['successFileList'], d['failureFileList'])
 
-        d['successIsolData'] = success_isol_data
-        d['failureIsolData'] = failure_isol_data
+        d['successData'] = success_data
+        d['failureData'] = failure_data
         d['success_files']   = success_files
         d['failure_files']   = failure_files
         d['kFoldList']       = kFold_list
@@ -118,6 +117,13 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         if data_gen: sys.exit()
 
     #-----------------------------------------------------------------------------------------
+
+    print processed_data_path
+    print d.keys()
+    print d['param_dict']['feature_names']
+    print len(d['param_dict']['feature_names'])
+    print d['param_dict']['feature_names'][10]
+    ## sys.exit()
 
     #temp
     kFold_list = kFold_list[:8]
@@ -127,8 +133,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     org_processed_data_path = copy.copy(processed_data_path)
     for i in xrange(len(success_isol_data)):
 
-        successData = copy.deepcopy(d['successIsolData'][[12,i]])
-        failureData = copy.deepcopy(d['failureIsolData'][[12,i]])
+        successData = copy.deepcopy(d['successData'][[10,i]])
+        failureData = copy.deepcopy(d['failureData'][[10,i]])
         ## successData = copy.copy(d['successIsolData'][i:i+1])
         ## failureData = copy.copy(d['failureIsolData'][i:i+1])
 
