@@ -155,7 +155,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                                       noise_mag=0.03, verbose=verbose)
         except:
             ## raise ValueError("hmm induced feature error")
-            print "Feature: ", i
+            print "Feature ", i, " does not work"
             continue
             ## sys.exit()
 
