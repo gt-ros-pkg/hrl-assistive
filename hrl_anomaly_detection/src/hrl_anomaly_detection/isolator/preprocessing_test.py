@@ -75,19 +75,14 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
     # data
     data_dict  = param_dict['data_param']
     data_renew = data_dict['renew']
-    # AE
-    AE_dict    = param_dict['AE']
     # HMM
     HMM_dict   = param_dict['HMM']
     nState     = HMM_dict['nState']
     cov        = HMM_dict['cov']
-    add_logp_d = HMM_dict.get('add_logp_d', False)
     # SVM
     SVM_dict   = param_dict['SVM']
-
     # ROC
     ROC_dict = param_dict['ROC']
-
 
     #------------------------------------------
     if os.path.isdir(processed_data_path) is False:
@@ -146,10 +141,10 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
 
     #-----------------------------------------------------------------------------------------
     # parameters
-    ref_num      = 2
+    ## ref_num      = 2
     window_size = [10,20]
     startIdx    = 4
-    weight      = -4.9 #-5.5 
+    weight      = -5.0 #-14.0 #-16.0 #-5.5 
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
 
@@ -172,7 +167,7 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
                               task_name, processed_data_path,\
                               HMM_dict, data_renew, startIdx, nState, cov, HMM_dict['scale'], \
                               success_files=success_files, failure_files=failure_files,\
-                              add_logp_d=add_logp_d, verbose=verbose)
+                              verbose=verbose)
 
     #-----------------------------------------------------------------------------------------
     # Training HMM, and getting classifier training and testing data
@@ -201,7 +196,6 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
         #-----------------------------------------------------------------------------------------
         # Classifier train data
         #-----------------------------------------------------------------------------------------
-        trainDataX = abnormalTrainData*HMM_dict['scale']
         trainDataY = []
         abnormalTrainIdxList  = []
         abnormalTrainFileList = []
@@ -211,36 +205,37 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
                 abnormalTrainIdxList.append(i)
                 abnormalTrainFileList.append(f.split('/')[-1])    
 
-        detection_train_idx_list = anomaly_detection(trainDataX/HMM_dict['scale'], trainDataY, \
+        detection_train_idx_list = anomaly_detection(abnormalTrainData, trainDataY, \
                                                      task_name, save_data_path, param_dict,\
-                                                     logp_viz=False, verbose=False, weight=weight)
+                                                     logp_viz=False, verbose=False, weight=weight,\
+                                                     idx=idx)
+
+        print "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        print idx
+        print len(detection_train_idx_list), detection_train_idx_list.count(None)
 
         #-----------------------------------------------------------------------------------------
         # Classifier test data
         #-----------------------------------------------------------------------------------------
-        testDataX = abnormalTestData*HMM_dict['scale']
-
         testDataY = []
-        normalIdxList  = []
-        normalFileList = []
         abnormalTestIdxList  = []
         abnormalTestFileList = []
         for i, f in enumerate(abnormal_test_files):
-            ## if f.find("success")>=0:
-            ##     testDataY.append(-1)
-            ##     normalIdxList.append(i)
-            ##     normalFileList.append(f.split('/')[-1])
             if f.find("failure")>=0:
                 testDataY.append(1)
                 abnormalTestIdxList.append(i)
                 abnormalTestFileList.append(f.split('/')[-1])    
 
-        detection_test_idx_list = anomaly_detection(testDataX/HMM_dict['scale'], testDataY, \
+        detection_test_idx_list = anomaly_detection(abnormalTestData, testDataY, \
                                                     task_name, save_data_path, param_dict,\
-                                                    logp_viz=False, verbose=False, weight=weight)
+                                                    logp_viz=False, verbose=False, weight=weight,\
+                                                    idx=idx)
+                                                    
+        print len(detection_test_idx_list), detection_test_idx_list.count(None)
+        print "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 
         #-----------------------------------------------------------------------------------------
-        # Expected output - it should be replaced.... using theoretical stuff
+        # 
         #-----------------------------------------------------------------------------------------        
         # get delta values...
         normal_isol_train_data   = success_isol_data[:, normalTrainIdx, :] 
@@ -249,40 +244,55 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
         abnormal_isol_test_data  = failure_isol_data[:, abnormalTestIdx, :]
 
         # get individual HMM
-        A        = dd['A']
-        pi       = dd['pi']
+        ## A        = dd['A']
+        ## pi       = dd['pi']
         nEmissionDim = 1
         cov_mult = [cov/2.0]*(nEmissionDim**2)
-        scale    = HMM_dict['scale']/2.0
+        scale    = HMM_dict['scale'] #/2.0
 
         ml_dict = {}
-        ## ref_data = normal_isol_train_data[0:1]
-        ## tgt_data = normal_isol_train_data[1:]
-        tgt_data = normal_isol_train_data
-        for i in xrange(len(tgt_data)):
-            ## x = np.vstack([ref_data, tgt_data[i:i+1]])
-            x = tgt_data[i:i+1]
-
+        tgt_data = copy.copy(normal_isol_train_data)        
+        r = Parallel(n_jobs=-1)(delayed(trainHMM)(i, tgt_data[i:i+1], nState, nEmissionDim, scale,\
+                                                  cov_mult) \
+                                                  for i in xrange(len(tgt_data)) )
+        l_i, l_A, l_B, l_pi = zip(*r)
+        
+        for i, A, B, pi in zip(l_i, l_A, l_B, l_pi):
             ml = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose)
-            ret = ml.fit( (x+np.random.normal(0.0, 0.03, np.shape(x)))*scale, \
-                          cov_mult=cov_mult, use_pkl=False)
-            if ret == 'Failure':
-                print "fitting failed... ", i, ml.B
-                sys.exit()
+            ml.set_hmm_object(A,B,pi)
             ml_dict[i] = ml
+                    
+        ## for i in xrange(len(tgt_data)):
+        ##     x = tgt_data[i:i+1]
+        ##     ml = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose)
+        ##     ret = ml.fit( (x+np.random.normal(0.0, 0.03, np.shape(x)))*scale, \
+        ##                   cov_mult=cov_mult, use_pkl=False)
+        ##     if ret == 'Failure':
+        ##         print "fitting failed... ", i, ml.B
+        ##         sys.exit()
+        ##     ml_dict[i] = ml
 
+        # Sliding window -based feature
         train_feature_list, train_anomaly_list = extractFeature(normal_isol_train_data, \
                                                                 abnormal_isol_train_data, \
                                                                 detection_train_idx_list, \
                                                                 abnormalTrainFileList, \
                                                                 window_size, hmm_model=ml_dict,\
                                                                 scale=scale)
-        test_feature_list, test_anomaly_list = extractFeature(normal_isol_train_data, \
+        test_feature_list, test_anomaly_list = extractFeature(normal_isol_test_data, \
                                                               abnormal_isol_test_data, \
                                                               detection_test_idx_list, \
                                                               abnormalTestFileList, \
                                                               window_size, hmm_model=ml_dict,\
                                                               scale=scale)
+
+        print "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        print np.shape(train_feature_list), np.shape(train_anomaly_list)
+        print "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+
+        # HMP-based feature? (temporal correlation)
+        
+
 
         d = {}
         d['train_feature_list'] = train_feature_list
@@ -309,8 +319,11 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
         
         sys.exit()
     else:
-        #0 17 9 7 8
-        add_list = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]
+        print np.shape(success_isol_data)
+        print "-----------------------------------------------"
+        # 8 9 15 17 7 4 16
+        add_list = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17]
+        add_list = [ 3, 10,  6,  1,  0,  2, 12, 14, 11, 15, 16, 17,  7, 13,  5,  4 ]
         y_test, y_pred, scores = anomaly_isolation(kFold_list, processed_data_path, task_name, \
                                                dim_viz=dim_viz, add_list=add_list)
 
@@ -329,12 +342,68 @@ def evaluation_test(subject_names, task_name, raw_data_path, processed_data_path
         plt.show()
 
 
+def evaluation_feature(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
+                       dim_viz=False, no_plot=False):
 
-def anomaly_isolation(kFold_list, processed_data_path, task_name, add_list=None, dim_viz=False):
+    ## Parameters
+    # data
+    data_dict  = param_dict['data_param']
+    data_renew = data_dict['renew']
+    # HMM
+    HMM_dict   = param_dict['HMM']
+    nState     = HMM_dict['nState']
+    cov        = HMM_dict['cov']
+    # SVM
+    SVM_dict   = param_dict['SVM']
+    # ROC
+    ROC_dict = param_dict['ROC']
+
+    crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
+    if os.path.isfile(crossVal_pkl):
+        print "CV data exists and no renew"
+        d = ut.load_pickle(crossVal_pkl)
+        kFold_list  = d['kFoldList']
+    else: sys.exit()
+
+    #-----------------------------------------------------------------------------------------
+    # parameters
+    ## ref_num      = 2
+    window_size = [10,20]
+    startIdx    = 4
+    weight      = -14 #-16.0 #-5.5 
+    method_list = ROC_dict['methods'] 
+    nPoints     = ROC_dict['nPoints']
+
+    param_dict2 = d['param_dict']
+    if 'timeList' in param_dict2.keys():
+        timeList = param_dict2['timeList'][startIdx:]
+    else: timeList = None
+    handFeatureParams = d['param_dict']
+    normalTrainData   = d['successData'] * HMM_dict['scale']
+
+    #-----------------------------------------------------------------------------------------
+    ## add_list = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]
+    add_list = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17]
+    y_test, y_pred, scores = anomaly_isolation(kFold_list, processed_data_path, task_name, \
+                                               dim_viz=dim_viz, add_list=add_list,\
+                                               feature_importance=True)
+
+    print np.shape(y_test), np.shape(y_pred)
+    print "Score: ", np.mean(scores), np.std(scores)
+    
+
+    return
+
+
+
+def anomaly_isolation(kFold_list, processed_data_path, task_name, add_list=None, dim_viz=False,
+                      feature_importance=False):
 
     y_test = []
     y_pred = []
-    scores = []   
+    scores = []
+    imp_list = []
+    
     # Training HMM, and getting classifier training and testing data
     for idx in xrange(len(kFold_list)):
 
@@ -352,17 +421,22 @@ def anomaly_isolation(kFold_list, processed_data_path, task_name, add_list=None,
 
         out_list = []
         if add_list is not None:
-            for i in range(len(train_feature_list[0])/2):
+            print "total features: ", len(train_feature_list[0])
+            for i in range(len(train_feature_list[0])):
                 if i not in add_list:
-                    out_list.append( (i-1)*2 )
-                    out_list.append( (i-1)*2 + 1 )
-        else:                            
-            ## remove_list = [1,2,4,5,12,13]
-            ## remove_list = [1,4,13]
-            remove_list = [2]
-            for i in remove_list:
-                out_list.append( (i-1)*2 )
-                out_list.append( (i-1)*2 + 1 )
+                    out_list.append( i )
+            
+            ## for i in range(len(train_feature_list[0])/2):
+            ##     if i not in add_list:
+            ##         out_list.append( (i-1)*2 )
+            ##         out_list.append( (i-1)*2 + 1 )
+        ## else:                            
+        ##     ## remove_list = [1,2,4,5,12,13]
+        ##     ## remove_list = [1,4,13]
+        ##     remove_list = [2]
+        ##     for i in remove_list:
+        ##         out_list.append( (i-1)*2 )
+        ##         out_list.append( (i-1)*2 + 1 )
 
         def feature_remove(x, out_list):
             x = np.swapaxes(x, 0,1).tolist()
@@ -370,11 +444,28 @@ def anomaly_isolation(kFold_list, processed_data_path, task_name, add_list=None,
             x = np.swapaxes(x, 0,1)
             return x
 
-        print np.shape(train_feature_list), np.shape(test_feature_list)
+        print "Before: ", np.shape(train_feature_list), np.shape(test_feature_list)
         train_feature_list = feature_remove(train_feature_list, out_list)
         test_feature_list = feature_remove(test_feature_list, out_list)
-        print np.shape(train_feature_list), np.shape(test_feature_list)
-                   
+        print "After: ", np.shape(train_feature_list), np.shape(test_feature_list)
+        # sample x feature x windows
+        
+        # flattening data
+        def flattenSample(x):
+            '''Convert sample x feature x windows to sample x feature
+            '''
+            x_new = None # sample x feature
+            for i in xrange(len(x)):                
+                if x_new is None: x_new = np.swapaxes(x[i],0,1)
+                else: x_new = np.vstack([x_new, np.swapaxes(x[i],0,1)])                
+            return x_new
+
+        
+        train_feature_list = flattenSample(train_feature_list)
+        train_anomaly_list = np.array(train_anomaly_list).flatten()
+        test_feature_list  = flattenSample(test_feature_list)
+        test_anomaly_list  = np.array(test_anomaly_list).flatten()
+
         # scaling
         scaler = preprocessing.StandardScaler()
         train_feature_list = scaler.fit_transform(train_feature_list)
@@ -397,6 +488,9 @@ def anomaly_isolation(kFold_list, processed_data_path, task_name, add_list=None,
         y_pred += list(pred_anomaly_list)
         scores.append(score)
         print idx, "'s score : ", score
+
+        if feature_importance:
+            imp_list.append( clf.feature_importances_ )
         
         #-----------------------------------------------------------------------------------------
         # Visualization
@@ -410,12 +504,26 @@ def anomaly_isolation(kFold_list, processed_data_path, task_name, add_list=None,
         ##              detection_idx_list, abnormalFileList, timeList,\
         ##              HMM_dict, \
         ##              startIdx=4, ref_num=2, window_size=window_size)
-    
+
+    if feature_importance:
+        print np.shape(imp_list)
+        mean_scores = np.mean(imp_list, axis=0)
+        std_scores  = np.std(imp_list, axis=0)
+
+        ## scores = []
+        ## for i in xrange(len(mean_scores)):
+        ##     scores.append([mean_scores[i], std_scores[i]])
+
+        idx_list = np.argsort(mean_scores)[::-1]
+        print "Idx: ", idx_list        
+        print "Mean: ", mean_scores[idx_list]
+        print "Stds: ", std_scores[idx_list]
+        
     return y_test, y_pred, scores
 
 
 def anomaly_detection(X, Y, task_name, processed_data_path, param_dict, logp_viz=False, verbose=False,
-                      weight=0.0):
+                      weight=0.0, idx=0):
     ''' Anomaly detector that return anomalous point on each data.
     '''
     HMM_dict = param_dict['HMM']
@@ -426,10 +534,9 @@ def anomaly_detection(X, Y, task_name, processed_data_path, param_dict, logp_viz
     method  = 'hmmgp' #'progress'
     ## weights = ROC_dict[method+'_param_range']
     nMaxData   = 20 # The maximun number of executions to train GP
-    nSubSample = 40 # The number of sub-samples from each execution to train GP
+    nSubSample = 50 # The number of sub-samples from each execution to train GP
 
     # Load a generative model
-    idx = 0
     modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
 
     if verbose: print "start to load hmm data, ", modeling_pkl
@@ -512,7 +619,7 @@ def anomaly_detection(X, Y, task_name, processed_data_path, param_dict, logp_viz
 
 
 def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_list, window_size,\
-                   hmm_model=None, scale=1.0, startIdx=4):
+                   hmm_model=None, scale=1.0, startIdx=4, offset=0 ):
 
     if hmm_model is None:
         normal_mean = []
@@ -529,13 +636,11 @@ def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_l
     ##         ml.fit(x, A=A, pi=pi, fixed_trans=1)
     ##         if ret == 'Failure' or np.isnan(ret):
     ##             print "hmm training failed"
-    ##             sys.exit()
-            
+    ##             sys.exit()           
     ref_num = 0
-         
 
     anomaly_list = []
-    feature_list = []
+    feature_list = [] # sample x feature x windows
     for i in xrange(len(abnormal_data[0])): # per sample
         # Anomaly point
         anomaly_idx = anomaly_idx_list[i]
@@ -547,30 +652,35 @@ def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_l
         features = []
         for j in xrange(len(abnormal_data)): # per feature
 
-            if j == 0: continue
+            ## if j == 0: continue
             if hmm_model is not None:
 
-                start_idx = anomaly_idx-window_size[0]
-                end_idx   = anomaly_idx+window_size[1]
-                if start_idx < 0: start_idx = 0
-                if end_idx >= len(abnormal_data[j][i]): end_idx = len(abnormal_data[j][i])-1
-                
-                ml            = hmm_model[j-1]
-                single_window = []
-                for k in xrange(start_idx, end_idx+1):
-                    if k<startIdx:
-                        logp = 0
-                    else:
-                        logp = ml.loglikelihood(abnormal_data[j:j+1,i,:k+1]*scale)
-                    single_window.append( logp )
-                        
-                    ## if k<startIdx:
-                    ##     x_pred = ml.B[0][0][1]
-                    ## else:
-                    ##     x_pred = ml.predict_from_single_seq(abnormal_data[ref_num,i,:k+1]*scale, \
-                    ##                                         ref_num=ref_num)[1]
-                    ## ## print np.shape(abnormal_data), j,i,k, (abnormal_data[j,i,k] - x_pred)/scale
-                    ## single_window.append( (abnormal_data[j,i,k] - x_pred)/scale )
+                ml    = hmm_model[j]                
+                logps = ml.loglikelihoods( abnormal_data[j:j+1,i:i+1]*scale )
+                logps = np.squeeze(logps)
+
+                feature_windows = []
+                for k in xrange(anomaly_idx-offset,anomaly_idx+offset+1):
+
+                    if k < 0: continue
+                    if k > len(abnormal_data[j,i])-1: continue
+
+                    s = k - window_size[0]
+                    if s < 0:  s = 0
+
+                    e = k + window_size[1]
+                    if e > len(abnormal_data[j,i])-1: e = len(abnormal_data[j,i])-1
+                    
+                    single_window = logps[s:e] 
+                    ## feature_windows += [ np.amax(single_window)-np.amin(single_window) ]
+                    feature_windows += [ np.mean(single_window) ]
+                    
+                if len(feature_windows) == 0:
+                    print "s,e: ", s,e, len(logps), anomaly_idx
+                    sys.exit()
+                    
+                features.append( feature_windows )
+                    
             else:
                 print "Not available"
                 sys.exit()
@@ -579,14 +689,31 @@ def extractFeature(normal_data, abnormal_data, anomaly_idx_list, abnormal_file_l
                 else: start_idx = anomaly_idx-window_size[0]
                 single_window = single_data[start_idx:anomaly_idx+window_size[1]+1]
 
-            features += [np.mean(single_window), np.amax(single_window)-np.amin(single_window)]
+                ## features += [np.mean(single_window), np.amax(single_window)-np.amin(single_window)]
+                ## features += [ np.mean(single_window) ]
+                features += [ np.amax(single_window)-np.amin(single_window) ]
+                
         feature_list.append(features)
         tid = int(abnormal_file_list[i].split('_')[0])
-        anomaly_list.append(tid)
+        ## anomaly_list.append(tid)
+        anomaly_list.append([tid]*len(features[0]))
 
     return feature_list, anomaly_list
 
 
+def trainHMM(i, x, nState, nEmissionDim, scale, cov_mult):
+
+    ml  = hmm.learning_hmm(nState, nEmissionDim)
+    ret = ml.fit( (x+np.random.normal(0.0, 0.03, np.shape(x)))*scale, \
+                  cov_mult=cov_mult, use_pkl=False)
+    if ret == 'Failure':
+        print "fitting failed... ", i, ml.B
+        sys.exit()
+
+    A, B, pi, _,_,_,_ = ml.get_hmm_object()
+    
+    return i,A,B,pi
+    
 
 def raw_data_viz(ml, nEmissionDim, nState, testDataX, testDataY, normalTestData,\
                  detection_idx_list, abnormalFileList, timeList,\
@@ -806,6 +933,8 @@ if __name__ == '__main__':
                  default=False, help='Plot low-dimensional embedding.')
     p.add_option('--feature_selection', '--fs', action='store_true', dest='feature_selection',
                  default=False, help='Search the best features.')
+    p.add_option('--feature_contribution', '--fc', action='store_true', dest='feature_contribution',
+                 default=False, help='Search the best features.')
     
     opt, args = p.parse_args()
     
@@ -875,9 +1004,6 @@ if __name__ == '__main__':
         success_viz = True
         failure_viz = False
         
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/ICRA2017/'+opt.task+'_data_online/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         dm.getDataLOPO(subjects, opt.task, raw_data_path, save_data_path,
                        param_dict['data_param']['rf_center'], param_dict['data_param']['local_range'],\
                        downSampleSize=param_dict['data_param']['downSampleSize'], scale=scale, \
@@ -903,10 +1029,18 @@ if __name__ == '__main__':
     elif opt.CLF_param_search:
         from hrl_anomaly_detection.classifiers import opt_classifier as clf_opt
         method = 'hmmgp'
-        clf_opt.tune_classifier(save_data_path, opt.task, method, param_dict, n_jobs=-1, n_iter_search=1000)
+        clf_opt.tune_classifier(save_data_path, opt.task, method, param_dict, n_jobs=opt.n_jobs, \
+                                n_iter_search=100)
+                                
+    elif opt.feature_contribution:
+        param_dict['ROC']['methods']     = ['hmmgp']
+        if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
+
+        evaluation_feature(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
+                           dim_viz=opt.low_dim_viz, no_plot=opt.bNoPlot)
                          
     else:
-        if opt.bHMMRenew: param_dict['ROC']['methods'] = ['fixed', 'progress'] 
+        if opt.bHMMRenew: param_dict['ROC']['methods']     = ['hmmgp'] 
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
                     
         evaluation_test(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
