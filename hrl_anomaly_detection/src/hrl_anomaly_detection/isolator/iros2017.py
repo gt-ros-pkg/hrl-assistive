@@ -455,13 +455,13 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
         
         successData = copy.copy(success_isol_data[feature_idx_list[i]])
         failureData = copy.copy(failure_isol_data[feature_idx_list[i]])
-        print feature_idx_list
-        HMM_dict['scale'] = param_dict['HMM']['scale'][i]
+        HMM_dict_local = copy.deepcopy(HMM_dict)
+        HMM_dict_local['scale'] = param_dict['HMM']['scale'][i]
 
         # Training HMM, and getting classifier training and testing data
         dm.saveHMMinducedFeatures(kFold_list, successData, failureData,\
                                   task_name, processed_data_path,\
-                                  HMM_dict, data_renew, startIdx, nState, cov, \
+                                  HMM_dict_local, data_renew, startIdx, nState, cov, \
                                   noise_mag=0.03, diag=False, suffix=str(i),\
                                   verbose=verbose)
 
@@ -470,7 +470,7 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
 
     if os.path.isfile(roc_pkl) is False or HMM_dict['renew'] or SVM_dict['renew']: ROC_data = {}
     else: ROC_data = ut.load_pickle(roc_pkl)
-    ROC_data = util.reset_roc_data(ROC_data, method_list[0], ROC_dict['update_list'], nPoints)
+    ROC_data = util.reset_roc_data(ROC_data, [method_list[0]], ROC_dict['update_list'], nPoints)
 
     # parallelization
     if debug: n_jobs=1

@@ -1513,7 +1513,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
 
 
 def run_classifiers_boost(idx, processed_data_path, task_name, method_list,\
-                          ROC_data, \
+                          ROC_data, param_dict,\
                           raw_data=None, startIdx=4, nState=25, \
                           prefix=None, suffix=None,\
                           delay_estimation=False,\
@@ -1522,11 +1522,10 @@ def run_classifiers_boost(idx, processed_data_path, task_name, method_list,\
     HMM_dict = param_dict['HMM']
     SVM_dict = param_dict['SVM']
     ROC_dict = param_dict['ROC'] 
-
-    #-----------------------------------------------------------------------------------------
     nPoints  = ROC_dict['nPoints']
     method   = method_list[0]
 
+    #-----------------------------------------------------------------------------------------
     # pass method if there is existing result
     data = {}
     data = util.reset_roc_data(data, [method], [], nPoints)
@@ -1534,11 +1533,12 @@ def run_classifiers_boost(idx, processed_data_path, task_name, method_list,\
     #-----------------------------------------------------------------------------------------
 
     # train a classifier and evaluate it using test data.
-    X_train_= []
+    X_train = []
     Y_train = []
-
-    X_test = []
-    Y_test = []
+    Idx_train = []
+    X_test  = []
+    Y_test  = []
+    Idx_test  = []
 
     for clf_idx in xrange(len(method_list)):
         
@@ -1598,6 +1598,8 @@ def run_classifiers_boost(idx, processed_data_path, task_name, method_list,\
         X_test.append(X_test_flat)
         Y_test.append(Y_test_flat)
 
+
+    print "fitting complete"
         
     #-----------------------------------------------------------------------------------------
     # classifier # TODO: need to make it efficient!!
@@ -1607,9 +1609,10 @@ def run_classifiers_boost(idx, processed_data_path, task_name, method_list,\
     dtc[0] = classifier( method=method_list[0], nPosteriors=nState, nLength=nLength, parallel=parallel )
     dtc[1] = classifier( method=method_list[1], nPosteriors=nState, nLength=nLength, parallel=parallel )
     for j in xrange(nPoints):
-
+        
         # Training
         for clf_idx in xrange(len(method_list)):
+
             X = X_train[clf_idx]
             Y = Y_train[clf_idx]
             inds = Idx_train[clf_idx]
@@ -1618,7 +1621,7 @@ def run_classifiers_boost(idx, processed_data_path, task_name, method_list,\
             if method_list[clf_idx] == 'progress' or method_list[clf_idx] == 'fixed' or \
               method_list[clf_idx] == 'hmmgp':
                 thresholds = ROC_dict[method_list[clf_idx]+'_param_range']
-                dtc.set_params( ths_mult = thresholds[j] )
+                dtc[clf_idx].set_params( ths_mult = thresholds[j] )
                 if not(j==0): continue
                 ret = dtc[clf_idx].fit(X, Y, inds)
                 if ret is False: raise ValueError("Classifier fitting error")
