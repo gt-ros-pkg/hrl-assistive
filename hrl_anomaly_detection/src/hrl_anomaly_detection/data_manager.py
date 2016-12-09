@@ -2854,7 +2854,7 @@ def saveHMMinducedFeatures(kFold_list, successData, failureData,\
                            task_name, processed_data_path,\
                            HMM_dict, data_renew, startIdx, nState, cov, \
                            success_files=None, failure_files=None,\
-                           noise_mag = 0.03, one_class=True,\
+                           noise_mag = 0.03, one_class=True, suffix=None,\
                            add_logp_d=False, diag=False, verbose=False):
     """
     Training HMM, and getting classifier training and testing data.
@@ -2871,7 +2871,11 @@ def saveHMMinducedFeatures(kFold_list, successData, failureData,\
       in enumerate(kFold_list):
 
         # Training HMM, and getting classifier training and testing data
-        modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
+        if suffix is not None:
+            modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
+        else:
+            modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'_c'+suffix+'.pkl')
+            
         if not (os.path.isfile(modeling_pkl) is False or HMM_dict['renew'] or data_renew):
             print idx, " : learned hmm exists"
             continue

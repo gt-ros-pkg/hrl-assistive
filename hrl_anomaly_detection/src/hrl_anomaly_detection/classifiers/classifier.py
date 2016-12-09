@@ -1432,13 +1432,9 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             dtc.set_params( class_weight=weights[j] )
             ret = True
         else:
-            print "Not available method", method
-            return "Not available method", -1, params
+            raise ValueError("Not available method: "+method)
 
-        if ret is False:
-            print "fit failed, ", weights[j]
-            sys.exit()
-            return 'fit failed', [],[],[],[],[]
+        if ret is False: raise ValueError("Classifier fitting error")
 
         if save_model:
             dtc.save_model(clf_pkl)
@@ -1453,7 +1449,6 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
         delay_l   = []
         delay_idx = 0
         tp_idx_l  = []
-        ## tp_labels = []
         fn_labels = []
         for ii in xrange(len(X_test)):
             if len(Y_test[ii])==0: continue
@@ -1484,8 +1479,6 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                     if Y_test[ii][0] > 0:
                         tp_idx_l.append(ii)
 
-                    ## if Y_test[ii][0] < 0:
-                    ##     print jj, Y_test[ii][0]
                     anomaly = True
                     break        
 
@@ -1499,8 +1492,6 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                             del delay_l[-1]
                     else:
                         tp_l.append(1)
-                        ## if ll_classifier_test_labels is not None:
-                        ##     tp_labels.append(ll_classifier_test_labels[ii])                        
                 else:
                     fn_l.append(1)
                     if ll_classifier_test_labels is not None:
@@ -1509,10 +1500,192 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                 if anomaly: fp_l.append(1)
                 else: tn_l.append(1)
 
-        ## #temp
-        ## if np.sum(fp_l)/(np.sum(tn_l)+np.sum(fp_l)) <1.0:
-        ##     print np.sum(fp_l)/(np.sum(tn_l)+np.sum(fp_l)), j, weights[j]
-        ##     sys.exit()
+        data[method]['tp_l'][j] += tp_l
+        data[method]['fp_l'][j] += fp_l
+        data[method]['fn_l'][j] += fn_l
+        data[method]['tn_l'][j] += tn_l
+        data[method]['delay_l'][j] += delay_l
+        data[method]['tp_idx_l'][j] += tp_idx_l
+        data[method]['fn_labels'][j] += fn_labels
+
+    print "finished ", idx, method
+    return data
+
+
+def run_classifiers_boost(idx, processed_data_path, task_name, method_list,\
+                          ROC_data, \
+                          raw_data=None, startIdx=4, nState=25, \
+                          prefix=None, suffix=None,\
+                          delay_estimation=False,\
+                          save_model=False, load_model=False, n_jobs=-1):
+                          
+    HMM_dict = param_dict['HMM']
+    SVM_dict = param_dict['SVM']
+    ROC_dict = param_dict['ROC'] 
+
+    #-----------------------------------------------------------------------------------------
+    nPoints  = ROC_dict['nPoints']
+    method   = method_list[0]
+
+    # pass method if there is existing result
+    data = {}
+    data = util.reset_roc_data(data, [method], [], nPoints)
+    if ROC_data[method]['complete'] == True: return data
+    #-----------------------------------------------------------------------------------------
+
+    # train a classifier and evaluate it using test data.
+    X_train_= []
+    Y_train = []
+
+    X_test = []
+    Y_test = []
+
+    for clf_idx in xrange(len(method_list)):
+        
+        if prefix is not None:
+            modeling_pkl = os.path.join(processed_data_path, prefix+'_'+str(idx)+'.pkl')
+        elif suffix is not None:
+            modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+\
+                                        str(idx)+'_c'+str(clf_idx)+'.pkl')            
+        else:        
+            modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
+
+        print "start to load hmm data, ", modeling_pkl
+        d            = ut.load_pickle(modeling_pkl)
+        for k, v in d.iteritems():
+            exec '%s = v' % k        
+        ## nState, ll_classifier_train_?, ll_classifier_test_?, nLength    
+        ll_classifier_test_labels = d.get('ll_classifier_test_labels', None)
+
+        if method_list[clf_idx] == 'hmmgp':            
+            normal_idx = [x for x in range(len(ll_classifier_train_X)) if ll_classifier_train_Y[x][0]<0 ]
+            ll_classifier_train_X = np.array(ll_classifier_train_X)[normal_idx]
+            ll_classifier_train_Y = np.array(ll_classifier_train_Y)[normal_idx]
+            ll_classifier_train_idx = np.array(ll_classifier_train_idx)[normal_idx]
+
+        if method_list[clf_idx] == 'hmmgp':
+            ## nSubSample = 50 #temp!!!!!!!!!!!!!
+            nSubSample = 20 #20 # 20 
+            nMaxData   = 50 #40 100
+            rnd_sample = True #False
+
+            ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
+              dm.subsampleData(ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx,\
+                               nSubSample=nSubSample, nMaxData=nMaxData, rnd_sample=rnd_sample)
+
+        # flatten the data
+        X_train_flat, Y_train_flat, idx_train_flat = dm.flattenSample(ll_classifier_train_X, \
+                                                                      ll_classifier_train_Y, \
+                                                                      ll_classifier_train_idx,\
+                                                                      remove_fp=False)
+
+        X_train.append(X_train_flat)
+        Y_train.append(Y_train_flat)
+        Idx_train.append(idx_train_flat)
+    
+        # Generate parameter list for ROC curve
+        # pass method if there is existing result
+        # data preparation
+        X_test_flat = []
+        Y_test_flat = [] 
+        for j in xrange(len(ll_classifier_test_X)):
+            if len(ll_classifier_test_X[j])==0: continue
+
+            X = ll_classifier_test_X[j]
+            X_test_flat.append(X)
+            Y_test_flat.append(ll_classifier_test_Y[j])
+
+        X_test.append(X_test_flat)
+        Y_test.append(Y_test_flat)
+
+        
+    #-----------------------------------------------------------------------------------------
+    # classifier # TODO: need to make it efficient!!
+    if n_jobs == 1: parallel = True
+    else: parallel = False
+    dtc = {}
+    dtc[0] = classifier( method=method_list[0], nPosteriors=nState, nLength=nLength, parallel=parallel )
+    dtc[1] = classifier( method=method_list[1], nPosteriors=nState, nLength=nLength, parallel=parallel )
+    for j in xrange(nPoints):
+
+        # Training
+        for clf_idx in xrange(len(method_list)):
+            X = X_train[clf_idx]
+            Y = Y_train[clf_idx]
+            inds = Idx_train[clf_idx]
+            
+            dtc[clf_idx].set_params( **SVM_dict )
+            if method_list[clf_idx] == 'progress' or method_list[clf_idx] == 'fixed' or \
+              method_list[clf_idx] == 'hmmgp':
+                thresholds = ROC_dict[method_list[clf_idx]+'_param_range']
+                dtc.set_params( ths_mult = thresholds[j] )
+                if not(j==0): continue
+                ret = dtc[clf_idx].fit(X, Y, inds)
+                if ret is False: raise ValueError("Classifier fitting error")
+            else:
+                raise ValueError("Not available method: "+method_list[clf_idx])
+
+        # evaluate the classifier
+        tp_l = []
+        fp_l = []
+        tn_l = []
+        fn_l = []
+        delay_l   = []
+        delay_idx = 0
+        tp_idx_l  = []
+        fn_labels = []
+        for ii in xrange(len(X_test[0])): # per sample
+            if len(Y_test[0][ii])==0: continue
+
+            est_y = []
+            for clf_idx in xrange(len(method_list)):
+                est_y.append(dtc[clf_idx].predict(X_test[clf_idx][ii], y=Y_test[clf_idx][ii]))
+
+            true_y = Y_test[0][ii][0]
+
+            # Combine classification result
+            anomaly = False
+            for jj in xrange(len(est_y[0])): # per time length
+                if est_y[0][jj] > 0.0 or est_y[1][jj] > 0.0:
+                    if ll_classifier_test_idx is not None and true_y>0:
+                        try:
+                            delay_idx = ll_classifier_test_idx[ii][jj]
+                        except:
+                            raise ValueError("Classifier test index error")
+
+                        # Only work with simulated anomalies
+                        if delay_estimation: 
+                            if step_idx_l[ii] is None:
+                                raise ValueError("Wrong step idx setting")
+                            # Ignore early detection
+                            if delay_idx-step_idx_l[ii]<0: continue
+                            delay_l.append( delay_idx-step_idx_l[ii] )
+                        else:
+                            delay_l.append( delay_idx )
+                    if true_y > 0:
+                        tp_idx_l.append(ii)
+
+                    anomaly = True
+                    break        
+
+            if true_y > 0.0:
+                if anomaly:
+                    if delay_estimation and False:
+                        if delay_l[-1] >= 0:
+                            tp_l.append(1)
+                        else:
+                            fp_l.append(1)
+                            del delay_l[-1]
+                    else:
+                        tp_l.append(1)
+                else:
+                    fn_l.append(1)
+                    if ll_classifier_test_labels is not None:
+                        fn_labels.append(ll_classifier_test_labels[ii])
+            elif true_y <= 0.0:
+                if anomaly: fp_l.append(1)
+                else: tn_l.append(1)
+
 
         data[method]['tp_l'][j] += tp_l
         data[method]['fp_l'][j] += fp_l
@@ -1520,7 +1693,6 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
         data[method]['tn_l'][j] += tn_l
         data[method]['delay_l'][j] += delay_l
         data[method]['tp_idx_l'][j] += tp_idx_l
-        ## data[method]['tp_labels'][j] += tp_labels
         data[method]['fn_labels'][j] += fn_labels
 
     print "finished ", idx, method

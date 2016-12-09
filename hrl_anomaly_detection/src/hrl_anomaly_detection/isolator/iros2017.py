@@ -386,21 +386,18 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
                          data_renew=False, save_pdf=False, verbose=False, debug=False,\
                          no_plot=False, delay_plot=True, find_param=False, data_gen=False):
 
-    (param_dict1, param_dict2) = param_dict
-
     ## Parameters
     # data
-    data_dict  = param_dict1['data_param']
+    data_dict  = param_dict['data_param']
     data_renew = data_dict['renew']
     # HMM
-    HMM_dict   = param_dict1['HMM']
+    HMM_dict   = param_dict['HMM']
     nState     = HMM_dict['nState']
     cov        = HMM_dict['cov']
     # SVM
-    SVM_dict   = param_dict1['SVM']
-
+    SVM_dict   = param_dict['SVM']
     # ROC
-    ROC_dict = param_dict1['ROC']
+    ROC_dict = param_dict['ROC']
 
     # parameters
     startIdx    = 4
@@ -408,8 +405,6 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
     nPoints     = ROC_dict['nPoints']
     
     #------------------------------------------
-
-   
     if os.path.isdir(processed_data_path) is False:
         os.system('mkdir -p '+processed_data_path)
 
@@ -452,26 +447,22 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
     
     feature_idx_list = []
     for i in xrange(2):
-        print param_dict[i]['data_param']['handFeatures']
+        print param_dict['data_param']['handFeatures'][i]
         
         feature_idx_list.append([])
-        for feature in param_dict[i]['data_param']['handFeatures']:
+        for feature in param_dict['data_param']['handFeatures'][i]:
             feature_idx_list[i].append(d['param_dict']['feature_names'].index(feature))
         
         successData = copy.copy(success_isol_data[feature_idx_list[i]])
         failureData = copy.copy(failure_isol_data[feature_idx_list[i]])
         print feature_idx_list
-        HMM_dict['scale'] = param_dict[i]['HMM']['scale']
+        HMM_dict['scale'] = param_dict['HMM']['scale'][i]
 
-
-        sys.exit()
-
-        #-----------------------------------------------------------------------------------------    
         # Training HMM, and getting classifier training and testing data
         dm.saveHMMinducedFeatures(kFold_list, successData, failureData,\
                                   task_name, processed_data_path,\
                                   HMM_dict, data_renew, startIdx, nState, cov, \
-                                  noise_mag=0.03, diag=False, \
+                                  noise_mag=0.03, diag=False, suffix=str(i),\
                                   verbose=verbose)
 
     #-----------------------------------------------------------------------------------------
@@ -479,27 +470,18 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
 
     if os.path.isfile(roc_pkl) is False or HMM_dict['renew'] or SVM_dict['renew']: ROC_data = {}
     else: ROC_data = ut.load_pickle(roc_pkl)
-    ROC_data = util.reset_roc_data(ROC_data, method_list, ROC_dict['update_list'], nPoints)
-
-    osvm_data = None ; bpsvm_data = None
-    if 'osvm' in method_list  and ROC_data['osvm']['complete'] is False:
-        osvm_data = dm.getPCAData(len(kFold_list), crossVal_pkl, \
-                                  window=SVM_dict['raw_window_size'],
-                                  use_test=True, use_pca=False )
+    ROC_data = util.reset_roc_data(ROC_data, method_list[0], ROC_dict['update_list'], nPoints)
 
     # parallelization
     if debug: n_jobs=1
     else: n_jobs=-1
-    l_data = Parallel(n_jobs=n_jobs, verbose=10)(delayed(cf.run_classifiers)( idx, processed_data_path, \
-                                                                         task_name, \
-                                                                         method, ROC_data, \
-                                                                         ROC_dict, \
-                                                                         SVM_dict, HMM_dict, \
-                                                                         raw_data=(osvm_data,bpsvm_data),\
-                                                                         startIdx=startIdx, nState=nState) \
-                                                                         for idx in xrange(len(kFold_list)) \
-                                                                         for method in method_list )
-
+    l_data = Parallel(n_jobs=n_jobs, verbose=10)\
+      (delayed(cf.run_classifiers_boost)( idx, processed_data_path, \
+                                          task_name, \
+                                          method_list, ROC_data, \
+                                          param_dict,\
+                                          startIdx=startIdx, nState=nState) \
+      for idx in xrange(len(kFold_list)) )
 
     print "finished to run run_classifiers"
     ROC_data = util.update_roc_data(ROC_data, l_data, nPoints, method_list)
@@ -678,18 +660,16 @@ if __name__ == '__main__':
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
-        param_dict['ROC']['methods'] = ['hmmgp']
-        param_dict1 = copy.deepcopy(param_dict)
-        param_dict1['data_param']['handFeatures'] = ['audioWristRMS', 'ftForce_z', \
-                                                      'landmarkEEDist', 'kinJntEff_1']
-        param_dict1['HMM']['scale'] = 6.111
+        # TODO: change feature name
+        param_dict['ROC']['methods'] = ['hmmgp', 'hmmgp']
+        param_dict['data_param']['handFeatures'] = [['audioWristRMS', 'ftForce_z', \
+                                                      'landmarkEEDist', 'kinJntEff_1'],
+                                                      ['ftForce_mag_integ', 'landmarkEEDist']  ]
+        param_dict['HMM']['scale'] = [6.111, 6.111]
                                                      
-        param_dict2 = copy.deepcopy(param_dict)
-        param_dict2['data_param']['handFeatures'] = ['ftForce_mag_integ', 'landmarkEEDist']
-        param_dict2['HMM']['scale'] = 6.11
         
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
-        evaluation_double_ad(subjects, opt.task, raw_data_path, save_data_path, (param_dict1,param_dict2), \
+        evaluation_double_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
                              save_pdf=opt.bSavePdf, \
                              verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                              find_param=False, data_gen=opt.bDataGen)
