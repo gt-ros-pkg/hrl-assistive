@@ -507,12 +507,12 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
 
     crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
 
-        if os.path.isfile(crossVal_pkl) and data_renew is False and data_gen is False:
+    if os.path.isfile(crossVal_pkl) and data_renew is False and data_gen is False:
         print "CV data exists and no renew"
         d = ut.load_pickle(crossVal_pkl)
         kFold_list = d['kFoldList'] 
-        success_isol_data = d['successIsolData']
-        failure_isol_data = d['failureIsolData']        
+        successData = d['successIsolData']
+        failureData = d['failureIsolData']        
         success_files = d['success_files']
         failure_files = d['failure_files']
     else:
@@ -526,12 +526,12 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
                            cut_data=data_dict['cut_data'], \
                            data_renew=data_renew, max_time=data_dict['max_time'])
                            
-        success_isol_data, failure_isol_data, success_files, failure_files, kFold_list \
+        successData, failureData, success_files, failure_files, kFold_list \
           = dm.LOPO_data_index(d['successDataList'], d['failureDataList'],\
                                d['successFileList'], d['failureFileList'])
 
-        d['successIsolData'] = success_isol_data
-        d['failureIsolData'] = failure_isol_data
+        d['successIsolData'] = successData
+        d['failureIsolData'] = failureData
         d['success_files']   = success_files
         d['failure_files']   = failure_files
         d['kFoldList']       = kFold_list
@@ -561,7 +561,7 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         X_train = []
         Y_train = []
         for i in xrange(len(abnormalTrainData[0])): # per sample
-            s_l = np.random.randint(start_idx, len(abnormalTrainData[0][i])-window_size*2, nSample)
+            s_l = np.random.randint(startIdx, len(abnormalTrainData[0][i])-window_size*2, nSample)
 
             for j in s_l:
                 block = abnormalTrainData[:,i,j:j+window_size]
@@ -576,7 +576,7 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         X_test = []
         Y_test = []
         for i in xrange(len(abnormalTestData[0])): # per sample
-            s_l = np.random.randint(start_idx, len(abnormalTestData[0][i])-window_size*2, nSample)
+            s_l = np.random.randint(startIdx, len(abnormalTestData[0][i])-window_size*2, nSample)
 
             for j in s_l:
                 block = abnormalTestData[:,i,j:j+window_size]
