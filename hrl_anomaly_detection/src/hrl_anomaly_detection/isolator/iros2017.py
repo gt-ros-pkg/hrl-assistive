@@ -479,6 +479,145 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
     roc_info(method_list, ROC_data, nPoints, no_plot=True)
 
 
+def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
+                         data_renew=False, save_pdf=False, verbose=False, debug=False,\
+                         no_plot=False, delay_plot=True, find_param=False, data_gen=False):
+
+    ## Parameters
+    # data
+    data_dict  = param_dict['data_param']
+    data_renew = data_dict['renew']
+    # HMM
+    HMM_dict   = param_dict['HMM']
+    nState     = HMM_dict['nState']
+    cov        = HMM_dict['cov']
+    # SVM
+    SVM_dict   = param_dict['SVM']
+    # ROC
+    ROC_dict = param_dict['ROC']
+
+    # parameters
+    startIdx    = 4
+    method_list = ROC_dict['methods'] 
+    nPoints     = ROC_dict['nPoints']
+    
+    #------------------------------------------
+    if os.path.isdir(processed_data_path) is False:
+        os.system('mkdir -p '+processed_data_path)
+
+    crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
+
+        if os.path.isfile(crossVal_pkl) and data_renew is False and data_gen is False:
+        print "CV data exists and no renew"
+        d = ut.load_pickle(crossVal_pkl)
+        kFold_list = d['kFoldList'] 
+        success_isol_data = d['successIsolData']
+        failure_isol_data = d['failureIsolData']        
+        success_files = d['success_files']
+        failure_files = d['failure_files']
+    else:
+        '''
+        Use augmented data? if nAugment is 0, then aug_successData = successData
+        '''        
+        d = dm.getDataLOPO(subject_names, task_name, raw_data_path, \
+                           processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
+                           downSampleSize=data_dict['downSampleSize'],\
+                           handFeatures=data_dict['isolationFeatures'], \
+                           cut_data=data_dict['cut_data'], \
+                           data_renew=data_renew, max_time=data_dict['max_time'])
+                           
+        success_isol_data, failure_isol_data, success_files, failure_files, kFold_list \
+          = dm.LOPO_data_index(d['successDataList'], d['failureDataList'],\
+                               d['successFileList'], d['failureFileList'])
+
+        d['successIsolData'] = success_isol_data
+        d['failureIsolData'] = failure_isol_data
+        d['success_files']   = success_files
+        d['failure_files']   = failure_files
+        d['kFoldList']       = kFold_list
+        ut.save_pickle(d, crossVal_pkl)
+        if data_gen: sys.exit()
+
+    failure_labels = []
+    for f in failure_files:
+        failure_labels.append( int( f.split('/')[-1].split('_')[0] ) )
+    failure_labels = np.array( failure_labels )
+
+    for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
+      in enumerate(kFold_list):
+
+        # dim x sample x length
+        normalTrainData   = copy.copy(successData[:, normalTrainIdx, :]) 
+        abnormalTrainData = copy.copy(failureData[:, abnormalTrainIdx, :])
+        normalTestData    = copy.copy(successData[:, normalTestIdx, :])
+        abnormalTestData  = copy.copy(failureData[:, abnormalTestIdx, :])
+
+        abnormalTrainLabel = copy.copy(failure_labels[abnormalTrainIdx])
+        abnormalTestLabel  = copy.copy(failure_labels[abnormalTestIdx])
+
+        # random sampling?
+        nSample     = 30
+        window_size = 20
+        X_train = []
+        Y_train = []
+        for i in xrange(len(abnormalTrainData[0])): # per sample
+            s_l = np.random.randint(start_idx, len(abnormalTrainData[0][i])-window_size*2, nSample)
+
+            for j in s_l:
+                block = abnormalTrainData[:,i,j:j+window_size]
+
+                # zero mean to resolve signal displacements
+                block -= np.mean(block, axis=1)
+
+                X_train.append( block )
+                Y_train.append( abnormalTrainLabel[i] )
+
+
+        X_test = []
+        Y_test = []
+        for i in xrange(len(abnormalTestData[0])): # per sample
+            s_l = np.random.randint(start_idx, len(abnormalTestData[0][i])-window_size*2, nSample)
+
+            for j in s_l:
+                block = abnormalTestData[:,i,j:j+window_size]
+
+                # zero mean to resolve signal displacements
+                block -= np.mean(block, axis=1)
+
+                X_test.append( block )
+                Y_test.append( abnormalTestLabel[i] )
+
+
+
+        from sklearn.linear_model import OrthogonalMatchingPursuit as omp     
+        omp.fit(X_train, Y_train)
+
+        scores.append( omp.score(X_test, Y_test) )
+        ## Y_pred = omp.predict(X_test)
+            
+    print scores
+
+
+
+
+
+        # vectorize
+      
+
+        # omp feature extraction?
+
+
+
+        # svm classification
+
+
+        
+
+
+
+
+
+
 
 
 if __name__ == '__main__':
@@ -491,7 +630,7 @@ if __name__ == '__main__':
                  default=False, help='Evaluate with single detector.')
     p.add_option('--eval_double', '--ed', action='store_true', dest='evaluation_double',
                  default=False, help='Evaluate with double detectors.')
-    p.add_option('--eval_single_isol', '--esi', action='store_true', dest='evaluation_single_isolation',
+    p.add_option('--eval_isol', '--ei', action='store_true', dest='evaluation_isolation',
                  default=False, help='Evaluate anomaly isolation with double detectors.')
     
     opt, args = p.parse_args()
@@ -697,4 +836,18 @@ if __name__ == '__main__':
                              verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                              find_param=False, data_gen=opt.bDataGen)
 
-    ## elif opt.evaluation_single_isolation:
+    elif opt.evaluation_isolation:
+
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation10/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)        
+        param_dict['data_param']['handFeatures'] = [['audioWristRMS', 'ftForce_z', \
+                                                      'landmarkEEDist', 'kinJntEff_1'],
+                                                      ['ftForce_mag_integ', 'landmarkEEDist']  ]
+        param_dict['SVM']['hmmgp_logp_offset'] = 30.0 #50.0
+        param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.6, 2.3, nPoints)*-1.0+1.0
+
+        evaluation_isolation(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
+                             save_pdf=opt.bSavePdf, \
+                             verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
+                             find_param=False, data_gen=opt.bDataGen)
