@@ -581,7 +581,7 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
             for j in s_l:
                 block = abnormalTestData[:,i,j:j+window_size]
 
-                # zero mean to resolve signal displacements
+                # zero mean and unit scale(?) to resolve signal displacements
                 block -= np.mean(block, axis=1)
 
                 X_test.append( block )
@@ -793,7 +793,7 @@ if __name__ == '__main__':
         param_dict['SVM']['hmmgp_logp_offset'] = 70.0 #50.0
         param_dict['SVM']['nugget'] = 10.0
 
-
+        # 80%
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)        
@@ -801,17 +801,17 @@ if __name__ == '__main__':
                                                       'landmarkEEDist', 'kinJntEff_1'],
                                                       ['ftForce_mag_integ', 'landmarkEEDist']  ]
         param_dict['SVM']['hmmgp_logp_offset'] = 30.0 #50.0
-        param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.6, 2.3, nPoints)*-1.0+1.0
+        param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.9, 2.0, nPoints)*-1.0+1.0
         
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## param_dict['data_param']['handFeatures'] = [['audioWristRMS', 'ftForce_z', \
-        ##                                               'landmarkEEDist', 'kinJntEff_1'],
-        ##                                             ['audioWristRMS', 'ftForce_z', \
-        ##                                               'landmarkEEDist', 'kinJntEff_1']]
-        ## param_dict['SVM']['hmmgp_logp_offset'] = 30.0 #50.0
-        ## param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.6, 2.3, nPoints)*-1.0+1.0
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        param_dict['data_param']['handFeatures'] = [['audioWristRMS', 'ftForce_z', \
+                                                      'landmarkEEDist', 'kinJntEff_1'],
+                                                    ['audioWristRMS', 'ftForce_z', \
+                                                      'landmarkEEDist', 'kinJntEff_1']]
+        param_dict['SVM']['hmmgp_logp_offset'] = 30.0 #50.0
+        param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.6, 2.3, nPoints)*-1.0+1.0
 
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation7/'+\
