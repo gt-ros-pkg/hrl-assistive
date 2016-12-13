@@ -56,10 +56,10 @@ class anomaly_detector(learning_base):
     def __init__(self, method, nState, nLength,\
                  weight=1., w_negative=1., gamma=1., cost=1., nu=0.5,\
                  ths_mult=-1.0, nugget=100.0, theta0=1.0):
-        self.method = method
-        self.nState = nState
+        self.method  = method
+        self.nState  = nState
         self.nLength = nLength
-        self.scaler = None
+        self.scaler  = None
 
         self.weight     = weight
         self.w_negative = w_negative
@@ -164,6 +164,7 @@ class anomaly_detector(learning_base):
         
         return fscore
 
+
 def getSamples(modeling_pkl):
     print "start to load hmm data, ", modeling_pkl
     d = ut.load_pickle(modeling_pkl)
@@ -219,9 +220,12 @@ def tune_classifier(save_data_path, task_name, method, param_dict, param_dist=No
                 #'weight': expon(scale=0.3),\
                 ## 'weight': uniform(np.exp(-2.15), np.exp(-0.1)),
         elif 'hmmgp' in method:            
-            param_dist = {'ths_mult': uniform(-30.0,25.0),\
-                          'nugget': uniform(60.0,80.0),\
-                          'theta0': uniform(1.0,0.5)}
+            param_dist = {'ths_mult': uniform(-25.0,25.0),\
+                          'nugget': [10.0],\
+                          'theta0': [1.0],\
+                          'hmmgp_logp_offset': [0,50,100,200]}
+                          ## 'nugget': uniform(60.0,80.0),\
+                          ## 'theta0': uniform(1.0,0.5)}
                           ## 'nugget': [10, 50, 100, 200],\
                           ## 'theta0': [0.5, 1.0, 1.5]}
         elif 'progress' in method:            

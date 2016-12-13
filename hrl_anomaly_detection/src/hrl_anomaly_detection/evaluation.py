@@ -63,22 +63,20 @@ matplotlib.rcParams['ps.fonttype'] = 42
 
 
 def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
-                          step_mag, pkl_prefix,\
+                          step_mag, pkl_prefix=None,\
                           data_renew=False, save_pdf=False, verbose=False, debug=False,\
-                          no_plot=False, delay_plot=False, find_param=False, all_plot=False):
+                          no_plot=False, delay_plot=False, find_param=False, all_plot=False,\
+                          save_model=False, load_model=False):
 
     ## Parameters
     # data
     data_dict  = param_dict['data_param']
     data_renew = data_dict['renew']
     dim        = len(data_dict['handFeatures'])
-    # AE
-    AE_dict    = param_dict['AE']
     # HMM
     HMM_dict   = param_dict['HMM']
     nState     = HMM_dict['nState']
     cov        = HMM_dict['cov']
-    add_logp_d = HMM_dict.get('add_logp_d', False)
     # SVM
     SVM_dict   = param_dict['SVM']
     # ROC
@@ -87,6 +85,10 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
     # reference data #TODO
     ref_data_path = os.path.join(processed_data_path, '../'+str(data_dict['downSampleSize'])+\
                                  '_'+str(dim))
+
+    if pkl_prefix is None:
+        pkl_prefix = 'step_'+"%0.4f" % step_mag
+        step_mag   = step_mag*param_dict['HMM']['scale']
 
     #------------------------------------------
     # Get features
@@ -114,6 +116,54 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
     else: timeList = None
 
     #-----------------------------------------------------------------------------------------
+    # random noise idx
+    noise_idx_pkl = os.path.join(processed_data_path, 'noise_idx.pkl')
+    noise_idx_l   = []
+    noise_max_l   = []
+    noise_dim_l   = []
+    if os.path.isfile(noise_idx_pkl) and HMM_dict['renew'] is False:
+        ddd = ut.load_pickle(noise_idx_pkl)
+        noise_idx_l = ddd['noise_idx_l']
+        noise_max_l = ddd['noise_max_l']
+        noise_dim_l = ddd['noise_dim_l']
+    else:
+        nLength = len(successData[0][0]) - startIdx    
+        for i in xrange(len(successData[0])):
+            ## start_idx = np.random.randint(startIdx, nLength*2/3, 1)[0]
+            ## start_idx = np.random.randint(startIdx, nLength/4, 1)[0]
+            ## start_idx = np.random.randint(nLength/4, nLength/2, 1)[0]
+            start_idx = np.random.randint(nLength/4, nLength*3/4, 1)[0]
+            noise_idx_l.append(start_idx)
+            noise_dim = np.random.randint(0, len(data_dict['anomaly_dir']), 1)[0]
+            noise_dim_l.append(noise_dim)
+
+            anomaly_dir = data_dict['anomaly_dir']
+            mag_list = []
+            for j in xrange(len(anomaly_dir)):
+                            
+                if anomaly_dir[j] == 0:
+                    noise_dir = np.random.choice([-1.0, 1.0])
+                else:
+                    noise_dir = anomaly_dir[j]
+                
+                if noise_dir>0:
+                    mag = data_dict['noise_pos_max'][j]/\
+                      (param_dict2['feature_max'][j]-param_dict2['feature_min'][j])
+                else:
+                    mag = data_dict['noise_neg_max'][j]/\
+                      (param_dict2['feature_max'][j]-param_dict2['feature_min'][j])
+                mag_list.append(mag)
+            noise_max_l.append( mag_list )
+            
+        ddd = {}
+        ddd['noise_idx_l'] = noise_idx_l
+        ddd['noise_max_l'] = noise_max_l
+        ddd['noise_dim_l'] = noise_dim_l
+        
+        ut.save_pickle(ddd, noise_idx_pkl)
+    
+
+    #-----------------------------------------------------------------------------------------
     # Training HMM, and getting classifier training and testing data
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(kFold_list):
@@ -129,7 +179,10 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
         if not (os.path.isfile(modeling_pkl) is False or HMM_dict['renew'] or data_renew): continue
 
         # dim x sample x length
-        normalTestData    = successData[:, normalTestIdx, :] * HMM_dict['scale']
+        normalTestData     = copy.copy(successData[:, normalTestIdx, :] * HMM_dict['scale'])
+        normalTestNoiseIdx = np.array(noise_idx_l)[normalTestIdx] 
+        normalTestNoiseMax = np.array(noise_max_l)[normalTestIdx] 
+        normalTestNoiseDim = np.array(noise_dim_l)[normalTestIdx] 
 
         # training hmm
         if verbose: print "start to fit hmm"
@@ -137,20 +190,67 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
         nEmissionDim = dd['nEmissionDim']
         nLength      = len(normalTestData[0][0]) - startIdx
 
-
         # Classifier test data
-        # random step noise
-        abnormalTestData = copy.copy(normalTestData)
         step_idx_l = []
         for i in xrange(len(normalTestData[0])):
             step_idx_l.append(None)
-        for i in xrange(len(abnormalTestData[0])):
-            start_idx = np.random.randint(startIdx, nLength*2/3, 1)[0]
-            ## dim_idx   = np.random.randint(0, len(abnormalTestData))
+        
+        # random step noise
+        abnormalTestData = None
+        if True: # and False:
+            for i in xrange(len(normalTestData)):
+                temp = copy.copy(normalTestData)
 
-            #abnormalTestData[dim_idx,i,start_idx:] += step_mag
-            abnormalTestData[:,i,start_idx:] += step_mag
-            step_idx_l.append(start_idx)
+                for j in xrange(len(temp[i])):
+                    start_idx = normalTestNoiseIdx[j]
+                    noise_max = normalTestNoiseMax[j]
+                    temp[i,j,start_idx:] += step_mag*noise_max[i]
+                    step_idx_l.append(start_idx)
+
+                if abnormalTestData is None:
+                    abnormalTestData = temp
+                else:
+                    abnormalTestData = np.vstack([ np.swapaxes(abnormalTestData,0,1), np.swapaxes(temp, 0,1)])
+                    abnormalTestData = np.swapaxes(abnormalTestData, 0,1)
+        elif True:
+            temp = copy.copy(normalTestData)
+            for i in xrange(len(temp[0])):
+                start_idx = normalTestNoiseIdx[i]
+                noise_max = normalTestNoiseMax[i]
+                noise_dim = normalTestNoiseDim[i]
+
+                ## temp[noise_dim,i,start_idx:] += step_mag*noise_max[noise_dim]
+                for j in xrange(len(temp)):
+                    if j==1:
+                        ## continue
+                        temp[j,i,start_idx:] += step_mag*noise_max[j] #*2.0
+                    else:
+                        temp[j,i,start_idx:] += step_mag*noise_max[j]
+                step_idx_l.append(start_idx)
+
+            abnormalTestData = temp
+        else:
+            temp = copy.copy(normalTestData)
+            for i in xrange(len(temp[0])):
+                start_idx = normalTestNoiseIdx[i]
+                noise_max = normalTestNoiseMax[i]
+                noise_dim = normalTestNoiseDim[i]
+
+                temp[noise_dim,i,start_idx:] += step_mag*noise_max[noise_dim]
+                ## for j in xrange(len(temp)):
+                ##     temp[j,i,start_idx:] += step_mag*noise_max[j]
+                step_idx_l.append(start_idx)
+            abnormalTestData = temp
+            
+        ## for i in xrange(len(abnormalTestData[0])):
+        ##     start_idx = normalTestNoiseIdx[i]
+        ##     noise_max = normalTestNoiseMax[i]
+        ##     ## start_idx = np.random.randint(startIdx, nLength*2/3, 1)[0]
+        ##     ## dim_idx   = np.random.randint(0, len(abnormalTestData))
+
+        ##     abnormalTestData[dim_idx,i,start_idx:] += step_mag*noise_max
+        ##     ## abnormalTestData[:,i,start_idx:] += step_mag
+        ##     step_idx_l.append(start_idx)
 
         ml = hmm.learning_hmm(nState, nEmissionDim, verbose=False)
         ml.set_hmm_object(dd['A'], dd['B'], dd['pi'])            
@@ -227,23 +327,22 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
                                   use_test=True, use_pca=False, \
                                   step_anomaly_info=(modeling_pkl_prefix, step_mag/HMM_dict['scale']) )
 
-    ## kFold_list = kFold_list[:1]
-                                  
     # parallelization
     if debug: n_jobs=1
     else: n_jobs=-1
+    ## n_jobs=1
     r = Parallel(n_jobs=n_jobs, verbose=10)(delayed(cf.run_classifiers)( idx, processed_data_path, task_name, \
                                                                  method, ROC_data, \
-                                                                 ROC_dict, AE_dict, \
+                                                                 ROC_dict, \
                                                                  SVM_dict, HMM_dict, \
                                                                  raw_data=(osvm_data,bpsvm_data),\
                                                                  startIdx=startIdx, nState=nState,\
                                                                  modeling_pkl_prefix='hmm_'+pkl_prefix,\
-                                                                 delay_estimation=True) \
+                                                                 delay_estimation=True, save_model=save_model,\
+                                                                 load_model=load_model) \
                                                                  for idx in xrange(len(kFold_list)) \
                                                                  for method in method_list )
     print "finished to run run_classifiers"
-
     ROC_data = util.update_roc_data(ROC_data, r, nPoints, method_list)
     ut.save_pickle(ROC_data, roc_pkl)
         
@@ -266,13 +365,10 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
     data_dict  = param_dict['data_param']
     data_renew = data_dict['renew']
     dim        = len(data_dict['handFeatures'])
-    # AE
-    AE_dict    = param_dict['AE']
     # HMM
     HMM_dict   = param_dict['HMM']
     nState     = HMM_dict['nState']
     cov        = HMM_dict['cov']
-    add_logp_d = HMM_dict.get('add_logp_d', False)
     # SVM
     SVM_dict   = param_dict['SVM']
     # ROC
@@ -312,18 +408,7 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
     
     score_list  = [ [[] for i in xrange(len(method_list))] for j in xrange(3) ]
     delay_list = [ [[] for i in xrange(len(method_list))] for j in xrange(3) ]
-
-    ## nLength = len(failureData[0][0])
-    ## step_idx_l = []
-    ## for i in xrange(len(failureData[0])):
-    ##     start_idx = np.random.randint(startIdx, nLength*2/3, 1)[0]
-    ##     ## dim_idx   = np.random.randint(0, len(failureData))
-    ##     step_mag  = np.random.uniform(0.01, 0.10)
-        
-    ##     ## failureData[dim_idx,i,start_idx:] += step_mag
-    ##     failureData[:,i,start_idx:] += step_mag
-    ##     step_idx_l.append(start_idx)
-
+    det_rate_list = [ [[] for i in xrange(len(method_list))] for j in xrange(3) ]
 
     #-----------------------------------------------------------------------------------------
     # Training HMM, and getting classifier training and testing data
@@ -334,12 +419,6 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
         
         # dim x sample x length
         normalTrainData   = successData[:, normalTrainIdx, :] * HMM_dict['scale']
-        ## abnormalTrainData = failureData[:, normalTrainIdx, :] * HMM_dict['scale']
-        ## step_idx_l_train  = np.array(step_idx_l)[normalTrainIdx]
-        ## abnormalTrainData = failureData[:, abnormalTrainIdx, :] * HMM_dict['scale']        
-        ## abnormalTrainData = copy.copy(normalTrainData)
-        ## normalTestData    = successData[:, normalTestIdx, :] * HMM_dict['scale']
-
 
         # training hmm
         if verbose: print "start to fit hmm"
@@ -347,15 +426,8 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
         cov_mult     = [cov]*(nEmissionDim**2)
         nLength      = len(normalTrainData[0][0]) - startIdx
 
-        ## # Random Step Noise to crossvalidation data
-        ## for i in xrange(len(abnormalTrainData[0])):
-        ##     start_idx = np.random.randint(0, nLength/2, 1)[0]
-        ##     if start_idx < startIdx: start_idx=startIdx
-        ##     abnormalTrainData[:,i,start_idx:] += step_mag
-            
-
         from sklearn import cross_validation
-        normal_folds = cross_validation.KFold(len(normalTrainData[0]), n_folds=2, shuffle=True)
+        normal_folds = cross_validation.KFold(len(normalTrainData[0]), n_folds=5, shuffle=True)
 
         for iidx, (train_fold, test_fold) in enumerate(normal_folds):
 
@@ -371,7 +443,7 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
             for i in xrange(len(t_normalTestData[0])):
                 t_step_idx_l.append(None)
             for i in xrange(len(t_abnormalTestData[0])):
-                start_idx = np.random.randint(startIdx, nLength*2/3, 1)[0]
+                start_idx = np.random.randint(startIdx, nLength/2, 1)[0]
                 t_abnormalTestData[:,i,start_idx:] += step_mag
                 t_step_idx_l.append(start_idx)
 
@@ -430,8 +502,7 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
         ##     sys.exit()
 
 
-
-    #-----------------------------------------------------------------------------------------
+        #-----------------------------------------------------------------------------------------
         roc_pkl = os.path.join(processed_data_path, 'roc_'+pkl_target_prefix+'_'+str(idx)+'.pkl')
 
         if os.path.isfile(roc_pkl) is False or HMM_dict['renew'] or SVM_dict['renew']: ROC_data = {}
@@ -459,7 +530,7 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
         else: n_jobs=-1
         r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(cf.run_classifiers)( iidx, processed_data_path, task_name, \
                                                                              method, ROC_data, \
-                                                                             ROC_dict, AE_dict, \
+                                                                             ROC_dict, \
                                                                              SVM_dict, HMM_dict, \
                                                                              raw_data=(osvm_data,bpsvm_data),\
                                                                              startIdx=startIdx, nState=nState, \
@@ -485,17 +556,213 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
 
         roc_pkl = os.path.join(processed_data_path, 'roc_'+pkl_prefix+'.pkl')
         ROC_data = ut.load_pickle(roc_pkl)
-        scores, delays = cost_info(best_param_idx, method_list, ROC_data, nPoints, \
-                                   timeList=timeList, verbose=False)
+        scores, delays, det_rate = cost_info(best_param_idx, method_list, ROC_data, nPoints, \
+                                             timeList=timeList, verbose=False)
         ## scores, delays = cost_info_with_max_tpr(method_list, ROC_data, nPoints, \
         ##                                         timeList=timeList, verbose=False)
-
+        
         for i in xrange(len(method_list)):
             for j in xrange(3):
                 score_list[j][i].append( scores[j][i] )
                 delay_list[j][i] += delays[j][i]
+                det_rate_list[j][i].append( det_rate[j][i])
                 ## print np.shape(score_list[j][i]), np.shape(delay_list[j][i])
 
     if no_plot is False:
         plotCostDelay(method_list, score_list, delay_list, save_pdf=save_pdf)
+        ## for i in xrange(len(det_rate_list)):
+        ##     print i, det_rate_list[i]
+
+
+def evaluation_acc_param2(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
+                          step_mag_list,\
+                          data_renew=False, save_pdf=False, verbose=False, debug=False,\
+                          no_plot=False, delay_plot=False, find_param=False, all_plot=False):
+
+    ## Parameters
+    # data
+    data_dict  = param_dict['data_param']
+    data_renew = data_dict['renew']
+    dim        = len(data_dict['handFeatures'])
+    # HMM
+    HMM_dict   = param_dict['HMM']
+    nState     = HMM_dict['nState']
+    cov        = HMM_dict['cov']
+    # SVM
+    SVM_dict   = param_dict['SVM']
+    # ROC
+    ROC_dict = param_dict['ROC']
+
+    # reference data #TODO
+    ref_data_path = os.path.join(processed_data_path, '../'+str(data_dict['downSampleSize'])+\
+                                 '_'+str(dim))
+    crossVal_pkl = os.path.join(ref_data_path, 'cv_'+task_name+'.pkl')
+
+    #-----------------------------------------------------------------------------------------
+    # parameters
+    startIdx    = 4
+    method_list = ROC_dict['methods'] 
+    method      = method_list[0]
+    nPoints     = ROC_dict['nPoints']
+
+    d = ut.load_pickle(crossVal_pkl)
+    param_dict2  = d['param_dict']
+    if 'timeList' in param_dict2.keys():
+        timeList = param_dict2['timeList'][startIdx:]
+        time_step = (timeList[-1]-timeList[0])/float(len(timeList)-1)
+    else:
+        timeList = None
+        time_step = 1.0
+
+    nLength = np.shape(timeList)[-1]
+
+    #-----------------------------------------------------------------------------------------
+    s_tpr_l   = []
+    s_delay_mean_l = []
+    s_delay_std_l = []
+    s_delay_cnt_l = []
+
+    for step_mag in step_mag_list:
+
+        pkl_prefix = 'step_'+"%0.4f" % step_mag #str(step_mag)        
+        step_mag   = step_mag*param_dict['HMM']['scale']
         
+        roc_pkl  = os.path.join(processed_data_path, 'roc_'+pkl_prefix+'.pkl')
+        ROC_data = ut.load_pickle(roc_pkl)
+        print roc_pkl
+        print ROC_data.keys()
+        
+        tp_ll = ROC_data[method]['tp_l']
+        fp_ll = ROC_data[method]['fp_l']
+        tn_ll = ROC_data[method]['tn_l']
+        fn_ll = ROC_data[method]['fn_l']
+        delay_ll = ROC_data[method]['delay_l']
+
+        tp_l = []
+        tn_l = []
+        fn_l = []
+        fp_l = []
+        delay_mean_l = []
+        delay_std_l  = []
+        delay_cnt_l  = []
+        nPoints = len(tp_ll)
+        for i in xrange(nPoints):
+            tp_l.append( float(np.sum(tp_ll[i])) )
+            tn_l.append( float(np.sum(tn_ll[i])) )
+            fn_l.append( float(np.sum(fn_ll[i])) )
+            fp_l.append( float(np.sum(fp_ll[i])) )
+
+            delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) ]
+            ## delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) \
+            ##                if delay_ll[i][ii]>0 ]
+            ## delay_list = [ delay_ll[i][ii]*time_step if delay_ll[i][ii]>=0 else nLength*time_step for ii in xrange(len(delay_ll[i])) ]
+            ## # to handle.....
+            ## tot_pos = int(np.sum(tp_ll[i]) + np.sum(fn_ll[i]))
+            ## n_true_detection = float(len(delay_list))/float(tot_pos)
+            ## if len(delay_list) < tot_pos:
+            ##     for k in xrange(tot_pos-len(delay_list)):
+            ##         delay_list.append(nLength*time_step)
+
+            ## delay_list = [ delay_list[ii] for ii in xrange(len(delay_list)) if delay_list[ii]>=0 ]
+            ## delay_list = [ delay_list[ii] if delay_list[ii]>=0 else nLength*time_step for ii in xrange(len(delay_list)) ]
+
+            delay_mean_l.append( np.mean(delay_list) )
+            delay_std_l.append( np.std(delay_list) )
+            delay_cnt_l.append( float(len(delay_list)) )
+
+        tp_l = np.array(tp_l)
+        fp_l = np.array(fp_l)
+        tn_l = np.array(tn_l)
+        fn_l = np.array(fn_l)
+
+        acc_l = (tp_l+tn_l)/( tp_l+tn_l+fp_l+fn_l )
+        fpr_l = fp_l/(fp_l+tn_l)
+        tpr_l = tp_l/(tp_l+fn_l)
+
+        print method
+        print tpr_l
+        print fpr_l
+
+        best_idx = np.argmin(np.abs(fpr_l-0.125))
+        ## best_idx = np.argmin(np.abs(fpr_l-0.02))
+        best_idx = util.argmin(np.abs(fpr_l-0.02))
+        ## best_idx = util.argmin(np.abs(fpr_l-0.125))
+        ## best_idx = util.argmin(np.abs(fpr_l-0.00001))
+        print "acc: ", acc_l[best_idx], "tpr: ", tpr_l[best_idx], "fpr: ", fpr_l[best_idx]
+        print "best idx: ", best_idx
+        ## print delay_mean_l
+
+        s_tpr_l.append( tpr_l[best_idx] )
+        s_delay_mean_l.append( delay_mean_l[best_idx] )
+        s_delay_std_l.append( delay_std_l[best_idx] )
+        s_delay_cnt_l.append( delay_cnt_l[best_idx] )
+
+    s_tpr_l = np.array(s_tpr_l)
+
+    ## s_delay_mean_l = s_delay_mean_l[-1:]
+    ## s_delay_std_l = s_delay_std_l[-1:]
+    ## s_tpr_l       = s_tpr_l[-1:]
+    ## step_mag_list = step_mag_list[-1:]
+    print s_delay_cnt_l
+    print s_delay_mean_l
+    
+    if no_plot is False:
+
+        step_mag_list *= 100
+        ## x_ticks = []
+        ## for step_mag in step_mag_list:
+        ##     x_ticks.append( str(round(step_mag,3)) )
+
+        fig, ax1 = plt.subplots()
+        plt.rc('text', usetex=True)
+
+        print np.shape(step_mag_list), np.shape(s_delay_mean_l)
+
+        ax1.errorbar(step_mag_list, s_delay_mean_l, yerr=s_delay_std_l, fmt='-o', ms=10, lw=2)
+        #ax1.plot(step_mag_list, s_delay_mean_l, 'bo-', ms=10, lw=2)        
+        ax1.set_ylim([0.0,4.0])
+        ## ax1.set_xticks(x_ticks)
+        ## ax1.set_xlim([step_mag_list[0]-0.02, step_mag_list[-1]+0.02])
+        ax1.set_ylabel(r'Detection Delay [sec]', fontsize=22)
+        ax1.set_xlabel(r'The Amplitude Ratio of Step Signal [$\%$]', fontsize=22)
+        ax1.yaxis.label.set_color('blue')
+        for tl in ax1.get_xticklabels():
+            tl.set_fontsize(18)
+
+        for tl in ax1.get_yticklabels():
+            tl.set_color('b')
+            tl.set_fontsize(18)
+
+        ax2 = ax1.twinx()
+        ax2.plot(step_mag_list, s_tpr_l*100.0, 'r^--', ms=10, lw=2)
+        ax2.set_ylabel(r'True Positive Rate [$\%$]', fontsize=22)
+        ax2.set_xlim([step_mag_list[0]-1, step_mag_list[-1]+1])
+        ax2.set_ylim([-0.02,102.0])
+        ax2.yaxis.label.set_color('red')
+        for tl in ax2.get_yticklabels():
+            tl.set_color('r')
+            tl.set_fontsize(18)
+
+        plt.tight_layout()
+
+        ## m1= ax1.plot([],[], 'bx-', markersize=15, label='HMM-D')
+        ## m2= ax1.plot([],[], 'bo-', markersize=15, label='HMM-GP')        
+        ## ax1.legend(loc=2, prop={'size':20}, ncol=2)
+
+        ## m3= ax2.plot([],[], 'rx--', markersize=15, label='HMM-D')
+        ## m4= ax2.plot([],[], 'ro--', markersize=15, label='HMM-GP')        
+        ## ax2.legend(loc=4, prop={'size':20} )
+
+        if save_pdf == True:
+            fig.savefig('delay_'+method+'_0.pdf')
+            fig.savefig('delay_'+method+'_0.png')
+            fig.savefig('delay_'+method+'_0.eps')
+            os.system('mv delay_'+method+'_0.* ~/Dropbox/HRL/')
+        else:
+            plt.show()        
+        del fig, ax1, ax2
+
+        
+        ## plotCostDelay(method_list, score_list, delay_list, save_pdf=save_pdf)
+        ## for i in xrange(len(det_rate_list)):
+        ##     print i, det_rate_list[i]

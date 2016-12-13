@@ -81,8 +81,6 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     # data
     data_dict  = param_dict['data_param']
     data_renew = data_dict['renew']
-    # AE
-    AE_dict     = param_dict['AE']
     # HMM
     HMM_dict   = param_dict['HMM']
     nState     = HMM_dict['nState']
@@ -114,7 +112,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                            processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
                            downSampleSize=data_dict['downSampleSize'], scale=1.0,\
                            handFeatures=data_dict['handFeatures'], \
-                           rawFeatures=AE_dict['rawFeatures'],\
+                           ## rawFeatures=AE_dict['rawFeatures'],\
                            data_renew=data_renew, max_time=data_dict['max_time'])
 
         # TODO: need leave-one-person-out
@@ -240,7 +238,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     l_data = Parallel(n_jobs=n_jobs, verbose=50)(delayed(cf.run_classifiers)( idx, processed_data_path, \
                                                                          task_name, \
                                                                          method, ROC_data, \
-                                                                         ROC_dict, AE_dict, \
+                                                                         ROC_dict, \
                                                                          SVM_dict, HMM_dict, \
                                                                          raw_data=(osvm_data,bpsvm_data),\
                                                                          startIdx=startIdx, nState=nState) \
@@ -286,8 +284,6 @@ def evaluation_unexp(subject_names, unexpected_subjects, task_name, raw_data_pat
     # data
     data_dict  = param_dict['data_param']
     data_renew = data_dict['renew']
-    # AE
-    AE_dict     = param_dict['AE']
     # HMM
     HMM_dict   = param_dict['HMM']
     nState     = HMM_dict['nState']
@@ -315,7 +311,7 @@ def evaluation_unexp(subject_names, unexpected_subjects, task_name, raw_data_pat
                            processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
                            downSampleSize=data_dict['downSampleSize'], scale=1.0,\
                            handFeatures=data_dict['handFeatures'], \
-                           rawFeatures=AE_dict['rawFeatures'],\
+                           ## rawFeatures=AE_dict['rawFeatures'],\
                            data_renew=data_renew, max_time=data_dict['max_time'])
 
         # TODO: need leave-one-person-out
@@ -430,7 +426,7 @@ def evaluation_unexp(subject_names, unexpected_subjects, task_name, raw_data_pat
                                                                               processed_data_path, \
                                                                               task_name, \
                                                                               method, ROC_data, \
-                                                                              ROC_dict, AE_dict, \
+                                                                              ROC_dict, \
                                                                               SVM_dict, HMM_dict, \
                                                                               startIdx=startIdx, nState=nState,\
                                                                               failsafe=False)\
@@ -482,8 +478,6 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     # data
     data_dict  = param_dict['data_param']
     data_renew = data_dict['renew']
-    # AE
-    AE_dict    = param_dict['AE']
     # HMM
     HMM_dict   = param_dict['HMM']
     nState     = HMM_dict['nState']
@@ -895,8 +889,6 @@ def evaluation_acc(subject_names, task_name, raw_data_path, processed_data_path,
     # data
     data_dict  = param_dict['data_param']
     data_renew = data_dict['renew']
-    # AE
-    AE_dict     = param_dict['AE']
     # HMM
     HMM_dict   = param_dict['HMM']
     nState     = HMM_dict['nState']
@@ -1011,7 +1003,7 @@ def evaluation_acc(subject_names, task_name, raw_data_path, processed_data_path,
                                                                               processed_data_path, \
                                                                               task_name, \
                                                                               method, ROC_data, \
-                                                                              ROC_dict, AE_dict, \
+                                                                              ROC_dict, \
                                                                               SVM_dict, HMM_dict, \
                                                                               startIdx=startIdx, nState=nState,\
                                                                               failsafe=False)\
@@ -1619,7 +1611,6 @@ if __name__ == '__main__':
                        param_dict['data_param']['rf_center'], param_dict['data_param']['local_range'],\
                        downSampleSize=param_dict['data_param']['downSampleSize'], scale=scale, \
                        success_viz=success_viz, failure_viz=failure_viz,\
-                       ae_data=False,\
                        cut_data=param_dict['data_param']['cut_data'],\
                        save_pdf=opt.bSavePdf, solid_color=True,\
                        handFeatures=param_dict['data_param']['handFeatures'], data_renew=opt.bDataRenew, \

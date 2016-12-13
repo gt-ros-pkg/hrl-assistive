@@ -41,6 +41,7 @@ from hrl_anomaly_detection.util_viz import *
 from hrl_anomaly_detection import data_manager as dm
 from hrl_anomaly_detection import util as util
 from hrl_anomaly_detection import optimizeParam as op
+import hrl_anomaly_detection.data_viz as dv        
 
 # Private learners
 from hrl_anomaly_detection.hmm import learning_hmm as hmm
@@ -221,7 +222,6 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         d = dm.getDataSet(subject_names, task_name, raw_data_path, \
                            processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
                            downSampleSize=data_dict['downSampleSize'], scale=1.0,\
-                           ae_data=AE_dict['switch'],\
                            handFeatures=data_dict['handFeatures'], \
                            rawFeatures=None,\
                            cut_data=data_dict['cut_data'], \
@@ -432,7 +432,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     l_data = Parallel(n_jobs=n_jobs, verbose=10)(delayed(cf.run_classifiers)( idx, processed_data_path, \
                                                                               task_name, \
                                                                               method, ROC_data, \
-                                                                              ROC_dict, AE_dict, \
+                                                                              ROC_dict, \
                                                                               SVM_dict, HMM_dict, \
                                                                               raw_data=(osvm_data,bpsvm_data),\
                                                                               startIdx=startIdx, nState=nState) \
@@ -462,8 +462,6 @@ def evaluation_acc_param2(subject_names, task_name, raw_data_path, processed_dat
     data_dict  = param_dict['data_param']
     data_renew = data_dict['renew']
     dim        = len(data_dict['handFeatures'])
-    # AE
-    AE_dict    = param_dict['AE']
     # HMM
     HMM_dict   = param_dict['HMM']
     nState     = HMM_dict['nState']
@@ -532,8 +530,6 @@ def evaluation_drop(subject_names, task_name, raw_data_path, processed_data_path
     data_dict  = param_dict['data_param']
     data_renew = data_dict['renew']
     dim        = len(data_dict['handFeatures'])
-    # AE
-    AE_dict    = param_dict['AE']
     # HMM
     HMM_dict   = param_dict['HMM']
     nState     = HMM_dict['nState']
@@ -756,7 +752,7 @@ def evaluation_drop(subject_names, task_name, raw_data_path, processed_data_path
     else: n_jobs=-1
     r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(cf.run_classifiers)( idx, processed_data_path, task_name, \
                                                                  method, ROC_data, \
-                                                                 ROC_dict, AE_dict, \
+                                                                 ROC_dict, \
                                                                  SVM_dict, HMM_dict, \
                                                                  raw_data=(osvm_data,bpsvm_data),\
                                                                  startIdx=startIdx, nState=nState,\
@@ -792,6 +788,142 @@ def evaluation_drop(subject_names, task_name, raw_data_path, processed_data_path
 
 
 
+def evaluation_modality(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
+                        data_renew=False, save_pdf=False, verbose=False, debug=False,\
+                        no_plot=False, delay_plot=True, find_param=False, data_gen=False):
+
+    ## Parameters
+    # data
+    data_dict  = param_dict['data_param']
+    data_renew = data_dict['renew']
+    # HMM
+    HMM_dict   = param_dict['HMM']
+    nState     = HMM_dict['nState']
+    cov        = HMM_dict['cov']
+    # SVM
+    SVM_dict   = param_dict['SVM']
+
+    # ROC
+    ROC_dict = param_dict['ROC']
+
+    # parameters
+    startIdx    = 4
+    method_list = ROC_dict['methods'] 
+    nPoints     = ROC_dict['nPoints']
+    
+    #------------------------------------------
+
+    if os.path.isdir(processed_data_path) is False:
+        os.system('mkdir -p '+processed_data_path)
+
+    crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
+    
+    if os.path.isfile(crossVal_pkl) and data_renew is False and data_gen is False:
+        print "CV data exists and no renew"
+        d = ut.load_pickle(crossVal_pkl)
+        kFold_list = d['kFoldList'] 
+        successData = d['successData']
+        failureData = d['failureData']        
+    else:
+        '''
+        Use augmented data? if nAugment is 0, then aug_successData = successData
+        '''        
+        d = dm.getDataLOPO(subject_names, task_name, raw_data_path, \
+                           processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
+                           downSampleSize=data_dict['downSampleSize'], scale=1.0,\
+                           handFeatures=data_dict['handFeatures'], \
+                           cut_data=data_dict['cut_data'], \
+                           data_renew=data_renew, max_time=data_dict['max_time'])
+        successData, failureData, success_files, failure_files, kFold_list \
+          = dm.LOPO_data_index(d['successDataList'], d['failureDataList'],\
+                               d['successFileList'], d['failureFileList'])
+
+        d['successData']   = successData
+        d['failureData']   = failureData
+        d['kFoldList']     = kFold_list
+        ut.save_pickle(d, crossVal_pkl)
+        if data_gen: sys.exit()
+
+    #-----------------------------------------------------------------------------------------
+    param_dict2 = d['param_dict']
+    if 'timeList' in param_dict2.keys():
+        timeList    = param_dict2['timeList'][startIdx:]
+    else: timeList = None
+
+    print d['param_dict']['feature_names']
+    ## sys.exit()
+    
+    org_processed_data_path = copy.copy(processed_data_path)
+    modality_list = ['f', 's', 'k', 'fs', 'fk', 'sk'] #, 'fsk']
+    for modality in modality_list:
+        print "-------------------- Modality: ", modality ," ------------------------"
+        noise_mag = 0.03
+        if modality == 'f':            
+            successData = d['successData'][1:2]
+            failureData = d['failureData'][1:2]
+        elif modality == 's':            
+            successData = d['successData'][0:1]
+            failureData = d['failureData'][0:1]
+        elif modality == 'k':            
+            successData = d['successData'][2:]
+            failureData = d['failureData'][2:]
+        elif modality == 'fs':            
+            noise_mag = 0.05
+            successData = d['successData'][[0,1]]
+            failureData = d['failureData'][[0,1]]
+        elif modality == 'fk':            
+            noise_mag = 0.05
+            successData = d['successData'][1:]
+            failureData = d['failureData'][1:]
+        elif modality == 'sk':            
+            successData = d['successData'][[0,2,3]]
+            failureData = d['failureData'][[0,2,3]]
+
+        processed_data_path = os.path.join(org_processed_data_path, modality)
+        if os.path.isdir(processed_data_path) is False:
+            os.system('mkdir -p '+processed_data_path)
+            
+        #-----------------------------------------------------------------------------------------    
+        # Training HMM, and getting classifier training and testing data
+        dm.saveHMMinducedFeatures(kFold_list, successData, failureData,\
+                                  task_name, processed_data_path,\
+                                  HMM_dict, data_renew, startIdx, nState, cov, scale, \
+                                  noise_mag=noise_mag, verbose=verbose)
+
+        #-----------------------------------------------------------------------------------------
+        roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
+
+        if os.path.isfile(roc_pkl) is False or HMM_dict['renew'] or SVM_dict['renew']: ROC_data = {}
+        else: ROC_data = ut.load_pickle(roc_pkl)
+        ROC_data = util.reset_roc_data(ROC_data, method_list, ROC_dict['update_list'], nPoints)
+
+        # parallelization
+        if debug: n_jobs=1
+        else: n_jobs=-1
+        l_data = Parallel(n_jobs=n_jobs, verbose=10)(delayed(cf.run_classifiers)( idx, processed_data_path, \
+                                                                             task_name, \
+                                                                             method, ROC_data, \
+                                                                             ROC_dict, \
+                                                                             SVM_dict, HMM_dict, \
+                                                                             startIdx=startIdx, nState=nState) \
+                                                                             for idx in xrange(len(kFold_list)) \
+                                                                             for method in method_list )
+
+
+        print "finished to run run_classifiers"
+        ROC_data = util.update_roc_data(ROC_data, l_data, nPoints, method_list)
+        ut.save_pickle(ROC_data, roc_pkl)
+
+    # ---------------- ROC Visualization ----------------------
+    for modality in modality_list:
+        print "-------------------- Modality: ", modality ," ------------------------"        
+        processed_data_path = os.path.join(org_processed_data_path, modality)
+        roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
+        ROC_data = ut.load_pickle(roc_pkl)        
+        roc_info(method_list, ROC_data, nPoints, no_plot=True)
+
+
+
 def evaluation_freq(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
                     refSampleSize,\
                     data_renew=False, save_pdf=False, verbose=False, debug=False,\
@@ -801,8 +933,6 @@ def evaluation_freq(subject_names, task_name, raw_data_path, processed_data_path
     # data
     data_dict  = param_dict['data_param']
     data_renew = data_dict['renew']
-    # AE
-    AE_dict    = param_dict['AE']
     # HMM
     HMM_dict   = param_dict['HMM']
     nState     = HMM_dict['nState']
@@ -836,7 +966,6 @@ def evaluation_freq(subject_names, task_name, raw_data_path, processed_data_path
         d = dm.getDataSet(subject_names, task_name, raw_data_path, \
                            processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
                            downSampleSize=data_dict['downSampleSize'], scale=1.0,\
-                           ae_data=AE_dict['switch'],\
                            handFeatures=data_dict['handFeatures'], \
                            rawFeatures=AE_dict['rawFeatures'],\
                            cut_data=data_dict['cut_data'], \
@@ -987,7 +1116,7 @@ def evaluation_freq(subject_names, task_name, raw_data_path, processed_data_path
     else: n_jobs=-1
     r = Parallel(n_jobs=n_jobs, verbose=50)(delayed(cf.run_classifiers)( idx, processed_data_path, task_name, \
                                                                  method, ROC_data, \
-                                                                 ROC_dict, AE_dict, \
+                                                                 ROC_dict, \
                                                                  SVM_dict, HMM_dict, \
                                                                  raw_data=(osvm_data,bpsvm_data),\
                                                                  startIdx=startIdx, nState=nState,\
@@ -1711,7 +1840,7 @@ if __name__ == '__main__':
         failureData = False
         modality_list   = ['kinematics', 'audio', 'ft', 'vision_artag'] # raw plot
         
-        data_plot(subjects, opt.task, raw_data_path, save_data_path,\
+        dv.data_plot(subjects, opt.task, raw_data_path, save_data_path,\
                   downSampleSize=param_dict['data_param']['downSampleSize'], \
                   local_range=local_range, rf_center=rf_center, \
                   raw_viz=opt.bRawDataPlot, interp_viz=opt.bInterpDataPlot, save_pdf=opt.bSavePdf,\
@@ -1743,7 +1872,6 @@ if __name__ == '__main__':
                       param_dict['data_param']['rf_center'], param_dict['data_param']['local_range'],\
                       downSampleSize=param_dict['data_param']['downSampleSize'], scale=scale, \
                       success_viz=success_viz, failure_viz=failure_viz,\
-                      ae_data=False,\
                       cut_data=param_dict['data_param']['cut_data'],\
                       save_pdf=opt.bSavePdf, solid_color=False,\
                       handFeatures=param_dict['data_param']['handFeatures'], data_renew=opt.bDataRenew)
@@ -1773,7 +1901,6 @@ if __name__ == '__main__':
 
 
     elif opt.bLikelihoodPlot:
-        import hrl_anomaly_detection.data_viz as dv        
         dv.vizLikelihoods(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
                           decision_boundary_viz=False, method='hmmgp', \
                           useTrain=True, useNormalTest=False, useAbnormalTest=True,\
@@ -1794,7 +1921,7 @@ if __name__ == '__main__':
 
     elif opt.bEvaluationAccParam or opt.bEvaluationWithNoise:
         param_dict['ROC']['methods']     = ['osvm', 'fixed', 'change', 'hmmosvm', 'progress', 'hmmgp' ]
-        ## param_dict['ROC']['methods']     = ['fixed'] 'hmmosvm', 
+        param_dict['ROC']['update_list'] = ['fixed'] #'hmmosvm', 
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         nPoints = param_dict['ROC']['nPoints']
 
@@ -1808,46 +1935,46 @@ if __name__ == '__main__':
             param_dict['ROC']['hmmgp_param_range']  = np.logspace(-3, 2.8, nPoints)*-1.0
             param_dict['ROC']['osvm_param_range']  = np.logspace(-4., 0.0, nPoints)
             param_dict['ROC']['hmmosvm_param_range']  = np.logspace(-6.0, 1.0, nPoints)
-            param_dict['ROC']['fixed_param_range']  = np.linspace(-1.5, 2.0, nPoints )
+            param_dict['ROC']['fixed_param_range']  = np.linspace(-0.02, 0.08, nPoints )
         elif opt.task == 'pushing_microwhite':
             param_dict['ROC']['change_param_range'] = np.logspace(0.0, 0.9, nPoints)*-1.0
             param_dict['ROC']['hmmgp_param_range']  = np.logspace(-0.5, 2.0, nPoints)*-1.0
             param_dict['ROC']['kmean_param_range']  = np.logspace(0.16, 0.8, nPoints)*-1.0
-        elif opt.task == 'feeding':
-            nPoints = 50
-            param_dict['ROC']['nPoints'] = nPoints
-            ## param_dict['SVM']['hmmosvm_nu'] = 0.1
-            param_dict['ROC']['hmmgp_param_range']  = -np.logspace(0.0, 3.0, nPoints)+2.0
-            param_dict['ROC']['kmean_param_range']  = np.logspace(0.16, 0.8, nPoints)*-1.0
-            param_dict['ROC']['progress_param_range'] = -np.logspace(0.0, 2.5, nPoints)+2.0            
-            param_dict['ROC']['osvm_param_range']     = np.logspace(-5,1,nPoints)
-            param_dict['ROC']['hmmosvm_param_range']  = np.logspace(-4,1,nPoints)
-            param_dict['ROC']['fixed_param_range']  = np.linspace(2.0, -2.5, nPoints)
-            param_dict['ROC']['change_param_range'] = np.linspace(5.0, -55.0, nPoints)
+        ## elif opt.task == 'feeding':
+        ##     nPoints = 50
+        ##     param_dict['ROC']['nPoints'] = nPoints
+        ##     ## param_dict['SVM']['hmmosvm_nu'] = 0.1
+        ##     param_dict['ROC']['hmmgp_param_range']  = -np.logspace(0.0, 3.0, nPoints)+2.0
+        ##     param_dict['ROC']['kmean_param_range']  = np.logspace(0.16, 0.8, nPoints)*-1.0
+        ##     param_dict['ROC']['progress_param_range'] = -np.logspace(0.0, 2.5, nPoints)+2.0            
+        ##     param_dict['ROC']['osvm_param_range']     = np.logspace(-5,1,nPoints)
+        ##     param_dict['ROC']['hmmosvm_param_range']  = np.logspace(-4,1,nPoints)
+        ##     param_dict['ROC']['fixed_param_range']  = np.linspace(2.0, -2.5, nPoints)
+        ##     param_dict['ROC']['change_param_range'] = np.linspace(5.0, -55.0, nPoints)
 
 
         if 0:
             step_mag =0.01*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.01'
-        elif 1:
+        elif 0:
             step_mag =0.05*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.05'
-        elif 1:
+        elif 0:
             step_mag = 0.1*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.1'
-        ## elif 0:
-        ##     step_mag = 0.15*param_dict['HMM']['scale'] # need to varying it
-        ##     pkl_prefix = 'step_0.15'
+        elif 0:
+            step_mag = 0.15*param_dict['HMM']['scale'] # need to varying it
+            pkl_prefix = 'step_0.15'
         elif 0:
             step_mag = 0.2*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.2'
-        elif 1:
+        elif 0:
             step_mag = 0.25*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.25'
-        elif 0:
+        elif 1:
             step_mag = 0.5*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_0.5'
-        elif 0:
+        elif 1:
             step_mag =1.0*param_dict['HMM']['scale'] # need to varying it
             pkl_prefix = 'step_1.0'
         else:
@@ -1894,9 +2021,37 @@ if __name__ == '__main__':
 
     elif opt.bEvaluationMaxAcc:
         plotEvalMaxAcc(opt.dim, rf_center, local_range, save_pdf=opt.bSavePdf)
+
+    elif opt.bEvaluationModality:
+        param_dict['ROC']['methods'] = ['hmmgp']
+        if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+opt.task+'_data_modality/'+\
+          str(param_dict['data_param']['downSampleSize'])
+        nPoints = param_dict['ROC']['nPoints']
+
+        if opt.task == 'pushing_microwhite':
+            param_dict['ROC']['hmmgp_param_range']  = np.logspace(0., 2.5, nPoints)*-1.0
+                    
             
+        evaluation_modality(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
+                            save_pdf=opt.bSavePdf, \
+                            verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
+                            data_gen=opt.bDataGen)
+        
     elif opt.bStatePathPlot:
         plotStatePath(opt.task, opt.dim, save_data_path, param_dict, save_pdf=opt.bSavePdf)
+
+    elif opt.HMM_param_search:
+        from hrl_anomaly_detection.hmm import run_hmm_cpu as hmm_opt
+        parameters = {'nState': [25], 'scale': np.linspace(2.0,9.0,5), \
+                      'cov': np.linspace(1.0, 2.0, 1) }
+        max_check_fold = len(subjects) #5 #None
+        no_cov = False
+        method = 'hmmgp'
+        
+        hmm_opt.tune_hmm(parameters, opt.task, param_dict, save_data_path, verbose=False, n_jobs=opt.n_jobs, \
+                         bSave=opt.bSave, method=method, max_check_fold=max_check_fold, no_cov=no_cov)
 
     elif opt.CLF_param_search:
         from hrl_anomaly_detection.classifiers import opt_classifier as clf_opt
@@ -1909,9 +2064,9 @@ if __name__ == '__main__':
         from scipy.stats import uniform, expon
         param_dist = {'scale': uniform(1.0,15.0),\
                       'cov': uniform(0.1,3.0),\
-                      'ths_mult': uniform(-30.0,25.0),\
-                      'nugget': uniform(60.0,80.0),\
-                      'theta0': uniform(1.0,0.5)}
+                      'ths_mult': uniform(-35.0,35.0),\
+                      'nugget': uniform(1.0,100.0),\
+                      'theta0': [1.0] }
         method = 'hmmgp'
         
         op.tune_detector(param_dist, opt.task, param_dict, save_data_path, verbose=False, n_jobs=opt.n_jobs, \
