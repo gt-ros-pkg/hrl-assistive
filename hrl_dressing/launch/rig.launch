@@ -5,7 +5,7 @@
         <!--<remap from='netft_data' to='/force_torque_arm' />-->
     <!--</node>-->
     <node pkg="netft_rdt_driver" name="ft8" type="netft_node"
-          args="192.168.0.125 --rate 100" respawn="true">
+          args="192.168.0.124 --rate 100" respawn="true">
         <remap from='netft_data' to='/force_torque_sleeve' />
     </node>
     <!--

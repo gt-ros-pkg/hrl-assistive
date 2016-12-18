@@ -16,6 +16,7 @@ import zenither.zenither as zenither
 roslib.load_manifest('hrl_lib')
 from hrl_lib.util import save_pickle, load_pickle
 from hrl_msgs.msg import FloatArray
+from pr2_controllers_msgs.msg import SingleJointPositionActionGoal
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
@@ -23,6 +24,13 @@ import matplotlib.mlab as mlab
 import matplotlib.pyplot as plt
 from matplotlib.path import Path
 import matplotlib.patches as patches
+
+from hrl_haptic_manipulation_in_clutter_srvs.srv import EnableHapticMPC
+
+from helper_functions import createBMatrix, Bmat_to_pos_quat
+
+from geometry_msgs.msg import PoseArray, Pose, PoseStamped, Point, Quaternion, PoseWithCovarianceStamped, Twist
+from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 
 class PR2_FT_Data_Acquisition(object):
@@ -41,6 +49,7 @@ class PR2_FT_Data_Acquisition(object):
 
         rospack = rospkg.RosPack()
         self.pkg_path = rospack.get_path('hrl_dressing')
+        self.base_selection_pkg_path = rospack.get_path('hrl_base_selection')
 
         self.data_path = '/home/ari/svn/robot1_data/usr/ari/data/hrl_dressing'
 
@@ -81,6 +90,78 @@ class PR2_FT_Data_Acquisition(object):
 
         self.initialize_ft_sensor()
 
+        self.traj_data = load_pickle(self.base_selection_pkg_path+'/data/saved_results/large_search_space/pr2_grasps.pkl')
+        self.pr2_config = load_pickle(self.base_selection_pkg_path+'/data/saved_results/large_search_space/best_pr2_config.pkl')
+        self.pr2_torso_lift_msg = SingleJointPositionActionGoal()
+        self.pr2_torso_lift_msg.goal.position = self.pr2_config[0][2]
+
+        self.r_arm_pub = rospy.Publisher('/right_arm/haptic_mpc/joint_trajectory', JointTrajectory, queue_size=1)
+        self.r_arm_pose_array_pub = rospy.Publisher('/right_arm/haptic_mpc/goal_pose_array', PoseArray, queue_size=1)
+        self.r_arm_pose_pub = rospy.Publisher('/right_arm/haptic_mpc/goal_pose', PoseStamped, queue_size=1)
+        self.rviz_trajectory_pub = rospy.Publisher('dressing_trajectory_visualization', PoseArray, queue_size=1, latch=True)
+        self.pr2_lift_pub = rospy.Publisher('torso_controller/position_joint_action/goal',
+                                            SingleJointPositionActionGoal, queue_size=10)
+
+        rospy.wait_for_service('/right_arm/haptic_mpc/enable_mpc')
+        self.mpc_enabled_service = rospy.ServiceProxy("/right_arm/haptic_mpc/enable_mpc", EnableHapticMPC)
+
+        # self.start_pose = None
+        self.start_pose = self.define_start_pose()
+
+        self.r_pose_trajectory = self.define_pose_trajectory()
+
+        self.ready_for_movements()
+
+    def define_pose_trajectory(self):
+        basefootprint_B_poses = self.traj_data
+        poseArray = PoseArray()
+
+        poseArray.header.frame_id = 'base_footprint'
+        # traj_vector = np.array(self.traj_data[7:])-np.array(self.traj_data[:3])
+        # ori = self.traj_data[3:7]
+        # num_waypoints = int(np.max([np.floor(np.linalg.norm(traj_vector)/.1), 1]))
+        for pose in basefootprint_B_poses:
+            newPose = Pose()
+            # pos = np.array(self.traj_data[:3])+(i+1)/num_waypoints*(np.array(self.traj_data[7:])-np.array(self.traj_data[:3]))
+            pos, ori = Bmat_to_pos_quat(pose)
+            newPose.position.x = pos[0]
+            newPose.position.y = pos[1]
+            newPose.position.z = pos[2]
+            newPose.orientation.x = ori[0]
+            newPose.orientation.y = ori[1]
+            newPose.orientation.z = ori[2]
+            newPose.orientation.w = ori[3]
+            poseArray.poses.append(copy.copy(newPose))
+        # poseArray.header.stamp = rospy.Time.now()
+        poseArray.header.stamp = rospy.Time(0)
+        self.rviz_trajectory_pub.publish(poseArray)
+        print 'Trajectory is ready'
+        return poseArray
+
+    def define_start_pose(self):
+
+        basefootprint_B_start_pose = self.traj_data[0]
+        pos_out, ori_out = Bmat_to_pos_quat(basefootprint_B_start_pose)
+
+        startpose = PoseStamped()
+        # startpose.header.stamp = rospy.Time.now()
+        startpose.header.stamp = rospy.Time(0)
+        startpose.header.frame_id = 'base_footprint'
+
+        startpose.pose.position.x = pos_out[0]
+        startpose.pose.position.y = pos_out[1]
+        startpose.pose.position.z = pos_out[2]
+        startpose.pose.orientation.x = ori_out[0]
+        startpose.pose.orientation.y = ori_out[1]
+        startpose.pose.orientation.z = ori_out[2]
+        startpose.pose.orientation.w = ori_out[3]
+        return startpose
+
+    def initialize_pr2_config(self):
+        resp = self.mpc_enabled_service('enabled')
+        self.pr2_lift_pub.publish(self.pr2_torso_lift_msg)
+        self.r_arm_pose_pub.publish(self.start_pose)
+
     def initialize_HMM(self):
 
         # self.myHmms = self.ghmm.HMMOpen(self.pkg_path+'/data/hmm_rig_subjects.xml')
@@ -100,7 +181,6 @@ class PR2_FT_Data_Acquisition(object):
         # print 'Zenither ready for action!'
         rospy.loginfo('FT sensor ready for action!')
 
-        self.ready_for_movements()
         # rospy.spin()
 
     def ft_sleeve_cb(self, msg):
@@ -135,6 +215,12 @@ class PR2_FT_Data_Acquisition(object):
                                              y_torque,
                                              z_torque)]))
             self.array_to_save[self.array_line] = [t.to_sec(), -x_force, -y_force, -z_force]
+            if np.linalg.norm([x_force, y_force, z_force]) >= 10.:
+                print 'Force exceeded 10 Newtons!! Stopping the arm!'
+                stopPose = PoseStamped()
+                self.r_arm_pose_pub.publish(stopPose)
+                resp = self.mpc_enabled_service('disabled')
+                self.recording = False
             if self.realtime_HMM:
                 HMM_run_timer = rospy.Time.now() - self.HMM_last_run_time
                 if HMM_run_timer.to_sec() > 0.5:
@@ -161,39 +247,45 @@ class PR2_FT_Data_Acquisition(object):
         start_move_time = rospy.Time.now()
 
         while self.continue_collecting and not rospy.is_shutdown():
-            user_feedback = raw_input('Hit enter to re-zero ft sensor and continue collecting data. Enter n to exit')
+            user_feedback = raw_input('Hit enter intialize pr2 config. Enter n to exit ')
             if user_feedback == 'n':
                 self.continue_collecting = False
             else:
-                self.calibrate_now = True
-                self.ft_sleeve_biased = False
-                rospy.sleep(0.5)
-                raw_input('Hit enter to start data collection')
-                self.start_recording_data(self.trial_number)
-                raw_input('Hit enter to stop recording data')
-                self.stop_recording_data(self.trial_number)
-                fig = plt.figure(1)
-                ax1 = fig.add_subplot(111)
-                # ax1.set_title('Data for caught trial on PR2: Classified Correctly!', fontsize=20)
-                ax1.set_title('Data from most recent trial', fontsize=20)
-                ax1.set_xlabel('Time (s)', fontsize=20)
-                ax1.set_ylabel('Force (N)', fontsize=20)
-                ax1.set_xlim(0., 8.2)
-                ax1.set_ylim(-10., 1.0)
-                ax1.tick_params(axis='x', labelsize=20)
-                ax1.tick_params(axis='y', labelsize=20)
+                self.initialize_pr2_config()
 
-                plot1 = ax1.plot(self.plotTime, self.plotX, label='Direction of Movement', linewidth=2)
-                plot2 = ax1.plot(self.plotTime, self.plotY, label='Direction of Gravity', linewidth=2)
-                # ax1.legend([plot1, plot2], ['Direction of Movement', ])
-                ax1.legend(loc='lower left', borderaxespad=0., fontsize=20)
-                # plt.plot(self.plotTime, self.plotX)
-                # plt.plot(self.plotTime, self.plotY)
+                user_feedback = raw_input('Hit enter to re-zero ft sensor and continue collecting data. Enter n to exit ')
+                if user_feedback == 'n':
+                    self.continue_collecting = False
+                else:
+                    self.calibrate_now = True
+                    self.ft_sleeve_biased = False
+                    rospy.sleep(0.5)
+                    raw_input('Hit enter to start data collection')
+                    self.start_recording_data(self.trial_number)
+                    self.r_arm_pose_array_pub.publish(self.r_pose_trajectory)
+                    raw_input('Hit enter to stop recording data')
+                    self.stop_recording_data(self.trial_number)
+                    fig = plt.figure(1)
+                    ax1 = fig.add_subplot(111)
+                    # ax1.set_title('Data for caught trial on PR2: Classified Correctly!', fontsize=20)
+                    ax1.set_title('Data from most recent trial', fontsize=20)
+                    ax1.set_xlabel('Time (s)', fontsize=20)
+                    ax1.set_ylabel('Force (N)', fontsize=20)
+                    ax1.set_xlim(0., 8.2)
+                    ax1.set_ylim(-10., 1.0)
+                    ax1.tick_params(axis='x', labelsize=20)
+                    ax1.tick_params(axis='y', labelsize=20)
 
-                plt.show()
+                    plot1 = ax1.plot(self.plotTime, self.plotX, label='Direction of Movement', linewidth=2)
+                    plot2 = ax1.plot(self.plotTime, self.plotY, label='Direction of Gravity', linewidth=2)
+                    # ax1.legend([plot1, plot2], ['Direction of Movement', ])
+                    ax1.legend(loc='lower left', borderaxespad=0., fontsize=20)
+                    # plt.plot(self.plotTime, self.plotX)
+                    # plt.plot(self.plotTime, self.plotY)
+
+                    plt.show()
         # final_time = rospy.Time.now().to_sec() - self.total_start_time.to_sec()
         # print 'Total elapsed time is:', final_time
-
 
     def run_HMM_realtime(self, test_data):
         # temp = np.dstack([(test_data[:, 1]), (test_data[:, 3])])[0]
@@ -216,8 +308,8 @@ class PR2_FT_Data_Acquisition(object):
             final_ts_obj = ghmm.EmissionSequence(self.F, np.array(temp).flatten().tolist())
             pathobj = self.myHmms[modelid].viterbi(final_ts_obj)
             # pathobj = self.myHMMs.test(self.model_trained[modelid])
-            print 'Log likelihood for ', self.categories[modelid], ' category'
-            print pathobj[1]
+            # print 'Log likelihood for ', self.categories[modelid], ' category'
+            # print pathobj[1]
             value = pathobj[1]
             if value > max_value:
                 max_value = copy.copy(value)
@@ -436,101 +528,6 @@ class PR2_FT_Data_Acquisition(object):
             surf2 = ax2.fill_between(position_values, mean_z + std_z, mean_z - std_z, color=colors[num], alpha=0.3)
             ax2.legend(bbox_to_anchor=(0.9, 1), loc=2, borderaxespad=0., fontsize=20)
 
-    def histogram_of_stop_point_fist(self, subjects, labels):
-        fig1 = plt.figure(3)
-        labels = ['caught_fist']
-        stop_locations = []
-        for num, label in enumerate(labels):
-            for subject in subjects:
-                # fig1 = plt.figure(2*num+1)
-                ax1 = fig1.add_subplot(111)
-                ax1.set_xlim(0.2, .5)
-                # ax1.set_ylim(-10.0, 1.0)
-                ax1.set_xlabel('Stop Position (m)', fontsize=20)
-                ax1.set_ylabel('Number of trials', fontsize=20)
-                ax1.tick_params(axis='x', labelsize=20)
-                ax1.tick_params(axis='y', labelsize=20)
-                ax1.set_title(''.join(['Stop position when caught on fist, when started at tip of fist']), fontsize=20)
-                vel = 0.1
-                directory = ''.join([data_path, '/', subject, '/formatted/', str(vel),'mps/', label, '/'])
-                force_file_list = os.listdir(directory)
-                for file_name in force_file_list:
-                    # print directory+file_name
-                    loaded_data = load_pickle(directory+file_name)
-                    stop_locations.append(np.max(loaded_data[:,1]))
-                vel = 0.15
-                directory = ''.join([data_path, '/', subject, '/formatted/', str(vel),'mps/', label, '/'])
-                force_file_list = os.listdir(directory)
-                for file_name in force_file_list:
-                    loaded_data = load_pickle(directory+file_name)
-                    stop_locations.append(np.max(loaded_data[:,1]))
-        mu = np.mean(stop_locations)
-        sigma = np.std(stop_locations)
-        print 'The mean of the stop location is: ', mu
-        print 'The standard deviation of the stop location is: ', sigma
-        n, bins, patches = ax1.hist(stop_locations, 10, color="green", alpha=0.75)
-        points = np.arange(0, 10, 0.001)
-        y = mlab.normpdf(points, mu, sigma)
-        l = ax1.plot(points, y, 'r--', linewidth=2)
-
-    def histogram_of_stop_point_elbow(self, subjects, labels):
-        fig1 = plt.figure(4)
-        fig2 = plt.figure(5)
-        labels = ['good']
-        stop_locations = []
-        arm_lengths = []
-        for num, label in enumerate(labels):
-            for subj_num, subject in enumerate(subjects):
-                subject_stop_locations = []
-                paramlist = rosparam.load_file(''.join([data_path, '/', subject, '/params.yaml']))
-                for params, ns in paramlist:
-                    rosparam.upload_params(ns, params)
-                arm_length = rosparam.get_param('crook_to_fist')/100.
-                # fig1 = plt.figure(2*num+1)
-                ax1 = fig1.add_subplot(111)
-                ax1.set_xlim(0.2, .4)
-                # ax1.set_ylim(-10.0, 1.0)
-                ax1.set_xlabel('Stop Position (m)', fontsize=20)
-                ax1.set_ylabel('Number of trials', fontsize=20)
-                ax1.set_title(''.join(['Difference between arm length and stop position at the elbow']), fontsize=20)
-                ax1.tick_params(axis='x', labelsize=20)
-                ax1.tick_params(axis='y', labelsize=20)
-                ax2 = fig2.add_subplot(431+subj_num)
-                ax2.set_xlim(0.2, .4)
-                # ax1.set_ylim(-10.0, 1.0)
-                ax2.set_xlabel('Position (m)')
-                ax2.set_ylabel('Number of trials')
-                ax2.set_title(''.join(['Stop position for "Good" outcome']), fontsize=20)
-                vel = 0.1
-                directory = ''.join([data_path, '/', subject, '/formatted_three/', str(vel),'mps/', label, '/'])
-                force_file_list = os.listdir(directory)
-                for file_name in force_file_list:
-                    # print directory+file_name
-                    loaded_data = load_pickle(directory+file_name)
-                    stop_locations.append(np.max(loaded_data[:,1])-arm_length)
-                    subject_stop_locations.append(np.max(loaded_data[:,1])-arm_length)
-                    arm_lengths.append(arm_length)
-                vel = 0.15
-                directory = ''.join([data_path, '/', subject, '/formatted_three/', str(vel),'mps/', label, '/'])
-                force_file_list = os.listdir(directory)
-                for file_name in force_file_list:
-                    loaded_data = load_pickle(directory+file_name)
-                    stop_locations.append(np.max(loaded_data[:,1]-arm_length))
-                    subject_stop_locations.append(np.max(loaded_data[:,1])-arm_length)
-                ax2.hist(subject_stop_locations)
-        mu = np.mean(stop_locations)
-        sigma = np.std(stop_locations)
-        print 'The minimum arm length is: ', np.min(arm_lengths)
-        print 'The max arm length is: ', np.max(arm_lengths)
-        print 'The mean arm length is: ', np.mean(arm_lengths)
-        print 'The mean of the stop location is: ', mu
-        print arm_lengths
-        print 'The standard deviation of the stop location is: ', sigma
-        n, bins, patches = ax1.hist(stop_locations, 10, color="green", alpha=0.75)
-        points = np.arange(0, 10, 0.001)
-        y = mlab.normpdf(points, mu, sigma)
-        l = ax1.plot(points, y, 'r--', linewidth=2)
-
     def start_recording_data(self, num):
         self.array_to_save = np.zeros([3000, 4])
         self.array_line = 0
@@ -580,9 +577,6 @@ if __name__ == "__main__":
     # plot = False
     num = 20
     vel = 0.1
-    subject_options = ['subject0', 'subject1', 'subject2', 'subject3', 'subject4', 'subject5', 'subject6', 'subject7', 'subject8', 'subject9', 'subject10', 'subject11', 'subject12',
-                       'with_sleeve_no_arm', 'no_sleeve_no_arm', 'moved_rig_onto_drawers', 'moved_rig_back', 'testing_level', 'tapo_test_data','wenhao_test_data', 'test_subj']
-    subject = subject_options[17]
     rc = PR2_FT_Data_Acquisition(trial_number=None, realtime_HMM=True)
     rospack = rospkg.RosPack()
     pkg_path = rospack.get_path('hrl_dressing')
