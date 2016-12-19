@@ -615,42 +615,42 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         ##         Y_train.append( abnormalTrainLabel[i] )
 
         # ---------------------------------------------------------------------------
-        X_train = []
-        for i in xrange(len(abnormalTrainData[0])): # per sample
-            X_train.append(abnormalTrainData[:,i,:]) #-np.mean(abnormalTrainData[:,i,:], axis=1)[:, np.newaxis])
-        Y_train = copy.copy(abnormalTrainLabel)
+        ## X_train = []
+        ## for i in xrange(len(abnormalTrainData[0])): # per sample
+        ##     X_train.append(abnormalTrainData[:,i,:]) #-np.mean(abnormalTrainData[:,i,:], axis=1)[:, np.newaxis])
+        ## Y_train = copy.copy(abnormalTrainLabel)
 
-        del abnormalTrainData
-        del abnormalTrainLabel
+        ## del abnormalTrainData
+        ## del abnormalTrainLabel
 
-        # train feature-wise omp
-        dimension = len(X_train[0][0]) #window_size
-        dict_size = int(dimension*10) ##1.5)
-        n_examples = len(X_train)
-        target_sparsity = int(0.1*dimension)
+        ## # train feature-wise omp
+        ## dimension = len(X_train[0][0]) #window_size
+        ## dict_size = int(dimension*10) ##1.5)
+        ## n_examples = len(X_train)
+        ## target_sparsity = int(0.1*dimension)
 
-        Gammas = None
-        ml_dict = {}
-        X_train = np.array(X_train)
-        for i in xrange(len(X_train[0])): # per feature
-            print i, ' / ', len(X_train[0])
-            # X \simeq Gamma * D
-            # D is the dictionary with `dict_size` by `dimension`
-            # Gamma is the code book with `n_examples` by `dict_size`
-            D, Gamma = KSVD(X_train[:,i,:], dict_size, target_sparsity, 1000,
-                            print_interval = 25,
-                            enable_printing = True, enable_threading = True)
-            ## print np.shape(D), np.shape(Gamma), dict_size, dimension, n_examples
+        ## Gammas = None
+        ## ml_dict = {}
+        ## X_train = np.array(X_train)
+        ## for i in xrange(len(X_train[0])): # per feature
+        ##     print i, ' / ', len(X_train[0])
+        ##     # X \simeq Gamma * D
+        ##     # D is the dictionary with `dict_size` by `dimension`
+        ##     # Gamma is the code book with `n_examples` by `dict_size`
+        ##     D, Gamma = KSVD(X_train[:,i,:], dict_size, target_sparsity, 1000,
+        ##                     print_interval = 25,
+        ##                     enable_printing = True, enable_threading = True)
+        ##     ## print np.shape(D), np.shape(Gamma), dict_size, dimension, n_examples
 
-            ml_dict[i] = (D, Gamma)
+        ##     ml_dict[i] = (D, Gamma)
 
-            if Gammas is None:
-                Gammas = Gamma
-            else:
-                Gammas = np.hstack([Gammas, Gamma])
+        ##     if Gammas is None:
+        ##         Gammas = Gamma
+        ##     else:
+        ##         Gammas = np.hstack([Gammas, Gamma])
 
-            del D
-            del Gamma
+        ##     del D
+        ##     del Gamma
         # ---------------------------------------------------------------------------
         X_train = []
         Y_train = []
@@ -674,7 +674,7 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         # X \simeq Gamma * D
         # D is the dictionary with `dict_size` by `dimension`
         # Gamma is the code book with `n_examples` by `dict_size`
-        D, Gamma = KSVD(X_train, dict_size, target_sparsity, 1000,
+        D, Gamma = KSVD(X_train, dict_size, target_sparsity, 400,
                         print_interval = 25,
                         enable_printing = True, enable_threading = True)
         ## ml_dict[i] = (D, Gamma)
