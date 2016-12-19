@@ -41,6 +41,7 @@ var RFH = (function (module) {
         var startTask = function (event) {
             var domain = $('#domain-select :selected').val();
             var options = getActiveOptions(domain);
+            console.log(options)
             self.domains[domain].sendTaskGoal(options);
         };
 
