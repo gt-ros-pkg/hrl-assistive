@@ -26,17 +26,6 @@ var RFH = (function (module) {
         self.$div = $(driveSVG.node);
         var headTrackingTimer = null;
 
-        self.baseContactDisplay = new module.SkinDisplay({tfClient: tfClient,
-                                                          head: head,
-                                                          camera: camera,
-                                                          skins: [RFH.skins.base],
-                                                          displayDiv: $('#bumper-contact-display'),
-                                                          markerSet: $('.bumper'),
-                                                          edgeMarkers: $('#bumper-contact-display > .edge-contact')
-        });
-
-        $('#zero-skin-base').button().on('click.skin', function (event) {RFH.skins.base.zeroSensor();});
-
         self.goalDisplay = new RFH.DriveGoalDisplay({
             ros: ros,
             tfClient: tfClient,
@@ -539,7 +528,6 @@ var RFH = (function (module) {
             $('.drive-ctrl').show();
             self.showGoal();
             $viewer.show();
-            self.baseContactDisplay.show();
             trackHeadPosition(getNearestStop());
             self.$div.on('resize.rfh', self.updateLineOffsets);
             $('#controls h3').text("Head Controls");
@@ -552,7 +540,6 @@ var RFH = (function (module) {
             self.hideGoal();
             $('.drive-ctrl').hide();
             $viewer.hide();
-            self.baseContactDisplay.hide();
             $('#controls h3').text("Controls");
             stopTracking();
         };
