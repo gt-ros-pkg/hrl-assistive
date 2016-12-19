@@ -615,81 +615,115 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         ##         Y_train.append( abnormalTrainLabel[i] )
 
         # ---------------------------------------------------------------------------
+        # train feature-wise omp
+        X_train = []
+        for i in xrange(len(abnormalTrainData[0])): # per sample
+            X_train.append(abnormalTrainData[:,i,:]) #-np.mean(abnormalTrainData[:,i,:], axis=1)[:, np.newaxis])
+        Y_train = copy.copy(abnormalTrainLabel)
+
+        del abnormalTrainData
+        del abnormalTrainLabel
+
+        dimension = len(X_train[0][0]) #window_size
+        dict_size = int(dimension*10) ##1.5)
+        n_examples = len(X_train)
+        target_sparsity = int(0.1*dimension)
+
+        Gammas = None
+        ml_dict = {}
+        X_train = np.array(X_train)
+        for i in xrange(len(X_train[0])): # per feature
+            print i, ' / ', len(X_train[0])
+            # X \simeq Gamma * D
+            # D is the dictionary with `dict_size` by `dimension`
+            # Gamma is the code book with `n_examples` by `dict_size`
+            D, Gamma = KSVD(X_train[:,i,:], dict_size, target_sparsity, 1000,
+                            print_interval = 25,
+                            enable_printing = True, enable_threading = True)
+            ## print np.shape(D), np.shape(Gamma), dict_size, dimension, n_examples
+
+            ml_dict[i] = (D, Gamma)
+
+            if Gammas is None:
+                Gammas = Gamma
+            else:
+                Gammas = np.hstack([Gammas, Gamma])
+
+            del D
+            del Gamma
+        # ---------------------------------------------------------------------------
+        ## ## # train multichannel omp?
         ## X_train = []
+        ## Y_train = []
         ## for i in xrange(len(abnormalTrainData[0])): # per sample
-        ##     X_train.append(abnormalTrainData[:,i,:]) #-np.mean(abnormalTrainData[:,i,:], axis=1)[:, np.newaxis])
+        ##     for j in xrange(len(abnormalTrainData)): # per feature
+        ##         X_train.append(abnormalTrainData[j,i,:]) #-np.mean(abnormalTrainData[:,i,j])) 
+        ##         ## Y_train.append(abnormalTrainLabel[i])
         ## Y_train = copy.copy(abnormalTrainLabel)
 
-        ## del abnormalTrainData
-        ## del abnormalTrainLabel
-
-        ## # train feature-wise omp
-        ## dimension = len(X_train[0][0]) #window_size
-        ## dict_size = int(dimension*10) ##1.5)
+        ## n_features = len(abnormalTrainData)
+        ## dimension = len(X_train[0]) 
+        ## dict_size = int(dimension*2)
         ## n_examples = len(X_train)
         ## target_sparsity = int(0.1*dimension)
 
         ## Gammas = None
         ## ml_dict = {}
         ## X_train = np.array(X_train)
-        ## for i in xrange(len(X_train[0])): # per feature
-        ##     print i, ' / ', len(X_train[0])
-        ##     # X \simeq Gamma * D
-        ##     # D is the dictionary with `dict_size` by `dimension`
-        ##     # Gamma is the code book with `n_examples` by `dict_size`
-        ##     D, Gamma = KSVD(X_train[:,i,:], dict_size, target_sparsity, 1000,
-        ##                     print_interval = 25,
-        ##                     enable_printing = True, enable_threading = True)
-        ##     ## print np.shape(D), np.shape(Gamma), dict_size, dimension, n_examples
-
-        ##     ml_dict[i] = (D, Gamma)
-
-        ##     if Gammas is None:
-        ##         Gammas = Gamma
-        ##     else:
-        ##         Gammas = np.hstack([Gammas, Gamma])
-
-        ##     del D
-        ##     del Gamma
-        # ---------------------------------------------------------------------------
-        X_train = []
-        Y_train = []
-        for i in xrange(len(abnormalTrainData[0])): # per sample
-            for j in xrange(len(abnormalTrainData[0][i])): # per time
-                X_train.append(abnormalTrainData[:,i,j]-np.mean(abnormalTrainData[:,i,j])) 
-                Y_train.append(abnormalTrainLabel[i])
-
-        # train time-wise omp
-        dimension = len(X_train[0]) 
-        dict_size = int(dimension*10)
-        n_examples = len(X_train)
-        target_sparsity = int(0.1*dimension)
         
-        window_size = 30 # for max pooling?
-        window_step = 5  # for max pooling?
-        Gammas = None
-        ml_dict = {}
-        ## for i in xrange(window_size, len(X_train[0][0])-1, window_step): # per length
-            
-        # X \simeq Gamma * D
-        # D is the dictionary with `dict_size` by `dimension`
-        # Gamma is the code book with `n_examples` by `dict_size`
-        D, Gamma = KSVD(X_train, dict_size, target_sparsity, 1000,
-                        print_interval = 25,
-                        enable_printing = True, enable_threading = True)
-        ## ml_dict[i] = (D, Gamma)
+        ## # X \simeq Gamma * D
+        ## # D is the dictionary with `dict_size` by `dimension`
+        ## # Gamma is the code book with `n_examples` by `dict_size`
+        ## D, Gamma = KSVD(X_train, dict_size, target_sparsity, 1000,
+        ##                 print_interval = 25,
+        ##                 enable_printing = True, enable_threading = True)
 
-        print np.linalg.norm(Gamma, axis=1)
+        ## # Stacking?
+        ## for i in xrange(len(abnormalTrainData[0])): # per sample
 
-        # Max pooling?
+        ##     g = Gamma[i:i+n_features,:].flatten()
+
+        ##     if Gammas is None: Gammas = g
+        ##     else: Gammas = np.vstack([Gammas, g])
+        
+        # ---------------------------------------------------------------------------
+        ## # train time-wise omp
+        ## X_train = []
+        ## Y_train = []
         ## for i in xrange(len(abnormalTrainData[0])): # per sample
         ##     for j in xrange(len(abnormalTrainData[0][i])): # per time
+        ##         X_train.append(abnormalTrainData[:,i,j]-np.mean(abnormalTrainData[:,i,j])) 
+        ##         Y_train.append(abnormalTrainLabel[i])
 
+        ## dimension = len(X_train[0]) 
+        ## dict_size = int(dimension*10)
+        ## n_examples = len(X_train)
+        ## target_sparsity = int(0.1*dimension)
+        
+        ## window_size = 30 # for max pooling?
+        ## window_step = 5  # for max pooling?
+        ## Gammas = None
+        ## ml_dict = {}
+        ## ## for i in xrange(window_size, len(X_train[0][0])-1, window_step): # per length
+            
+        ## # X \simeq Gamma * D
+        ## # D is the dictionary with `dict_size` by `dimension`
+        ## # Gamma is the code book with `n_examples` by `dict_size`
+        ## D, Gamma = KSVD(X_train, dict_size, target_sparsity, 1000,
+        ##                 print_interval = 25,
+        ##                 enable_printing = True, enable_threading = True)
+        ## ## ml_dict[i] = (D, Gamma)
 
-        ## if Gammas is None:  Gammas = Gamma
-        ## else:               Gammas = np.hstack([Gammas, Gamma])
-        ## del D, Gamma
-        Gammas = Gamma
+        ## print np.linalg.norm(Gamma, axis=1)
+
+        ## # Max pooling?
+        ## for i in xrange(len(abnormalTrainData[0])): # per sample
+        ##     for j in xrange(window_size, len(abnormalTrainData[0][i]), window_step): # per time
+
+        ##         max_pool = np.amax( Gamma[i+j-window_size:i+j,:], axis=0 )
+                
+        ##         if Gammas is None: Gammas = max_pool
+        ##         else: Gammas = np.vstack([Gammas, max_pool])
 
 
         # ---------------------------------------------------------------------------
