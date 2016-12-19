@@ -17,7 +17,7 @@ var RFH = (function (module) {
         self.eeDisplay.hide();
         self.preview = false;
         self.handDelta = null;
-        self.stepSizes = {'tiny': 0.015,
+        self.stepSizes = {'xsmall': 0.015,
             'small': 0.04,
             'medium': 0.11,
             'large': 0.25};
@@ -542,7 +542,6 @@ var RFH = (function (module) {
             self.active = true;
             self.$viewer.show();
             self.updateCtrlRingViz();
-            self.skinContactDisplay.show();
         };
 
         self.stop = function () {
@@ -553,7 +552,6 @@ var RFH = (function (module) {
             self.trackHand(false);
             self.active = false;
             self.rotationControl.hide();
-            self.skinContactDisplay.hide();
 //            if (armCameraOn) {
 //                hideArmCamera();
 //            }
