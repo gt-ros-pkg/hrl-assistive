@@ -656,7 +656,7 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         Y_train = []
         for i in xrange(len(abnormalTrainData[0])): # per sample
             for j in xrange(len(abnormalTrainData[0][i])): # per time
-                X_train.append(abnormalTrainData[:,i,j]) 
+                X_train.append(abnormalTrainData[:,i,j]-np.mean(abnormalTrainData[:,i,j])) 
                 Y_train.append(abnormalTrainLabel[i])
 
         # train time-wise omp
