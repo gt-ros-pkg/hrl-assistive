@@ -661,7 +661,7 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
 
         # train time-wise omp
         dimension = len(X_train[0]) 
-        dict_size = int(dimension*10) ##1.5)
+        dict_size = int(dimension*1.5)
         n_examples = len(X_train)
         target_sparsity = int(0.1*dimension)
         
