@@ -165,10 +165,8 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                    'ft',\
                    'relativePose_landmark_EE']
 
-    # 0 1 2 3456789 10 11 12 13 14 15 16  17 18 19
-    isolationFeatures = ['unimodal_kinDesEEChange',\
-                         'unimodal_kinEEChange',\
-                         'unimodal_audioWristRMS', \
+    # 0 1234567 891011 121314 15 16 1718 1920
+    isolationFeatures = ['unimodal_audioWristRMS', \
                          'unimodal_kinJntEff_1', \
                          'unimodal_kinJntEff_2', \
                          'unimodal_kinJntEff_3', \
@@ -176,16 +174,20 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                          'unimodal_kinJntEff_5', \
                          'unimodal_kinJntEff_6', \
                          'unimodal_kinJntEff_7', \
-                         'unimodal_ftForce_delta',\
+                         'unimodal_ftForce',\
                          'unimodal_ftForce_zero',\
                          'unimodal_ftForce_integ',\
-                         'unimodal_ftForce',\
+                         'unimodal_ftForce_delta',\
                          'unimodal_ftForceX',\
                          'unimodal_ftForceY',\
                          'unimodal_ftForceZ',\
+                         'unimodal_fabricForce',\
+                         'unimodal_landmarkDist',\
+                         'unimodal_kinEEChange',\
+                         'unimodal_kinDesEEChange',\
                          'crossmodal_landmarkEEDist', \
                          'crossmodal_landmarkEEAng',\
-                         'unimodal_landmarkDist'] 
+                         ] 
                    
 
     modality_list   = ['ft' ,'kinematics', 'audioWrist', 'vision_landmark']
