@@ -674,7 +674,7 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         # X \simeq Gamma * D
         # D is the dictionary with `dict_size` by `dimension`
         # Gamma is the code book with `n_examples` by `dict_size`
-        D, Gamma = KSVD(X_train, dict_size, target_sparsity, 400,
+        D, Gamma = KSVD(X_train, dict_size, target_sparsity, 4000,
                         print_interval = 25,
                         enable_printing = True, enable_threading = True)
         ## ml_dict[i] = (D, Gamma)
