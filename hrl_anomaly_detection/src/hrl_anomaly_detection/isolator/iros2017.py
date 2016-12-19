@@ -733,7 +733,6 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         # svm classification
 
 
-def         
 
 def save_data_labels(data, labels, processed_data_path='./'):
     LOG_DIR = os.path.join(processed_data_path, 'tensorflow' )
