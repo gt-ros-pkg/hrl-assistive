@@ -481,7 +481,8 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
 
 def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
                          data_renew=False, save_pdf=False, verbose=False, debug=False,\
-                         no_plot=False, delay_plot=True, find_param=False, data_gen=False):
+                         no_plot=False, delay_plot=True, find_param=False, data_gen=False, \
+                         save_viz_data=False):
 
     ## Parameters
     # data
@@ -543,57 +544,178 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         failure_labels.append( int( f.split('/')[-1].split('_')[0] ) )
     failure_labels = np.array( failure_labels )
 
+
+    ## if save_viz_data or True:
+    ##     LOG_DIR = os.path.join(processed_data_path, 'tensorflow' )
+    ##     if os.path.isdir(LOG_DIR) is False:
+    ##         os.system('mkdir -p '+LOG_DIR)
+        
+    ##     n_features = failureData.shape[0]
+    ##     n_samples  = failureData.shape[1]
+    ##     n_length  = failureData.shape[2]
+    ##     training_data   = copy.copy(failureData)
+    ##     training_data   = np.swapaxes(training_data, 0, 1).reshape((n_samples, n_features*n_length))        
+    ##     training_labels = copy.copy(failure_labels)
+
+    ##     import csv
+    ##     tgt_csv = os.path.join(LOG_DIR, 'data.tsv')
+    ##     with open(tgt_csv, 'w') as csvfile:
+    ##         for row in training_data:
+    ##             string = None
+    ##             for col in row:
+    ##                 if string is None:
+    ##                     string = str(col)
+    ##                 else:
+    ##                     string += '\t'+str(col)
+                        
+    ##             csvfile.write(string+"\n")
+            
+    ##     tgt_csv = os.path.join(LOG_DIR, 'labels.tsv')
+    ##     with open(tgt_csv, 'w') as csvfile:
+    ##         for row in training_labels:
+    ##             csvfile.write(str(row)+"\n")
+
+
+    ## from sklearn.linear_model import OrthogonalMatchingPursuit
+    from ksvd import KSVD
+
+    # k-fold cross validation
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(kFold_list):
 
         # dim x sample x length
-        normalTrainData   = copy.copy(successData[:, normalTrainIdx, :]) 
+        ## normalTrainData   = copy.copy(successData[:, normalTrainIdx, :]) 
+        ## normalTestData    = copy.copy(successData[:, normalTestIdx, :])
         abnormalTrainData = copy.copy(failureData[:, abnormalTrainIdx, :])
-        normalTestData    = copy.copy(successData[:, normalTestIdx, :])
         abnormalTestData  = copy.copy(failureData[:, abnormalTestIdx, :])
 
         abnormalTrainLabel = copy.copy(failure_labels[abnormalTrainIdx])
         abnormalTestLabel  = copy.copy(failure_labels[abnormalTestIdx])
 
-        # random sampling?
-        nSample     = 30
-        window_size = 20
+        # ---------------------------------------------------------------------------
+        ## # random sampling?
+        ## ## nSample     = 30
+        ## window_size = 30
+        ## window_step = 5
+        ## X_train = []
+        ## Y_train = []
+        ## ml_dict = {}
+        ## for i in xrange(len(abnormalTrainData[0])): # per sample
+
+        ##     s_l = np.arange(startIdx, len(abnormalTrainData[0][i])-int(window_size*1.5), window_step)            
+        ##     ## s_l = np.random.randint(startIdx, len(abnormalTrainData[0][i])-window_size*2, nSample)
+
+        ##     for j in s_l:
+        ##         block = abnormalTrainData[:,i,j:j+window_size]
+
+        ##         # zero mean to resolve signal displacements
+        ##         block -= np.mean(block, axis=1)[:,np.newaxis]
+
+        ##         X_train.append( block )
+        ##         Y_train.append( abnormalTrainLabel[i] )
+
+        # ---------------------------------------------------------------------------
+        X_train = []
+        for i in xrange(len(abnormalTrainData[0])): # per sample
+            X_train.append(abnormalTrainData[:,i,:]) #-np.mean(abnormalTrainData[:,i,:], axis=1)[:, np.newaxis])
+        Y_train = copy.copy(abnormalTrainLabel)
+
+        del abnormalTrainData
+        del abnormalTrainLabel
+
+        # train feature-wise omp
+        dimension = len(X_train[0][0]) #window_size
+        dict_size = int(dimension*10) ##1.5)
+        n_examples = len(X_train)
+        target_sparsity = int(0.1*dimension)
+
+        Gammas = None
+        ml_dict = {}
+        X_train = np.array(X_train)
+        for i in xrange(len(X_train[0])): # per feature
+            print i, ' / ', len(X_train[0])
+            # X \simeq Gamma * D
+            # D is the dictionary with `dict_size` by `dimension`
+            # Gamma is the code book with `n_examples` by `dict_size`
+            D, Gamma = KSVD(X_train[:,i,:], dict_size, target_sparsity, 1000,
+                            print_interval = 25,
+                            enable_printing = True, enable_threading = True)
+            ## print np.shape(D), np.shape(Gamma), dict_size, dimension, n_examples
+
+            ml_dict[i] = (D, Gamma)
+
+            if Gammas is None:
+                Gammas = Gamma
+            else:
+                Gammas = np.hstack([Gammas, Gamma])
+
+            del D
+            del Gamma
+        # ---------------------------------------------------------------------------
         X_train = []
         Y_train = []
         for i in xrange(len(abnormalTrainData[0])): # per sample
-            s_l = np.random.randint(startIdx, len(abnormalTrainData[0][i])-window_size*2, nSample)
+            for j in xrange(len(abnormalTrainData[0][i])): # per time
+                X_train.append(abnormalTrainData[:,i,j]) 
+                Y_train.append(abnormalTrainLabel[i])
 
-            for j in s_l:
-                block = abnormalTrainData[:,i,j:j+window_size]
+        del abnormalTrainData
+        del abnormalTrainLabel
 
-                # zero mean to resolve signal displacements
-                block -= np.mean(block, axis=1)
+        # train time-wise omp
+        dimension = len(X_train[0]) 
+        dict_size = int(dimension*10) ##1.5)
+        n_examples = len(X_train)
+        target_sparsity = int(0.1*dimension)
+        
+        window_size = 30 # for max pooling?
+        window_step = 5  # for max pooling?
+        Gammas = None
+        ml_dict = {}
+        ## for i in xrange(window_size, len(X_train[0][0])-1, window_step): # per length
+            
+        # X \simeq Gamma * D
+        # D is the dictionary with `dict_size` by `dimension`
+        # Gamma is the code book with `n_examples` by `dict_size`
+        D, Gamma = KSVD(X_train, dict_size, target_sparsity, 1000,
+                        print_interval = 25,
+                        enable_printing = True, enable_threading = True)
+        ## ml_dict[i] = (D, Gamma)
 
-                X_train.append( block )
-                Y_train.append( abnormalTrainLabel[i] )
+        ## if Gammas is None:  Gammas = Gamma
+        ## else:               Gammas = np.hstack([Gammas, Gamma])
+        ## del D, Gamma
+        Gammas = gamma
 
+        save_data_labels(Gammas, Y_train, processed_data_path)
+
+        sys.exit()
 
         X_test = []
         Y_test = []
         for i in xrange(len(abnormalTestData[0])): # per sample
-            s_l = np.random.randint(startIdx, len(abnormalTestData[0][i])-window_size*2, nSample)
+            s_l = np.arange(startIdx, len(abnormalTestData[0][i])-int(window_size*1.5), window_step)            
+            ## s_l = np.random.randint(startIdx, len(abnormalTestData[0][i])-window_size*2, nSample)
 
             for j in s_l:
                 block = abnormalTestData[:,i,j:j+window_size]
 
                 # zero mean and unit scale(?) to resolve signal displacements
-                block -= np.mean(block, axis=1)
+                block -= np.mean(block, axis=1)[:,np.newaxis]
 
                 X_test.append( block )
                 Y_test.append( abnormalTestLabel[i] )
 
+        X_test = np.array(X_test)
+        for i in xrange(len(X_test[0])):
+            ml = ml_dict[i]
+            ml.fit(X_train[:,i,:], Y_train)
 
 
-        from sklearn.linear_model import OrthogonalMatchingPursuit as omp     
-        omp.fit(X_train, Y_train)
 
         scores.append( omp.score(X_test, Y_test) )
         ## Y_pred = omp.predict(X_test)
+        sys.exit()
             
     print scores
 
@@ -611,9 +733,43 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         # svm classification
 
 
-        
+def         
 
+def save_data_labels(data, labels, processed_data_path='./'):
+    LOG_DIR = os.path.join(processed_data_path, 'tensorflow' )
+    if os.path.isdir(LOG_DIR) is False:
+        os.system('mkdir -p '+LOG_DIR)
 
+    
+    if len(np.shape(data)) > 2:
+        n_features = np.shape(data)[0]
+        n_samples  = np.shape(data)[1]
+        n_length  = np.shape(data)[2]
+        training_data   = copy.copy(data)
+        training_data   = np.swapaxes(training_data, 0, 1).reshape((n_samples, n_features*n_length))
+    else:
+        training_data   = copy.copy(data)
+    training_labels = copy.copy(labels)
+
+    import csv
+    tgt_csv = os.path.join(LOG_DIR, 'data.tsv')
+    with open(tgt_csv, 'w') as csvfile:
+        for row in training_data:
+            string = None
+            for col in row:
+                if string is None:
+                    string = str(col)
+                else:
+                    string += '\t'+str(col)
+
+            csvfile.write(string+"\n")
+
+    tgt_csv = os.path.join(LOG_DIR, 'labels.tsv')
+    with open(tgt_csv, 'w') as csvfile:
+        for row in training_labels:
+            csvfile.write(str(row)+"\n")
+    
+    
 
 
 
