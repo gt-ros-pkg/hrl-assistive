@@ -121,7 +121,6 @@ var RFH = (function (module) {
             RFH.mjpeg.cameraModel.updateCameraInfo();
 
             RFH.initViewer('video-main');
-            RFH.initSkin();
             RFH.rightEEDisplay = new RFH.EEDisplay({side:'r',
                 ros: RFH.ros,
                 tfClient: RFH.tfClient});
@@ -129,18 +128,6 @@ var RFH = (function (module) {
                 ros: RFH.ros,
                 tfClient: RFH.tfClient});
 
-            RFH.leftSkinDisplay = new RFH.SkinDisplay({tfClient: RFH.tfClient,
-                                                          head: RFH.pr2.head,
-                                                          camera: RFH.mjpeg.cameraModel,
-                                                          skins: [RFH.skins.left.upperarm,
-                                                                  RFH.skins.left.forearm]
-            });
-            RFH.rightSkinDisplay = new RFH.SkinDisplay({tfClient: RFH.tfClient,
-                                                          head: RFH.pr2.head,
-                                                          camera: RFH.mjpeg.cameraModel,
-                                                          skins: [RFH.skins.right.upperarm,
-                                                                  RFH.skins.right.forearm]
-            });
             RFH.initActionMenu('main-menu');
             RFH.smach = new RFH.Smach({displayContainer: $('#smach-container'),
                 ros: RFH.ros});
@@ -155,7 +142,6 @@ var RFH = (function (module) {
                 tfClient: RFH.tfClient });
             RFH.dataLogger = new RFH.DataLogger({ros: RFH.ros, topic: "/interface_log"});
             RFH.heartbeatMonitor = new RFH.HeartbeatMonitor({ros: RFH.ros});
-            RFH.shaver = new RFH.ShaverToggle({ros: RFH.ros, divId:'toggle-shaver-button'});
             RFH.initTaskMenu();
 
             /* Added content for left column */
@@ -175,7 +161,7 @@ var RFH = (function (module) {
             setTimeout(hideLeftColumn, 2500);
 
             $('.left-col-accordion').accordion({collapsible: true, heightStyle: 'content', animate:75});
-            //$('.task-menu-accordion').accordion('option', 'active', false);
+            $('.task-menu-accordion').accordion('option', 'active', false);
 
         });
     };
