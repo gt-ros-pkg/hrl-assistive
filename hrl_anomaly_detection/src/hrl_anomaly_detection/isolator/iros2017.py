@@ -659,9 +659,6 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
                 X_train.append(abnormalTrainData[:,i,j]) 
                 Y_train.append(abnormalTrainLabel[i])
 
-        del abnormalTrainData
-        del abnormalTrainLabel
-
         # train time-wise omp
         dimension = len(X_train[0]) 
         dict_size = int(dimension*10) ##1.5)
@@ -682,11 +679,21 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
                         enable_printing = True, enable_threading = True)
         ## ml_dict[i] = (D, Gamma)
 
+        print np.linalg.norm(Gamma, axis=1)
+
+        # Max pooling?
+        ## for i in xrange(len(abnormalTrainData[0])): # per sample
+        ##     for j in xrange(len(abnormalTrainData[0][i])): # per time
+
+
         ## if Gammas is None:  Gammas = Gamma
         ## else:               Gammas = np.hstack([Gammas, Gamma])
         ## del D, Gamma
-        Gammas = gamma
+        Gammas = Gamma
 
+
+        # ---------------------------------------------------------------------------
+        # ---------------------------------------------------------------------------
         save_data_labels(Gammas, Y_train, processed_data_path)
 
         sys.exit()
@@ -718,10 +725,6 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         sys.exit()
             
     print scores
-
-
-
-
 
         # vectorize
       
