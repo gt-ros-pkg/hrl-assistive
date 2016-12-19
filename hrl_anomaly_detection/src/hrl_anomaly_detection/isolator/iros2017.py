@@ -649,8 +649,8 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
             else:
                 Gammas = np.hstack([Gammas, Gamma])
 
-            del D
-            del Gamma
+            ## del D
+            ## del Gamma
         # ---------------------------------------------------------------------------
         ## ## # train multichannel omp?
         ## X_train = []
