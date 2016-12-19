@@ -131,11 +131,6 @@ var RFH = (function (module) {
             RFH.initActionMenu('main-menu');
             RFH.smach = new RFH.Smach({displayContainer: $('#smach-container'),
                 ros: RFH.ros});
-            RFH.undo = new RFH.Undo({ros: RFH.ros,
-                undoTopic: '/undo',
-                buttonDiv: 'undo',
-                rightEEDisplay: RFH.rightEEDisplay,
-                leftEEDisplay: RFH.leftEEDisplay});
             RFH.kinectHeadPointCloud = new RFH.PointCloudView({ros: RFH.ros,
                 topic: "/pcl_filters/peek_points",
                 maxPoints: 16000,
@@ -161,7 +156,7 @@ var RFH = (function (module) {
             setTimeout(hideLeftColumn, 2500);
 
             $('.left-col-accordion').accordion({collapsible: true, heightStyle: 'content', animate:75});
-            $('.task-menu-accordion').accordion('option', 'active', false);
+            //$('.task-menu-accordion').accordion('option', 'active', false);
 
         });
     };

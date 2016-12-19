@@ -80,7 +80,7 @@
   <!-- Arms: Haptic MPC -->
   <include file="$(find hrl_haptic_mpc)/launch/start_pr2_mpc.launch">
     <arg name="arm" value="l"/>
-    <arg name="skin" value="fabric"/>
+    <arg name="skin" value="none"/>
     <arg name="namespace" value="left_arm"/>
     <arg name="rviz_teleop" value="true"/>
     <arg name="verbose" value="true"/>
