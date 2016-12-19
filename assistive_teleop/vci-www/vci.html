@@ -35,9 +35,7 @@
   <script type="text/javascript" src="js/utils/runstop.js"></script>
   <script type="text/javascript" src="js/utils/heartbeat.js"></script>
   <script type="text/javascript" src="js/utils/datalogging.js"></script>
-  <script type="text/javascript" src="js/utils/fabric-skin.js"></script>
   <script type="text/javascript" src="js/utils/battery-monitor.js"></script>
-  <script type="text/javascript" src="js/utils/shaver.js"></script>
   <script type="text/javascript" src="js/utils/pr2.js"></script>
   <!-- Interface action modes -->
   <script type="text/javascript" src="js/action-modes/action-menu.js"></script>
@@ -52,30 +50,24 @@
   <script type="text/javascript" src="js/action-modes/ee-control/ee-rotation.js"></script>
   <script type="text/javascript" src="js/action-modes/ee-control/ee-display.js"></script>
   <script type="text/javascript" src="js/action-modes/ee-control/arm-postures.js"></script>
-  <script type="text/javascript" src="js/action-modes/ee-control/skin-display.js"></script>
   <!-- Plannable tasks -->
   <script type="text/javascript" src="js/task-planning/display-smach-plan.js"></script>
   <script type="text/javascript" src="js/task-planning/task-menu.js"></script>
-  <script type="text/javascript" src="js/task-planning/domains/pick.js"></script>
-  <script type="text/javascript" src="js/task-planning/domains/place.js"></script>
-  <script type="text/javascript" src="js/task-planning/domains/pick-and-place.js"></script>
   <script type="text/javascript" src="js/task-planning/domains/adl.js"></script>
-  <script type="text/javascript" src="js/task-planning/domains/tool-pick.js"></script>
-  <script type="text/javascript" src="js/task-planning/domains/realtime-base-selection.js"></script>
   <!-- CSS -->
   <link type="text/css" href="css/notifications.css" rel="stylesheet" />
   <link type="text/css" href="css/page-wide.css" rel="stylesheet" />
   <link type="text/css" href="css/look.css" rel="stylesheet" />
   <link type="text/css" href="css/torso.css" rel="stylesheet" />
   <link type="text/css" href="css/drive.css" rel="stylesheet" />
+  <link type="text/css" href="css/action-menu.css" rel="stylesheet" />
   <link type="text/css" href="css/battery.css" rel="stylesheet" />
   <link type="text/css" href="css/ee-cart.css" rel="stylesheet" />
   <link type="text/css" href="css/skin.css" rel="stylesheet" />
   <link type="text/css" href="css/bumper.css" rel="stylesheet" />
   <link type="text/css" href="css/gripper.css" rel="stylesheet" />
-  <link type="text/css" href="css/undo.css" rel="stylesheet" />
+  <!--link type="text/css" href="css/undo.css" rel="stylesheet" /-->
   <link type="text/css" href="css/smach.css" rel="stylesheet" />
-  <link type="text/css" href="css/action-menu.css" rel="stylesheet" />
   <link type="text/css" href="css/task-menu.css" rel="stylesheet" />
   
 </head>
@@ -148,7 +140,7 @@
                 <div id="right-3d-peek-button" class="camera-swing r-arm-ctrl controls-button log-click">3D Peek</div>
                 <div id="right-tuck-aside-button" class="posture aside r-arm-ctrl controls-button log-click">Move Aside</div>
                 <div id="right-tuck-setup-button" class="posture manip r-arm-ctrl controls-button log-click">Move to Setup</div>
-                <div id="zero-skin-right" class="r-arm-ctrl controls-button log-click">Re-zero Skin</div>
+                <!--div id="zero-skin-right" class="r-arm-ctrl controls-button log-click">Re-zero Skin</div-->
             </div>
 
             <!-- Left Arm Controls -->
@@ -165,10 +157,10 @@
                 <div id="left-3d-peek-button" class="camera-swing l-arm-ctrl controls-button log-click">3D Peek</div>
                 <div id="left-tuck-aside-button" class="posture aside l-arm-ctrl controls-button  log-click">Move Aside</div>
                 <div id="left-tuck-setup-button" class="posture manip l-arm-ctrl controls-button log-click">Move to Setup</div>
-                <div id="zero-skin-left" class="l-arm-ctrl controls-button log-click">Re-zero Skin</div>
+                <!--div id="zero-skin-left" class="l-arm-ctrl controls-button log-click">Re-zero Skin</div-->
             </div>
 
-            <div id="toggle-shaver-button" class="arm-ctrl controls-button log-click">Toggle Shaver</div>
+            <!--div id="toggle-shaver-button" class="arm-ctrl controls-button log-click">Toggle Shaver</div-->
         </div>
     </div>
     <div id="task-menu-accordion" class="left-col-accordion task-menu-accordion log-activate">
@@ -177,23 +169,18 @@
             <form>
                 <label for="domain-select">Select a Planned Task</label>
                 <select id="domain-select" name="domain-select" class="log-open log-select">
-                    <option value="realtime_base_selection">Approach</option>
-                    <option value="pick_and_place">Move Object</option>
-                    <option value="tool_pick">Get Tool</option>
+                    <option value="adl">Self-Care Tasks</option>
                 </select>
                 
-                <label for="arm-select" class="option-select option-realtime_base_selection option-pick_and_place option-tool_pick">Select arm</label>
-                <select id="arm-select" name="arm-select" class='option-select option-realtime_base_selection option-pick_and_place option-tool_pick log-open log-select'>
+                <label for="task-select" class="option-select option-adl">Select a Self-care Task</label>
+                <select id="task-select" name="task-select" class="option-select option-adl">
+                    <option value="wiping_mouth">Wipe Mouth</option>
+                    <option value="scratching_left_knee">Wipe Left Knee</option>
+                </select>
+                <label for="arm-select" class="option-select option-realtime_base_selection option-pick_and_place">Select arm</label>
+                <select id="arm-select" name="arm-select" class='option-select option-realtime_base_selection option-pick_and_place'>
                     <option value="left_arm">Left Arm</option>
                     <option value="right_arm">Right Arm</option>
-                </select>
-                <label for="tool-select" class="option-select option-tool_pick">Select a Tool</label>
-                <select id="tool-select" name="tool-select" class='option-select option-tool_pick'>
-                    <option value="scratcher">Scratcher</option>
-                    <option value="towel">Towel</option>
-                    <option value="toothbrush">Toothbrush</option>
-                    <option value="shaver">Shaver</option>
-                    <option value="lotion_applicator">Lotion Applicator</option>
                 </select>
             </form>
           <div id="start-task-button" class="task-button log-click">Start Task</div>
