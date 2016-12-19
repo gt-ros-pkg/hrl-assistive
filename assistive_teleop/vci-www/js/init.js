@@ -109,8 +109,8 @@ var RFH = (function (module) {
             RFH.runStop = new RFH.RunStop({ros: RFH.ros});
 
             RFH.mjpeg = new RFH.MjpegClient({ros: RFH.ros,
-                imageTopic: '/head_mount_kinect/hd/image_color',
-                infoTopic: '/head_mount_kinect/hd/camera_info',
+                imageTopic: '/head_mount_kinect/qhd/image_color',
+                infoTopic: '/head_mount_kinect/qhd/camera_info',
                 divId: 'video-main',
                 imageId: 'mjpeg-image',
                 host: RFH.ROBOT,
