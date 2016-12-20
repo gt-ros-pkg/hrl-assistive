@@ -404,16 +404,16 @@ class BaseSelector(object):
                     self.pr2_B_model = createBMatrix(trans, rot)
                 elif model == 'autobed':
                     now = rospy.Time.now()
-                    self.listener.waitForTransform('/base_footprint', '/user_head_link', now, rospy.Duration(15))
-                    (trans, rot) = self.listener.lookupTransform('/base_footprint', '/user_head_link', now)
+                    # self.listener.waitForTransform('/base_footprint', '/user_head_link', now, rospy.Duration(15))
+                    (trans, rot) = self.listener.lookupTransform('/base_footprint', '/user_head_link', rospy.Time(0))
                     self.pr2_B_head = createBMatrix(trans, rot)
                     now = rospy.Time.now()
-                    self.listener.waitForTransform('/base_footprint', '/ar_marker_4', now, rospy.Duration(15))
-                    (trans, rot) = self.listener.lookupTransform('/base_footprint', '/ar_marker_4', now)
+                    # self.listener.waitForTransform('/base_footprint', '/ar_marker_4', now, rospy.Duration(15))
+                    (trans, rot) = self.listener.lookupTransform('/base_footprint', '/ar_marker_4', rospy.Time(0))
                     self.pr2_B_ar = createBMatrix(trans, rot)
                     now = rospy.Time.now()
-                    self.listener.waitForTransform('/base_footprint', '/autobed/base_link', now, rospy.Duration(15))
-                    (trans, rot) = self.listener.lookupTransform('/base_footprint', '/autobed/base_link', now)
+                    # self.listener.waitForTransform('/base_footprint', '/autobed/base_link', now, rospy.Duration(15))
+                    (trans, rot) = self.listener.lookupTransform('/base_footprint', '/autobed/base_link', rospy.Time(0))
                     self.pr2_B_model = createBMatrix(trans, rot)
                     # print 'The transform from PR2 to autobed is:'
                     # print self.pr2_B_model
@@ -615,7 +615,7 @@ class BaseSelector(object):
             if head_rest_angle > -1:
                 head_rest_possibilities = np.arange(-10, 80.1, 10)
                 head_rest_neigh = KNeighborsClassifier(n_neighbors=1)
-                head_rest_neigh.fit(np.reshape(head_rest_possibilities,[len(head_rest_possibilities),1]), head_rest_possibilities)
+                head_rest_neigh.fit(np.reshape(head_rest_possibilities, [len(head_rest_possibilities),1]), head_rest_possibilities)
                 head_rest_angle = head_rest_neigh.predict(np.degrees(self.bed_state_head_theta))[0]
 
             self.score = all_scores[model, max_num_configs, head_rest_angle, headx, heady, 1]
