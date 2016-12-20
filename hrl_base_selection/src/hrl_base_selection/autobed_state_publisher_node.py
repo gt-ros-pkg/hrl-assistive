@@ -308,9 +308,9 @@ class AutobedStatePublisherNode(object):
                 unoccupied_shift.position[0] = trans[0]
             else:
                 # print 'Error with transform lookup'
-                    unoccupied_shift.position[1] = 0.
+                    unoccupied_shift.position[0] = 10.
             self.joint_pub.publish(unoccupied_shift)
-            head_rotation = JoinstState()
+            head_rotation = JointState()
             head_rotation.header.stamp = rospy.Time.now()
             head_rotation.name = [None]*(2)
             head_rotation.position = [None]*(2)
