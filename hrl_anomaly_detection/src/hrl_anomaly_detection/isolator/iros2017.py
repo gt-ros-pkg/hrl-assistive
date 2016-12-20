@@ -563,7 +563,7 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         data_dict = ut.load_pickle(data_pkl)
 
     #temp
-    kFold_list = kFold_list[:1]
+    ## kFold_list = kFold_list[:1]
     
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(kFold_list):
