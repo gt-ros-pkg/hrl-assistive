@@ -56,21 +56,21 @@ var RFH = (function (module) {
         $('#task-menu select.option-select').selectmenu().hide();
 
         /* Add Domain instances to menu domains */
-        RFH.taskMenu.domains.pick = new RFH.Domains.Pick({ros:RFH.ros,
-                                                          r_arm: RFH.pr2.r_arm_cart,
-                                                          r_gripper: RFH.pr2.r_gripper,
-                                                          l_arm: RFH.pr2.l_arm_cart,
-                                                          l_gripper: RFH.pr2.l_gripper});
+        //RFH.taskMenu.domains.pick = new RFH.Domains.Pick({ros:RFH.ros,
+        //                                                  r_arm: RFH.pr2.r_arm_cart,
+        //                                                  r_gripper: RFH.pr2.r_gripper,
+        //                                                  l_arm: RFH.pr2.l_arm_cart,
+        //                                                  l_gripper: RFH.pr2.l_gripper});
 
-        RFH.taskMenu.domains.place = new RFH.Domains.Place({ros:RFH.ros,
-                                                    r_arm: RFH.pr2.r_arm_cart,
-                                                    r_gripper: RFH.pr2.r_gripper,
-                                                    l_arm: RFH.pr2.l_arm_cart,
-                                                    l_gripper: RFH.pr2.l_gripper});
-        RFH.taskMenu.domains.pick_and_place = new RFH.Domains.PickAndPlace({ros:RFH.ros});
-        RFH.taskMenu.domains.realtime_base_selection = new RFH.Domains.RealtimeBaseSelection({ros:RFH.ros});
+        //RFH.taskMenu.domains.place = new RFH.Domains.Place({ros:RFH.ros,
+        //                                            r_arm: RFH.pr2.r_arm_cart,
+        //                                            r_gripper: RFH.pr2.r_gripper,
+        //                                            l_arm: RFH.pr2.l_arm_cart,
+        //                                            l_gripper: RFH.pr2.l_gripper});
+        //RFH.taskMenu.domains.pick_and_place = new RFH.Domains.PickAndPlace({ros:RFH.ros});
+        //RFH.taskMenu.domains.realtime_base_selection = new RFH.Domains.RealtimeBaseSelection({ros:RFH.ros});
         RFH.taskMenu.domains.adl = new RFH.Domains.ADL({ros:RFH.ros});
-        RFH.taskMenu.domains.tool_pick = new RFH.Domains.ToolPick({ros:RFH.ros});
+        //RFH.taskMenu.domains.tool_pick = new RFH.Domains.ToolPick({ros:RFH.ros});
         
         /* Update menu to reflect current state */
         RFH.taskMenu.updateOptions();
