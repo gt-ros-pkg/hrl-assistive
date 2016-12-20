@@ -588,9 +588,10 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         ## save_data_labels(gs_train, y_train, processed_data_path)
         data_dict[idx] = (gs_train, y_train, gs_test, y_test)
 
+    print data_pkl
     if not(os.path.isfile(data_pkl) is False or svd_renew):
         print "dddddddddddddddddddddddddddddddd save "
-        ut.save_pickle(data_dict, data_pkl)
+    ut.save_pickle(data_dict, data_pkl)
 
     
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
