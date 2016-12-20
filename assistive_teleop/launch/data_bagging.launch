@@ -2,8 +2,8 @@
 
     <node name="kinect_throttle" pkg="topic_tools" type="throttle" args="messages /head_mount_kinect/qhd/image_color 0.25 kinect_throttled" />
     <node name="joints_throttle" pkg="topic_tools" type="throttle" args="messages /joint_states 4 joint_states_throttled" />
-    <node name="video_bag" pkg="rosbag" type="record" args="-j -o /home/pgrice/trial_logs/video --topic /kinect_throttled --size 250 --split" />
-    <node name="data_bag" pkg="rosbag" type="record" args="-j -o /home/pgrice/trial_logs/data --size 250 --split
+    <node name="video_bag" pkg="rosbag" type="record" args="-j -o /home/ari/trial_logs/video --topic /kinect_throttled --size 250 --split" />
+    <node name="data_bag" pkg="rosbag" type="record" args="-j -o /home/ari/trial_logs/data --size 250 --split
                                                            --topic
                                                             /ar_pose_marker
                                                             /base_controller/command
