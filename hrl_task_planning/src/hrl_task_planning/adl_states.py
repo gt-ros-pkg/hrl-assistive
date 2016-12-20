@@ -136,8 +136,11 @@ class RegisterHeadState(PDDLSmachState):
         print "Looking for head of person on: %s" % model
 
     def on_execute(self, ud):
+        print 'Trying to find head now'
         if self.model.upper() == "AUTOBED":
+            #print 'model is autobed'
             head_registered = self.get_head_pose()
+            #print 'head registered is', head_registered
         elif self.model.upper() == "WHEELCHAIR":
             head_registered = True
         if head_registered:
@@ -153,10 +156,10 @@ class RegisterHeadState(PDDLSmachState):
 
     def get_head_pose(self, head_frame="/user_head_link"):
         try:
-            now = rospy.Time.now()
+            #now = rospy.Time.now()
             print "[%s] Register Head State Waiting for Head Transform" % rospy.get_name()
-            self.listener.waitForTransform("/base_link", head_frame, now, rospy.Duration(5))
-            pos, quat = self.listener.lookupTransform("/base_link", head_frame, now)
+            #self.listener.waitForTransform("/base_link", head_frame, now, rospy.Duration(5))
+            pos, quat = self.listener.lookupTransform("/base_link", head_frame, rospy.Time(0))
             return True
         except Exception as e:
             rospy.loginfo("TF Exception:\r\n%s" %e)
