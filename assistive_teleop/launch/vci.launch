@@ -19,6 +19,9 @@
   <!-- Data Logging -->
   <include file="$(find assistive_teleop)/launch/data_bagging.launch" />
 
+  <!-- Task Planning -->
+  <include file="$(find hrl_task_planning)/launch/task_planner.launch" />
+
   <!-- Rosbridge, Rosapi, Roswww, and web_video_server -->
   <node name="rosbridge" pkg="rosbridge_server" type="rosbridge_websocket" output="screen">
       <param name="port" type="int" value="$(arg ws_port)" />
@@ -95,6 +98,6 @@
     <arg name="verbose" value="true"/>
   </include>
 
-  <node name="shaver_toggle_node" pkg="assistive_teleop" type="shaver" />
+  <!--<node name="shaver_toggle_node" pkg="assistive_teleop" type="shaver" />-->
 
 </launch>

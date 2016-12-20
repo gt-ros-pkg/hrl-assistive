@@ -32,5 +32,5 @@ srv_gen
 
 # Files specific to this repo #
 ###############################
-
+*.dat
 assistive_teleop/www/jqueryui
