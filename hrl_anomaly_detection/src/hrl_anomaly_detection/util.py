@@ -115,11 +115,6 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
     for idx, fileName in enumerate(fileNames):        
         if os.path.isdir(fileName):
             continue
-        ## cause = os.path.split(fileName)[1].split('_')[3:]
-        ## description = ''
-        ## if cause is list:
-        ##     for c in cause:
-        ##         description += c
         raw_data_dict['fileNameList'].append(fileName)
         data_dict['fileNameList'].append(fileName)
 
@@ -134,13 +129,6 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
         if verbose: print fileName
         d = ut.load_pickle(fileName)        
         init_time = d['init_time']
-
-        ## max_time = 0
-        ## for key in d.keys():
-        ##     if 'time' in key and 'init' not in key:
-        ##         feature_time = d[key]
-        ##         if max_time < feature_time[-1]-init_time: max_time = feature_time[-1]-init_time
-        ## new_times = np.linspace(0.01, max_time, downSampleSize)
         data_dict['timesList'].append(new_times)
 
         # Define receptive field center trajectory ---------------------------
@@ -160,7 +148,6 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
                                          base_link='torso_lift_link')
                 if rf_traj is None: rf_traj = (np.array(mPose1[:3,3])+np.array(mPose2[:3,3]))/2.0
                 else: rf_traj = np.hstack([ rf_traj, (np.array(mPose1[:3,3])+np.array(mPose2[:3,3]))/2.0 ])
-        ## elif rf_center == 'l_upper_arm_link':            
         else:
             print "No specified rf center"
             sys.exit()
@@ -231,7 +218,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             audio_time    = (np.array(d['audio_wrist_time']) - init_time).tolist()
             audio_rms     = np.array([d['audio_wrist_rms']])
             audio_azimuth = d.get('audio_wrist_azimuth',None)
-            ## audio_mfcc    = np.array(d['audio_wrist_mfcc']).T
+            audio_mfcc    = np.array(d['audio_wrist_mfcc']).T
 
             if audio_azimuth is not None:
                 from scipy import stats

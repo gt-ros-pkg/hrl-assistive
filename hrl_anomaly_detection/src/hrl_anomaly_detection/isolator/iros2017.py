@@ -561,7 +561,10 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         data_dict = {}
     else:
         data_dict = ut.load_pickle(data_pkl)
-        
+
+    #temp
+    kFold_list = kFold_list[:1]
+    
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(kFold_list):
         print "kFold_list: ", idx
@@ -586,6 +589,7 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         data_dict[idx] = (gs_train, y_train, gs_test, y_test)
 
     if not(os.path.isfile(data_pkl) is False or svd_renew):
+        print "dddddddddddddddddddddddddddddddd save "
         ut.save_pickle(data_dict, data_pkl)
 
     
@@ -881,13 +885,17 @@ if __name__ == '__main__':
 
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation10/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)        
-        param_dict['data_param']['handFeatures'] = [['audioWristRMS', 'ftForce_z', \
-                                                      'landmarkEEDist', 'kinJntEff_1'],
-                                                      ['ftForce_mag_integ', 'landmarkEEDist']  ]
-        param_dict['SVM']['hmmgp_logp_offset'] = 30.0 #50.0
-        param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.6, 2.3, nPoints)*-1.0+1.0
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForce_integ', \
+                                                    'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
 
+        param_dict['ROC']['methods'] = ['hmmgp']
+        nPoints = param_dict['ROC']['nPoints']
+        param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.6, 2.3, nPoints)*-1.0
+        param_dict['HMM']['scale'] = 6.111 
+        param_dict['SVM']['hmmgp_logp_offset'] = 30.0 
+        if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
+        
         evaluation_isolation(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
                              data_renew=opt.bDataRenew, svd_renew=opt.svd_renew,\
                              save_pdf=opt.bSavePdf, \
