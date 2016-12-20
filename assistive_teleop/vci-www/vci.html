@@ -53,7 +53,7 @@
   <script type="text/javascript" src="js/action-modes/ee-control/ee-display.js"></script>
   <script type="text/javascript" src="js/action-modes/ee-control/arm-postures.js"></script>
   <script type="text/javascript" src="js/action-modes/ee-control/skin-display.js"></script>
-  <!-- Plannable tasks 
+  <!-- Plannable tasks -->
   <script type="text/javascript" src="js/task-planning/display-smach-plan.js"></script>
   <script type="text/javascript" src="js/task-planning/task-menu.js"></script>
   <script type="text/javascript" src="js/task-planning/domains/pick.js"></script>
@@ -62,7 +62,7 @@
   <script type="text/javascript" src="js/task-planning/domains/adl.js"></script>
   <script type="text/javascript" src="js/task-planning/domains/tool-pick.js"></script>
   <script type="text/javascript" src="js/task-planning/domains/realtime-base-selection.js"></script>
-  -->
+
   <!-- CSS -->
   <link type="text/css" href="css/notifications.css" rel="stylesheet" />
   <link type="text/css" href="css/page-wide.css" rel="stylesheet" />
@@ -75,9 +75,9 @@
   <link type="text/css" href="css/skin.css" rel="stylesheet" />
   <link type="text/css" href="css/bumper.css" rel="stylesheet" />
   <link type="text/css" href="css/gripper.css" rel="stylesheet" />
-  <!--<link type="text/css" href="css/undo.css" rel="stylesheet" />
+  <link type="text/css" href="css/undo.css" rel="stylesheet" />
   <link type="text/css" href="css/smach.css" rel="stylesheet" />
-  <link type="text/css" href="css/task-menu.css" rel="stylesheet" />-->
+  <link type="text/css" href="css/task-menu.css" rel="stylesheet" />
   
 </head>
 
@@ -172,37 +172,37 @@
 
         </div>
     </div>
-  <!--  <div id="task-menu-accordion" class="left-col-accordion task-menu-accordion log-activate">
+    <div id="task-menu-accordion" class="left-col-accordion task-menu-accordion log-activate">
         <h3>Task Menu</h3>
         <div id="task-menu">
             <form>
                 <label for="domain-select">Select a Planned Task</label>
                 <select id="domain-select" name="domain-select" class="log-open log-select">
-                    <option value="realtime_base_selection">Approach</option>
-                    <option value="pick_and_place">Move Object</option>
-                    <option value="tool_pick">Get Tool</option>
+                    <option value="adl">Self-Care Tasks</option>
                 </select>
                 
-                <label for="arm-select" class="option-select option-realtime_base_selection option-pick_and_place option-tool_pick">Select arm</label>
-                <select id="arm-select" name="arm-select" class='option-select option-realtime_base_selection option-pick_and_place option-tool_pick log-open log-select'>
-                    <option value="left_arm">Left Arm</option>
-                    <option value="right_arm">Right Arm</option>
+                <label for="task-select" class="option-select option-adl">Select a Self-care Task</label>
+                <select id="task-select" name="task-select" class="option-select option-adl">
+                    <option value="shaving">Shave Face</option>
+                    <option value="wiping_mouth">Wipe Mouth</option>
+                    <option value="scratching_forehead">Scratch Forehead</option>
+                    <option value="scratching_left_knee">Scratch Left Knee</option>
+                    <option value="scratching_right_knee">Scratch Right Knee</option>
                 </select>
-                <label for="tool-select" class="option-select option-tool_pick">Select a Tool</label>
-                <select id="tool-select" name="tool-select" class='option-select option-tool_pick'>
-                    <option value="scratcher">Scratcher</option>
-                    <option value="towel">Towel</option>
-                    <option value="toothbrush">Toothbrush</option>
-                    <option value="shaver">Shaver</option>
-                    <option value="lotion_applicator">Lotion Applicator</option>
+
+                </select>
+                <label for="model-select" class="option-select option-adl">Select a Location</label>
+                <select id="model-select" name="model-select" class='option-select option-adl'>
+                    <option value="autobed">Autobed</option>
+                    <option value="wheelchair">Wheelchair</option>
                 </select>
             </form>
           <div id="start-task-button" class="task-button log-click">Start Task</div>
         </div>
     </div>
 
-    <div id="undo" class="log-click"><p>Undo</p></div>
-    -->
+    <!--<div id="undo" class="log-click"><p>Undo</p></div>-->
+
      <div id="util-bar">
         <div id='battery-status'>
             <div class='battery-contact'></div>

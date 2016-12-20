@@ -75,13 +75,13 @@
         args="messages /l_gripper_controller/state 16 /l_gripper_controller/state_throttled" />
 
   <!-- Skin drivers -->
-  <include file="$(find hrl_fabric_based_tactile_sensor)/launch/pr2_tactile_sleeve_both_arms.launch"/>
-  <include file="$(find hrl_fabric_based_tactile_sensor)/launch/pr2_tactile_sleeve_base.launch"/>
+  <!--<include file="$(find hrl_fabric_based_tactile_sensor)/launch/pr2_tactile_sleeve_both_arms.launch"/>-->
+  <!--<include file="$(find hrl_fabric_based_tactile_sensor)/launch/pr2_tactile_sleeve_base.launch"/>-->
 
   <!-- Arms: Haptic MPC -->
   <include file="$(find hrl_haptic_mpc)/launch/start_pr2_mpc.launch">
     <arg name="arm" value="l"/>
-    <arg name="skin" value="fabric"/>
+    <arg name="skin" value="none"/>
     <arg name="namespace" value="left_arm"/>
     <arg name="rviz_teleop" value="true"/>
     <arg name="verbose" value="true"/>

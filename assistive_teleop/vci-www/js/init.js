@@ -176,7 +176,7 @@ var RFH = (function (module) {
             setTimeout(hideLeftColumn, 2500);
 
             $('.left-col-accordion').accordion({collapsible: true, heightStyle: 'content', animate:75});
-            //$('.task-menu-accordion').accordion('option', 'active', false);
+            $('.task-menu-accordion').accordion('option', 'active', false);
 
         });
     };
