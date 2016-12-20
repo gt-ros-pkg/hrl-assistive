@@ -589,14 +589,18 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         data_dict[idx] = (gs_train, y_train, gs_test, y_test)
 
     print data_pkl
+    print os.path.isfile(data_pkl)
+    print svd_renew
     if not(os.path.isfile(data_pkl) is False or svd_renew):
         print "dddddddddddddddddddddddddddddddd save "
     ut.save_pickle(data_dict, data_pkl)
 
-    
+    scores = []
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(kFold_list):
         print "kFold_list: ", idx
+
+        (gs_train, y_train, gs_test, y_test) = data_dict[idx]
 
         ## svm classification
         ## sys.path.insert(0, '/usr/lib/pymodules/python2.7')
@@ -607,11 +611,14 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         ## ml = svm.svm_train(y_train.tolist(), gs_train.tolist(), commands)        
         ## p_labels, _, p_vals = svm.svm_predict(y_test.tolist(), gs_test.tolist(), ml)
 
+        print np.shape( gs_train.tolist() ), np.shape( y_train.tolist() )
+        print np.shape( gs_test.tolist() ), np.shape( y_test.tolist() )
+        
         from sklearn.svm import SVC
         clf = SVC(C=6.0) #, decision_function_shape='ovo')
         clf.fit(gs_train.tolist(), y_train.tolist())
-        y_pred = clf.predict(gs_test.tolist())
-        score = clf.score(y_test.tolist(), y_pred)
+        ## y_pred = clf.predict(gs_test.tolist())
+        score = clf.score(gs_test.tolist(), y_test.tolist())
         scores.append( score )
         print idx, " = ", score
             
