@@ -481,7 +481,7 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
 
 
 def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
-                         data_renew=False, save_pdf=False, verbose=False, debug=False,\
+                         data_renew=False, svd_renew=False, save_pdf=False, verbose=False, debug=False,\
                          no_plot=False, delay_plot=True, find_param=False, data_gen=False, \
                          save_viz_data=False):
 
@@ -556,9 +556,17 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
     from ksvd import KSVD
 
     # k-fold cross validation
+    data_pkl = os.path.join(processed_data_path, 'isol_data.pkl')
+    if os.path.isfile(data_pkl) is False or svd_renew:
+        data_dict = {}
+    else:
+        data_dict = ut.load_pickle(data_pkl)
+        
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(kFold_list):
 
+        if not(os.path.isfile(data_pkl) is False or svd_renew): continue
+            
         # dim x sample x length
         ## normalTrainData   = copy.copy(successData[:, normalTrainIdx, :]) 
         ## normalTestData    = copy.copy(successData[:, normalTestIdx, :])
@@ -576,6 +584,14 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         # Test
         _, gs_test, y_test = iutil.feature_omp(abnormalTestData, abnormalTestLabel, Ds)
 
+        data_dict[idx] = (gs_train, y_train, gs_test, y_test)
+
+    if not(os.path.isfile(data_pkl) is False or svd_renew):
+        ut.save_pickle(data_dict, data_pkl)
+
+    
+    for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
+      in enumerate(kFold_list):
 
         ## svm classification
         sys.path.insert(0, '/usr/lib/pymodules/python2.7')
@@ -587,6 +603,7 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         ml = svm.svm_train(y_train.tolist(), gs_train.tolist(), commands)
         score = ml.score(gs_test, y_test)
         scores.append( score )
+        print idx, " = ", score
             
     print scores
 
