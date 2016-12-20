@@ -564,7 +564,7 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(kFold_list):
-
+        print "kFold_list: ", idx
         if not(os.path.isfile(data_pkl) is False or svd_renew): continue
             
         # dim x sample x length
@@ -572,18 +572,17 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         ## normalTestData    = copy.copy(successData[:, normalTestIdx, :])
         abnormalTrainData = copy.copy(failureData[:, abnormalTrainIdx, :])
         abnormalTestData  = copy.copy(failureData[:, abnormalTestIdx, :])
-
         abnormalTrainLabel = copy.copy(failure_labels[abnormalTrainIdx])
         abnormalTestLabel  = copy.copy(failure_labels[abnormalTestIdx])
 
         ## omp feature extraction?
-        # Training
+        # Train
         Ds, gs_train, y_train = iutil.feature_omp(abnormalTrainData, abnormalTrainLabel)
-        save_data_labels(gs_train, y_train, processed_data_path)
         
         # Test
         _, gs_test, y_test = iutil.feature_omp(abnormalTestData, abnormalTestLabel, Ds)
 
+        ## save_data_labels(gs_train, y_train, processed_data_path)
         data_dict[idx] = (gs_train, y_train, gs_test, y_test)
 
     if not(os.path.isfile(data_pkl) is False or svd_renew):
@@ -592,16 +591,22 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
     
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(kFold_list):
+        print "kFold_list: ", idx
 
         ## svm classification
-        sys.path.insert(0, '/usr/lib/pymodules/python2.7')
-        import svmutil as svm
-        svm_type = 0
-        kernel_type = 0
-        
-        commands = '-q -s '+str(svm_type)+' -t '+str(kernel_type)          
-        ml = svm.svm_train(y_train.tolist(), gs_train.tolist(), commands)
-        score = ml.score(gs_test, y_test)
+        ## sys.path.insert(0, '/usr/lib/pymodules/python2.7')
+        ## import svmutil as svm
+        ## svm_type = 0
+        ## kernel_type = 0        
+        ## commands = '-q -s '+str(svm_type)+' -t '+str(kernel_type)          
+        ## ml = svm.svm_train(y_train.tolist(), gs_train.tolist(), commands)        
+        ## p_labels, _, p_vals = svm.svm_predict(y_test.tolist(), gs_test.tolist(), ml)
+
+        from sklearn.svm import SVC
+        clf = SVC(C=6.0) #, decision_function_shape='ovo')
+        clf.fit(gs_train.tolist(), y_train.tolist())
+        y_pred = clf.predict(gs_test.tolist())
+        score = clf.score(y_test.tolist(), y_pred)
         scores.append( score )
         print idx, " = ", score
             
@@ -666,6 +671,8 @@ if __name__ == '__main__':
                  default=False, help='Evaluate with double detectors.')
     p.add_option('--eval_isol', '--ei', action='store_true', dest='evaluation_isolation',
                  default=False, help='Evaluate anomaly isolation with double detectors.')
+    p.add_option('--svd_renew', '--sr', action='store_true', dest='svd_renew',
+                 default=False, help='Renew ksvd')
     
     opt, args = p.parse_args()
 
@@ -782,21 +789,21 @@ if __name__ == '__main__':
         evaluation with selected feature set
         '''
         # 74%
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation5/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_integ', 'crossmodal_landmarkEEDist']
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation5/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_integ', 'crossmodal_landmarkEEDist']
         # 68
         ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForce_integ', \
         ##                                             'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
 
 
         # 84.5% scale1, 83.81% scale?
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForce_integ', \
-        ##                                             'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForce_integ', \
+                                                    'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
 
         # 78% scale?,  82% scale 1
         ## save_data_path = os.path.expanduser('~')+\
@@ -882,6 +889,7 @@ if __name__ == '__main__':
         param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.6, 2.3, nPoints)*-1.0+1.0
 
         evaluation_isolation(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
+                             data_renew=opt.bDataRenew, svd_renew=opt.svd_renew,\
                              save_pdf=opt.bSavePdf, \
                              verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                              find_param=False, data_gen=opt.bDataGen)
