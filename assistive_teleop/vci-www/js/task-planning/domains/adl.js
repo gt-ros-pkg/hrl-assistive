@@ -46,7 +46,7 @@ var RFH = (function(module) {
                 case 'MOVE_ROBOT':
                     startFunc = function () {
                         //RFH.undo.sentUndoCommands.mode += 1; // Increment so this switch isn't grabbed by undo queue...(yes, ugly hack)
-                        RFH.actionMenu.startAction('drivingAction');
+                        //RFH.actionMenu.startAction('drivingAction');
                     };
                     break;
                 case 'CONFIGURE_MODEL_ROBOT':
