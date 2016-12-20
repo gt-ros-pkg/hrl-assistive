@@ -144,11 +144,11 @@ class BaseSelector(object):
         elif load == 'henry':
             model = 'chair'
             #self.scores_dict[model, 'shaving'] = self.load_task('shaving', model)
-            self.scores_dict[model, 'wiping_mouth'] = self.load_task('wiping_mouth', model)
-            self.scores_dict[model, 'scratching_knee_left'] = self.load_task('scratching_knee_left', model)
-            self.scores_dict[model, 'scratching_forehead'] = self.load_task('scratching_knee_left', model)
-            self.scores_dict[model, 'shaving'] = self.load_task('scratching_knee_left', model)
-            self.scores_dict[model, 'brushing_teeth'] = self.load_task('scratching_knee_left', model)
+            # self.scores_dict[model, 'wiping_mouth'] = self.load_task('wiping_mouth', model)
+            # self.scores_dict[model, 'scratching_knee_left'] = self.load_task('scratching_knee_left', model)
+            # self.scores_dict[model, 'scratching_forehead'] = self.load_task('scratching_knee_left', model)
+            # self.scores_dict[model, 'shaving'] = self.load_task('scratching_knee_left', model)
+            # self.scores_dict[model, 'brushing_teeth'] = self.load_task('scratching_knee_left', model)
             #self.scores_dict[model, 'scratching_knee_right'] = self.load_task('scratching_knee_right', model)
             #self.scores_dict[model, 'scratching_upper_arm_left'] = self.load_task('scratching_upper_arm_left', model)
             #self.scores_dict[model, 'scratching_upper_arm_right'] = self.load_task('scratching_upper_arm_right', model)
@@ -159,8 +159,8 @@ class BaseSelector(object):
             model = 'autobed'
             self.scores_dict[model, 'wiping_mouth'] = self.load_task('wiping_mouth', model)
             self.scores_dict[model, 'scratching_knee_left'] = self.load_task('scratching_knee_left', model)
-            self.scores_dict[model, 'scratching_forehead'] = self.load_task('scratching_knee_left', model)
-            self.scores_dict[model, 'brushing_teeth'] = self.load_task('scratching_knee_left', model)
+            # self.scores_dict[model, 'scratching_forehead'] = self.load_task('scratching_knee_left', model)
+            # self.scores_dict[model, 'brushing_teeth'] = self.load_task('scratching_knee_left', model)
             # self.scores_dict[model, 'shaving'] = self.load_task('shaving', model)
             # self.scores_dict[model, 'feeding'] = self.load_task('feeding', model)
             # self.scores_dict[model, 'bathing'] = self.load_task('bathing', model)
