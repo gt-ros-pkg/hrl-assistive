@@ -612,7 +612,7 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         print np.shape( gs_test.tolist() ), np.shape( y_test.tolist() )
         
         from sklearn.svm import SVC
-        clf = SVC(C=5.0, kernel='linear') #, decision_function_shape='ovo')
+        clf = SVC(C=15.0, kernel='linear') #, decision_function_shape='ovo')
         clf.fit(gs_train.tolist(), y_train.tolist())
         ## y_pred = clf.predict(gs_test.tolist())
         score = clf.score(gs_test.tolist(), y_test.tolist())
