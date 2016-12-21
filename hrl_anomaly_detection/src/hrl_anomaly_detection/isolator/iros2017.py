@@ -623,6 +623,7 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         print idx, " = ", score
             
     print scores
+    print np.mean(scores), np.std(scores)
 
 
 
