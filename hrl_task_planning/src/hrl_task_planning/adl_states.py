@@ -250,7 +250,7 @@ class MoveArmState(PDDLSmachState):
                 rospy.loginfo('[%s] Reaching to left knee.' % rospy.get_name())
 
             elif self.task.upper() == 'WIPING_MOUTH':
-                self.goal_position = [0.45, 0., -0.07-0.05]
+                self.goal_position = [0.22, 0., -0.12]
                 self.goal_orientation = [0., 0., 1., 0.]
                 self.reference_frame = '/'+str(self.model.lower())+'/head_link'
                 goal.pose.position.x = self.goal_position[0]
@@ -302,23 +302,31 @@ class MoveArmState(PDDLSmachState):
         return True
 
     def on_execute(self, ud):
+        print 'Starting to execute arm movement'
         publish_stat = self.publish_goal()
         self.goal_reached = False
         if not publish_stat:
             return 'aborted'
         #Now that goal is published, we wait until goal is reached
         movement_timer = rospy.Time.now()
+        repeat_movement_timer = rospy.Time.now()
         while not rospy.is_shutdown() and not self.goal_reached:
             if self.preempt_requested():
                 self.stop_tracking_AR_publisher.publish(False)
                 rospy.loginfo("[%s] Cancelling action.", rospy.get_name())
                 return
-            current_position, current_orientation = self.listener.lookupTransform('/l_gripper_tool_frame', self.reference_frame, rospy.Time(0))
+            current_position, current_orientation = self.listener.lookupTransform(self.reference_frame,'/l_gripper_tool_frame', rospy.Time(0))
+            print 'distance to goal', np.linalg.norm(np.array(current_position) - np.array(self.goal_position))
+            print 'angle to goal', utils.quat_angle(current_position, self.goal_orientation)
             if np.linalg.norm(np.array(current_position) - np.array(self.goal_position)) < 0.05 and utils.quat_angle(current_position, self.goal_orientation) < 10.0:
                 self.goal_reached = True
-            movement_elapsed_time = rospy.Time.now() - movement_timer
-            if not self.goal_reached and movement_elapsed_time.to_sec() > 3.0:
+            recent_movement_elapsed_time = rospy.Time.now() - repeat_movement_timer
+            total_movement_elapsed_time = rospy.Time.now() - movement_timer
+            if not self.goal_reached and recent_movement_elapsed_time.to_sec() > 3.0:
+                repeat_movement_timer = rospy.Time.now()
                 self.publish_goal()
+            if total_movement_elapsed_time.to_sec() > 15.0:
+                self.goal_reached = True
             rospy.sleep(1)
 
         if self.goal_reached:
@@ -538,7 +546,7 @@ class ConfigureModelRobotState(PDDLSmachState):
 
     def define_reset(self):
         r_reset_traj_point = JointTrajectoryPoint()
-        r_reset_traj_point.positions = [-3.14/2, -0.52, 0.00, -3.14*2/3, 0., -1.5, 0.0]
+        r_reset_traj_point.positions = [-3.14/2, -0.6, 0.00, m.radians(-100), 0., m.radians(-90), 0.0]
 
         r_reset_traj_point.velocities = [0.0]*7
         r_reset_traj_point.accelerations = [0.0]*7
@@ -554,7 +562,7 @@ class ConfigureModelRobotState(PDDLSmachState):
         self.r_reset_traj.points.append(r_reset_traj_point)
         l_reset_traj_point = JointTrajectoryPoint()
 
-        l_reset_traj_point.positions = [(3.14/2 + 3.14/4), -0.9, 0.00, -3.14*2/3, 0., -1.5, 0.0]
+        l_reset_traj_point.positions = [(3.14/2 + 3.14/4), -0.6, 0.00, m.radians(-90.), 0., m.radians(-90.), 0.0]
         # l_reset_traj_point.positions = [0.0, 1.35, 0.00, -1.60, -3.14, -0.3, 0.0]
         #l_reset_traj_point.positions = [0.7629304700932569, -0.3365186041095207, 0.5240000202473829,
         #                                        -2.003310310963515, 0.9459734129025158, -1.7128778450423763, 0.6123854412633384]
