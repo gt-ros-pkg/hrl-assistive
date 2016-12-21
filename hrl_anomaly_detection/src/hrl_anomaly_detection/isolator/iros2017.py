@@ -579,11 +579,14 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         abnormalTestLabel  = copy.copy(failure_labels[abnormalTestIdx])
 
         ## omp feature extraction?
-        # Train
-        Ds, gs_train, y_train = iutil.feature_omp(abnormalTrainData, abnormalTrainLabel)
-        
-        # Test
-        _, gs_test, y_test = iutil.feature_omp(abnormalTestData, abnormalTestLabel, Ds)
+        # Train & test
+        ## Ds, gs_train, y_train = iutil.feature_omp(abnormalTrainData, abnormalTrainLabel)
+        ## _, gs_test, y_test = iutil.feature_omp(abnormalTestData, abnormalTestLabel, Ds)
+
+        # Train & test
+        Ds, gs_train, y_train = iutil.m_omp(abnormalTrainData, abnormalTrainLabel)
+        _, gs_test, y_test = iutil.m_omp(abnormalTestData, abnormalTestLabel, Ds)
+
 
         ## save_data_labels(gs_train, y_train, processed_data_path)
         data_dict[idx] = (gs_train, y_train, gs_test, y_test)

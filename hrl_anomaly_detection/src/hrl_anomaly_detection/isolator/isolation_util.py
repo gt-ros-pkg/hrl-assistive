@@ -26,7 +26,7 @@ def rnd_():
             X_train.append( block )
             Y_train.append( label[i] )
     
-def feature_omp(x, label, D0=None, n_iter=1000):
+def feature_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.1):
     ''' Feature-wise omp '''
 
     # train feature-wise omp
@@ -38,7 +38,7 @@ def feature_omp(x, label, D0=None, n_iter=1000):
     dimension = len(X_[0][0]) #window_size
     dict_size = int(dimension*2) ##10, 1.5)
     n_examples = len(X_)
-    target_sparsity = int(0.1*dimension)
+    target_sparsity = int(sp_ratio*dimension)
 
     gs = None
     Ds = {}
@@ -66,7 +66,7 @@ def feature_omp(x, label, D0=None, n_iter=1000):
     else:          return D0, gs, Y_
 
 
-def m_omp(x, label, D0=None, n_iter=1000):
+def m_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.1):
     ''' Multichannel OMP '''
 
     # train multichannel omp?
@@ -82,26 +82,32 @@ def m_omp(x, label, D0=None, n_iter=1000):
     dimension  = len(X_[0]) 
     dict_size  = int(dimension*10)
     n_examples = len(X_)
-    target_sparsity = int(0.5*dimension)
+    target_sparsity = int(sp_ratio*dimension)
 
     gs = None
-    Ds = {}
     X_ = np.array(X_)
 
-    # X \simeq g * D
-    # D is the dictionary with `dict_size` by `dimension`
-    # g is the code book with `n_examples` by `dict_size`
-    D, g = KSVD(X_, dict_size, target_sparsity, n_iter,
-                    print_interval = 25,
-                    enable_printing = True, enable_threading = True)
+    if D0 is None:
+        # X \simeq g * D
+        # D is the dictionary with `dict_size` by `dimension`
+        # g is the code book with `n_examples` by `dict_size`
+        D, g = KSVD(X_, dict_size, target_sparsity, n_iter,
+                        print_interval = 25,
+                        enable_printing = True, enable_threading = True)
+    else:        
+        g = KSVD_Encode(X_, D0, target_sparsity)        
 
     # Stacking?
     for i in xrange(len(x[0])): # per sample
 
-        g = g[i:i+n_features,:].flatten()
+        single_g = g[i*n_features:(i+1)*n_features,:].flatten()
 
-        if gs is None: gs = g
-        else: gs = np.vstack([gs, g])
+        if gs is None: gs = single_g
+        else: gs = np.vstack([gs, single_g])
+
+    if D0 is None: return D, gs, Y_
+    else:          return D0, gs, Y_
+
 
     
 def time_wise_omp():
