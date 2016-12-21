@@ -27,9 +27,7 @@ def rnd_():
             Y_train.append( label[i] )
     
 def feature_omp(x, label, D0=None, n_iter=1000):
-    '''
-    Feature-wise omp
-    '''
+    ''' Feature-wise omp '''
 
     # train feature-wise omp
     X_ = []
@@ -38,7 +36,7 @@ def feature_omp(x, label, D0=None, n_iter=1000):
     Y_ = copy.copy(label)
 
     dimension = len(X_[0][0]) #window_size
-    dict_size = int(dimension*10) ##1.5)
+    dict_size = int(dimension*2) ##10, 1.5)
     n_examples = len(X_)
     target_sparsity = int(0.1*dimension)
 
@@ -68,7 +66,9 @@ def feature_omp(x, label, D0=None, n_iter=1000):
     else:          return D0, gs, Y_
 
 
-def multichannel_omp():
+def m_omp(x, label, D0=None, n_iter=1000):
+    ''' Multichannel OMP '''
+
     # train multichannel omp?
     X_ = []
     Y_ = []
@@ -79,8 +79,8 @@ def multichannel_omp():
     Y_ = copy.copy(label)
 
     n_features = len(x)
-    dimension = len(X_[0]) 
-    dict_size = int(dimension*10)
+    dimension  = len(X_[0]) 
+    dict_size  = int(dimension*10)
     n_examples = len(X_)
     target_sparsity = int(0.5*dimension)
 
@@ -91,7 +91,7 @@ def multichannel_omp():
     # X \simeq g * D
     # D is the dictionary with `dict_size` by `dimension`
     # g is the code book with `n_examples` by `dict_size`
-    D, g = KSVD(X_, dict_size, target_sparsity, 1000,
+    D, g = KSVD(X_, dict_size, target_sparsity, n_iter,
                     print_interval = 25,
                     enable_printing = True, enable_threading = True)
 
