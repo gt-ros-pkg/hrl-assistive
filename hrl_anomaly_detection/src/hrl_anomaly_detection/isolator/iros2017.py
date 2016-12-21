@@ -829,7 +829,7 @@ if __name__ == '__main__':
         param_dict['ROC']['methods'] = ['hmmgp']
         nPoints = param_dict['ROC']['nPoints']
         param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.6, 2.3, nPoints)*-1.0
-        param_dict['HMM']['scale'] = 8. #6.111 #7.0
+        param_dict['HMM']['scale'] = 4. #6.111 #7.0
         ## param_dict['SVM']['hmmgp_logp_offset'] = 30.0 
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         evaluation_single_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
