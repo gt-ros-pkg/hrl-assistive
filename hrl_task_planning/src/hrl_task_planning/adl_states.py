@@ -253,9 +253,9 @@ class MoveArmState(PDDLSmachState):
                 self.goal_position = [0.45, 0., -0.07-0.05]
                 self.goal_orientation = [0., 0., 1., 0.]
                 self.reference_frame = '/'+str(self.model.lower())+'/head_link'
-                goal.pose.position.x = 0.45
+                goal.pose.position.x = 0.22
                 goal.pose.position.y = 0.
-                goal.pose.position.z = -0.07-0.05
+                goal.pose.position.z = -0.12
                 goal.pose.orientation.x = 0.
                 goal.pose.orientation.y = 0.
                 goal.pose.orientation.z = 1.
