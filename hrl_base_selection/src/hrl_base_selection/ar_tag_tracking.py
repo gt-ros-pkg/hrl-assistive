@@ -243,7 +243,7 @@ class AR_Tag_Tracking(object):
         rate = rospy.Rate(10.0)
         while not rospy.is_shutdown():
             #print self.out_pos, self.out_quat
-            if self.finished_acquiring_AR_tag:
+            if self.finished_acquiring_AR_tag and list(self.out_pos) and list(self.out_quat):
                 self.broadcaster.sendTransform(self.out_pos, self.out_quat,
                                                rospy.Time.now(),
                                                self.out_frame,

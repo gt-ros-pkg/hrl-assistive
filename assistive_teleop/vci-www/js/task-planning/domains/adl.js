@@ -167,6 +167,7 @@ var RFH = (function(module) {
 
         self.sendTaskGoal = function (options) {
             var task = options.task;
+            console.log(task);
             //var model = options.model;
             var model = "Autobed";
             var goal = options.goal || []; // Empty goal will use default for task
