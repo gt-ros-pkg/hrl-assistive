@@ -239,28 +239,28 @@ class MoveArmState(PDDLSmachState):
                 self.goal_position = [-0.06310556, 0.07347758+0.05+0.08, 0.00485197]
                 self.goal_orientation = [0.48790861, -0.50380292, 0.51703901, -0.4907122]
                 self.reference_frame = '/'+str(self.model.lower())+'/calf_left_link'
-                goal.pose.position.x = -0.06310556
-                goal.pose.position.y = 0.07347758+0.05+0.08
-                goal.pose.position.z = 0.00485197
-                goal.pose.orientation.x = 0.48790861
-                goal.pose.orientation.y = -0.50380292
-                goal.pose.orientation.z = 0.51703901
-                goal.pose.orientation.w = -0.4907122
-                goal.header.frame_id = '/'+str(self.model.lower())+'/calf_left_link'
+                goal.pose.position.x = self.goal_position[0]
+                goal.pose.position.y = self.goal_position[1]
+                goal.pose.position.z = self.goal_position[2]
+                goal.pose.orientation.x = self.goal_orientation[0]
+                goal.pose.orientation.y = self.goal_orientation[1]
+                goal.pose.orientation.z = self.goal_orientation[2]
+                goal.pose.orientation.w = self.goal_orientation[3]
+                goal.header.frame_id = self.reference_frame
                 rospy.loginfo('[%s] Reaching to left knee.' % rospy.get_name())
 
             elif self.task.upper() == 'WIPING_MOUTH':
                 self.goal_position = [0.45, 0., -0.07-0.05]
                 self.goal_orientation = [0., 0., 1., 0.]
                 self.reference_frame = '/'+str(self.model.lower())+'/head_link'
-                goal.pose.position.x = 0.22
-                goal.pose.position.y = 0.
-                goal.pose.position.z = -0.12
-                goal.pose.orientation.x = 0.
-                goal.pose.orientation.y = 0.
-                goal.pose.orientation.z = 1.
-                goal.pose.orientation.w = 0.
-                goal.header.frame_id = '/'+str(self.model.lower())+'/head_link'
+                goal.pose.position.x = self.goal_position[0]
+                goal.pose.position.y = self.goal_position[1]
+                goal.pose.position.z = self.goal_position[2]
+                goal.pose.orientation.x = self.goal_orientation[0]
+                goal.pose.orientation.y = self.goal_orientation[1]
+                goal.pose.orientation.z = self.goal_orientation[2]
+                goal.pose.orientation.w = self.goal_orientation[3]
+                goal.header.frame_id = self.reference_frame
                 rospy.loginfo('[%s] Reaching to mouth.' % rospy.get_name())
             else:
                 rospy.logwarn('[%s] Cannot Find ARM GOAL to reach. Have you specified the right task? [%s]' % (rospy.get_name(), self.task))
@@ -307,15 +307,18 @@ class MoveArmState(PDDLSmachState):
         if not publish_stat:
             return 'aborted'
         #Now that goal is published, we wait until goal is reached
+        movement_timer = rospy.Time.now()
         while not rospy.is_shutdown() and not self.goal_reached:
             if self.preempt_requested():
                 self.stop_tracking_AR_publisher.publish(False)
                 rospy.loginfo("[%s] Cancelling action.", rospy.get_name())
                 return
             current_position, current_orientation = self.listener.lookupTransform('/l_gripper_tool_frame', self.reference_frame, rospy.Time(0))
-            if np.linalg.norm(np.array(current_position) - np.array(self.goal_position)) < 0.05 and utils.quat_angle(current_position, self.goal_orientation) <  10.0:
+            if np.linalg.norm(np.array(current_position) - np.array(self.goal_position)) < 0.05 and utils.quat_angle(current_position, self.goal_orientation) < 10.0:
                 self.goal_reached = True
-
+            movement_elapsed_time = rospy.Time.now() - movement_timer
+            if not self.goal_reached and movement_elapsed_time.to_sec() > 3.0:
+                self.publish_goal()
             rospy.sleep(1)
 
         if self.goal_reached:
