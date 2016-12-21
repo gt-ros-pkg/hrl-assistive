@@ -588,12 +588,9 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         ## save_data_labels(gs_train, y_train, processed_data_path)
         data_dict[idx] = (gs_train, y_train, gs_test, y_test)
 
-    print data_pkl
-    print os.path.isfile(data_pkl)
-    print svd_renew
-    if not(os.path.isfile(data_pkl) is False or svd_renew):
-        print "dddddddddddddddddddddddddddddddd save "
-    ut.save_pickle(data_dict, data_pkl)
+    if os.path.isfile(data_pkl) is False or svd_renew:
+        print "save pkl: ", data_pkl
+        ut.save_pickle(data_dict, data_pkl)
 
     scores = []
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
@@ -615,7 +612,7 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         print np.shape( gs_test.tolist() ), np.shape( y_test.tolist() )
         
         from sklearn.svm import SVC
-        clf = SVC(C=1.0, kernel='linear') #, decision_function_shape='ovo')
+        clf = SVC(C=5.0, kernel='linear') #, decision_function_shape='ovo')
         clf.fit(gs_train.tolist(), y_train.tolist())
         ## y_pred = clf.predict(gs_test.tolist())
         score = clf.score(gs_test.tolist(), y_test.tolist())
