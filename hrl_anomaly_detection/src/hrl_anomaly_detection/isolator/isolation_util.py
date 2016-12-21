@@ -110,7 +110,7 @@ def m_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.1):
     else:          return D0, gs, Y_
 
 
-def w_mp(x, label, D0=None, n_iter=1000, sp_ratio=0.05):
+def w_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.05):
     ''' Multichannel OMP with random wavelet dictionary'''
     from sklearn.decomposition import SparseCoder
 
@@ -168,6 +168,9 @@ def w_mp(x, label, D0=None, n_iter=1000, sp_ratio=0.05):
     ## X_est = np.ravel(np.dot(g, D))
     ## squared_error = np.sum((X_est - np.ravel(X_)) ** 2)
     ## print squared_error
+    ## for i in xrange(len(g)):
+    ##     print np.shape(D), np.shape(g), np.shape(np.dot(g[i:i+1,:],D))
+    ##     plot_decoder(X_[i], np.dot(g[i:i+1,:],D)[0] )    
     
     # Stacking?
     for i in xrange(len(x[0])): # per sample
@@ -215,3 +218,16 @@ def time_wise_omp():
 
             if gs is None: gs = max_pool
             else: gs = np.vstack([gs, max_pool])
+
+
+
+def plot_decoder(x1,x2):
+    # visualization
+    import matplotlib.pyplot as plt
+
+    plt.figure()
+    plt.plot(x1, 'b-')
+    plt.plot(x2, 'r-', linewidth=3.0)
+    plt.show()
+
+    return

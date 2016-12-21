@@ -588,8 +588,8 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         ## _, gs_test, y_test = iutil.m_omp(abnormalTestData, abnormalTestLabel, Ds)
 
         # Train & test
-        Ds, gs_train, y_train = iutil.w_mp(abnormalTrainData, abnormalTrainLabel)
-        _, gs_test, y_test = iutil.w_mp(abnormalTestData, abnormalTestLabel, Ds)
+        Ds, gs_train, y_train = iutil.w_omp(abnormalTrainData, abnormalTrainLabel)
+        _, gs_test, y_test = iutil.w_omp(abnormalTestData, abnormalTestLabel, Ds)
 
         ## save_data_labels(gs_train, y_train, processed_data_path)
         data_dict[idx] = (gs_train, y_train, gs_test, y_test)
@@ -821,6 +821,8 @@ if __name__ == '__main__':
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForce_integ', \
                                                     'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
+        param_dict['SVM']['hmmgp_logp_offset'] = 30.0
+        param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.6, 2.3, nPoints)*-1.0 + 1        
 
         ## # 78% scale?,  82% scale 1
         ## save_data_path = os.path.expanduser('~')+\
@@ -831,9 +833,9 @@ if __name__ == '__main__':
 
         param_dict['ROC']['methods'] = ['hmmgp']
         nPoints = param_dict['ROC']['nPoints']
-        param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.6, 2.3, nPoints)*-1.0
         param_dict['HMM']['scale'] = 6.111 #7.0
-        param_dict['SVM']['hmmgp_logp_offset'] = 30.0 
+        ## param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.6, 2.3, nPoints)*-1.0        
+        
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         evaluation_single_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
                              save_pdf=opt.bSavePdf, \
