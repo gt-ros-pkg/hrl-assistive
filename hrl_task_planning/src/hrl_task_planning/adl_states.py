@@ -173,7 +173,7 @@ class CheckOccupancyState(PDDLSmachState):
     def __init__(self, model, domain, *args, **kwargs):
         super(CheckOccupancyState, self).__init__(domain=domain, *args, **kwargs)
         self.model = model
-        self.state_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=10, latch=True)
+        self.state_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=1, latch=True)
 #        print "Check Occupancy of Model: %s" % model
         if model.upper() == 'AUTOBED':
             self.autobed_occupied_status = False
