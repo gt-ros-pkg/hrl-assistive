@@ -188,7 +188,7 @@ class AutobedStatePublisherNode(object):
                 # print self.bed_height
                 elapsed_time = rospy.Time.now() - bed_status_update_timer
                 if not self.bed_status or bed_status_update_timer.to_sec() > 2.0:
-                    bed_status_update_timer = rospy.Time.now()s
+                    bed_status_update_timer = rospy.Time.now()
                     joint_state.position[0] = self.bed_height
                     joint_state.position[1] = self.head_filt_data
                     joint_state.position[2] = 0  # self.leg_filt_data
@@ -321,7 +321,7 @@ class AutobedStatePublisherNode(object):
             # now = rospy.Time.now()
             #     self.listener.waitForTransform('/autobed/base_link', '/user_head_link', rospy.Time(0), rospy.Duration(3))
                 (trans_b, rot_b) = self.listener.lookupTransform('/autobed/base_link', '/base_link', rospy.Time(0))
-                head_rotation.position[0] = m.copysign(m.radians(60.), trans_b[1])
+                head_rotation.position[0] = -m.copysign(m.radians(60.), trans_b[1])
                 head_rotation.position[1] = 0.
             else:
                 head_rotation.position[0] = 0.
