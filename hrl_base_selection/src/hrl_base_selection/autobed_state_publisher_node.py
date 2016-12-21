@@ -60,12 +60,12 @@ class AutobedStatePublisherNode(object):
         init_centered.name[4] = "autobed/neck_twist_joint"
         init_centered.name[5] = "autobed/neck_head_rotz_joint"
 
-        init_centered.position[0] = 0
-        init_centered.position[1] = 0
-        init_centered.position[2] = 0
-        init_centered.position[3] = 0
-        init_centered.position[4] = 0
-        init_centered.position[5] = 0
+        init_centered.position[0] = 0.
+        init_centered.position[1] = 0.
+        init_centered.position[2] = 0.
+        init_centered.position[3] = 0.
+        init_centered.position[4] = 0.
+        init_centered.position[5] = 0.
         # self.joint_pub.publish(init_centered)
         self.bed_status = None
         rospy.Subscriber("/abdstatus0", Bool, self.bed_status_cb)
@@ -100,25 +100,24 @@ class AutobedStatePublisherNode(object):
 
     # Callback for the pose messages from the autobed
     def bed_pose_cb(self, data): 
-        poses=np.asarray(data.data);
+        poses = np.asarray(data.data)
         # print poses
-        
-        self.bed_height = ((poses[1]/100)) if (((poses[1]/100))
-                > 0) else 0
-        if poses[0]<0.02:
-            poses[0]=0.02
-        if poses[0]>79.9:
-            poses[0]=79.9
+        if (((poses[1]/100.)) > 0):
+            self.bed_height = ((poses[1]/100.))
+        else:
+            self.bed_height = 0.
+        if poses[0] < 0.02:
+            poses[0] = 0.02
+        if poses[0] > 79.9:
+            poses[0] = 79.9
         head_angle = (poses[0]*pi/180)
 
         leg_angle = (poses[2]*pi/180 - 0.1)
         with self.frame_lock:
             self.collated_head_angle = np.delete(self.collated_head_angle, 0)
-            self.collated_head_angle = np.append(self.collated_head_angle,
-                    [head_angle])
+            self.collated_head_angle = np.append(self.collated_head_angle, [head_angle])
             self.collated_leg_angle = np.delete(self.collated_leg_angle, 0)
-            self.collated_leg_angle = np.append(self.collated_leg_angle,
-                    [leg_angle])
+            self.collated_leg_angle = np.append(self.collated_leg_angle, [leg_angle])
      
     #Callback for autobed pose status
     def bed_status_cb(self, data):
@@ -152,10 +151,10 @@ class AutobedStatePublisherNode(object):
 
         joint_state = JointState()
 
-        dict_of_links = ({'/head_rest_link':0.762659,
-                          '/leg_rest_upper_link':1.04266,
-                          '/leg_rest_lower_link':1.41236})
-        list_of_links = dict_of_links.keys()
+        # dict_of_links = ({'/head_rest_link':0.762659,
+        #                   '/leg_rest_upper_link':1.04266,
+        #                   '/leg_rest_lower_link':1.41236})
+        # list_of_links = dict_of_links.keys()
         #Allow autobed sensor filters to fill up
         rospy.sleep(2.)
         self.filter_data()
@@ -297,30 +296,30 @@ class AutobedStatePublisherNode(object):
             unoccupied_shift.position = [None]*(1)
             unoccupied_shift.name[0] = "autobed/bed_neck_base_leftright_joint"
             if not occupied_state:
-                unoccupied_shift.position[0] = 15
+                unoccupied_shift.position[0] = 15.
             else:
                 unoccupied_shift.position[0] = 0.
-            # try:
+            # # try:
             if self.listener.canTransform('/autobed/base_link', '/user_head_link', rospy.Time(0)):
-            # now = rospy.Time.now()
-            #     self.listener.waitForTransform('/autobed/base_link', '/user_head_link', rospy.Time(0), rospy.Duration(3))
-                (trans, rot) = self.listener.lookupTransform('/autobed/base_link', '/user_head_link', rospy.Time(0))
-                unoccupied_shift.position[0] = trans[0]
+                (trans_h, rot_h) = self.listener.lookupTransform('/autobed/base_link', '/user_head_link', rospy.Time(0))
+                unoccupied_shift.position[0] = trans_h[0]
             else:
                 # print 'Error with transform lookup'
-                    unoccupied_shift.position[0] = 10.
+                unoccupied_shift.position[0] = 15.
             self.joint_pub.publish(unoccupied_shift)
+
             head_rotation = JointState()
             head_rotation.header.stamp = rospy.Time.now()
             head_rotation.name = [None]*(2)
             head_rotation.position = [None]*(2)
             head_rotation.name[0] = "autobed/neck_twist_joint"
             head_rotation.name[1] = "autobed/neck_head_rotz_joint"
+            # head_rotation.name[2] = "autobed/bed_neck_base_leftright_joint"
             if self.listener.canTransform('/autobed/base_link', '/base_link', rospy.Time(0)):
             # now = rospy.Time.now()
             #     self.listener.waitForTransform('/autobed/base_link', '/user_head_link', rospy.Time(0), rospy.Duration(3))
-                (trans, rot) = self.listener.lookupTransform('/autobed/base_link', '/base_link', rospy.Time(0))
-                head_rotation.position[0] = m.copysign(m.radians(60.), trans[1])
+                (trans_b, rot_b) = self.listener.lookupTransform('/autobed/base_link', '/base_link', rospy.Time(0))
+                head_rotation.position[0] = m.copysign(m.radians(60.), trans_b[1])
                 head_rotation.position[1] = 0.
             else:
                 head_rotation.position[0] = 0.

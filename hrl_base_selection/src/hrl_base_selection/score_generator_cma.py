@@ -413,6 +413,8 @@ class ScoreGenerator(object):
 
         head_x_range = [0.]
         self.head_angles = np.array([[58, 18], [58, 0], [58, -18], [0, 0], [-58, 18], [-58, 0], [-58, -18]])
+        if self.task == 'scratching_knee_left':
+            self.head_angles = np.array([[0, 0]])
         head_y_range = (np.arange(11)-5)*.03
         head_rest_range = np.arange(-10, 80.1, 10.)
         head_rest_range = [-10]
@@ -512,8 +514,8 @@ class ScoreGenerator(object):
                 maxiter = 10
                 # popsize = 1000
                 popsize = m.pow(6, 2)*100
-                parameters_min = np.array([0.2, -3., -m.pi-0.001, 0., 0., 0.])
-                parameters_max = np.array([3., 3., m.pi+.001, 0.3, 0.001, 80.*m.pi/180.])
+                parameters_min = np.array([0.2, 0.1, -m.pi-0.001, 0., 0., 20.*m.pi/180.])
+                parameters_max = np.array([3., 3., m.pi+.001, 0.3, 0.2, 70.*m.pi/180.])
                 parameters_scaling = (parameters_max-parameters_min)/4.
                 parameters_initialization = (parameters_max+parameters_min)/2.
                 opts1 = {'seed': 1234, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter, 'maxfevals': 1e8, 'CMA_cmean': 0.25,
@@ -973,8 +975,7 @@ class ScoreGenerator(object):
                             for solution in sols:
                                 self.robot.SetDOFValues(solution, self.manip.GetArmIndices())
                                 self.env.UpdatePublishedBodies()
-                                if self.visualize:
-                                    rospy.sleep(0.5)
+
                                 J = np.matrix(np.vstack([self.manip.CalculateJacobian(), self.manip.CalculateAngularVelocityJacobian()]))
                                 try:
                                     joint_limit_weight = self.gen_joint_limit_weight(solution)
@@ -984,6 +985,8 @@ class ScoreGenerator(object):
                                     print 'Jacobian may be singular or close to singular'
                                     print 'Determinant of J*JT is: ', np.linalg.det(J*J.T)
                                     manip[num] = np.max([0., manip[num]])
+                            if self.visualize:
+                                rospy.sleep(1.0)
                 for num in xrange(len(reached)):
                     manip_score += copy.copy(reached[num] * manip[num]*self.weights[num])
                     reach_score += copy.copy(reached[num] * self.weights[num])
@@ -2487,7 +2490,7 @@ class ScoreGenerator(object):
         elif self.model == 'autobed':
             # self.env.Load(''.join([pkg_path, '/collada/bed_and_body_v3_real_expanded_rounded.dae']))
             # self.env.Load(''.join([pkg_path, '/collada/bed_and_body_expanded_rounded.dae']))
-            self.env.Load(''.join([pkg_path, '/collada/bed_and_environment_henry_rounded.dae']))
+            self.env.Load(''.join([pkg_path, '/collada/bed_and_environment_henry_tray_rounded.dae']))
             self.autobed = self.env.GetRobots()[1]
             v = self.autobed.GetActiveDOFValues()
 
