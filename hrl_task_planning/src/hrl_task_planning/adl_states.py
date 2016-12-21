@@ -313,7 +313,7 @@ class MoveArmState(PDDLSmachState):
                 rospy.loginfo("[%s] Cancelling action.", rospy.get_name())
                 return
             current_position, current_orientation = self.listener.lookupTransform('/l_gripper_tool_frame', self.reference_frame, rospy.Time(0))
-            if np.linalg.norm(np.array(current_position) - np.array(self.goal_position)) < 0.02 and utils.quat_angle(current_position, self.goal_orientation) <  5.0:
+            if np.linalg.norm(np.array(current_position) - np.array(self.goal_position)) < 0.05 and utils.quat_angle(current_position, self.goal_orientation) <  10.0:
                 self.goal_reached = True
 
             rospy.sleep(1)
