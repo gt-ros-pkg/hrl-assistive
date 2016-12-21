@@ -161,8 +161,8 @@ class AutobedStatePublisherNode(object):
 
         joint_state_stable = [self.bed_height,
                               self.head_filt_data,
-                              0,#self.leg_filt_data
-                              0, # -(1+(4.0/9.0))*self.leg_filt_data
+                              0.,#self.leg_filt_data
+                              0., # -(1+(4.0/9.0))*self.leg_filt_data
                               -self.head_filt_data,
                               self.head_filt_data]
 
@@ -181,8 +181,8 @@ class AutobedStatePublisherNode(object):
                 joint_state.position = [None]*(6)
                 joint_state.name[0] = "autobed/tele_legs_joint"
                 joint_state.name[1] = "autobed/head_rest_hinge"
-                joint_state.name[2] = "autobed/leg_rest_upper_joint"
-                joint_state.name[3] = "autobed/leg_rest_upper_lower_joint"
+                joint_state.name[2] = "autobed/leg_rest_upper_hinge"
+                joint_state.name[3] = "autobed/leg_rest_lower_hinge"
                 joint_state.name[4] = "autobed/headrest_bed_to_worldframe_joint"
                 joint_state.name[5] = "autobed/bed_neck_to_bedframe_joint"
                 # print self.bed_height
@@ -297,12 +297,12 @@ class AutobedStatePublisherNode(object):
             unoccupied_shift.name[0] = "autobed/bed_neck_base_leftright_joint"
             if not occupied_state:
                 unoccupied_shift.position[0] = 15.
-            else:
-                unoccupied_shift.position[0] = 0.
+            #else:
+            #    unoccupied_shift.position[0] = 0.
             # # try:
-            if self.listener.canTransform('/autobed/base_link', '/user_head_link', rospy.Time(0)):
+            elif self.listener.canTransform('/autobed/base_link', '/user_head_link', rospy.Time(0)):
                 (trans_h, rot_h) = self.listener.lookupTransform('/autobed/base_link', '/user_head_link', rospy.Time(0))
-                unoccupied_shift.position[0] = trans_h[0]
+                unoccupied_shift.position[0] = trans_h[1]
             else:
                 # print 'Error with transform lookup'
                 unoccupied_shift.position[0] = 15.
