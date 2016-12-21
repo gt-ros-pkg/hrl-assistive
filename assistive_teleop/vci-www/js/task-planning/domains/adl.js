@@ -36,6 +36,7 @@ var RFH = (function(module) {
                 case 'TRACK_TAG':
                 case 'CHECK_OCCUPANCY':
                 case 'REGISTER_HEAD':
+                case 'MOVE_ROBOT':
                 case 'CALL_BASE_SELECTION':
                     startFunc = function () {
                         //RFH.undo.sentUndoCommands.mode += 1; // Increment so this switch isn't grabbed by undo queue...(yes, ugly hack)
@@ -43,10 +44,9 @@ var RFH = (function(module) {
                     };
                     break;
                 case 'MOVE_BACK':
-                case 'MOVE_ROBOT':
                     startFunc = function () {
                         //RFH.undo.sentUndoCommands.mode += 1; // Increment so this switch isn't grabbed by undo queue...(yes, ugly hack)
-                        //RFH.actionMenu.startAction('drivingAction');
+                        RFH.actionMenu.startAction('drivingAction');
                     };
                     break;
                 case 'CONFIGURE_MODEL_ROBOT':

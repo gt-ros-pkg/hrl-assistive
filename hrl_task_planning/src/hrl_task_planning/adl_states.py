@@ -13,12 +13,15 @@ from actionlib_msgs.msg import GoalStatus
 # from actionlib_msgs.msg import GoalStatus as GS
 from geometry_msgs.msg import PoseStamped
 import tf
+import numpy as np
 from hrl_task_planning.msg import PDDLState
 from hrl_pr2_ar_servo.msg import ARServoGoalData
 from hrl_base_selection.srv import BaseMove
 from hrl_srvs.srv import None_Bool, None_BoolResponse
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from pr2_controllers_msgs.msg import SingleJointPositionActionGoal, SingleJointPositionAction, SingleJointPositionGoal
+roslib.load_manifest('hrl_lib')
+import hrl_lib.util as utils
 # pylint: disable=W0102
 from task_smacher import PDDLSmachState
 from hrl_task_planning.pddl_utils import PlanStep, State, GoalState, Predicate
@@ -213,6 +216,10 @@ class CheckOccupancyState(PDDLSmachState):
 class MoveArmState(PDDLSmachState):
     def __init__(self, task, model, domain, *args, **kwargs):
         super(MoveArmState, self).__init__(domain=domain, *args, **kwargs)
+        self.listener = tf.TransformListener()
+        self.goal_position = None
+        self.goal_orientation = None
+        self.reference_frame = None
         self.l_arm_pose_pub = rospy.Publisher('/left_arm/haptic_mpc/goal_pose', PoseStamped, queue_size=1)
         self.domain = domain
         self.task = task
@@ -229,6 +236,9 @@ class MoveArmState(PDDLSmachState):
         goal = PoseStamped()
         if self.model.upper() == 'AUTOBED':
             if self.task.upper() == 'SCRATCHING':
+                self.goal_position = [-0.06310556, 0.07347758+0.05+0.08, 0.00485197]
+                self.goal_orientation = [0.48790861, -0.50380292, 0.51703901, -0.4907122]
+                self.reference_frame = '/'+str(self.model.lower())+'/calf_left_link'
                 goal.pose.position.x = -0.06310556
                 goal.pose.position.y = 0.07347758+0.05+0.08
                 goal.pose.position.z = 0.00485197
@@ -240,6 +250,9 @@ class MoveArmState(PDDLSmachState):
                 rospy.loginfo('[%s] Reaching to left knee.' % rospy.get_name())
 
             elif self.task.upper() == 'WIPING_MOUTH':
+                self.goal_position = [0.45, 0., -0.07-0.05]
+                self.goal_orientation = [0., 0., 1., 0.]
+                self.reference_frame = '/'+str(self.model.lower())+'/head_link'
                 goal.pose.position.x = 0.45
                 goal.pose.position.y = 0.
                 goal.pose.position.z = -0.07-0.05
@@ -254,6 +267,10 @@ class MoveArmState(PDDLSmachState):
                 return False
         elif self.model.upper() == 'WHEELCHAIR':
             if self.task.upper() == 'SCRATCHING':
+                # THESE ARE NOT UPDATED to match self to the desired ones. self is copied from autobed values.
+                self.goal_position = [0.45, 0., -0.07-0.05]
+                self.goal_orientation = [0., 0., 1., 0.]
+                self.reference_frame = '/'+str(self.model.lower())+'/calf_left_link'
                 goal.pose.position.x = -0.06310556 - 0.02
                 goal.pose.position.y = 0.07347758+0.05+0.03
                 goal.pose.position.z = 0.00485197
@@ -265,6 +282,10 @@ class MoveArmState(PDDLSmachState):
                 rospy.loginfo('[%s] Reaching to left knee.' % rospy.get_name())
 
             elif self.task.upper() == 'WIPING_MOUTH':
+                # THESE ARE NOT UPDATED
+                self.goal_position = [0.45, 0., -0.07-0.05]
+                self.goal_orientation = [0., 0., 1., 0.]
+                self.reference_frame = '/'+str(self.model.lower())+'/head_link'
                 goal.pose.position.x = 0.2
                 goal.pose.position.y = 0.
                 goal.pose.position.z = -0.0
@@ -290,7 +311,11 @@ class MoveArmState(PDDLSmachState):
             if self.preempt_requested():
                 self.stop_tracking_AR_publisher.publish(False)
                 rospy.loginfo("[%s] Cancelling action.", rospy.get_name())
-                return 
+                return
+            current_position, current_orientation = self.listener.lookupTransform('/l_gripper_tool_frame', self.reference_frame, rospy.Time(0))
+            if np.linalg.norm(np.array(current_position) - np.array(self.goal_position)) < 0.02 and utils.quat_angle(current_position, self.goal_orientation) <  5.0:
+                self.goal_reached = True
+
             rospy.sleep(1)
 
         if self.goal_reached:
