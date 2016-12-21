@@ -165,7 +165,7 @@ class AutobedStatePublisherNode(object):
                               0., # -(1+(4.0/9.0))*self.leg_filt_data
                               -self.head_filt_data,
                               self.head_filt_data]
-
+        bed_status_update_timer = rospy.Time.now()
         rate = rospy.Rate(20.0)
         while not rospy.is_shutdown():
             with self.frame_lock:
@@ -186,7 +186,9 @@ class AutobedStatePublisherNode(object):
                 joint_state.name[4] = "autobed/headrest_bed_to_worldframe_joint"
                 joint_state.name[5] = "autobed/bed_neck_to_bedframe_joint"
                 # print self.bed_height
-                if not self.bed_status:
+                elapsed_time = rospy.Time.now() - bed_status_update_timer
+                if not self.bed_status or bed_status_update_timer.to_sec() > 2.0:
+                    bed_status_update_timer = rospy.Time.now()s
                     joint_state.position[0] = self.bed_height
                     joint_state.position[1] = self.head_filt_data
                     joint_state.position[2] = 0  # self.leg_filt_data
