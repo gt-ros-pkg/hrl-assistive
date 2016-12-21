@@ -242,7 +242,7 @@ class PDDLTaskThread(Thread):
     def conditions_check(self, result, attempted_goal):
         print "Evaluating: Result: %s , attempted_goal: %s" % (result, attempted_goal)
         # Evaluate results, break if completely succeeded or aborted
-        if self.abort_requested: # and result == 'preempted':
+        if self.abort_requested:  # and result == 'preempted':
             print "Evaluated to False - requested abort"
             return False
         elif result == 'preempted' or result == 'aborted':
