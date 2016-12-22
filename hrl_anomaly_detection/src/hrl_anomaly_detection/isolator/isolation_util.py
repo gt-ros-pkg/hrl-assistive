@@ -415,7 +415,7 @@ def get_isolation_data(idx, normalTrainIdx, abnormalTrainIdx, normalTestIdx, abn
                        data_pkl, modeling_pkl, svd_renew=False):
 
     print "kFold_list: ", idx
-    if not(os.path.isfile(data_pkl) is False or svd_renew): continue
+    if not(os.path.isfile(data_pkl) is False or svd_renew): return
 
     #-----------------------------------------------------------------------------------------
     # Anomaly Detection
