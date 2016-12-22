@@ -881,6 +881,7 @@ if __name__ == '__main__':
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
                                                     'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
+        param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.6, 2.1, nPoints)*-1.0 + 1.0
 
         ## # 78% scale?,  82% scale 1
         ## save_data_path = os.path.expanduser('~')+\
