@@ -384,6 +384,7 @@ class MoveRobotState(PDDLSmachState):
 
     def base_servoing_cb(self, msg):
         if msg.data == 5:
+            print 'Servo says it has reached the goal'
             self.goal_reached = True
 
 
@@ -422,6 +423,7 @@ class MoveRobotState(PDDLSmachState):
         rospy.Subscriber('/pr2_ar_servo/state_feedback', Int8, self.base_servoing_cb)
         rospy.loginfo("[%s] Waiting For Base to reach goal pose" % rospy.get_name())
         while not rospy.is_shutdown() and not self.goal_reached:
+            self.start_servoing.publish(True)
             if self.preempt_requested():
                 rospy.loginfo("[%s] Cancelling action.", rospy.get_name())
                 self.stop_tracking_AR_publisher.publish(False)
