@@ -161,8 +161,8 @@ class RegisterHeadState(PDDLSmachState):
         try:
             #now = rospy.Time.now()
             print "[%s] Register Head State Waiting for Head Transform" % rospy.get_name()
-            #self.listener.waitForTransform("/base_link", head_frame, now, rospy.Duration(5))
-            pos, quat = self.listener.lookupTransform("/base_link", head_frame, rospy.Time(0))
+            self.listener.waitForTransform("/base_link", head_frame, rospy.Time(0), rospy.Duration(5))
+            pos, quat = self.listener.lookupTransform("/autobed/base_link", head_frame, rospy.Time(0))
             return True
         except Exception as e:
             rospy.loginfo("TF Exception:\r\n%s" %e)
@@ -250,7 +250,7 @@ class MoveArmState(PDDLSmachState):
                 rospy.loginfo('[%s] Reaching to left knee.' % rospy.get_name())
 
             elif self.task.upper() == 'WIPING_MOUTH':
-                self.goal_position = [0.22, 0., -0.12]
+                self.goal_position = [0.25, 0., -0.1]
                 self.goal_orientation = [0., 0., 1., 0.]
                 self.reference_frame = '/'+str(self.model.lower())+'/head_link'
                 goal.pose.position.x = self.goal_position[0]
@@ -562,7 +562,8 @@ class ConfigureModelRobotState(PDDLSmachState):
         self.r_reset_traj.points.append(r_reset_traj_point)
         l_reset_traj_point = JointTrajectoryPoint()
 
-        l_reset_traj_point.positions = [(3.14/2 + 3.14/4), -0.6, 0.00, m.radians(-90.), 0., m.radians(-90.), 0.0]
+
+        l_reset_traj_point.positions = [(3.14/2 + 3.14/4), -0.6, m.radians(0), m.radians(-150.), m.radians(150.), m.radians(-110.), 0.0]
         # l_reset_traj_point.positions = [0.0, 1.35, 0.00, -1.60, -3.14, -0.3, 0.0]
         #l_reset_traj_point.positions = [0.7629304700932569, -0.3365186041095207, 0.5240000202473829,
         #                                        -2.003310310963515, 0.9459734129025158, -1.7128778450423763, 0.6123854412633384]

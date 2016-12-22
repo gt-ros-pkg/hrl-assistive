@@ -48,8 +48,8 @@ class AR_Tag_Tracking(object):
         self.listener = tf.TransformListener()
         self.broadcaster = tf.TransformBroadcaster()
 
-        self.out_pos = None
-        self.out_quat = None
+        self.out_pos = []
+        self.out_quat = []
 
         self.tag_id = None
         self.tag_side_length = None
