@@ -588,10 +588,15 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         ## _, gs_test, y_test = iutil.m_omp(abnormalTestData, abnormalTestLabel, Ds)
 
         # Train & test
-        Ds, gs_train, y_train = iutil.w_omp(abnormalTrainData, abnormalTrainLabel)
-        _, gs_test, y_test = iutil.w_omp(abnormalTestData, abnormalTestLabel, Ds)
+        ## Ds, gs_train, y_train = iutil.w_omp(abnormalTrainData, abnormalTrainLabel)
+        ## _, gs_test, y_test = iutil.w_omp(abnormalTestData, abnormalTestLabel, Ds)
 
-        ## save_data_labels(gs_train, y_train, processed_data_path)
+        # Train & test
+        Ds, gs_train, y_train = iutil.time_omp(abnormalTrainData, abnormalTrainLabel)
+        _, gs_test, y_test = iutil.time_omp(abnormalTestData, abnormalTestLabel, Ds)
+
+        save_data_labels(gs_train, y_train, processed_data_path)
+        sys.exit()
         data_dict[idx] = (gs_train, y_train, gs_test, y_test)
 
     if os.path.isfile(data_pkl) is False or svd_renew:
@@ -605,23 +610,19 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
 
         (gs_train, y_train, gs_test, y_test) = data_dict[idx]
 
-        ## svm classification
-        ## sys.path.insert(0, '/usr/lib/pymodules/python2.7')
-        ## import svmutil as svm
-        ## svm_type = 0
-        ## kernel_type = 0        
-        ## commands = '-q -s '+str(svm_type)+' -t '+str(kernel_type)          
-        ## ml = svm.svm_train(y_train.tolist(), gs_train.tolist(), commands)        
-        ## p_labels, _, p_vals = svm.svm_predict(y_test.tolist(), gs_test.tolist(), ml)
-
-        print np.shape( gs_train.tolist() ), np.shape( y_train.tolist() )
-        print np.shape( gs_test.tolist() ), np.shape( y_test.tolist() )
+        if type(gs_train) is list:
+            gs_train = gs_train.tolist()
+            y_train  = y_train.tolist()
+            gs_test  = gs_test.tolist()
+            y_test   = y_test.tolist()
+        print np.shape( gs_train ), np.shape( y_train )
+        print np.shape( gs_test ), np.shape( y_test )
         
         from sklearn.svm import SVC
         clf = SVC(C=1.0, kernel='linear') #, decision_function_shape='ovo')
-        clf.fit(gs_train.tolist(), y_train.tolist())
+        clf.fit(gs_train, y_train)
         ## y_pred = clf.predict(gs_test.tolist())
-        score = clf.score(gs_test.tolist(), y_test.tolist())
+        score = clf.score(gs_test, y_test)
         scores.append( score )
         print idx, " = ", score
             
@@ -821,8 +822,8 @@ if __name__ == '__main__':
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForce_integ', \
                                                     'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
-        param_dict['SVM']['hmmgp_logp_offset'] = 30.0
-        param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.6, 2.3, nPoints)*-1.0 + 1        
+        param_dict['SVM']['hmmgp_logp_offset'] = 10.0
+        param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.6, 2.3, nPoints)*-1.0 + 1.0
 
         ## # 78% scale?,  82% scale 1
         ## save_data_path = os.path.expanduser('~')+\

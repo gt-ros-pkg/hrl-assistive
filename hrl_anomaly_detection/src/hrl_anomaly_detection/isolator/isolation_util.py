@@ -1,3 +1,4 @@
+import sys
 import copy
 import numpy as np
 
@@ -85,7 +86,6 @@ def m_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.1):
     n_examples = len(X_)
     target_sparsity = int(sp_ratio*dimension)
 
-    gs = None
     X_ = np.array(X_)
 
     if D0 is None:
@@ -99,6 +99,7 @@ def m_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.1):
         g = KSVD_Encode(X_, D0, target_sparsity)        
 
     # Stacking?
+    gs = None
     for i in xrange(len(x[0])): # per sample
 
         single_g = g[i*n_features:(i+1)*n_features,:].flatten()
@@ -184,40 +185,53 @@ def w_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.05):
 
 
     
-def time_wise_omp():
+def time_omp(x, label, D0=None, n_iter=500, sp_ratio=0.1):
+    ''' Time-sample OMP with max pooling and contrast normalization'''
+    from ksvd import KSVD, KSVD_Encode
     
     # train time-wise omp
     X_ = []
     Y_ = []
     for i in xrange(len(x[0])): # per sample
         for j in xrange(len(x[0][i])): # per time
-            X_.append(x[:,i,j]-np.mean(x[:,i,j])) 
-            Y_.append(label[i])
+            X_.append(x[:,i,j]) #-np.mean(x[:,i,j])) 
+            ## Y_.append(label[i])
 
-    dimension = len(X_[0]) 
-    dict_size = int(dimension*10)
+    dimension  = len(X_[0]) 
     n_examples = len(X_)
-    target_sparsity = int(0.1*dimension)
+    dict_size  = int(dimension*2)
+    target_sparsity = int(sp_ratio*dict_size)
 
-    window_size = 20 # for max pooling?
-    window_step = 5  # for max pooling?
+    X_ = np.array(X_)
+    if D0 is None:
+        # X \simeq g * D
+        # D is the dictionary with `dict_size` by `dimension`
+        # g is the code book with `n_examples` by `dict_size`
+        D, g = KSVD(X_, dict_size, target_sparsity, n_iter,
+                        print_interval = 25,
+                        enable_printing = True, enable_threading = True)
+    else:        
+        g = KSVD_Encode(X_, D0, target_sparsity)        
+
+
+    # Fixed-size Max pooling?
+    window_size = 90 # for max pooling?
+    window_step = 10  # for max pooling?
     gs = None
-
-    # X \simeq g * D
-    # D is the dictionary with `dict_size` by `dimension`
-    # g is the code book with `n_examples` by `dict_size`
-    D, g = KSVD(X_, dict_size, target_sparsity, 1000,
-                    print_interval = 25,
-                    enable_printing = True, enable_threading = True)
-
-    # Max pooling?
     for i in xrange(len(x[0])): # per sample
+        g_per_sample = g[i*len(x[0][i]):(i+1)*len(x[0][i]),:]
+        
         for j in xrange(window_size, len(x[0][i]), window_step): # per time
 
-            max_pool = np.amax( g[i+j-window_size:i+j,:], axis=0 )
-
+            max_pool = np.amax( g_per_sample[j-window_size:j,:], axis=0 )
+            ## max_pool /= np.linalg.norm(max_pool+1e-6)
+            
             if gs is None: gs = max_pool
             else: gs = np.vstack([gs, max_pool])
+            Y_.append(label[i])
+
+    if D0 is None: return D, gs, Y_
+    else:          return D0, gs, Y_
 
 
 
