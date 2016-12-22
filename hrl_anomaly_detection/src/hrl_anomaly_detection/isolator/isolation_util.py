@@ -104,18 +104,36 @@ def feature_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.1):
     else:          return D0, gs, Y_
 
 
-def m_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.1):
+def m_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.1, idx_list=None):
     ''' Multichannel OMP '''
     from ksvd import KSVD, KSVD_Encode
 
     # train multichannel omp?
-    X_ = []
-    Y_ = []
-    for i in xrange(len(x[0])): # per sample
-        for j in xrange(len(x)): # per feature
-            X_.append(x[j,i,:]) #-np.mean(x[:,i,j])) 
-            ## Y_.append(label[i])
-    Y_ = copy.copy(label)
+    if idx_list is None:
+        X_ = []
+        Y_ = []
+        for i in xrange(len(x[0])): # per sample
+            for j in xrange(len(x)): # per feature
+                X_.append(x[j,i,:]) #-np.mean(x[:,i,j])) 
+                ## Y_.append(label[i])
+        Y_ = copy.copy(label)
+    else:
+        X_ = []
+        Y_ = []
+        for i in xrange(len(x[0])): # per sample
+            if idx_list[i] is None: continue
+
+            for j in xrange(len(x)): # per feature
+                X_.append(x[j,i,:idx_list[i]+1]) #-np.mean(x[:,i,j])) 
+
+            Y_.append(label[i])
+            
+        for i in xrange(len(x[0])): # per sample
+            for j in xrange(len(x)): # per feature
+                X_.append(x[j,i,:]) #-np.mean(x[:,i,j])) 
+                ## Y_.append(label[i])
+
+
 
     n_features = len(x)
     dimension  = len(X_[0]) 
@@ -132,8 +150,9 @@ def m_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.1):
         D, g = KSVD(X_, dict_size, target_sparsity, n_iter,
                         print_interval = 25,
                         enable_printing = True, enable_threading = True)
-    else:        
-        g = KSVD_Encode(X_, D0, target_sparsity)        
+    else:
+        g = KSVD_Encode(X_, D0, target_sparsity)
+            
 
     # Stacking?
     gs = None
@@ -274,7 +293,7 @@ def time_omp(x, label, D0=None, n_iter=2000, sp_ratio=0.1, idx_list=None):
             ## print i, len(idx_list), idx_list[i], " : ", window_size, j-window_size
             if j-window_size < 0: start_idx = 0
             else:start_idx = j-window_size 
-            end_idx = j
+            end_idx = j+1
             max_pool = np.amax( g_per_sample[start_idx:end_idx,:], axis=0 )
             if gs is None: gs = max_pool
             else: gs = np.vstack([gs, max_pool])

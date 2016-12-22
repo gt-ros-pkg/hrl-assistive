@@ -631,7 +631,8 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
 
         # Train & test
         ## Ds, gs_train, y_train = iutil.m_omp(abnormalTrainData, abnormalTrainLabel)
-        ## _, gs_test, y_test = iutil.m_omp(abnormalTestData, abnormalTestLabel, Ds)
+        ## _, gs_test, y_test = iutil.m_omp(abnormalTestData, abnormalTestLabel, Ds,\
+        ##                                  idx_list=detection_test_idx_list)
 
         # Train & test
         ## Ds, gs_train, y_train = iutil.w_omp(abnormalTrainData, abnormalTrainLabel)
