@@ -75,7 +75,7 @@ class FindTagState(PDDLSmachState):
         super(FindTagState, self).__init__(domain=domain, *args, **kwargs)
         self.start_finding_AR_publisher = rospy.Publisher('find_AR_now', Bool, queue_size=1)
         self.domain = domain
-        self.state_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=10, latch=True)
+        self.state_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=10)
         self.model = model
         self.ar_tag_found = False
 
@@ -112,7 +112,7 @@ class FindTagState(PDDLSmachState):
 class TrackTagState(PDDLSmachState):
     def __init__(self, model, domain, *args, **kwargs):
         super(TrackTagState, self).__init__(domain=domain, *args, **kwargs)
-        self.start_tracking_AR_publisher = rospy.Publisher('track_AR_now', Bool, queue_size=1, latch = True)
+        self.start_tracking_AR_publisher = rospy.Publisher('track_AR_now', Bool, queue_size=1)
         self.model = model
 
     def on_execute(self, ud):
@@ -123,7 +123,7 @@ class TrackTagState(PDDLSmachState):
 class StopTrackingState(PDDLSmachState):
     def __init__(self, domain, *args, **kwargs):
         super(StopTrackingState, self).__init__(domain=domain, *args, **kwargs)
-        self.stop_tracking_AR_publisher = rospy.Publisher('track_AR_now', Bool, queue_size=1, latch = True)
+        self.stop_tracking_AR_publisher = rospy.Publisher('track_AR_now', Bool, queue_size=1)
 
     def on_execute(self, ud):
         rospy.loginfo('[%s] Stopping AR Tag Tracking' % rospy.get_name())
@@ -134,7 +134,7 @@ class RegisterHeadState(PDDLSmachState):
     def __init__(self, model, domain, *args, **kwargs):
         super(RegisterHeadState, self).__init__(domain=domain, *args, **kwargs)
         self.listener = tf.TransformListener()
-        self.state_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=10, latch=True)
+        self.state_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=10)
         self.model = model
         print "Looking for head of person on: %s" % model
 
@@ -173,7 +173,7 @@ class CheckOccupancyState(PDDLSmachState):
     def __init__(self, model, domain, *args, **kwargs):
         super(CheckOccupancyState, self).__init__(domain=domain, *args, **kwargs)
         self.model = model
-        self.state_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=1, latch=True)
+        self.state_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=1)
 #        print "Check Occupancy of Model: %s" % model
         if model.upper() == 'AUTOBED':
             self.autobed_occupied_status = False
@@ -225,9 +225,9 @@ class MoveArmState(PDDLSmachState):
         self.task = task
         self.model = model
         self.goal_reached = False
-        self.state_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=10, latch=True)
+        self.state_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=10)
         rospy.Subscriber("/left_arm/haptic_mpc/in_deadzone", Bool, self.arm_reach_goal_cb)
-        self.stop_tracking_AR_publisher = rospy.Publisher('track_AR_now', Bool, queue_size=1, latch = True)
+        self.stop_tracking_AR_publisher = rospy.Publisher('track_AR_now', Bool, queue_size=1)
     
     def arm_reach_goal_cb(self, msg):
         self.goal_reached = msg.data
@@ -344,7 +344,7 @@ class MoveBackState(PDDLSmachState):
         super(MoveBackState, self).__init__(domain=domain, *args, **kwargs)
         self.model = model
         #self.domain_state_sub = rospy.Subscriber("/pddl_tasks/%s/state" % self.domain, PDDLState, self.domain_state_cb)
-        self.stop_tracking_AR_publisher = rospy.Publisher('track_AR_now', Bool, queue_size=1, latch = True)
+        self.stop_tracking_AR_publisher = rospy.Publisher('track_AR_now', Bool, queue_size=1)
 
     def domain_state_cb(self, state_msg):
         self.current_state = State(map(Predicate.from_string, state_msg.predicates))
@@ -376,11 +376,11 @@ class MoveRobotState(PDDLSmachState):
         self.task = task
         self.domain = domain
         self.goal_reached = False
-        self.state_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=10, latch=True)
+        self.state_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=10)
         self.servo_goal_pub = rospy.Publisher("ar_servo_goal_data", ARServoGoalData, queue_size=1)
-        self.start_servoing = rospy.Publisher("/pr2_ar_servo/tag_confirm", Bool, queue_size=1, latch=True)
+        self.start_servoing = rospy.Publisher("/pr2_ar_servo/tag_confirm", Bool, queue_size=1)
         rospy.loginfo('[%s] Remember: The AR tag must be tracked before moving!' % rospy.get_name())
-        self.stop_tracking_AR_publisher = rospy.Publisher('track_AR_now', Bool, queue_size=1, latch = True)
+        self.stop_tracking_AR_publisher = rospy.Publisher('track_AR_now', Bool, queue_size=1)
 
     def base_servoing_cb(self, msg):
         if msg.data == 5:
@@ -439,7 +439,7 @@ class MoveRobotState(PDDLSmachState):
 class CallBaseSelectionState(PDDLSmachState):
     def __init__(self, task, model, domain, *args, **kwargs):
         super(CallBaseSelectionState, self).__init__(domain=domain, *args, **kwargs)
-        self.state_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=10, latch=True)
+        self.state_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=10)
         print "Base Selection Called for task: %s and Model: %s" %(task, model)
         self.domain = domain
         self.task = task
@@ -513,13 +513,13 @@ class ConfigureModelRobotState(PDDLSmachState):
         self.task = task
         self.model = model
         print "Configuring Model and Robot for task: %s and Model: %s" %(task, model)
-        self.stop_tracking_AR_publisher = rospy.Publisher('track_AR_now', Bool, queue_size=1, latch = True)
+        self.stop_tracking_AR_publisher = rospy.Publisher('track_AR_now', Bool, queue_size=1)
         if self.model.upper() == 'AUTOBED':
             self.model_reached = False
         else:
             self.model_reached = True
         self.torso_reached = False
-        self.state_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=10, latch=True)
+        self.state_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=10)
         self.torso_client = actionlib.SimpleActionClient('torso_controller/position_joint_action',
                                                          SingleJointPositionAction)
         self.l_reset_traj = None
