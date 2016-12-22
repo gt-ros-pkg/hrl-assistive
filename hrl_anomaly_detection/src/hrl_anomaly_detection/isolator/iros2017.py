@@ -590,9 +590,9 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         # dim x sample x length
         ## normalTrainData   = successData_ad[:, normalTrainIdx, :]
         ## abnormalTrainData = failureData_ad[:, abnormalTrainIdx, :]
-        normalTestData    = copy.copy(successData_ad[:, normalTestIdx, :]) 
+        ## normalTestData    = copy.copy(successData_ad[:, normalTestIdx, :]) 
         abnormalTestData  = copy.copy(failureData_ad[:, abnormalTestIdx, :])
-        abnormal_train_files = np.array(failure_files)[abnormalTrainIdx].tolist()
+        ## abnormal_train_files = np.array(failure_files)[abnormalTrainIdx].tolist()
         abnormal_test_files  = np.array(failure_files)[abnormalTestIdx].tolist()
 
         testDataY = []
@@ -604,13 +604,14 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
                 abnormalTestIdxList.append(i)
                 abnormalTestFileList.append(f.split('/')[-1])    
 
-        detection_test_idx_list = anomaly_detection(abnormalTestData, testDataY, \
-                                                    task_name, processed_data_path, param_dict,\
-                                                    logp_viz=False, verbose=False, weight=weight,\
-                                                    idx=idx)
+        detection_test_idx_list = iutil.anomaly_detection(abnormalTestData, testDataY, \
+                                                          task_name, processed_data_path, param_dict,\
+                                                          logp_viz=False, verbose=False, weight=weight,\
+                                                          idx=idx)
 
-        print detection_test_idx_list
-        sys.exit()
+        ## print np.shape(abnormalTestData), np.shape(testDataY)
+        ## print len(detection_test_idx_list)
+        ## print detection_test_idx_list
 
         #-----------------------------------------------------------------------------------------
         # Anomaly Isolation
@@ -638,12 +639,8 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
 
         # Train & test
         Ds, gs_train, y_train = iutil.time_omp(abnormalTrainData, abnormalTrainLabel)
-        _, gs_test, y_test = iutil.time_omp(abnormalTestData, abnormalTestLabel, Ds)
-
-
-        
-
-
+        _, gs_test, y_test = iutil.time_omp(abnormalTestData, abnormalTestLabel, Ds, \
+                                            idx_list=detection_test_idx_list)
 
 
         ## save_data_labels(gs_train, y_train, processed_data_path)
@@ -668,8 +665,7 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
             y_train  = y_train.tolist()
             gs_test  = gs_test.tolist()
             y_test   = y_test.tolist()
-        print np.shape( gs_train ), np.shape( y_train )
-        print np.shape( gs_test ), np.shape( y_test )
+        print np.shape( gs_train ), np.shape( y_train ), np.shape( gs_test ), np.shape( y_test )
         
         from sklearn.svm import SVC
         clf = SVC(C=1.0, kernel='linear') #, decision_function_shape='ovo')

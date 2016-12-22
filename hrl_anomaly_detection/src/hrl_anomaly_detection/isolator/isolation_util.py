@@ -33,6 +33,8 @@ import os, sys, copy, random
 import numpy as np
 from joblib import Parallel, delayed
 
+from hrl_anomaly_detection import data_manager as dm
+from hrl_anomaly_detection import util as util
 import hrl_lib.util as ut
 from hrl_anomaly_detection.hmm import learning_hmm as hmm
 import hrl_anomaly_detection.classifiers.classifier as cf
@@ -220,7 +222,7 @@ def w_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.05):
 
 
     
-def time_omp(x, label, D0=None, n_iter=500, sp_ratio=0.1):
+def time_omp(x, label, D0=None, n_iter=2000, sp_ratio=0.1, idx_list=None):
     ''' Time-sample OMP with max pooling and contrast normalization'''
     from ksvd import KSVD, KSVD_Encode
     
@@ -250,20 +252,35 @@ def time_omp(x, label, D0=None, n_iter=500, sp_ratio=0.1):
 
 
     # Fixed-size Max pooling?
-    window_size = 90 # for max pooling?
-    window_step = 10  # for max pooling?
+    window_size = 30 # for max pooling?
+    window_step = 5  # for max pooling?
     gs = None
     for i in xrange(len(x[0])): # per sample
         g_per_sample = g[i*len(x[0][i]):(i+1)*len(x[0][i]),:]
-        
-        for j in xrange(window_size, len(x[0][i]), window_step): # per time
 
-            max_pool = np.amax( g_per_sample[j-window_size:j,:], axis=0 )
-            ## max_pool /= np.linalg.norm(max_pool+1e-6)
+        if idx_list is None:
+            for j in xrange(window_size, len(x[0][i]), window_step): # per time
+
+                max_pool = np.amax( g_per_sample[j-window_size:j,:], axis=0 )
+                ## max_pool /= np.linalg.norm(max_pool+1e-6)
+
+                if gs is None: gs = max_pool
+                else: gs = np.vstack([gs, max_pool])
+                Y_.append(label[i])
+        else:
+            j = idx_list[i]
+            if j is None: continue
             
+            ## print i, len(idx_list), idx_list[i], " : ", window_size, j-window_size
+            if j-window_size < 0: start_idx = 0
+            else:start_idx = j-window_size 
+            end_idx = j
+            max_pool = np.amax( g_per_sample[start_idx:end_idx,:], axis=0 )
             if gs is None: gs = max_pool
             else: gs = np.vstack([gs, max_pool])
             Y_.append(label[i])
+
+    print 
 
     if D0 is None: return D, gs, Y_
     else:          return D0, gs, Y_
