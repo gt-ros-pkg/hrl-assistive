@@ -1657,7 +1657,7 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
                 
             # magnitude
             unimodal_ftForce_mag = np.linalg.norm(ftForce, axis=0)
-            ## unimodal_ftForce_mag = np.sum(ftForce**2, axis=0)
+            unimodal_ftForce_mag = np.sum(ftForce**2, axis=0)
             ## if offset_flag: #correct???????
             ##     unimodal_ftForce_mag -= np.mean(unimodal_ftForce_mag[:startOffsetSize])
 
