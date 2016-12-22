@@ -484,7 +484,6 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
                          data_renew=False, svd_renew=False, save_pdf=False, verbose=False, debug=False,\
                          no_plot=False, delay_plot=True, find_param=False, data_gen=False, \
                          save_viz_data=False):
-
     ## Parameters
     # data
     data_dict  = param_dict['data_param']
@@ -545,11 +544,24 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         failure_labels.append( int( f.split('/')[-1].split('_')[0] ) )
     failure_labels = np.array( failure_labels )
 
+    # ---------------------------------------------------------------
+    # select feature for detection
+    feature_list = [0,1,11,20]
+    successData_ad = successData[feature_list]
+    failureData_ad = failureData[feature_list]
 
-    # select features
-    feature_list = [0,1,10,14,15,16,18,19,20]
-    successData = successData[feature_list]
-    failureData = failureData[feature_list]
+    dm.saveHMMinducedFeatures(kFold_list, successData_ad, failureData_ad,\
+                              task_name, processed_data_path,\
+                              HMM_dict, data_renew, startIdx, nState, cov, \
+                              success_files=success_files, failure_files=failure_files,\
+                              noise_mag=0.03, verbose=verbose)
+    
+    # ---------------------------------------------------------------
+    # select features for isolation
+    feature_list = [0,1,2,11,15,16,17,19,20,21]
+    successData_ai = successData[feature_list]
+    failureData_ai = failureData[feature_list]
+
 
     # k-fold cross validation
     data_pkl = os.path.join(processed_data_path, 'isol_data.pkl')
@@ -567,10 +579,10 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         if not(os.path.isfile(data_pkl) is False or svd_renew): continue
             
         # dim x sample x length
-        ## normalTrainData   = copy.copy(successData[:, normalTrainIdx, :]) 
-        ## normalTestData    = copy.copy(successData[:, normalTestIdx, :])
-        abnormalTrainData = copy.copy(failureData[:, abnormalTrainIdx, :])
-        abnormalTestData  = copy.copy(failureData[:, abnormalTestIdx, :])
+        ## normalTrainData   = copy.copy(successData_ai[:, normalTrainIdx, :]) 
+        ## normalTestData    = copy.copy(successData_ai[:, normalTestIdx, :])
+        abnormalTrainData = copy.copy(failureData_ai[:, abnormalTrainIdx, :])
+        abnormalTestData  = copy.copy(failureData_ai[:, abnormalTestIdx, :])
         abnormalTrainLabel = copy.copy(failure_labels[abnormalTrainIdx])
         abnormalTestLabel  = copy.copy(failure_labels[abnormalTestIdx])
 
@@ -819,7 +831,7 @@ if __name__ == '__main__':
         param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForce_integ', \
                                                     'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
         param_dict['SVM']['hmmgp_logp_offset'] = 10.0
-        param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.6, 2.3, nPoints)*-1.0 + 1.0
+        param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.6, 2.1, nPoints)*-1.0 + 1.0
 
         ## # 78% scale?,  82% scale 1
         ## save_data_path = os.path.expanduser('~')+\
