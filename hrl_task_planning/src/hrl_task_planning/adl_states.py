@@ -536,7 +536,7 @@ class ConfigureModelRobotState(PDDLSmachState):
 
         if self.model.upper() == 'AUTOBED':
             self.bed_state_leg_theta = None
-            self.autobed_pub = rospy.Publisher('/abdin0', FloatArrayBare, queue_size=1, latch=True)
+            self.autobed_pub = rospy.Publisher('/abdin0', FloatArrayBare, queue_size=1)
 
     def bed_state_cb(self, data):
         self.bed_state_leg_theta = data.data[2]
