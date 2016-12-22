@@ -409,3 +409,76 @@ def anomaly_detection(X, Y, task_name, processed_data_path, param_dict, logp_viz
                 break
 
     return detection_idx
+
+
+def get_isolation_data(idx, normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx, \
+                       data_pkl, modeling_pkl, svd_renew=False):
+
+    print "kFold_list: ", idx
+    if not(os.path.isfile(data_pkl) is False or svd_renew): continue
+
+    #-----------------------------------------------------------------------------------------
+    # Anomaly Detection
+    #-----------------------------------------------------------------------------------------
+    dd = ut.load_pickle(modeling_pkl)
+    nEmissionDim = dd['nEmissionDim']
+    ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
+    ml.set_hmm_object(dd['A'],dd['B'],dd['pi'])
+
+    # dim x sample x length
+    ## normalTrainData   = successData_ad[:, normalTrainIdx, :]
+    ## abnormalTrainData = failureData_ad[:, abnormalTrainIdx, :]
+    ## normalTestData    = copy.copy(successData_ad[:, normalTestIdx, :]) 
+    abnormalTestData  = copy.copy(failureData_ad[:, abnormalTestIdx, :])
+    ## abnormal_train_files = np.array(failure_files)[abnormalTrainIdx].tolist()
+    abnormal_test_files  = np.array(failure_files)[abnormalTestIdx].tolist()
+
+    testDataY = []
+    abnormalTestIdxList  = []
+    abnormalTestFileList = []
+    for i, f in enumerate(abnormal_test_files):
+        if f.find("failure")>=0:
+            testDataY.append(1)
+            abnormalTestIdxList.append(i)
+            abnormalTestFileList.append(f.split('/')[-1])    
+
+    detection_test_idx_list = iutil.anomaly_detection(abnormalTestData, testDataY, \
+                                                      task_name, processed_data_path, param_dict,\
+                                                      logp_viz=False, verbose=False, weight=weight,\
+                                                      idx=idx)
+
+    ## print np.shape(abnormalTestData), np.shape(testDataY)
+    ## print len(detection_test_idx_list)
+    ## print detection_test_idx_list
+
+    #-----------------------------------------------------------------------------------------
+    # Anomaly Isolation
+    #-----------------------------------------------------------------------------------------
+    # dim x sample x length
+    ## normalTrainData   = copy.copy(successData_ai[:, normalTrainIdx, :]) 
+    ## normalTestData    = copy.copy(successData_ai[:, normalTestIdx, :])
+    abnormalTrainData = copy.copy(failureData_ai[:, abnormalTrainIdx, :])
+    abnormalTestData  = copy.copy(failureData_ai[:, abnormalTestIdx, :])
+    abnormalTrainLabel = copy.copy(failure_labels[abnormalTrainIdx])
+    abnormalTestLabel  = copy.copy(failure_labels[abnormalTestIdx])
+
+    ## omp feature extraction?
+    # Train & test
+    ## Ds, gs_train, y_train = iutil.feature_omp(abnormalTrainData, abnormalTrainLabel)
+    ## _, gs_test, y_test = iutil.feature_omp(abnormalTestData, abnormalTestLabel, Ds)
+
+    # Train & test
+    Ds, gs_train, y_train = iutil.m_omp(abnormalTrainData, abnormalTrainLabel)
+    _, gs_test, y_test = iutil.m_omp(abnormalTestData, abnormalTestLabel, Ds,\
+                                     idx_list=detection_test_idx_list)
+
+    # Train & test
+    ## Ds, gs_train, y_train = iutil.w_omp(abnormalTrainData, abnormalTrainLabel)
+    ## _, gs_test, y_test = iutil.w_omp(abnormalTestData, abnormalTestLabel, Ds)
+
+    # Train & test
+    ## Ds, gs_train, y_train = iutil.time_omp(abnormalTrainData, abnormalTrainLabel)
+    ## _, gs_test, y_test = iutil.time_omp(abnormalTestData, abnormalTestLabel, Ds, \
+    ##                                     idx_list=detection_test_idx_list)
+
+    return idx, gs_train, y_train, gs_test, y_test

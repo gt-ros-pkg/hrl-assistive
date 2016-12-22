@@ -321,7 +321,7 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
         if data_gen: sys.exit()
 
     # temp
-    kFold_list = kFold_list[:8]
+    ## kFold_list = kFold_list[:8]
 
     #-----------------------------------------------------------------------------------------    
     # Training HMM, and getting classifier training and testing data
@@ -570,6 +570,18 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         data_dict = {}
     else:
         data_dict = ut.load_pickle(data_pkl)
+
+
+    ## n_jobs = -1
+    ## l_data = Parallel(n_jobs=n_jobs, verbose=10)\
+    ##   (delayed(iutil.get_isolation_data)( idx, \
+    ##                                       os.path.join(processed_data_path, \
+    ##                                                    'hmm_'+task_name+'_'+str(idx)+'.pkl')
+    ##                                       )
+    ##                                       for idx in xrange(len(kFold_list)) )
+    ## for i in xrange(len(l_data)):
+    ##     idx = l_data[i][0]
+    ##     data_dict[idx] = (l_data[i][1],l_data[i][2],l_data[i][3],l_data[i][4] )
 
     #temp
     ## kFold_list = kFold_list[:1]    
