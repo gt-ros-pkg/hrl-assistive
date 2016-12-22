@@ -124,15 +124,11 @@ def m_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.1, idx_list=None):
             if idx_list[i] is None: continue
 
             for j in xrange(len(x)): # per feature
-                X_.append(x[j,i,:idx_list[i]+1]) #-np.mean(x[:,i,j])) 
+                x_j = x[j,i,:idx_list[i]+1]
+                x_j = np.concatenate( (x_j, x_j[-1]*(len(x[j,i])-len(x_j))) )                
+                X_.append( x_j ) 
 
             Y_.append(label[i])
-            
-        for i in xrange(len(x[0])): # per sample
-            for j in xrange(len(x)): # per feature
-                X_.append(x[j,i,:]) #-np.mean(x[:,i,j])) 
-                ## Y_.append(label[i])
-
 
 
     n_features = len(x)
