@@ -1,6 +1,41 @@
-import sys
-import copy
+#!/usr/bin/env python
+#
+# Copyright (c) 2014, Georgia Tech Research Corporation
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of the Georgia Tech Research Corporation nor the
+#       names of its contributors may be used to endorse or promote products
+#       derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY GEORGIA TECH RESEARCH CORPORATION ''AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL GEORGIA TECH BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+# OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+# ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+
+#  \author Daehyung Park (Healthcare Robotics Lab, Georgia Tech.)
+
+# system & utils
+import os, sys, copy, random
 import numpy as np
+from joblib import Parallel, delayed
+
+import hrl_lib.util as ut
+from hrl_anomaly_detection.hmm import learning_hmm as hmm
+import hrl_anomaly_detection.classifiers.classifier as cf
 
 
 def rnd_():
@@ -245,3 +280,99 @@ def plot_decoder(x1,x2):
     plt.show()
 
     return
+
+
+def anomaly_detection(X, Y, task_name, processed_data_path, param_dict, logp_viz=False, verbose=False,
+                      weight=0.0, idx=0):
+    ''' Anomaly detector that return anomalous point on each data.
+    '''
+    HMM_dict = param_dict['HMM']
+    SVM_dict = param_dict['SVM']
+    ROC_dict = param_dict['ROC']
+    
+    # set parameters
+    method  = 'hmmgp' #'progress'
+    ## weights = ROC_dict[method+'_param_range']
+    nMaxData   = 20 # The maximun number of executions to train GP
+    nSubSample = 50 # The number of sub-samples from each execution to train GP
+
+    # Load a generative model
+    modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
+
+    if verbose: print "start to load hmm data, ", modeling_pkl
+    d            = ut.load_pickle(modeling_pkl)
+    ## Load local variables: nState, nEmissionDim, ll_classifier_train_?, ll_classifier_test_?, nLength    
+    for k, v in d.iteritems():
+        # Ignore predefined test data in the hmm object
+        if not(k.find('test')>=0):
+            exec '%s = v' % k
+
+    ml = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
+    ml.set_hmm_object(A,B,pi)
+            
+    # 1) Convert training data
+    if method == 'hmmgp':
+
+        idx_list = range(len(ll_classifier_train_X))
+        random.shuffle(idx_list)
+        ll_classifier_train_X = np.array(ll_classifier_train_X)[idx_list[:nMaxData]].tolist()
+        ll_classifier_train_Y = np.array(ll_classifier_train_Y)[idx_list[:nMaxData]].tolist()
+        ll_classifier_train_idx = np.array(ll_classifier_train_idx)[idx_list[:nMaxData]].tolist()
+
+        new_X = []
+        new_Y = []
+        new_idx = []
+        for i in xrange(len(ll_classifier_train_X)):
+            idx_list = range(len(ll_classifier_train_X[i]))
+            random.shuffle(idx_list)
+            new_X.append( np.array(ll_classifier_train_X)[i,idx_list[:nSubSample]].tolist() )
+            new_Y.append( np.array(ll_classifier_train_Y)[i,idx_list[:nSubSample]].tolist() )
+            new_idx.append( np.array(ll_classifier_train_idx)[i,idx_list[:nSubSample]].tolist() )
+
+        ll_classifier_train_X = new_X
+        ll_classifier_train_Y = new_Y
+        ll_classifier_train_idx = new_idx
+
+        if len(ll_classifier_train_X)*len(ll_classifier_train_X[0]) > 1000:
+            print "Too many input data for GP"
+            sys.exit()
+
+    X_train, Y_train, idx_train = dm.flattenSample(ll_classifier_train_X, \
+                                                   ll_classifier_train_Y, \
+                                                   ll_classifier_train_idx,\
+                                                   remove_fp=False)
+    if verbose: print method, " : Before classification : ", np.shape(X_train), np.shape(Y_train)
+
+    # 2) Convert test data
+    startIdx   = 4
+    ll_classifier_test_X, ll_classifier_test_Y, ll_classifier_test_idx = \
+      hmm.getHMMinducedFeaturesFromRawCombinedFeatures(ml, X * HMM_dict['scale'], Y, startIdx)
+
+    if logp_viz:
+        ll_logp_neg = np.array(ll_classifier_train_X)[:,:,0]
+        ll_logp_pos = np.array(ll_classifier_test_X)[:,:,0]
+        dv.vizLikelihood(ll_logp_neg, ll_logp_pos)
+        sys.exit()
+
+    # Create anomaly classifier
+    dtc = cf.classifier( method=method, nPosteriors=nState, nLength=nLength, parallel=True )
+    dtc.set_params( class_weight=weight )
+    dtc.set_params( ths_mult = weight )    
+    ret = dtc.fit(X_train, Y_train, idx_train)
+
+    # anomaly detection
+    detection_idx = [None for i in xrange(len(ll_classifier_test_X))]
+    for ii in xrange(len(ll_classifier_test_X)):
+        if len(ll_classifier_test_Y[ii])==0: continue
+
+        est_y    = dtc.predict(ll_classifier_test_X[ii], y=ll_classifier_test_Y[ii])
+
+        for jj in xrange(len(est_y)):
+            if est_y[jj] > 0.0:                
+                if ll_classifier_test_Y[ii][0] > 0:
+                    detection_idx[ii] = ll_classifier_test_idx[ii][jj]
+                    ## if ll_classifier_test_idx[ii][jj] ==4:
+                    ##     print "Current likelihood: ", ll_classifier_test_X[ii][jj][0] 
+                break
+
+    return detection_idx

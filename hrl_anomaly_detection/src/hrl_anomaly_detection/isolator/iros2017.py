@@ -501,6 +501,7 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
     startIdx    = 4
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
+    weight      = -5.0 #-14.0 #-16.0 #-5.5 
     
     #------------------------------------------
     if os.path.isdir(processed_data_path) is False:
@@ -571,13 +572,49 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         data_dict = ut.load_pickle(data_pkl)
 
     #temp
-    ## kFold_list = kFold_list[:1]
-    
+    ## kFold_list = kFold_list[:1]    
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(kFold_list):
         print "kFold_list: ", idx
         if not(os.path.isfile(data_pkl) is False or svd_renew): continue
-            
+
+        #-----------------------------------------------------------------------------------------
+        # Anomaly Detection
+        #-----------------------------------------------------------------------------------------
+        modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
+        dd = ut.load_pickle(modeling_pkl)
+        nEmissionDim = dd['nEmissionDim']
+        ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
+        ml.set_hmm_object(dd['A'],dd['B'],dd['pi'])
+
+        # dim x sample x length
+        ## normalTrainData   = successData_ad[:, normalTrainIdx, :]
+        ## abnormalTrainData = failureData_ad[:, abnormalTrainIdx, :]
+        normalTestData    = copy.copy(successData_ad[:, normalTestIdx, :]) 
+        abnormalTestData  = copy.copy(failureData_ad[:, abnormalTestIdx, :])
+        abnormal_train_files = np.array(failure_files)[abnormalTrainIdx].tolist()
+        abnormal_test_files  = np.array(failure_files)[abnormalTestIdx].tolist()
+
+        testDataY = []
+        abnormalTestIdxList  = []
+        abnormalTestFileList = []
+        for i, f in enumerate(abnormal_test_files):
+            if f.find("failure")>=0:
+                testDataY.append(1)
+                abnormalTestIdxList.append(i)
+                abnormalTestFileList.append(f.split('/')[-1])    
+
+        detection_test_idx_list = anomaly_detection(abnormalTestData, testDataY, \
+                                                    task_name, processed_data_path, param_dict,\
+                                                    logp_viz=False, verbose=False, weight=weight,\
+                                                    idx=idx)
+
+        print detection_test_idx_list
+        sys.exit()
+
+        #-----------------------------------------------------------------------------------------
+        # Anomaly Isolation
+        #-----------------------------------------------------------------------------------------
         # dim x sample x length
         ## normalTrainData   = copy.copy(successData_ai[:, normalTrainIdx, :]) 
         ## normalTestData    = copy.copy(successData_ai[:, normalTestIdx, :])
@@ -603,14 +640,22 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         Ds, gs_train, y_train = iutil.time_omp(abnormalTrainData, abnormalTrainLabel)
         _, gs_test, y_test = iutil.time_omp(abnormalTestData, abnormalTestLabel, Ds)
 
-        save_data_labels(gs_train, y_train, processed_data_path)
-        sys.exit()
+
+        
+
+
+
+
+        ## save_data_labels(gs_train, y_train, processed_data_path)
+        ## sys.exit()
         data_dict[idx] = (gs_train, y_train, gs_test, y_test)
 
     if os.path.isfile(data_pkl) is False or svd_renew:
         print "save pkl: ", data_pkl
         ut.save_pickle(data_dict, data_pkl)
 
+
+    # ---------------------------------------------------------------
     scores = []
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(kFold_list):
