@@ -134,8 +134,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     org_processed_data_path = copy.copy(processed_data_path)
     for i in xrange(len(success_data)):
 
-        successData = copy.deepcopy(d['successData'][[10,i]])
-        failureData = copy.deepcopy(d['failureData'][[10,i]])
+        successData = copy.deepcopy(d['successData'][[18,i]])
+        failureData = copy.deepcopy(d['failureData'][[18,i]])
         ## successData = copy.copy(d['successIsolData'][i:i+1])
         ## failureData = copy.copy(d['failureIsolData'][i:i+1])
 
@@ -550,10 +550,6 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
     feature_list = [0,1,10,14,15,16,18,19,20]
     successData = successData[feature_list]
     failureData = failureData[feature_list]
-    
-
-    ## from sklearn.linear_model import OrthogonalMatchingPursuit
-    from ksvd import KSVD
 
     # k-fold cross validation
     data_pkl = os.path.join(processed_data_path, 'isol_data.pkl')
@@ -824,6 +820,13 @@ if __name__ == '__main__':
                                                     'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
         param_dict['SVM']['hmmgp_logp_offset'] = 10.0
         param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.6, 2.3, nPoints)*-1.0 + 1.0
+
+        ## # 78% scale?,  82% scale 1
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation7/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
+        ##                                             'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
 
         ## # 78% scale?,  82% scale 1
         ## save_data_path = os.path.expanduser('~')+\
