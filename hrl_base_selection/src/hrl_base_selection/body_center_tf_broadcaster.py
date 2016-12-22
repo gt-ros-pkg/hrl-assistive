@@ -35,7 +35,7 @@ class HeadDetector:
         self.zoom_factor = 2
         self.hist_size = 30
         self.width_offset = 0.05
-        self.head_rest_B_head
+        self.head_rest_B_head = None
         self.head_pos_buf = cb.CircularBuffer(self.hist_size, (3,))
         rospy.sleep(2)
         self.mat_sampled = False
@@ -43,7 +43,6 @@ class HeadDetector:
         self.head_rest_B_mat = np.eye(4)
         self.head_rest_B_mat[0:3, 0:3] = np.array([[0, -1, 0], [0, 0, -1], [1, 0, 0]])
         self.head_rest_B_mat[0:3, 3] = np.array([0.735-0.2286, 0, -(MAT_HALF_WIDTH - self.width_offset)])
-        self.mat_sampled = False
         rospy.Subscriber("/fsascan", FloatArrayBare, self.current_physical_pressure_map_callback)
         
         rospy.sleep(1)
