@@ -337,7 +337,7 @@ class AutobedStatePublisherNode(object):
 
 
 if __name__ == "__main__":
-    rospy.init_node('autobed_state_publisher_node', anonymous = False)
+    rospy.init_node('autobed_state_publisher_node')
     a = AutobedStatePublisherNode()
     a.run()
 

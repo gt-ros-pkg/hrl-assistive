@@ -15,9 +15,9 @@ TOTAL_TAXELS = NUMOFTAXELS_X*NUMOFTAXELS_Y
 
 class AutobedOccupied():
     def __init__(self):
-        self.pressure_map  = [] 
-        rospy.init_node('autobed_occ_status_server')    
+        self.pressure_map = []
         self.sub_once = rospy.Subscriber("/fsascan", FloatArrayBare, self.p_map_cb)
+        rospy.sleep(1)
         # service for robot's request
         self.occ_status = rospy.Service('autobed_occ_status', None_Bool, self.autobed_occ_cb)
 
@@ -37,9 +37,10 @@ class AutobedOccupied():
         the Vista Medical Pressure Mat and sends it out. 
         Remember, this array needs to be binarized to be used'''
         if len(data.data) == TOTAL_TAXELS:
-            self.pressure_map  = data.data
+            self.pressure_map = data.data
 
 
 if __name__ == '__main__':
+    rospy.init_node('autobed_occ_status_server')
     ara = AutobedOccupied()
     rospy.spin()
