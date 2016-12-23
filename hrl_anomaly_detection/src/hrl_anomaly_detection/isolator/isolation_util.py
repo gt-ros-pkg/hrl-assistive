@@ -411,10 +411,16 @@ def anomaly_detection(X, Y, task_name, processed_data_path, param_dict, logp_viz
     return detection_idx
 
 
-def get_isolation_data(idx, normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx,\
-                       modeling_pkl):
+def get_isolation_data(idx, kFold_list, modeling_pkl, nState, \
+                       failureData_ad, failureData_ai, failure_files, failure_labels, \
+                       task_name, processed_data_path, param_dict, weight,\
+                       verbose=False):
 
     print "kFold_list: ", idx
+    normalTrainIdx = kFold_list[0]
+    abnormalTrainIdx = kFold_list[1]
+    normalTestIdx = kFold_list[2]
+    abnormalTestIdx = kFold_list[3]
 
     #-----------------------------------------------------------------------------------------
     # Anomaly Detection

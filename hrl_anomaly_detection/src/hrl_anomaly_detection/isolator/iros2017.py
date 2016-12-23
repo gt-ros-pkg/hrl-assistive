@@ -32,7 +32,6 @@
 import os, sys, copy, random
 import numpy as np
 import scipy
-from joblib import Parallel, delayed
 import hrl_lib.util as ut
 
 # Private utils
@@ -46,6 +45,8 @@ from hrl_anomaly_detection.hmm import learning_hmm as hmm
 import hrl_anomaly_detection.classifiers.classifier as cf
 import hrl_anomaly_detection.data_viz as dv
 import hrl_anomaly_detection.isolator.isolation_util as iutil
+
+from joblib import Parallel, delayed
 
 # visualization
 import matplotlib
@@ -570,12 +571,13 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
     if os.path.isfile(data_pkl) is False or svd_renew:
         n_jobs = -1
         l_data = Parallel(n_jobs=n_jobs, verbose=10)\
-          (delayed(iutil.get_isolation_data)( idx, normalTrainIdx, abnormalTrainIdx, \
-                                              normalTestIdx, abnormalTestIdx,\
+          (delayed(iutil.get_isolation_data)( idx, kFold_list[idx],\
                                               os.path.join(processed_data_path, \
-                                                           'hmm_'+task_name+'_'+str(idx)+'.pkl')
-                                              )
-                                              for idx in xrange(len(kFold_list)) )
+                                                           'hmm_'+task_name+'_'+str(idx)+'.pkl'),\
+                                                nState, failureData_ad, failureData_ai, failure_files,\
+                                                failure_labels,\
+                                                task_name, processed_data_path, param_dict, weight)
+          for idx in xrange(len(kFold_list)) )
         data_dict = {}
         for i in xrange(len(l_data)):
             idx = l_data[i][0]
