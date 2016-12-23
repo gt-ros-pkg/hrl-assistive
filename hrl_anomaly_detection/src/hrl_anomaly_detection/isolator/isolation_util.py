@@ -203,7 +203,7 @@ def window_omp(x, label, D0=None, n_iter=500, sp_ratio=0.05, idx_list=None):
 
     n_features = len(x)
     dimension  = window_size 
-    dict_size  = int(dimension*8)
+    dict_size  = int(dimension*2) #8)
     n_examples = len(X_)
     target_sparsity = int(sp_ratio*dict_size)
 
