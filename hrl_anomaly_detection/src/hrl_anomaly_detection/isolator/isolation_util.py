@@ -428,7 +428,6 @@ def get_isolation_data(idx, kFold_list, modeling_pkl, nState, \
                        task_name, processed_data_path, param_dict, weight,\
                        verbose=False):
 
-    print "kFold_list: ", idx
     normalTrainIdx = kFold_list[0]
     abnormalTrainIdx = kFold_list[1]
     normalTestIdx = kFold_list[2]
@@ -485,7 +484,9 @@ def get_isolation_data(idx, kFold_list, modeling_pkl, nState, \
     ## _, gs_test, y_test = feature_omp(abnormalTestData, abnormalTestLabel, Ds)
 
     # Train & test
+    print "Training: ", idx
     Ds, gs_train, y_train = m_omp(abnormalTrainData, abnormalTrainLabel)
+    print "Testing: ", idx
     _, gs_test, y_test = m_omp(abnormalTestData, abnormalTestLabel, Ds,\
                                      idx_list=detection_test_idx_list)
 
