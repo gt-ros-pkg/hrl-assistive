@@ -80,6 +80,7 @@ class FindTagState(PDDLSmachState):
         self.ar_tag_found = False
 
     def on_execute(self, ud):
+        rospy.sleep(1.)
         rospy.loginfo("[%s] Start Looking For Tag" % rospy.get_name())
         self.start_finding_AR_publisher.publish(True)
         rospy.loginfo("[%s] Waiting to see if tag found" % rospy.get_name())
@@ -116,6 +117,7 @@ class TrackTagState(PDDLSmachState):
         self.model = model
 
     def on_execute(self, ud):
+        rospy.sleep(1.)
         rospy.loginfo('[%s] Starting AR Tag Tracking' % rospy.get_name())
         self.start_tracking_AR_publisher.publish(True)
 
@@ -126,6 +128,7 @@ class StopTrackingState(PDDLSmachState):
         self.stop_tracking_AR_publisher = rospy.Publisher('track_AR_now', Bool, queue_size=1)
 
     def on_execute(self, ud):
+        rospy.sleep(1.)
         rospy.loginfo('[%s] Stopping AR Tag Tracking' % rospy.get_name())
         self.stop_tracking_AR_publisher.publish(False)
 
@@ -139,6 +142,7 @@ class RegisterHeadState(PDDLSmachState):
         print "Looking for head of person on: %s" % model
 
     def on_execute(self, ud):
+        rospy.sleep(1.)
         print 'Trying to find head now'
         if self.model.upper() == "AUTOBED":
             #print 'model is autobed'
@@ -182,6 +186,7 @@ class CheckOccupancyState(PDDLSmachState):
             
 
     def on_execute(self, ud):
+        rospy.sleep(1.)
         if self.model.upper() == 'AUTOBED':
             print "[%s] Check Occupancy State Waiting for Service" % rospy.get_name()
 	    try:
@@ -221,6 +226,8 @@ class MoveArmState(PDDLSmachState):
         self.goal_orientation = None
         self.reference_frame = None
         self.l_arm_pose_pub = rospy.Publisher('/left_arm/haptic_mpc/goal_pose', PoseStamped, queue_size=1)
+        rospy.Subscriber('/left_arm/haptic_mpc/goal_pose', PoseStamped, self.goal_pose_cb)
+        self.ignore_next_goal_pose = False
         self.domain = domain
         self.task = task
         self.model = model
@@ -228,6 +235,12 @@ class MoveArmState(PDDLSmachState):
         self.state_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=10)
         rospy.Subscriber("/left_arm/haptic_mpc/in_deadzone", Bool, self.arm_reach_goal_cb)
         self.stop_tracking_AR_publisher = rospy.Publisher('track_AR_now', Bool, queue_size=1)
+
+    def goal_pose_cb(self, msg):
+        if not self.ignore_next_goal_pose:
+            self.goal_reached = True
+        else:
+            self.ignore_next_goal_pose = False
     
     def arm_reach_goal_cb(self, msg):
         self.goal_reached = msg.data
@@ -298,10 +311,12 @@ class MoveArmState(PDDLSmachState):
             else:
                 rospy.logwarn('[%s] Cannot Find ARM GOAL to reach. Have you specified the right task? [%s]' % (rospy.get_name(), self.task))
                 return False 
+        self.ignore_next_goal_pose = True
         self.l_arm_pose_pub.publish(goal)
         return True
 
     def on_execute(self, ud):
+        rospy.sleep(1.)
         print 'Starting to execute arm movement'
         publish_stat = self.publish_goal()
         self.goal_reached = False
@@ -389,6 +404,7 @@ class MoveRobotState(PDDLSmachState):
 
 
     def on_execute(self, ud):
+        rospy.sleep(1.)
         rospy.loginfo('[%s] Moving PR2 Base' % rospy.get_name())
         try:
             base_goals = rospy.get_param('/pddl_tasks/%s/base_goals' % self.domain)
@@ -478,6 +494,7 @@ class CallBaseSelectionState(PDDLSmachState):
         return resp.base_goal, resp.configuration_goal
 
     def on_execute(self, ud):
+        rospy.sleep(1.)
         base_goals = []
         configuration_goals = []
         goal_array, config_array = self.call_base_selection()
@@ -586,6 +603,11 @@ class ConfigureModelRobotState(PDDLSmachState):
         self.goal_reached = msg.data
 
     def on_execute(self, ud):
+        rospy.sleep(2.)
+        rospy.loginfo("[%s] Moving Arms to Home Position" % rospy.get_name())
+        self.r_arm_pub.publish(self.r_reset_traj)
+        self.l_arm_pub.publish(self.l_reset_traj)
+
         rospy.loginfo("[%s] Waiting for torso_controller/position_joint_action server" % rospy.get_name())
         if self.torso_client.wait_for_server(rospy.Duration(5)):
             rospy.loginfo("[%s] Found torso_controller/position_joint_action server" % rospy.get_name())
@@ -622,15 +644,19 @@ class ConfigureModelRobotState(PDDLSmachState):
 
 
         if self.model.upper() == 'AUTOBED':
-            self.autobed_sub = rospy.Subscriber('/abdout0', FloatArrayBare, self.bed_state_cb)
-            while (self.bed_state_leg_theta is None):
-                rospy.sleep(1)
+            self.model_reached = False
+            #self.autobed_sub = rospy.Subscriber('/abdout0', FloatArrayBare, self.bed_state_cb)
+            rospy.Subscriber('abdstatus0', Bool, self.bed_status_cb)
+            rospy.sleep(2.)
+            #while (self.bed_state_leg_theta is None):
+            #    rospy.sleep(1)
             autobed_goal = FloatArrayBare()
             autobed_goal.data = ([self.configuration_goal[2],
                                   self.configuration_goal[1],
-                                  self.bed_state_leg_theta])
+                                  float('nan')])
             self.autobed_pub.publish(autobed_goal)
-            rospy.Subscriber('abdstatus0', Bool, self.bed_status_cb)
+            rospy.sleep(3.)
+            
             rospy.loginfo("[%s] Waiting For Model to be moved" % rospy.get_name())
             while not rospy.is_shutdown() and not self.model_reached:
                 if self.preempt_requested():
@@ -655,12 +681,7 @@ class ConfigureModelRobotState(PDDLSmachState):
             self.stop_tracking_AR_publisher.publish(False)
             return 
 
-
-        rospy.loginfo("[%s] Moving Arms to Home Position" % rospy.get_name())
-        self.r_arm_pub.publish(self.r_reset_traj)
-        self.l_arm_pub.publish(self.l_reset_traj)
-
-        rospy.sleep(10)
+        rospy.sleep(8)
         rospy.loginfo("[%s] Arm Goal Reached" % rospy.get_name())
         state_update = PDDLState()
         state_update.domain = self.domain
