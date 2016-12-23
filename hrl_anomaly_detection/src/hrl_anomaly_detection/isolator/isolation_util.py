@@ -189,7 +189,6 @@ def window_omp(x, label, D0=None, n_iter=25, sp_ratio=0.05, idx_list=None):
             for k in xrange(window_size, len(x[0][i]), window_step):                
                 for j in xrange(len(x)): # per feature
                     X_.append(x[j,i,k-window_size:k]) # -np.mean(x[:,i,j])) 
-                    Y_ = copy.copy(label[i])
     else:
         for i in xrange(len(x[0])): # per sample
             if idx_list[i] is None: continue
@@ -199,14 +198,12 @@ def window_omp(x, label, D0=None, n_iter=25, sp_ratio=0.05, idx_list=None):
                 else:
                     x_j = x[j,i,idx_list[i]+1-window_size:idx_list[i]+1].tolist()
                 X_.append( x_j ) 
-                Y_.append(label[i])
 
 
     n_features = len(x)
     dimension  = window_size 
     dict_size  = int(dimension*8)
     n_examples = len(X_)
-    ## target_sparsity = int(sp_ratio*dimension)
     target_sparsity = int(sp_ratio*dict_size)
 
     if D0 is None:
@@ -228,12 +225,12 @@ def window_omp(x, label, D0=None, n_iter=25, sp_ratio=0.05, idx_list=None):
         Y_ = []
         
         for i in xrange(len(x[0])): # per sample
-            for k in xrange(window_size, len(x[0][i]), window_step):
+            for k in xrange(n_window_per_sample):
 
                 single_g = g[i*(n_window_per_sample*n_features)+k*n_features: \
                              i*(n_window_per_sample*n_features)+(k+1)*n_features ]
 
-                print i, len(x[0]), k, n_window_per_sample, " : ", np.shape(single_g)
+                ## print i, len(x[0]), k, n_window_per_sample, " : ", np.shape(single_g)
 
                 if gs is None: gs = single_g.flatten()
                 else: gs = np.vstack([gs, single_g.flatten()])
