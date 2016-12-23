@@ -178,7 +178,7 @@ def window_omp(x, label, D0=None, n_iter=500, sp_ratio=0.05, idx_list=None):
     from ksvd import KSVD, KSVD_Encode
 
     ## idx_list = None
-    window_size = 80 
+    window_size = 30 
     window_step = 10
 
     # train multichannel omp?
