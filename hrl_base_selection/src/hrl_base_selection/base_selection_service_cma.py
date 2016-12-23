@@ -692,6 +692,8 @@ class BaseSelector(object):
                                        [0.,                      0.,                           0.,           1.]])
             print 'model origin to goal:'
             print origin_B_goal
+            print 'PR2 goal pose to model origin:'
+            print origin_B_goal.I
             model_B_goal_trans, model_B_goal_rot = Bmat_to_pos_quat(origin_B_goal)
             #model_B_goal_out = list(flatten([model_B_goal_trans, model_B_goal_rot]))
             #model_B_goal_out_list = [float(i) for i in model_B_goal_out]
