@@ -116,8 +116,7 @@ def m_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.05, idx_list=None):
         Y_ = []
         for i in xrange(len(x[0])): # per sample
             for j in xrange(len(x)): # per feature
-                X_.append( x[j,i,:] - np.mean(x[j,i,:5]) ) 
-                ## Y_.append(label[i])
+                X_.append( x[j,i,:] ) # - np.mean(x[j,i,:5]) ) 
         Y_ = copy.copy(label)
     else:
         X_ = []
@@ -160,8 +159,6 @@ def m_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.05, idx_list=None):
                 g.append( KSVD_Encode(np.array(X_[i]).reshape(1,-1), D0, target_sparsity).tolist() )
             g = np.array(g)
             
-    print np.shape(g)
-    
     # Stacking?
     gs = None
     for i in xrange(len(Y_)): # per sample
@@ -185,36 +182,29 @@ def window_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.05, idx_list=None):
     window_step = 10
 
     # train multichannel omp?
+    X_ = []
+    Y_ = []
     if idx_list is None:
-        X_ = []
-        Y_ = []
         for i in xrange(len(x[0])): # per sample
             for j in xrange(len(x)): # per feature
                 for k in xrange(window_size, len(x[j][i]), window_step):
                     X_.append(x[j,i,k-window_size:k]) #-np.mean(x[:,i,j])) 
-                    
-                ## X_.append(x[j,i,:]) #-np.mean(x[:,i,j])) 
-                ## Y_.append(label[i])
-        Y_ = copy.copy(label)
+                    Y_ = copy.copy(label)
+        n_window_per_sample = len(range(window_size, len(x[0][0]), window_step))
     else:
-        X_ = []
-        Y_ = []
         for i in xrange(len(x[0])): # per sample
             if idx_list[i] is None: continue
             for j in xrange(len(x)): # per feature
-                if idx_list[i]-window_size < 0: start_idx = 0
-                else:start_idx = idx_list[i]-window_size 
-                end_idx = idx_list[i]
-                
-                
-                x_j = x[j,i,start_idx+1:end_idx+1].tolist()
+                if idx_list[i]-window_size < -1:
+                    x_j = [x[j,i,0]]*(abs(idx_list[i]-window_size)-1) + x[j,i,0:idx_list[i]+1].tolist()
+                else:
+                    x_j = x[j,i,idx_list[i]+1-window_size:idx_list[i]+1].tolist()
                 X_.append( x_j ) 
-
-            Y_.append(label[i])
+                Y_.append(label[i])
 
 
     n_features = len(x)
-    dimension  = len(x[0][0]) 
+    dimension  = window_size 
     dict_size  = int(dimension*8)
     n_examples = len(X_)
     ## target_sparsity = int(sp_ratio*dimension)
@@ -228,24 +218,22 @@ def window_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.05, idx_list=None):
                         print_interval = 25,
                         enable_printing = True, enable_threading = True)
     else:
-        if idx_list is None:
-            g = KSVD_Encode(np.array(X_), D0, target_sparsity)
-        else:
-            target_sparsity = int(sp_ratio*dict_size) if int(sp_ratio*dict_size) > 0 else 1
+        g = KSVD_Encode(np.array(X_), D0, target_sparsity)
+        g = np.array(g)
             
-            g = []
-            for i in xrange(len(X_)):
-                g.append( KSVD_Encode(np.array(X_[i]).reshape(1,-1), D0, target_sparsity).tolist() )
-            g = np.array(g)
-            
-    print np.shape(g)
-    
     # Stacking?
     gs = None
-    for i in xrange(len(Y_)): # per sample
+    for i in xrange(len(Y_)): 
 
-        single_g = g[i*n_features:(i+1)*n_features,:].flatten()
-        ## single_g /= np.linalg.norm(single_g)
+        if idx_list is None:
+            for j in xrange(len(x)): # per feature
+                for k in xrange(window_size, len(x[0][i]), window_step):
+            
+                single_g = g[i*n_features:(i+1)*n_features,:].flatten()
+                ## single_g /= np.linalg.norm(single_g)
+        else:
+            single_g = g[i*n_features:(i+1)*n_features,:].flatten()
+            
 
         if gs is None: gs = single_g
         else: gs = np.vstack([gs, single_g])
@@ -578,5 +566,13 @@ def get_isolation_data(idx, kFold_list, modeling_pkl, nState, \
     ## Ds, gs_train, y_train = time_omp(abnormalTrainData, abnormalTrainLabel)
     ## _, gs_test, y_test = time_omp(abnormalTestData, abnormalTestLabel, Ds, \
     ##                                     idx_list=detection_test_idx_list)
+
+    ## # Train & test
+    ## print "Training: ", idx
+    ## Ds, gs_train, y_train = window_omp(abnormalTrainData, abnormalTrainLabel)
+    ## print "Testing: ", idx
+    ## _, gs_test, y_test = window_omp(abnormalTestData, abnormalTestLabel, Ds,\
+    ##                                  idx_list=detection_test_idx_list)
+
 
     return idx, gs_train, y_train, gs_test, y_test

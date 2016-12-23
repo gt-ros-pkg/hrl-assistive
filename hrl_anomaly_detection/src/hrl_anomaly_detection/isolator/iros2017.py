@@ -545,7 +545,7 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
 
     # ---------------------------------------------------------------
     # select feature for detection
-    feature_list = [0,1,11,20]
+    feature_list = [0,2,11,18] #[0,1,11,20]
     successData_ad = successData[feature_list]
     failureData_ad = failureData[feature_list]
 
@@ -557,7 +557,7 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
     
     # ---------------------------------------------------------------
     # select features for isolation
-    feature_list = [0,1,2,11,15,16,17,19,20,21]
+    feature_list = [0,1,2,11,15,16,17,18,20,21]
     successData_ai = successData[feature_list]
     failureData_ai = failureData[feature_list]
 
@@ -891,7 +891,7 @@ if __name__ == '__main__':
 
     elif opt.evaluation_isolation:
 
-        # c11 offset 0 weight -8 spar 0.05, dict 8, idx none, zero mean #75
+        # c11 offset 0 weight -8 spar 0.05, dict 8, idx none#75
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation10/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
