@@ -565,6 +565,8 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
     successData_ai = successData[feature_list]
     failureData_ai = failureData[feature_list]
 
+    #temp
+    kFold_list = kFold_list[:8]
 
     # k-fold cross validation
     data_pkl = os.path.join(processed_data_path, 'isol_data.pkl')
@@ -980,6 +982,9 @@ if __name__ == '__main__':
 
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation10/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation11/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForce_integ', \
                                                     'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']

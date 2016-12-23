@@ -108,6 +108,8 @@ def m_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.1, idx_list=None):
     ''' Multichannel OMP '''
     from ksvd import KSVD, KSVD_Encode
 
+    idx_list = None
+
     # train multichannel omp?
     if idx_list is None:
         X_ = []
@@ -125,8 +127,8 @@ def m_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.1, idx_list=None):
 
             for j in xrange(len(x)): # per feature
                 x_j = x[j,i,:idx_list[i]+1].tolist()
-                print np.shape(x_j), np.shape( [x_j[-1]]*(len(x[j,i])-len(x_j)) )
-                x_j = x_j + [x_j[-1]]*(len(x[j,i])-len(x_j)) 
+                ## x_j = x_j + [x_j[-1]]*(len(x[j,i])-len(x_j)) 
+                x_j = x_j + [0]*(len(x[j,i])-len(x_j)) 
                 X_.append( x_j ) 
 
             Y_.append(label[i])
