@@ -159,7 +159,7 @@ def m_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.1, idx_list=None):
     for i in xrange(len(Y_)): # per sample
 
         single_g = g[i*n_features:(i+1)*n_features,:].flatten()
-        ## single_g /= np.linalg.norm(single_g)
+        single_g /= np.linalg.norm(single_g)
 
         if gs is None: gs = single_g
         else: gs = np.vstack([gs, single_g])
