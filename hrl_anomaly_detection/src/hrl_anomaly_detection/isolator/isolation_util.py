@@ -387,7 +387,8 @@ def anomaly_detection(X, Y, task_name, processed_data_path, param_dict, logp_viz
     # 2) Convert test data
     startIdx   = 4
     ll_classifier_test_X, ll_classifier_test_Y, ll_classifier_test_idx = \
-      hmm.getHMMinducedFeaturesFromRawCombinedFeatures(ml, X * HMM_dict['scale'], Y, startIdx)
+      hmm.getHMMinducedFeaturesFromRawCombinedFeatures(ml, X * HMM_dict['scale'], Y, startIdx, \
+                                                       n_jobs=-1)
 
     if logp_viz:
         ll_logp_neg = np.array(ll_classifier_train_X)[:,:,0]
