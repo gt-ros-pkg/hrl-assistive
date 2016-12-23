@@ -233,7 +233,7 @@ def window_omp(x, label, D0=None, n_iter=25, sp_ratio=0.05, idx_list=None):
                 single_g = g[i*(n_window_per_sample*n_features)+k*n_features: \
                              i*(n_window_per_sample*n_features)+(k+1)*n_features ]
 
-                print np.shape(single_g)
+                print i, len(x[0]), k, n_window_per_sample, " : ", np.shape(single_g)
 
                 if gs is None: gs = single_g.flatten()
                 else: gs = np.vstack([gs, single_g.flatten()])
