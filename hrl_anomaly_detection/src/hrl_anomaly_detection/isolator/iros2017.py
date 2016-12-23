@@ -134,7 +134,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     ## x_classes = ['Object collision', 'Noisy environment', 'Spoon miss by a user', 'Spoon collision by a user', 'Robot-body collision by a user', 'Aggressive eating', 'Anomalous sound from a user', 'Unreachable mouth pose', 'Face occlusion by a user', 'Spoon miss by system fault', 'Spoon collision by system fault', 'Freeze by system fault']
 
     org_processed_data_path = copy.copy(processed_data_path)
-    for i in xrange(len(success_data)):
+    ## for i in xrange(len(success_data)):
+    for i in [2]:
 
         successData = copy.deepcopy(d['successData'][[0,11,20,i]])
         failureData = copy.deepcopy(d['failureData'][[0,11,20,i]])
@@ -255,8 +256,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
         from sklearn import metrics 
         auc = metrics.auc(fpr_l, tpr_l, True)
-        ## print idx , auc, " - ", fpr_l[0], fpr_l[-1]
-        print idx , auc, " - ", fpr_l
+        print idx , auc, " - ", fpr_l[0], fpr_l[-1]
+        ## print idx , auc, " - ", fpr_l
 
 
 def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
