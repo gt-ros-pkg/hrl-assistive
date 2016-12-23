@@ -889,9 +889,8 @@ if __name__ == '__main__':
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForce_integ', \
-                                                    'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
+                                                    'unimodal_kinEEChange', 'unimodal_kinJntEff_1']
         ## param_dict['SVM']['hmmgp_logp_offset'] = 10.0
-        ## param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.8, 2.1, nPoints)*-1.0 + 1.0
         param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.6, 2.3, nPoints)*-1.0        
 
         # 78% scale?,  82% scale 1
@@ -902,17 +901,11 @@ if __name__ == '__main__':
         ##                                             'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
         ## param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.6, 2.1, nPoints)*-1.0 + 1.0
 
-        ## # 78% scale?,  82% scale 1
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation7/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
-        ##                                             'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
+
 
         param_dict['ROC']['methods'] = ['hmmgp']
         nPoints = param_dict['ROC']['nPoints']
         param_dict['HMM']['scale'] = 6.111 #7.0
-        ## param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.6, 2.3, nPoints)*-1.0        
         
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         evaluation_single_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
@@ -987,7 +980,7 @@ if __name__ == '__main__':
         weight = -8.0
         param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0 
 
-        ## # c12 offset 0 weight -8 [-1], spar 0.05, dict 5 #73%
+        ## # c12 offset 0 weight -5 [0], spar 0.05, dict 5 #73%
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation11/'+\
         ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)

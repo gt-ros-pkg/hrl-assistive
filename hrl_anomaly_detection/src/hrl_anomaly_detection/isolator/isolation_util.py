@@ -181,7 +181,7 @@ def window_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.05, idx_list=None):
     from ksvd import KSVD, KSVD_Encode
 
     ## idx_list = None
-    window_size = 50
+    window_size = 30
     window_step = 10
 
     # train multichannel omp?
@@ -190,7 +190,10 @@ def window_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.05, idx_list=None):
         Y_ = []
         for i in xrange(len(x[0])): # per sample
             for j in xrange(len(x)): # per feature
-                X_.append(x[j,i,:]) #-np.mean(x[:,i,j])) 
+                for k in xrange(window_size, len(x[j][i]), window_step):
+                    X_.append(x[j,i,k-window_size:k]) #-np.mean(x[:,i,j])) 
+                    
+                ## X_.append(x[j,i,:]) #-np.mean(x[:,i,j])) 
                 ## Y_.append(label[i])
         Y_ = copy.copy(label)
     else:
@@ -198,12 +201,13 @@ def window_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.05, idx_list=None):
         Y_ = []
         for i in xrange(len(x[0])): # per sample
             if idx_list[i] is None: continue
-
             for j in xrange(len(x)): # per feature
-                x_j = x[j,i,:idx_list[i]+1].tolist()
-                x_j = x_j + [x_j[0]]*(len(x[j,i])-len(x_j)) 
-                ## x_j = x_j + [x_j[-1]]*(len(x[j,i])-len(x_j)) 
-                ## x_j = x_j + [0]*(len(x[j,i])-len(x_j)) 
+                if idx_list[i]-window_size < 0: start_idx = 0
+                else:start_idx = idx_list[i]-window_size 
+                end_idx = idx_list[i]
+                
+                
+                x_j = x[j,i,start_idx+1:end_idx+1].tolist()
                 X_.append( x_j ) 
 
             Y_.append(label[i])
