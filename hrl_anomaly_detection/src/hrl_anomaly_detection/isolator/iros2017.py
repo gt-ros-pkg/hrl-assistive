@@ -138,8 +138,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     org_processed_data_path = copy.copy(processed_data_path)
     for i in xrange(len(success_data)):
 
-        successData = copy.deepcopy(d['successData'][[0,2,11,18,i]])
-        failureData = copy.deepcopy(d['failureData'][[0,2,11,18,i]])
+        successData = copy.deepcopy(d['successData'][[0,2,11,18,20,i]])
+        failureData = copy.deepcopy(d['failureData'][[0,2,11,18,20,i]])
         ## successData = copy.copy(d['successIsolData'][i:i+1])
         ## failureData = copy.copy(d['failureIsolData'][i:i+1])
 
