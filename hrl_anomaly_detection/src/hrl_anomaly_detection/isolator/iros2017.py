@@ -987,12 +987,12 @@ if __name__ == '__main__':
         weight = -12.0
         param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0 
 
-        ## # c11 - no idx list, 0, -5
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation11/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## weight = -5.0
-        ## param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0 
+        # c11 - no idx list, 0, -8
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation11/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        weight = -8.0
+        param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0 
 
         ## # c12 - offset 0 weight -5
         ## save_data_path = os.path.expanduser('~')+\
