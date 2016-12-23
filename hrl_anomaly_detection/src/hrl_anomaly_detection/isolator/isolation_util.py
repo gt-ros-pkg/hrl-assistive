@@ -104,7 +104,7 @@ def feature_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.1):
     else:          return D0, gs, Y_
 
 
-def m_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.02, idx_list=None):
+def m_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.04, idx_list=None):
     ''' Multichannel OMP '''
     from ksvd import KSVD, KSVD_Encode
 
@@ -135,7 +135,7 @@ def m_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.02, idx_list=None):
 
 
     n_features = len(x)
-    dimension  = len(X_[0]) 
+    dimension  = len(x[0][0]) 
     dict_size  = int(dimension*10)
     n_examples = len(X_)
     ## target_sparsity = int(sp_ratio*dimension)
