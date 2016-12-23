@@ -173,7 +173,7 @@ def m_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.05, idx_list=None):
     else:          return D0, gs, Y_
 
 
-def window_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.05, idx_list=None):
+def window_omp(x, label, D0=None, n_iter=25, sp_ratio=0.05, idx_list=None):
     ''' Multichannel OMP with sliding window'''
     from ksvd import KSVD, KSVD_Encode
 
