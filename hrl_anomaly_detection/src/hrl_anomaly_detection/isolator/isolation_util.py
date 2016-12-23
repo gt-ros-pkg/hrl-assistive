@@ -108,7 +108,81 @@ def m_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.05, idx_list=None):
     ''' Multichannel OMP '''
     from ksvd import KSVD, KSVD_Encode
 
+    idx_list = None
+
+    # train multichannel omp?
+    if idx_list is None:
+        X_ = []
+        Y_ = []
+        for i in xrange(len(x[0])): # per sample
+            for j in xrange(len(x)): # per feature
+                X_.append(x[j,i,:]) - np.mean(x[:,i,j])) 
+                ## Y_.append(label[i])
+        Y_ = copy.copy(label)
+    else:
+        X_ = []
+        Y_ = []
+        for i in xrange(len(x[0])): # per sample
+            if idx_list[i] is None: continue
+
+            for j in xrange(len(x)): # per feature
+                x_j = x[j,i,:idx_list[i]+1].tolist()
+                x_j = x_j + [x_j[0]]*(len(x[j,i])-len(x_j)) 
+                ## x_j = x_j + [x_j[-1]]*(len(x[j,i])-len(x_j)) 
+                ## x_j = x_j + [0]*(len(x[j,i])-len(x_j)) 
+                X_.append( x_j ) 
+
+            Y_.append(label[i])
+
+
+    n_features = len(x)
+    dimension  = len(x[0][0]) 
+    dict_size  = int(dimension*8)
+    n_examples = len(X_)
+    ## target_sparsity = int(sp_ratio*dimension)
+    target_sparsity = int(sp_ratio*dict_size)
+
+    if D0 is None:
+        # X \simeq g * D
+        # D is the dictionary with `dict_size` by `dimension`
+        # g is the code book with `n_examples` by `dict_size`
+        D, g = KSVD(np.array(X_), dict_size, target_sparsity, n_iter,
+                        print_interval = 25,
+                        enable_printing = True, enable_threading = True)
+    else:
+        if idx_list is None:
+            g = KSVD_Encode(np.array(X_), D0, target_sparsity)
+        else:
+            target_sparsity = int(sp_ratio*dict_size) if int(sp_ratio*dict_size) > 0 else 1
+            
+            g = []
+            for i in xrange(len(X_)):
+                g.append( KSVD_Encode(np.array(X_[i]).reshape(1,-1), D0, target_sparsity).tolist() )
+            g = np.array(g)
+            
+    print np.shape(g)
+    
+    # Stacking?
+    gs = None
+    for i in xrange(len(Y_)): # per sample
+
+        single_g = g[i*n_features:(i+1)*n_features,:].flatten()
+        ## single_g /= np.linalg.norm(single_g)
+
+        if gs is None: gs = single_g
+        else: gs = np.vstack([gs, single_g])
+
+    if D0 is None: return D, gs, Y_
+    else:          return D0, gs, Y_
+
+
+def window_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.05, idx_list=None):
+    ''' Multichannel OMP with sliding window'''
+    from ksvd import KSVD, KSVD_Encode
+
     ## idx_list = None
+    window_size = 50
+    window_ste[ = 10
 
     # train multichannel omp?
     if idx_list is None:
@@ -174,6 +248,7 @@ def m_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.05, idx_list=None):
 
     if D0 is None: return D, gs, Y_
     else:          return D0, gs, Y_
+
 
 
 def w_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.05):
