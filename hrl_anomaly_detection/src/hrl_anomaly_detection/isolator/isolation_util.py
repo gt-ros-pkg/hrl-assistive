@@ -173,7 +173,7 @@ def m_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.05, idx_list=None):
     else:          return D0, gs, Y_
 
 
-def window_omp(x, label, D0=None, n_iter=500, sp_ratio=0.05, idx_list=None):
+def window_omp(x, label, D0=None, n_iter=25, sp_ratio=0.05, idx_list=None):
     ''' Multichannel OMP with sliding window'''
     from ksvd import KSVD, KSVD_Encode
 
@@ -198,7 +198,7 @@ def window_omp(x, label, D0=None, n_iter=500, sp_ratio=0.05, idx_list=None):
                 else:
                     x_j = x[j,i,idx_list[i]+1-window_size:idx_list[i]+1].tolist()
                 X_.append( x_j ) 
-                Y_.append( label[i] )
+            Y_.append( label[i] )
 
 
     n_features = len(x)
@@ -236,7 +236,7 @@ def window_omp(x, label, D0=None, n_iter=500, sp_ratio=0.05, idx_list=None):
 
                 Y_.append(label[i])
     else:
-        for i in xrange(len(Y_)/n_features): # per sample
+        for i in xrange(len(X_)/n_features): # per sample
 
             single_g = g[i*n_features : (i+1)*n_features ]
             ## print i, len(Y_)/n_features, " : ", np.shape(single_g)
