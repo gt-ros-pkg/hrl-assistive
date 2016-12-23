@@ -229,8 +229,8 @@ def window_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.05, idx_list=None):
             for j in xrange(len(x)): # per feature
                 for k in xrange(window_size, len(x[0][i]), window_step):
             
-                single_g = g[i*n_features:(i+1)*n_features,:].flatten()
-                ## single_g /= np.linalg.norm(single_g)
+                    single_g = g[i*n_features:(i+1)*n_features,:].flatten()
+                    ## single_g /= np.linalg.norm(single_g)
         else:
             single_g = g[i*n_features:(i+1)*n_features,:].flatten()
             
