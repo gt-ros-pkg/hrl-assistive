@@ -411,11 +411,10 @@ def anomaly_detection(X, Y, task_name, processed_data_path, param_dict, logp_viz
     return detection_idx
 
 
-def get_isolation_data(idx, normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx, \
-                       data_pkl, modeling_pkl, svd_renew=False):
+def get_isolation_data(idx, normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx,\
+                       modeling_pkl):
 
     print "kFold_list: ", idx
-    if not(os.path.isfile(data_pkl) is False or svd_renew): return
 
     #-----------------------------------------------------------------------------------------
     # Anomaly Detection
@@ -442,7 +441,7 @@ def get_isolation_data(idx, normalTrainIdx, abnormalTrainIdx, normalTestIdx, abn
             abnormalTestIdxList.append(i)
             abnormalTestFileList.append(f.split('/')[-1])    
 
-    detection_test_idx_list = iutil.anomaly_detection(abnormalTestData, testDataY, \
+    detection_test_idx_list = anomaly_detection(abnormalTestData, testDataY, \
                                                       task_name, processed_data_path, param_dict,\
                                                       logp_viz=False, verbose=False, weight=weight,\
                                                       idx=idx)
@@ -464,21 +463,21 @@ def get_isolation_data(idx, normalTrainIdx, abnormalTrainIdx, normalTestIdx, abn
 
     ## omp feature extraction?
     # Train & test
-    ## Ds, gs_train, y_train = iutil.feature_omp(abnormalTrainData, abnormalTrainLabel)
-    ## _, gs_test, y_test = iutil.feature_omp(abnormalTestData, abnormalTestLabel, Ds)
+    ## Ds, gs_train, y_train = feature_omp(abnormalTrainData, abnormalTrainLabel)
+    ## _, gs_test, y_test = feature_omp(abnormalTestData, abnormalTestLabel, Ds)
 
     # Train & test
-    Ds, gs_train, y_train = iutil.m_omp(abnormalTrainData, abnormalTrainLabel)
-    _, gs_test, y_test = iutil.m_omp(abnormalTestData, abnormalTestLabel, Ds,\
+    Ds, gs_train, y_train = m_omp(abnormalTrainData, abnormalTrainLabel)
+    _, gs_test, y_test = m_omp(abnormalTestData, abnormalTestLabel, Ds,\
                                      idx_list=detection_test_idx_list)
 
     # Train & test
-    ## Ds, gs_train, y_train = iutil.w_omp(abnormalTrainData, abnormalTrainLabel)
-    ## _, gs_test, y_test = iutil.w_omp(abnormalTestData, abnormalTestLabel, Ds)
+    ## Ds, gs_train, y_train = w_omp(abnormalTrainData, abnormalTrainLabel)
+    ## _, gs_test, y_test = w_omp(abnormalTestData, abnormalTestLabel, Ds)
 
     # Train & test
-    ## Ds, gs_train, y_train = iutil.time_omp(abnormalTrainData, abnormalTrainLabel)
-    ## _, gs_test, y_test = iutil.time_omp(abnormalTestData, abnormalTestLabel, Ds, \
+    ## Ds, gs_train, y_train = time_omp(abnormalTrainData, abnormalTrainLabel)
+    ## _, gs_test, y_test = time_omp(abnormalTestData, abnormalTestLabel, Ds, \
     ##                                     idx_list=detection_test_idx_list)
 
     return idx, gs_train, y_train, gs_test, y_test

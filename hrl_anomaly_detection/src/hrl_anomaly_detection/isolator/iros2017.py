@@ -253,7 +253,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
         from sklearn import metrics 
         auc = metrics.auc(fpr_l, tpr_l, True)
-        print idx , auc
+        print idx , auc, " - ", fpr_l[0], fpr_l[-1]
 
 
 def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
@@ -567,102 +567,105 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
     # k-fold cross validation
     data_pkl = os.path.join(processed_data_path, 'isol_data.pkl')
     if os.path.isfile(data_pkl) is False or svd_renew:
+        n_jobs = -1
+        l_data = Parallel(n_jobs=n_jobs, verbose=10)\
+          (delayed(iutil.get_isolation_data)( idx, normalTrainIdx, abnormalTrainIdx, \
+                                              normalTestIdx, abnormalTestIdx,\
+                                              os.path.join(processed_data_path, \
+                                                           'hmm_'+task_name+'_'+str(idx)+'.pkl')
+                                              )
+                                              for idx in xrange(len(kFold_list)) )
         data_dict = {}
+        for i in xrange(len(l_data)):
+            idx = l_data[i][0]
+            data_dict[idx] = (l_data[i][1],l_data[i][2],l_data[i][3],l_data[i][4] )
+            
+        print "save pkl: ", data_pkl
+        ut.save_pickle(data_dict, data_pkl)            
     else:
         data_dict = ut.load_pickle(data_pkl)
 
 
-    ## n_jobs = -1
-    ## l_data = Parallel(n_jobs=n_jobs, verbose=10)\
-    ##   (delayed(iutil.get_isolation_data)( idx, \
-    ##                                       os.path.join(processed_data_path, \
-    ##                                                    'hmm_'+task_name+'_'+str(idx)+'.pkl')
-    ##                                       )
-    ##                                       for idx in xrange(len(kFold_list)) )
-    ## for i in xrange(len(l_data)):
-    ##     idx = l_data[i][0]
-    ##     data_dict[idx] = (l_data[i][1],l_data[i][2],l_data[i][3],l_data[i][4] )
+    ## #temp
+    ## ## kFold_list = kFold_list[:1]    
+    ## for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
+    ##   in enumerate(kFold_list):
+    ##     print "kFold_list: ", idx
+    ##     if not(os.path.isfile(data_pkl) is False or svd_renew): continue
 
-    #temp
-    ## kFold_list = kFold_list[:1]    
-    for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
-      in enumerate(kFold_list):
-        print "kFold_list: ", idx
-        if not(os.path.isfile(data_pkl) is False or svd_renew): continue
+    ##     #-----------------------------------------------------------------------------------------
+    ##     # Anomaly Detection
+    ##     #-----------------------------------------------------------------------------------------
+    ##     modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
+    ##     dd = ut.load_pickle(modeling_pkl)
+    ##     nEmissionDim = dd['nEmissionDim']
+    ##     ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
+    ##     ml.set_hmm_object(dd['A'],dd['B'],dd['pi'])
 
-        #-----------------------------------------------------------------------------------------
-        # Anomaly Detection
-        #-----------------------------------------------------------------------------------------
-        modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
-        dd = ut.load_pickle(modeling_pkl)
-        nEmissionDim = dd['nEmissionDim']
-        ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
-        ml.set_hmm_object(dd['A'],dd['B'],dd['pi'])
+    ##     # dim x sample x length
+    ##     ## normalTrainData   = successData_ad[:, normalTrainIdx, :]
+    ##     ## abnormalTrainData = failureData_ad[:, abnormalTrainIdx, :]
+    ##     ## normalTestData    = copy.copy(successData_ad[:, normalTestIdx, :]) 
+    ##     abnormalTestData  = copy.copy(failureData_ad[:, abnormalTestIdx, :])
+    ##     ## abnormal_train_files = np.array(failure_files)[abnormalTrainIdx].tolist()
+    ##     abnormal_test_files  = np.array(failure_files)[abnormalTestIdx].tolist()
 
-        # dim x sample x length
-        ## normalTrainData   = successData_ad[:, normalTrainIdx, :]
-        ## abnormalTrainData = failureData_ad[:, abnormalTrainIdx, :]
-        ## normalTestData    = copy.copy(successData_ad[:, normalTestIdx, :]) 
-        abnormalTestData  = copy.copy(failureData_ad[:, abnormalTestIdx, :])
-        ## abnormal_train_files = np.array(failure_files)[abnormalTrainIdx].tolist()
-        abnormal_test_files  = np.array(failure_files)[abnormalTestIdx].tolist()
+    ##     testDataY = []
+    ##     abnormalTestIdxList  = []
+    ##     abnormalTestFileList = []
+    ##     for i, f in enumerate(abnormal_test_files):
+    ##         if f.find("failure")>=0:
+    ##             testDataY.append(1)
+    ##             abnormalTestIdxList.append(i)
+    ##             abnormalTestFileList.append(f.split('/')[-1])    
 
-        testDataY = []
-        abnormalTestIdxList  = []
-        abnormalTestFileList = []
-        for i, f in enumerate(abnormal_test_files):
-            if f.find("failure")>=0:
-                testDataY.append(1)
-                abnormalTestIdxList.append(i)
-                abnormalTestFileList.append(f.split('/')[-1])    
+    ##     detection_test_idx_list = iutil.anomaly_detection(abnormalTestData, testDataY, \
+    ##                                                       task_name, processed_data_path, param_dict,\
+    ##                                                       logp_viz=False, verbose=False, weight=weight,\
+    ##                                                       idx=idx)
 
-        detection_test_idx_list = iutil.anomaly_detection(abnormalTestData, testDataY, \
-                                                          task_name, processed_data_path, param_dict,\
-                                                          logp_viz=False, verbose=False, weight=weight,\
-                                                          idx=idx)
+    ##     ## print np.shape(abnormalTestData), np.shape(testDataY)
+    ##     ## print len(detection_test_idx_list)
+    ##     ## print detection_test_idx_list
 
-        ## print np.shape(abnormalTestData), np.shape(testDataY)
-        ## print len(detection_test_idx_list)
-        ## print detection_test_idx_list
+    ##     #-----------------------------------------------------------------------------------------
+    ##     # Anomaly Isolation
+    ##     #-----------------------------------------------------------------------------------------
+    ##     # dim x sample x length
+    ##     ## normalTrainData   = copy.copy(successData_ai[:, normalTrainIdx, :]) 
+    ##     ## normalTestData    = copy.copy(successData_ai[:, normalTestIdx, :])
+    ##     abnormalTrainData = copy.copy(failureData_ai[:, abnormalTrainIdx, :])
+    ##     abnormalTestData  = copy.copy(failureData_ai[:, abnormalTestIdx, :])
+    ##     abnormalTrainLabel = copy.copy(failure_labels[abnormalTrainIdx])
+    ##     abnormalTestLabel  = copy.copy(failure_labels[abnormalTestIdx])
 
-        #-----------------------------------------------------------------------------------------
-        # Anomaly Isolation
-        #-----------------------------------------------------------------------------------------
-        # dim x sample x length
-        ## normalTrainData   = copy.copy(successData_ai[:, normalTrainIdx, :]) 
-        ## normalTestData    = copy.copy(successData_ai[:, normalTestIdx, :])
-        abnormalTrainData = copy.copy(failureData_ai[:, abnormalTrainIdx, :])
-        abnormalTestData  = copy.copy(failureData_ai[:, abnormalTestIdx, :])
-        abnormalTrainLabel = copy.copy(failure_labels[abnormalTrainIdx])
-        abnormalTestLabel  = copy.copy(failure_labels[abnormalTestIdx])
+    ##     ## omp feature extraction?
+    ##     # Train & test
+    ##     ## Ds, gs_train, y_train = iutil.feature_omp(abnormalTrainData, abnormalTrainLabel)
+    ##     ## _, gs_test, y_test = iutil.feature_omp(abnormalTestData, abnormalTestLabel, Ds)
 
-        ## omp feature extraction?
-        # Train & test
-        ## Ds, gs_train, y_train = iutil.feature_omp(abnormalTrainData, abnormalTrainLabel)
-        ## _, gs_test, y_test = iutil.feature_omp(abnormalTestData, abnormalTestLabel, Ds)
+    ##     # Train & test
+    ##     Ds, gs_train, y_train = iutil.m_omp(abnormalTrainData, abnormalTrainLabel)
+    ##     _, gs_test, y_test = iutil.m_omp(abnormalTestData, abnormalTestLabel, Ds,\
+    ##                                      idx_list=detection_test_idx_list)
 
-        # Train & test
-        Ds, gs_train, y_train = iutil.m_omp(abnormalTrainData, abnormalTrainLabel)
-        _, gs_test, y_test = iutil.m_omp(abnormalTestData, abnormalTestLabel, Ds,\
-                                         idx_list=detection_test_idx_list)
+    ##     # Train & test
+    ##     ## Ds, gs_train, y_train = iutil.w_omp(abnormalTrainData, abnormalTrainLabel)
+    ##     ## _, gs_test, y_test = iutil.w_omp(abnormalTestData, abnormalTestLabel, Ds)
 
-        # Train & test
-        ## Ds, gs_train, y_train = iutil.w_omp(abnormalTrainData, abnormalTrainLabel)
-        ## _, gs_test, y_test = iutil.w_omp(abnormalTestData, abnormalTestLabel, Ds)
-
-        # Train & test
-        ## Ds, gs_train, y_train = iutil.time_omp(abnormalTrainData, abnormalTrainLabel)
-        ## _, gs_test, y_test = iutil.time_omp(abnormalTestData, abnormalTestLabel, Ds, \
-        ##                                     idx_list=detection_test_idx_list)
+    ##     # Train & test
+    ##     ## Ds, gs_train, y_train = iutil.time_omp(abnormalTrainData, abnormalTrainLabel)
+    ##     ## _, gs_test, y_test = iutil.time_omp(abnormalTestData, abnormalTestLabel, Ds, \
+    ##     ##                                     idx_list=detection_test_idx_list)
 
 
-        ## save_data_labels(gs_train, y_train, processed_data_path)
-        ## sys.exit()
-        data_dict[idx] = (gs_train, y_train, gs_test, y_test)
+    ##     ## save_data_labels(gs_train, y_train, processed_data_path)
+    ##     ## sys.exit()
+    ##     data_dict[idx] = (gs_train, y_train, gs_test, y_test)
 
-    if os.path.isfile(data_pkl) is False or svd_renew:
-        print "save pkl: ", data_pkl
-        ut.save_pickle(data_dict, data_pkl)
+    ## if os.path.isfile(data_pkl) is False or svd_renew:
+    ##     print "save pkl: ", data_pkl
+    ##     ut.save_pickle(data_dict, data_pkl)
 
 
     # ---------------------------------------------------------------
