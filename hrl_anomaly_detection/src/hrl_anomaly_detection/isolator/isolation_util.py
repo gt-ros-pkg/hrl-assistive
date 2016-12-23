@@ -154,7 +154,7 @@ def m_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.1, idx_list=None):
         if idx_list is None:
             g = KSVD_Encode(X_, D0, target_sparsity)
         else:
-            for i in xrange()
+            ## for i in xrange()
             g = KSVD_Encode(X_, D0, target_sparsity)
             
             
