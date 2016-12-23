@@ -587,88 +587,6 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         data_dict = ut.load_pickle(data_pkl)
 
 
-    ## #temp
-    ## ## kFold_list = kFold_list[:1]    
-    ## for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
-    ##   in enumerate(kFold_list):
-    ##     print "kFold_list: ", idx
-    ##     if not(os.path.isfile(data_pkl) is False or svd_renew): continue
-
-    ##     #-----------------------------------------------------------------------------------------
-    ##     # Anomaly Detection
-    ##     #-----------------------------------------------------------------------------------------
-    ##     modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
-    ##     dd = ut.load_pickle(modeling_pkl)
-    ##     nEmissionDim = dd['nEmissionDim']
-    ##     ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
-    ##     ml.set_hmm_object(dd['A'],dd['B'],dd['pi'])
-
-    ##     # dim x sample x length
-    ##     ## normalTrainData   = successData_ad[:, normalTrainIdx, :]
-    ##     ## abnormalTrainData = failureData_ad[:, abnormalTrainIdx, :]
-    ##     ## normalTestData    = copy.copy(successData_ad[:, normalTestIdx, :]) 
-    ##     abnormalTestData  = copy.copy(failureData_ad[:, abnormalTestIdx, :])
-    ##     ## abnormal_train_files = np.array(failure_files)[abnormalTrainIdx].tolist()
-    ##     abnormal_test_files  = np.array(failure_files)[abnormalTestIdx].tolist()
-
-    ##     testDataY = []
-    ##     abnormalTestIdxList  = []
-    ##     abnormalTestFileList = []
-    ##     for i, f in enumerate(abnormal_test_files):
-    ##         if f.find("failure")>=0:
-    ##             testDataY.append(1)
-    ##             abnormalTestIdxList.append(i)
-    ##             abnormalTestFileList.append(f.split('/')[-1])    
-
-    ##     detection_test_idx_list = iutil.anomaly_detection(abnormalTestData, testDataY, \
-    ##                                                       task_name, processed_data_path, param_dict,\
-    ##                                                       logp_viz=False, verbose=False, weight=weight,\
-    ##                                                       idx=idx)
-
-    ##     ## print np.shape(abnormalTestData), np.shape(testDataY)
-    ##     ## print len(detection_test_idx_list)
-    ##     ## print detection_test_idx_list
-
-    ##     #-----------------------------------------------------------------------------------------
-    ##     # Anomaly Isolation
-    ##     #-----------------------------------------------------------------------------------------
-    ##     # dim x sample x length
-    ##     ## normalTrainData   = copy.copy(successData_ai[:, normalTrainIdx, :]) 
-    ##     ## normalTestData    = copy.copy(successData_ai[:, normalTestIdx, :])
-    ##     abnormalTrainData = copy.copy(failureData_ai[:, abnormalTrainIdx, :])
-    ##     abnormalTestData  = copy.copy(failureData_ai[:, abnormalTestIdx, :])
-    ##     abnormalTrainLabel = copy.copy(failure_labels[abnormalTrainIdx])
-    ##     abnormalTestLabel  = copy.copy(failure_labels[abnormalTestIdx])
-
-    ##     ## omp feature extraction?
-    ##     # Train & test
-    ##     ## Ds, gs_train, y_train = iutil.feature_omp(abnormalTrainData, abnormalTrainLabel)
-    ##     ## _, gs_test, y_test = iutil.feature_omp(abnormalTestData, abnormalTestLabel, Ds)
-
-    ##     # Train & test
-    ##     Ds, gs_train, y_train = iutil.m_omp(abnormalTrainData, abnormalTrainLabel)
-    ##     _, gs_test, y_test = iutil.m_omp(abnormalTestData, abnormalTestLabel, Ds,\
-    ##                                      idx_list=detection_test_idx_list)
-
-    ##     # Train & test
-    ##     ## Ds, gs_train, y_train = iutil.w_omp(abnormalTrainData, abnormalTrainLabel)
-    ##     ## _, gs_test, y_test = iutil.w_omp(abnormalTestData, abnormalTestLabel, Ds)
-
-    ##     # Train & test
-    ##     ## Ds, gs_train, y_train = iutil.time_omp(abnormalTrainData, abnormalTrainLabel)
-    ##     ## _, gs_test, y_test = iutil.time_omp(abnormalTestData, abnormalTestLabel, Ds, \
-    ##     ##                                     idx_list=detection_test_idx_list)
-
-
-    ##     ## save_data_labels(gs_train, y_train, processed_data_path)
-    ##     ## sys.exit()
-    ##     data_dict[idx] = (gs_train, y_train, gs_test, y_test)
-
-    ## if os.path.isfile(data_pkl) is False or svd_renew:
-    ##     print "save pkl: ", data_pkl
-    ##     ut.save_pickle(data_dict, data_pkl)
-
-
     # ---------------------------------------------------------------
     scores = []
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
@@ -980,12 +898,12 @@ if __name__ == '__main__':
         weight = -8.0
         param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0 
 
-        ## # c12 offset 0 weight -5 [0], spar 0.05, dict 5 #73%
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation11/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## weight = -5.0
-        ## param_dict['SVM']['hmmgp_logp_offset'] = 0.0 
+        # c12 offset 0 weight -5 [0], spar 0.05, dict 5 #73%
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation11/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        weight = -5.0
+        param_dict['SVM']['hmmgp_logp_offset'] = 0.0 
 
         ## # ep offset 0 weight -8, spar 0.05, dict 10
         ## save_data_path = os.path.expanduser('~')+\

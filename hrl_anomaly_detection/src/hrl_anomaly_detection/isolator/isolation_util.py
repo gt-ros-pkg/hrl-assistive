@@ -116,7 +116,7 @@ def m_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.05, idx_list=None):
         Y_ = []
         for i in xrange(len(x[0])): # per sample
             for j in xrange(len(x)): # per feature
-                X_.append( x[j,i,:] - np.mean(x[j,i,:]) ) 
+                X_.append( x[j,i,:] - np.mean(x[j,i,:5]) ) 
                 ## Y_.append(label[i])
         Y_ = copy.copy(label)
     else:
