@@ -56,7 +56,7 @@ var RFH = (function(module) {
                     };
                     break;
                 case 'MOVE_ARM':
-                case 'DO_TASK':
+//                case 'DO_TASK':
                     startFunc = function () {
                         //RFH.undo.sentUndoCommands.mode += 1; // Increment so this switch isn't grabbed by undo queue...(yes, ugly hack)
                         RFH.actionMenu.startAction('lEECartAction');

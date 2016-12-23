@@ -603,7 +603,11 @@ class ConfigureModelRobotState(PDDLSmachState):
         self.goal_reached = msg.data
 
     def on_execute(self, ud):
-        rospy.sleep(1.)
+        rospy.sleep(2.)
+        rospy.loginfo("[%s] Moving Arms to Home Position" % rospy.get_name())
+        self.r_arm_pub.publish(self.r_reset_traj)
+        self.l_arm_pub.publish(self.l_reset_traj)
+
         rospy.loginfo("[%s] Waiting for torso_controller/position_joint_action server" % rospy.get_name())
         if self.torso_client.wait_for_server(rospy.Duration(5)):
             rospy.loginfo("[%s] Found torso_controller/position_joint_action server" % rospy.get_name())
@@ -640,15 +644,19 @@ class ConfigureModelRobotState(PDDLSmachState):
 
 
         if self.model.upper() == 'AUTOBED':
-            self.autobed_sub = rospy.Subscriber('/abdout0', FloatArrayBare, self.bed_state_cb)
-            while (self.bed_state_leg_theta is None):
-                rospy.sleep(1)
+            self.model_reached = False
+            #self.autobed_sub = rospy.Subscriber('/abdout0', FloatArrayBare, self.bed_state_cb)
+            rospy.Subscriber('abdstatus0', Bool, self.bed_status_cb)
+            rospy.sleep(2.)
+            #while (self.bed_state_leg_theta is None):
+            #    rospy.sleep(1)
             autobed_goal = FloatArrayBare()
             autobed_goal.data = ([self.configuration_goal[2],
                                   self.configuration_goal[1],
-                                  self.bed_state_leg_theta])
+                                  float('nan')])
             self.autobed_pub.publish(autobed_goal)
-            rospy.Subscriber('abdstatus0', Bool, self.bed_status_cb)
+            rospy.sleep(3.)
+            
             rospy.loginfo("[%s] Waiting For Model to be moved" % rospy.get_name())
             while not rospy.is_shutdown() and not self.model_reached:
                 if self.preempt_requested():
@@ -673,12 +681,7 @@ class ConfigureModelRobotState(PDDLSmachState):
             self.stop_tracking_AR_publisher.publish(False)
             return 
 
-
-        rospy.loginfo("[%s] Moving Arms to Home Position" % rospy.get_name())
-        self.r_arm_pub.publish(self.r_reset_traj)
-        self.l_arm_pub.publish(self.l_reset_traj)
-
-        rospy.sleep(10)
+        rospy.sleep(8)
         rospy.loginfo("[%s] Arm Goal Reached" % rospy.get_name())
         state_update = PDDLState()
         state_update.domain = self.domain
