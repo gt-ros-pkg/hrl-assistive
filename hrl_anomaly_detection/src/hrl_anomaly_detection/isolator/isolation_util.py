@@ -136,23 +136,21 @@ def m_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.05, idx_list=None):
 
     n_features = len(x)
     dimension  = len(x[0][0]) 
-    dict_size  = int(dimension*8)
+    dict_size  = int(dimension*10)
     n_examples = len(X_)
     ## target_sparsity = int(sp_ratio*dimension)
     target_sparsity = int(sp_ratio*dict_size)
-
-    X_ = np.array(X_)
 
     if D0 is None:
         # X \simeq g * D
         # D is the dictionary with `dict_size` by `dimension`
         # g is the code book with `n_examples` by `dict_size`
-        D, g = KSVD(X_, dict_size, target_sparsity, n_iter,
+        D, g = KSVD(np.array(X_), dict_size, target_sparsity, n_iter,
                         print_interval = 25,
                         enable_printing = True, enable_threading = True)
     else:
         if idx_list is None:
-            g = KSVD_Encode(X_, D0, target_sparsity)
+            g = KSVD_Encode(np.array(X_), D0, target_sparsity)
         else:
             g = []
             for i in xrange(X_):
