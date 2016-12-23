@@ -186,11 +186,10 @@ def window_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.05, idx_list=None):
     Y_ = []
     if idx_list is None:
         for i in xrange(len(x[0])): # per sample
-            for j in xrange(len(x)): # per feature
-                for k in xrange(window_size, len(x[j][i]), window_step):
+            for k in xrange(window_size, len(x[0][i]), window_step):                
+                for j in xrange(len(x)): # per feature
                     X_.append(x[j,i,k-window_size:k]) #-np.mean(x[:,i,j])) 
-                    Y_ = copy.copy(label)
-        n_window_per_sample = len(range(window_size, len(x[0][0]), window_step))
+                    Y_ = copy.copy(label[i])
     else:
         for i in xrange(len(x[0])): # per sample
             if idx_list[i] is None: continue
@@ -218,25 +217,38 @@ def window_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.05, idx_list=None):
                         print_interval = 25,
                         enable_printing = True, enable_threading = True)
     else:
+        D = D0
         g = KSVD_Encode(np.array(X_), D0, target_sparsity)
         g = np.array(g)
-            
+    
     # Stacking?
     gs = None
-    for i in xrange(len(Y_)): 
+    if idx_list is None:
+        n_window_per_sample = len(range(window_size, len(x[0][0]), window_step))
+        Y_ = []
+        
+        for i in xrange(len(x[0])): # per sample
+            for k in xrange(window_size, len(x[0][i]), window_step):
 
-        if idx_list is None:
-            for j in xrange(len(x)): # per feature
-                for k in xrange(window_size, len(x[0][i]), window_step):
-            
-                    single_g = g[i*n_features:(i+1)*n_features,:].flatten()
-                    ## single_g /= np.linalg.norm(single_g)
-        else:
-            single_g = g[i*n_features:(i+1)*n_features,:].flatten()
-            
+                single_g = g[i*(n_window_per_sample*n_features)+k*n_features: \
+                             i*(n_window_per_sample*n_features)+(k+1)*n_features ]
 
-        if gs is None: gs = single_g
-        else: gs = np.vstack([gs, single_g])
+                if gs is None: gs = single_g.flatten()
+                else: gs = np.vstack([gs, single_g.flatten()])
+
+                Y_.append(label[i])
+    else:
+        Y_ = []
+        for i in xrange(len(x[0])): # per sample
+            if idx_list[i] is None: continue
+
+            single_g = g[i*n_features : (i+1)*n_features ]
+
+            if gs is None: gs = single_g.flatten()
+            else: gs = np.vstack([gs, single_g.flatten()])
+
+            Y_.append(label[i])
+
 
     if D0 is None: return D, gs, Y_
     else:          return D0, gs, Y_
@@ -552,11 +564,11 @@ def get_isolation_data(idx, kFold_list, modeling_pkl, nState, \
     ## _, gs_test, y_test = feature_omp(abnormalTestData, abnormalTestLabel, Ds)
 
     # Train & test
-    print "Training: ", idx
-    Ds, gs_train, y_train = m_omp(abnormalTrainData, abnormalTrainLabel)
-    print "Testing: ", idx
-    _, gs_test, y_test = m_omp(abnormalTestData, abnormalTestLabel, Ds,\
-                                     idx_list=detection_test_idx_list)
+    ## print "Training: ", idx
+    ## Ds, gs_train, y_train = m_omp(abnormalTrainData, abnormalTrainLabel)
+    ## print "Testing: ", idx
+    ## _, gs_test, y_test = m_omp(abnormalTestData, abnormalTestLabel, Ds,\
+    ##                                  idx_list=detection_test_idx_list)
 
     # Train & test
     ## Ds, gs_train, y_train = w_omp(abnormalTrainData, abnormalTrainLabel)
@@ -567,12 +579,12 @@ def get_isolation_data(idx, kFold_list, modeling_pkl, nState, \
     ## _, gs_test, y_test = time_omp(abnormalTestData, abnormalTestLabel, Ds, \
     ##                                     idx_list=detection_test_idx_list)
 
-    ## # Train & test
-    ## print "Training: ", idx
-    ## Ds, gs_train, y_train = window_omp(abnormalTrainData, abnormalTrainLabel)
-    ## print "Testing: ", idx
-    ## _, gs_test, y_test = window_omp(abnormalTestData, abnormalTestLabel, Ds,\
-    ##                                  idx_list=detection_test_idx_list)
+    # Train & test
+    print "Training: ", idx
+    Ds, gs_train, y_train = window_omp(abnormalTrainData, abnormalTrainLabel)
+    print "Testing: ", idx
+    _, gs_test, y_test = window_omp(abnormalTestData, abnormalTestLabel, Ds,\
+                                     idx_list=detection_test_idx_list)
 
 
     return idx, gs_train, y_train, gs_test, y_test
