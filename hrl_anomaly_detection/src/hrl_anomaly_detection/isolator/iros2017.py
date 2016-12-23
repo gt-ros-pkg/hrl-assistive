@@ -567,7 +567,7 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
     # k-fold cross validation
     data_pkl = os.path.join(processed_data_path, 'isol_data.pkl')
     if os.path.isfile(data_pkl) is False or svd_renew:
-        n_jobs = -1
+        n_jobs = 1 #-1
         l_data = Parallel(n_jobs=n_jobs, verbose=10)\
           (delayed(iutil.get_isolation_data)( idx, kFold_list[idx],\
                                               os.path.join(processed_data_path, \
@@ -902,7 +902,7 @@ if __name__ == '__main__':
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation11/'+\
         ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## weight = -5.0
+        ## weight = -8.0
         ## param_dict['SVM']['hmmgp_logp_offset'] = 0.0 
 
         ## # ep offset 0 weight -8, spar 0.05, dict 10
