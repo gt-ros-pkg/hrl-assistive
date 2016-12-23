@@ -152,6 +152,8 @@ def m_omp(x, label, D0=None, n_iter=100, sp_ratio=0.05, idx_list=None):
         if idx_list is None:
             g = KSVD_Encode(np.array(X_), D0, target_sparsity)
         else:
+            target_sparsity = int(sp_ratio*dict_size) if int(sp_ratio*dict_size) > 0 else 1
+            
             g = []
             for i in xrange(len(X_)):
                 g.append( KSVD_Encode(np.array(X_[i]).reshape(1,-1), D0, target_sparsity).tolist() )
