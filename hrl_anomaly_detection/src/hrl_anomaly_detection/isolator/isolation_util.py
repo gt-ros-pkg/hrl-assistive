@@ -239,13 +239,10 @@ def window_omp(x, label, D0=None, n_iter=25, sp_ratio=0.05, idx_list=None):
         for i in xrange(len(Y_)/n_features): # per sample
 
             single_g = g[i*n_features : (i+1)*n_features ]
-
-            print i, len(Y_)/n_features, " : ", np.shape(single_g)
+            ## print i, len(Y_)/n_features, " : ", np.shape(single_g)
 
             if gs is None: gs = single_g.flatten()
             else: gs = np.vstack([gs, single_g.flatten()])
-
-
 
     if D0 is None: return D, gs, Y_
     else:          return D0, gs, Y_
