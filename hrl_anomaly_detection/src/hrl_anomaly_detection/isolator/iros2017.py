@@ -125,6 +125,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     print d['param_dict']['feature_names']
     print len(d['param_dict']['feature_names'])
     print d['param_dict']['feature_names'][0]
+    print d['param_dict']['feature_names'][2]
+    print d['param_dict']['feature_names'][11]
     print d['param_dict']['feature_names'][20]
     ## sys.exit()
 
@@ -134,8 +136,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     ## x_classes = ['Object collision', 'Noisy environment', 'Spoon miss by a user', 'Spoon collision by a user', 'Robot-body collision by a user', 'Aggressive eating', 'Anomalous sound from a user', 'Unreachable mouth pose', 'Face occlusion by a user', 'Spoon miss by system fault', 'Spoon collision by system fault', 'Freeze by system fault']
 
     org_processed_data_path = copy.copy(processed_data_path)
-    ## for i in xrange(len(success_data)):
-    for i in [2]:
+    for i in xrange(len(success_data)):
 
         successData = copy.deepcopy(d['successData'][[0,11,20,i]])
         failureData = copy.deepcopy(d['failureData'][[0,11,20,i]])
@@ -174,12 +175,6 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         else: ROC_data = ut.load_pickle(roc_pkl)
         ROC_data = util.reset_roc_data(ROC_data, method_list, ROC_dict['update_list'], nPoints)
 
-        osvm_data = None ; bpsvm_data = None
-        if 'osvm' in method_list  and ROC_data['osvm']['complete'] is False:
-            osvm_data = dm.getPCAData(len(kFold_list), crossVal_pkl, \
-                                      window=SVM_dict['raw_window_size'],
-                                      use_test=True, use_pca=False )
-
         # parallelization
         if debug: n_jobs=1
         else: n_jobs=-1
@@ -188,7 +183,6 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                                                                              method, ROC_data, \
                                                                              ROC_dict, \
                                                                              SVM_dict, HMM_dict, \
-                                                                             raw_data=(osvm_data,bpsvm_data),\
                                                                              startIdx=startIdx, nState=nState,\
                                                                              n_jobs=n_jobs) \
                                                                              for idx in xrange(len(kFold_list)) \
@@ -203,7 +197,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         
     # ---------------- ROC Visualization ----------------------
     ## if detection_rate: sys.exit()
-    for idx in xrange(len(success_data)):
+    for idx in xrange(len(d['successData'])):
         processed_data_path = os.path.join(org_processed_data_path, str(idx))
         roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
         if os.path.isfile(roc_pkl) is False: continue
@@ -873,7 +867,8 @@ if __name__ == '__main__':
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         evaluation_all(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
                        verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
-                       find_param=False, data_gen=opt.bDataGen, target_class=target_class)
+                       find_param=False, data_gen=opt.bDataGen)
+                       ## find_param=False, data_gen=opt.bDataGen, target_class=target_class)
 
     elif opt.evaluation_single:
         '''
