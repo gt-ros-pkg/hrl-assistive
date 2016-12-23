@@ -255,7 +255,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
         from sklearn import metrics 
         auc = metrics.auc(fpr_l, tpr_l, True)
-        print idx , auc, " - ", fpr_l[0], fpr_l[-1]
+        ## print idx , auc, " - ", fpr_l[0], fpr_l[-1]
+        print idx , auc, " - ", fpr_l
 
 
 def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
