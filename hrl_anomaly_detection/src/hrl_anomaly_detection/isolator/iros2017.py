@@ -996,7 +996,7 @@ if __name__ == '__main__':
         nPoints = param_dict['ROC']['nPoints']
         param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.6, 2.3, nPoints)*-1.0
         param_dict['HMM']['scale'] = 6.111 
-        param_dict['SVM']['hmmgp_logp_offset'] = 30.0 
+        param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0 
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         
         evaluation_isolation(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
