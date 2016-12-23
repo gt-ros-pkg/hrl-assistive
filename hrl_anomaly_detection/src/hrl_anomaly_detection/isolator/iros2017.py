@@ -499,7 +499,6 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
     startIdx    = 4
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
-    ## weight      = -8.0 #-14.0 #-16.0 #-5.5 
     
     #------------------------------------------
     if os.path.isdir(processed_data_path) is False:
@@ -906,11 +905,11 @@ if __name__ == '__main__':
         ## param_dict['SVM']['hmmgp_logp_offset'] = 0.0 
 
         # ep offset 0 weight -8, spar 0.05, dict 10, win_size 30
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation12/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        weight = -8.0
-        param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0 
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation12/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## weight = -8.0
+        ## param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0 
 
 
         param_dict['ROC']['methods'] = ['hmmgp']
