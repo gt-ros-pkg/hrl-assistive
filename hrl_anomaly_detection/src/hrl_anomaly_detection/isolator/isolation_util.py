@@ -108,7 +108,7 @@ def m_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.05, idx_list=None):
     ''' Multichannel OMP '''
     from ksvd import KSVD, KSVD_Encode
 
-    idx_list = None
+    #idx_list = None
 
     # train multichannel omp?
     if idx_list is None:
@@ -116,7 +116,7 @@ def m_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.05, idx_list=None):
         Y_ = []
         for i in xrange(len(x[0])): # per sample
             for j in xrange(len(x)): # per feature
-                X_.append( x[j,i,:] ) # - np.mean(x[j,i,:5]) ) 
+                X_.append( x[j,i,:] - np.mean(x[j,i,:5]) ) 
         Y_ = copy.copy(label)
     else:
         X_ = []
@@ -173,12 +173,12 @@ def m_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.05, idx_list=None):
     else:          return D0, gs, Y_
 
 
-def window_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.05, idx_list=None):
+def window_omp(x, label, D0=None, n_iter=100, sp_ratio=0.05, idx_list=None):
     ''' Multichannel OMP with sliding window'''
     from ksvd import KSVD, KSVD_Encode
 
     ## idx_list = None
-    window_size = 30
+    window_size = 50 #30 
     window_step = 10
 
     # train multichannel omp?
@@ -188,7 +188,7 @@ def window_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.05, idx_list=None):
         for i in xrange(len(x[0])): # per sample
             for k in xrange(window_size, len(x[0][i]), window_step):                
                 for j in xrange(len(x)): # per feature
-                    X_.append(x[j,i,k-window_size:k]) #-np.mean(x[:,i,j])) 
+                    X_.append(x[j,i,k-window_size:k]) # -np.mean(x[:,i,j])) 
                     Y_ = copy.copy(label[i])
     else:
         for i in xrange(len(x[0])): # per sample
