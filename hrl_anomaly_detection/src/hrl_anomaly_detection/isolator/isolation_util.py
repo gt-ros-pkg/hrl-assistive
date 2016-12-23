@@ -108,7 +108,7 @@ def m_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.05, idx_list=None):
     ''' Multichannel OMP '''
     from ksvd import KSVD, KSVD_Encode
 
-    idx_list = None
+    ## idx_list = None
 
     # train multichannel omp?
     if idx_list is None:
