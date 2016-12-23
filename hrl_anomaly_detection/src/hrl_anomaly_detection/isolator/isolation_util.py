@@ -153,7 +153,7 @@ def m_omp(x, label, D0=None, n_iter=100, sp_ratio=0.05, idx_list=None):
             g = KSVD_Encode(np.array(X_), D0, target_sparsity)
         else:
             g = []
-            for i in xrange(X_):
+            for i in xrange(len(X_)):
                 g.append( KSVD_Encode(X_[i], D0, target_sparsity).tolist() )
             g = np.array(g)
             
