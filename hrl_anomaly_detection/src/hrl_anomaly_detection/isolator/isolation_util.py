@@ -138,8 +138,8 @@ def m_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.1, idx_list=None):
     dimension  = len(X_[0]) 
     dict_size  = int(dimension*10)
     n_examples = len(X_)
-    ## target_sparsity = int(sp_ratio*dimension)
-    target_sparsity = int(sp_ratio*dict_size)
+    target_sparsity = int(sp_ratio*dimension)
+    ## target_sparsity = int(sp_ratio*dict_size)
 
     X_ = np.array(X_)
 
