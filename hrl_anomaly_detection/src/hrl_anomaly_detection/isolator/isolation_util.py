@@ -104,7 +104,7 @@ def feature_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.1):
     else:          return D0, gs, Y_
 
 
-def m_omp(x, label, D0=None, n_iter=100, sp_ratio=0.05, idx_list=None):
+def m_omp(x, label, D0=None, n_iter=25, sp_ratio=0.05, idx_list=None):
     ''' Multichannel OMP '''
     from ksvd import KSVD, KSVD_Encode
 
@@ -159,7 +159,8 @@ def m_omp(x, label, D0=None, n_iter=100, sp_ratio=0.05, idx_list=None):
                 g.append( KSVD_Encode(np.array(X_[i]).reshape(1,-1), D0, target_sparsity).tolist() )
             g = np.array(g)
             
-
+    print np.shape(g)
+    
     # Stacking?
     gs = None
     for i in xrange(len(Y_)): # per sample
