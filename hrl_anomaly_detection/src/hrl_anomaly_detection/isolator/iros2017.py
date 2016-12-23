@@ -123,8 +123,9 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     print d.keys()
     print d['param_dict']['feature_names']
     print len(d['param_dict']['feature_names'])
-    print d['param_dict']['feature_names'][10]
-    ## sys.exit()
+    print d['param_dict']['feature_names'][0]
+    print d['param_dict']['feature_names'][20]
+    sys.exit()
 
     #temp
     kFold_list = kFold_list[:8]
