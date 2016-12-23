@@ -485,7 +485,7 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
 def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
                          data_renew=False, svd_renew=False, save_pdf=False, verbose=False, debug=False,\
                          no_plot=False, delay_plot=True, find_param=False, data_gen=False, \
-                         save_viz_data=False):
+                         save_viz_data=False, weight=-5.0):
     ## Parameters
     # data
     data_dict  = param_dict['data_param']
@@ -503,7 +503,7 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
     startIdx    = 4
     method_list = ROC_dict['methods'] 
     nPoints     = ROC_dict['nPoints']
-    weight      = -8.0 #-14.0 #-16.0 #-5.5 
+    ## weight      = -8.0 #-14.0 #-16.0 #-5.5 
     
     #------------------------------------------
     if os.path.isdir(processed_data_path) is False:
@@ -980,6 +980,7 @@ if __name__ == '__main__':
 
     elif opt.evaluation_isolation:
 
+        # c12
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation10/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
@@ -988,9 +989,16 @@ if __name__ == '__main__':
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation11/'+\
         ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        
+
+        # c12 - offset 0 weight 5
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation12/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+
         param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForce_integ', \
                                                     'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
+
+        weight = -5.0
 
         param_dict['ROC']['methods'] = ['hmmgp']
         nPoints = param_dict['ROC']['nPoints']
@@ -1003,4 +1011,4 @@ if __name__ == '__main__':
                              data_renew=opt.bDataRenew, svd_renew=opt.svd_renew,\
                              save_pdf=opt.bSavePdf, \
                              verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
-                             find_param=False, data_gen=opt.bDataGen)
+                             find_param=False, data_gen=opt.bDataGen, weight=weight)
