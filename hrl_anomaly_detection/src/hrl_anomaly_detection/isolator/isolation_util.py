@@ -182,7 +182,7 @@ def window_omp(x, label, D0=None, n_iter=1000, sp_ratio=0.05, idx_list=None):
 
     ## idx_list = None
     window_size = 50
-    window_ste[ = 10
+    window_step = 10
 
     # train multichannel omp?
     if idx_list is None:
