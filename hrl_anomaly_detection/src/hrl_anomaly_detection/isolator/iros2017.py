@@ -984,7 +984,7 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation10/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        weight = -8.0
+        weight = -12.0
 
         ## # c11 - no idx list, 0, -5
         ## save_data_path = os.path.expanduser('~')+\
