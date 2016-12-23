@@ -980,17 +980,18 @@ if __name__ == '__main__':
 
     elif opt.evaluation_isolation:
 
-        # c12
+        # c12 offset 0 weight -10
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation10/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        weight = -10.0
 
-        # c11 - no idx list, 0, -5
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation11/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## # c11 - no idx list, 0, -5
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation11/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
-        ## # c12 - offset 0 weight 5
+        ## # c12 - offset 0 weight -5
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation12/'+\
         ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
