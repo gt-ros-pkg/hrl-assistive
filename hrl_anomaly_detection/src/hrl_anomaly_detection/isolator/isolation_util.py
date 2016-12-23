@@ -227,7 +227,6 @@ def window_omp(x, label, D0=None, n_iter=500, sp_ratio=0.05, idx_list=None):
         
         for i in xrange(len(x[0])): # per sample
             for k in xrange(n_window_per_sample):
-
                 single_g = g[i*(n_window_per_sample*n_features)+k*n_features: \
                              i*(n_window_per_sample*n_features)+(k+1)*n_features ]
 
@@ -237,9 +236,7 @@ def window_omp(x, label, D0=None, n_iter=500, sp_ratio=0.05, idx_list=None):
                 Y_.append(label[i])
     else:
         for i in xrange(len(X_)/n_features): # per sample
-
             single_g = g[i*n_features : (i+1)*n_features ]
-            ## print i, len(Y_)/n_features, " : ", np.shape(single_g)
 
             if gs is None: gs = single_g.flatten()
             else: gs = np.vstack([gs, single_g.flatten()])
