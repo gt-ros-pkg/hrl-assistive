@@ -521,7 +521,7 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         d = dm.getDataLOPO(subject_names, task_name, raw_data_path, \
                            processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
                            downSampleSize=data_dict['downSampleSize'],\
-                           handFeatures=data_dict['isolationFeatures'], \
+                           handFeatures=data_dict['handFeatures'], \
                            cut_data=data_dict['cut_data'], \
                            data_renew=data_renew, max_time=data_dict['max_time'])
                            
@@ -669,6 +669,8 @@ if __name__ == '__main__':
                  default=False, help='Evaluate with single detector.')
     p.add_option('--eval_double', '--ed', action='store_true', dest='evaluation_double',
                  default=False, help='Evaluate with double detectors.')
+    p.add_option('--eval_omp_isol', '--eoi', action='store_true', dest='evaluation_omp_isolation',
+                 default=False, help='Evaluate anomaly isolation with omp.')
     p.add_option('--eval_isol', '--ei', action='store_true', dest='evaluation_isolation',
                  default=False, help='Evaluate anomaly isolation with double detectors.')
     p.add_option('--svd_renew', '--sr', action='store_true', dest='svd_renew',
@@ -888,28 +890,38 @@ if __name__ == '__main__':
                              verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                              find_param=False, data_gen=opt.bDataGen)
 
-    elif opt.evaluation_isolation:
+    elif opt.evaluation_omp_isolation:
 
-        # c11 offset 0 weight -8 spar 0.05, dict 8, win_size 130
+        # c11 offset 0 weight -8 spar 0.05, dict 8, win_size 130 #74%
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation10/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         weight = -8.0
         param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0 
 
-        # c12 offset 0 weight -5 spar 0.05, dict 8, win_size 130  #73%
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation11/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        weight = -5.0
-        param_dict['SVM']['hmmgp_logp_offset'] = 0.0 
+        param_dict['ROC']['methods'] = ['hmmgp']
+        nPoints = param_dict['ROC']['nPoints']
+        param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.6, 2.3, nPoints)*-1.0
+        param_dict['HMM']['scale'] = 6.111 
+        if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
+        
+        evaluation_omp_isolation(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
+                                 data_renew=opt.bDataRenew, svd_renew=opt.svd_renew,\
+                                 save_pdf=opt.bSavePdf, \
+                                 verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
+                                 find_param=False, data_gen=opt.bDataGen, weight=weight)
 
-        # ep offset 0 weight -8, spar 0.05, dict 2, win_size 130
+    elif opt.evaluation_isolation:
+
+        # c11 offset 0 weight -8 spar 0.05, dict 8, win_size 130
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation12/'+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation9/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         weight = -8.0
         param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0 
+
+        param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForce_integ', \
+                                                    'unimodal_kinEEChange', 'unimodal_kinJntEff_1']
 
 
         param_dict['ROC']['methods'] = ['hmmgp']
