@@ -625,7 +625,7 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failure_labels,
 
 def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalLabel, \
                   task_name, processed_data_path, param_dict,\
-                  ref_idx, verbose=False):
+                  ref_idx, window_size=10, window_step=5, verbose=False):
     ''' Get conditional probability vector when anomalies are detected
     '''
 
@@ -649,16 +649,22 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalLabel, \
         if d_idx is None:
             continue
 
-        print np.shape(B), ref_idx
-        cp_vec = ml.conditional_prob( abnormalData[:,i,:d_idx+1]*param_dict['HMM']['scale'], \
-                                      ref_idx)
+        cp_vecs = None
+        for j in xrange(d_idx-window_step, d_idx):
+            if j<0: continue
+            cp_vec = ml.conditional_prob( abnormalData[:,i,:j+1]*param_dict['HMM']['scale'], \
+                                          ref_idx)
+            if cp_vecs is None: cp_vecs = cp_vec
+            else: cp_vecs = np.vstack([ cp_vecs, cp_vec])
 
-        print cp_vec, np.sum(cp_vec)
-        ## sys.exit()
+        cp_vecs = np.amin(cp_vecs, axis=0)
+        
+        print cp_vec, np.sum(cp_vecs)
+        sys.exit()
 
         # slice data
         # get conditional probability
-        x.append( cp_vec )
+        x.append( cp_vecs )
         y.append( abnormalLabel[i] )
         
     return x, y
