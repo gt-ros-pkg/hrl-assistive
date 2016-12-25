@@ -726,7 +726,7 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
             #-----------------------------------------------------------------------------------------
             # Feature Extraction
             #-----------------------------------------------------------------------------------------
-            ref_idx = 18 # kinEEChange
+            ref_idx = 3 # kinEEChange
             x_train, y_train = iutil.get_cond_prob(idx, detection_train_idx_list, \
                                                    abnormalTrainData, abnormalTrainLabel,\
                                                    task_name, processed_data_path, param_dict, \
