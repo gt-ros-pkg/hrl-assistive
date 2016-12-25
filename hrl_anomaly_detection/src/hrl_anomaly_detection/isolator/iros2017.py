@@ -1038,7 +1038,7 @@ if __name__ == '__main__':
                                                     'unimodal_kinEEChange', \
                                                     'crossmodal_landmarkEEDist', \
                                                     ]
-        ref_idx = 6 # kinEEChange
+        ref_idx = 5 # kinEEChange
 
         param_dict['ROC']['methods'] = ['hmmgp']
         nPoints = param_dict['ROC']['nPoints']
