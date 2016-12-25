@@ -754,7 +754,7 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
 
         (x_train, y_train, x_test, y_test) = data_dict[idx]
 
-        if type(x_train) is list:
+        if type(x_train) is np.ndarray:
             x_train = x_train.tolist()
             y_train  = y_train.tolist()
             x_test  = x_test.tolist()
