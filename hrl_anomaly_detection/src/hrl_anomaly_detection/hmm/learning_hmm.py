@@ -378,6 +378,7 @@ class learning_hmm(learning_base):
 
         Only single sample works
         '''
+        from scipy.stats import norm, entropy
         
         # new emission for partial sequence
         B = []
@@ -410,7 +411,7 @@ class learning_hmm(learning_base):
                   (x[ref_idx][-1]-self.B[j][0][ref_idx])
                 std = np.sqrt( self.B[j][1][tt_cov_idx] )
                   
-                p += alpha[-1][j]*scipy.stats.norm.pdf(x[i][-1], loc=mu_j, scale=std)
+                p += alpha[-1][j]*norm.pdf(x[i][-1], loc=mu_j, scale=std)
 
             cond_prob.append(p)
         
