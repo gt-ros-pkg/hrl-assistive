@@ -597,7 +597,7 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalLabel, \
     
     x = []
     y = []
-    for i, d_idx in enumerate(detection_idx_list):
+    for i, d_idx in enumerate(anomaly_idx_list):
 
         # Skip undetected anomaly
         if d_idx is None:

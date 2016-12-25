@@ -695,55 +695,55 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
 
     #-----------------------------------------------------------------------------------------
     # Training HMM, and getting classifier training and testing data
-    for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
-      in enumerate(kFold_list):
+    data_dict = {}
+    isol_pkl = os.path.join(processed_data_path, 'isol_data.pkl')
+    if os.path.isfile(isol_pkl) is False or svd_renew: 
+        for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
+          in enumerate(kFold_list):
 
-        isol_pkl = os.path.join(processed_data_path, 'isol_data_'+str(idx)+'.pkl')
-        if not(os.path.isfile(isol_pkl) is False or svd_renew): continue
+            # dim x sample x length
+            normalTrainData   = copy.copy(successData[:, normalTrainIdx, :])
+            abnormalTrainData = copy.copy(failureData[:, abnormalTrainIdx, :])
+            normalTestData    = copy.copy(successData[:, normalTestIdx, :] )
+            abnormalTestData  = copy.copy(failureData[:, abnormalTestIdx, :])
+            abnormalTrainLabel = copy.copy(failure_labels[abnormalTrainIdx])
+            abnormalTestLabel  = copy.copy(failure_labels[abnormalTestIdx])
 
-        # dim x sample x length
-        normalTrainData   = copy.copy(successData[:, normalTrainIdx, :])
-        abnormalTrainData = copy.copy(failureData[:, abnormalTrainIdx, :])
-        normalTestData    = copy.copy(successData[:, normalTestIdx, :] )
-        abnormalTestData  = copy.copy(failureData[:, abnormalTestIdx, :])
-        abnormalTrainLabel = copy.copy(failure_labels[abnormalTrainIdx])
-        abnormalTestLabel  = copy.copy(failure_labels[abnormalTestIdx])
+            #-----------------------------------------------------------------------------------------
+            # Anomaly Detection
+            #-----------------------------------------------------------------------------------------
+            detection_train_idx_list = iutil.anomaly_detection(abnormalTrainData, \
+                                                               [1]*len(abnormalTrainData[0]), \
+                                                               task_name, processed_data_path, param_dict,\
+                                                               logp_viz=False, verbose=False, weight=weight,\
+                                                               idx=idx)
+            detection_test_idx_list = iutil.anomaly_detection(abnormalTestData, \
+                                                              [1]*len(abnormalTestData[0]), \
+                                                              task_name, processed_data_path, param_dict,\
+                                                              logp_viz=False, verbose=False, weight=weight,\
+                                                              idx=idx)
 
-        #-----------------------------------------------------------------------------------------
-        # Anomaly Detection
-        #-----------------------------------------------------------------------------------------
-        detection_train_idx_list = iutil.anomaly_detection(abnormalTrainData, [1]*len(abnormalTrainData[0]), \
-                                                           task_name, processed_data_path, param_dict,\
-                                                           logp_viz=False, verbose=False, weight=weight,\
-                                                           idx=idx)
-        detection_test_idx_list = iutil.anomaly_detection(abnormalTestData, [1]*len(abnormalTestData[0]), \
-                                                          task_name, processed_data_path, param_dict,\
-                                                          logp_viz=False, verbose=False, weight=weight,\
-                                                          idx=idx)
+            #-----------------------------------------------------------------------------------------
+            # Feature Extraction
+            #-----------------------------------------------------------------------------------------
+            ref_idx = 18 # kinEEChange
+            x_train, y_train = iutil.get_cond_prob(idx, detection_train_idx_list, \
+                                                   abnormalTrainData, abnormalTrainLabel,\
+                                                   task_name, processed_data_path, param_dict, \
+                                                   ref_idx=ref_idx )
 
-        #-----------------------------------------------------------------------------------------
-        # Feature Extraction
-        #-----------------------------------------------------------------------------------------
-        ref_idx = 18 # kinEEChange
-        x_train, y_train = iutil.get_cond_prob(idx, detection_train_idx_list, \
-                                               abnormalTrainData, abnormalTrainLabel,\
-                                               task_name, processed_data_path, param_dict, \
-                                               ref_idx=ref_idx )
+            x_test, y_test = iutil.get_cond_prob(idx, detection_test_idx_list, \
+                                                 abnormalTestData, abnormalTestLabel,\
+                                                 task_name, processed_data_path, param_dict, \
+                                                 ref_idx=ref_idx  )
 
-        x_test, y_test = iutil.get_cond_prob(idx, detection_test_idx_list, \
-                                             abnormalTestData, abnormalTestLabel,\
-                                             task_name, processed_data_path, param_dict, \
-                                             ref_idx=ref_idx  )
-
-        isol_dict = {}
-        isol_dict['x_train'] = x_train
-        isol_dict['y_train'] = y_train
-        isol_dict['x_test'] = x_test
-        isol_dict['y_test'] = y_test
+            data_dict[idx] = (x_train, y_train, x_test, y_test)
 
         # save
         print "save pkl: ", isol_pkl
-        ut.save_pickle(isol_dict, isol_pkl)            
+        ut.save_pickle(data_dict, isol_pkl)            
+    else:
+        data_dict = ut.load_pickle(isol_pkl)
 
 
     # ---------------------------------------------------------------
@@ -752,20 +752,20 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
       in enumerate(kFold_list):
         print "kFold_list: ", idx
 
-        (gs_train, y_train, gs_test, y_test) = data_dict[idx]
+        (x_train, y_train, x_test, y_test) = data_dict[idx]
 
-        if type(gs_train) is list:
-            gs_train = gs_train.tolist()
+        if type(x_train) is list:
+            x_train = x_train.tolist()
             y_train  = y_train.tolist()
-            gs_test  = gs_test.tolist()
+            x_test  = x_test.tolist()
             y_test   = y_test.tolist()
-        print np.shape( gs_train ), np.shape( y_train ), np.shape( gs_test ), np.shape( y_test )
+        print np.shape( x_train ), np.shape( y_train ), np.shape( x_test ), np.shape( y_test )
         
         from sklearn.svm import SVC
         clf = SVC(C=1.0, kernel='linear') #, decision_function_shape='ovo')
-        clf.fit(gs_train, y_train)
-        ## y_pred = clf.predict(gs_test.tolist())
-        score = clf.score(gs_test, y_test)
+        clf.fit(x_train, y_train)
+        ## y_pred = clf.predict(x_test.tolist())
+        score = clf.score(x_test, y_test)
         scores.append( score )
         print idx, " = ", score
             
