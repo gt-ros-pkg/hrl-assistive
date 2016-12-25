@@ -366,6 +366,55 @@ class learning_hmm(learning_base):
                 x_pred.append(t_o)
 
         return x_pred
+
+
+    def conditional_prob(self, x, ref_idx):
+        '''
+        Input
+        @ x: dim x length
+        @ ref_idx: the index of x_s in a list of features
+        Output
+        @ A list of conditional probabilities P(x_t|x_s,lambda)
+
+        Only single sample works
+        '''
+        
+        # new emission for partial sequence
+        B = []
+        for i in xrange(self.nState):
+            B.append( [ self.B[i][0][ref_idx], self.B[i][1][ref_idx*self.nEmissionDim+ref_idx] ] )
+
+        ml = ghmm.HMMFromMatrices(self.F, ghmm.GaussianDistribution(self.F), \
+                                  self.A, B, self.pi)
+
+        if type(x) is not list: x = x.tolist()            
+        final_ts_obj = ghmm.EmissionSequence(self.F, x[ref_idx])        
+        try:
+            (alpha, scale) = ml.forward(final_ts_obj)
+        except:
+            print "No alpha is available !!"
+            sys.exit()
+
+        cond_prob = []
+        for i in xrange(self.nEmissionDim): # per feature
+            if i == ref_idx: continue
+            
+            ss_cov_idx = ref_idx*self.nEmissionDim+ref_idx
+            st_cov_idx = ref_idx*self.nEmissionDim+i
+            tt_cov_idx = i*self.nEmissionDim+i
+
+            p = 0.0
+            for j in xrange(self.nState):
+                mu_j = self.B[j][0][i] + \
+                  self.B[j][1][st_cov_idx]/self.B[j][1][ss_cov_idx]*\
+                  (x[ref_idx][-1]-self.B[j][0][ref_idx])
+                std = np.sqrt( self.B[j][1][tt_cov_idx] )
+                  
+                p += alpha[-1][j]*scipy.stats.norm.pdf(x[i][-1], loc=mu_j, scale=std)
+
+            cond_prob.append(p)
+        
+        return np.array(cond_prob)/np.linalg.norm(cond_prob)
         
 
     def loglikelihood(self, X, bPosterior=False):

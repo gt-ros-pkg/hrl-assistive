@@ -530,13 +530,9 @@ def get_isolation_data(idx, kFold_list, modeling_pkl, nState, \
             abnormalTestFileList.append(f.split('/')[-1])    
 
     detection_test_idx_list = anomaly_detection(abnormalTestData, testDataY, \
-                                                      task_name, processed_data_path, param_dict,\
-                                                      logp_viz=False, verbose=False, weight=weight,\
-                                                      idx=idx)
-
-    ## print np.shape(abnormalTestData), np.shape(testDataY)
-    ## print len(detection_test_idx_list)
-    ## print detection_test_idx_list
+                                                task_name, processed_data_path, param_dict,\
+                                                logp_viz=False, verbose=False, weight=weight,\
+                                                idx=idx)
 
     #-----------------------------------------------------------------------------------------
     # Anomaly Isolation
@@ -579,3 +575,79 @@ def get_isolation_data(idx, kFold_list, modeling_pkl, nState, \
 
 
     return idx, gs_train, y_train, gs_test, y_test
+
+
+def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalLabel, \
+                  task_name, processed_data_path, param_dict,\
+                  ref_idx, verbose=False):
+    ''' Get conditional probability vector when anomalies are detected
+    '''
+
+    # Load a generative model
+    modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
+    d            = ut.load_pickle(modeling_pkl)
+    ## Load local variables: nState, nEmissionDim, ll_classifier_train_?, ll_classifier_test_?, nLength    
+    for k, v in d.iteritems():
+        # Ignore predefined test data in the hmm object
+        if not(k.find('test')>=0):
+            exec '%s = v' % k
+    
+    ml = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
+    ml.set_hmm_object(A,B,pi)
+    
+    x = []
+    y = []
+    for i, d_idx in enumerate(detection_idx_list):
+
+        # Skip undetected anomaly
+        if d_idx is None:
+            continue
+
+        # slice data
+        # get conditional probability
+        x.append( ml.conditional_prob( abnormalData[:,i,:d_idx+1]*param_dict['HMM']['scale'], \
+                                       ref_idx) )
+        y.append( abnormalLabel[i] )
+        
+    return x, y
+
+
+
+def save_data_labels(data, labels, processed_data_path='./'):
+    LOG_DIR = os.path.join(processed_data_path, 'tensorflow' )
+    if os.path.isdir(LOG_DIR) is False:
+        os.system('mkdir -p '+LOG_DIR)
+
+    
+    if len(np.shape(data)) > 2:
+        n_features = np.shape(data)[0]
+        n_samples  = np.shape(data)[1]
+        n_length  = np.shape(data)[2]
+        training_data   = copy.copy(data)
+        training_data   = np.swapaxes(training_data, 0, 1).reshape((n_samples, n_features*n_length))
+    else:
+        training_data   = copy.copy(data)
+    training_labels = copy.copy(labels)
+
+    import csv
+    ## tgt_csv = os.path.join(LOG_DIR, 'data.tsv')
+    tgt_csv = './data.tsv'
+    with open(tgt_csv, 'w') as csvfile:
+        for row in training_data:
+            string = None
+            for col in row:
+                if string is None:
+                    string = str(col)
+                else:
+                    string += '\t'+str(col)
+
+            csvfile.write(string+"\n")
+
+    ## tgt_csv = os.path.join(LOG_DIR, 'labels.tsv')
+    tgt_csv = './labels.tsv'
+    with open(tgt_csv, 'w') as csvfile:
+        for row in training_labels:
+            csvfile.write(str(row)+"\n")
+    
+    os.system('cp *.tsv ~/Dropbox/HRL/')        
+

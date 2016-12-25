@@ -478,10 +478,10 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
     roc_info(method_list, ROC_data, nPoints, no_plot=True)
 
 
-def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
-                         data_renew=False, svd_renew=False, save_pdf=False, verbose=False, debug=False,\
-                         no_plot=False, delay_plot=True, find_param=False, data_gen=False, \
-                         save_viz_data=False, weight=-5.0):
+def evaluation_omp_isolation(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
+                             data_renew=False, svd_renew=False, save_pdf=False, verbose=False, debug=False,\
+                             no_plot=False, delay_plot=True, find_param=False, data_gen=False, \
+                             save_viz_data=False, weight=-5.0):
     ## Parameters
     # data
     data_dict  = param_dict['data_param']
@@ -521,7 +521,7 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         d = dm.getDataLOPO(subject_names, task_name, raw_data_path, \
                            processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
                            downSampleSize=data_dict['downSampleSize'],\
-                           handFeatures=data_dict['handFeatures'], \
+                           handFeatures=param_dict['data_param']['isolationFeatures'], \
                            cut_data=data_dict['cut_data'], \
                            data_renew=data_renew, max_time=data_dict['max_time'])
                            
@@ -613,45 +613,167 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
     print np.mean(scores), np.std(scores)
 
 
+def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
+                         data_renew=False, svd_renew=False, save_pdf=False, verbose=False, debug=False,\
+                         no_plot=False, delay_plot=True, find_param=False, data_gen=False, \
+                         save_viz_data=False, weight=-5.0):
+    ## Parameters
+    # data
+    data_dict  = param_dict['data_param']
+    data_renew = data_dict['renew']
+    # HMM
+    HMM_dict   = param_dict['HMM']
+    nState     = HMM_dict['nState']
+    cov        = HMM_dict['cov']
+    # SVM
+    SVM_dict   = param_dict['SVM']
+    # ROC
+    ROC_dict = param_dict['ROC']
 
-
-def save_data_labels(data, labels, processed_data_path='./'):
-    LOG_DIR = os.path.join(processed_data_path, 'tensorflow' )
-    if os.path.isdir(LOG_DIR) is False:
-        os.system('mkdir -p '+LOG_DIR)
-
+    # parameters
+    startIdx    = 4
+    method_list = ROC_dict['methods'] 
+    nPoints     = ROC_dict['nPoints']
     
-    if len(np.shape(data)) > 2:
-        n_features = np.shape(data)[0]
-        n_samples  = np.shape(data)[1]
-        n_length  = np.shape(data)[2]
-        training_data   = copy.copy(data)
-        training_data   = np.swapaxes(training_data, 0, 1).reshape((n_samples, n_features*n_length))
+    #------------------------------------------
+    if os.path.isdir(processed_data_path) is False:
+        os.system('mkdir -p '+processed_data_path)
+
+    crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
+
+    if os.path.isfile(crossVal_pkl) and data_renew is False and data_gen is False:
+        print "CV data exists and no renew"
+        d = ut.load_pickle(crossVal_pkl)
+        kFold_list = d['kFoldList'] 
+        successData = d['successIsolData']
+        failureData = d['failureIsolData']        
+        success_files = d['success_files']
+        failure_files = d['failure_files']
     else:
-        training_data   = copy.copy(data)
-    training_labels = copy.copy(labels)
+        '''
+        Use augmented data? if nAugment is 0, then aug_successData = successData
+        '''        
+        d = dm.getDataLOPO(subject_names, task_name, raw_data_path, \
+                           processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
+                           downSampleSize=data_dict['downSampleSize'],\
+                           handFeatures=data_dict['handFeatures'], \
+                           cut_data=data_dict['cut_data'], \
+                           data_renew=data_renew, max_time=data_dict['max_time'])
+                           
+        successData, failureData, success_files, failure_files, kFold_list \
+          = dm.LOPO_data_index(d['successDataList'], d['failureDataList'],\
+                               d['successFileList'], d['failureFileList'])
 
-    import csv
-    ## tgt_csv = os.path.join(LOG_DIR, 'data.tsv')
-    tgt_csv = './data.tsv'
-    with open(tgt_csv, 'w') as csvfile:
-        for row in training_data:
-            string = None
-            for col in row:
-                if string is None:
-                    string = str(col)
-                else:
-                    string += '\t'+str(col)
+        d['successIsolData'] = successData
+        d['failureIsolData'] = failureData
+        d['success_files']   = success_files
+        d['failure_files']   = failure_files
+        d['kFoldList']       = kFold_list
+        ut.save_pickle(d, crossVal_pkl)
+        if data_gen: sys.exit()
 
-            csvfile.write(string+"\n")
+    failure_labels = []
+    for f in failure_files:
+        failure_labels.append( int( f.split('/')[-1].split('_')[0] ) )
+    failure_labels = np.array( failure_labels )
 
-    ## tgt_csv = os.path.join(LOG_DIR, 'labels.tsv')
-    tgt_csv = './labels.tsv'
-    with open(tgt_csv, 'w') as csvfile:
-        for row in training_labels:
-            csvfile.write(str(row)+"\n")
+    # ---------------------------------------------------------------
+    dm.saveHMMinducedFeatures(kFold_list, successData, failureData,\
+                              task_name, processed_data_path,\
+                              HMM_dict, data_renew, startIdx, nState, cov, \
+                              success_files=success_files, failure_files=failure_files,\
+                              noise_mag=0.03, verbose=verbose)
     
-    os.system('cp *.tsv ~/Dropbox/HRL/')        
+    # ---------------------------------------------------------------
+    #temp
+    kFold_list = kFold_list[:8]
+
+    # set parameters
+    method     = 'hmmgp'
+    nMaxData   = 20 # The maximun number of executions to train GP
+    nSubSample = 50 # The number of sub-samples from each execution to train GP
+
+    #-----------------------------------------------------------------------------------------
+    # Training HMM, and getting classifier training and testing data
+    for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
+      in enumerate(kFold_list):
+
+        isol_pkl = os.path.join(processed_data_path, 'isol_data_'+str(idx)+'.pkl')
+        if not(os.path.isfile(isol_pkl) is False or svd_renew): continue
+
+        # dim x sample x length
+        normalTrainData   = copy.copy(successData[:, normalTrainIdx, :])
+        abnormalTrainData = copy.copy(failureData[:, abnormalTrainIdx, :])
+        normalTestData    = copy.copy(successData[:, normalTestIdx, :] )
+        abnormalTestData  = copy.copy(failureData[:, abnormalTestIdx, :])
+        abnormalTrainLabel = copy.copy(failure_labels[abnormalTrainIdx])
+        abnormalTestLabel  = copy.copy(failure_labels[abnormalTestIdx])
+
+        #-----------------------------------------------------------------------------------------
+        # Anomaly Detection
+        #-----------------------------------------------------------------------------------------
+        detection_train_idx_list = iutil.anomaly_detection(abnormalTrainData, [1]*len(abnormalTrainData[0]), \
+                                                           task_name, processed_data_path, param_dict,\
+                                                           logp_viz=False, verbose=False, weight=weight,\
+                                                           idx=idx)
+        detection_test_idx_list = iutil.anomaly_detection(abnormalTestData, [1]*len(abnormalTestData[0]), \
+                                                          task_name, processed_data_path, param_dict,\
+                                                          logp_viz=False, verbose=False, weight=weight,\
+                                                          idx=idx)
+
+        #-----------------------------------------------------------------------------------------
+        # Feature Extraction
+        #-----------------------------------------------------------------------------------------
+        ref_idx = 18 # kinEEChange
+        x_train, y_train = iutil.get_cond_prob(idx, detection_train_idx_list, \
+                                               abnormalTrainData, abnormalTrainLabel,\
+                                               task_name, processed_data_path, param_dict, \
+                                               ref_idx=ref_idx )
+
+        x_test, y_test = iutil.get_cond_prob(idx, detection_test_idx_list, \
+                                             abnormalTestData, abnormalTestLabel,\
+                                             task_name, processed_data_path, param_dict, \
+                                             ref_idx=ref_idx  )
+
+        isol_dict = {}
+        isol_dict['x_train'] = x_train
+        isol_dict['y_train'] = y_train
+        isol_dict['x_test'] = x_test
+        isol_dict['y_test'] = y_test
+
+        # save
+        print "save pkl: ", isol_pkl
+        ut.save_pickle(isol_dict, isol_pkl)            
+
+
+    # ---------------------------------------------------------------
+    scores = []
+    for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
+      in enumerate(kFold_list):
+        print "kFold_list: ", idx
+
+        (gs_train, y_train, gs_test, y_test) = data_dict[idx]
+
+        if type(gs_train) is list:
+            gs_train = gs_train.tolist()
+            y_train  = y_train.tolist()
+            gs_test  = gs_test.tolist()
+            y_test   = y_test.tolist()
+        print np.shape( gs_train ), np.shape( y_train ), np.shape( gs_test ), np.shape( y_test )
+        
+        from sklearn.svm import SVC
+        clf = SVC(C=1.0, kernel='linear') #, decision_function_shape='ovo')
+        clf.fit(gs_train, y_train)
+        ## y_pred = clf.predict(gs_test.tolist())
+        score = clf.score(gs_test, y_test)
+        scores.append( score )
+        print idx, " = ", score
+            
+    print scores
+    print np.mean(scores), np.std(scores)
+
+
+
 
 
 
@@ -920,8 +1042,12 @@ if __name__ == '__main__':
         weight = -8.0
         param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0 
 
-        param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForce_integ', \
-                                                    'unimodal_kinEEChange', 'unimodal_kinJntEff_1']
+        param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
+                                                    'unimodal_kinJntEff_1',\
+                                                    'unimodal_ftForce_integ',\
+                                                    'unimodal_kinEEChange', \
+                                                    'crossmodal_landmarkEEDist', \
+                                                    ]
 
 
         param_dict['ROC']['methods'] = ['hmmgp']
