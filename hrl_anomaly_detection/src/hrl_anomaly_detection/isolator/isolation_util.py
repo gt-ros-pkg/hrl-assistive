@@ -579,7 +579,7 @@ def get_isolation_data(idx, kFold_list, modeling_pkl, nState, \
 
 def get_hmm_isolation_data(idx, kFold_list, failureData, failure_labels,
                            task_name, processed_data_path, param_dict, weight,\
-                           ref_idx ):
+                           ref_idx, n_jobs=-1 ):
 
     normalTrainIdx = kFold_list[0]
     abnormalTrainIdx = kFold_list[1]
