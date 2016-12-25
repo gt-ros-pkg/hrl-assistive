@@ -653,7 +653,7 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalLabel, \
         cp_vec = ml.conditional_prob( abnormalData[:,i,:d_idx+1]*param_dict['HMM']['scale'], \
                                       ref_idx)
 
-        print cp_vec
+        print cp_vec, np.sum(cp_vec)
         ## sys.exit()
 
         # slice data

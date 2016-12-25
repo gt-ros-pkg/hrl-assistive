@@ -415,7 +415,7 @@ class learning_hmm(learning_base):
 
             cond_prob.append(p)
         
-        return np.array(cond_prob)/np.linalg.norm(cond_prob)
+        return np.array(cond_prob) #/np.linalg.norm(cond_prob)
         
 
     def loglikelihood(self, X, bPosterior=False):
