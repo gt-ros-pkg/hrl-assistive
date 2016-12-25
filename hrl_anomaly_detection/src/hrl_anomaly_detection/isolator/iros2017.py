@@ -702,7 +702,7 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
           in enumerate(kFold_list):
 
             x_train, y_train, x_test, y_test = \
-              iutil.get_hmm_isolation_data(idx, kFold_list, failureData, failure_labels,
+              iutil.get_hmm_isolation_data(idx, kFold_list[idx], failureData, failure_labels,
                                            task_name, processed_data_path, param_dict, weight,\
                                            ref_idx )
             data_dict[idx] = (x_train, y_train, x_test, y_test)

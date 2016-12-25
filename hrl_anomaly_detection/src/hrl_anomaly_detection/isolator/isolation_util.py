@@ -587,8 +587,8 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failure_labels,
     abnormalTestIdx = kFold_list[3]
 
     # dim x sample x length
-    abnormalTrainData = copy.copy(failureData[:, abnormalTrainIdx, :])
-    abnormalTestData  = copy.copy(failureData[:, abnormalTestIdx, :])
+    abnormalTrainData  = copy.copy(failureData[:, abnormalTrainIdx, :])
+    abnormalTestData   = copy.copy(failureData[:, abnormalTestIdx, :])
     abnormalTrainLabel = copy.copy(failure_labels[abnormalTrainIdx])
     abnormalTestLabel  = copy.copy(failure_labels[abnormalTestIdx])
 
