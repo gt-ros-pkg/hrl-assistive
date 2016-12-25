@@ -654,7 +654,7 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalLabel, \
                                       ref_idx)
 
         print cp_vec
-        sys.exit()
+        ## sys.exit()
 
         # slice data
         # get conditional probability
