@@ -696,22 +696,24 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
     #-----------------------------------------------------------------------------------------
     # Training HMM, and getting classifier training and testing data
     data_dict = {}
-    isol_pkl = os.path.join(processed_data_path, 'isol_data.pkl')
-    if os.path.isfile(isol_pkl) is False or svd_renew: 
-        for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
-          in enumerate(kFold_list):
+    data_pkl = os.path.join(processed_data_path, 'isol_data.pkl')
+    if os.path.isfile(data_pkl) is False or svd_renew:
 
-            x_train, y_train, x_test, y_test = \
-              iutil.get_hmm_isolation_data(idx, kFold_list[idx], failureData, failure_labels,
-                                           task_name, processed_data_path, param_dict, weight,\
-                                           ref_idx )
-            data_dict[idx] = (x_train, y_train, x_test, y_test)
-
-        # save
-        print "save pkl: ", isol_pkl
-        ut.save_pickle(data_dict, isol_pkl)            
+        n_jobs = 1
+        l_data = Parallel(n_jobs=n_jobs, verbose=10)\
+          (delayed(iutil.get_hmm_isolation_data)(idx, kFold_list[idx], failureData, failure_labels,
+                                                 task_name, processed_data_path, param_dict, weight,\
+                                                 ref_idx) for idx in xrange(len(kFold_list)) )
+        
+        data_dict = {}
+        for i in xrange(len(l_data)):
+            idx = l_data[i][0]
+            data_dict[idx] = (l_data[i][1],l_data[i][2],l_data[i][3],l_data[i][4] )
+            
+        print "save pkl: ", data_pkl
+        ut.save_pickle(data_dict, data_pkl)            
     else:
-        data_dict = ut.load_pickle(isol_pkl)
+        data_dict = ut.load_pickle(data_pkl)
 
 
     # ---------------------------------------------------------------
