@@ -726,6 +726,9 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
 
         (x_train, y_train, x_test, y_test) = data_dict[idx]
 
+        iutil.save_data_labels(x_train, y_train)
+        sys.exit()
+
         if type(x_train) is np.ndarray:
             x_train = x_train.tolist()
             y_train  = y_train.tolist()
@@ -1012,7 +1015,7 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation9/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        weight = -8.0
+        weight = -7.0
         param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0 
 
         param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
@@ -1022,7 +1025,7 @@ if __name__ == '__main__':
                                                     'unimodal_kinEEChange', \
                                                     'crossmodal_landmarkEEDist', \
                                                     ]
-        ref_idx = 4 # kinEEChange
+        ref_idx = 5 # kinEEChange
 
         param_dict['ROC']['methods'] = ['hmmgp']
         nPoints = param_dict['ROC']['nPoints']

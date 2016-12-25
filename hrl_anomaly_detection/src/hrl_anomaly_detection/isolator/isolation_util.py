@@ -695,5 +695,5 @@ def save_data_labels(data, labels, processed_data_path='./'):
         for row in training_labels:
             csvfile.write(str(row)+"\n")
     
-    os.system('cp *.tsv ~/Dropbox/HRL/')        
+    os.system('mv *.tsv ~/Dropbox/HRL/')        
 
