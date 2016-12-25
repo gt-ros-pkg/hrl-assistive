@@ -699,7 +699,7 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
     data_pkl = os.path.join(processed_data_path, 'isol_data.pkl')
     if os.path.isfile(data_pkl) is False or svd_renew:
 
-        n_jobs = 1
+        n_jobs = -1
         l_data = Parallel(n_jobs=n_jobs, verbose=10)\
           (delayed(iutil.get_hmm_isolation_data)(idx, kFold_list[idx], failureData, failure_labels,
                                                  task_name, processed_data_path, param_dict, weight,\
