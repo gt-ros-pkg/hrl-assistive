@@ -917,12 +917,18 @@ if __name__ == '__main__':
         param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.6, 2.3, nPoints)*-1.0        
 
         # 78% scale?,  82% scale 1
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation7/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
-        ##                                             'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
-        ## param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.6, 2.1, nPoints)*-1.0 + 1.0
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation7/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
+                                                    'unimodal_audioWristAzimuth',\
+                                                    'unimodal_kinJntEff_1',\
+                                                    'unimodal_ftForce_integ',\
+                                                    'unimodal_fabricForce',\
+                                                    'unimodal_kinEEChange', \
+                                                    'crossmodal_landmarkEEDist', \
+                                                    ]
+        param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.6, 2.3, nPoints)*-1.0 
 
 
 
