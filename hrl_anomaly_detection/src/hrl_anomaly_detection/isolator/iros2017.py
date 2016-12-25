@@ -616,7 +616,7 @@ def evaluation_omp_isolation(subject_names, task_name, raw_data_path, processed_
 def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
                          data_renew=False, svd_renew=False, save_pdf=False, verbose=False, debug=False,\
                          no_plot=False, delay_plot=True, find_param=False, data_gen=False, \
-                         save_viz_data=False, weight=-5.0):
+                         save_viz_data=False, weight=-5.0, ref_idx=3):
     ## Parameters
     # data
     data_dict  = param_dict['data_param']
@@ -701,42 +701,10 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
           in enumerate(kFold_list):
 
-            # dim x sample x length
-            normalTrainData   = copy.copy(successData[:, normalTrainIdx, :])
-            abnormalTrainData = copy.copy(failureData[:, abnormalTrainIdx, :])
-            normalTestData    = copy.copy(successData[:, normalTestIdx, :] )
-            abnormalTestData  = copy.copy(failureData[:, abnormalTestIdx, :])
-            abnormalTrainLabel = copy.copy(failure_labels[abnormalTrainIdx])
-            abnormalTestLabel  = copy.copy(failure_labels[abnormalTestIdx])
-
-            #-----------------------------------------------------------------------------------------
-            # Anomaly Detection
-            #-----------------------------------------------------------------------------------------
-            detection_train_idx_list = iutil.anomaly_detection(abnormalTrainData, \
-                                                               [1]*len(abnormalTrainData[0]), \
-                                                               task_name, processed_data_path, param_dict,\
-                                                               logp_viz=False, verbose=False, weight=weight,\
-                                                               idx=idx)
-            detection_test_idx_list = iutil.anomaly_detection(abnormalTestData, \
-                                                              [1]*len(abnormalTestData[0]), \
-                                                              task_name, processed_data_path, param_dict,\
-                                                              logp_viz=False, verbose=False, weight=weight,\
-                                                              idx=idx)
-
-            #-----------------------------------------------------------------------------------------
-            # Feature Extraction
-            #-----------------------------------------------------------------------------------------
-            ref_idx = 3 # kinEEChange
-            x_train, y_train = iutil.get_cond_prob(idx, detection_train_idx_list, \
-                                                   abnormalTrainData, abnormalTrainLabel,\
-                                                   task_name, processed_data_path, param_dict, \
-                                                   ref_idx=ref_idx )
-
-            x_test, y_test = iutil.get_cond_prob(idx, detection_test_idx_list, \
-                                                 abnormalTestData, abnormalTestLabel,\
-                                                 task_name, processed_data_path, param_dict, \
-                                                 ref_idx=ref_idx  )
-
+            x_train, y_train, x_test, y_test = \
+              iutil.get_hmm_isolation_data(idx, kFold_list, failureData, failure_labels,
+                                           task_name, processed_data_path, param_dict, weight,\
+                                           ref_idx )
             data_dict[idx] = (x_train, y_train, x_test, y_test)
 
         # save
@@ -1043,12 +1011,13 @@ if __name__ == '__main__':
         param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0 
 
         param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
+                                                    'unimodal_audioWristAzimuth',\
                                                     'unimodal_kinJntEff_1',\
                                                     'unimodal_ftForce_integ',\
                                                     'unimodal_kinEEChange', \
                                                     'crossmodal_landmarkEEDist', \
                                                     ]
-
+        ref_idx = 4 # kinEEChange
 
         param_dict['ROC']['methods'] = ['hmmgp']
         nPoints = param_dict['ROC']['nPoints']
@@ -1060,4 +1029,5 @@ if __name__ == '__main__':
                              data_renew=opt.bDataRenew, svd_renew=opt.svd_renew,\
                              save_pdf=opt.bSavePdf, \
                              verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
-                             find_param=False, data_gen=opt.bDataGen, weight=weight)
+                             find_param=False, data_gen=opt.bDataGen, weight=weight,\
+                             ref_idx=ref_idx)

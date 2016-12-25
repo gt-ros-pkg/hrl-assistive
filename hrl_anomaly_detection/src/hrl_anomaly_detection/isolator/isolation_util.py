@@ -577,6 +577,52 @@ def get_isolation_data(idx, kFold_list, modeling_pkl, nState, \
     return idx, gs_train, y_train, gs_test, y_test
 
 
+def get_hmm_isolation_data(idx, kFold_list, failureData, failure_labels,
+                           task_name, processed_data_path, param_dict, weight,\
+                           ref_idx ):
+
+    normalTrainIdx = kFold_list[0]
+    abnormalTrainIdx = kFold_list[1]
+    normalTestIdx = kFold_list[2]
+    abnormalTestIdx = kFold_list[3]
+
+    # dim x sample x length
+    abnormalTrainData = copy.copy(failureData[:, abnormalTrainIdx, :])
+    abnormalTestData  = copy.copy(failureData[:, abnormalTestIdx, :])
+    abnormalTrainLabel = copy.copy(failure_labels[abnormalTrainIdx])
+    abnormalTestLabel  = copy.copy(failure_labels[abnormalTestIdx])
+
+    #-----------------------------------------------------------------------------------------
+    # Anomaly Detection
+    #-----------------------------------------------------------------------------------------
+    detection_train_idx_list = anomaly_detection(abnormalTrainData, \
+                                                       [1]*len(abnormalTrainData[0]), \
+                                                       task_name, processed_data_path, param_dict,\
+                                                       logp_viz=False, verbose=False, weight=weight,\
+                                                       idx=idx)
+    detection_test_idx_list = anomaly_detection(abnormalTestData, \
+                                                      [1]*len(abnormalTestData[0]), \
+                                                      task_name, processed_data_path, param_dict,\
+                                                      logp_viz=False, verbose=False, weight=weight,\
+                                                      idx=idx)
+
+    #-----------------------------------------------------------------------------------------
+    # Feature Extraction
+    #-----------------------------------------------------------------------------------------
+    x_train, y_train = get_cond_prob(idx, detection_train_idx_list, \
+                                           abnormalTrainData, abnormalTrainLabel,\
+                                           task_name, processed_data_path, param_dict, \
+                                           ref_idx=ref_idx )
+
+    x_test, y_test = get_cond_prob(idx, detection_test_idx_list, \
+                                         abnormalTestData, abnormalTestLabel,\
+                                         task_name, processed_data_path, param_dict, \
+                                         ref_idx=ref_idx  )
+
+    return idx, x_train, y_train, x_test, y_test
+
+                                         
+
 def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalLabel, \
                   task_name, processed_data_path, param_dict,\
                   ref_idx, verbose=False):
