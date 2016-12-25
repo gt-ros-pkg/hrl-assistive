@@ -726,6 +726,7 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
 
         (x_train, y_train, x_test, y_test) = data_dict[idx]
 
+        from sklearn import preprocessing
         scaler = preprocessing.StandardScaler()
         x_train = scaler.fit_transform(x_train)
         x_test  = scaler.transform(x_test)
