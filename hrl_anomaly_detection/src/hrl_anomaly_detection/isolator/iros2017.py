@@ -573,7 +573,8 @@ def evaluation_omp_isolation(subject_names, task_name, raw_data_path, processed_
                                                            'hmm_'+task_name+'_'+str(idx)+'.pkl'),\
                                                 nState, failureData_ad, failureData_ai, failure_files,\
                                                 failure_labels,\
-                                                task_name, processed_data_path, param_dict, weight)
+                                                task_name, processed_data_path, param_dict, weight,\
+                                                n_jobs=1)
           for idx in xrange(len(kFold_list)) )
         data_dict = {}
         for i in xrange(len(l_data)):
@@ -686,7 +687,8 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
     
     # ---------------------------------------------------------------
     #temp
-    kFold_list = kFold_list[:8]
+    ## kFold_list = kFold_list[:8]
+    kFold_list = kFold_list[:1]
 
     # set parameters
     method     = 'hmmgp'
@@ -699,11 +701,11 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
     data_pkl = os.path.join(processed_data_path, 'isol_data.pkl')
     if os.path.isfile(data_pkl) is False or svd_renew:
 
-        n_jobs = -1
+        n_jobs = 1
         l_data = Parallel(n_jobs=n_jobs, verbose=10)\
           (delayed(iutil.get_hmm_isolation_data)(idx, kFold_list[idx], failureData, failure_labels,
                                                  task_name, processed_data_path, param_dict, weight,\
-                                                 ref_idx) for idx in xrange(len(kFold_list)) )
+                                                 ref_idx, n_jobs=-1) for idx in xrange(len(kFold_list)) )
         
         data_dict = {}
         for i in xrange(len(l_data)):
@@ -732,7 +734,8 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         print np.shape( x_train ), np.shape( y_train ), np.shape( x_test ), np.shape( y_test )
         
         from sklearn.svm import SVC
-        clf = SVC(C=1.0, kernel='linear') #, decision_function_shape='ovo')
+        clf = SVC(C=1.0, kernel='rbf') #, decision_function_shape='ovo')
+        ## clf = SVC(C=1.0, kernel='linear') #, decision_function_shape='ovo')
         clf.fit(x_train, y_train)
         ## y_pred = clf.predict(x_test.tolist())
         score = clf.score(x_test, y_test)

@@ -398,7 +398,7 @@ def plot_decoder(x1,x2):
 
 
 def anomaly_detection(X, Y, task_name, processed_data_path, param_dict, logp_viz=False, verbose=False,
-                      weight=0.0, idx=0):
+                      weight=0.0, idx=0, n_jobs=-1):
     ''' Anomaly detector that return anomalous point on each data.
     '''
     HMM_dict = param_dict['HMM']
@@ -462,7 +462,7 @@ def anomaly_detection(X, Y, task_name, processed_data_path, param_dict, logp_viz
     startIdx   = 4
     ll_classifier_test_X, ll_classifier_test_Y, ll_classifier_test_idx = \
       hmm.getHMMinducedFeaturesFromRawCombinedFeatures(ml, X * HMM_dict['scale'], Y, startIdx, \
-                                                       n_jobs=-1)
+                                                       n_jobs=n_jobs)
 
     if logp_viz:
         ll_logp_neg = np.array(ll_classifier_train_X)[:,:,0]
@@ -497,7 +497,7 @@ def anomaly_detection(X, Y, task_name, processed_data_path, param_dict, logp_viz
 def get_isolation_data(idx, kFold_list, modeling_pkl, nState, \
                        failureData_ad, failureData_ai, failure_files, failure_labels, \
                        task_name, processed_data_path, param_dict, weight,\
-                       verbose=False):
+                       verbose=False, n_jobs=-1):
 
     normalTrainIdx = kFold_list[0]
     abnormalTrainIdx = kFold_list[1]
@@ -532,7 +532,7 @@ def get_isolation_data(idx, kFold_list, modeling_pkl, nState, \
     detection_test_idx_list = anomaly_detection(abnormalTestData, testDataY, \
                                                 task_name, processed_data_path, param_dict,\
                                                 logp_viz=False, verbose=False, weight=weight,\
-                                                idx=idx)
+                                                idx=idx, n_jobs=n_jobs)
 
     #-----------------------------------------------------------------------------------------
     # Anomaly Isolation
@@ -599,12 +599,12 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failure_labels,
                                                        [1]*len(abnormalTrainData[0]), \
                                                        task_name, processed_data_path, param_dict,\
                                                        logp_viz=False, verbose=False, weight=weight,\
-                                                       idx=idx)
+                                                       idx=idx, n_jobs=n_jobs)
     detection_test_idx_list = anomaly_detection(abnormalTestData, \
                                                       [1]*len(abnormalTestData[0]), \
                                                       task_name, processed_data_path, param_dict,\
                                                       logp_viz=False, verbose=False, weight=weight,\
-                                                      idx=idx)
+                                                      idx=idx, n_jobs=n_jobs)
 
     #-----------------------------------------------------------------------------------------
     # Feature Extraction
