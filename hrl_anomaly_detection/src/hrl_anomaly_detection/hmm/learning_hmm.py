@@ -379,7 +379,7 @@ class learning_hmm(learning_base):
         Only single sample works
         '''
         from scipy.stats import norm, entropy
-        
+
         # new emission for partial sequence
         B = []
         for i in xrange(self.nState):
@@ -396,6 +396,7 @@ class learning_hmm(learning_base):
             print "No alpha is available !!"
             sys.exit()
 
+        # feature-wise conditional probability
         cond_prob = []
         for i in xrange(self.nEmissionDim): # per feature
             if i == ref_idx: continue
@@ -405,6 +406,7 @@ class learning_hmm(learning_base):
             tt_cov_idx = i*self.nEmissionDim+i
 
             p = 0.0
+            p_denom = 0.0
             for j in xrange(self.nState):
                 mu_j = self.B[j][0][i] + \
                   self.B[j][1][st_cov_idx]/self.B[j][1][ss_cov_idx]*\
@@ -412,8 +414,9 @@ class learning_hmm(learning_base):
                 std = np.sqrt( self.B[j][1][tt_cov_idx] )
                   
                 p += alpha[-1][j]*norm.pdf(x[i][-1], loc=mu_j, scale=std)
-
-            cond_prob.append(p)
+                p_denom += norm.pdf(x[i][-1], loc=mu_j, scale=std)
+                
+            cond_prob.append(np.log10(p)) #/p_denom)
         
         return np.array(cond_prob) #/np.linalg.norm(cond_prob)
         
