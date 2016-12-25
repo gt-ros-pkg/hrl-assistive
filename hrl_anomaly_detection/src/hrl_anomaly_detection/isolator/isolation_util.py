@@ -649,10 +649,16 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalLabel, \
         if d_idx is None:
             continue
 
+        print np.shape(B), ref_idx
+        cp_vec = ml.conditional_prob( abnormalData[:,i,:d_idx+1]*param_dict['HMM']['scale'], \
+                                      ref_idx)
+
+        print cp_vec
+        sys.exit()
+
         # slice data
         # get conditional probability
-        x.append( ml.conditional_prob( abnormalData[:,i,:d_idx+1]*param_dict['HMM']['scale'], \
-                                       ref_idx) )
+        x.append( cp_vec )
         y.append( abnormalLabel[i] )
         
     return x, y
