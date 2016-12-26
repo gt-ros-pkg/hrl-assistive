@@ -598,12 +598,14 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failure_labels,
     detection_train_idx_list = anomaly_detection(abnormalTrainData, \
                                                        [1]*len(abnormalTrainData[0]), \
                                                        task_name, processed_data_path, param_dict,\
-                                                       logp_viz=False, verbose=False, weight=weight,\
+                                                       logp_viz=False, verbose=False, \
+                                                       weight=weight,\
                                                        idx=idx, n_jobs=n_jobs)
     detection_test_idx_list = anomaly_detection(abnormalTestData, \
                                                       [1]*len(abnormalTestData[0]), \
                                                       task_name, processed_data_path, param_dict,\
-                                                      logp_viz=False, verbose=False, weight=weight,\
+                                                      logp_viz=False, verbose=False, \
+                                                      weight=weight,\
                                                       idx=idx, n_jobs=n_jobs)
 
     #-----------------------------------------------------------------------------------------
@@ -625,7 +627,7 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failure_labels,
 
 def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalLabel, \
                   task_name, processed_data_path, param_dict,\
-                  ref_idx, window_step=10, verbose=False):
+                  ref_idx, window_step=10, verbose=False, plot=False):
     ''' Get conditional probability vector when anomalies are detected
     '''
 
@@ -650,17 +652,15 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalLabel, \
             continue
 
         cp_vecs = None
-        for j in xrange(d_idx-window_step, d_idx):
+        for j in xrange(d_idx-window_step, d_idx+window_step):
             if j<0: continue
             cp_vec = ml.conditional_prob( abnormalData[:,i,:j+1]*param_dict['HMM']['scale'], \
                                           ref_idx)
             if cp_vecs is None: cp_vecs = cp_vec
             else: cp_vecs = np.vstack([ cp_vecs, cp_vec])
 
-        cp_vecs = np.amin(cp_vecs, axis=0)
-        
-        ## print cp_vec, np.sum(cp_vecs)
-        ## sys.exit()
+        ## cp_vecs = np.amin(cp_vecs, axis=0)
+        cp_vecs = np.mean(cp_vecs, axis=0)
 
         # slice data
         # get conditional probability
@@ -682,7 +682,8 @@ def save_data_labels(data, labels, processed_data_path='./'):
         n_samples  = np.shape(data)[1]
         n_length  = np.shape(data)[2]
         training_data   = copy.copy(data)
-        training_data   = np.swapaxes(training_data, 0, 1).reshape((n_samples, n_features*n_length))
+        training_data   = np.swapaxes(training_data, 0, 1).reshape\
+          ((n_samples, n_features*n_length))
     else:
         training_data   = copy.copy(data)
     training_labels = copy.copy(labels)

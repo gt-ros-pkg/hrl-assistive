@@ -731,10 +731,6 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         x_train = scaler.fit_transform(x_train)
         x_test  = scaler.transform(x_test)
 
-        #temp
-        iutil.save_data_labels(x_train, y_train)
-        sys.exit()
-
         if type(x_train) is np.ndarray:
             x_train = x_train.tolist()
             y_train  = y_train.tolist()
@@ -754,6 +750,9 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
     print scores
     print np.mean(scores), np.std(scores)
 
+    #temp
+    iutil.save_data_labels(x_train, y_train)
+    sys.exit()
 
 
 
