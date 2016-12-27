@@ -649,8 +649,10 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalLabel, \
             continue
 
         if plot is False:
-            cp_vecs = ml.conditional_prob2( abnormalData[:,i,:d_idx+1]*\
+            cp_vecs = ml.conditional_prob2( abnormalData[:,i,:d_idx+10]*\
                                            param_dict['HMM']['scale'])
+            ## cp_vecs = ml.conditional_prob2( abnormalData[:,i,:d_idx+1]*\
+            ##                                param_dict['HMM']['scale'])
             cp_vecs = (cp_vecs-np.amin(cp_vecs))/(np.amax(cp_vecs)-np.amin(cp_vecs))
                                            
         else:

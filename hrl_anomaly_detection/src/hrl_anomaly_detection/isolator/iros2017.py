@@ -756,7 +756,7 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         
         from sklearn.svm import SVC
         clf = SVC(C=1.0, kernel='rbf') #, decision_function_shape='ovo')
-        ## clf = SVC(C=1.0, kernel='linear') #, decision_function_shape='ovo')
+        #clf = SVC(C=1.0, kernel='linear') #, decision_function_shape='ovo')
         clf.fit(x_train, y_train)
         ## y_pred = clf.predict(x_test.tolist())
         score = clf.score(x_test, y_test)
