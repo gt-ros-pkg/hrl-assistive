@@ -695,7 +695,12 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
                               HMM_dict, data_renew, startIdx, nState, cov, \
                               success_files=success_files, failure_files=failure_files,\
                               noise_mag=0.03, verbose=verbose)
-    
+
+    # select features for isolation
+    feature_list = [0,1,2,11,15,16,17,18,20,21]
+    successData_ai = np.array(successData)[feature_list]
+    failureData_ai = np.array(failureData)[feature_list]
+                              
     # ---------------------------------------------------------------
     #temp
     kFold_list = kFold_list[:8]
@@ -713,7 +718,7 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
 
         n_jobs = 1
         l_data = Parallel(n_jobs=n_jobs, verbose=10)\
-          (delayed(iutil.get_hmm_isolation_data)(idx, kFold_list[idx], failureData_ad, failureData, \
+          (delayed(iutil.get_hmm_isolation_data)(idx, kFold_list[idx], failureData_ad, failureData_ai, \
                                                  failure_labels,
                                                  task_name, processed_data_path, param_dict, weight,\
                                                  ref_idx, n_jobs=-1) for idx in xrange(len(kFold_list)) )

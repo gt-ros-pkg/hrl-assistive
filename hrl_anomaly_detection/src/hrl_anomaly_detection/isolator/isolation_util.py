@@ -549,7 +549,8 @@ def get_isolation_data(idx, kFold_list, modeling_pkl, nState, \
     Ds, gs_train, y_train = m_omp(abnormalTrainData, abnormalTrainLabel)
     print "Testing: ", idx
     _, gs_test, y_test = m_omp(abnormalTestData, abnormalTestLabel, Ds,\
-                                     idx_list=detection_test_idx_list)
+                               )
+                                     ## idx_list=detection_test_idx_list)
 
     # Train & test
     ## Ds, gs_train, y_train = w_omp(abnormalTrainData, abnormalTrainLabel)
