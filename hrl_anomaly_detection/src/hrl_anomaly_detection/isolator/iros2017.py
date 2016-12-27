@@ -678,8 +678,19 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         failure_labels.append( int( f.split('/')[-1].split('_')[0] ) )
     failure_labels = np.array( failure_labels )
 
+
     # ---------------------------------------------------------------
-    dm.saveHMMinducedFeatures(kFold_list, successData, failureData,\
+    # select feature for detection
+    feature_list = []
+    for feature in param_dict['data_param']['handFeatures']:
+        idx = [ i for i, x in enumerate(param_dict['data_param']['isolationFeatures']) if feature == x][0]
+        feature_list.append(idx)
+    
+    ## feature_list 
+    successData_ad = successData[feature_list]
+    failureData_ad = failureData[feature_list]
+
+    dm.saveHMMinducedFeatures(kFold_list, successData_ad, failureData_ad,\
                               task_name, processed_data_path,\
                               HMM_dict, data_renew, startIdx, nState, cov, \
                               success_files=success_files, failure_files=failure_files,\
@@ -687,7 +698,6 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
     
     # ---------------------------------------------------------------
     #temp
-    ## kFold_list = kFold_list[:8]
     kFold_list = kFold_list[:8]
 
     # set parameters
@@ -703,7 +713,8 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
 
         n_jobs = 1
         l_data = Parallel(n_jobs=n_jobs, verbose=10)\
-          (delayed(iutil.get_hmm_isolation_data)(idx, kFold_list[idx], failureData, failure_labels,
+          (delayed(iutil.get_hmm_isolation_data)(idx, kFold_list[idx], failureData_ad, failureData, \
+                                                 failure_labels,
                                                  task_name, processed_data_path, param_dict, weight,\
                                                  ref_idx, n_jobs=-1) for idx in xrange(len(kFold_list)) )
         

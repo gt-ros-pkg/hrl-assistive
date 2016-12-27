@@ -571,7 +571,7 @@ def get_isolation_data(idx, kFold_list, modeling_pkl, nState, \
     return idx, gs_train, y_train, gs_test, y_test
 
 
-def get_hmm_isolation_data(idx, kFold_list, failureData, failure_labels,
+def get_hmm_isolation_data(idx, kFold_list, failureData_ad, failureData, failure_labels,
                            task_name, processed_data_path, param_dict, weight,\
                            ref_idx, n_jobs=-1 ):
 
@@ -581,6 +581,8 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failure_labels,
     abnormalTestIdx = kFold_list[3]
 
     # dim x sample x length
+    abnormalTrainData_ad  = copy.copy(failureData_ad[:, abnormalTrainIdx, :])
+    abnormalTestData_ad   = copy.copy(failureData_ad[:, abnormalTestIdx, :])
     abnormalTrainData  = copy.copy(failureData[:, abnormalTrainIdx, :])
     abnormalTestData   = copy.copy(failureData[:, abnormalTestIdx, :])
     abnormalTrainLabel = copy.copy(failure_labels[abnormalTrainIdx])
@@ -589,31 +591,31 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failure_labels,
     #-----------------------------------------------------------------------------------------
     # Anomaly Detection
     #-----------------------------------------------------------------------------------------
-    detection_train_idx_list = anomaly_detection(abnormalTrainData, \
-                                                       [1]*len(abnormalTrainData[0]), \
-                                                       task_name, processed_data_path, param_dict,\
-                                                       logp_viz=False, verbose=False, \
-                                                       weight=weight,\
-                                                       idx=idx, n_jobs=n_jobs)
-    detection_test_idx_list = anomaly_detection(abnormalTestData, \
-                                                      [1]*len(abnormalTestData[0]), \
-                                                      task_name, processed_data_path, param_dict,\
-                                                      logp_viz=False, verbose=False, \
-                                                      weight=weight,\
-                                                      idx=idx, n_jobs=n_jobs)
+    detection_train_idx_list = anomaly_detection(abnormalTrainData_ad, \
+                                                 [1]*len(abnormalTrainData_ad[0]), \
+                                                 task_name, processed_data_path, param_dict,\
+                                                 logp_viz=False, verbose=False, \
+                                                 weight=weight,\
+                                                 idx=idx, n_jobs=n_jobs)
+    detection_test_idx_list = anomaly_detection(abnormalTestData_ad, \
+                                                [1]*len(abnormalTestData_ad[0]), \
+                                                task_name, processed_data_path, param_dict,\
+                                                logp_viz=False, verbose=False, \
+                                                weight=weight,\
+                                                idx=idx, n_jobs=n_jobs)
 
     #-----------------------------------------------------------------------------------------
     # Feature Extraction
     #-----------------------------------------------------------------------------------------
     x_train, y_train = get_cond_prob(idx, detection_train_idx_list, \
-                                           abnormalTrainData, abnormalTrainLabel,\
-                                           task_name, processed_data_path, param_dict, \
-                                           ref_idx=ref_idx, plot=False )
-
+                                     abnormalTrainData, abnormalTrainLabel,\
+                                     task_name, processed_data_path, param_dict, \
+                                     ref_idx=ref_idx, plot=False )
+                                     
     x_test, y_test = get_cond_prob(idx, detection_test_idx_list, \
-                                         abnormalTestData, abnormalTestLabel,\
-                                         task_name, processed_data_path, param_dict, \
-                                         ref_idx=ref_idx  )
+                                   abnormalTestData, abnormalTestLabel,\
+                                   task_name, processed_data_path, param_dict, \
+                                   ref_idx=ref_idx  )
 
     return idx, x_train, y_train, x_test, y_test
 
@@ -646,7 +648,7 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalLabel, \
             continue
 
         if plot is False:
-            cp_vecs = ml.conditional_prob( abnormalData[:,i,:d_idx+1]*\
+            cp_vecs = ml.conditional_prob2( abnormalData[:,i,:d_idx+1]*\
                                            param_dict['HMM']['scale'], \
                                            ref_idx)
             cp_vecs = (cp_vecs-np.amin(cp_vecs))/(np.amax(cp_vecs)-np.amin(cp_vecs))
@@ -680,13 +682,13 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalLabel, \
             ref_logps_abnormal = ref_logps[j:]
             # ----------------------------------------------------
 
-            #temp
-            ax = fig.add_subplot( nPlot*100+10+nPlot )
-            ## ref_logps = np.array(ll_classifier_train_X)[:,i,0]
-            ## ax = fig.add_subplot(111)
-            ax.plot(ref_logps_normal, 'b-')
-            ax.plot(cp_vecs[:,-1], 'r-')
-            ax.plot([d_idx,d_idx], [np.amin(cp_vecs[:,-1]), np.amax(cp_vecs[:,-1])], 'k-')
+            ## #temp
+            ## ax = fig.add_subplot( nPlot*100+10+nPlot )
+            ## ## ref_logps = np.array(ll_classifier_train_X)[:,i,0]
+            ## ## ax = fig.add_subplot(111)
+            ## ax.plot(ref_logps_normal, 'b-')
+            ## ax.plot(cp_vecs[:,-1], 'r-')
+            ## ax.plot([d_idx,d_idx], [np.amin(cp_vecs[:,-1]), np.amax(cp_vecs[:,-1])], 'k-')
                 
             plt.show()
             
@@ -698,14 +700,13 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalLabel, \
     return x, y
 
 
-def get_single_cond_prob(d_idx, window_step, ml, abnormalData, param_dict, ref_idx):
+def get_single_cond_prob(d_idx, window_step, ml, abnormalData, param_dict, ref_idx=None):
     cp_vecs = None
     ## for j in xrange(d_idx-window_step, d_idx):
     for j in xrange(len(abnormalData[0])):
         if j<4: continue
-        cp_vec = ml.conditional_prob( abnormalData[:,:j+1]*\
-                                      param_dict['HMM']['scale'], \
-                                      ref_idx)
+        cp_vec = ml.conditional_prob2( abnormalData[:,:j+1]*\
+                                      param_dict['HMM']['scale'])
         if cp_vecs is None: cp_vecs = cp_vec
         else: cp_vecs = np.vstack([ cp_vecs, cp_vec])
     return cp_vecs

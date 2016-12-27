@@ -413,7 +413,48 @@ class learning_hmm(learning_base):
         cond_prob = np.array(cond_prob)
             
         return cond_prob
+
+
+    def conditional_prob2(self, x):
+        '''
+        Input
+        @ x: dim x length
+        Output
+        @ A list of conditional probabilities P(x_t|x_s,lambda)
+
+        Only single sample works
+        '''
+        from scipy.stats import norm, entropy
+
+        # feature-wise conditional probability
+        cond_prob = []
+        for i in xrange(self.nEmissionDim): # per feature
+
+            B = [0] * self.nState
+            for j in xrange(self.nState):
+                B[j] = [ self.B[j][0][i] self.B[j][1][i*self.nEmissionDim+i] ]
+                
+            ml_src = ghmm.HMMFromMatrices(self.F, ghmm.GaussianDistribution(self.F), \
+                                          self.A, B, self.pi)
+
+            X_test = util.convert_sequence2(x[[ref_idx,i]], emission=False)
+            X_test = np.squeeze(X_test)
+            final_ts_obj = ghmm.EmissionSequence(self.F, X_test.tolist())
+            logp = ml_src.loglikelihood(final_ts_obj)
+
+            cond_prob.append(logp)
+
+        ## # all
+        ## X_test = util.convert_sequence2(x, emission=False)
+        ## X_test = np.squeeze(X_test)
+        ## final_ts_obj = ghmm.EmissionSequence(self.F, X_test.tolist())
+        ## cond_prob.append( self.ml.loglikelihood(final_ts_obj) )
         
+        # min-max normalization
+        cond_prob = np.array(cond_prob)
+            
+        return cond_prob
+    
 
     def loglikelihood(self, X, bPosterior=False):
         '''        
