@@ -203,7 +203,7 @@ def window_omp(x, label, D0=None, n_iter=500, sp_ratio=0.05, idx_list=None):
 
     n_features = len(x)
     dimension  = window_size 
-    dict_size  = int(dimension*2) #8)
+    dict_size  = int(dimension*8)
     n_examples = len(X_)
     target_sparsity = int(sp_ratio*dict_size)
 
@@ -513,11 +513,7 @@ def get_isolation_data(idx, kFold_list, modeling_pkl, nState, \
     ml.set_hmm_object(dd['A'],dd['B'],dd['pi'])
 
     # dim x sample x length
-    ## normalTrainData   = successData_ad[:, normalTrainIdx, :]
-    ## abnormalTrainData = failureData_ad[:, abnormalTrainIdx, :]
-    ## normalTestData    = copy.copy(successData_ad[:, normalTestIdx, :]) 
     abnormalTestData  = copy.copy(failureData_ad[:, abnormalTestIdx, :])
-    ## abnormal_train_files = np.array(failure_files)[abnormalTrainIdx].tolist()
     abnormal_test_files  = np.array(failure_files)[abnormalTestIdx].tolist()
 
     testDataY = []
@@ -538,8 +534,6 @@ def get_isolation_data(idx, kFold_list, modeling_pkl, nState, \
     # Anomaly Isolation
     #-----------------------------------------------------------------------------------------
     # dim x sample x length
-    ## normalTrainData   = copy.copy(successData_ai[:, normalTrainIdx, :]) 
-    ## normalTestData    = copy.copy(successData_ai[:, normalTestIdx, :])
     abnormalTrainData = copy.copy(failureData_ai[:, abnormalTrainIdx, :])
     abnormalTestData  = copy.copy(failureData_ai[:, abnormalTestIdx, :])
     abnormalTrainLabel = copy.copy(failure_labels[abnormalTrainIdx])
@@ -551,11 +545,11 @@ def get_isolation_data(idx, kFold_list, modeling_pkl, nState, \
     ## _, gs_test, y_test = feature_omp(abnormalTestData, abnormalTestLabel, Ds)
 
     # Train & test
-    ## print "Training: ", idx
-    ## Ds, gs_train, y_train = m_omp(abnormalTrainData, abnormalTrainLabel)
-    ## print "Testing: ", idx
-    ## _, gs_test, y_test = m_omp(abnormalTestData, abnormalTestLabel, Ds,\
-    ##                                  idx_list=detection_test_idx_list)
+    print "Training: ", idx
+    Ds, gs_train, y_train = m_omp(abnormalTrainData, abnormalTrainLabel)
+    print "Testing: ", idx
+    _, gs_test, y_test = m_omp(abnormalTestData, abnormalTestLabel, Ds,\
+                                     idx_list=detection_test_idx_list)
 
     # Train & test
     ## Ds, gs_train, y_train = w_omp(abnormalTrainData, abnormalTrainLabel)
@@ -567,11 +561,11 @@ def get_isolation_data(idx, kFold_list, modeling_pkl, nState, \
     ##                                     idx_list=detection_test_idx_list)
 
     # Train & test
-    print "Training: ", idx
-    Ds, gs_train, y_train = window_omp(abnormalTrainData, abnormalTrainLabel)
-    print "Testing: ", idx
-    _, gs_test, y_test = window_omp(abnormalTestData, abnormalTestLabel, Ds,\
-                                     idx_list=detection_test_idx_list)
+    ## print "Training: ", idx
+    ## Ds, gs_train, y_train = window_omp(abnormalTrainData, abnormalTrainLabel)
+    ## print "Testing: ", idx
+    ## _, gs_test, y_test = window_omp(abnormalTestData, abnormalTestLabel, Ds,\
+    ##                                  idx_list=detection_test_idx_list)
 
 
     return idx, gs_train, y_train, gs_test, y_test
