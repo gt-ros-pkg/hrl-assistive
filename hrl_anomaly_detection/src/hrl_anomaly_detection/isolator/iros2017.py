@@ -1023,18 +1023,18 @@ if __name__ == '__main__':
         weight = -18.0
         param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0 
 
-        param_dict['ROC']['methods'] = ['hmmgp']
-        nPoints = param_dict['ROC']['nPoints']
-        param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.6, 2.3, nPoints)*-1.0
-        param_dict['HMM']['scale'] = 6.111 
-        if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
-
         param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
                                                     'unimodal_kinJntEff_1',\
                                                     'unimodal_ftForce_integ',\
                                                     'unimodal_kinEEChange', \
                                                     'crossmodal_landmarkEEDist', \
                                                     ]
+
+        param_dict['ROC']['methods'] = ['hmmgp']
+        nPoints = param_dict['ROC']['nPoints']
+        param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.6, 2.3, nPoints)*-1.0
+        param_dict['HMM']['scale'] = 6.111 
+        if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
             
         evaluation_omp_isolation(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
                                  data_renew=opt.bDataRenew, svd_renew=opt.svd_renew,\
@@ -1048,7 +1048,7 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation9/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        weight = -18.15
+        weight = -18.0
         param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0 
 
         param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
@@ -1062,15 +1062,13 @@ if __name__ == '__main__':
                                                     ## 'unimodal_fabricForce',\
                                                     ## 'unimodal_audioWristAzimuth',\
                                                     ## 'unimodal_kinDesEEChange', \
-        ref_idx = 5 # kinEEChange
+        ref_idx = 4 # kinEEChange
         # noise: 3,8
         # azimuth: 3
         # jnteff: 2,6
         # ftforce:
         # fabric: 2,6
-        
-        
-
+                
         param_dict['ROC']['methods'] = ['hmmgp']
         nPoints = param_dict['ROC']['nPoints']
         param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.6, 2.3, nPoints)*-1.0
