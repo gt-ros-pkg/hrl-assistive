@@ -138,8 +138,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     org_processed_data_path = copy.copy(processed_data_path)
     for i in xrange(len(success_data)):
 
-        successData = copy.deepcopy(d['successData'][[0,2,11,18,20,i]])
-        failureData = copy.deepcopy(d['failureData'][[0,2,11,18,20,i]])
+        successData = copy.deepcopy(d['successData'][[0,1,2,11,19,i]])
+        failureData = copy.deepcopy(d['failureData'][[0,1,2,11,19,i]])
         ## successData = copy.copy(d['successIsolData'][i:i+1])
         ## failureData = copy.copy(d['failureIsolData'][i:i+1])
 
@@ -733,8 +733,9 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
 
         if type(x_train) is np.ndarray:
             x_train = x_train.tolist()
-            y_train  = y_train.tolist()
             x_test  = x_test.tolist()
+        if type(y_train) is np.ndarray:
+            y_train  = y_train.tolist()
             y_test   = y_test.tolist()
         print np.shape( x_train ), np.shape( y_train ), np.shape( x_test ), np.shape( y_test )
         
@@ -1038,6 +1039,13 @@ if __name__ == '__main__':
                                                     'crossmodal_landmarkEEDist', \
                                                     ]
         ref_idx = 5 # kinEEChange
+        # noise: 3,8
+        # azimuth: 3
+        # jnteff: 2,6
+        # ftforce:
+        # fabric: 2,6
+        
+        
 
         param_dict['ROC']['methods'] = ['hmmgp']
         nPoints = param_dict['ROC']['nPoints']

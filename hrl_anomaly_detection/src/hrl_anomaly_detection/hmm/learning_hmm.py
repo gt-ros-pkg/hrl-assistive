@@ -380,43 +380,68 @@ class learning_hmm(learning_base):
         '''
         from scipy.stats import norm, entropy
 
-        # new emission for partial sequence
-        B = []
-        for i in xrange(self.nState):
-            B.append( [ self.B[i][0][ref_idx], self.B[i][1][ref_idx*self.nEmissionDim+ref_idx] ] )
+        ## # new emission for partial sequence
+        ## B = []
+        ## for i in xrange(self.nState):
+        ##     print np.shape(self.B[i][0]), np.shape(self.B[i][1]), ref_idx, ref_idx*self.nEmissionDim+ref_idx
+        ##     B.append( [ self.B[i][0][ref_idx], self.B[i][1][ref_idx*self.nEmissionDim+ref_idx] ])
+        ## ml_ref = ghmm.HMMFromMatrices(self.F, ghmm.GaussianDistribution(self.F), \
+        ##                               self.A, B, self.pi)
 
-        ml = ghmm.HMMFromMatrices(self.F, ghmm.GaussianDistribution(self.F), \
-                                  self.A, B, self.pi)
-
-        if type(x) is not list: x = x.tolist()            
-        final_ts_obj = ghmm.EmissionSequence(self.F, x[ref_idx])        
-        try:
-            (alpha, scale) = ml.forward(final_ts_obj)
-        except:
-            print "No alpha is available !!"
-            sys.exit()
+        ## if type(x) is not list: x = x.tolist()            
+        ## final_ts_obj = ghmm.EmissionSequence(self.F, x[ref_idx])        
+        ## try:
+        ##     (alpha_b, _) = ml_ref.forward(final_ts_obj)
+        ## except:
+        ##     print "No alpha is available !!"
+        ##     sys.exit()
 
         # feature-wise conditional probability
         cond_prob = []
         for i in xrange(self.nEmissionDim): # per feature
             if i == ref_idx: continue
-            
-            ss_cov_idx = ref_idx*self.nEmissionDim+ref_idx
-            st_cov_idx = ref_idx*self.nEmissionDim+i
-            tt_cov_idx = i*self.nEmissionDim+i
 
-            p = 0.0
-            p_denom = 0.0
+            B = [0] * self.nState
             for j in xrange(self.nState):
-                mu_j = self.B[j][0][i] + \
-                  self.B[j][1][st_cov_idx]/self.B[j][1][ss_cov_idx]*\
-                  (x[ref_idx][-1]-self.B[j][0][ref_idx])
-                std = np.sqrt( self.B[j][1][tt_cov_idx] )
-                  
-                p += alpha[-1][j]*norm.pdf(x[i][-1], loc=mu_j, scale=std)
-                p_denom += norm.pdf(x[i][-1], loc=mu_j, scale=std)
+                B[j] = [[self.B[j][0][ref_idx], self.B[j][0][i] ] ]
+                B[j].append( [self.B[j][1][ref_idx*self.nEmissionDim+ref_idx],
+                              self.B[j][1][ref_idx*self.nEmissionDim+i],
+                              self.B[j][1][ref_idx*self.nEmissionDim+i],
+                              self.B[j][1][i*self.nEmissionDim+i] ])
                 
-            cond_prob.append(np.log10(p)) #/p_denom)
+            ml_src = ghmm.HMMFromMatrices(self.F, ghmm.MultivariateGaussianDistribution(self.F), \
+                                          self.A, B, self.pi)
+
+            X_test = util.convert_sequence2(x[[ref_idx,i]], emission=False)
+            X_test = np.squeeze(X_test)
+            final_ts_obj = ghmm.EmissionSequence(self.F, X_test.tolist())
+            logp = ml_src.loglikelihood(final_ts_obj)
+
+            cond_prob.append(logp)
+            
+            ## seq = util.convert_sequence(x_temp[[ref_idx,i]])
+            ## seq = np.squeeze(seq)
+            ## final_ts_obj = ghmm.EmissionSequence(self.F, seq.tolist() )
+            ## (alpha_bm, _) = ml_src.forward(final_ts_obj)            
+            ## p = np.array(alpha_bm)[-1] / np.array(alpha_b)[-1]            
+            ## cond_prob.append(np.sum(p))
+             
+            ## ss_cov_idx = ref_idx*self.nEmissionDim+ref_idx
+            ## st_cov_idx = ref_idx*self.nEmissionDim+i
+            ## tt_cov_idx = i*self.nEmissionDim+i
+
+            ## p = 0.0
+            ## p_denom = 0.0
+            ## for j in xrange(self.nState):
+            ##     mu_j = self.B[j][0][i] + \
+            ##       self.B[j][1][st_cov_idx]/self.B[j][1][ss_cov_idx]*\
+            ##       (x[ref_idx][-1]-self.B[j][0][ref_idx])
+            ##     std = np.sqrt( self.B[j][1][tt_cov_idx] )
+                  
+            ##     p += alpha[-1][j]*norm.pdf(x[i][-1], loc=mu_j, scale=std)
+            ##     p_denom += norm.pdf(x[i][-1], loc=mu_j, scale=std)
+                
+            ## cond_prob.append(np.log10(p)) #/p_denom)
         
         return np.array(cond_prob) #/np.linalg.norm(cond_prob)
         

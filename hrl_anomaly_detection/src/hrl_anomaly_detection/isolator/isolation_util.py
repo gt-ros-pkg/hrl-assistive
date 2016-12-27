@@ -614,7 +614,7 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failure_labels,
     x_train, y_train = get_cond_prob(idx, detection_train_idx_list, \
                                            abnormalTrainData, abnormalTrainLabel,\
                                            task_name, processed_data_path, param_dict, \
-                                           ref_idx=ref_idx )
+                                           ref_idx=ref_idx, plot=True )
 
     x_test, y_test = get_cond_prob(idx, detection_test_idx_list, \
                                          abnormalTestData, abnormalTestLabel,\
@@ -642,7 +642,7 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalLabel, \
     
     ml = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
     ml.set_hmm_object(A,B,pi)
-    
+   
     x = []
     y = []
     for i, d_idx in enumerate(anomaly_idx_list):
@@ -651,13 +651,26 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalLabel, \
         if d_idx is None:
             continue
 
-        cp_vecs = None
-        for j in xrange(d_idx-window_step, d_idx+window_step):
-            if j<0: continue
-            cp_vec = ml.conditional_prob( abnormalData[:,i,:j+1]*param_dict['HMM']['scale'], \
-                                          ref_idx)
-            if cp_vecs is None: cp_vecs = cp_vec
-            else: cp_vecs = np.vstack([ cp_vecs, cp_vec])
+        if plot is False:
+            cp_vecs = get_single_cond_prob(d_idx, window_step, ml, abnormalData[:,i,:], \
+                                           param_dict, ref_idx)
+        else:
+            cp_vecs = get_single_cond_prob(d_idx, d_idx, ml, abnormalData[:,i,:], \
+                                           param_dict, ref_idx)
+
+            nPlot = len(cp_vecs[0])
+
+            print "label: ", abnormalLabel[i], np.shape(cp_vecs)
+            
+            import matplotlib.pyplot as plt
+            fig = plt.figure()
+
+            for j in xrange(nPlot):
+                ax = fig.add_subplot(nPlot*100+10+j)
+                ax.plot(cp_vecs[:,j], 'b-')
+                
+            plt.show()
+            
 
         ## cp_vecs = np.amin(cp_vecs, axis=0)
         cp_vecs = np.mean(cp_vecs, axis=0)
@@ -669,6 +682,17 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalLabel, \
         
     return x, y
 
+
+def get_single_cond_prob(d_idx, window_step, ml, abnormalData, param_dict, ref_idx):
+    cp_vecs = None
+    for j in xrange(d_idx-window_step, d_idx):
+        if j<4: continue
+        cp_vec = ml.conditional_prob( abnormalData[:,:j+1]*\
+                                      param_dict['HMM']['scale'], \
+                                      ref_idx)
+        if cp_vecs is None: cp_vecs = cp_vec
+        else: cp_vecs = np.vstack([ cp_vecs, cp_vec])
+    return cp_vecs
 
 
 def save_data_labels(data, labels, processed_data_path='./'):

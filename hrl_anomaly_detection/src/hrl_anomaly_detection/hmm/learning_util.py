@@ -107,17 +107,19 @@ def vectors_to_mean_cov(vecs, nState, nEmissionDim, cov_type='full'):
 
 def convert_sequence(data, emission=False):
     '''
-    @data: dimension x sample x length
+    @data: dimension x sample x length 
 
     return: data with sample x ???
     TODO: need to replace entire code it looks too inefficient conversion.
     '''
-
+        
     # change to array from other types => dimension x sample x length
+    ## X = [np.array(d) if type(d) is not np.ndarray else d for d in data] 
     X = [copy.copy(np.array(d)) if type(d) is not np.ndarray else copy.copy(d) for d in data]
 
     # Change to two-dimensional array => dim x sample x length
     X = [np.reshape(x, (1, len(x))) if len(np.shape(x)) == 1 else x for x in X]
+
 
     # sample, length
     n, m = np.shape(X[0])
@@ -134,6 +136,27 @@ def convert_sequence(data, emission=False):
             Seq.append(np.array(Xs).flatten().tolist())
 
     return np.array(Seq)
+
+
+def convert_sequence2(data, emission=False):
+    '''
+    @data: dimension x sample x length 
+
+    return: data with sample x ???
+    TODO: need to replace entire code it looks too inefficient conversion.
+    '''
+    if type(data) is list: X = np.array(copy.copy(data))
+    else: X = copy.copy(data)
+
+    if len(np.shape(X)) == 2: X = np.array([X])
+    else: X = np.swapaxes(X,0,1)
+        
+    seq = []
+    for x in X:
+        seq.append(x.flatten(order='F').tolist())
+
+    return seq
+
 
 
 def scaling(X, min_c=None, max_c=None, scale=10.0, bMinMax=False, verbose=False):
