@@ -1036,6 +1036,7 @@ if __name__ == '__main__':
                                                     'unimodal_ftForceZ',\
                                                     'unimodal_kinEEChange', \
                                                     'crossmodal_landmarkEEDist', \
+                                                    'unimodal_landmarkDist',\
                                                     ]
                                                     ## 'unimodal_fabricForce',\
                                                     ## 'unimodal_audioWristAzimuth',\

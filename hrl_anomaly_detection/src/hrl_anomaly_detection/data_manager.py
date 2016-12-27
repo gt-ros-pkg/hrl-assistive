@@ -1876,7 +1876,7 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
             if 'DesEEChange' not in param_dict['feature_names']:
                 param_dict['feature_names'].append('DesEEChange')
 
-            
+
         # Crossmodal feature - relative dist --------------------------
         if 'crossmodal_targetEEDist' in feature_list:
             kinEEPos     = d['kinEEPosList'][idx]

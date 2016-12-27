@@ -105,7 +105,7 @@ def vectors_to_mean_cov(vecs, nState, nEmissionDim, cov_type='full'):
     return mus, cov
 
 
-def convert_sequence(data, emission=False):
+def convert_sequence2(data, emission=False):
     '''
     @data: dimension x sample x length 
 
@@ -138,7 +138,7 @@ def convert_sequence(data, emission=False):
     return np.array(Seq)
 
 
-def convert_sequence2(data, emission=False):
+def convert_sequence(data, emission=False):
     '''
     @data: dimension x sample x length 
 
