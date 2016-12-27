@@ -432,12 +432,12 @@ class learning_hmm(learning_base):
 
             B = [0] * self.nState
             for j in xrange(self.nState):
-                B[j] = [ self.B[j][0][i] self.B[j][1][i*self.nEmissionDim+i] ]
+                B[j] = [ self.B[j][0][i], self.B[j][1][i*self.nEmissionDim+i] ]
                 
             ml_src = ghmm.HMMFromMatrices(self.F, ghmm.GaussianDistribution(self.F), \
                                           self.A, B, self.pi)
 
-            X_test = util.convert_sequence2(x[[ref_idx,i]], emission=False)
+            X_test = util.convert_sequence2(x[[i]], emission=False)
             X_test = np.squeeze(X_test)
             final_ts_obj = ghmm.EmissionSequence(self.F, X_test.tolist())
             logp = ml_src.loglikelihood(final_ts_obj)
