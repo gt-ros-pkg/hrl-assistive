@@ -737,7 +737,6 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         if type(y_train) is np.ndarray:
             y_train  = y_train.tolist()
             y_test   = y_test.tolist()
-        print np.shape( x_train ), np.shape( y_train ), np.shape( x_test ), np.shape( y_test )
         
         from sklearn.svm import SVC
         clf = SVC(C=1.0, kernel='rbf') #, decision_function_shape='ovo')
@@ -747,9 +746,10 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         score = clf.score(x_test, y_test)
         scores.append( score )
         print idx, " = ", score
-            
+
+
     print scores
-    print np.mean(scores), np.std(scores)
+    print "Score mean = ", np.mean(scores), np.std(scores)
 
     #temp
     iutil.save_data_labels(x_train, y_train)
@@ -1027,7 +1027,7 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation9/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        weight = -7.0
+        weight = -6.0
         param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0 
 
         param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
