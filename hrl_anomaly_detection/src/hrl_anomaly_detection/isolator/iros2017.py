@@ -135,13 +135,14 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
     ## x_classes = ['Object collision', 'Noisy environment', 'Spoon miss by a user', 'Spoon collision by a user', 'Robot-body collision by a user', 'Aggressive eating', 'Anomalous sound from a user', 'Unreachable mouth pose', 'Face occlusion by a user', 'Spoon miss by system fault', 'Spoon collision by system fault', 'Freeze by system fault']
 
+    base_idx = [0,1,2,11,19]
+
     org_processed_data_path = copy.copy(processed_data_path)
     for i in xrange(len(success_data)):
 
-        successData = copy.deepcopy(d['successData'][[0,1,2,11,19,i]])
-        failureData = copy.deepcopy(d['failureData'][[0,1,2,11,19,i]])
-        ## successData = copy.copy(d['successIsolData'][i:i+1])
-        ## failureData = copy.copy(d['failureIsolData'][i:i+1])
+        if i in base_idx: continue
+        successData = copy.deepcopy(d['successData'][base_idx+[i]] )
+        failureData = copy.deepcopy(d['failureData'][base_idx+[i]] )
 
         success_files = d['success_files']
         failure_files = d['failure_files']
@@ -926,7 +927,9 @@ if __name__ == '__main__':
                                                     'unimodal_ftForce_integ',\
                                                     'unimodal_fabricForce',\
                                                     'unimodal_kinEEChange', \
+                                                    'unimodal_kinDesEEChange', \
                                                     'crossmodal_landmarkEEDist', \
+                                                    'crossmodal_landmarkEEAng', \
                                                     ]
         param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.6, 2.3, nPoints)*-1.0 
 
@@ -1027,7 +1030,7 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation9/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        weight = -6.0
+        weight = -8.0
         param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0 
 
         param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
@@ -1036,6 +1039,7 @@ if __name__ == '__main__':
                                                     'unimodal_ftForce_integ',\
                                                     'unimodal_fabricForce',\
                                                     'unimodal_kinEEChange', \
+                                                    'unimodal_kinDesEEChange', \
                                                     'crossmodal_landmarkEEDist', \
                                                     ]
         ref_idx = 5 # kinEEChange
