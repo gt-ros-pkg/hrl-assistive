@@ -595,12 +595,12 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failure_labels,
                                                        logp_viz=False, verbose=False, \
                                                        weight=weight,\
                                                        idx=idx, n_jobs=n_jobs)
-    ## detection_test_idx_list = anomaly_detection(abnormalTestData, \
-    ##                                                   [1]*len(abnormalTestData[0]), \
-    ##                                                   task_name, processed_data_path, param_dict,\
-    ##                                                   logp_viz=False, verbose=False, \
-    ##                                                   weight=weight,\
-    ##                                                   idx=idx, n_jobs=n_jobs)
+    detection_test_idx_list = anomaly_detection(abnormalTestData, \
+                                                      [1]*len(abnormalTestData[0]), \
+                                                      task_name, processed_data_path, param_dict,\
+                                                      logp_viz=False, verbose=False, \
+                                                      weight=weight,\
+                                                      idx=idx, n_jobs=n_jobs)
 
     #-----------------------------------------------------------------------------------------
     # Feature Extraction
@@ -608,12 +608,12 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failure_labels,
     x_train, y_train = get_cond_prob(idx, detection_train_idx_list, \
                                            abnormalTrainData, abnormalTrainLabel,\
                                            task_name, processed_data_path, param_dict, \
-                                           ref_idx=ref_idx, plot=True )
+                                           ref_idx=ref_idx, plot=False )
 
-    ## x_test, y_test = get_cond_prob(idx, detection_test_idx_list, \
-    ##                                      abnormalTestData, abnormalTestLabel,\
-    ##                                      task_name, processed_data_path, param_dict, \
-    ##                                      ref_idx=ref_idx  )
+    x_test, y_test = get_cond_prob(idx, detection_test_idx_list, \
+                                         abnormalTestData, abnormalTestLabel,\
+                                         task_name, processed_data_path, param_dict, \
+                                         ref_idx=ref_idx  )
 
     return idx, x_train, y_train, x_test, y_test
 
