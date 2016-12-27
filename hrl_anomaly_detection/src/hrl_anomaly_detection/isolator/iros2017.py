@@ -688,7 +688,7 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
     # ---------------------------------------------------------------
     #temp
     ## kFold_list = kFold_list[:8]
-    kFold_list = kFold_list[:1]
+    kFold_list = kFold_list[:8]
 
     # set parameters
     method     = 'hmmgp'
@@ -1061,7 +1061,7 @@ if __name__ == '__main__':
                                                     ## 'unimodal_fabricForce',\
                                                     ## 'unimodal_audioWristAzimuth',\
                                                     ## 'unimodal_kinDesEEChange', \
-        ref_idx = 4 # kinEEChange
+        ref_idx = 5 # kinEEChange
         # noise: 3,8
         # azimuth: 3
         # jnteff: 2,6

@@ -403,11 +403,11 @@ class learning_hmm(learning_base):
 
             cond_prob.append(logp)
 
-        # all
-        X_test = util.convert_sequence2(x, emission=False)
-        X_test = np.squeeze(X_test)
-        final_ts_obj = ghmm.EmissionSequence(self.F, X_test.tolist())
-        cond_prob.append( self.ml.loglikelihood(final_ts_obj) )
+        ## # all
+        ## X_test = util.convert_sequence2(x, emission=False)
+        ## X_test = np.squeeze(X_test)
+        ## final_ts_obj = ghmm.EmissionSequence(self.F, X_test.tolist())
+        ## cond_prob.append( self.ml.loglikelihood(final_ts_obj) )
         
         # min-max normalization
         cond_prob = np.array(cond_prob)

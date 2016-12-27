@@ -690,10 +690,6 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalLabel, \
                 
             plt.show()
             
-
-        ## cp_vecs = np.amin(cp_vecs, axis=0)
-        ## cp_vecs = np.mean(cp_vecs, axis=0)
-
         # slice data
         # get conditional probability
         x.append( cp_vecs )
