@@ -610,7 +610,7 @@ def get_hmm_isolation_data(idx, kFold_list, failureData_ad, failureData, failure
     x_train, y_train = get_cond_prob(idx, detection_train_idx_list, \
                                      abnormalTrainData, abnormalTrainLabel,\
                                      task_name, processed_data_path, param_dict, \
-                                     ref_idx=ref_idx, plot=False )
+                                     ref_idx=ref_idx, plot=True )
                                      
     x_test, y_test = get_cond_prob(idx, detection_test_idx_list, \
                                    abnormalTestData, abnormalTestLabel,\
@@ -654,11 +654,16 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalLabel, \
             cp_vecs = (cp_vecs-np.amin(cp_vecs))/(np.amax(cp_vecs)-np.amin(cp_vecs))
                                            
         else:
-            cp_vecs = get_single_cond_prob(d_idx, d_idx, ml, abnormalData[:,i,:], \
-                                           param_dict, ref_idx)
+            cp_vecs = None
+            for j in xrange(len(abnormalData[0,i,:])):
+                if j<4: continue
+                cp_vec = ml.conditional_prob2( abnormalData[:,i,:j+1]*\
+                                               param_dict['HMM']['scale'] )
+                if cp_vecs is None: cp_vecs = cp_vec
+                else: cp_vecs = np.vstack([ cp_vecs, cp_vec])
+
 
             nPlot = len(cp_vecs[0])
-
             print "label: ", abnormalLabel[i], np.shape(cp_vecs)
             
             import matplotlib.pyplot as plt
@@ -668,19 +673,19 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalLabel, \
                 ax = fig.add_subplot(nPlot*100+10+j+1)
                 ax.plot(cp_vecs[:,j], 'r-')
 
-            # ----------------------------------------------------
-            ref_logps = np.array(ll_classifier_train_X)[:,:,0]
-            ref_logps = np.swapaxes(ref_logps,0,1)
-            for j in xrange(len(ll_classifier_train_Y[0])):
-                if ll_classifier_train_Y[0][j] > 0:
-                    print "--------------------------------------"
-                    print j, ' / ', len(ll_classifier_train_Y[0])
-                    print "--------------------------------------"
-                    break
+            ## # ----------------------------------------------------
+            ## ref_logps = np.array(ll_classifier_train_X)[:,:,0]
+            ## ref_logps = np.swapaxes(ref_logps,0,1)
+            ## for j in xrange(len(ll_classifier_train_Y[0])):
+            ##     if ll_classifier_train_Y[0][j] > 0:
+            ##         print "--------------------------------------"
+            ##         print j, ' / ', len(ll_classifier_train_Y[0])
+            ##         print "--------------------------------------"
+            ##         break
                 
-            ref_logps_normal   = ref_logps[:j]
-            ref_logps_abnormal = ref_logps[j:]
-            # ----------------------------------------------------
+            ## ref_logps_normal   = ref_logps[:j]
+            ## ref_logps_abnormal = ref_logps[j:]
+            ## # ----------------------------------------------------
 
             ## #temp
             ## ax = fig.add_subplot( nPlot*100+10+nPlot )

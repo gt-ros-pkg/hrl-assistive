@@ -687,8 +687,8 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         feature_list.append(idx)
     
     ## feature_list 
-    successData_ad = successData[feature_list]
-    failureData_ad = failureData[feature_list]
+    successData_ad = np.array(successData)[feature_list]
+    failureData_ad = np.array(failureData)[feature_list]
 
     dm.saveHMMinducedFeatures(kFold_list, successData_ad, failureData_ad,\
                               task_name, processed_data_path,\
