@@ -405,7 +405,6 @@ class learning_hmm(learning_base):
 
         # min-max normalization
         cond_prob = np.array(cond_prob)
-        cond_prob = (cond_prob-np.amin(cond_prob))/(np.amax(cond_prob)-np.amin(cond_prob))
             
         return cond_prob
         

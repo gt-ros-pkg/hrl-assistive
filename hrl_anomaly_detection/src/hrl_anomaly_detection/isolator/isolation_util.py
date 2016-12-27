@@ -614,7 +614,7 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failure_labels,
     x_train, y_train = get_cond_prob(idx, detection_train_idx_list, \
                                            abnormalTrainData, abnormalTrainLabel,\
                                            task_name, processed_data_path, param_dict, \
-                                           ref_idx=ref_idx, plot=False )
+                                           ref_idx=ref_idx, plot=True )
 
     x_test, y_test = get_cond_prob(idx, detection_test_idx_list, \
                                          abnormalTestData, abnormalTestLabel,\
@@ -655,6 +655,8 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalLabel, \
             cp_vecs = ml.conditional_prob( abnormalData[:,i,:d_idx+1]*\
                                            param_dict['HMM']['scale'], \
                                            ref_idx)
+            cp_vecs = (cp_vecs-np.amin(cp_vecs))/(np.amax(cp_vecs)-np.amin(cp_vecs))
+                                           
         else:
             cp_vecs = get_single_cond_prob(d_idx, d_idx, ml, abnormalData[:,i,:], \
                                            param_dict, ref_idx)

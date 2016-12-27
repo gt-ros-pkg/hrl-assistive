@@ -327,7 +327,7 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
     dm.saveHMMinducedFeatures(kFold_list, successData, failureData,\
                               task_name, processed_data_path,\
                               HMM_dict, data_renew, startIdx, nState, cov, \
-                              noise_mag=0.03, diag=False, \
+                              noise_mag=0.03, diag=False, cov_type='diag', \
                               verbose=verbose)
 
     #-----------------------------------------------------------------------------------------
@@ -1034,14 +1034,15 @@ if __name__ == '__main__':
         param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0 
 
         param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
-                                                    'unimodal_audioWristAzimuth',\
                                                     'unimodal_kinJntEff_1',\
                                                     'unimodal_ftForce_integ',\
+                                                    'unimodal_ftForceZ',\
                                                     'unimodal_fabricForce',\
                                                     'unimodal_kinEEChange', \
-                                                    'unimodal_kinDesEEChange', \
                                                     'crossmodal_landmarkEEDist', \
                                                     ]
+                                                    ## 'unimodal_audioWristAzimuth',\
+                                                    ## 'unimodal_kinDesEEChange', \
         ref_idx = 5 # kinEEChange
         # noise: 3,8
         # azimuth: 3
