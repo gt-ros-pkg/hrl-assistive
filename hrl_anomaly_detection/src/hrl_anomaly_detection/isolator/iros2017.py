@@ -657,7 +657,7 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         d = dm.getDataLOPO(subject_names, task_name, raw_data_path, \
                            processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
                            downSampleSize=data_dict['downSampleSize'],\
-                           handFeatures=data_dict['handFeatures'], \
+                           handFeatures=param_dict['data_param']['isolationFeatures'], \
                            cut_data=data_dict['cut_data'], \
                            data_renew=data_renew, max_time=data_dict['max_time'])
                            
