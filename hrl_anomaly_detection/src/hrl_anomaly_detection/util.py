@@ -1393,7 +1393,7 @@ def combineData(X1,X2, target_features, all_features, first_axis='dim', add_nois
         ## return X
 
 def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, save_pdf=False,\
-             timeList=None, only_tpr=False, legend=False, verbose=True):
+             timeList=None, only_tpr=False, legend=False, verbose=True, ROC_dict=None):
     # ---------------- ROC Visualization ----------------------
     
     if verbose: print "Start to visualize ROC curves!!!"
@@ -1467,6 +1467,9 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
             print method
             print tpr_l
             print fpr_l
+            if ROC_dict is not None:
+                weight_list = ROC_dict[method+'_param_range']
+                print "Weight= ", weight_list[np.argmax(acc_l)], " , acc = ", np.amax(acc_l)
         if only_tpr is False:
             auc = metrics.auc(fpr_l, tpr_l, True)
             ## auc = metrics.auc(fpr_l + [100], tpr_l + [100], True)

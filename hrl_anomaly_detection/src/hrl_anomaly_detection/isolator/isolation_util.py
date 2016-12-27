@@ -601,12 +601,12 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failure_labels,
                                                        logp_viz=False, verbose=False, \
                                                        weight=weight,\
                                                        idx=idx, n_jobs=n_jobs)
-    detection_test_idx_list = anomaly_detection(abnormalTestData, \
-                                                      [1]*len(abnormalTestData[0]), \
-                                                      task_name, processed_data_path, param_dict,\
-                                                      logp_viz=False, verbose=False, \
-                                                      weight=weight,\
-                                                      idx=idx, n_jobs=n_jobs)
+    ## detection_test_idx_list = anomaly_detection(abnormalTestData, \
+    ##                                                   [1]*len(abnormalTestData[0]), \
+    ##                                                   task_name, processed_data_path, param_dict,\
+    ##                                                   logp_viz=False, verbose=False, \
+    ##                                                   weight=weight,\
+    ##                                                   idx=idx, n_jobs=n_jobs)
 
     #-----------------------------------------------------------------------------------------
     # Feature Extraction
@@ -616,10 +616,10 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failure_labels,
                                            task_name, processed_data_path, param_dict, \
                                            ref_idx=ref_idx, plot=True )
 
-    x_test, y_test = get_cond_prob(idx, detection_test_idx_list, \
-                                         abnormalTestData, abnormalTestLabel,\
-                                         task_name, processed_data_path, param_dict, \
-                                         ref_idx=ref_idx  )
+    ## x_test, y_test = get_cond_prob(idx, detection_test_idx_list, \
+    ##                                      abnormalTestData, abnormalTestLabel,\
+    ##                                      task_name, processed_data_path, param_dict, \
+    ##                                      ref_idx=ref_idx  )
 
     return idx, x_train, y_train, x_test, y_test
 
@@ -639,7 +639,7 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalLabel, \
         # Ignore predefined test data in the hmm object
         if not(k.find('test')>=0):
             exec '%s = v' % k
-    
+
     ml = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
     ml.set_hmm_object(A,B,pi)
    
@@ -669,8 +669,30 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalLabel, \
             fig = plt.figure()
 
             for j in xrange(nPlot):
-                ax = fig.add_subplot(nPlot*100+10+j)
-                ax.plot(cp_vecs[:,j], 'b-')
+                ax = fig.add_subplot(nPlot*100+10+j+1)
+                ax.plot(cp_vecs[:,j], 'r-')
+
+            # ----------------------------------------------------
+            ref_logps = np.array(ll_classifier_train_X)[:,:,0]
+            ref_logps = np.swapaxes(ref_logps,0,1)
+            for j in xrange(len(ll_classifier_train_Y[0])):
+                if ll_classifier_train_Y[0][j] > 0:
+                    print "--------------------------------------"
+                    print j, ' / ', len(ll_classifier_train_Y[0])
+                    print "--------------------------------------"
+                    break
+                
+            ref_logps_normal   = ref_logps[:j]
+            ref_logps_abnormal = ref_logps[j:]
+            # ----------------------------------------------------
+
+            #temp
+            ax = fig.add_subplot( nPlot*100+10+nPlot )
+            ## ref_logps = np.array(ll_classifier_train_X)[:,i,0]
+            ## ax = fig.add_subplot(111)
+            ax.plot(ref_logps_normal, 'b-')
+            ax.plot(cp_vecs[:,-1], 'r-')
+            ax.plot([d_idx,d_idx], [np.amin(cp_vecs[:,-1]), np.amax(cp_vecs[:,-1])], 'k-')
                 
             plt.show()
             

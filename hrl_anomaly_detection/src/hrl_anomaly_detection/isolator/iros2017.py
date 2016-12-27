@@ -362,7 +362,7 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
     ut.save_pickle(ROC_data, roc_pkl)
 
     # ---------------- ROC Visualization ----------------------
-    roc_info(method_list, ROC_data, nPoints, no_plot=True)
+    roc_info(method_list, ROC_data, nPoints, no_plot=no_plot, ROC_dict=ROC_dict)
 
 
 def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
@@ -545,7 +545,12 @@ def evaluation_omp_isolation(subject_names, task_name, raw_data_path, processed_
 
     # ---------------------------------------------------------------
     # select feature for detection
-    feature_list = [0,2,11,18] #[0,1,11,20]
+    feature_list = []
+    for feature in param_dict['data_param']['handFeatures']:
+        idx = [ i for i, x in enumerate(param_dict['data_param']['isolationFeatures']) if feature == x][0]
+        feature_list.append(idx)
+    
+    ## feature_list = [0,2,11,18] #[0,1,11,20]
     successData_ad = successData[feature_list]
     failureData_ad = failureData[feature_list]
 
@@ -1015,7 +1020,7 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation10/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        weight = -8.0
+        weight = -18.0
         param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0 
 
         param_dict['ROC']['methods'] = ['hmmgp']
@@ -1023,7 +1028,14 @@ if __name__ == '__main__':
         param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.6, 2.3, nPoints)*-1.0
         param_dict['HMM']['scale'] = 6.111 
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
-        
+
+        param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
+                                                    'unimodal_kinJntEff_1',\
+                                                    'unimodal_ftForce_integ',\
+                                                    'unimodal_kinEEChange', \
+                                                    'crossmodal_landmarkEEDist', \
+                                                    ]
+            
         evaluation_omp_isolation(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
                                  data_renew=opt.bDataRenew, svd_renew=opt.svd_renew,\
                                  save_pdf=opt.bSavePdf, \
@@ -1036,7 +1048,7 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation9/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        weight = -8.0
+        weight = -18.15
         param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0 
 
         param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
