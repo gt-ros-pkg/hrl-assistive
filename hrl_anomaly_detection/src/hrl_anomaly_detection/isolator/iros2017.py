@@ -924,10 +924,9 @@ if __name__ == '__main__':
         param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
                                                     'unimodal_kinJntEff_1',\
                                                     'unimodal_ftForce_integ',\
-                                                    'unimodal_fabricForce',\
+                                                    'unimodal_ftForceZ',\
                                                     'unimodal_kinEEChange', \
                                                     'crossmodal_landmarkEEDist', \
-                                                    'crossmodal_landmarkEEAng', \
                                                     ]
         param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.6, 2.3, nPoints)*-1.0 
 
@@ -1035,10 +1034,10 @@ if __name__ == '__main__':
                                                     'unimodal_kinJntEff_1',\
                                                     'unimodal_ftForce_integ',\
                                                     'unimodal_ftForceZ',\
-                                                    'unimodal_fabricForce',\
                                                     'unimodal_kinEEChange', \
                                                     'crossmodal_landmarkEEDist', \
                                                     ]
+                                                    ## 'unimodal_fabricForce',\
                                                     ## 'unimodal_audioWristAzimuth',\
                                                     ## 'unimodal_kinDesEEChange', \
         ref_idx = 5 # kinEEChange

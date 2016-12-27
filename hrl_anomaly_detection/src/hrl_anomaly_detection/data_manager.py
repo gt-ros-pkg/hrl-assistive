@@ -1869,8 +1869,7 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
             ##         kinDesEEPos[i] -= offset[i]
             dist = np.linalg.norm(kinEEPos-kinDesEEPos, axis=0)
             if offset_flag:
-                offset = np.mean(dist[:startOffsetSize])
-                dist -= offset
+                dist -= np.mean(dist[:startOffsetSize])
 
             if dataSample is None: dataSample = np.array(dist)
             else: dataSample = np.vstack([dataSample, dist])
