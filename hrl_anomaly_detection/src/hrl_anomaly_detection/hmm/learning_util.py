@@ -155,7 +155,7 @@ def convert_sequence(data, emission=False):
     for x in X:
         seq.append(x.flatten(order='F').tolist())
 
-    return seq
+    return np.array(seq)
 
 
 

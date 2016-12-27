@@ -688,7 +688,8 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalLabel, \
 
 def get_single_cond_prob(d_idx, window_step, ml, abnormalData, param_dict, ref_idx):
     cp_vecs = None
-    for j in xrange(d_idx-window_step, d_idx):
+    ## for j in xrange(d_idx-window_step, d_idx):
+    for j in xrange(len(abnormalData[0])):
         if j<4: continue
         cp_vec = ml.conditional_prob( abnormalData[:,:j+1]*\
                                       param_dict['HMM']['scale'], \
