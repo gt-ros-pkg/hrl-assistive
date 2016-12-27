@@ -120,22 +120,16 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
     #-----------------------------------------------------------------------------------------
 
-    print processed_data_path
-    print d.keys()
-    print d['param_dict']['feature_names']
-    print len(d['param_dict']['feature_names'])
-    print d['param_dict']['feature_names'][0]
-    print d['param_dict']['feature_names'][2]
-    print d['param_dict']['feature_names'][11]
-    print d['param_dict']['feature_names'][20]
-    ## sys.exit()
-
     #temp
     kFold_list = kFold_list[:8]
 
     ## x_classes = ['Object collision', 'Noisy environment', 'Spoon miss by a user', 'Spoon collision by a user', 'Robot-body collision by a user', 'Aggressive eating', 'Anomalous sound from a user', 'Unreachable mouth pose', 'Face occlusion by a user', 'Spoon miss by system fault', 'Spoon collision by system fault', 'Freeze by system fault']
 
-    base_idx = [0,1,2,11,19]
+    # select feature for detection #[0,1,2,11,19]
+    base_idx = []
+    for feature in param_dict['data_param']['handFeatures']:
+        idx = [ i for i, x in enumerate(param_dict['data_param']['isolationFeatures']) if feature == x][0]
+        base_idx.append(idx)
 
     org_processed_data_path = copy.copy(processed_data_path)
     for i in xrange(len(success_data)):
@@ -897,6 +891,11 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation3/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+
+        param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
+                                                    'unimodal_kinJntEff_1',\
+                                                    'unimodal_ftForce_integ',\
+                                                    ]
 
         param_dict['ROC']['methods'] = ['hmmgp']
         param_dict['HMM']['scale'] = 6.11
