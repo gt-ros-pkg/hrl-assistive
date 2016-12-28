@@ -1143,21 +1143,21 @@ if __name__ == '__main__':
                                                     ]
 
 
-        ## # c12, window 10
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## weight = -25.0
-        ## param_dict['HMM']['scale'] = 8.111  # 7-51
-        ## param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0 
-        ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
-        ##                                             'unimodal_audioWristAzimuth',\
-        ##                                             'unimodal_kinJntEff_1',\
-        ##                                             'unimodal_ftForce',\
-        ##                                             'unimodal_ftForce_integ',\
-        ##                                             'unimodal_kinEEChange',\
-        ##                                             'crossmodal_landmarkEEDist', \
-        ##                                             ]
+        # c12, window 10
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        weight = -25.0
+        param_dict['HMM']['scale'] = 8.111  # 7-51
+        param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0 
+        param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
+                                                    'unimodal_audioWristAzimuth',\
+                                                    'unimodal_kinJntEff_1',\
+                                                    'unimodal_ftForce',\
+                                                    'unimodal_ftForce_integ',\
+                                                    'unimodal_kinEEChange',\
+                                                    'crossmodal_landmarkEEDist', \
+                                                    ]
 
         ## # br, window 5
         ## save_data_path = os.path.expanduser('~')+\
