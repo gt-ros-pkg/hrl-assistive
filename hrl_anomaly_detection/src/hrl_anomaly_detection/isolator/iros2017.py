@@ -708,9 +708,9 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
                               noise_mag=0.03, verbose=verbose)
 
     # select features for isolation
-    feature_list = [0,1,2,11,15,16,17,18,20,21]
-    successData_ai = np.array(successData)[feature_list]
-    failureData_ai = np.array(failureData)[feature_list]
+    ## feature_list = [0,1,2,11,15,16,17,18,20,21]
+    ## successData_ai = np.array(successData)[feature_list]
+    ## failureData_ai = np.array(failureData)[feature_list]
                               
     # ---------------------------------------------------------------
     #temp
@@ -1048,6 +1048,7 @@ if __name__ == '__main__':
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation7/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
+                                                    'unimodal_audioWristAzimuth',\
                                                     'unimodal_kinJntEff_1',\
                                                     'unimodal_ftForce_integ',\
                                                     'unimodal_fabricForce',\
@@ -1097,7 +1098,7 @@ if __name__ == '__main__':
 
         param_dict['ROC']['methods'] = ['hmmgp']
         nPoints = param_dict['ROC']['nPoints']
-        param_dict['HMM']['scale'] = 6.111 #7.0
+        param_dict['HMM']['scale'] = 7.111 #7.0
         
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         evaluation_single_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
