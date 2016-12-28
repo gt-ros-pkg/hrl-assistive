@@ -718,7 +718,7 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
 
         n_jobs = 1
         l_data = Parallel(n_jobs=n_jobs, verbose=10)\
-          (delayed(iutil.get_hmm_isolation_data)(idx, kFold_list[idx], failureData_ad, failureData_ai, \
+          (delayed(iutil.get_hmm_isolation_data)(idx, kFold_list[idx], failureData_ad, failureData_ad, \
                                                  failure_labels,
                                                  task_name, processed_data_path, param_dict, weight,\
                                                  ref_idx, n_jobs=-1) for idx in xrange(len(kFold_list)) )
