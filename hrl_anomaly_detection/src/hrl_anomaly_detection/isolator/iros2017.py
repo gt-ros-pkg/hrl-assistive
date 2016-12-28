@@ -922,10 +922,11 @@ if __name__ == '__main__':
         param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
                                                     'unimodal_kinJntEff_1',\
                                                     'unimodal_ftForce_integ',\
+                                                    'unimodal_kinEEChange',\
                                                     ]
 
         param_dict['ROC']['methods'] = ['hmmgp']
-        param_dict['HMM']['scale'] = 6.11
+        param_dict['HMM']['scale'] = 7.11
         param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.6, 2.3, nPoints)*-1.0
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         evaluation_all(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
