@@ -295,7 +295,7 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
         d = dm.getDataLOPO(subject_names, task_name, raw_data_path, \
                            processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
                            downSampleSize=data_dict['downSampleSize'],\
-                           handFeatures=data_dict['handFeatures'], \
+                           handFeatures=param_dict['data_param']['isolationFeatures'], \
                            cut_data=data_dict['cut_data'], \
                            data_renew=data_renew, max_time=data_dict['max_time'])
 
@@ -312,6 +312,17 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
         d['kFoldList']     = kFold_list
         ut.save_pickle(d, crossVal_pkl)
         if data_gen: sys.exit()
+
+
+    # select feature for detection
+    feature_list = []
+    for feature in param_dict['data_param']['handFeatures']:
+        idx = [ i for i, x in enumerate(param_dict['data_param']['isolationFeatures']) if feature == x][0]
+        feature_list.append(idx)
+    
+    ## feature_list = [0,2,11,18] #[0,1,11,20]
+    successData = successData[feature_list]
+    failureData = failureData[feature_list]
 
     # temp
     kFold_list = kFold_list[:8]
