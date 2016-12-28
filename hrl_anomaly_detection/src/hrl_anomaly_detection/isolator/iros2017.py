@@ -1132,21 +1132,18 @@ if __name__ == '__main__':
                                                     ## 'unimodal_kinDesEEChange', \
 
 
-        # c11 offset 0 weight -8 spar 0.05, dict 8, win_size 130
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        weight = -18.0
-        param_dict['HMM']['scale'] = 7.111 
-        param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0 
-        param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
-                                                    'unimodal_kinJntEff_1',\
-                                                    'unimodal_ftForce_integ',\
-                                                    'unimodal_fabricForce',\
-                                                    'unimodal_kinEEChange', \
-                                                    'crossmodal_landmarkEEDist', \
-                                                    'unimodal_landmarkDist',\
-                                                    ]
+        ## # c11 offset 0 weight -8 spar 0.05, dict 8, win_size 130
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## weight = -18.0
+        ## param_dict['HMM']['scale'] = 7.111 
+        ## param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0 
+        ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
+        ##                                             'unimodal_audioWristAzimuth',\
+        ##                                             'unimodal_kinJntEff_1',\
+        ##                                             'unimodal_ftForce_integ',\
+        ##                                             'unimodal_kinEEChange']
 
                                                     
         # noise: 3,8
