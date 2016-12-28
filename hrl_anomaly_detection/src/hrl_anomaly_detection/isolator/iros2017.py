@@ -926,6 +926,7 @@ if __name__ == '__main__':
                                                     'unimodal_kinJntEff_1',\
                                                     'unimodal_ftForce',\
                                                     'unimodal_ftForce_integ',\
+                                                    'unimodal_landmarkDist',\
                                                     'unimodal_kinEEChange',\
                                                     'crossmodal_landmarkEEDist', \
                                                     ]
@@ -1124,12 +1125,12 @@ if __name__ == '__main__':
 
     elif opt.evaluation_isolation:
 
-        # c11, window 0
+        # br, window 0
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation9/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         weight = -25.0
-        param_dict['HMM']['scale'] = 7.111 
+        param_dict['HMM']['scale'] = 9.111 
         param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0 
 
         # 54
@@ -1143,22 +1144,22 @@ if __name__ == '__main__':
                                                     ]
 
 
-        # c11, window 5
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        weight = -25.0
-        param_dict['HMM']['scale'] = 8.111  # 7-51
-        param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0 
-        param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
-                                                    'unimodal_audioWristAzimuth',\
-                                                    'unimodal_kinJntEff_1',\
-                                                    'unimodal_ftForce',\
-                                                    'unimodal_ftForce_integ',\
-                                                    'unimodal_fabricForce',\
-                                                    'unimodal_kinEEChange',\
-                                                    'crossmodal_landmarkEEDist', \
-                                                    ]
+        ## # c11, window 5
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## weight = -25.0
+        ## param_dict['HMM']['scale'] = 8.111  # 7-51
+        ## param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0 
+        ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
+        ##                                             'unimodal_audioWristAzimuth',\
+        ##                                             'unimodal_kinJntEff_1',\
+        ##                                             'unimodal_ftForce',\
+        ##                                             'unimodal_ftForce_integ',\
+        ##                                             'unimodal_fabricForce',\
+        ##                                             'unimodal_kinEEChange',\
+        ##                                             'crossmodal_landmarkEEDist', \
+        ##                                             ]
 
         ## # c12, window 5
         ## save_data_path = os.path.expanduser('~')+\
