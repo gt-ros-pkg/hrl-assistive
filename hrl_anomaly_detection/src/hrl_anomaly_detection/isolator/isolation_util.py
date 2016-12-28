@@ -670,7 +670,7 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalLabel, \
                     if cp_vecs is None: d_idx -= 1
                     else: break
                     
-                cp_vecs = (cp_vecs-np.amin(cp_vecs))/(np.amax(cp_vecs)-np.amin(cp_vecs))
+                ## cp_vecs = (cp_vecs-np.amin(cp_vecs))/(np.amax(cp_vecs)-np.amin(cp_vecs))
                 x.append( cp_vecs )
                 y.append( abnormalLabel[i] )
         else:
