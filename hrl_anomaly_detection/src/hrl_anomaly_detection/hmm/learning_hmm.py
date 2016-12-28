@@ -421,7 +421,7 @@ class learning_hmm(learning_base):
         Input
         @ x: dim x length
         Output
-        @ A list of conditional probabilities P(x_t|x_s,lambda)
+        @ A list of conditional probabilities P(x_t|lambda)
 
         Only single sample works
         '''
