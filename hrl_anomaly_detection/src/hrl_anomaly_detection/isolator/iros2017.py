@@ -1172,6 +1172,7 @@ if __name__ == '__main__':
         param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
                                                     'unimodal_audioWristAzimuth',\
                                                     'unimodal_kinJntEff_1',\
+                                                    'unimodal_ftForce',\
                                                     'unimodal_ftForce_integ',\
                                                     'unimodal_kinEEChange',\
                                                     'crossmodal_landmarkEEDist', \
