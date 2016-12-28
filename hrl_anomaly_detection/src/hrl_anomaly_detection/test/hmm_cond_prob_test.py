@@ -26,7 +26,7 @@ print np.shape(X)
 
 nEmissionDim = len(X)
 nState       = 20
-cov_mult = [0.05]*(nEmissionDim**2)
+cov_mult = [0.01]*(nEmissionDim**2)
 cov_type = 'full'
 
 #-------------------------------------------------------------
@@ -38,7 +38,7 @@ ret = ml.fit(X+\
 #-------------------------------------------------------------
 
 X_test = X[:,1,:50]
-cp = ml.conditional_prob(X_test,1)
+cp = ml.conditional_prob(X_test)
 
 print cp #/np.sum(cp)
 

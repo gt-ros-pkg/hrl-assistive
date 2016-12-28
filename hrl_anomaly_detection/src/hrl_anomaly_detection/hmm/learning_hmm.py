@@ -395,8 +395,8 @@ class learning_hmm(learning_base):
                 B_arr = copy.copy(B[j][1])
                 B_arr = np.array(B_arr).reshape( (self.nEmissionDim, self.nEmissionDim) )
                 B_arr = np.delete(B_arr, (i), axis=0)
-                B_arr = np.delete(B_arr, (i), axis=1)                
-                B[j][1] = np.squeeze(B_arr.flatten()).tolist()
+                B_arr = np.delete(B_arr, (i), axis=1)
+                B[j][1] = B_arr.flatten().tolist()
             ml_src = ghmm.HMMFromMatrices(self.F, ghmm.MultivariateGaussianDistribution(self.F), \
                                           self.A, B, self.pi)
 
@@ -408,6 +408,10 @@ class learning_hmm(learning_base):
             logp_src = ml_src.loglikelihood(final_ts_obj)
 
             cond_prob.append(logp_all - logp_src)
+
+            if np.isnan(cond_prob[-1]):
+                print "NaN in conditional probabilities: ", np.shape(x)
+                return None
         
         return np.array(cond_prob)
 

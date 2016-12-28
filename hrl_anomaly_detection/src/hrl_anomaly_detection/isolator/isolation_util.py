@@ -611,7 +611,7 @@ def get_hmm_isolation_data(idx, kFold_list, failureData_ad, failureData, failure
     x_train, y_train = get_cond_prob(idx, detection_train_idx_list, \
                                      abnormalTrainData, abnormalTrainLabel,\
                                      task_name, processed_data_path, param_dict, \
-                                     ref_idx=ref_idx, plot=False, window=True, window_step=5 )
+                                     ref_idx=ref_idx, plot=False) #, window=True, window_step=5 )
                                      
     x_test, y_test = get_cond_prob(idx, detection_test_idx_list, \
                                    abnormalTestData, abnormalTestLabel,\
@@ -656,14 +656,19 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalLabel, \
                     if d_idx+1+j > len(abnormalData[0,i]): continue
                     cp_vecs = ml.conditional_prob( abnormalData[:,i,:d_idx+1+j]*\
                                                    param_dict['HMM']['scale'])
+                    if cp_vecs is None: continue
+
                     cp_vecs = (cp_vecs-np.amin(cp_vecs))/(np.amax(cp_vecs)-np.amin(cp_vecs))
                     x.append( cp_vecs )
                     y.append( abnormalLabel[i] )                                                    
             else:
                 if d_idx+1 <= 0: continue
                 if d_idx+1 > len(abnormalData[0,i]): continue
-                cp_vecs = ml.conditional_prob( abnormalData[:,i,:d_idx+1]*\
-                                                param_dict['HMM']['scale'])
+                while True:
+                    cp_vecs = ml.conditional_prob( abnormalData[:,i,:d_idx+1]*\
+                                                   param_dict['HMM']['scale'])
+                    if cp_vecs is None: d_idx -= 1
+                    else: break
                 cp_vecs = (cp_vecs-np.amin(cp_vecs))/(np.amax(cp_vecs)-np.amin(cp_vecs))
 
                 x.append( cp_vecs )
