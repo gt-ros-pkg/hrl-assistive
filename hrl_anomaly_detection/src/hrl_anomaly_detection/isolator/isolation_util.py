@@ -611,7 +611,7 @@ def get_hmm_isolation_data(idx, kFold_list, failureData_ad, failureData, failure
     x_train, y_train = get_cond_prob(idx, detection_train_idx_list, \
                                      abnormalTrainData, abnormalTrainLabel,\
                                      task_name, processed_data_path, param_dict, \
-                                     ref_idx=ref_idx, plot=False )
+                                     ref_idx=ref_idx, plot=False, window=True, window_step=10 )
                                      
     x_test, y_test = get_cond_prob(idx, detection_test_idx_list, \
                                    abnormalTestData, abnormalTestLabel,\
@@ -624,7 +624,8 @@ def get_hmm_isolation_data(idx, kFold_list, failureData_ad, failureData, failure
 
 def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalLabel, \
                   task_name, processed_data_path, param_dict,\
-                  ref_idx, window_step=10, verbose=False, plot=False):
+                  ref_idx, window_step=10, verbose=False, plot=False,\
+                  window=False):
     ''' Get conditional probability vector when anomalies are detected
     '''
 
@@ -649,12 +650,24 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalLabel, \
             continue
 
         if plot is False:
-            cp_vecs = ml.conditional_prob2( abnormalData[:,i,:d_idx+1]*\
-                                           param_dict['HMM']['scale'])
-            ## cp_vecs = ml.conditional_prob2( abnormalData[:,i,:d_idx+1]*\
-            ##                                param_dict['HMM']['scale'])
-            cp_vecs = (cp_vecs-np.amin(cp_vecs))/(np.amax(cp_vecs)-np.amin(cp_vecs))
-                                           
+            if window:
+                for j in range(-window_step, window_step):
+                    if d_idx+1+j <= 0: continue
+                    if d_idx+1+j > len(abnormalData[0,i]): continue
+                    cp_vecs = ml.conditional_prob2( abnormalData[:,i,:d_idx+1+j]*\
+                                                    param_dict['HMM']['scale'])
+                    cp_vecs = (cp_vecs-np.amin(cp_vecs))/(np.amax(cp_vecs)-np.amin(cp_vecs))
+                    x.append( cp_vecs )
+                    y.append( abnormalLabel[i] )                                                    
+            else:
+                if d_idx+1 <= 0: continue
+                if d_idx+1 > len(abnormalData[0,i]): continue
+                cp_vecs = ml.conditional_prob2( abnormalData[:,i,:d_idx+1]*\
+                                                param_dict['HMM']['scale'])
+                cp_vecs = (cp_vecs-np.amin(cp_vecs))/(np.amax(cp_vecs)-np.amin(cp_vecs))
+
+                x.append( cp_vecs )
+                y.append( abnormalLabel[i] )
         else:
             cp_vecs = None
             for j in xrange(len(abnormalData[0,i,:])):
@@ -699,10 +712,9 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalLabel, \
                 
             plt.show()
             
-        # slice data
-        # get conditional probability
-        x.append( cp_vecs )
-        y.append( abnormalLabel[i] )
+            # slice data
+            x.append( cp_vecs )
+            y.append( abnormalLabel[i] )
         
     return x, y
 
