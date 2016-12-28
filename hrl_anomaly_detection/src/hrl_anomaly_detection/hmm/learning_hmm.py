@@ -368,11 +368,10 @@ class learning_hmm(learning_base):
         return x_pred
 
 
-    def conditional_prob(self, x, ref_idx):
+    def conditional_prob(self, x):
         '''
         Input
         @ x: dim x length
-        @ ref_idx: the index of x_s in a list of features
         Output
         @ A list of conditional probabilities P(x_t|x_s,lambda)
 
@@ -380,39 +379,37 @@ class learning_hmm(learning_base):
         '''
         from scipy.stats import norm, entropy
 
+        # logp from all features
+        X_test = util.convert_sequence2(x, emission=False)
+        X_test = np.squeeze(X_test)
+        final_ts_obj = ghmm.EmissionSequence(self.F, X_test.tolist())
+        logp_all = self.ml.loglikelihood(final_ts_obj)
+
         # feature-wise conditional probability
         cond_prob = []
         for i in xrange(self.nEmissionDim): # per feature
-            if i == ref_idx: continue
 
-            B = [0] * self.nState
+            B = copy.copy(self.B)
             for j in xrange(self.nState):
-                B[j] = [[self.B[j][0][ref_idx], self.B[j][0][i] ] ]
-                B[j].append( [self.B[j][1][ref_idx*self.nEmissionDim+ref_idx],
-                              self.B[j][1][ref_idx*self.nEmissionDim+i],
-                              self.B[j][1][ref_idx*self.nEmissionDim+i],
-                              self.B[j][1][i*self.nEmissionDim+i] ])
-                
+                B[j][0] = [b for idx, b in enumerate(B[j][0]) if idx != i ]
+                B_arr = copy.copy(B[j][1])
+                B_arr = np.array(B_arr).reshape( (self.nEmissionDim, self.nEmissionDim) )
+                B_arr = np.delete(B_arr, (i), axis=0)
+                B_arr = np.delete(B_arr, (i), axis=1)                
+                B[j][1] = np.squeeze(B_arr.flatten()).tolist()
             ml_src = ghmm.HMMFromMatrices(self.F, ghmm.MultivariateGaussianDistribution(self.F), \
                                           self.A, B, self.pi)
 
-            X_test = util.convert_sequence2(x[[ref_idx,i]], emission=False)
+            # logp from remains
+            X_test = util.convert_sequence2([ x[j] for j in xrange(len(x)) if j != i ], \
+                                            emission=False)
             X_test = np.squeeze(X_test)
             final_ts_obj = ghmm.EmissionSequence(self.F, X_test.tolist())
-            logp = ml_src.loglikelihood(final_ts_obj)
+            logp_src = ml_src.loglikelihood(final_ts_obj)
 
-            cond_prob.append(logp)
-
-        ## # all
-        ## X_test = util.convert_sequence2(x, emission=False)
-        ## X_test = np.squeeze(X_test)
-        ## final_ts_obj = ghmm.EmissionSequence(self.F, X_test.tolist())
-        ## cond_prob.append( self.ml.loglikelihood(final_ts_obj) )
+            cond_prob.append(logp_all - logp_src)
         
-        # min-max normalization
-        cond_prob = np.array(cond_prob)
-            
-        return cond_prob
+        return np.array(cond_prob)
 
 
     def conditional_prob2(self, x):

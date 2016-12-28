@@ -765,9 +765,11 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
             y_train  = y_train.tolist()
             y_test   = y_test.tolist()
         
-        from sklearn.svm import SVC
-        clf = SVC(C=1.0, kernel='rbf') #, decision_function_shape='ovo')
-        #clf = SVC(C=1.0, kernel='linear') #, decision_function_shape='ovo')
+        ## from sklearn.svm import SVC
+        ## clf = SVC(C=1.0, kernel='rbf') #, decision_function_shape='ovo')
+        from sklearn.ensemble import RandomForestClassifier
+        clf = RandomForestClassifier(n_estimators=400, n_jobs=-1)
+        
         clf.fit(x_train, y_train)
         ## y_pred = clf.predict(x_test.tolist())
         score = clf.score(x_test, y_test)
@@ -924,6 +926,7 @@ if __name__ == '__main__':
                                                     'unimodal_kinJntEff_1',\
                                                     'unimodal_ftForce_integ',\
                                                     'unimodal_kinEEChange',\
+                                                    'crossmodal_landmarkEEDist', \
                                                     ]
 
         param_dict['ROC']['methods'] = ['hmmgp']
@@ -1120,7 +1123,7 @@ if __name__ == '__main__':
 
     elif opt.evaluation_isolation:
 
-        # c11 offset 0 weight -8 spar 0.05, dict 8, win_size 130
+        # c11, window 10
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation9/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
@@ -1128,6 +1131,7 @@ if __name__ == '__main__':
         param_dict['HMM']['scale'] = 7.111 
         param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0 
 
+        # 54
         param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
                                                     'unimodal_audioWristAzimuth',\
                                                     'unimodal_kinJntEff_1',\
@@ -1143,7 +1147,7 @@ if __name__ == '__main__':
                                                     ## 'unimodal_kinDesEEChange', \
 
 
-        ## # c11 offset 0 weight -8 spar 0.05, dict 8, win_size 130
+        ## # br, window 10
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
         ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)

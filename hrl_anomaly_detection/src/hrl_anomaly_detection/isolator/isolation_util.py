@@ -654,15 +654,15 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalLabel, \
                 for j in range(-window_step, window_step):
                     if d_idx+1+j <= 4: continue
                     if d_idx+1+j > len(abnormalData[0,i]): continue
-                    cp_vecs = ml.conditional_prob2( abnormalData[:,i,:d_idx+1+j]*\
-                                                    param_dict['HMM']['scale'])
+                    cp_vecs = ml.conditional_prob( abnormalData[:,i,:d_idx+1+j]*\
+                                                   param_dict['HMM']['scale'])
                     cp_vecs = (cp_vecs-np.amin(cp_vecs))/(np.amax(cp_vecs)-np.amin(cp_vecs))
                     x.append( cp_vecs )
                     y.append( abnormalLabel[i] )                                                    
             else:
                 if d_idx+1 <= 0: continue
                 if d_idx+1 > len(abnormalData[0,i]): continue
-                cp_vecs = ml.conditional_prob2( abnormalData[:,i,:d_idx+1]*\
+                cp_vecs = ml.conditional_prob( abnormalData[:,i,:d_idx+1]*\
                                                 param_dict['HMM']['scale'])
                 cp_vecs = (cp_vecs-np.amin(cp_vecs))/(np.amax(cp_vecs)-np.amin(cp_vecs))
 
