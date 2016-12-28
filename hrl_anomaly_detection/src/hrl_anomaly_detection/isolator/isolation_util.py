@@ -611,7 +611,7 @@ def get_hmm_isolation_data(idx, kFold_list, failureData_ad, failureData, failure
     x_train, y_train = get_cond_prob(idx, detection_train_idx_list, \
                                      abnormalTrainData, abnormalTrainLabel,\
                                      task_name, processed_data_path, param_dict, \
-                                     ref_idx=ref_idx, plot=False) #, window=True, window_step=10 )
+                                     ref_idx=ref_idx, plot=False, window=True, window_step=10 )
                                      
     x_test, y_test = get_cond_prob(idx, detection_test_idx_list, \
                                    abnormalTestData, abnormalTestLabel,\
