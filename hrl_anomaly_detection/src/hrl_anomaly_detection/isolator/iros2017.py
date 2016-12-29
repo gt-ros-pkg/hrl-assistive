@@ -1137,12 +1137,12 @@ if __name__ == '__main__':
 
     elif opt.evaluation_isolation:
 
-        # c11, window 5
+        # c11, window 5 64
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation9/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         weight = -25.0
-        param_dict['HMM']['scale'] = 8.111 
+        param_dict['HMM']['scale'] = 7.111 
         param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0 
 
         param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
