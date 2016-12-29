@@ -320,7 +320,6 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
         idx = [ i for i, x in enumerate(param_dict['data_param']['isolationFeatures']) if feature == x][0]
         feature_list.append(idx)
     
-    ## feature_list = [0,2,11,18] #[0,1,11,20]
     successData = successData[feature_list]
     failureData = failureData[feature_list]
 
@@ -708,9 +707,12 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
                               noise_mag=0.03, verbose=verbose)
 
     # select features for isolation
-    ## feature_list = [0,1,2,11,15,16,17,18,20,21]
-    ## successData_ai = np.array(successData)[feature_list]
-    ## failureData_ai = np.array(failureData)[feature_list]
+    feature_list = []
+    for feature in param_dict['data_param']['addFeatures']:
+        idx = [ i for i, x in enumerate(param_dict['data_param']['isolationFeatures']) if feature == x][0]
+        feature_list.append(idx)
+    successData_ai = np.array(successData)[feature_list]
+    failureData_ai = np.array(failureData)[feature_list]
                               
     # ---------------------------------------------------------------
     #temp
@@ -729,7 +731,7 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
 
         n_jobs = 1
         l_data = Parallel(n_jobs=n_jobs, verbose=10)\
-          (delayed(iutil.get_hmm_isolation_data)(idx, kFold_list[idx], failureData_ad, failureData_ad, \
+          (delayed(iutil.get_hmm_isolation_data)(idx, kFold_list[idx], failureData_ad, failureData_ai, \
                                                  failure_labels,
                                                  task_name, processed_data_path, param_dict, weight,\
                                                  ref_idx, n_jobs=-1) for idx in xrange(len(kFold_list)) )
@@ -1055,9 +1057,7 @@ if __name__ == '__main__':
 
 
         param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
-                                                    'unimodal_audioWristAzimuth',\
                                                     'unimodal_kinJntEff_1',\
-                                                    'unimodal_ftForce',\
                                                     'unimodal_ftForce_integ',\
                                                     'unimodal_kinEEChange',\
                                                     'crossmodal_landmarkEEDist', \
@@ -1144,14 +1144,16 @@ if __name__ == '__main__':
         param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0 
 
         param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
-                                                    'unimodal_audioWristAzimuth',\
                                                     'unimodal_kinJntEff_1',\
                                                     'unimodal_ftForce',\
                                                     'unimodal_ftForce_integ',\
-                                                    'unimodal_landmarkDist',\
                                                     'unimodal_kinEEChange',\
                                                     'crossmodal_landmarkEEDist', \
                                                     ]
+        param_dict['data_param']['addFeatures'] = ['unimodal_audioWristAzimuth',\
+                                                   'unimodal_fabricForce',  \
+                                                   'unimodal_landmarkDist',\
+                                                   ]
 
 
         ## # c11, window 5
@@ -1171,7 +1173,7 @@ if __name__ == '__main__':
         ##                                             'crossmodal_landmarkEEDist', \
         ##                                             ]
 
-        ## # c12, window 5
+        ## # c12, window 5 #62
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation10/'+\
         ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
@@ -1210,3 +1212,5 @@ if __name__ == '__main__':
         # options
         # 1. window diff
         # 2. noise
+        # 3. add feature (in classifier layer)
+        # 4. change

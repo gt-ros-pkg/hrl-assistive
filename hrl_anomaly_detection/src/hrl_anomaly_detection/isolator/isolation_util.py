@@ -572,7 +572,7 @@ def get_isolation_data(idx, kFold_list, modeling_pkl, nState, \
     return idx, gs_train, y_train, gs_test, y_test
 
 
-def get_hmm_isolation_data(idx, kFold_list, failureData_ad, failureData, failure_labels,
+def get_hmm_isolation_data(idx, kFold_list, failureData_ad, failureData_ai, failure_labels,
                            task_name, processed_data_path, param_dict, weight,\
                            ref_idx, n_jobs=-1 ):
 
@@ -584,8 +584,8 @@ def get_hmm_isolation_data(idx, kFold_list, failureData_ad, failureData, failure
     # dim x sample x length
     abnormalTrainData_ad  = copy.copy(failureData_ad[:, abnormalTrainIdx, :])
     abnormalTestData_ad   = copy.copy(failureData_ad[:, abnormalTestIdx, :])
-    abnormalTrainData  = copy.copy(failureData[:, abnormalTrainIdx, :])
-    abnormalTestData   = copy.copy(failureData[:, abnormalTestIdx, :])
+    abnormalTrainData_ai  = copy.copy(failureData_ai[:, abnormalTrainIdx, :])
+    abnormalTestData_ai   = copy.copy(failureData_ai[:, abnormalTestIdx, :])
     abnormalTrainLabel = copy.copy(failure_labels[abnormalTrainIdx])
     abnormalTestLabel  = copy.copy(failure_labels[abnormalTestIdx])
 
@@ -609,12 +609,12 @@ def get_hmm_isolation_data(idx, kFold_list, failureData_ad, failureData, failure
     # Feature Extraction
     #-----------------------------------------------------------------------------------------
     x_train, y_train = get_cond_prob(idx, detection_train_idx_list, \
-                                     abnormalTrainData, abnormalTrainLabel,\
+                                     abnormalTrainData_ad, abnormalTrainData_ai, abnormalTrainLabel,\
                                      task_name, processed_data_path, param_dict, \
                                      ref_idx=ref_idx, plot=False, window=True, window_step=5 )
                                      
     x_test, y_test = get_cond_prob(idx, detection_test_idx_list, \
-                                   abnormalTestData, abnormalTestLabel,\
+                                   abnormalTestData_ad, abnormalTestData_ai, abnormalTestLabel,\
                                    task_name, processed_data_path, param_dict, \
                                    ref_idx=ref_idx  )
 
@@ -622,7 +622,7 @@ def get_hmm_isolation_data(idx, kFold_list, failureData_ad, failureData, failure
 
                                          
 
-def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalLabel, \
+def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalData_ext, abnormalLabel, \
                   task_name, processed_data_path, param_dict,\
                   ref_idx, window_step=10, verbose=False, plot=False,\
                   window=False):
@@ -658,7 +658,9 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalLabel, \
                                                    param_dict['HMM']['scale'])
                     if cp_vecs is None: continue
 
-                    cp_vecs = (cp_vecs-np.amin(cp_vecs))/(np.amax(cp_vecs)-np.amin(cp_vecs))
+                    max_vals = np.amax(abnormalData_ext[:,i,:d_idx+1+j], axis=1)
+                    cp_vecs = cp_vecs.tolist()+ max_vals.tolist()
+                    ## cp_vecs = (cp_vecs-np.amin(cp_vecs))/(np.amax(cp_vecs)-np.amin(cp_vecs))
                     x.append( cp_vecs )
                     y.append( abnormalLabel[i] )                                                    
             else:
