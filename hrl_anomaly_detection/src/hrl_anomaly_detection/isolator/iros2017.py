@@ -1170,7 +1170,9 @@ if __name__ == '__main__':
                                                     'unimodal_kinEEChange',\
                                                     'crossmodal_landmarkEEDist', \
                                                     ]
-        param_dict['data_param']['addFeatures'] = ['unimodal_audioWristAzimuth',\
+        param_dict['data_param']['addFeatures'] = ['unimodal_audioWristFrontRMS',\
+                                                   'unimodal_audioWristAzimuth',\
+                                                   'unimodal_ftForceZ',\
                                                    'unimodal_fabricForce',  \
                                                    'unimodal_landmarkDist',\
                                                    'crossmodal_landmarkEEAng',\
@@ -1199,7 +1201,7 @@ if __name__ == '__main__':
         
                                                     
 
-        ## # br, window 10 
+        ## # br, window 10 #69
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation10/'+\
         ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
@@ -1212,7 +1214,9 @@ if __name__ == '__main__':
         ##                                             'unimodal_kinEEChange',\
         ##                                             'crossmodal_landmarkEEDist', \
         ##                                             ]
-        ## param_dict['data_param']['addFeatures'] = ['unimodal_audioWristAzimuth',\
+        ## param_dict['data_param']['addFeatures'] = ['unimodal_audioWristFrontRMS',\
+        ##                                            'unimodal_audioWristAzimuth',\
+        ##                                            'unimodal_ftForceZ',\
         ##                                            'unimodal_fabricForce',  \
         ##                                            'unimodal_landmarkDist',\
         ##                                            'crossmodal_landmarkEEAng',\
