@@ -611,7 +611,7 @@ def get_hmm_isolation_data(idx, kFold_list, failureData_ad, failureData_ai, fail
     x_train, y_train = get_cond_prob(idx, detection_train_idx_list, \
                                      abnormalTrainData_ad, abnormalTrainData_ai, abnormalTrainLabel,\
                                      task_name, processed_data_path, param_dict, \
-                                     ref_idx=ref_idx, plot=False, window=True, window_step=10 )
+                                     ref_idx=ref_idx, plot=False, window=True, window_step=20 )
                                      
     x_test, y_test = get_cond_prob(idx, detection_test_idx_list, \
                                    abnormalTestData_ad, abnormalTestData_ai, abnormalTestLabel,\
@@ -625,7 +625,7 @@ def get_hmm_isolation_data(idx, kFold_list, failureData_ad, failureData_ai, fail
 def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalData_ext, abnormalLabel, \
                   task_name, processed_data_path, param_dict,\
                   ref_idx, window_step=10, verbose=False, plot=False,\
-                  window=False, delta_flag=True):
+                  window=False, delta_flag=False):
     ''' Get conditional probability vector when anomalies are detected
     '''
 
