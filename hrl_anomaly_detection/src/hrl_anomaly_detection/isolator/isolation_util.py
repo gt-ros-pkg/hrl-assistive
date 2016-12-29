@@ -658,14 +658,14 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalData_ext, abnorma
                     cp_vecs = ml.conditional_prob( abnormalData[:,i,:d_idx+1+j]*\
                                                    param_dict['HMM']['scale'])
                     if cp_vecs is None: continue
-                    if cp_vecs_last is None and delta_flag:
-                        cp_vecs_last = cp_vecs
-                        continue
-                    else:
-                        temp = cp_vecs - cp_vecs_last
-                        cp_vecs_last = cp_vecs
-                        cp_vecs = temp
-                        
+                    if delta_flag:
+                        if cp_vecs_last is None:
+                            cp_vecs_last = cp_vecs
+                            continue
+                        else:
+                            temp = cp_vecs - cp_vecs_last
+                            cp_vecs_last = cp_vecs
+                            cp_vecs = temp
 
                     max_vals = np.amax(abnormalData_ext[:,i,:d_idx+1+j], axis=1)
                     cp_vecs = cp_vecs.tolist()+ max_vals.tolist()
