@@ -672,6 +672,8 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalData_ext, abnorma
                     if cp_vecs is None: d_idx -= 1
                     else: break
                     
+                max_vals = np.amax(abnormalData_ext[:,i,:d_idx+1+j], axis=1)
+                cp_vecs = cp_vecs.tolist()+ max_vals.tolist()
                 ## cp_vecs = (cp_vecs-np.amin(cp_vecs))/(np.amax(cp_vecs)-np.amin(cp_vecs))
                 x.append( cp_vecs )
                 y.append( abnormalLabel[i] )

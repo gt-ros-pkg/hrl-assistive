@@ -755,6 +755,8 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
 
         (x_train, y_train, x_test, y_test) = data_dict[idx]
 
+        print np.shape(x_train), np.shape(x_test)
+
         from sklearn import preprocessing
         scaler = preprocessing.StandardScaler()
         x_train = scaler.fit_transform(x_train)
@@ -1135,7 +1137,7 @@ if __name__ == '__main__':
 
     elif opt.evaluation_isolation:
 
-        # c12, window 5
+        # c11, window 5
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation9/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
@@ -1156,24 +1158,24 @@ if __name__ == '__main__':
                                                    ]
 
 
-        # c12, window 5
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        weight = -25.0
-        param_dict['HMM']['scale'] = 8.111  # 7-51
-        param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0 
-        param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
-                                                    'unimodal_audioWristAzimuth',\
-                                                    'unimodal_kinJntEff_1',\
-                                                    'unimodal_ftForce',\
-                                                    'unimodal_ftForce_integ',\
-                                                    'unimodal_kinEEChange',\
-                                                    'crossmodal_landmarkEEDist', \
-                                                    ]
-        param_dict['data_param']['addFeatures'] = ['unimodal_fabricForce',  \
-                                                   'unimodal_landmarkDist',\
-                                                   ]
+        ## # c12, window 5
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## weight = -25.0
+        ## param_dict['HMM']['scale'] = 8.111  # 7-51
+        ## param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0 
+        ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
+        ##                                             'unimodal_audioWristAzimuth',\
+        ##                                             'unimodal_kinJntEff_1',\
+        ##                                             'unimodal_ftForce',\
+        ##                                             'unimodal_ftForce_integ',\
+        ##                                             'unimodal_kinEEChange',\
+        ##                                             'crossmodal_landmarkEEDist', \
+        ##                                             ]
+        ## param_dict['data_param']['addFeatures'] = ['unimodal_fabricForce',  \
+        ##                                            'unimodal_landmarkDist',\
+        ##                                            ]
         
                                                     
 
