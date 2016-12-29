@@ -625,7 +625,7 @@ def get_hmm_isolation_data(idx, kFold_list, failureData_ad, failureData_ai, fail
 def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalData_ext, abnormalLabel, \
                   task_name, processed_data_path, param_dict,\
                   ref_idx, window_step=10, verbose=False, plot=False,\
-                  window=False):
+                  window=False, delta_flag=True):
     ''' Get conditional probability vector when anomalies are detected
     '''
 
@@ -650,6 +650,7 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalData_ext, abnorma
             continue
 
         if plot is False:
+            cp_vecs_last = None
             if window:
                 for j in range(-window_step, window_step):
                     if d_idx+1+j <= 4: continue
@@ -657,6 +658,13 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalData_ext, abnorma
                     cp_vecs = ml.conditional_prob( abnormalData[:,i,:d_idx+1+j]*\
                                                    param_dict['HMM']['scale'])
                     if cp_vecs is None: continue
+                    if cp_vecs_last is None and delta_flag:
+                        cp_vecs_last = cp_vecs
+                        continue
+                    else:
+                        cp_vecs = cp_vecs - cp_vecs_last
+                        cp_vecs_last = cp_vecs
+                        
 
                     max_vals = np.amax(abnormalData_ext[:,i,:d_idx+1+j], axis=1)
                     cp_vecs = cp_vecs.tolist()+ max_vals.tolist()
@@ -671,6 +679,11 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalData_ext, abnorma
                                                    param_dict['HMM']['scale'])
                     if cp_vecs is None: d_idx -= 1
                     else: break
+
+                if delta_flag:
+                    cp_vecs_last = ml.conditional_prob( abnormalData[:,i,:d_idx]*\
+                                                        param_dict['HMM']['scale'])
+                    cp_vecs = cp_vecs - cp_vecs_last
                     
                 max_vals = np.amax(abnormalData_ext[:,i,:d_idx+1], axis=1)
                 cp_vecs = cp_vecs.tolist()+ max_vals.tolist()

@@ -1137,7 +1137,7 @@ if __name__ == '__main__':
 
     elif opt.evaluation_isolation:
 
-        # c11, window 5 64
+        # c11, window 10 delta # 65
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation9/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
