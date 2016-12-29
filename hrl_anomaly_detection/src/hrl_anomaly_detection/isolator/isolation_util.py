@@ -669,7 +669,7 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalData_ext, abnorma
 
                     max_vals = np.amax(abnormalData_ext[:,i,:d_idx+1+j], axis=1)
                     min_vals = np.amin(abnormalData_ext[:,i,:d_idx+1+j], axis=1)
-                    vals = [mx for (mx, mi) in zip(max_vals, min_vals) if abs(mx) > abs(mi) else mi]
+                    vals = [mx if abs(mx) > abs(mi) else mi for (mx, mi) in zip(max_vals, min_vals) ]
                     
                     cp_vecs = cp_vecs.tolist()+ vals
                     ## cp_vecs = (cp_vecs-np.amin(cp_vecs))/(np.amax(cp_vecs)-np.amin(cp_vecs))
@@ -692,10 +692,9 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalData_ext, abnorma
                 ## max_vals = np.amax(abnormalData_ext[:,i,:d_idx+1], axis=1)
                 max_vals = np.amax(abnormalData_ext[:,i,:d_idx+1], axis=1)
                 min_vals = np.amin(abnormalData_ext[:,i,:d_idx+1], axis=1)
-                vals = [mx for (mx, mi) in zip(max_vals, min_vals) if abs(mx) > abs(mi) else mi]
-
+                vals = [mx if abs(mx) > abs(mi) else mi for (mx, mi) in zip(max_vals, min_vals) ]
                 
-                cp_vecs = cp_vecs.tolist()+ max_vals.tolist()
+                cp_vecs = cp_vecs.tolist()+ vals
                 ## cp_vecs = (cp_vecs-np.amin(cp_vecs))/(np.amax(cp_vecs)-np.amin(cp_vecs))
                 x.append( cp_vecs )
                 y.append( abnormalLabel[i] )
