@@ -711,9 +711,24 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
     for feature in param_dict['data_param']['staticFeatures']:
         idx = [ i for i, x in enumerate(param_dict['data_param']['isolationFeatures']) if feature == x][0]
         feature_list.append(idx)
-    successData_ai = np.array(successData)[feature_list]
-    failureData_ai = np.array(failureData)[feature_list]
-                              
+    successData_static = np.array(successData)[feature_list]
+    failureData_static = np.array(failureData)[feature_list]
+
+    # select features for isolation
+    feature_list = []
+    for feature in param_dict['data_param']['dynamicFeatures']:
+        idx = [ i for i, x in enumerate(param_dict['data_param']['isolationFeatures']) if feature == x][0]
+        feature_list.append(idx)
+    successData_dynamic = np.array(successData)[feature_list]
+    failureData_dynamic = np.array(failureData)[feature_list]
+
+    dm.saveHMMinducedFeatures(kFold_list, successData_dynamic, failureData_dynamic,\
+                              task_name, processed_data_path,\
+                              HMM_dict, data_renew, startIdx, nState, cov, \
+                              success_files=success_files, failure_files=failure_files,\
+                              suffix='dynamic',\
+                              noise_mag=0.03, verbose=verbose)
+    
     # ---------------------------------------------------------------
     #temp
     kFold_list = kFold_list[:8]
@@ -731,7 +746,8 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
 
         n_jobs = 1
         l_data = Parallel(n_jobs=n_jobs, verbose=10)\
-          (delayed(iutil.get_hmm_isolation_data)(idx, kFold_list[idx], failureData_ad, failureData_ai, \
+          (delayed(iutil.get_hmm_isolation_data)(idx, kFold_list[idx], failureData_ad, failureData_static, \
+                                                 failureData_static,\
                                                  failure_labels,
                                                  task_name, processed_data_path, param_dict, weight,\
                                                  ref_idx, n_jobs=-1) for idx in xrange(len(kFold_list)) )
@@ -1146,7 +1162,18 @@ if __name__ == '__main__':
                                                     'unimodal_kinJntEff_1',\
                                                     'unimodal_ftForce_integ',\
                                                     'unimodal_kinEEChange',\
+                                                    'crossmodal_landmarkEEDist', \
                                                     ]
+        param_dict['data_param']['dynamicFeatures'] = ['unimodal_audioWristRMS',  \
+                                                       'unimodal_kinJntEff_2', \
+                                                       'unimodal_kinJntEff_3', \
+                                                       'unimodal_kinJntEff_4', \
+                                                       'unimodal_kinJntEff_5', \
+                                                       'unimodal_kinJntEff_6', \
+                                                       'unimodal_kinJntEff_7', \
+                                                       'unimodal_ftForce_zero',\
+                                                       'crossmodal_landmarkEEDist', \
+                                                       ]                                                    
         param_dict['data_param']['staticFeatures'] = ['unimodal_audioWristFrontRMS',\
                                                       'unimodal_audioWristAzimuth',\
                                                       'unimodal_ftForceX',\
@@ -1154,7 +1181,6 @@ if __name__ == '__main__':
                                                       'unimodal_ftForceZ',\
                                                       'unimodal_fabricForce',  \
                                                       'unimodal_landmarkDist',\
-                                                      'crossmodal_landmarkEEDist', \
                                                       'crossmodal_landmarkEEAng',\
                                                       ]                                                  
         
@@ -1174,16 +1200,16 @@ if __name__ == '__main__':
         ##                                             'crossmodal_landmarkEEDist', \
         ##                                             ]
 
-        ## ## param_dict['data_param']['dynamicFeatures'] = ['unimodal_audioWristRMS',  \
-        ## ##                                                'unimodal_kinJntEff_2', \
-        ## ##                                                'unimodal_kinJntEff_3', \
-        ## ##                                                'unimodal_kinJntEff_4', \
-        ## ##                                                'unimodal_kinJntEff_5', \
-        ## ##                                                'unimodal_kinJntEff_6', \
-        ## ##                                                'unimodal_kinJntEff_7', \
-        ## ##                                                'unimodal_ftForce_zero',\
-        ##                                             ## 'crossmodal_landmarkEEDist', \
-        ## ##                                                ]                                                    
+        ## param_dict['data_param']['dynamicFeatures'] = ['unimodal_audioWristRMS',  \
+        ##                                                'unimodal_kinJntEff_2', \
+        ##                                                'unimodal_kinJntEff_3', \
+        ##                                                'unimodal_kinJntEff_4', \
+        ##                                                'unimodal_kinJntEff_5', \
+        ##                                                'unimodal_kinJntEff_6', \
+        ##                                                'unimodal_kinJntEff_7', \
+        ##                                                'unimodal_ftForce_zero',\
+        ##                                                'crossmodal_landmarkEEDist', \
+        ##                                                ]                                                    
         ## param_dict['data_param']['staticFeatures'] = ['unimodal_audioWristFrontRMS',\
         ##                                               'unimodal_audioWristAzimuth',\
         ##                                               'unimodal_ftForceX',\
@@ -1195,7 +1221,8 @@ if __name__ == '__main__':
         ##                                               ]                                                  
         ##                                               ## 'unimodal_ftForce',\
         ##                                               ## 'unimodal_kinEEChange',\
-                                                    
+
+        
         # noise: 3,8
         # azimuth: 3
         # jnteff: 2,6

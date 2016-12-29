@@ -572,7 +572,8 @@ def get_isolation_data(idx, kFold_list, modeling_pkl, nState, \
     return idx, gs_train, y_train, gs_test, y_test
 
 
-def get_hmm_isolation_data(idx, kFold_list, failureData_ad, failureData_ai, failure_labels,
+def get_hmm_isolation_data(idx, kFold_list, failureData_ad, failureData_static, \
+                           failureData_dynamic, failure_labels, \
                            task_name, processed_data_path, param_dict, weight,\
                            ref_idx, n_jobs=-1 ):
 
@@ -584,8 +585,10 @@ def get_hmm_isolation_data(idx, kFold_list, failureData_ad, failureData_ai, fail
     # dim x sample x length
     abnormalTrainData_ad  = copy.copy(failureData_ad[:, abnormalTrainIdx, :])
     abnormalTestData_ad   = copy.copy(failureData_ad[:, abnormalTestIdx, :])
-    abnormalTrainData_ai  = copy.copy(failureData_ai[:, abnormalTrainIdx, :])
-    abnormalTestData_ai   = copy.copy(failureData_ai[:, abnormalTestIdx, :])
+    abnormalTrainData_s  = copy.copy(failureData_static[:, abnormalTrainIdx, :])
+    abnormalTestData_s   = copy.copy(failureData_static[:, abnormalTestIdx, :])
+    abnormalTrainData_d  = copy.copy(failureData_dynamic[:, abnormalTrainIdx, :])
+    abnormalTestData_d   = copy.copy(failureData_dynamic[:, abnormalTestIdx, :])
     abnormalTrainLabel = copy.copy(failure_labels[abnormalTrainIdx])
     abnormalTestLabel  = copy.copy(failure_labels[abnormalTestIdx])
 
@@ -609,12 +612,12 @@ def get_hmm_isolation_data(idx, kFold_list, failureData_ad, failureData_ai, fail
     # Feature Extraction
     #-----------------------------------------------------------------------------------------
     x_train, y_train = get_cond_prob(idx, detection_train_idx_list, \
-                                     abnormalTrainData_ad, abnormalTrainData_ai, abnormalTrainLabel,\
+                                     abnormalTrainData_s, abnormalTrainData_d, abnormalTrainLabel,\
                                      task_name, processed_data_path, param_dict, \
                                      ref_idx=ref_idx, plot=False, window=True, window_step=10 )
                                      
     x_test, y_test = get_cond_prob(idx, detection_test_idx_list, \
-                                   abnormalTestData_ad, abnormalTestData_ai, abnormalTestLabel,\
+                                   abnormalTestData_s, abnormalTestData_d, abnormalTestLabel,\
                                    task_name, processed_data_path, param_dict, \
                                    ref_idx=ref_idx  )
 
@@ -622,7 +625,7 @@ def get_hmm_isolation_data(idx, kFold_list, failureData_ad, failureData_ai, fail
 
                                          
 
-def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalData_ext, abnormalLabel, \
+def get_cond_prob(idx, anomaly_idx_list, abnormalData_s, abnormalData_d, abnormalLabel, \
                   task_name, processed_data_path, param_dict,\
                   ref_idx, window_step=10, verbose=False, plot=False,\
                   window=False, delta_flag=False):
@@ -630,7 +633,9 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalData_ext, abnorma
     '''
 
     # Load a generative model
-    modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
+    suffix = 'dynamic'
+    modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'_c'+suffix+'.pkl')
+    ## modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
     d            = ut.load_pickle(modeling_pkl)
     ## Load local variables: nState, nEmissionDim, ll_classifier_train_?, ll_classifier_test_?, nLength    
     for k, v in d.iteritems():
@@ -654,8 +659,8 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalData_ext, abnorma
             if window:
                 for j in range(-window_step, window_step):
                     if d_idx+1+j <= 4: continue
-                    if d_idx+1+j > len(abnormalData[0,i]): continue
-                    cp_vecs = ml.conditional_prob( abnormalData[:,i,:d_idx+1+j]*\
+                    if d_idx+1+j > len(abnormalData_d[0,i]): continue
+                    cp_vecs = ml.conditional_prob( abnormalData_d[:,i,:d_idx+1+j]*\
                                                    param_dict['HMM']['scale'])
                     if cp_vecs is None: continue
                     if delta_flag:
@@ -667,8 +672,8 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalData_ext, abnorma
                             cp_vecs_last = cp_vecs
                             cp_vecs = temp
 
-                    max_vals = np.amax(abnormalData_ext[:,i,:d_idx+1+j], axis=1)
-                    min_vals = np.amin(abnormalData_ext[:,i,:d_idx+1+j], axis=1)
+                    max_vals = np.amax(abnormalData_s[:,i,:d_idx+1+j], axis=1)
+                    min_vals = np.amin(abnormalData_s[:,i,:d_idx+1+j], axis=1)
                     vals = [mx if abs(mx) > abs(mi) else mi for (mx, mi) in zip(max_vals, min_vals) ]
                     
                     cp_vecs = cp_vecs.tolist()+ vals
@@ -677,21 +682,21 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalData_ext, abnorma
                     y.append( abnormalLabel[i] )                                                    
             else:
                 if d_idx+1 <= 0: continue
-                if d_idx+1 > len(abnormalData[0,i]): continue
+                if d_idx+1 > len(abnormalData_d[0,i]): continue
                 while True:
-                    cp_vecs = ml.conditional_prob( abnormalData[:,i,:d_idx+1]*\
+                    cp_vecs = ml.conditional_prob( abnormalData_d[:,i,:d_idx+1]*\
                                                    param_dict['HMM']['scale'])
                     if cp_vecs is None: d_idx -= 1
                     else: break
 
                 if delta_flag:
-                    cp_vecs_last = ml.conditional_prob( abnormalData[:,i,:d_idx]*\
+                    cp_vecs_last = ml.conditional_prob( abnormalData_d[:,i,:d_idx]*\
                                                         param_dict['HMM']['scale'])
                     cp_vecs = cp_vecs - cp_vecs_last
                     
                 ## max_vals = np.amax(abnormalData_ext[:,i,:d_idx+1], axis=1)
-                max_vals = np.amax(abnormalData_ext[:,i,:d_idx+1], axis=1)
-                min_vals = np.amin(abnormalData_ext[:,i,:d_idx+1], axis=1)
+                max_vals = np.amax(abnormalData_s[:,i,:d_idx+1], axis=1)
+                min_vals = np.amin(abnormalData_s[:,i,:d_idx+1], axis=1)
                 vals = [mx if abs(mx) > abs(mi) else mi for (mx, mi) in zip(max_vals, min_vals) ]
                 
                 cp_vecs = cp_vecs.tolist()+ vals
