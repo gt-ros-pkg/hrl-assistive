@@ -662,8 +662,9 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalData_ext, abnorma
                         cp_vecs_last = cp_vecs
                         continue
                     else:
-                        cp_vecs = cp_vecs - cp_vecs_last
+                        temp = cp_vecs - cp_vecs_last
                         cp_vecs_last = cp_vecs
+                        cp_vecs = temp
                         
 
                     max_vals = np.amax(abnormalData_ext[:,i,:d_idx+1+j], axis=1)
