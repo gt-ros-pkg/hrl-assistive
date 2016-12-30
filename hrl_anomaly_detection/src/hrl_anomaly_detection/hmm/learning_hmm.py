@@ -409,7 +409,7 @@ class learning_hmm(learning_base):
 
             cond_prob.append(logp_all - logp_src)
 
-            if np.isnan(cond_prob[-1]):
+            if np.isnan(cond_prob[-1]) or np.isinf(cond_prob[-1]):
                 print "NaN in conditional probabilities: ", np.shape(x)
                 return None
         
