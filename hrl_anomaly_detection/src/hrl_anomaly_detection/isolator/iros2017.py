@@ -700,11 +700,11 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
     successData_ad = np.array(successData)[feature_list]
     failureData_ad = np.array(failureData)[feature_list]
 
-    ## dm.saveHMMinducedFeatures(kFold_list, successData_ad, failureData_ad,\
-    ##                           task_name, processed_data_path,\
-    ##                           HMM_dict, data_renew, startIdx, nState, cov, \
-    ##                           success_files=success_files, failure_files=failure_files,\
-    ##                           noise_mag=0.03, verbose=verbose)
+    dm.saveHMMinducedFeatures(kFold_list, successData_ad, failureData_ad,\
+                              task_name, processed_data_path,\
+                              HMM_dict, data_renew, startIdx, nState, cov, \
+                              success_files=success_files, failure_files=failure_files,\
+                              noise_mag=0.03, verbose=verbose)
 
     # select features for isolation
     feature_list = []
@@ -1197,34 +1197,32 @@ if __name__ == '__main__':
         
                                                     
 
-        ## # c12, window 10 #73
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation10/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## weight = -32.0
-        ## param_dict['HMM']['scale'] = 7.111 
-        ## param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0
-        ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
-        ##                                             'unimodal_kinJntEff_1',\
-        ##                                             'unimodal_ftForce_integ',\
-        ##                                             'unimodal_kinEEChange',\
-        ##                                             'crossmodal_landmarkEEDist', \
-        ##                                             ]
+        # c12, window 10 #73
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation10/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        weight = -32.0
+        param_dict['HMM']['scale'] = 7.111 
+        param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0
+        param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
+                                                    'unimodal_kinJntEff_1',\
+                                                    'unimodal_ftForce_integ',\
+                                                    'unimodal_kinEEChange',\
+                                                    'crossmodal_landmarkEEDist', \
+                                                    ]
 
-        ## param_dict['data_param']['dynamicFeatures'] = ['unimodal_ftForce_zero',\
-        ##                                                'unimodal_ftForceZ',\
-        ##                                                'crossmodal_landmarkEEDist', \
-        ##                                                ]                                                    
-        ## param_dict['data_param']['staticFeatures'] = ['unimodal_audioWristFrontRMS',\
-        ##                                               'unimodal_audioWristAzimuth',\
-        ##                                               'unimodal_ftForceX',\
-        ##                                               'unimodal_ftForceY',\
-        ##                                               'unimodal_fabricForce',  \
-        ##                                               'unimodal_landmarkDist',\
-        ##                                               'crossmodal_landmarkEEAng',\
-        ##                                               ]                                                  
-        ##                                               ## 'unimodal_ftForce',\
-        ##                                               ## 'unimodal_kinEEChange',\
+        param_dict['data_param']['dynamicFeatures'] = ['unimodal_ftForce_zero',\
+                                                       'unimodal_ftForceZ',\
+                                                       'crossmodal_landmarkEEDist', \
+                                                       ]                                                    
+        param_dict['data_param']['staticFeatures'] = ['unimodal_audioWristFrontRMS',\
+                                                      'unimodal_audioWristAzimuth',\
+                                                      'unimodal_ftForceX',\
+                                                      'unimodal_ftForceY',\
+                                                      'unimodal_fabricForce',  \
+                                                      'unimodal_landmarkDist',\
+                                                      'crossmodal_landmarkEEAng',\
+                                                      ]                                                  
 
         
         # noise: 3,8
