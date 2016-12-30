@@ -700,11 +700,11 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
     successData_ad = np.array(successData)[feature_list]
     failureData_ad = np.array(failureData)[feature_list]
 
-    dm.saveHMMinducedFeatures(kFold_list, successData_ad, failureData_ad,\
-                              task_name, processed_data_path,\
-                              HMM_dict, data_renew, startIdx, nState, cov, \
-                              success_files=success_files, failure_files=failure_files,\
-                              noise_mag=0.03, verbose=verbose)
+    ## dm.saveHMMinducedFeatures(kFold_list, successData_ad, failureData_ad,\
+    ##                           task_name, processed_data_path,\
+    ##                           HMM_dict, data_renew, startIdx, nState, cov, \
+    ##                           success_files=success_files, failure_files=failure_files,\
+    ##                           noise_mag=0.03, verbose=verbose)
 
     # select features for isolation
     feature_list = []
