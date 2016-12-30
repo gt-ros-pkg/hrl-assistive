@@ -1213,7 +1213,7 @@ if __name__ == '__main__':
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation10/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         weight = -32.0
-        param_dict['HMM']['scale'] = 8.111 
+        param_dict['HMM']['scale'] = 7.111 
         param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0
         param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
                                                     'unimodal_kinJntEff_1',\
