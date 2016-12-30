@@ -704,7 +704,7 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalData_s, abnormalD
                     cp_vecs = cp_vecs.tolist()+ vals
                     ## cp_vecs = (cp_vecs-np.amin(cp_vecs))/(np.amax(cp_vecs)-np.amin(cp_vecs))
 
-                    if np.nan in cp_vecs:
+                    if np.isnan(cp_vecs).any() or np.isinf(cp_vecs).any():
                         print "NaN in cp_vecs ", i, d_idx
                         sys.exit()
                     

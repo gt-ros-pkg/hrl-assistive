@@ -778,10 +778,6 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         (x_train, y_train, x_test, y_test) = data_dict[idx]
 
         print np.shape(x_train), np.shape(x_test)
-        for ii, x in enumerate(x_train):
-            if np.nan in x or np.inf in x or None in x:
-                print idx, i, x
-                sys.exit()
 
         from sklearn import preprocessing
         scaler = preprocessing.StandardScaler()
