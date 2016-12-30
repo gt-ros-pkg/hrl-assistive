@@ -779,7 +779,7 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
 
         print np.shape(x_train), np.shape(x_test)
         for x in enumerate(x_train):
-            if np.nan in x:
+            if np.nan in x or np.inf in x:
                 print idx, i, x
                 sys.exit()
 
