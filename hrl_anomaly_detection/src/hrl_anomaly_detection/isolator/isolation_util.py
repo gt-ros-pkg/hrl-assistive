@@ -628,7 +628,7 @@ def get_hmm_isolation_data(idx, kFold_list, failureData_ad, failureData_static, 
 
                                          
 
-def get_cond_prob(idx, anomaly_idx_list, abnormalTestData, abnormalData_s, abnormalData_d, \
+def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalData_s, abnormalData_d, \
                   abnormalLabel, \
                   task_name, processed_data_path, param_dict,\
                   window_step=10, verbose=False, plot=False,\
