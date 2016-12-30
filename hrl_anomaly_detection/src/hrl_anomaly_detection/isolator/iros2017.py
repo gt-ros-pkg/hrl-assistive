@@ -782,7 +782,6 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
             if np.nan in x or np.inf in x or None in x:
                 print idx, i, x
                 sys.exit()
-        sys.exit()
 
         from sklearn import preprocessing
         scaler = preprocessing.StandardScaler()
