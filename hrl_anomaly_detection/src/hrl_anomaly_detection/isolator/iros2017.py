@@ -1233,7 +1233,7 @@ if __name__ == '__main__':
                                                     'crossmodal_landmarkEEDist', \
                                                     ]
 
-        param_dict['HMM']['df_scale'] = 3.0 
+        param_dict['HMM']['df_scale'] = 5.0 
         param_dict['data_param']['dynamicFeatures'] = ['unimodal_ftForce_zero',\
                                                        'unimodal_ftForceZ',\
                                                        'crossmodal_landmarkEEDist', \
