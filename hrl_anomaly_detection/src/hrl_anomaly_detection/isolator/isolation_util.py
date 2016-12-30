@@ -592,6 +592,7 @@ def get_hmm_isolation_data(idx, kFold_list, failureData_ad, failureData_static, 
     abnormalTrainLabel = copy.copy(failure_labels[abnormalTrainIdx])
     abnormalTestLabel  = copy.copy(failure_labels[abnormalTestIdx])
 
+
     #-----------------------------------------------------------------------------------------
     # Anomaly Detection
     #-----------------------------------------------------------------------------------------
@@ -616,13 +617,13 @@ def get_hmm_isolation_data(idx, kFold_list, failureData_ad, failureData_static, 
                                      abnormalTrainData_s, abnormalTrainData_d, abnormalTrainLabel,\
                                      task_name, processed_data_path, param_dict, \
                                      plot=False, window=True, window_step=10,\
-                                     dynamic_flag=True)
+                                     dynamic_flag=dynamic_flag)
                                      
     x_test, y_test = get_cond_prob(idx, detection_test_idx_list, \
                                    abnormalTestData_ad, \
                                    abnormalTestData_s, abnormalTestData_d, abnormalTestLabel,\
                                    task_name, processed_data_path, param_dict, \
-                                   dynamic_flag=True)
+                                   dynamic_flag=dynamic_flag)
 
     return idx, x_train, y_train, x_test, y_test
 
@@ -648,6 +649,7 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalData_s, abnormalD
     ml = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
     ml.set_hmm_object(A,B,pi)
 
+
     # Load a generative model from dynamic feature
     if dynamic_flag:
         suffix = 'dynamic'
@@ -661,7 +663,6 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalData_s, abnormalD
 
         ml_d = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
         ml_d.set_hmm_object(A,B,pi)
-
     
     x = []
     y = []
