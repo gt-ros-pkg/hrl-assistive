@@ -1189,34 +1189,34 @@ if __name__ == '__main__':
         
                                                     
 
-        ## # c11, window 10 #73
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation10/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## weight = -32.0
-        ## param_dict['HMM']['scale'] = 7.111 
-        ## param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0
-        ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
-        ##                                             'unimodal_kinJntEff_1',\
-        ##                                             'unimodal_ftForce_integ',\
-        ##                                             'unimodal_kinEEChange',\
-        ##                                             'crossmodal_landmarkEEDist', \
-        ##                                             ]
+        # c11, window 10 #73
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation10/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        weight = -32.0
+        param_dict['HMM']['scale'] = 7.111 
+        param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0
+        param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
+                                                    'unimodal_kinJntEff_1',\
+                                                    'unimodal_ftForce_integ',\
+                                                    'unimodal_kinEEChange',\
+                                                    'crossmodal_landmarkEEDist', \
+                                                    ]
 
-        ## param_dict['data_param']['dynamicFeatures'] = ['unimodal_ftForce_zero',\
-        ##                                                'unimodal_ftForceZ',\
-        ##                                                'crossmodal_landmarkEEDist', \
-        ##                                                ]                                                    
-        ## param_dict['data_param']['staticFeatures'] = ['unimodal_audioWristFrontRMS',\
-        ##                                               'unimodal_audioWristAzimuth',\
-        ##                                               'unimodal_ftForceX',\
-        ##                                               'unimodal_ftForceY',\
-        ##                                               'unimodal_fabricForce',  \
-        ##                                               'unimodal_landmarkDist',\
-        ##                                               'crossmodal_landmarkEEAng',\
-        ##                                               ]                                                  
-        ##                                               ## 'unimodal_ftForce',\
-        ##                                               ## 'unimodal_kinEEChange',\
+        param_dict['data_param']['dynamicFeatures'] = ['unimodal_ftForce_zero',\
+                                                       'unimodal_ftForceZ',\
+                                                       'crossmodal_landmarkEEDist', \
+                                                       ]                                                    
+        param_dict['data_param']['staticFeatures'] = ['unimodal_audioWristFrontRMS',\
+                                                      'unimodal_audioWristAzimuth',\
+                                                      'unimodal_ftForceX',\
+                                                      'unimodal_ftForceY',\
+                                                      'unimodal_fabricForce',  \
+                                                      'unimodal_landmarkDist',\
+                                                      'crossmodal_landmarkEEAng',\
+                                                      ]                                                  
+                                                      ## 'unimodal_ftForce',\
+                                                      ## 'unimodal_kinEEChange',\
 
         
         # noise: 3,8
