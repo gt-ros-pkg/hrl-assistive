@@ -683,11 +683,10 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalData_s, abnormalD
                     if cp_vecs is None: continue
                     
                     if dynamic_flag:
-                        cp_vecs_d = ml.conditional_prob( abnormalData_d[param_dict['data_param']['df_idx'],\
-                                                                        i,:d_idx+1+j]*\
+                        cp_vecs_d = ml.conditional_prob( abnormalData_d[:,i,:d_idx+1+j]*\
                                                          param_dict['HMM']['scale'])
                         if cp_vecs_d is None: continue
-                        cp_vecs = np.concatenate((cp_vecs, cp_vecs_d))
+                        cp_vecs = np.concatenate((cp_vecs, cp_vecs_d[param_dict['data_param']['df_idx']]))
                                                    
                     if delta_flag:
                         if cp_vecs_last is None:
@@ -722,12 +721,11 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalData_s, abnormalD
 
                 if dynamic_flag:
                     while True:
-                        cp_vecs_d = ml.conditional_prob( abnormalData_d[param_dict['data_param']['df_idx'],\
-                                                                        i,:d_idx+1]*\
+                        cp_vecs_d = ml.conditional_prob( abnormalData_d[:,i,:d_idx+1]*\
                                                          param_dict['HMM']['scale'])
                         if cp_vecs_d is None: d_idx -= 1
                         else: break
-                    cp_vecs = np.concatenate((cp_vecs, cp_vecs_d))
+                    cp_vecs = np.concatenate((cp_vecs, cp_vecs_d[param_dict['data_param']['df_idx'] ]))
                     
 
                 if delta_flag:
