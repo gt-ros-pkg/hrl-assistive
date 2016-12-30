@@ -723,9 +723,11 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         successData_dynamic = np.array(successData)[feature_list]
         failureData_dynamic = np.array(failureData)[feature_list]
 
+        df_HMM_dict = copy.copy(HMM_dict)
+        df_HMM_dict['scale'] = param_dict['HMM']['df_scale']
         dm.saveHMMinducedFeatures(kFold_list, successData_dynamic, failureData_dynamic,\
                                   task_name, processed_data_path,\
-                                  HMM_dict, data_renew, startIdx, nState, cov, \
+                                  df_HMM_dict, data_renew, startIdx, nState, cov, \
                                   success_files=success_files, failure_files=failure_files,\
                                   suffix='dynamic',\
                                   noise_mag=0.03, verbose=verbose)
@@ -1046,7 +1048,16 @@ if __name__ == '__main__':
         ##                                             'crossmodal_landmarkEEDist', \
         ##                                             ]
           
-        # 86
+        #  #86
+        param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
+                                                    'unimodal_kinJntEff_1',\
+                                                    'unimodal_ftForce_integ',\
+                                                    'unimodal_kinEEChange',\
+                                                    ## 'crossmodal_landmarkEEDist', \
+                                                    ## 'unimodal_landmarkDist',\
+                                                    ]
+
+        # 84.6
         param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
                                                     'unimodal_kinJntEff_1',\
                                                     'unimodal_ftForce_integ',\
@@ -1054,7 +1065,7 @@ if __name__ == '__main__':
                                                     'crossmodal_landmarkEEDist', \
                                                     ## 'unimodal_landmarkDist',\
                                                     ]
-
+                                                    
         ## #81
         ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
         ##                                             'unimodal_kinJntEff_1',\
@@ -1222,6 +1233,7 @@ if __name__ == '__main__':
                                                     'crossmodal_landmarkEEDist', \
                                                     ]
 
+        param_dict['HMM']['df_scale'] = 4.0 
         param_dict['data_param']['dynamicFeatures'] = ['unimodal_ftForce_zero',\
                                                        'unimodal_ftForceZ',\
                                                        'crossmodal_landmarkEEDist', \
