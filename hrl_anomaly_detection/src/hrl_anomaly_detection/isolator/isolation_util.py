@@ -679,13 +679,14 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalData_s, abnormalD
                     if d_idx+1+j > len(abnormalData[0,i]): continue
                     cp_vecs = ml.conditional_prob( abnormalData[:,i,:d_idx+1+j]*\
                                                    param_dict['HMM']['scale'])
+                    if cp_vecs is None: continue
+                    
                     if dynamic_flag:
                         cp_vecs_d = ml.conditional_prob( abnormalData_d[:,i,:d_idx+1+j]*\
                                                          param_dict['HMM']['scale'])
                         if cp_vecs_d is None: continue
                         cp_vecs = np.concatenate((cp_vecs, cp_vecs_d))
                                                    
-                    if cp_vecs is None: continue
                     if delta_flag:
                         if cp_vecs_last is None:
                             cp_vecs_last = cp_vecs
