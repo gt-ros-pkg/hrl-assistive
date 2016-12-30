@@ -612,40 +612,57 @@ def get_hmm_isolation_data(idx, kFold_list, failureData_ad, failureData_static, 
     # Feature Extraction
     #-----------------------------------------------------------------------------------------
     x_train, y_train = get_cond_prob(idx, detection_train_idx_list, \
+                                     abnormalTrainData_ad,\
                                      abnormalTrainData_s, abnormalTrainData_d, abnormalTrainLabel,\
                                      task_name, processed_data_path, param_dict, \
-                                     ref_idx=ref_idx, plot=False, window=True, window_step=10 )
+                                     plot=False, window=True, window_step=10,\
+                                     dynamic_flag=True)
                                      
     x_test, y_test = get_cond_prob(idx, detection_test_idx_list, \
+                                   abnormalTestData_ad, \
                                    abnormalTestData_s, abnormalTestData_d, abnormalTestLabel,\
                                    task_name, processed_data_path, param_dict, \
-                                   ref_idx=ref_idx  )
+                                   dynamic_flag=True)
 
     return idx, x_train, y_train, x_test, y_test
 
                                          
 
-def get_cond_prob(idx, anomaly_idx_list, abnormalData_s, abnormalData_d, abnormalLabel, \
+def get_cond_prob(idx, anomaly_idx_list, abnormalTestData, abnormalData_s, abnormalData_d, \
+                  abnormalLabel, \
                   task_name, processed_data_path, param_dict,\
-                  ref_idx, window_step=10, verbose=False, plot=False,\
-                  window=False, delta_flag=False):
+                  window_step=10, verbose=False, plot=False,\
+                  window=False, delta_flag=False, dynamic_flag=False):
     ''' Get conditional probability vector when anomalies are detected
     '''
 
-    # Load a generative model
-    suffix = 'dynamic'
-    modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'_c'+suffix+'.pkl')
-    ## modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
+    # Load a generative model from anomaly detector
+    modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
     d            = ut.load_pickle(modeling_pkl)
     ## Load local variables: nState, nEmissionDim, ll_classifier_train_?, ll_classifier_test_?, nLength    
     for k, v in d.iteritems():
         # Ignore predefined test data in the hmm object
         if not(k.find('test')>=0):
             exec '%s = v' % k
-
+            
     ml = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
     ml.set_hmm_object(A,B,pi)
-   
+
+    # Load a generative model from dynamic feature
+    if dynamic_flag:
+        suffix = 'dynamic'
+        modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'_c'+suffix+'.pkl')
+        d            = ut.load_pickle(modeling_pkl)
+        ## Load local variables: nState, nEmissionDim, ll_classifier_train_?, ll_classifier_test_?, nLength    
+        for k, v in d.iteritems():
+            # Ignore predefined test data in the hmm object
+            if not(k.find('test')>=0):
+                exec '%s = v' % k
+
+        ml_d = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
+        ml_d.set_hmm_object(A,B,pi)
+
+    
     x = []
     y = []
     for i, d_idx in enumerate(anomaly_idx_list):
@@ -659,9 +676,14 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData_s, abnormalData_d, abnorma
             if window:
                 for j in range(-window_step, window_step):
                     if d_idx+1+j <= 4: continue
-                    if d_idx+1+j > len(abnormalData_d[0,i]): continue
-                    cp_vecs = ml.conditional_prob( abnormalData_d[:,i,:d_idx+1+j]*\
+                    if d_idx+1+j > len(abnormalData[0,i]): continue
+                    cp_vecs = ml.conditional_prob( abnormalData[:,i,:d_idx+1+j]*\
                                                    param_dict['HMM']['scale'])
+                    if dynamic_flag:
+                        cp_vecs_d = ml.conditional_prob( abnormalData_d[:,i,:d_idx+1+j]*\
+                                                         param_dict['HMM']['scale'])
+                        cp_vecs = np.concatenate((cp_vecs, cp_vecs_d))
+                                                   
                     if cp_vecs is None: continue
                     if delta_flag:
                         if cp_vecs_last is None:
@@ -682,15 +704,24 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData_s, abnormalData_d, abnorma
                     y.append( abnormalLabel[i] )                                                    
             else:
                 if d_idx+1 <= 0: continue
-                if d_idx+1 > len(abnormalData_d[0,i]): continue
+                if d_idx+1 > len(abnormalData[0,i]): continue
                 while True:
-                    cp_vecs = ml.conditional_prob( abnormalData_d[:,i,:d_idx+1]*\
+                    cp_vecs = ml.conditional_prob( abnormalData[:,i,:d_idx+1]*\
                                                    param_dict['HMM']['scale'])
                     if cp_vecs is None: d_idx -= 1
                     else: break
 
+                if dynamic_flag:
+                    while True:
+                        cp_vecs_d = ml.conditional_prob( abnormalData_d[:,i,:d_idx+1]*\
+                                                         param_dict['HMM']['scale'])
+                        if cp_vecs_d is None: d_idx -= 1
+                        else: break
+                    cp_vecs = np.concatenate((cp_vecs, cp_vecs_d))
+                    
+
                 if delta_flag:
-                    cp_vecs_last = ml.conditional_prob( abnormalData_d[:,i,:d_idx]*\
+                    cp_vecs_last = ml.conditional_prob( abnormalData[:,i,:d_idx]*\
                                                         param_dict['HMM']['scale'])
                     cp_vecs = cp_vecs - cp_vecs_last
                     
