@@ -1175,10 +1175,16 @@ if __name__ == '__main__':
                                                     'crossmodal_landmarkEEDist', \
                                                     ]
 
-        param_dict['data_param']['dynamicFeatures'] = ['unimodal_ftForce_zero',\
-                                                       'unimodal_ftForceZ',\
+        param_dict['data_param']['dynamicFeatures'] = ['unimodal_audioWristRMS',  \
+                                                       'unimodal_kinJntEff_1',\
+                                                       'unimodal_ftForce_integ',\
+                                                       'unimodal_kinEEChange',\
                                                        'crossmodal_landmarkEEDist', \
-                                                       ]                                                    
+                                                       ]
+        ## param_dict['data_param']['dynamicFeatures'] = ['unimodal_ftForce_zero',\
+        ##                                                'unimodal_ftForceZ',\
+        ##                                                'crossmodal_landmarkEEDist', \
+        ##                                                ]                                                    
         param_dict['data_param']['staticFeatures'] = ['unimodal_audioWristFrontRMS',\
                                                       'unimodal_audioWristAzimuth',\
                                                       'unimodal_ftForceX',\
