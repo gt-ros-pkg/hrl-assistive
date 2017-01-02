@@ -356,7 +356,7 @@ def get_hog_data(idx, files, label, augmentation=True):
         height, width = img.shape[:2]
         l = 224
         crop_img = img[height/2-l:height/2+l, width/2-l:width/2+l ]        
-        img = cv2.resize(img,(l, l), interpolation = cv2.INTER_CUBIC)
+        img = cv2.resize(crop_img,(l, l), interpolation = cv2.INTER_CUBIC)
         ## img = cv2.resize(img,(width/4, height/4), interpolation = cv2.INTER_CUBIC)
         ## img = rescale(img, 0.25)
         ## print np.shape(img)
