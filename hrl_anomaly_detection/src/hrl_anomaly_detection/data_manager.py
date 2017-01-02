@@ -442,7 +442,7 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
                 handFeatures=[], data_renew=False,\
                 isolationFeatures=[], isolation_viz=False,\
                 time_sort=False, max_time=None, \
-                target_class=None):
+                target_class=None, ros_bag_image=False):
     """
     Get data per subject. It also returns leave-one-out cross-validataion indices.
     """
@@ -468,10 +468,12 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
         param_dict_isol     = data_dict.get('param_dict_isol',[])
         successFileList     = data_dict.get('successFileList',[])
         failureFileList     = data_dict.get('failureFileList',[])
+        success_image_list  = data_dict.get('success_image_list',[])
+        failure_image_list  = data_dict.get('failure_image_list',[])
 
     else:
         file_list = util.getSubjectFileList(raw_data_path, subject_names, task_name,\
-                                                             time_sort=time_sort, no_split=True)
+                                            time_sort=time_sort, no_split=True)
 
         ## data_renew = False
         print "start to load data"
@@ -512,6 +514,8 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
         failureIsolDataList = []
         successFileList = []
         failureFileList = []
+        success_image_list = []
+        failure_image_list = []
         for i in xrange(len(subject_names)):
 
             success_list, failure_list = util.getSubjectFileList(raw_data_path, [subject_names[i]], \
@@ -557,7 +561,25 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
             successFileList.append(success_list)
             failureFileList.append(failure_list)
 
-        data_dict = {}
+            if ros_bag_image:
+                new_success_list = []
+                for f in success_list:
+                    root_dir = os.path.split(f)[0]+'_rosbag'
+                    sub_dir  = os.path.split(f)[1].split('.pkl')[0]
+                    new_success_list.append( os.path.join(root_dir, sub_dir) )
+                new_failure_list = []
+                for f in failure_list:
+                    root_dir = os.path.split(f)[0]+'_rosbag'
+                    sub_dir  = os.path.split(f)[1].split('.pkl')[0]
+                    new_failure_list.append( os.path.join(root_dir, sub_dir) )
+                    
+                success_image_list.append(export_images(new_success_list, success_data_dict, \
+                                                        downSampleSize) )
+                failure_image_list.append(export_images(new_failure_list, failure_data_dict, \
+                                                        downSampleSize) )
+            
+
+        data_dict = {}        
         data_dict['successDataList'] = successDataList
         data_dict['failureDataList'] = failureDataList
         data_dict['param_dict']      = param_dict
@@ -566,6 +588,8 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
         data_dict['dataNameList']    = failureNameList = None #failure_data_dict['fileNameList']
         data_dict['successIsolDataList'] = successIsolDataList
         data_dict['failureIsolDataList'] = failureIsolDataList
+        data_dict['success_image_list'] = success_image_list
+        data_dict['failure_image_list'] = failure_image_list
         if len(isolationFeatures) > 0:
             data_dict['param_dict_isol']     = param_dict_isol
         
@@ -2405,6 +2429,72 @@ def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, param_dict=None, 
     param_dict['dataDim']       = dataDim
    
     return success_features, failure_features, param_dict
+
+
+def export_images(folder_list, data_dict, downSampleSize):
+    ''' Get list of images between start and end time '''
+
+    assert len(data_dict['timesList']) == len(folder_list)
+
+    images = []
+    for idx, f in enumerate(folder_list):
+
+        des_time_list = data_dict['timesList'][idx]
+
+        # get image folder
+        files = os.listdir(f)
+        if len(files) == 0:
+            print "No images so skip: ", f
+            images.append(None)
+            continue
+            
+
+        # get time list
+        time_list = []
+        for i, img in enumerate(files):
+            if not(img.find('.jpg')>=0): continue
+            t = float(img.split('_')[-1].split('.jpg')[0])
+            time_list.append(t)
+        time_list = np.array(time_list)
+
+        # Note: do we need to sort? probably not
+
+        t_idx_list = []
+        for t in des_time_list:
+            t_idx = np.argmin(abs(time_list - t))
+            t_idx_list.append(t_idx)
+
+        # get list of iamges between start_time and end_time
+        imgs = [os.path.join(f,files[i]) for i in t_idx_list ]
+        images.append(imgs)
+
+
+        ## # get time
+        ## start_time = data_dict['timesList'][idx][0]
+        ## end_time   = data_dict['timesList'][idx][-1]
+
+        ## # get image folder
+        ## files = os.listdir(f)
+
+        ## # find start index
+        ## for i, img in enumerate(files):
+        ##     t = float(f.split('_')[-1].split('.jpg')[0])
+        ##     if t > start_time:
+        ##         start_idx = i
+        ##         break
+
+        ## # find end index
+        ## for i, img in enumerate(files[::-1]):
+        ##     t = float(f.split('_')[-1].split('.jpg')[0])
+        ##     if t < end_time:
+        ##         end_idx = i
+        ##         break
+            
+        ## # get list of iamges between start_time and end_time
+        ## imgs = [os.path.join(f,img) if i>=start_idx and i<=end_idx for i, img in enumerate(files) ]
+        ## images.append(imgs)
+
+    return images
 
 #-------------------------------------------------------------------------------------------------
 

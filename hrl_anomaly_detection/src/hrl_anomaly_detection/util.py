@@ -629,8 +629,8 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
     return raw_data_dict, data_dict
     
     
-def getSubjectFileList(root_path, subject_names, task_name, exact_name=False, time_sort=False, \
-                       no_split=False):
+def getSubjectFileList(root_path, subject_names, task_name, exact_name=True, time_sort=False, \
+                       no_split=False, ros_bag_image=False):
     # List up recorded files
     folder_list  = [d for d in os.listdir(root_path) if os.path.isdir(os.path.join(root_path,d))]   
     success_list = []
@@ -653,14 +653,19 @@ def getSubjectFileList(root_path, subject_names, task_name, exact_name=False, ti
 
             for f in files:
                 # pickle file name with full path
-                pkl_file = os.path.join(root_path,d,f)
-                
+                target = os.path.join(root_path,d,f)
+
+                if ros_bag_image:
+                    if not os.path.isdir(target): continue
+                else:
+                    if os.path.isdir(target): continue
+                    
                 if f.find('success') >= 0:
-                    success_list.append(pkl_file)
-                    success_time_list.append( os.stat(pkl_file).st_mtime )
+                    success_list.append(target)
+                    success_time_list.append( os.stat(target).st_mtime )
                 elif f.find('failure') >= 0:
-                    failure_list.append(pkl_file)
-                    failure_time_list.append( os.stat(pkl_file).st_mtime )
+                    failure_list.append(target)
+                    failure_time_list.append( os.stat(target).st_mtime )
                 else:
                     print "It's not success/failure file: ", f
 

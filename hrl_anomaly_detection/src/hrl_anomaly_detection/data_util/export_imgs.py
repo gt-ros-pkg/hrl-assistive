@@ -32,25 +32,30 @@ class ImageCreator():
                     cv2.imwrite(image_name, cv_image)
 
 
-def export_jpgs(data_path, subject_name):
+def export_jpgs(subject_path):
 
     # get rosbags path
-    subject_path = os.path.join(data_path,subject_name)
     bag_files = os.listdir(subject_path)
-
+    
     # For loop
     for idx, f in enumerate(bag_files):
-        print idx, "/" len(bag_files), " : ", f
+        print idx, "/", len(bag_files), " : ", f
 
-        folder_name = f.split(f)[1].split('.')[0]
+        folder_name = f.split('.')[0]
+        if not(folder_name.find('success')>=0 or folder_name.find('failure')>=0):
+            continue
+        if not(f.find('.bag')>=0): continue
 
         # create save folder
         save_dir = os.path.join(subject_path, folder_name)
         if not os.path.isdir(save_dir):
             os.makedirs(save_dir)
+        ## else:
+        ##     continue
 
         # export
-        image_creator = ImageCreator(save_dir, f)
+        bag_file = os.path.join(subject_path,f)
+        image_creator = ImageCreator(save_dir, bag_file)
 
 
 
@@ -63,6 +68,5 @@ if __name__ == '__main__':
     ## try:
     ##     image_creator = ImageCreator()
     ## except rospy.ROSInterruptException: pass
-
-    export_jpgs(sys.path[0], sys.argv[1])
+    export_jpgs(sys.argv[1])
         
