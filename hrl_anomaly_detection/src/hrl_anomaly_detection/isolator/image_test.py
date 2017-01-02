@@ -354,7 +354,8 @@ def get_hog_data(idx, files, label, augmentation=True):
     for f in files:
         img = cv2.imread(f) # 480*640*3
         height, width = img.shape[:2]
-        img = cv2.resize(img,(width/4, height/4), interpolation = cv2.INTER_CUBIC)
+        img = cv2.resize(img,(224, 224), interpolation = cv2.INTER_CUBIC)
+        ## img = cv2.resize(img,(width/4, height/4), interpolation = cv2.INTER_CUBIC)
         ## img = rescale(img, 0.25)
         ## print np.shape(img)
         ## images.append(hog(img))
