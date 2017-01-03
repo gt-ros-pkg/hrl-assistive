@@ -711,8 +711,12 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, abno
                         sys.exit()
 
                     x.append( cp_vecs )
-                    x_img.append( abnormalData_img[i][d_idx+j-1] )
-                    y.append( abnormalLabel[i] )                                                    
+                    y.append( abnormalLabel[i] )
+                    if abnormalData_img[i] is not None:
+                        x_img.append( abnormalData_img[i][d_idx+j-1] )
+                    else:
+                        x_img.append(None)
+                    
             else:
                 if d_idx <= 0: continue
                 if d_idx > len(abnormalData[0,i]): continue
@@ -744,8 +748,12 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, abno
                 cp_vecs = cp_vecs.tolist()+ vals
                 ## cp_vecs = (cp_vecs-np.amin(cp_vecs))/(np.amax(cp_vecs)-np.amin(cp_vecs))
                 x.append( cp_vecs )
-                x_img.append( abnormalData_img[i][d_idx-1] )
                 y.append( abnormalLabel[i] )
+                if abnormalData_img[i] is not None:
+                    x_img.append( abnormalData_img[i][d_idx-1] )
+                else:
+                    x_img.append( None )
+
         else:
             cp_vecs = None
             for j in xrange(len(abnormalData[0,i,:])):
