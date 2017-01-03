@@ -208,7 +208,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     # Feature extraction for Anomaly Isolation
     #-----------------------------------------------------------------------------------------
     hog_pkl = os.path.join(processed_data_path, 'hog_data.pkl')
-    if os.path.isfile(hog_pkl) and HMM_dict['renew'] is False and ai_renew is False: # and False:
+    if os.path.isfile(hog_pkl) and HMM_dict['renew'] is False and ai_renew is False and False:
         print "Start to loading"
         dd = ut.load_pickle(hog_pkl)
         print "Finished to loading"
