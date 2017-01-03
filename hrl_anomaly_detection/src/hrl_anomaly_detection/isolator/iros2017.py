@@ -669,7 +669,8 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
                            downSampleSize=data_dict['downSampleSize'],\
                            handFeatures=param_dict['data_param']['isolationFeatures'], \
                            cut_data=data_dict['cut_data'], \
-                           data_renew=data_renew, max_time=data_dict['max_time'])
+                           data_renew=data_renew, max_time=data_dict['max_time'],\
+                           ros_bag_image=True)
                            
         successData, failureData, success_files, failure_files, kFold_list \
           = dm.LOPO_data_index(d['successDataList'], d['failureDataList'],\

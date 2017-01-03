@@ -594,8 +594,7 @@ def get_hmm_isolation_data(idx, kFold_list, failureData_ad, failureData_static, 
 
     abnormalTrainData_img = copy.copy(failure_image_list[abnormalTrainIdx])
     abnormalTestData_img  = copy.copy(failure_image_list[abnormalTestIdx])
-
-
+                                                 
     #-----------------------------------------------------------------------------------------
     # Anomaly Detection
     #-----------------------------------------------------------------------------------------
