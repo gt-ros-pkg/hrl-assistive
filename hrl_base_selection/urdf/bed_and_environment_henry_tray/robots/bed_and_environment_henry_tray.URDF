@@ -106,7 +106,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/bed_frame_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/bed_frame_expanded_link.STL" />
       </geometry>
     </visual>
     <collision>
@@ -115,7 +115,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/bed_frame_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/bed_frame_expanded_link.STL" />
       </geometry>
     </collision>
   </link>

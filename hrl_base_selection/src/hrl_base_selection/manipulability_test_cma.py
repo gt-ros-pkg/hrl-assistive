@@ -554,6 +554,8 @@ class Manipulability_Testing(object):
        [ 1.38750928,  0.29672911]]
         base = [base_config, [0.057329581427009745, 1.0, 0.36352068257210146]]
 
+
+
         visualize = True
         mytargets = 'all_goals'
         reference_options = []
