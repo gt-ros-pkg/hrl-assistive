@@ -684,8 +684,8 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         if data_gen: sys.exit()
 
     # flattening image list
-    success_image_list = image_list_flatten( d.get('success_image_list',[]) )
-    failure_image_list = image_list_flatten( d.get('failure_image_list',[]) )
+    success_image_list = iutil.image_list_flatten( d.get('success_image_list',[]) )
+    failure_image_list = iutil.image_list_flatten( d.get('failure_image_list',[]) )
 
     failure_labels = []
     for f in failure_files:
