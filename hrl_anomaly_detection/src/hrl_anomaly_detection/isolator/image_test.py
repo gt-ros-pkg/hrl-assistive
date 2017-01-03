@@ -65,7 +65,7 @@ np.random.seed(3334)
 
 import cv2
 SZ=20
-bin_n = 8 #16 # Number of bins
+bin_n = 16 # Number of bins
 
 
 def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
@@ -210,12 +210,12 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     hog_pkl = os.path.join(processed_data_path, 'hog_data.pkl')
     if os.path.isfile(hog_pkl) and HMM_dict['renew'] is False and ai_renew is False: # and False:
         print "Start to loading"
-        dd = ut.load_pickle(hog_pkl)
-        print "Finished to loading"
-        x_train_list = dd['x_train_list']
-        y_train_list = dd['y_train_list']
-        x_test_list  = dd['x_test_list']
-        y_test_list  = dd['y_test_list']
+        ## dd = ut.load_pickle(hog_pkl)
+        ## print "Finished to loading"
+        ## x_train_list = dd['x_train_list']
+        ## y_train_list = dd['y_train_list']
+        ## x_test_list  = dd['x_test_list']
+        ## y_test_list  = dd['y_test_list']
     else:
         # get hog data first
         x_train_list = []
@@ -277,51 +277,70 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     test_data_pkl = os.path.join(processed_data_path, 'test_data.pkl')
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) in enumerate(kFold_list):
 
-        window_step = 5
-        print np.shape(x_train_list), np.shape(detection_train_idx_list)
-        print np.shape(x_test_list), np.shape(detection_test_idx_list)
-        assert len(x_train_list[idx]) == len(detection_train_idx_list[idx])
+        if os.path.isfile(test_data_pkl):
+            dd = ut.load_pickle(test_data_pkl)
+            x_train = dd['x_train']
+            y_train = dd['y_train']
+            x_test  = dd['x_test']
+            y_test  = dd['y_test']
+        else:
+            window_step = 5
+            print np.shape(x_train_list), np.shape(detection_train_idx_list)
+            print np.shape(x_test_list), np.shape(detection_test_idx_list)
+            assert len(x_train_list[idx]) == len(detection_train_idx_list[idx])
 
-        # feature extraction
-        x_train = []
-        y_train = []
-        for i, x in enumerate(x_train_list[idx]):
-            d_idx = detection_train_idx_list[idx][i]
-            if d_idx is None: continue
+            # feature extraction
+            x_train = []
+            y_train = []
+            for i, x in enumerate(x_train_list[idx]):
+                d_idx = detection_train_idx_list[idx][i]
+                if d_idx is None: continue
 
-            for j in range(-window_step, window_step):
-                if d_idx+1+j <= 4: continue
-                if d_idx+1+j >= len(x_train_list[idx][i]): continue
+                for j in range(-window_step, window_step):
+                    if d_idx+1+j <= 4: continue
+                    if d_idx+1+j >= len(x_train_list[idx][i]): continue
 
-                ## print y_train_list[idx][i][d_idx+1+j]
-                ## cv2.imshow('image',x_train_list[idx][i][d_idx+1+j])
-                ## cv2.waitKey(0)
-                ## cv2.destroyAllWindows()        
-                ## sys.exit()
+                    ## print y_train_list[idx][i][d_idx+1+j]
+                    ## cv2.imshow('image',x_train_list[idx][i][d_idx+1+j])
+                    ## cv2.waitKey(0)
+                    ## cv2.destroyAllWindows()        
+                    ## sys.exit()
 
-                x_train.append( x_train_list[idx][i][d_idx+1+j] )
-                y_train.append( y_train_list[idx][i][d_idx+1+j] )
+                    x_train.append( x_train_list[idx][i][d_idx+1+j] )
+                    y_train.append( y_train_list[idx][i][d_idx+1+j] )
 
 
-        x_test = []
-        y_test = []
-        for i, x in enumerate(x_test_list[idx]):
-            d_idx = detection_test_idx_list[idx][i]
-            if d_idx is None: continue
-            if d_idx+1 >= len(x_test_list[idx][i]): d_idx -= 1
-            if x_test_list[idx][i] == []: continue
-            x_test.append( x_test_list[idx][i][d_idx+1] )
-            y_test.append( y_test_list[idx][i][d_idx+1] )
+            x_test = []
+            y_test = []
+            for i, x in enumerate(x_test_list[idx]):
+                d_idx = detection_test_idx_list[idx][i]
+                if d_idx is None: continue
+                if d_idx+1 >= len(x_test_list[idx][i]): d_idx -= 1
+                if x_test_list[idx][i] == []: continue
+                x_test.append( x_test_list[idx][i][d_idx+1] )
+                y_test.append( y_test_list[idx][i][d_idx+1] )
 
-        dd = {}
-        dd['x_train'] = x_train
-        dd['y_train'] = y_train
-        dd['x_test'] = x_test
-        dd['y_test'] = y_test
-        ut.save_pickle(dd, test_data_pkl)
+            dd = {}
+            dd['x_train'] = x_train
+            dd['y_train'] = y_train
+            dd['x_test'] = x_test
+            dd['y_test'] = y_test
+            ut.save_pickle(dd, test_data_pkl)
         print "---------------------------------------- aaaaaaaaaaaaaaaaa"
-        #temp
-        sys.exit()
+        ## #temp
+        ## sys.exit()
+
+        # extract hog
+        x_train_hog = []
+        for x in x_train: x_train_hog.append( hog(x) )
+        x_test_hog = []
+        for x in x_test: x_test_hog.append( hog(x) )
+        x_train = x_train_hog
+        x_test = x_test_hog
+
+        print np.shape(x_train), np.shape(y_train)
+        print np.shape(x_test), np.shape(y_test)
+
 
         # normalization
         from sklearn import preprocessing
@@ -332,12 +351,14 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         
         # train svm
         from sklearn.svm import SVC
-        clf = SVC(C=1.0, kernel='rbf')#, gamma=1e-1) #, decision_function_shape='ovo')
+        clf = SVC(C=1.0, kernel='linear', gamma=1e-1) #, decision_function_shape='ovo')
         clf.fit(x_train, y_train)
         
         # classify and get scores
         score = clf.score(x_test, y_test)
         scores.append(score)
+        print "score: ", score
+        sys.exit()
 
     print scores
     print np.mean(scores), np.std(scores)
