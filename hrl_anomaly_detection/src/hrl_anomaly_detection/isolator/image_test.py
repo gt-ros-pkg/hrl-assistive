@@ -277,7 +277,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     test_data_pkl = os.path.join(processed_data_path, 'test_data.pkl')
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) in enumerate(kFold_list):
 
-        window_step = 1
+        window_step = 5
         print np.shape(x_train_list), np.shape(detection_train_idx_list)
         print np.shape(x_test_list), np.shape(detection_test_idx_list)
         assert len(x_train_list[idx]) == len(detection_train_idx_list[idx])
