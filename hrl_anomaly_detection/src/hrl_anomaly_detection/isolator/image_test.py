@@ -208,8 +208,10 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     # Feature extraction for Anomaly Isolation
     #-----------------------------------------------------------------------------------------
     hog_pkl = os.path.join(processed_data_path, 'hog_data.pkl')
-    if os.path.isfile(hog_pkl) and HMM_dict['renew'] is False and ai_renew is False and False:
+    if os.path.isfile(hog_pkl) and HMM_dict['renew'] is False and ai_renew is False: # and False:
+        print "Start to loading"
         dd = ut.load_pickle(hog_pkl)
+        print "Finished to loading"
         x_train_list = dd['x_train_list']
         y_train_list = dd['y_train_list']
         x_test_list  = dd['x_test_list']
@@ -269,7 +271,6 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         dd['x_test_list'] = x_test_list
         dd['y_test_list'] = y_test_list
         ut.save_pickle(dd, hog_pkl)
-    sys.exit()
     
     scores = []
     # Select feature and 
@@ -292,7 +293,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                 if d_idx+1+j <= 4: continue
                 if d_idx+1+j >= len(x_train_list[idx][i]): continue
 
-                cv2.imshow('image',img)
+                cv2.imshow('image',x_train_list[idx][i][d_idx+1+j])
                 cv2.waitKey(0)
                 cv2.destroyAllWindows()        
                 sys.exit()
@@ -367,7 +368,7 @@ def get_hog_data(idx, files, label, augmentation=True):
         ## l = 224
         ## crop_img = img[height/2-l:height/2+l, width/2-l:width/2+l ]        
         ## img = cv2.resize(crop_img,(l, l), interpolation = cv2.INTER_CUBIC)
-        img = cv2.resize(img,(width/2, height/2), interpolation = cv2.INTER_CUBIC)
+        img = cv2.resize(img,(width/4, height/4), interpolation = cv2.INTER_CUBIC)
         ## img = rescale(img, 0.25)
         ## print np.shape(img)
         ## images.append(hog(img))
