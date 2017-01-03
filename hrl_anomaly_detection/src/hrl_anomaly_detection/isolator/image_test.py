@@ -293,10 +293,10 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                 if d_idx+1+j <= 4: continue
                 if d_idx+1+j >= len(x_train_list[idx][i]): continue
 
-                print y_train_list[idx][i][d_idx+1+j]
-                cv2.imshow('image',x_train_list[idx][i][d_idx+1+j])
-                cv2.waitKey(0)
-                cv2.destroyAllWindows()        
+                ## print y_train_list[idx][i][d_idx+1+j]
+                ## cv2.imshow('image',x_train_list[idx][i][d_idx+1+j])
+                ## cv2.waitKey(0)
+                ## cv2.destroyAllWindows()        
                 ## sys.exit()
 
                 x_train.append( x_train_list[idx][i][d_idx+1+j] )
