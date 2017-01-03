@@ -2446,15 +2446,14 @@ def export_images(folder_list, data_dict, downSampleSize):
         if len(files) == 0:
             print "No images so skip: ", f
             images.append(None)
-            continue
-            
+            continue            
 
         # get time list
         time_list = []
         for i, img in enumerate(files):
             if not(img.find('.jpg')>=0): continue
             t = float(img.split('_')[-1].split('.jpg')[0])
-            time_list.append(t)
+            time_list.append(t-data_dict['initTimeList'][idx])
         time_list = np.array(time_list)
 
         # Note: do we need to sort? probably not
@@ -2467,32 +2466,6 @@ def export_images(folder_list, data_dict, downSampleSize):
         # get list of iamges between start_time and end_time
         imgs = [os.path.join(f,files[i]) for i in t_idx_list ]
         images.append(imgs)
-
-
-        ## # get time
-        ## start_time = data_dict['timesList'][idx][0]
-        ## end_time   = data_dict['timesList'][idx][-1]
-
-        ## # get image folder
-        ## files = os.listdir(f)
-
-        ## # find start index
-        ## for i, img in enumerate(files):
-        ##     t = float(f.split('_')[-1].split('.jpg')[0])
-        ##     if t > start_time:
-        ##         start_idx = i
-        ##         break
-
-        ## # find end index
-        ## for i, img in enumerate(files[::-1]):
-        ##     t = float(f.split('_')[-1].split('.jpg')[0])
-        ##     if t < end_time:
-        ##         end_idx = i
-        ##         break
-            
-        ## # get list of iamges between start_time and end_time
-        ## imgs = [os.path.join(f,img) if i>=start_idx and i<=end_idx for i, img in enumerate(files) ]
-        ## images.append(imgs)
 
     return images
 

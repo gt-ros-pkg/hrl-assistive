@@ -277,7 +277,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     test_data_pkl = os.path.join(processed_data_path, 'test_data.pkl')
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) in enumerate(kFold_list):
 
-        window_step = 5
+        window_step = 1
         print np.shape(x_train_list), np.shape(detection_train_idx_list)
         print np.shape(x_test_list), np.shape(detection_test_idx_list)
         assert len(x_train_list[idx]) == len(detection_train_idx_list[idx])
@@ -293,9 +293,10 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                 if d_idx+1+j <= 4: continue
                 if d_idx+1+j >= len(x_train_list[idx][i]): continue
 
-                ## cv2.imshow('image',x_train_list[idx][i][d_idx+1+j])
-                ## cv2.waitKey(0)
-                ## cv2.destroyAllWindows()        
+                print y_train_list[idx][i][d_idx+1+j]
+                cv2.imshow('image',x_train_list[idx][i][d_idx+1+j])
+                cv2.waitKey(0)
+                cv2.destroyAllWindows()        
                 ## sys.exit()
 
                 x_train.append( x_train_list[idx][i][d_idx+1+j] )
@@ -361,9 +362,6 @@ def get_hog_data(idx, files, label, augmentation=True):
     for f in files:
         img = cv2.imread(f) # 480*640*3
         height, width = img.shape[:2]
-        ## cv2.imshow('image',img)
-        ## cv2.waitKey(0)
-        ## cv2.destroyAllWindows()        
         ## sys.exit()
         ## l = 224
         ## crop_img = img[height/2-l:height/2+l, width/2-l:width/2+l ]        

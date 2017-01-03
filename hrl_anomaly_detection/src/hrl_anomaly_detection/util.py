@@ -68,7 +68,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             data_dict = ut.load_pickle(save_pkl+'_interp.pkl')
             return raw_data_dict, data_dict
 
-    key_list = ['timesList', 'fileNameList',\
+    key_list = ['timesList', 'fileNameList', 'initTimeList',\
                 'audioTimesList', 'audioAzimuthList', 'audioPowerList',\
                 'audioWristTimesList', 'audioWristRMSList', 'audioWristFrontRMSList', 'audioWristMFCCList', \
                 'audioWristAzimuthList',\
@@ -127,8 +127,9 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
 
         # Load raw data
         if verbose: print fileName
-        d = ut.load_pickle(fileName)        
+        d = ut.load_pickle(fileName)
         init_time = d['init_time']
+        data_dict['initTimeList'].append(init_time) 
         data_dict['timesList'].append(new_times)
 
         # Define receptive field center trajectory ---------------------------
@@ -613,6 +614,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
         max_size = max([ len(x) for x in data_dict['timesList'] ])
         # Extrapolate each time step
         for key in data_dict.keys():
+            if 'initTimeList' == key: continue
             if 'file' in key: continue
             if 'success_idx_list' in key: continue
             if 'failure_idx_list' in key: continue
