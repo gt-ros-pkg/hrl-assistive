@@ -573,7 +573,7 @@ def get_isolation_data(idx, kFold_list, modeling_pkl, nState, \
 
 
 def get_hmm_isolation_data(idx, kFold_list, failureData_ad, failureData_static, \
-                           failureData_dynamic, failure_labels, \
+                           failureData_dynamic, failure_labels, failure_image_list,\
                            task_name, processed_data_path, param_dict, weight,\
                            dynamic_flag=False, n_jobs=-1 ):
 
@@ -591,6 +591,9 @@ def get_hmm_isolation_data(idx, kFold_list, failureData_ad, failureData_static, 
     abnormalTestData_d   = copy.copy(failureData_dynamic[:, abnormalTestIdx, :])
     abnormalTrainLabel = copy.copy(failure_labels[abnormalTrainIdx])
     abnormalTestLabel  = copy.copy(failure_labels[abnormalTestIdx])
+
+    abnormalTrainData_img = copy.copy(failure_image_list[abnormalTrainIdx])
+    abnormalTestData_img  = copy.copy(failure_image_list[abnormalTestIdx])
 
 
     #-----------------------------------------------------------------------------------------
@@ -612,30 +615,32 @@ def get_hmm_isolation_data(idx, kFold_list, failureData_ad, failureData_static, 
     #-----------------------------------------------------------------------------------------
     # Feature Extraction
     #-----------------------------------------------------------------------------------------
-    x_train, y_train = get_cond_prob(idx, detection_train_idx_list, \
-                                     abnormalTrainData_ad,\
-                                     abnormalTrainData_s, abnormalTrainData_d, abnormalTrainLabel,\
-                                     task_name, processed_data_path, param_dict, \
-                                     plot=False, window=True, window_step=10,\
-                                     dynamic_flag=dynamic_flag)
+    x_train, y_train, x_train_img = feature_extraction(idx, detection_train_idx_list, \
+                                                       abnormalTrainData_ad,\
+                                                       abnormalTrainData_s, abnormalTrainData_d, \
+                                                       abnormalTrainLabel,\
+                                                       abnormalTrainData_img,\
+                                                       task_name, processed_data_path, param_dict, \
+                                                       plot=False, window=True, window_step=10,\
+                                                       dynamic_flag=dynamic_flag)
                                      
-    x_test, y_test = get_cond_prob(idx, detection_test_idx_list, \
-                                   abnormalTestData_ad, \
-                                   abnormalTestData_s, abnormalTestData_d, abnormalTestLabel,\
-                                   task_name, processed_data_path, param_dict, \
-                                   dynamic_flag=dynamic_flag)
+    x_test, y_test, x_test_img = feature_extraction(idx, detection_test_idx_list, \
+                                                    abnormalTestData_ad, \
+                                                    abnormalTestData_s, abnormalTestData_d, abnormalTestLabel,\
+                                                    abnormalTestData_img,\
+                                                    task_name, processed_data_path, param_dict, \
+                                                    dynamic_flag=dynamic_flag)
 
-    return idx, x_train, y_train, x_test, y_test
+    return idx, [x_train, x_train_img], y_train, [x_test, x_test_img], y_test
 
                                          
 
-def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalData_s, abnormalData_d, \
-                  abnormalLabel, \
-                  task_name, processed_data_path, param_dict,\
-                  window_step=10, verbose=False, plot=False,\
-                  window=False, delta_flag=False, dynamic_flag=False):
-    ''' Get conditional probability vector when anomalies are detected
-    '''
+def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, abnormalData_d, \
+                       abnormalLabel, abnormalData_img,\
+                       task_name, processed_data_path, param_dict,\
+                       window_step=10, verbose=False, plot=False,\
+                       window=False, delta_flag=False, dynamic_flag=False):
+    ''' Get conditional probability vector when anomalies are detected '''
 
     # Load a generative model from anomaly detector
     modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
@@ -649,7 +654,6 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalData_s, abnormalD
     ml = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
     ml.set_hmm_object(A,B,pi)
 
-
     # Load a generative model from dynamic feature
     if dynamic_flag:
         suffix = 'dynamic'
@@ -660,17 +664,16 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalData_s, abnormalD
             # Ignore predefined test data in the hmm object
             if not(k.find('test')>=0):
                 exec '%s = v' % k
-
         ml_d = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
         ml_d.set_hmm_object(A,B,pi)
     
     x = []
     y = []
+    x_img = []
     for i, d_idx in enumerate(anomaly_idx_list):
 
         # Skip undetected anomaly
-        if d_idx is None:
-            continue
+        if d_idx is None: continue
 
         if plot is False:
             cp_vecs_last = None
@@ -709,6 +712,7 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalData_s, abnormalD
                         sys.exit()
                     
                     x.append( cp_vecs )
+                    x_img.append( abnormalData_img[i, d_idx+1+j] )
                     y.append( abnormalLabel[i] )                                                    
             else:
                 if d_idx+1 <= 0: continue
@@ -741,6 +745,7 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalData_s, abnormalD
                 cp_vecs = cp_vecs.tolist()+ vals
                 ## cp_vecs = (cp_vecs-np.amin(cp_vecs))/(np.amax(cp_vecs)-np.amin(cp_vecs))
                 x.append( cp_vecs )
+                x_img.append( abnormalData_img[i, d_idx+1] )
                 y.append( abnormalLabel[i] )
         else:
             cp_vecs = None
@@ -790,7 +795,7 @@ def get_cond_prob(idx, anomaly_idx_list, abnormalData, abnormalData_s, abnormalD
             x.append( cp_vecs )
             y.append( abnormalLabel[i] )
         
-    return x, y
+    return x, y, x_img
 
 
 def get_single_cond_prob(d_idx, window_step, ml, abnormalData, param_dict, ref_idx=None):
@@ -844,3 +849,12 @@ def save_data_labels(data, labels, processed_data_path='./'):
     
     os.system('mv *.tsv ~/Dropbox/HRL/')        
 
+
+def image_list_flatten(image_list):
+    ''' flatten image list '''
+    if len(image_list) == 0: return []
+    new_list = []
+    for i in xrange(len(image_list)):
+        for j in xrange(len(image_list[i])):
+            new_list.append(image_list[i][j])
+    return np.array(new_list)

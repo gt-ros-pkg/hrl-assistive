@@ -96,9 +96,9 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     if os.path.isfile(crossVal_pkl) and data_renew is False and data_gen is False:
         print "CV data exists and no renew"
         d = ut.load_pickle(crossVal_pkl)
-        kFold_list = d['kFoldList'] 
-        success_data = d['successData']
-        failure_data = d['failureData']        
+        kFold_list    = d['kFoldList'] 
+        success_data  = d['successData']
+        failure_data  = d['failureData']        
         success_files = d['success_files']
         failure_files = d['failure_files']
     else:
@@ -115,38 +115,24 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
           = dm.LOPO_data_index(d['successDataList'], d['failureDataList'],\
                                d['successFileList'], d['failureFileList'])
 
-        d['successData'] = success_data
-        d['failureData'] = failure_data
-        d['success_files']   = success_files
-        d['failure_files']   = failure_files
-        d['kFoldList']       = kFold_list
+        d['successData']   = success_data
+        d['failureData']   = failure_data
+        d['success_files'] = success_files
+        d['failure_files'] = failure_files
+        d['kFoldList']     = kFold_list
         
         ut.save_pickle(d, crossVal_pkl)
         if data_gen: sys.exit()
 
     # flattening image list
-    success_image_list  = d.get('success_image_list',[])
-    failure_image_list  = d.get('failure_image_list',[])
-
-    new_list = []
-    for i in xrange(len(success_image_list)):
-        for j in xrange(len(success_image_list[i])):
-            new_list.append(success_image_list[i][j])
-    success_image_list = np.array(copy.copy(new_list))
-
-    new_list = []
-    for i in xrange(len(failure_image_list)):
-        for j in xrange(len(failure_image_list[i])):
-            new_list.append(failure_image_list[i][j])
-    failure_image_list = np.array(copy.copy(new_list))
+    success_image_list = image_list_flatten( d.get('success_image_list',[]) )
+    failure_image_list = image_list_flatten( d.get('failure_image_list',[]) )
 
     # label
     failure_labels = []
     for f in failure_files:
         failure_labels.append( int( f.split('/')[-1].split('_')[0] ) )
     failure_labels = np.array( failure_labels )
-
-    print "----------------------------------------"
 
     #-----------------------------------------------------------------------------------------
     # Anomaly Detection
@@ -210,12 +196,12 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     hog_pkl = os.path.join(processed_data_path, 'hog_data.pkl')
     if os.path.isfile(hog_pkl) and HMM_dict['renew'] is False and ai_renew is False: # and False:
         print "Start to loading"
-        ## dd = ut.load_pickle(hog_pkl)
-        ## print "Finished to loading"
-        ## x_train_list = dd['x_train_list']
-        ## y_train_list = dd['y_train_list']
-        ## x_test_list  = dd['x_test_list']
-        ## y_test_list  = dd['y_test_list']
+        dd = ut.load_pickle(hog_pkl)
+        print "Finished to loading"
+        x_train_list = dd['x_train_list']
+        y_train_list = dd['y_train_list']
+        x_test_list  = dd['x_test_list']
+        y_test_list  = dd['y_test_list']
     else:
         # get hog data first
         x_train_list = []

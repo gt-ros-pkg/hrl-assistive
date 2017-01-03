@@ -683,6 +683,10 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         ut.save_pickle(d, crossVal_pkl)
         if data_gen: sys.exit()
 
+    # flattening image list
+    success_image_list = image_list_flatten( d.get('success_image_list',[]) )
+    failure_image_list = image_list_flatten( d.get('failure_image_list',[]) )
+
     failure_labels = []
     for f in failure_files:
         failure_labels.append( int( f.split('/')[-1].split('_')[0] ) )
@@ -755,8 +759,8 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         n_jobs = 1
         l_data = Parallel(n_jobs=n_jobs, verbose=10)\
           (delayed(iutil.get_hmm_isolation_data)(idx, kFold_list[idx], failureData_ad, failureData_static, \
-                                                 failureData_static,\
-                                                 failure_labels,
+                                                 failureData_static, failure_labels,\
+                                                 failure_image_list,\
                                                  task_name, processed_data_path, param_dict, weight,\
                                                  dynamic_flag, n_jobs=-1) for idx in xrange(len(kFold_list)) )
         
@@ -777,7 +781,9 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
       in enumerate(kFold_list):
         print "kFold_list: ", idx
 
-        (x_train, y_train, x_test, y_test) = data_dict[idx]
+        (x_trains, y_train, x_tests, y_test) = data_dict[idx]         
+        x_train = x_trains[0] 
+        x_test  = x_tests[0] 
 
         print np.shape(x_train), np.shape(x_test)
 
