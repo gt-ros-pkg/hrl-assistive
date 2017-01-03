@@ -785,7 +785,6 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         (x_trains, y_train, x_tests, y_test) = data_dict[idx]         
         x_train = x_trains[0] 
         x_test  = x_tests[0] 
-
         print np.shape(x_train), np.shape(x_test)
 
         from sklearn import preprocessing

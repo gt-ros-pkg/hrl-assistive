@@ -594,7 +594,7 @@ def get_hmm_isolation_data(idx, kFold_list, failureData_ad, failureData_static, 
 
     abnormalTrainData_img = copy.copy(failure_image_list[abnormalTrainIdx])
     abnormalTestData_img  = copy.copy(failure_image_list[abnormalTestIdx])
-                                                 
+
     #-----------------------------------------------------------------------------------------
     # Anomaly Detection
     #-----------------------------------------------------------------------------------------
@@ -711,7 +711,7 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, abno
                         sys.exit()
                     
                     x.append( cp_vecs )
-                    x_img.append( abnormalData_img[i, d_idx+1+j] )
+                    x_img.append( abnormalData_img[i][d_idx+1+j] )
                     y.append( abnormalLabel[i] )                                                    
             else:
                 if d_idx+1 <= 0: continue
@@ -744,7 +744,7 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, abno
                 cp_vecs = cp_vecs.tolist()+ vals
                 ## cp_vecs = (cp_vecs-np.amin(cp_vecs))/(np.amax(cp_vecs)-np.amin(cp_vecs))
                 x.append( cp_vecs )
-                x_img.append( abnormalData_img[i, d_idx+1] )
+                x_img.append( abnormalData_img[i][d_idx+1] )
                 y.append( abnormalLabel[i] )
         else:
             cp_vecs = None
