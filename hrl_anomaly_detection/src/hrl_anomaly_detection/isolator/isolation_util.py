@@ -710,7 +710,7 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, abno
                         print "NaN in cp_vecs ", i, d_idx
                         sys.exit()
 
-                    print np.shape(abnormalData_img[i]), i, d_idx+j
+                    print np.shape(abnormalData_img[i]), i, d_idx,j
                     
                     x.append( cp_vecs )
                     x_img.append( abnormalData_img[i][d_idx+j] )
