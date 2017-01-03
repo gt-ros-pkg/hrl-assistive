@@ -709,6 +709,8 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, abno
                     if np.isnan(cp_vecs).any() or np.isinf(cp_vecs).any():
                         print "NaN in cp_vecs ", i, d_idx
                         sys.exit()
+
+                    print np.shape(abnormalData_img[i]), i, d_idx+1+j
                     
                     x.append( cp_vecs )
                     x_img.append( abnormalData_img[i][d_idx+1+j] )
