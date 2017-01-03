@@ -627,7 +627,7 @@ def evaluation_omp_isolation(subject_names, task_name, raw_data_path, processed_
 def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
                          data_renew=False, svd_renew=False, save_pdf=False, verbose=False, debug=False,\
                          no_plot=False, delay_plot=True, find_param=False, data_gen=False, \
-                         save_viz_data=False, weight=-5.0, ref_idx=3):
+                         save_viz_data=False, weight=-5.0, ref_idx=3, window_steps=10):
     ## Parameters
     # data
     data_dict  = param_dict['data_param']
@@ -763,7 +763,8 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
                                                  failureData_static, failure_labels,\
                                                  failure_image_list,\
                                                  task_name, processed_data_path, param_dict, weight,\
-                                                 dynamic_flag, n_jobs=-1) for idx in xrange(len(kFold_list)) )
+                                                 dynamic_flag, n_jobs=-1, window_steps=window_steps,\
+                                                 ) for idx in xrange(len(kFold_list)) )
         
         data_dict = {}
         for i in xrange(len(l_data)):
@@ -1224,6 +1225,7 @@ if __name__ == '__main__':
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation10/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         weight = -20.0
+        window_steps=5
         param_dict['HMM']['scale'] = 7.111 
         param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0
         param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
@@ -1247,7 +1249,7 @@ if __name__ == '__main__':
                                                       'unimodal_landmarkDist',\
                                                       'crossmodal_landmarkEEAng',\
                                                       ]                                                  
-
+        
         
         # noise: 3,8
         # azimuth: 3
@@ -1264,7 +1266,8 @@ if __name__ == '__main__':
                              data_renew=opt.bDataRenew, svd_renew=opt.svd_renew,\
                              save_pdf=opt.bSavePdf, \
                              verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
-                             find_param=False, data_gen=opt.bDataGen, weight=weight)
+                             find_param=False, data_gen=opt.bDataGen, weight=weight, \
+                             window_steps=window_steps)
 
 
 

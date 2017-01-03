@@ -575,7 +575,7 @@ def get_isolation_data(idx, kFold_list, modeling_pkl, nState, \
 def get_hmm_isolation_data(idx, kFold_list, failureData_ad, failureData_static, \
                            failureData_dynamic, failure_labels, failure_image_list,\
                            task_name, processed_data_path, param_dict, weight,\
-                           dynamic_flag=False, n_jobs=-1 ):
+                           dynamic_flag=False, n_jobs=-1, window_steps=10 ):
 
     normalTrainIdx = kFold_list[0]
     abnormalTrainIdx = kFold_list[1]
@@ -620,7 +620,7 @@ def get_hmm_isolation_data(idx, kFold_list, failureData_ad, failureData_static, 
                                                        abnormalTrainLabel,\
                                                        abnormalTrainData_img,\
                                                        task_name, processed_data_path, param_dict, \
-                                                       plot=False, window=True, window_step=10,\
+                                                       plot=False, window=True, window_step=window_steps,\
                                                        dynamic_flag=dynamic_flag)
                                      
     x_test, y_test, x_test_img = feature_extraction(idx, detection_test_idx_list, \
