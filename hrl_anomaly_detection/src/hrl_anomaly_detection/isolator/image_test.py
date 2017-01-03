@@ -208,7 +208,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     # Feature extraction for Anomaly Isolation
     #-----------------------------------------------------------------------------------------
     hog_pkl = os.path.join(processed_data_path, 'hog_data.pkl')
-    if os.path.isfile(hog_pkl) and HMM_dict['renew'] is False and ai_renew is False and False:
+    if os.path.isfile(hog_pkl) and HMM_dict['renew'] is False and ai_renew is False: # and False:
         print "Start to loading"
         dd = ut.load_pickle(hog_pkl)
         print "Finished to loading"
@@ -277,7 +277,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     test_data_pkl = os.path.join(processed_data_path, 'test_data.pkl')
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) in enumerate(kFold_list):
 
-        window_step = 10
+        window_step = 5
         print np.shape(x_train_list), np.shape(detection_train_idx_list)
         print np.shape(x_test_list), np.shape(detection_test_idx_list)
         assert len(x_train_list[idx]) == len(detection_train_idx_list[idx])
@@ -293,10 +293,10 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                 if d_idx+1+j <= 4: continue
                 if d_idx+1+j >= len(x_train_list[idx][i]): continue
 
-                cv2.imshow('image',x_train_list[idx][i][d_idx+1+j])
-                cv2.waitKey(0)
-                cv2.destroyAllWindows()        
-                sys.exit()
+                ## cv2.imshow('image',x_train_list[idx][i][d_idx+1+j])
+                ## cv2.waitKey(0)
+                ## cv2.destroyAllWindows()        
+                ## sys.exit()
 
                 x_train.append( x_train_list[idx][i][d_idx+1+j] )
                 y_train.append( y_train_list[idx][i][d_idx+1+j] )
