@@ -678,14 +678,14 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, abno
             cp_vecs_last = None
             if window:
                 for j in range(-window_step, window_step):
-                    if d_idx+1+j <= 4: continue
-                    if d_idx+1+j > len(abnormalData[0,i]): continue
-                    cp_vecs = ml.conditional_prob( abnormalData[:,i,:d_idx+1+j]*\
+                    if d_idx+j <= 4: continue
+                    if d_idx+j > len(abnormalData[0,i]): continue
+                    cp_vecs = ml.conditional_prob( abnormalData[:,i,:d_idx+j]*\
                                                    param_dict['HMM']['scale'])
                     if cp_vecs is None: continue
                     
                     if dynamic_flag:
-                        cp_vecs_d = ml.conditional_prob( abnormalData_d[:,i,:d_idx+1+j]*\
+                        cp_vecs_d = ml.conditional_prob( abnormalData_d[:,i,:d_idx+j]*\
                                                          param_dict['HMM']['df_scale'])
                         if cp_vecs_d is None: continue
                         cp_vecs = np.concatenate((cp_vecs, cp_vecs_d[param_dict['data_param']['df_idx']]))
@@ -699,8 +699,8 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, abno
                             cp_vecs_last = cp_vecs
                             cp_vecs = temp
 
-                    max_vals = np.amax(abnormalData_s[:,i,:d_idx+1+j], axis=1)
-                    min_vals = np.amin(abnormalData_s[:,i,:d_idx+1+j], axis=1)
+                    max_vals = np.amax(abnormalData_s[:,i,:d_idx+j], axis=1)
+                    min_vals = np.amin(abnormalData_s[:,i,:d_idx+j], axis=1)
                     vals = [mx if abs(mx) > abs(mi) else mi for (mx, mi) in zip(max_vals, min_vals) ]
                     
                     cp_vecs = cp_vecs.tolist()+ vals
@@ -710,23 +710,23 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, abno
                         print "NaN in cp_vecs ", i, d_idx
                         sys.exit()
 
-                    print np.shape(abnormalData_img[i]), i, d_idx+1+j
+                    print np.shape(abnormalData_img[i]), i, d_idx+j
                     
                     x.append( cp_vecs )
-                    x_img.append( abnormalData_img[i][d_idx+1+j] )
+                    x_img.append( abnormalData_img[i][d_idx+j] )
                     y.append( abnormalLabel[i] )                                                    
             else:
-                if d_idx+1 <= 0: continue
-                if d_idx+1 > len(abnormalData[0,i]): continue
+                if d_idx <= 0: continue
+                if d_idx > len(abnormalData[0,i]): continue
                 while True:
-                    cp_vecs = ml.conditional_prob( abnormalData[:,i,:d_idx+1]*\
+                    cp_vecs = ml.conditional_prob( abnormalData[:,i,:d_idx]*\
                                                    param_dict['HMM']['scale'])
                     if cp_vecs is None: d_idx -= 1
                     else: break
 
                 if dynamic_flag:
                     while True:
-                        cp_vecs_d = ml.conditional_prob( abnormalData_d[:,i,:d_idx+1]*\
+                        cp_vecs_d = ml.conditional_prob( abnormalData_d[:,i,:d_idx]*\
                                                          param_dict['HMM']['df_scale'])
                         if cp_vecs_d is None: d_idx -= 1
                         else: break
@@ -738,21 +738,21 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, abno
                                                         param_dict['HMM']['scale'])
                     cp_vecs = cp_vecs - cp_vecs_last
                     
-                ## max_vals = np.amax(abnormalData_ext[:,i,:d_idx+1], axis=1)
-                max_vals = np.amax(abnormalData_s[:,i,:d_idx+1], axis=1)
-                min_vals = np.amin(abnormalData_s[:,i,:d_idx+1], axis=1)
+                ## max_vals = np.amax(abnormalData_ext[:,i,:d_idx], axis=1)
+                max_vals = np.amax(abnormalData_s[:,i,:d_idx], axis=1)
+                min_vals = np.amin(abnormalData_s[:,i,:d_idx], axis=1)
                 vals = [mx if abs(mx) > abs(mi) else mi for (mx, mi) in zip(max_vals, min_vals) ]
                 
                 cp_vecs = cp_vecs.tolist()+ vals
                 ## cp_vecs = (cp_vecs-np.amin(cp_vecs))/(np.amax(cp_vecs)-np.amin(cp_vecs))
                 x.append( cp_vecs )
-                x_img.append( abnormalData_img[i][d_idx+1] )
+                x_img.append( abnormalData_img[i][d_idx] )
                 y.append( abnormalLabel[i] )
         else:
             cp_vecs = None
             for j in xrange(len(abnormalData[0,i,:])):
                 if j<4: continue
-                cp_vec = ml.conditional_prob2( abnormalData[:,i,:j+1]*\
+                cp_vec = ml.conditional_prob2( abnormalData[:,i,:j]*\
                                                param_dict['HMM']['scale'] )
                 if cp_vecs is None: cp_vecs = cp_vec
                 else: cp_vecs = np.vstack([ cp_vecs, cp_vec])
@@ -765,7 +765,7 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, abno
             fig = plt.figure()
 
             for j in xrange(nPlot):
-                ax = fig.add_subplot(nPlot*100+10+j+1)
+                ax = fig.add_subplot(nPlot*100+10+j)
                 ax.plot(cp_vecs[:,j], 'r-')
 
             ## # ----------------------------------------------------
@@ -797,18 +797,6 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, abno
             y.append( abnormalLabel[i] )
         
     return x, y, x_img
-
-
-def get_single_cond_prob(d_idx, window_step, ml, abnormalData, param_dict, ref_idx=None):
-    cp_vecs = None
-    ## for j in xrange(d_idx-window_step, d_idx):
-    for j in xrange(len(abnormalData[0])):
-        if j<4: continue
-        cp_vec = ml.conditional_prob2( abnormalData[:,:j+1]*\
-                                      param_dict['HMM']['scale'])
-        if cp_vecs is None: cp_vecs = cp_vec
-        else: cp_vecs = np.vstack([ cp_vecs, cp_vec])
-    return cp_vecs
 
 
 def save_data_labels(data, labels, processed_data_path='./'):
