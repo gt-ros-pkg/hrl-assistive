@@ -2114,7 +2114,7 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
             crossmodal_landmarkEEAng = np.array(crossmodal_landmarkEEAng)
             if offset_flag:
                 crossmodal_landmarkEEAng -= np.mean(crossmodal_landmarkEEAng[:startOffsetSize])
-            crossmodal_landmarkEEAng = abs(crossmodal_landmarkEEAng)
+            ## crossmodal_landmarkEEAng = abs(crossmodal_landmarkEEAng)
 
             if dataSample is None: dataSample = np.array(crossmodal_landmarkEEAng)
             else: dataSample = np.vstack([dataSample, crossmodal_landmarkEEAng])
