@@ -740,8 +740,10 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, abno
                                                         param_dict['HMM']['scale'])
                     cp_vecs = cp_vecs - cp_vecs_last
                     
-                max_vals = np.amax(abnormalData_s[:,i,d_idx-10:d_idx], axis=1)
-                min_vals = np.amin(abnormalData_s[:,i,d_idx-10:d_idx], axis=1)
+                ## max_vals = np.amax(abnormalData_s[:,i,d_idx-10:d_idx], axis=1)
+                ## min_vals = np.amin(abnormalData_s[:,i,d_idx-10:d_idx], axis=1)
+                max_vals = np.amax(abnormalData_s[:,i,:d_idx], axis=1)
+                min_vals = np.amin(abnormalData_s[:,i,:d_idx], axis=1)
                 vals = [mx if abs(mx) > abs(mi) else mi for (mx, mi) in zip(max_vals, min_vals) ]
                 ## vals = np.amax(abnormalData_s[:,i,d_idx-10:d_idx], axis=1)
                 
