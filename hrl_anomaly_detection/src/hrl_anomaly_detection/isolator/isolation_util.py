@@ -739,15 +739,17 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, abno
                     cp_vecs_last = ml.conditional_prob( abnormalData[:,i,:d_idx]*\
                                                         param_dict['HMM']['scale'])
                     cp_vecs = cp_vecs - cp_vecs_last
-                    
-                ## max_vals = np.amax(abnormalData_s[:,i,:d_idx], axis=1)
-                ## min_vals = np.amin(abnormalData_s[:,i,:d_idx], axis=1)
-                ## vals = [mx if abs(mx) > abs(mi) else mi for (mx, mi) in zip(max_vals, min_vals) ]
 
-                vals = abnormalData_s[:,i,:d_idx] - np.mean(abnormalData_s[:,i,:4], axis=1)[:,None]
-                max_vals = np.amax(vals, axis=1)
-                min_vals = np.amin(vals, axis=1)
+                if d_idx-20: s_idx = 0
+                else: s_idx = d_dix
+                max_vals = np.amax(abnormalData_s[:,i,s_idx:d_idx], axis=1)
+                min_vals = np.amin(abnormalData_s[:,i,s_idx:d_idx], axis=1)
                 vals = [mx if abs(mx) > abs(mi) else mi for (mx, mi) in zip(max_vals, min_vals) ]
+
+                ## vals = abnormalData_s[:,i,:d_idx] - np.mean(abnormalData_s[:,i,:4], axis=1)[:,None]
+                ## max_vals = np.amax(vals, axis=1)
+                ## min_vals = np.amin(vals, axis=1)
+                ## vals = [mx if abs(mx) > abs(mi) else mi for (mx, mi) in zip(max_vals, min_vals) ]
                 
                 
                 cp_vecs = cp_vecs.tolist()+ vals
