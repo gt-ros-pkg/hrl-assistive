@@ -741,7 +741,7 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, abno
                     cp_vecs = cp_vecs - cp_vecs_last
 
                 if d_idx-20<0: s_idx = 0
-                else: s_idx = d_dix
+                else: s_idx = d_idx
                 max_vals = np.amax(abnormalData_s[:,i,s_idx:d_idx], axis=1)
                 min_vals = np.amin(abnormalData_s[:,i,s_idx:d_idx], axis=1)
                 vals = [mx if abs(mx) > abs(mi) else mi for (mx, mi) in zip(max_vals, min_vals) ]
