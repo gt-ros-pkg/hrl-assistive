@@ -552,10 +552,13 @@ class ConfigureModelRobotState(PDDLSmachState):
                                           JointTrajectory,
                                           queue_size=1)
 
-
         if self.model.upper() == 'AUTOBED':
             self.bed_state_leg_theta = None
             self.autobed_pub = rospy.Publisher('/abdin0', FloatArrayBare, queue_size=1)
+            self.model_reached = False
+            #self.autobed_sub = rospy.Subscriber('/abdout0', FloatArrayBare, self.bed_state_cb)
+            self.status_sub = rospy.Subscriber('abdstatus0', Bool, self.bed_status_cb)
+
 
     def bed_state_cb(self, data):
         self.bed_state_leg_theta = data.data[2]
@@ -603,7 +606,20 @@ class ConfigureModelRobotState(PDDLSmachState):
         self.goal_reached = msg.data
 
     def on_execute(self, ud):
-        rospy.sleep(2.)
+        rospy.sleep(1.)
+        if self.model.upper() == 'AUTOBED':
+            rospy.loginfo("[%s] Moving Autobed to configuration" % rospy.get_name())
+            self.model_reached = False
+            autobed_goal = FloatArrayBare()
+            autobed_goal.data = ([self.configuration_goal[2],
+                                  self.configuration_goal[1],
+                                  float('nan')])
+            self.autobed_pub.publish(autobed_goal)
+            rospy.sleep(0.5)
+            self.autobed_pub.publish(autobed_goal)
+            rospy.sleep(0.5)
+            self.autobed_pub.publish(autobed_goal)
+
         rospy.loginfo("[%s] Moving Arms to Home Position" % rospy.get_name())
         self.r_arm_pub.publish(self.r_reset_traj)
         self.l_arm_pub.publish(self.l_reset_traj)
@@ -645,17 +661,7 @@ class ConfigureModelRobotState(PDDLSmachState):
 
         if self.model.upper() == 'AUTOBED':
             self.model_reached = False
-            #self.autobed_sub = rospy.Subscriber('/abdout0', FloatArrayBare, self.bed_state_cb)
-            rospy.Subscriber('abdstatus0', Bool, self.bed_status_cb)
-            rospy.sleep(2.)
-            #while (self.bed_state_leg_theta is None):
-            #    rospy.sleep(1)
-            autobed_goal = FloatArrayBare()
-            autobed_goal.data = ([self.configuration_goal[2],
-                                  self.configuration_goal[1],
-                                  float('nan')])
-            self.autobed_pub.publish(autobed_goal)
-            rospy.sleep(3.)
+            rospy.sleep(5.)
             
             rospy.loginfo("[%s] Waiting For Model to be moved" % rospy.get_name())
             while not rospy.is_shutdown() and not self.model_reached:
