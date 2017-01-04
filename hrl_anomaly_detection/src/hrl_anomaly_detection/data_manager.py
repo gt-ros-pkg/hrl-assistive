@@ -1574,7 +1574,8 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
             unimodal_audioWristAzimuth = d['audioWristAzimuthList'][idx]
             if offset_flag:
                 unimodal_audioWristAzimuth -= np.mean(unimodal_audioWristAzimuth[:startOffsetSize])
-
+            unimodal_audioWristAzimuth = abs(unimodal_audioWristAzimuth)
+            
             if dataSample is None: dataSample = copy.copy(np.array(unimodal_audioWristAzimuth))
             else: dataSample = np.vstack([dataSample, copy.copy(unimodal_audioWristAzimuth)])
             if 'audioWristAzimuth' not in param_dict['feature_names']:
@@ -2113,6 +2114,7 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
             crossmodal_landmarkEEAng = np.array(crossmodal_landmarkEEAng)
             if offset_flag:
                 crossmodal_landmarkEEAng -= np.mean(crossmodal_landmarkEEAng[:startOffsetSize])
+            crossmodal_landmarkEEAng = abs(crossmodal_landmarkEEAng)
 
             if dataSample is None: dataSample = np.array(crossmodal_landmarkEEAng)
             else: dataSample = np.vstack([dataSample, crossmodal_landmarkEEAng])

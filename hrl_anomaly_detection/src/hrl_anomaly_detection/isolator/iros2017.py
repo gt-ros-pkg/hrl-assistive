@@ -809,7 +809,7 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
         ## y_pred = clf.predict(x_test.tolist())
         score = clf.score(x_test, y_test)
         scores.append( score )
-        print idx, " = ", score
+        print idx, " : score = ", score
 
 
     print scores
