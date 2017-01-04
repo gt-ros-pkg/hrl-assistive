@@ -577,10 +577,10 @@ def get_hmm_isolation_data(idx, kFold_list, failureData_ad, failureData_static, 
                            task_name, processed_data_path, param_dict, weight,\
                            dynamic_flag=False, n_jobs=-1, window_steps=10 ):
 
-    normalTrainIdx = kFold_list[0]
+    normalTrainIdx   = kFold_list[0]
     abnormalTrainIdx = kFold_list[1]
-    normalTestIdx = kFold_list[2]
-    abnormalTestIdx = kFold_list[3]
+    normalTestIdx    = kFold_list[2]
+    abnormalTestIdx  = kFold_list[3]
 
     # dim x sample x length
     abnormalTrainData_ad  = copy.copy(failureData_ad[:, abnormalTrainIdx, :])
@@ -740,10 +740,10 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, abno
                                                         param_dict['HMM']['scale'])
                     cp_vecs = cp_vecs - cp_vecs_last
                     
-                ## max_vals = np.amax(abnormalData_ext[:,i,:d_idx], axis=1)
-                max_vals = np.amax(abnormalData_s[:,i,:d_idx], axis=1)
-                min_vals = np.amin(abnormalData_s[:,i,:d_idx], axis=1)
+                max_vals = np.amax(abnormalData_s[:,i,d_idx-10:d_idx], axis=1)
+                min_vals = np.amin(abnormalData_s[:,i,d_idx-10:d_idx], axis=1)
                 vals = [mx if abs(mx) > abs(mi) else mi for (mx, mi) in zip(max_vals, min_vals) ]
+                ## vals = np.amax(abnormalData_s[:,i,d_idx-10:d_idx], axis=1)
                 
                 cp_vecs = cp_vecs.tolist()+ vals
                 ## cp_vecs = (cp_vecs-np.amin(cp_vecs))/(np.amax(cp_vecs)-np.amin(cp_vecs))
