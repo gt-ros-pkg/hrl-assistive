@@ -258,7 +258,7 @@ class AutobedStatePublisherNode(object):
                 human_joint_state.position[12] = (bth/40)*(.86-0.1)+0.1
                 human_joint_state.position[13] = 0.
                 human_joint_state.position[14] = 0.
-                human_joint_state.position[15] = (bth/40)*(0.03 - 0)+0
+                human_joint_state.position[15] = (bth/40)*(0.03 - 0)+0+.1
                 human_joint_state.position[16] = (bth/40)*(-0.13 - 0)+0
                 human_joint_state.position[17] = ((bth/40)*(.7 - 0)+0)
                 human_joint_state.position[18] = -((bth/40)*(-0.2 - 0)+0)
@@ -279,7 +279,7 @@ class AutobedStatePublisherNode(object):
                 human_joint_state.position[12] = ((bth-40)/40)*(1.02-0.86)+.86
                 human_joint_state.position[13] = ((bth-40)/40)*(.35-0)+0
                 human_joint_state.position[14] = ((bth-40)/40)*(.35-0)+0
-                human_joint_state.position[15] = ((bth-40)/40)*(0.03 - (0.03))+(0.03)
+                human_joint_state.position[15] = ((bth-40)/40)*(0.03 - (0.03))+(0.03) + .1
                 human_joint_state.position[16] = (bth/40)*(-0.18 - (-0.13))+(-0.13)
                 human_joint_state.position[17] = (((bth-40)/40)*(0.7 - 0.7)+0.7)
                 human_joint_state.position[18] = -((bth/40)*(.02 - (-0.2))+(-0.2))

@@ -285,7 +285,7 @@ class AR_Tag_Tracking(object):
         model_trans_B_ar = np.eye(4)
         # model_trans_B_ar[0:3, 3] = np.array([-0.01, .00, 1.397])
         # Now that I adjust the AR tag pose to be on the ground plane, no Z shift needed.
-        model_trans_B_ar[0:3, 3] = np.array([-0.05, 0.01, 0.])
+        model_trans_B_ar[0:3, 3] = np.array([-0.005, 0.01, 0.])
         ar_rotz_B = np.eye(4)
         #ar_rotz_B[0:2, 0:2] = np.array([[-1, 0], [0, -1]])
 
