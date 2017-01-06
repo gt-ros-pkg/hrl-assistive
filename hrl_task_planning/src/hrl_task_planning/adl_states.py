@@ -221,6 +221,8 @@ class CheckOccupancyState(PDDLSmachState):
 class MoveArmState(PDDLSmachState):
     def __init__(self, task, model, domain, *args, **kwargs):
         super(MoveArmState, self).__init__(domain=domain, *args, **kwargs)
+        rospy.wait_for_service('/left_arm/haptic_mpc/enable_mpc')
+        self.mpc_enabled_service = rospy.ServiceProxy("/left_arm/haptic_mpc/enable_mpc", EnableHapticMPC)
         self.listener = tf.TransformListener()
         self.goal_position = None
         self.goal_orientation = None
@@ -318,6 +320,8 @@ class MoveArmState(PDDLSmachState):
     def on_execute(self, ud):
         rospy.sleep(1.)
         print 'Starting to execute arm movement'
+        resp = self.mpc_enabled_service('enabled')
+        rospy.sleep(0.5)
         publish_stat = self.publish_goal()
         self.goal_reached = False
         if not publish_stat:
@@ -528,6 +532,8 @@ class CallBaseSelectionState(PDDLSmachState):
 class ConfigureModelRobotState(PDDLSmachState):
     def __init__(self, task, model, domain, *args, **kwargs):
         super(ConfigureModelRobotState, self).__init__(domain=domain, *args, **kwargs)
+        rospy.wait_for_service('/left_arm/haptic_mpc/enable_mpc')
+        self.mpc_enabled_service = rospy.ServiceProxy("/left_arm/haptic_mpc/enable_mpc", EnableHapticMPC)
         self.domain = domain
         self.task = task
         self.model = model
@@ -607,6 +613,7 @@ class ConfigureModelRobotState(PDDLSmachState):
 
     def on_execute(self, ud):
         rospy.sleep(1.)
+        resp = self.mpc_enabled_service('enabled')
 
         try:
 	    self.configuration_goal = rospy.get_param('/pddl_tasks/%s/configuration_goals' % self.domain)

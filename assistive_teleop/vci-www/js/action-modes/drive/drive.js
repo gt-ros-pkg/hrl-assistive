@@ -343,7 +343,7 @@ var RFH = (function (module) {
             self.currentStop = stopName;
             $('#drive-dir-icon path').css({'fill':'rgb(30,220,250)'});
             $('#drive-dir-icon path.'+stopName).css({'fill':'#ffffff'});
-            head.setPosition(angs[0], angs[1]);
+            trackHeadPosition(stopName);
         };
 
         var trackHeadPosition = function (stopName) {
@@ -357,7 +357,7 @@ var RFH = (function (module) {
             Snap.load('./css/icons/drive-direction-icon.svg', function (icon_svg) {
                 driveDirIcon.append(icon_svg.select('g'));
                 var wedgeClickCB = function (e) {
-                    trackHeadPosition(e.target.classList[0]);
+                    moveToStop(e.target.classList[0]);
                 };
                 var wedges = driveDirIcon.selectAll('path');
                 for (var i=0; i<wedges.length; i+=1) {
@@ -513,7 +513,7 @@ var RFH = (function (module) {
             base.pubCmd(cmd.x, cmd.y, cmd.theta);
 //            console.log("Sent ", cmd);
             timer = setTimeout(function(){self.sendCmd(self.cmd);}, 50);
-            console.log("Set Timer: ", timer);
+//            console.log("Set Timer: ", timer);
         };
 
         $(document).on("mouseleave.rfh mouseout.rfh", self.setUnsafe);
@@ -528,7 +528,7 @@ var RFH = (function (module) {
             $('.drive-ctrl').show();
             self.showGoal();
             $viewer.show();
-            trackHeadPosition(getNearestStop());
+            moveToStop(getNearestStop());
             self.$div.on('resize.rfh', self.updateLineOffsets);
             $('#controls h3').text("Head Controls");
         };

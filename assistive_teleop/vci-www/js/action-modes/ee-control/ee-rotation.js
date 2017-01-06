@@ -55,7 +55,7 @@ var RFH = (function (module) {
             }
         };
 
-        self.stepSizes = {'tiny': Math.PI/18,
+        self.stepSizes = {'xsmall': Math.PI/18,
             'small': Math.PI/10,
             'medium': Math.PI/5,
             'large': Math.PI/3};
