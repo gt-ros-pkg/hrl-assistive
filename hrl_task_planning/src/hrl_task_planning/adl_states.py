@@ -249,7 +249,7 @@ class MoveArmState(PDDLSmachState):
         goal = PoseStamped()
         if self.model.upper() == 'AUTOBED':
             if self.task.upper() == 'SCRATCHING':
-                self.goal_position = [-0.06310556, 0.07347758+0.05+0.08, 0.00485197]
+                self.goal_position = [-0.18310556, 0.07347758+0.05+0.08, 0.00485197]
                 self.goal_orientation = [0.48790861, -0.50380292, 0.51703901, -0.4907122]
                 self.reference_frame = '/'+str(self.model.lower())+'/calf_left_link'
                 goal.pose.position.x = self.goal_position[0]
@@ -607,6 +607,13 @@ class ConfigureModelRobotState(PDDLSmachState):
 
     def on_execute(self, ud):
         rospy.sleep(1.)
+
+        try:
+	    self.configuration_goal = rospy.get_param('/pddl_tasks/%s/configuration_goals' % self.domain)
+        except:
+	    rospy.logwarn("[%s] ConfigurationGoalState - Cannot find spine height and autobed config on parameter server" % rospy.get_name())
+	    return 'aborted'
+
         if self.model.upper() == 'AUTOBED':
             rospy.loginfo("[%s] Moving Autobed to configuration" % rospy.get_name())
             self.model_reached = False
@@ -631,12 +638,6 @@ class ConfigureModelRobotState(PDDLSmachState):
             rospy.logwarn("[%s] Cannot find torso_controller/position_joint_action server" % rospy.get_name())
             return 'aborted'
 
-        try:
-	    self.configuration_goal = rospy.get_param('/pddl_tasks/%s/configuration_goals' % self.domain)
-        except:
-	    rospy.logwarn("[%s] ConfigurationGoalState - Cannot find spine height and autobed config on parameter server" % rospy.get_name())
-	    return 'aborted'
-
         if self.configuration_goal[0] is not None:
             torso_lift_msg = SingleJointPositionGoal()
             torso_lift_msg.position = self.configuration_goal[0]
@@ -657,7 +658,6 @@ class ConfigureModelRobotState(PDDLSmachState):
         else:
             rospy.logwarn("[%s] Torso Actionlib Client has NOT succeeded" % rospy.get_name())
             return 'aborted'
-
 
         if self.model.upper() == 'AUTOBED':
             self.model_reached = False
