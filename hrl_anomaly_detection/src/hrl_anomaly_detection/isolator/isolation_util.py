@@ -665,7 +665,11 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, abno
                 exec '%s = v' % k
         ml_d = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
         ml_d.set_hmm_object(A,B,pi)
-    
+
+
+    if delta_flag is False: max_step = 1
+    else:                   max_step = 8
+        
     x = []
     y = []
     x_img = []
@@ -726,9 +730,6 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, abno
             else:
                 if d_idx <= 0: continue
                 if d_idx > len(abnormalData[0,i]): continue                    
-
-                if delta_flag is False: max_step = 1
-                else:                   max_step = 8
 
                 vs = temporal_features(abnormalData[:,i], d_idx, max_step, ml,
                                        param_dict['HMM']['scale'])
