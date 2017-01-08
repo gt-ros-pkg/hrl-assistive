@@ -705,9 +705,9 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, abno
                         #1
                         cp_vecs = np.amin(v[:1], axis=0)
                         #4
-                        cp_vecs = np.vtack([ cp_vecs, np.amin(v[:4], axis=0) ])
+                        cp_vecs = np.vstack([ cp_vecs, np.amin(v[:4], axis=0) ])
                         #8
-                        cp_vecs = np.vtack([ cp_vecs, np.amin(v[:8], axis=0) ])
+                        cp_vecs = np.vstack([ cp_vecs, np.amin(v[:8], axis=0) ])
                         cp_vecs = np.flatten(cp_vecs)
 
                     
