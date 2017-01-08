@@ -724,10 +724,10 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, abno
                 if delta_flag is False: max_step = 1
                 else:                   max_step = 8
 
-                vs = temporal_features(abnormalData, d_idx, max_step, ml,
+                vs = temporal_features(abnormalData[:,i], d_idx, max_step, ml,
                                        param_dict['HMM']['scale'])
                 if dynamic_flag:
-                    vs_d = temporal_features(abnormalData_d, d_idx, max_step, ml_d, \
+                    vs_d = temporal_features(abnormalData_d[:,i], d_idx, max_step, ml_d, \
                                            param_dict['HMM']['df_scale'])
 
                 if dynamic_flag is False and delta_flag is False:
@@ -814,14 +814,14 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, abno
 def temporal_features(X, d_idx, max_step, ml, scale):
 
     while True:
-        v = ml.conditional_prob( X[:,i,:d_idx]*scale)
+        v = ml.conditional_prob( X[:,:d_idx]*scale)
         if v is None: d_idx -= 1
         else: break
 
     vs = None
     for i in xrange(d_idx, d_idx-max_step,-1):
         if i<0: break
-        v = ml.conditional_prob( X[:,i,:i]*scale)
+        v = ml.conditional_prob( X[:,:i]*scale)
         v = v.reshape((1,) + v.shape)
         vs = np.vstack([vs, v])
 
