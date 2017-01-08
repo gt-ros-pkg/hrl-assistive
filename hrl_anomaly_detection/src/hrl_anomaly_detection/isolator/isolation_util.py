@@ -620,7 +620,7 @@ def get_hmm_isolation_data(idx, kFold_list, failureData_ad, failureData_static, 
                                                        abnormalTrainLabel,\
                                                        abnormalTrainData_img,\
                                                        task_name, processed_data_path, param_dict, \
-                                                       plot=False, window=True, window_step=window_steps,\
+                                                       plot=False, window=False, window_step=window_steps,\
                                                        dynamic_flag=dynamic_flag)
                                      
     x_test, y_test, x_test_img = feature_extraction(idx, detection_test_idx_list, \
@@ -719,35 +719,37 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, abno
                     
             else:
                 if d_idx <= 0: continue
-                if d_idx > len(abnormalData[0,i]): continue
-                while True:
-                    cp_vecs = ml.conditional_prob( abnormalData[:,i,:d_idx]*\
-                                                   param_dict['HMM']['scale'])
-                    if cp_vecs is None: d_idx -= 1
-                    else: break
+                if d_idx > len(abnormalData[0,i]): continue                    
 
+                if delta_flag is False: max_step = 1
+                else:                   max_step = 8
+
+                vs = temporal_features(abnormalData, d_idx, max_step, ml,
+                                       param_dict['HMM']['scale'])
                 if dynamic_flag:
-                    while True:
-                        cp_vecs_d = ml_d.conditional_prob( abnormalData_d[:,i,:d_idx]*\
-                                                           param_dict['HMM']['df_scale'])
-                        if cp_vecs_d is None: d_idx -= 1
-                        else: break
-                    cp_vecs = np.concatenate((cp_vecs, cp_vecs_d[param_dict['data_param']['df_idx'] ]))
-                    
+                    vs_d = temporal_features(abnormalData_d, d_idx, max_step, ml_d, \
+                                           param_dict['HMM']['df_scale'])
 
-                if delta_flag:
-                    cp_vecs_last = ml.conditional_prob( abnormalData[:,i,:d_idx-1]*\
-                                                        param_dict['HMM']['scale'])
-                    cp_vecs = cp_vecs - cp_vecs_last
+                if dynamic_flag is False and delta_flag is False:
+                    cp_vecs = vs[0]
+                elif dynamic_flag is True and delta_flag is False:
+                    cp_vecs = np.concatenate((vs[0], vs_d[0][param_dict['data_param']['df_idx'] ]))
+                elif delta_flag is True:
+                    if dynamic_flag:
+                        v = np.hstack([vs, vs_d])
+                    else:
+                        v = vs
+                    #1
+                    cp_vecs = np.amin(v[:1], axis=0)
+                    #4
+                    cp_vecs = np.vtack([ cp_vecs, np.amin(v[:4], axis=0) ])
+                    #8
+                    cp_vecs = np.vtack([ cp_vecs, np.amin(v[:8], axis=0) ])
+                    cp_vecs = np.flatten(cp_vecs)
 
-                ## if d_idx-10<0: s_idx = 0
-                ## else: s_idx = d_idx-10
-                ## max_vals = np.amax(abnormalData_s[:,i,s_idx:d_idx], axis=1)
-                ## min_vals = np.amin(abnormalData_s[:,i,s_idx:d_idx], axis=1)
                 max_vals = np.amax(abnormalData_s[:,i,:d_idx], axis=1)
                 min_vals = np.amin(abnormalData_s[:,i,:d_idx], axis=1)
                 vals = [mx if abs(mx) > abs(mi) else mi for (mx, mi) in zip(max_vals, min_vals) ]
-                
                 
                 cp_vecs = cp_vecs.tolist()+ vals
                 ## cp_vecs = (cp_vecs-np.amin(cp_vecs))/(np.amax(cp_vecs)-np.amin(cp_vecs))
@@ -808,6 +810,23 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, abno
         
     return x, y, x_img
 
+
+def temporal_features(X, d_idx, max_step, ml, scale):
+
+    while True:
+        v = ml.conditional_prob( X[:,i,:d_idx]*scale)
+        if v is None: d_idx -= 1
+        else: break
+
+    vs = None
+    for i in xrange(d_idx, d_idx-max_step,-1):
+        if i<0: break
+        v = ml.conditional_prob( X[:,i,:i]*scale)
+        v = v.reshape((1,) + v.shape)
+        vs = np.vstack([vs, v])
+
+    return vs
+    
 
 def save_data_labels(data, labels, processed_data_path='./'):
     LOG_DIR = os.path.join(processed_data_path, 'tensorflow' )
