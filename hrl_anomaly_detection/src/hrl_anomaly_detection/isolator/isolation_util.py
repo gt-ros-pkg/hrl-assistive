@@ -685,7 +685,7 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, abno
                     if cp_vecs is None: continue
                     
                     if dynamic_flag:
-                        cp_vecs_d = ml.conditional_prob( abnormalData_d[:,i,:d_idx+j]*\
+                        cp_vecs_d = ml_d.conditional_prob( abnormalData_d[:,i,:d_idx+j]*\
                                                          param_dict['HMM']['df_scale'])
                         if cp_vecs_d is None: continue
                         cp_vecs = np.concatenate((cp_vecs, cp_vecs_d[param_dict['data_param']['df_idx']]))
@@ -728,15 +728,15 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, abno
 
                 if dynamic_flag:
                     while True:
-                        cp_vecs_d = ml.conditional_prob( abnormalData_d[:,i,:d_idx]*\
-                                                         param_dict['HMM']['df_scale'])
+                        cp_vecs_d = ml_d.conditional_prob( abnormalData_d[:,i,:d_idx]*\
+                                                           param_dict['HMM']['df_scale'])
                         if cp_vecs_d is None: d_idx -= 1
                         else: break
                     cp_vecs = np.concatenate((cp_vecs, cp_vecs_d[param_dict['data_param']['df_idx'] ]))
                     
 
                 if delta_flag:
-                    cp_vecs_last = ml.conditional_prob( abnormalData[:,i,:d_idx]*\
+                    cp_vecs_last = ml.conditional_prob( abnormalData[:,i,:d_idx-1]*\
                                                         param_dict['HMM']['scale'])
                     cp_vecs = cp_vecs - cp_vecs_last
 
