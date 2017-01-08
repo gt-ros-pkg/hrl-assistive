@@ -823,8 +823,10 @@ def temporal_features(X, d_idx, max_step, ml, scale):
         if i<0: break
         v = ml.conditional_prob( X[:,:i]*scale)
         v = v.reshape((1,) + v.shape)
-        vs = np.vstack([vs, v])
-
+        if vs is None: vs = v
+        else:          vs = np.vstack([vs, v])
+    print np.shape(vs)
+    
     return vs
     
 
