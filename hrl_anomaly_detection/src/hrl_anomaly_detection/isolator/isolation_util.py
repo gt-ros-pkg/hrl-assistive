@@ -707,7 +707,7 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, abno
                         cp_vecs = np.vstack([ cp_vecs, np.amin(v[:4], axis=0) ])
                         #8
                         cp_vecs = np.vstack([ cp_vecs, np.amin(v[:8], axis=0) ])
-                        cp_vecs = np.flatten(cp_vecs)
+                        cp_vecs = cp_vecs.flatten()
 
                     
                     max_vals = np.amax(abnormalData_s[:,i,:d_idx+j], axis=1)
@@ -753,7 +753,7 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, abno
                     cp_vecs = np.vstack([ cp_vecs, np.amin(v[:4], axis=0) ])
                     #8
                     cp_vecs = np.vstack([ cp_vecs, np.amin(v[:8], axis=0) ])
-                    cp_vecs = np.flatten(cp_vecs)
+                    cp_vecs = cp_vecs.flatten()
 
                 max_vals = np.amax(abnormalData_s[:,i,:d_idx], axis=1)
                 min_vals = np.amin(abnormalData_s[:,i,:d_idx], axis=1)
