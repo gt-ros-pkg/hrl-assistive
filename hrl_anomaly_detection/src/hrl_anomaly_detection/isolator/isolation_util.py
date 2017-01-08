@@ -621,14 +621,14 @@ def get_hmm_isolation_data(idx, kFold_list, failureData_ad, failureData_static, 
                                                        abnormalTrainData_img,\
                                                        task_name, processed_data_path, param_dict, \
                                                        plot=False, window=True, window_step=window_steps,\
-                                                       dynamic_flag=dynamic_flag)
+                                                       dynamic_flag=dynamic_flag, delta_flag=True)
                                      
     x_test, y_test, x_test_img = feature_extraction(idx, detection_test_idx_list, \
                                                     abnormalTestData_ad, \
                                                     abnormalTestData_s, abnormalTestData_d, abnormalTestLabel,\
                                                     abnormalTestData_img,\
                                                     task_name, processed_data_path, param_dict, \
-                                                    dynamic_flag=dynamic_flag)
+                                                    dynamic_flag=dynamic_flag, delta_flag=True)
 
     return idx, [x_train, x_train_img], y_train, [x_test, x_test_img], y_test
 
