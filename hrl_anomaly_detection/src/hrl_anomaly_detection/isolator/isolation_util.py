@@ -680,25 +680,31 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, abno
                 for j in range(-window_step, window_step):
                     if d_idx+j <= 4: continue
                     if d_idx+j > len(abnormalData[0,i]): continue
-                    cp_vecs = ml.conditional_prob( abnormalData[:,i,:d_idx+j]*\
-                                                   param_dict['HMM']['scale'])
-                    if cp_vecs is None: continue
-                    
-                    if dynamic_flag:
-                        cp_vecs_d = ml_d.conditional_prob( abnormalData_d[:,i,:d_idx+j]*\
-                                                         param_dict['HMM']['df_scale'])
-                        if cp_vecs_d is None: continue
-                        cp_vecs = np.concatenate((cp_vecs, cp_vecs_d[param_dict['data_param']['df_idx']]))
-                                                   
-                    if delta_flag:
-                        if cp_vecs_last is None:
-                            cp_vecs_last = cp_vecs
-                            continue
-                        else:
-                            temp = cp_vecs - cp_vecs_last
-                            cp_vecs_last = cp_vecs
-                            cp_vecs = temp
 
+                    vs = temporal_features(abnormalData[:,i], d_idx+j, max_step, ml,
+                                           param_dict['HMM']['scale'])
+                    if dynamic_flag:
+                        vs_d = temporal_features(abnormalData_d[:,i], d_idx+j, max_step, ml_d, \
+                                               param_dict['HMM']['df_scale'])
+
+                    if dynamic_flag is False and delta_flag is False:
+                        cp_vecs = vs[0]
+                    elif dynamic_flag is True and delta_flag is False:
+                        cp_vecs = np.concatenate((vs[0], vs_d[0][param_dict['data_param']['df_idx'] ]))
+                    elif delta_flag is True:
+                        if dynamic_flag:
+                            v = np.hstack([vs, vs_d])
+                        else:
+                            v = vs
+                        #1
+                        cp_vecs = np.amin(v[:1], axis=0)
+                        #4
+                        cp_vecs = np.vtack([ cp_vecs, np.amin(v[:4], axis=0) ])
+                        #8
+                        cp_vecs = np.vtack([ cp_vecs, np.amin(v[:8], axis=0) ])
+                        cp_vecs = np.flatten(cp_vecs)
+
+                    
                     max_vals = np.amax(abnormalData_s[:,i,:d_idx+j], axis=1)
                     min_vals = np.amin(abnormalData_s[:,i,:d_idx+j], axis=1)
                     vals = [mx if abs(mx) > abs(mi) else mi for (mx, mi) in zip(max_vals, min_vals) ]
@@ -760,53 +766,53 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, abno
                 else:
                     x_img.append( None )
 
-        else:
-            cp_vecs = None
-            for j in xrange(len(abnormalData[0,i,:])):
-                if j<4: continue
-                cp_vec = ml.conditional_prob2( abnormalData[:,i,:j]*\
-                                               param_dict['HMM']['scale'] )
-                if cp_vecs is None: cp_vecs = cp_vec
-                else: cp_vecs = np.vstack([ cp_vecs, cp_vec])
+        ## else:
+        ##     cp_vecs = None
+        ##     for j in xrange(len(abnormalData[0,i,:])):
+        ##         if j<4: continue
+        ##         cp_vec = ml.conditional_prob2( abnormalData[:,i,:j]*\
+        ##                                        param_dict['HMM']['scale'] )
+        ##         if cp_vecs is None: cp_vecs = cp_vec
+        ##         else: cp_vecs = np.vstack([ cp_vecs, cp_vec])
 
 
-            nPlot = len(cp_vecs[0])
-            print "label: ", abnormalLabel[i], np.shape(cp_vecs)
+        ##     nPlot = len(cp_vecs[0])
+        ##     print "label: ", abnormalLabel[i], np.shape(cp_vecs)
             
-            import matplotlib.pyplot as plt
-            fig = plt.figure()
+        ##     import matplotlib.pyplot as plt
+        ##     fig = plt.figure()
 
-            for j in xrange(nPlot):
-                ax = fig.add_subplot(nPlot*100+10+j)
-                ax.plot(cp_vecs[:,j], 'r-')
+        ##     for j in xrange(nPlot):
+        ##         ax = fig.add_subplot(nPlot*100+10+j)
+        ##         ax.plot(cp_vecs[:,j], 'r-')
 
-            ## # ----------------------------------------------------
-            ## ref_logps = np.array(ll_classifier_train_X)[:,:,0]
-            ## ref_logps = np.swapaxes(ref_logps,0,1)
-            ## for j in xrange(len(ll_classifier_train_Y[0])):
-            ##     if ll_classifier_train_Y[0][j] > 0:
-            ##         print "--------------------------------------"
-            ##         print j, ' / ', len(ll_classifier_train_Y[0])
-            ##         print "--------------------------------------"
-            ##         break
+        ##     ## # ----------------------------------------------------
+        ##     ## ref_logps = np.array(ll_classifier_train_X)[:,:,0]
+        ##     ## ref_logps = np.swapaxes(ref_logps,0,1)
+        ##     ## for j in xrange(len(ll_classifier_train_Y[0])):
+        ##     ##     if ll_classifier_train_Y[0][j] > 0:
+        ##     ##         print "--------------------------------------"
+        ##     ##         print j, ' / ', len(ll_classifier_train_Y[0])
+        ##     ##         print "--------------------------------------"
+        ##     ##         break
                 
-            ## ref_logps_normal   = ref_logps[:j]
-            ## ref_logps_abnormal = ref_logps[j:]
-            ## # ----------------------------------------------------
+        ##     ## ref_logps_normal   = ref_logps[:j]
+        ##     ## ref_logps_abnormal = ref_logps[j:]
+        ##     ## # ----------------------------------------------------
 
-            ## #temp
-            ## ax = fig.add_subplot( nPlot*100+10+nPlot )
-            ## ## ref_logps = np.array(ll_classifier_train_X)[:,i,0]
-            ## ## ax = fig.add_subplot(111)
-            ## ax.plot(ref_logps_normal, 'b-')
-            ## ax.plot(cp_vecs[:,-1], 'r-')
-            ax.plot([d_idx,d_idx], [np.amin(cp_vecs[:,-1]), np.amax(cp_vecs[:,-1])], 'k-')
+        ##     ## #temp
+        ##     ## ax = fig.add_subplot( nPlot*100+10+nPlot )
+        ##     ## ## ref_logps = np.array(ll_classifier_train_X)[:,i,0]
+        ##     ## ## ax = fig.add_subplot(111)
+        ##     ## ax.plot(ref_logps_normal, 'b-')
+        ##     ## ax.plot(cp_vecs[:,-1], 'r-')
+        ##     ax.plot([d_idx,d_idx], [np.amin(cp_vecs[:,-1]), np.amax(cp_vecs[:,-1])], 'k-')
                 
-            plt.show()
+        ##     plt.show()
             
-            # slice data
-            x.append( cp_vecs )
-            y.append( abnormalLabel[i] )
+        ##     # slice data
+        ##     x.append( cp_vecs )
+        ##     y.append( abnormalLabel[i] )
         
     return x, y, x_img
 
@@ -825,8 +831,6 @@ def temporal_features(X, d_idx, max_step, ml, scale):
         v = v.reshape((1,) + v.shape)
         if vs is None: vs = v
         else:          vs = np.vstack([vs, v])
-    print np.shape(vs)
-    
     return vs
     
 
