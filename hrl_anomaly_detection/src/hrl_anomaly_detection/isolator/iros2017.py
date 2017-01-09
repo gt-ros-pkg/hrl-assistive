@@ -295,7 +295,7 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
         d = dm.getDataLOPO(subject_names, task_name, raw_data_path, \
                            processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
                            downSampleSize=data_dict['downSampleSize'],\
-                           handFeatures=param_dict['data_param']['isolationFeatures'], \
+                           handFeatures=data_dict['isolationFeatures'], \
                            cut_data=data_dict['cut_data'], \
                            data_renew=data_renew, max_time=data_dict['max_time'])
 
@@ -392,9 +392,9 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
     if os.path.isfile(crossVal_pkl) and data_renew is False and data_gen is False:
         print "CV data exists and no renew"
         d = ut.load_pickle(crossVal_pkl)
-        kFold_list = d['kFoldList'] 
-        success_isol_data = d['successIsolData']
-        failure_isol_data = d['failureIsolData']        
+        kFold_list    = d['kFoldList'] 
+        successData   = d['successData']
+        failureData   = d['failureData']        
         success_files = d['success_files']
         failure_files = d['failure_files']
     else:
@@ -412,28 +412,30 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
           = dm.LOPO_data_index(d['successDataList'], d['failureDataList'],\
                                d['successFileList'], d['failureFileList'])
 
-        d['successIsolData'] = success_isol_data
-        d['failureIsolData'] = failure_isol_data
-        d['success_files']   = success_files
-        d['failure_files']   = failure_files
-        d['kFoldList']       = kFold_list
+        d['successData']   = successData
+        d['failureData']   = failureData
+        d['success_files'] = success_files
+        d['failure_files'] = failure_files
+        d['kFoldList']     = kFold_list
         ut.save_pickle(d, crossVal_pkl)
         if data_gen: sys.exit()
 
     #-----------------------------------------------------------------------------------------
     # feature selection
-    print d['param_dict']['feature_names']
-    
+    print d['param_dict']['feature_names']    
     feature_idx_list = []
     for i in xrange(2):
         print param_dict['data_param']['handFeatures'][i]
         
         feature_idx_list.append([])
         for feature in param_dict['data_param']['handFeatures'][i]:
-            feature_idx_list[i].append(d['param_dict']['feature_names'].index(feature))
+            feature_idx_list[i].append(d['param_dict']['isolationFeatures'].index(feature))
+
+        print feature_idx_list
+        sys.exit()
         
-        successData = copy.copy(success_isol_data[feature_idx_list[i]])
-        failureData = copy.copy(failure_isol_data[feature_idx_list[i]])
+        success_data_ad = copy.copy(successData[feature_idx_list[i]])
+        failure_data_ad = copy.copy(failureData[feature_idx_list[i]])
         HMM_dict_local = copy.deepcopy(HMM_dict)
         HMM_dict_local['scale'] = param_dict['HMM']['scale'][i]
 
@@ -970,35 +972,6 @@ if __name__ == '__main__':
                        find_param=False, data_gen=opt.bDataGen)
                        ## find_param=False, data_gen=opt.bDataGen, target_class=target_class)
 
-    elif opt.evaluation_double:
-
-
-        # TODO: change feature name
-        param_dict['ROC']['methods'] = ['hmmgp', 'hmmgp']
-        param_dict['HMM']['scale'] = [6.111, 6.111]
-        param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.6, 2.3, nPoints)*-1.0
-        param_dict['SVM']['hmmgp_logp_offset'] = 70.0 #50.0
-        param_dict['SVM']['nugget'] = 10.0
-
-        # -------------------------------------------------------------------------------------
-        # 80%
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)        
-        param_dict['data_param']['handFeatures'] = [['audioWristRMS', 'ftForce_z', \
-                                                      'landmarkEEDist', 'kinJntEff_1'],
-                                                      ['ftForce_mag_integ', 'landmarkEEDist']  ]
-        param_dict['SVM']['hmmgp_logp_offset'] = 30.0 #50.0
-        param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.9, 2.0, nPoints)*-1.0+1.0
-        # -------------------------------------------------------------------------------------
-                                                             
-        
-        if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
-        evaluation_double_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
-                             save_pdf=opt.bSavePdf, \
-                             verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
-                             find_param=False, data_gen=opt.bDataGen)
-
     elif opt.evaluation_omp_isolation:
 
         # c11 offset 0 weight -8 spar 0.05, dict 8, win_size 130 #74%
@@ -1085,6 +1058,39 @@ if __name__ == '__main__':
                              find_param=False, data_gen=opt.bDataGen)
                              ## find_param=False, data_gen=opt.bDataGen, target_class=target_class)
 
+
+    elif opt.evaluation_double:
+
+        # TODO: change feature name
+        param_dict['ROC']['methods'] = ['hmmgp', 'hmmgp']
+        param_dict['HMM']['scale']   = [6.111, 6.111]
+        param_dict['SVM']['nugget']  = 10.0
+
+        # -------------------------------------------------------------------------------------
+        # 80%
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)        
+        param_dict['data_param']['handFeatures'] = [['unimodal_audioWristRMS',  \
+                                                    'unimodal_kinJntEff_1',\
+                                                    'unimodal_ftForce_integ',\
+                                                    'unimodal_kinEEChange', \
+                                                    'crossmodal_landmarkEEDist'],
+                                                    ['unimodal_ftForce_zero',\
+                                                     'unimodal_ftForceZ',\
+                                                     'unimodal_kinDesEEChange', \
+                                                     'crossmodal_landmarkEEDist', \
+                                                    ]]
+        param_dict['SVM']['hmmgp_logp_offset'] = 0 #30.0 #50.0
+        param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.9, 2.0, nPoints)*-1.0+1.0
+        # -------------------------------------------------------------------------------------
+                                                             
+        
+        if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
+        evaluation_double_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
+                             save_pdf=opt.bSavePdf, \
+                             verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
+                             find_param=False, data_gen=opt.bDataGen)
 
 
     elif opt.evaluation_isolation:
