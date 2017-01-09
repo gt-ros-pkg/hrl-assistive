@@ -1008,11 +1008,11 @@ if __name__ == '__main__':
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
         #  #86
-        ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
-        ##                                             'unimodal_kinJntEff_1',\
-        ##                                             'unimodal_ftForce_integ',\
-        ##                                             'unimodal_kinEEChange',\
-        ##                                             ]
+        param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
+                                                    'unimodal_kinJntEff_1',\
+                                                    'unimodal_ftForce_integ',\
+                                                    'unimodal_kinEEChange',\
+                                                    ]
 
         # 84.6
         ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
@@ -1034,12 +1034,12 @@ if __name__ == '__main__':
         ##                                             ]
         
         # 81 = 7.0
-        param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
-                                                    'unimodal_kinJntEff_1',\
-                                                    'unimodal_ftForce_integ',\
-                                                    'unimodal_kinEEChange', \
-                                                    'crossmodal_landmarkEEDist', \
-                                                    ]
+        ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
+        ##                                             'unimodal_kinJntEff_1',\
+        ##                                             'unimodal_ftForce_integ',\
+        ##                                             'unimodal_kinEEChange', \
+        ##                                             'crossmodal_landmarkEEDist', \
+        ##                                             ]
         param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.4, 2.7, nPoints)*-1.0 
 
 
