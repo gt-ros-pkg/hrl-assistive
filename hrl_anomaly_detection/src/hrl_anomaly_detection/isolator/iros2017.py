@@ -341,12 +341,6 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
     else: ROC_data = ut.load_pickle(roc_pkl)
     ROC_data = util.reset_roc_data(ROC_data, method_list, ROC_dict['update_list'], nPoints)
 
-    osvm_data = None ; bpsvm_data = None
-    if 'osvm' in method_list  and ROC_data['osvm']['complete'] is False:
-        osvm_data = dm.getPCAData(len(kFold_list), crossVal_pkl, \
-                                  window=SVM_dict['raw_window_size'],
-                                  use_test=True, use_pca=False )
-
     # parallelization
     if debug: n_jobs=1
     else: n_jobs=-1
@@ -355,11 +349,9 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
                                                                          method, ROC_data, \
                                                                          ROC_dict, \
                                                                          SVM_dict, HMM_dict, \
-                                                                         raw_data=(osvm_data,bpsvm_data),\
                                                                          startIdx=startIdx, nState=nState) \
                                                                          for idx in xrange(len(kFold_list)) \
                                                                          for method in method_list )
-
 
     print "finished to run run_classifiers"
     ROC_data = util.update_roc_data(ROC_data, l_data, nPoints, method_list)
@@ -892,12 +884,12 @@ if __name__ == '__main__':
         success_viz = True
         failure_viz = True
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation4/'+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         param_dict['data_param']['handFeatures'] = [## 'unimodal_audioWristRMS', \
                                                     ## 'unimodal_audioWristFrontRMS', \
                                                     ## 'unimodal_audioWristAzimuth',\
-                                                    ## 'unimodal_kinJntEff', \
+                                                    'unimodal_kinJntEff', \
                                                     ## 'unimodal_ftForce_integ', \
                                                     ## 'unimodal_ftForce_delta', \
                                                     ## 'unimodal_ftForce_zero', \
@@ -907,10 +899,12 @@ if __name__ == '__main__':
                                                     ## 'unimodal_ftForceZ', \
                                                     'unimodal_kinEEChange', \
                                                     'unimodal_kinDesEEChange', \
-                                                    'crossmodal_landmarkEEDist', \
-                                                    'crossmodal_landmarkEEAng',\
+                                                    ## 'crossmodal_landmarkEEDist', \
+                                                    ## 'crossmodal_landmarkEEAng',\
                                                     ## 'unimodal_fabricForce',\
                                                     'unimodal_landmarkDist']
+        target_class = [13]
+
                                                     
         dm.getDataLOPO(subjects, opt.task, raw_data_path, save_data_path,
                        param_dict['data_param']['rf_center'], param_dict['data_param']['local_range'],\
@@ -919,8 +913,8 @@ if __name__ == '__main__':
                        cut_data=param_dict['data_param']['cut_data'],\
                        save_pdf=opt.bSavePdf, solid_color=True,\
                        handFeatures=param_dict['data_param']['handFeatures'], data_renew=opt.bDataRenew, \
-                       max_time=param_dict['data_param']['max_time'])
-                       ## max_time=param_dict['data_param']['max_time'], target_class=target_class)
+                       ## max_time=param_dict['data_param']['max_time'])
+                       max_time=param_dict['data_param']['max_time'], target_class=target_class)
 
     elif opt.bLikelihoodPlot:
         save_data_path = os.path.expanduser('~')+\
@@ -1045,11 +1039,11 @@ if __name__ == '__main__':
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
         #  #86
-        param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
-                                                    'unimodal_kinJntEff_1',\
-                                                    'unimodal_ftForce_integ',\
-                                                    'unimodal_kinEEChange',\
-                                                    ]
+        ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
+        ##                                             'unimodal_kinJntEff_1',\
+        ##                                             'unimodal_ftForce_integ',\
+        ##                                             'unimodal_kinEEChange',\
+        ##                                             ]
 
         # 84.6
         ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \

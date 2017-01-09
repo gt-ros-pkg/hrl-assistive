@@ -420,7 +420,6 @@ def evaluation_modality(subject_names, task_name, raw_data_path, processed_data_
 
         if detection_rate: detection_info(method_list, ROC_data, nPoints, kFold_list,zero_fp_flag=True)
         
-
     # ---------------- ROC Visualization ----------------------
     if detection_rate: sys.exit()
     for modality in modality_list:
