@@ -1446,6 +1446,8 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
             time_step = 1.0
 
         for i in xrange(nPoints):
+            print np.shape(tp_ll), np.shape(fn_ll), nPoints, i
+            
             tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
             fnr_l.append( 100.0 - tpr_l[-1] )
             if only_tpr is False:
