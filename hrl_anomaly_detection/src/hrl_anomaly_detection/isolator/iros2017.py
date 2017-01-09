@@ -425,17 +425,11 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
     print d['param_dict']['feature_names']    
     feature_idx_list = []
     for i in xrange(2):
-        print param_dict['data_param']['handFeatures'][i]
         
         feature_idx_list.append([])
         for feature in param_dict['data_param']['handFeatures'][i]:
             feature_idx_list[i].append(data_dict['isolationFeatures'].index(feature))
 
-        print feature_idx_list
-        print np.array(data_dict['isolationFeatures'])[feature_idx_list[0]]
-        print np.array(data_dict['isolationFeatures'])[feature_idx_list[1]]
-        sys.exit()
-        
         success_data_ad = copy.copy(successData[feature_idx_list[i]])
         failure_data_ad = copy.copy(failureData[feature_idx_list[i]])
         HMM_dict_local = copy.deepcopy(HMM_dict)
