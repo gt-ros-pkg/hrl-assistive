@@ -1033,7 +1033,7 @@ if __name__ == '__main__':
         ##                                             'unimodal_landmarkDist',\
         ##                                             ]
         
-        # 81 = 7.5
+        # 81 = 8.5
         param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
                                                     'unimodal_kinJntEff_1',\
                                                     'unimodal_ftForce_integ',\
