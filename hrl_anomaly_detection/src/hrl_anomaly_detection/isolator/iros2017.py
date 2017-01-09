@@ -1045,7 +1045,7 @@ if __name__ == '__main__':
 
         param_dict['ROC']['methods'] = ['hmmgp']
         nPoints = param_dict['ROC']['nPoints']
-        param_dict['HMM']['scale'] = 5.5
+        param_dict['HMM']['scale'] = 7.0
         
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         evaluation_single_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
