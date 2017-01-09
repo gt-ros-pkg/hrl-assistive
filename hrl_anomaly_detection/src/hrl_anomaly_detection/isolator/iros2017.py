@@ -429,7 +429,7 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
         
         feature_idx_list.append([])
         for feature in param_dict['data_param']['handFeatures'][i]:
-            feature_idx_list[i].append(d['param_dict']['isolationFeatures'].index(feature))
+            feature_idx_list[i].append(data_dict['isolationFeatures'].index(feature))
 
         print feature_idx_list
         sys.exit()
