@@ -432,6 +432,8 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
             feature_idx_list[i].append(data_dict['isolationFeatures'].index(feature))
 
         print feature_idx_list
+        print np.array(data_dict['isolationFeatures'])[feature_idx_list[0]]
+        print np.array(data_dict['isolationFeatures'])[feature_idx_list[1]]
         sys.exit()
         
         success_data_ad = copy.copy(successData[feature_idx_list[i]])
