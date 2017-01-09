@@ -700,7 +700,6 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, abno
                             v = np.hstack([vs, vs_d])
                         else:
                             v = vs
-
                         #1
                         cp_vecs = np.amin(v[:1], axis=0)
                         #4

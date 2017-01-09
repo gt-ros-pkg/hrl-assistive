@@ -135,7 +135,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     # Training HMM, and getting classifier training and testing data
     dm.saveHMMinducedFeatures(kFold_list, successData, failureData,\
                               task_name, processed_data_path,\
-                              HMM_dict, data_renew, startIdx, nState, cov, scale, \
+                              HMM_dict, data_renew, startIdx, nState, cov, \
                               noise_mag=0.03, diag=diag, \
                               verbose=verbose)
 
@@ -250,7 +250,7 @@ def evaluation_unexp(subject_names, task_name, raw_data_path, processed_data_pat
     # HMM-induced vector with LOPO
     dm.saveHMMinducedFeatures(kFold_list, successData, failureData,\
                               task_name, processed_data_path,\
-                              HMM_dict, data_renew, startIdx, nState, cov, scale, \
+                              HMM_dict, data_renew, startIdx, nState, cov, \
                               success_files=success_files, failure_files=failure_files,\
                               verbose=verbose)
                               
@@ -383,7 +383,7 @@ def evaluation_modality(subject_names, task_name, raw_data_path, processed_data_
         # Training HMM, and getting classifier training and testing data
         dm.saveHMMinducedFeatures(kFold_list, successData, failureData,\
                                   task_name, processed_data_path,\
-                                  HMM_dict, data_renew, startIdx, nState, cov, scale, \
+                                  HMM_dict, data_renew, startIdx, nState, cov, \
                                   success_files=success_files, failure_files=failure_files,\
                                   noise_mag=0.03, verbose=verbose)
 
