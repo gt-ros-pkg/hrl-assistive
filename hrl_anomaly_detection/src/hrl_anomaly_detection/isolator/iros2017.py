@@ -408,7 +408,7 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
                            cut_data=data_dict['cut_data'], \
                            data_renew=data_renew, max_time=data_dict['max_time'])
                            
-        success_isol_data, failure_isol_data, success_files, failure_files, kFold_list \
+        successData, failureData, success_files, failure_files, kFold_list \
           = dm.LOPO_data_index(d['successDataList'], d['failureDataList'],\
                                d['successFileList'], d['failureFileList'])
 
