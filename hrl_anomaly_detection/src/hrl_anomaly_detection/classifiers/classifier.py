@@ -1150,7 +1150,6 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
     if ROC_data[method]['complete'] == True: return data
     #-----------------------------------------------------------------------------------------
 
-    ## print idx, " : training classifier and evaluate testing data"
     # train a classifier and evaluate it using test data.
     from sklearn import preprocessing
 
@@ -1158,9 +1157,6 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
         if method == 'osvm': raw_data_idx = 0
         elif method == 'bpsvm': raw_data_idx = 1
 
-        ## if modeling_pkl_prefix is not None and delay_estimation is False:
-        ##     idx = int(modeling_pkl_prefix.split('_')[-1])
-            
         X_train_org   = raw_data[raw_data_idx][idx]['X_scaled']
         Y_train_org   = raw_data[raw_data_idx][idx]['Y_train_org']
         idx_train_org = raw_data[raw_data_idx][idx]['idx_train_org']
@@ -1216,84 +1212,11 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             ll_classifier_test_Y    = ll_classifier_ep_test_Y
             ll_classifier_test_idx  = ll_classifier_ep_test_idx
 
-
         if method == 'hmmosvm' or method == 'progress_osvm' or method == 'hmmgp':            
             normal_idx = [x for x in range(len(ll_classifier_train_X)) if ll_classifier_train_Y[x][0]<0 ]
             ll_classifier_train_X = np.array(ll_classifier_train_X)[normal_idx]
             ll_classifier_train_Y = np.array(ll_classifier_train_Y)[normal_idx]
             ll_classifier_train_idx = np.array(ll_classifier_train_idx)[normal_idx]
-        elif method == 'hmmsvm_dL':
-            # replace dL/(ds+e) to dL
-            for i in xrange(len(ll_classifier_train_X)):
-                for j in xrange(len(ll_classifier_train_X[i])):
-                    if j == 0:
-                        ll_classifier_train_X[i][j][1] = 0.0
-                    else:
-                        ll_classifier_train_X[i][j][1] = ll_classifier_train_X[i][j][0] - \
-                          ll_classifier_train_X[i][j-1][0]
-
-            for i in xrange(len(ll_classifier_test_X)):
-                for j in xrange(len(ll_classifier_test_X[i])):
-                    if j == 0:
-                        ll_classifier_test_X[i][j][1] = 0.0
-                    else:
-                        ll_classifier_test_X[i][j][1] = ll_classifier_test_X[i][j][0] - \
-                          ll_classifier_test_X[i][j-1][0]
-        elif method == 'hmmsvm_LSLS':
-            # reconstruct data into LS(t-1)+LS(t)
-            if type(ll_classifier_train_X) is list:
-                ll_classifier_train_X = np.array(ll_classifier_train_X)
-
-            x = np.dstack([ll_classifier_train_X[:,:,:1], ll_classifier_train_X[:,:,2:]] )
-            x = x.tolist()
-
-            new_x = []
-            for i in xrange(len(x)):
-                new_x.append([])
-                for j in xrange(len(x[i])):
-                    if j == 0:
-                        new_x[i].append( x[i][j]+x[i][j] )
-                    else:
-                        new_x[i].append( x[i][j-1]+x[i][j] )
-
-            ll_classifier_train_X = new_x
-
-            # test data
-            if len(np.shape(ll_classifier_test_X))<3:
-                x = []
-                for sample in ll_classifier_test_X:
-                    x.append( np.hstack( [np.array(sample)[:,:1], np.array(sample)[:,2:]] ).tolist() )
-            else:
-                if type(ll_classifier_test_X) is list:
-                    ll_classifier_test_X = np.array(ll_classifier_test_X)
-
-                x = np.dstack([ll_classifier_test_X[:,:,:1], ll_classifier_test_X[:,:,2:]] )
-                x = x.tolist()
-
-            new_x = []
-            for i in xrange(len(x)):
-                new_x.append([])
-                for j in xrange(len(x[i])):
-                    if j == 0:
-                        new_x[i].append( x[i][j]+x[i][j] )
-                    else:
-                        new_x[i].append( x[i][j-1]+x[i][j] )
-
-            ll_classifier_test_X = new_x
-        elif (method == 'hmmsvm_no_dL' or add_logp_d is False) and \
-          len(ll_classifier_train_X[0][0]) > 1+nState:
-            # remove dL related things
-            ll_classifier_train_X = np.array(ll_classifier_train_X)
-            ll_classifier_train_X = np.delete(ll_classifier_train_X, 1, 2).tolist()
-
-            if len(np.shape(ll_classifier_test_X))<3:
-                x = []
-                for sample in ll_classifier_test_X:
-                    x.append( np.hstack( [np.array(sample)[:,:1], np.array(sample)[:,2:]] ).tolist() )
-                ll_classifier_test_X = x
-            else:
-                ll_classifier_test_X = np.array(ll_classifier_test_X)
-                ll_classifier_test_X = np.delete(ll_classifier_test_X, 1, 2).tolist()
 
         if method == 'hmmgp':
             ## nSubSample = 50 #temp!!!!!!!!!!!!!
@@ -1578,13 +1501,11 @@ def run_classifiers_boost(idx, processed_data_path, task_name, method_list,\
                                                                       ll_classifier_train_Y, \
                                                                       ll_classifier_train_idx,\
                                                                       remove_fp=False)
-
         X_train.append(X_train_flat)
         Y_train.append(Y_train_flat)
         Idx_train.append(idx_train_flat)
     
-        # Generate parameter list for ROC curve
-        # pass method if there is existing result
+        # Generate parameter list for ROC curve pass method if there is existing result
         # data preparation
         X_test_flat = []
         Y_test_flat = [] 
