@@ -2930,13 +2930,6 @@ def saveHMMinducedFeatures(kFold_list, successData, failureData,\
         successData = np.array(successData)
         failureData = np.array(failureData)
 
-    print np.shape(successData)
-    sys.exit()
-
-        
-
-
-
     # HMM-induced vector with LOPO
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(kFold_list):
