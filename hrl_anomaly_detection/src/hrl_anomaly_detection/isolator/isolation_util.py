@@ -728,7 +728,9 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failureData_static, \
     abnormalTrainData_2 = copy.copy(failureData[1][:, abnormalTrainIdx, :])
     abnormalTestData_2  = copy.copy(failureData[1][:, abnormalTestIdx, :])
 
-    if len(np.shape(failureData)) == 4:
+    print np.shape(failureData)
+    
+    if len(np.shape(failureData)) == 4 and len(failureData) == 2:
         # multiple detector
         input_list = [abnormalTrainData_1, abnormalTrainData_2]
     else:
