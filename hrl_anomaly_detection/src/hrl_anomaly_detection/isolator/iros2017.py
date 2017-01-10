@@ -1012,7 +1012,7 @@ if __name__ == '__main__':
 
         param_dict['data_param']['handFeatures'] = [
             ## 'unimodal_ftForce_zero',\
-                                                    'unimodal_ftForceZ',\
+                                                    ## 'unimodal_ftForceZ',\
                                                     'unimodal_kinDesEEChange',\
                                                     'crossmodal_landmarkEEDist', \
                                                     ]
