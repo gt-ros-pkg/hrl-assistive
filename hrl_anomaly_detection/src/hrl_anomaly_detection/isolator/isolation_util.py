@@ -506,6 +506,7 @@ def anomaly_detection(X, Y, task_name, processed_data_path, param_dict, logp_viz
     nMaxData   = 20 # The maximun number of executions to train GP
     nSubSample = 50 # The number of sub-samples from each execution to train GP
     nDetector  = len(X)
+    print np.shape(X)
 
     l_test_X = []
     l_test_Y = []
@@ -522,6 +523,8 @@ def anomaly_detection(X, Y, task_name, processed_data_path, param_dict, logp_viz
         else:
             modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
             scale = HMM_dict['scale']
+
+        print scale
 
         if verbose: print "start to load hmm data, ", modeling_pkl
         d            = ut.load_pickle(modeling_pkl)
