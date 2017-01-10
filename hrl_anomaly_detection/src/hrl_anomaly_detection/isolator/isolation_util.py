@@ -495,7 +495,7 @@ def anomaly_detection(X, Y, task_name, processed_data_path, param_dict, logp_viz
 
 def anomaly_detection2(X, Y, task_name, processed_data_path, param_dict, logp_viz=False, verbose=False,
                        weight=0.0, idx=0, n_jobs=-1):
-    ''' Anomaly detector that return anomalous point on each data.
+    ''' Anomaly detector that return anomalous point on each data using two HMMs.
     '''
     HMM_dict = param_dict['HMM']
     SVM_dict = param_dict['SVM']
@@ -506,11 +506,17 @@ def anomaly_detection2(X, Y, task_name, processed_data_path, param_dict, logp_vi
     ## weights = ROC_dict[method+'_param_range']
     nMaxData   = 20 # The maximun number of executions to train GP
     nSubSample = 50 # The number of sub-samples from each execution to train GP
+    nDetector  = len(X)
 
-    for i in xrange(len(X)):
+    l_test_X = []
+    l_test_Y = []
+    l_test_idx = []
+    dtc_list = []
+    
+    for ii in xrange(nDetector):
 
         # Load a generative model
-        modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'_c'+str(i)+'.pkl')
+        modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'_c'+str(ii)+'.pkl')
 
         if verbose: print "start to load hmm data, ", modeling_pkl
         d            = ut.load_pickle(modeling_pkl)
@@ -550,11 +556,21 @@ def anomaly_detection2(X, Y, task_name, processed_data_path, param_dict, logp_vi
                 print "Too many input data for GP"
                 sys.exit()
 
+        #
         X_train, Y_train, idx_train = dm.flattenSample(ll_classifier_train_X, \
                                                        ll_classifier_train_Y, \
                                                        ll_classifier_train_idx,\
                                                        remove_fp=False)
         if verbose: print method, " : Before classification : ", np.shape(X_train), np.shape(Y_train)
+        del ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx
+
+        # Create anomaly classifier
+        dtc = cf.classifier( method=method, nPosteriors=nState, nLength=nLength, parallel=True )
+        dtc.set_params( class_weight=weight[ii] )
+        dtc.set_params( ths_mult = weight[ii] )    
+        ret = dtc.fit(X_train, Y_train, idx_train)
+        dtc_list.append(dtc)
+
 
         # 2) Convert test data
         startIdx   = 4
@@ -568,24 +584,9 @@ def anomaly_detection2(X, Y, task_name, processed_data_path, param_dict, logp_vi
             dv.vizLikelihood(ll_logp_neg, ll_logp_pos)
             sys.exit()
 
-
-        X_trains.append(X_train)
-        Y_trains.append(Y_train)
-        idx_trains.append(idx_train)
-
-        
-
-    # Create anomaly classifier
-    dtc1 = cf.classifier( method=method, nPosteriors=nState, nLength=nLength, parallel=True )
-    dtc1.set_params( class_weight=weight[0] )
-    dtc1.set_params( ths_mult = weight[0] )    
-    ret1 = dtc.fit(X_trains[0], Y_trainx[0], idx_trainx[0])
-
-    dtc2 = cf.classifier( method=method, nPosteriors=nState, nLength=nLength, parallel=True )
-    dtc2.set_params( class_weight=weight[1] )
-    dtc2.set_params( ths_mult = weight[1] )    
-    ret2 = dtc.fit(X_trains[1], Y_trainx[1], idx_trainx[1])
-
+        l_test_X.append(ll_classifier_test_X)
+        l_test_Y.append(ll_classifier_test_Y)
+        l_test_idx.append(ll_classifier_test_idx)
 
     
 
@@ -594,11 +595,11 @@ def anomaly_detection2(X, Y, task_name, processed_data_path, param_dict, logp_vi
     for ii in xrange(len(ll_classifier_test_X)):
         if len(ll_classifier_test_Y[ii])==0: continue
 
-        y_pred1 = dtc1.predict(ll_classifier_test_X1[ii], y=ll_classifier_test_Y1[ii])
-        y_pred2 = dtc2.predict(ll_classifier_test_X2[ii], y=ll_classifier_test_Y2[ii])
+        y_pred1 = dtc_list[0].predict(l_test_X[0][ii], y=l_test_Y[0][ii])
+        y_pred2 = dtc_list[1].predict(l_test_X[1][ii], y=l_test_Y[1][ii])
 
         for jj in xrange(len(y_pred)):
-            if y_pred[jj] > 0.0:                
+            if y_pred1[jj] > 0.0 or y_pred2[jj]:                
                 if ll_classifier_test_Y[ii][0] > 0:
                     detection_idx[ii] = ll_classifier_test_idx[ii][jj]
                     ## if ll_classifier_test_idx[ii][jj] ==4:
@@ -711,19 +712,19 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failureData_static, \
         # nDetector x dim x sample x length
         abnormalTrainData_1 = copy.copy(failureData[0][:, abnormalTrainIdx, :])
         abnormalTestData_1  = copy.copy(failureData[0][:, abnormalTestIdx, :])
-        abnormalTrainData_2  = copy.copy(failureData[1][:, abnormalTrainIdx, :])
-        abnormalTestData_2   = copy.copy(failureData[1][:, abnormalTestIdx, :])
+        abnormalTrainData_2 = copy.copy(failureData[1][:, abnormalTrainIdx, :])
+        abnormalTestData_2  = copy.copy(failureData[1][:, abnormalTestIdx, :])
 
         #-----------------------------------------------------------------------------------------
         # Anomaly Detection
         #-----------------------------------------------------------------------------------------
-        detection_train_idx_list = anomaly_detection([abnormalTrainData_1, abnormalTrainData_2], \
+        detection_train_idx_list = anomaly_detection2([abnormalTrainData_1, abnormalTrainData_2], \
                                                      [1]*len(abnormalTrainData_1[0]), \
                                                      task_name, processed_data_path, param_dict,\
                                                      logp_viz=False, verbose=False, \
                                                      weight=weight,\
                                                      idx=idx, n_jobs=n_jobs)
-        detection_test_idx_list = anomaly_detection([abnormalTestData_1, abnormalTestData_2] \
+        detection_test_idx_list = anomaly_detection2([abnormalTestData_1, abnormalTestData_2] \
                                                     [1]*len(abnormalTestData_1[0]), \
                                                     task_name, processed_data_path, param_dict,\
                                                     logp_viz=False, verbose=False, \
