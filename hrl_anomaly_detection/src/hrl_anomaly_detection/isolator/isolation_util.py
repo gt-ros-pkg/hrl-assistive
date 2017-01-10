@@ -815,6 +815,7 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, \
             for j in range(-window_step, window_step):
                 if d_idx+j <= 4: continue
                 if d_idx+j > len(abnormalData[0][0,i]): continue
+                print d_idx+j, j, len(abnormalData[0][0,i])
 
                 vs = None # step x feature
                 for ii in xrange(nDetector):
