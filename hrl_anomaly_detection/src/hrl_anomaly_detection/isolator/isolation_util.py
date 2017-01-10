@@ -866,9 +866,11 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, \
             for ii in xrange(nDetector):
                 v = temporal_features(abnormalData[ii][:,i], d_idx, max_step, ml,
                                       scale_list[ii])
-                print ii, np.shape(v), np.shape(abnormalData[ii][:,i]), np.shape(abnormalData[ii])
+                print ii, np.shape(v), np.shape(abnormalData[ii][:,i])
                 if vs is None: vs = v
                 else: vs = np.hstack([vs, v])
+
+            print np.shape(vs)
             sys.exit()
 
             ## if delta_flag:
