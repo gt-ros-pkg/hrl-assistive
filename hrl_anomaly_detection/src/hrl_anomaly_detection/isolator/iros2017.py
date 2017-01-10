@@ -1012,11 +1012,11 @@ if __name__ == '__main__':
 
         param_dict['data_param']['handFeatures'] = [
             ## 'unimodal_ftForce_zero',\
-                                                    ## 'unimodal_ftForceZ',\
+                                                    'unimodal_ftForceZ',\
                                                     'unimodal_kinDesEEChange',\
                                                     'crossmodal_landmarkEEDist', \
                                                     ]
-        param_dict['ROC']['hmmgp_param_range'] = np.logspace(-1, 2.7, nPoints)*-1.0 
+        param_dict['ROC']['hmmgp_param_range'] = np.logspace(-1.5, 2.7, nPoints)*-1.0 
         param_dict['HMM']['scale'] = 9.0
 
         #  #86 or 85
@@ -1072,7 +1072,7 @@ if __name__ == '__main__':
 
         # TODO: change feature name
         param_dict['ROC']['methods'] = ['hmmgp', 'hmmgp']
-        param_dict['HMM']['scale']   = [6.111, 6.111]
+        param_dict['HMM']['scale']   = [7.0, 9.0]
         param_dict['SVM']['nugget']  = 10.0
 
         # -------------------------------------------------------------------------------------
@@ -1085,13 +1085,14 @@ if __name__ == '__main__':
                                                     'unimodal_ftForce_integ',\
                                                     'unimodal_kinEEChange', \
                                                     'crossmodal_landmarkEEDist'],
-                                                    ['unimodal_ftForce_zero',\
-                                                     'unimodal_ftForceZ',\
+                                                    ['unimodal_ftForceZ',\
                                                      'unimodal_kinDesEEChange', \
                                                      'crossmodal_landmarkEEDist', \
                                                     ]]
         param_dict['SVM']['hmmgp_logp_offset'] = 0 #30.0 #50.0
-        param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0., 2.3, nPoints)*-1.0+1.0
+        param_dict['ROC']['hmmgp1_param_range'] = np.logspace(-0., 2.3, nPoints)*-1.0+1.0
+        param_dict['ROC']['hmmgp2_param_range'] = np.logspace(-1.5, 2.7, nPoints)*-1.0
+
         # -------------------------------------------------------------------------------------
                                                              
         
@@ -1118,9 +1119,8 @@ if __name__ == '__main__':
                                                     'unimodal_kinEEChange',\
                                                     ]
 
-        param_dict['HMM']['df_scale'] = 7.0 
-        param_dict['data_param']['dynamicFeatures'] = ['unimodal_ftForce_zero',\
-                                                       'unimodal_ftForceZ',\
+        param_dict['HMM']['df_scale'] = 9.0 
+        param_dict['data_param']['dynamicFeatures'] = ['unimodal_ftForceZ',\
                                                        'unimodal_kinDesEEChange',\
                                                        'crossmodal_landmarkEEDist', \
                                                        ]

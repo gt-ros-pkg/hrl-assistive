@@ -1536,7 +1536,7 @@ def run_classifiers_boost(idx, processed_data_path, task_name, method_list,\
             dtc[clf_idx].set_params( **SVM_dict )
             if method_list[clf_idx] == 'progress' or method_list[clf_idx] == 'fixed' or \
               method_list[clf_idx] == 'hmmgp':
-                thresholds = ROC_dict[method_list[clf_idx]+'_param_range']
+                thresholds = ROC_dict[method_list[clf_idx]+str(clf_idx+1)+'_param_range']
                 dtc[clf_idx].set_params( ths_mult = thresholds[j] )
                 if not(j==0): continue
                 ret = dtc[clf_idx].fit(X, Y, inds)
