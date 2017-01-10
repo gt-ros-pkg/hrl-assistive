@@ -939,7 +939,7 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
                                                  failure_labels,\
                                                  failure_image_list,\
                                                  task_name, processed_data_path, param_dict, weight,\
-                                                 n_jobs=-1, window_steps=window_steps,\
+                                                 n_jobs=-1, window_steps=window_steps, verbose=verbose\
                                                  ) for idx in xrange(len(kFold_list)) )
         
         data_dict = {}
