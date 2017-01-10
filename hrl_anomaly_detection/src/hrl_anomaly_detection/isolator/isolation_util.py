@@ -740,12 +740,12 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failureData_static, \
                                                   logp_viz=False, verbose=False, \
                                                   weight=weight,\
                                                   idx=idx, n_jobs=n_jobs)
-    ## detection_test_idx_list = anomaly_detection(input_test_list, \
-    ##                                              [1]*len(abnormalTestData_1[0]), \
-    ##                                              task_name, processed_data_path, param_dict,\
-    ##                                              logp_viz=False, verbose=False, \
-    ##                                              weight=weight,\
-    ##                                              idx=idx, n_jobs=n_jobs)
+    detection_test_idx_list = anomaly_detection(input_test_list, \
+                                                 [1]*len(abnormalTestData_1[0]), \
+                                                 task_name, processed_data_path, param_dict,\
+                                                 logp_viz=False, verbose=False, \
+                                                 weight=weight,\
+                                                 idx=idx, n_jobs=n_jobs)
 
     #-----------------------------------------------------------------------------------------
     # Feature Extraction
@@ -812,34 +812,29 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, \
         if d_idx is None: continue
 
         cp_vecs_last = None
-        if window and False: #temp
+        if window:
             for j in range(-window_step, window_step):
                 if d_idx+j <= 4: continue
                 if d_idx+j > len(abnormalData[0][0,i]): continue
 
-                vs = temporal_features(abnormalData[0][:,i], d_idx+j, max_step, ml_list[0],
-                                       scale_list[0])
-                if dynamic_flag or nDetector>1:
-                    vs_d = temporal_features(abnormalData[1][:,i], d_idx+j, max_step, ml_list[1], \
-                                             scale_list[1])
+                vs = None # step x feature
+                for ii in xrange(nDetector):
+                    v = temporal_features(abnormalData[ii][:,i], d_idx+j, max_step, ml_list[ii],
+                                          scale_list[ii])
+                    if vs is None: vs = v
+                    else: vs = np.hstack([vs, v])
 
-                if dynamic_flag is False and delta_flag is False:
-                    cp_vecs = vs[0]
-                elif dynamic_flag is True and delta_flag is False:
-                    cp_vecs = np.concatenate((vs[0], vs_d[0][param_dict['data_param']['df_idx'] ]))
-                elif delta_flag is True:
-                    if dynamic_flag:
-                        v = np.hstack([vs, vs_d])
-                    else:
-                        v = vs
+                if delta_flag:
                     #1
-                    cp_vecs = np.amin(v[:1], axis=0)
+                    cp_vecs = np.amin(vs[:1], axis=0)
                     #4
-                    cp_vecs = np.vstack([ cp_vecs, np.amin(v[:4], axis=0) ])
+                    cp_vecs = np.vstack([ cp_vecs, np.amin(vs[:4], axis=0) ])
                     #8
-                    cp_vecs = np.vstack([ cp_vecs, np.amin(v[:8], axis=0) ])
+                    cp_vecs = np.vstack([ cp_vecs, np.amin(vs[:8], axis=0) ])
                     cp_vecs = cp_vecs.flatten()
-
+                    print np.shape(cp_vecs)
+                else:
+                    cp_vecs = np.amin(vs[:1], axis=0)
 
                 max_vals = np.amax(abnormalData_s[:,i,:d_idx+j], axis=1)
                 min_vals = np.amin(abnormalData_s[:,i,:d_idx+j], axis=1)
