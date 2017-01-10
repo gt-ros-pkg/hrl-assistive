@@ -529,7 +529,7 @@ def anomaly_detection(X, Y, task_name, processed_data_path, param_dict, logp_viz
             # Ignore predefined test data in the hmm object
             if not(k.find('test')>=0):
                 exec '%s = v' % k
-
+        
         ml = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
         ml.set_hmm_object(A,B,pi)
 
@@ -579,6 +579,9 @@ def anomaly_detection(X, Y, task_name, processed_data_path, param_dict, logp_viz
         ret = dtc.fit(X_train, Y_train, idx_train)
         dtc_list.append(dtc)
 
+
+        print ml.nEmissionDim
+        sys.exit()
         # 2) Convert test data
         startIdx   = 4
         ll_classifier_test_X, ll_classifier_test_Y, ll_classifier_test_idx = \
@@ -793,7 +796,6 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, \
             # Ignore predefined test data in the hmm object
             if not(k.find('test')>=0):
                 exec '%s = v' % k
-        print ii, nEmissionDim
         ml = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
         ml.set_hmm_object(A,B,pi)
         ml_list.append(ml)
