@@ -513,9 +513,6 @@ def anomaly_detection(X, Y, task_name, processed_data_path, param_dict, logp_viz
     dtc_list   = []
     
     for ii in xrange(nDetector):
-        print ii, np.shape(X[ii]), np.shape(Y)
-
-
         # Load a generative model
         if nDetector > 1:
             modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+\
@@ -779,6 +776,8 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, \
                        window=False, delta_flag=False, dynamic_flag=False):
     ''' Get conditional probability vector when anomalies are detected '''
     nDetector = len(abnormalData)
+    print "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    print nDetector
 
     # Load a generative model from anomaly detector
     ml_list    = []
@@ -867,7 +866,7 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, \
             for ii in xrange(nDetector):
                 v = temporal_features(abnormalData[ii][:,i], d_idx, max_step, ml,
                                       scale_list[ii])
-                print np.shape(v)
+                print ii, np.shape(v)
                 if vs is None: vs = v
                 else: vs = np.hstack([vs, v])
             sys.exit()
