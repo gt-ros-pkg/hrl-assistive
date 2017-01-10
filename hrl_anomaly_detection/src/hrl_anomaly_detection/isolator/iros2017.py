@@ -1016,7 +1016,7 @@ if __name__ == '__main__':
                                                     'crossmodal_landmarkEEDist', \
                                                     ]
         param_dict['ROC']['hmmgp_param_range'] = np.logspace(-1, 2.7, nPoints)*-1.0 
-        param_dict['HMM']['scale'] = 9.0
+        param_dict['HMM']['scale'] = 12.0
 
         #  #86 or 85
         ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
