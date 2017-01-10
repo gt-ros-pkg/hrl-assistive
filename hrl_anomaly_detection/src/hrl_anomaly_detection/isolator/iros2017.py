@@ -938,7 +938,7 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
                                                  failure_labels,\
                                                  failure_image_list,\
                                                  task_name, processed_data_path, param_dict, weight,\
-                                                 dynamic_flag, n_jobs=-1, window_steps=window_steps,\
+                                                 n_jobs=-1, window_steps=window_steps,\
                                                  ) for idx in xrange(len(kFold_list)) )
         
         data_dict = {}
@@ -992,7 +992,6 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
 
     #temp
     iutil.save_data_labels(x_train, y_train)
-    sys.exit()
 
 
 
@@ -1016,6 +1015,8 @@ if __name__ == '__main__':
     p.add_option('--eval_omp_isol', '--eoi', action='store_true', dest='evaluation_omp_isolation',
                  default=False, help='Evaluate anomaly isolation with omp.')
     p.add_option('--eval_isol', '--ei', action='store_true', dest='evaluation_isolation',
+                 default=False, help='Evaluate anomaly isolation with double detectors.')
+    p.add_option('--eval_isol2', '--ei2', action='store_true', dest='evaluation_isolation2',
                  default=False, help='Evaluate anomaly isolation with double detectors.')
     p.add_option('--svd_renew', '--sr', action='store_true', dest='svd_renew',
                  default=False, help='Renew ksvd')
