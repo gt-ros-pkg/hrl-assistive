@@ -827,7 +827,7 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, \
                     if vs is None: vs = v
                     else: vs = np.hstack([vs, v])
 
-                print np.shape(vs)
+                print np.shape(vs), d_idx, d_idx+j
                 if delta_flag:
                     #1
                     cp_vecs = np.amin(vs[:1], axis=0)
@@ -848,7 +848,6 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, \
                     print "NaN in cp_vecs ", i, d_idx
                     sys.exit()
 
-                print "fianl, ", np.shape(vals)
                 x.append( cp_vecs )
                 y.append( abnormalLabel[i] )
                 if abnormalData_img[i] is not None:
@@ -902,9 +901,11 @@ def temporal_features(X, d_idx, max_step, ml, scale):
         if v is None: d_idx -= 1
         else: break
 
+    print d_idx, d_idx-max_step
+
     vs = None
     for i in xrange(d_idx, d_idx-max_step,-1):
-        if i<0: break
+        if i<0: continue
         v = ml.conditional_prob( X[:,:i]*scale)
         v = v.reshape((1,) + v.shape)
         if vs is None: vs = v
