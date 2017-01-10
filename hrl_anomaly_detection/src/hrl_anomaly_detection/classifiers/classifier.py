@@ -1465,13 +1465,11 @@ def run_classifiers_boost(idx, processed_data_path, task_name, method_list,\
 
     for clf_idx in xrange(len(method_list)):
         
-        if prefix is not None:
-            modeling_pkl = os.path.join(processed_data_path, prefix+'_'+str(idx)+'.pkl')
-        elif suffix is not None:
-            modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+\
-                                        str(idx)+'_c'+str(clf_idx)+'.pkl')            
-        else:        
-            modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
+        ## if prefix is not None:
+        ##     modeling_pkl = os.path.join(processed_data_path, prefix+'_'+str(idx)+'.pkl')
+        ## else:
+        modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+\
+                                    str(idx)+'_c'+str(clf_idx)+'.pkl')            
 
         print "start to load hmm data, ", modeling_pkl
         d            = ut.load_pickle(modeling_pkl)
