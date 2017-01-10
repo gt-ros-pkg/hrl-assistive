@@ -439,6 +439,7 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
         dm.saveHMMinducedFeatures(kFold_list, success_data_ad, failure_data_ad,\
                                   task_name, processed_data_path,\
                                   HMM_dict_local, data_renew, startIdx, nState, cov, \
+                                  success_files=success_files, failure_files=failure_files,\
                                   noise_mag=0.03, diag=False, suffix=str(i),\
                                   verbose=verbose)
 

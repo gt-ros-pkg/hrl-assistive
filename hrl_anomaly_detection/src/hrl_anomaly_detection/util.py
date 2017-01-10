@@ -1614,10 +1614,13 @@ def class_info(method_list, ROC_data, nPoints, kFold_list, save_pdf=False):
         t_sum  = []
         print "Max count is ", len(kFold_list)*2
         for idx in l_idx:
-            print "Class: ", np.array(d.keys())[idx], "Count: ", np.array(d.values())[idx], \
-              " Detection rate: ", float( len(kFold_list)*2 - np.array(d.values())[idx])/float( len(kFold_list)*2)
+            print "Class: ", np.array(d.keys())[idx], \
+              "Count: ", np.array(d.values())[idx], \
+              " Detection rate: ", \
+              float( len(kFold_list)*2 - np.array(d.values())[idx])/float( len(kFold_list)*2)
             t_sum.append( float( len(kFold_list)*2 - np.array(d.values())[idx])/float( len(kFold_list)*2) )
-            d_list.append([float(np.array(d.keys())[idx]), float( len(kFold_list)*2 - np.array(d.values())[idx])/float( len(kFold_list)*2)])
+            d_list.append([float(np.array(d.keys())[idx]), \
+                           float( len(kFold_list)*2 - np.array(d.values())[idx])/float( len(kFold_list)*2)])
 
         if len(t_sum)<12: t_sum.append(1.0)
         print "Avg.: ", np.mean(t_sum)
