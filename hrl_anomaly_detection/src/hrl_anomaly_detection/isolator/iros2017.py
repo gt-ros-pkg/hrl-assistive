@@ -1287,7 +1287,6 @@ if __name__ == '__main__':
                                                     'unimodal_kinJntEff_1',\
                                                     'unimodal_ftForce_integ',\
                                                     'unimodal_kinEEChange', \
-                                                    'crossmodal_landmarkEEDist'],
                                                     ['unimodal_ftForceZ',\
                                                      'unimodal_kinDesEEChange', \
                                                      'crossmodal_landmarkEEDist', \
