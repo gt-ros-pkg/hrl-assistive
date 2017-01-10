@@ -909,7 +909,7 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
                                   HMM_dict_local, data_renew, startIdx, nState, cov, \
                                   noise_mag=0.03, diag=False, suffix=str(i),\
                                   verbose=verbose)
-    print np.shape(failure_data_ad)
+    print np.shape(failure_data_ad[0])
     sys.exit()
 
     # Static feature selection for isolation
