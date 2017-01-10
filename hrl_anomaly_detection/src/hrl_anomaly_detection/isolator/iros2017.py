@@ -442,6 +442,8 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
                                   noise_mag=0.03, diag=False, suffix=str(i),\
                                   verbose=verbose)
 
+    print "Finished to save hmm data"
+
     #-----------------------------------------------------------------------------------------
     roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
 
