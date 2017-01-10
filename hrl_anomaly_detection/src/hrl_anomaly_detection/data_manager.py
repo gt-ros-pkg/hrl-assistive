@@ -2952,9 +2952,6 @@ def saveHMMinducedFeatures(kFold_list, successData, failureData,\
         abnormalTestData  = copy.copy(failureData[:, abnormalTestIdx, :]) * HMM_dict['scale'] 
         if one_class: abnormalTrainData = None
 
-        print np.shape(normalTrainData), np.shape(normalTestData)
-        sys.exit()
-
         # training hmm
         if verbose: print "start to fit hmm"
         nEmissionDim = len(normalTrainData)
