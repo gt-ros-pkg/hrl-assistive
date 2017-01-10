@@ -776,8 +776,6 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, \
                        window=False, delta_flag=False, dynamic_flag=False):
     ''' Get conditional probability vector when anomalies are detected '''
     nDetector = len(abnormalData)
-    print "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-    print nDetector
 
     # Load a generative model from anomaly detector
     ml_list    = []

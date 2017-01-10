@@ -1128,34 +1128,6 @@ if __name__ == '__main__':
                           hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf,\
                           verbose=opt.bVerbose, lopo=True, plot_feature=False)
 
-    elif opt.bEvaluationAll:
-        '''
-        feature-wise evaluation
-        '''        
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation3/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-
-        # 87.95
-        param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
-                                                    'unimodal_audioWristAzimuth',\
-                                                    'unimodal_kinJntEff_1',\
-                                                    'unimodal_ftForce',\
-                                                    'unimodal_ftForce_integ',\
-                                                    'unimodal_landmarkDist',\
-                                                    'unimodal_kinEEChange',\
-                                                    'crossmodal_landmarkEEDist', \
-                                                    ]
-
-        param_dict['ROC']['methods'] = ['hmmgp']
-        param_dict['HMM']['scale'] = 7.11
-        param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.6, 2.5, nPoints)*-1.0
-        if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
-        evaluation_all(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
-                       verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
-                       find_param=False, data_gen=opt.bDataGen)
-                       ## find_param=False, data_gen=opt.bDataGen, target_class=target_class)
-
     elif opt.evaluation_omp_isolation:
 
         # c11 offset 0 weight -8 spar 0.05, dict 8, win_size 130 #74%
@@ -1185,25 +1157,68 @@ if __name__ == '__main__':
                                  find_param=False, data_gen=opt.bDataGen, weight=weight)
 
 
+    elif opt.bEvaluationAll:
+        '''
+        feature-wise evaluation
+        '''        
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation3/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+
+        # 87.95
+        param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
+                                                    'unimodal_audioWristAzimuth',\
+                                                    'unimodal_kinJntEff_1',\
+                                                    'unimodal_ftForce',\
+                                                    'unimodal_ftForce_integ',\
+                                                    'unimodal_landmarkDist',\
+                                                    'unimodal_kinEEChange',\
+                                                    'crossmodal_landmarkEEDist', \
+                                                    ]
+
+        param_dict['ROC']['methods'] = ['hmmgp']
+        param_dict['HMM']['scale'] = 7.11
+        param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.6, 2.5, nPoints)*-1.0
+        if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
+        evaluation_all(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
+                       verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
+                       find_param=False, data_gen=opt.bDataGen)
+                       ## find_param=False, data_gen=opt.bDataGen, target_class=target_class)
+
+
     elif opt.evaluation_single:
         '''
         evaluation with selected feature set
         '''
 
-        # 78% scale?,  82% scale 1
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation7/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
 
-        param_dict['data_param']['handFeatures'] = [
-            ## 'unimodal_ftForce_zero',\
-                                                    'unimodal_ftForceZ',\
-                                                    'unimodal_kinDesEEChange',\
+        # 78% scale?,  82% scale 1
+        ## param_dict['data_param']['handFeatures'] = [
+        ##     ## 'unimodal_ftForce_zero',\
+        ##                                             'unimodal_ftForceZ',\
+        ##                                             'unimodal_kinDesEEChange',\
+        ##                                             'crossmodal_landmarkEEDist', \
+        ##                                             ]
+        ## param_dict['ROC']['hmmgp_param_range'] = np.logspace(-1.0, 2.7, nPoints)*-1.0 +0.5
+        ## param_dict['HMM']['scale'] = 9.0
+
+
+        param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
+                                                    'unimodal_audioWristAzimuth',\
+                                                    'unimodal_kinJntEff_1',\
+                                                    'unimodal_ftForce',\
+                                                    'unimodal_ftForce_integ',\
+                                                    'unimodal_landmarkDist',\
+                                                    'unimodal_kinEEChange',\
                                                     'crossmodal_landmarkEEDist', \
                                                     ]
-        param_dict['ROC']['hmmgp_param_range'] = np.logspace(-1.0, 2.7, nPoints)*-1.0 +0.5
-        param_dict['HMM']['scale'] = 9.0
+        param_dict['HMM']['scale'] = 7.11
+        param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.6, 2.5, nPoints)*-1.0
+
 
         #  #86 or 85
         ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
@@ -1244,7 +1259,6 @@ if __name__ == '__main__':
 
         param_dict['ROC']['methods'] = ['hmmgp']
         nPoints = param_dict['ROC']['nPoints']
-        ## param_dict['HMM']['scale'] = 7.0
         
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         evaluation_single_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
