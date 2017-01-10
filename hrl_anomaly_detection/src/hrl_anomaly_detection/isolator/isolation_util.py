@@ -809,6 +809,9 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, \
     for i, d_idx in enumerate(anomaly_idx_list):
         # Skip undetected anomaly
         if d_idx is None: continue
+
+        # temp
+        if i<46: continue
         print i, d_idx
 
         if window:
@@ -824,6 +827,7 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, \
                     if vs is None: vs = v
                     else: vs = np.hstack([vs, v])
 
+                print np.shape(vs)
                 if delta_flag:
                     #1
                     cp_vecs = np.amin(vs[:1], axis=0)
@@ -840,12 +844,11 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, \
                 vals = [mx if abs(mx) > abs(mi) else mi for (mx, mi) in zip(max_vals, min_vals) ]
 
                 cp_vecs = cp_vecs.tolist()+ vals
-                ## cp_vecs = (cp_vecs-np.amin(cp_vecs))/(np.amax(cp_vecs)-np.amin(cp_vecs))
-
                 if np.isnan(cp_vecs).any() or np.isinf(cp_vecs).any():
                     print "NaN in cp_vecs ", i, d_idx
                     sys.exit()
 
+                print "fianl, ", np.shape(vals)
                 x.append( cp_vecs )
                 y.append( abnormalLabel[i] )
                 if abnormalData_img[i] is not None:
