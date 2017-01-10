@@ -513,7 +513,7 @@ def anomaly_detection(X, Y, task_name, processed_data_path, param_dict, logp_viz
     dtc_list   = []
     
     for ii in xrange(nDetector):
-        print ii, np.shape(X[ii]), np.shape(Y), scale
+        print ii, np.shape(X[ii]), np.shape(Y)
 
 
         # Load a generative model
