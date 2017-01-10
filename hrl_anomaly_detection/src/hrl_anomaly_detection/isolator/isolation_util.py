@@ -793,6 +793,7 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, \
             # Ignore predefined test data in the hmm object
             if not(k.find('test')>=0):
                 exec '%s = v' % k
+        print ii, nEmissionDim
         ml = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
         ml.set_hmm_object(A,B,pi)
         ml_list.append(ml)
@@ -913,7 +914,6 @@ def temporal_features(X, d_idx, max_step, ml, scale):
     for i in xrange(d_idx, d_idx-max_step,-1):
         if i<0: break
         v = ml.conditional_prob( X[:,:i]*scale)
-        print "time = ", i,  np.shape(v), ml.nEmissionDim
         v = v.reshape((1,) + v.shape)
         if vs is None: vs = v
         else:          vs = np.vstack([vs, v])
