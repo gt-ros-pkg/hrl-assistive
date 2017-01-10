@@ -740,12 +740,12 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failureData_static, \
                                                   logp_viz=False, verbose=False, \
                                                   weight=weight,\
                                                   idx=idx, n_jobs=n_jobs)
-    detection_test_idx_list = anomaly_detection(input_test_list, \
-                                                 [1]*len(abnormalTestData_1[0]), \
-                                                 task_name, processed_data_path, param_dict,\
-                                                 logp_viz=False, verbose=False, \
-                                                 weight=weight,\
-                                                 idx=idx, n_jobs=n_jobs)
+    ## detection_test_idx_list = anomaly_detection(input_test_list, \
+    ##                                              [1]*len(abnormalTestData_1[0]), \
+    ##                                              task_name, processed_data_path, param_dict,\
+    ##                                              logp_viz=False, verbose=False, \
+    ##                                              weight=weight,\
+    ##                                              idx=idx, n_jobs=n_jobs)
 
     #-----------------------------------------------------------------------------------------
     # Feature Extraction
@@ -755,7 +755,7 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failureData_static, \
                                                        abnormalTrainData_s, abnormalTrainLabel,\
                                                        abnormalTrainData_img,\
                                                        task_name, processed_data_path, param_dict, \
-                                                       plot=False, window=True, window_step=window_steps,\
+                                                       window=True, window_step=window_steps,\
                                                        dynamic_flag=dynamic_flag, delta_flag=True)
                                      
     x_test, y_test, x_test_img = feature_extraction(idx, detection_test_idx_list, \
@@ -913,6 +913,7 @@ def temporal_features(X, d_idx, max_step, ml, scale):
     for i in xrange(d_idx, d_idx-max_step,-1):
         if i<0: break
         v = ml.conditional_prob( X[:,:i]*scale)
+        print "time = ", i,  np.shape(v)
         v = v.reshape((1,) + v.shape)
         if vs is None: vs = v
         else:          vs = np.vstack([vs, v])
