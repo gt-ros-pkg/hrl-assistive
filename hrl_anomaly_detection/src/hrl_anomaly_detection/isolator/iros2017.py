@@ -474,6 +474,8 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
     # ---------------- ROC Visualization ----------------------
     roc_info(method_list, ROC_data, nPoints, no_plot=True, multi_ad=True, ROC_dict=ROC_dict)
 
+    class_info(method_list, ROC_data, nPoints, kFold_list)
+
 
 def evaluation_omp_isolation(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
                              data_renew=False, svd_renew=False, save_pdf=False, verbose=False, debug=False,\
@@ -920,7 +922,7 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
 
     # ---------------------------------------------------------------
     #temp
-    kFold_list = kFold_list[:8]
+    ## kFold_list = kFold_list[:8]
 
     # set parameters
     method     = 'hmmgp'
@@ -1305,37 +1307,6 @@ if __name__ == '__main__':
 
     elif opt.evaluation_isolation:
 
-        ## # c12, window 10 #75
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation9/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## weight = -20.0
-        ## window_steps=5
-        ## param_dict['HMM']['scale'] = 7.111 
-        ## param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0
-        ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
-        ##                                             'unimodal_kinJntEff_1',\
-        ##                                             'unimodal_ftForce_integ',\
-        ##                                             'unimodal_kinEEChange',\
-        ##                                             'crossmodal_landmarkEEDist', \
-        ##                                             ]
-
-        ## param_dict['HMM']['df_scale'] = 4.0 #7.0 
-        ## param_dict['data_param']['dynamicFeatures'] = ['unimodal_ftForce_zero',\
-        ##                                                'unimodal_ftForceZ',\
-        ##                                                'unimodal_kinDesEEChange',\
-        ##                                                'crossmodal_landmarkEEDist', \
-        ##                                                ]
-        ## param_dict['data_param']['df_idx'] = [0,1]                                                      
-        ## param_dict['data_param']['staticFeatures'] = ['unimodal_audioWristFrontRMS',\
-        ##                                               'unimodal_audioWristAzimuth',\
-        ##                                               'unimodal_ftForceX',\
-        ##                                               'unimodal_ftForceY',\
-        ##                                               'unimodal_fabricForce',  \
-        ##                                               'unimodal_landmarkDist',\
-        ##                                               'crossmodal_landmarkEEAng',\
-        ##                                               ]                                                  
-
         # c12, window 10 #75
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation10/'+\
@@ -1366,12 +1337,6 @@ if __name__ == '__main__':
                                                       'crossmodal_landmarkEEAng',\
                                                       ]                                                  
         
-        # noise: 3,8
-        # azimuth: 3
-        # jnteff: 2,6
-        # ftforce:
-        # fabric: 2,6
-                
         param_dict['ROC']['methods'] = ['hmmgp']
         nPoints = param_dict['ROC']['nPoints']
         param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.6, 2.3, nPoints)*-1.0
@@ -1384,16 +1349,8 @@ if __name__ == '__main__':
                              find_param=False, data_gen=opt.bDataGen, weight=weight, \
                              window_steps=window_steps)
 
-        # options
-        # 1. window diff
-        # 2. noise
-        # 3. add feature (in classifier layer)
-        # ------------
-        # 4. change
-
 
     elif opt.evaluation_isolation2:
-
         # c12, window 10 #75
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
@@ -1434,3 +1391,12 @@ if __name__ == '__main__':
                               verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                               find_param=False, data_gen=opt.bDataGen, weight=weight, \
                               window_steps=window_steps)
+
+        # options
+        # 1. window diff
+        # 2. noise
+        # 3. add feature (in classifier layer)
+        # ------------
+        # 4. change
+
+

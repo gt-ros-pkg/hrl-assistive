@@ -1441,7 +1441,6 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
 
         if timeList is not None:
             time_step = (timeList[-1]-timeList[0])/float(len(timeList)-1)
-            ## print np.shape(timeList), timeList[0], timeList[-1], (timeList[-1]-timeList[0])/float(len(timeList))
             if verbose: print "time_step[s] = ", time_step, " length: ", timeList[-1]-timeList[0]
         else:
             time_step = 1.0
@@ -1463,9 +1462,6 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
             if verbose: print method + ' has NaN? and fitting error?'
             continue
 
-        # add edge
-        ## fpr_l = [0] + fpr_l + [100]
-        ## tpr_l = [0] + tpr_l + [100]
 
         from sklearn import metrics 
         if verbose:       
@@ -1580,11 +1576,60 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
     elif no_plot is False:
         plt.show()
 
-    ## for key in auc_rates.keys():
-    ##     print key, " : ", auc_rates[key]
-
     return auc_rates
-    
+
+
+def class_info(method_list, ROC_data, nPoints, kFold_list, save_pdf=False):
+        
+    for method in method_list:
+        print "---------- ", method, " -----------"
+        tp_l = []
+        tn_l = []
+        fn_l = []
+        fp_l = []
+        for i in xrange(nPoints):
+            tp_l.append( float(np.sum(ROC_data[method]['tp_l'][i])) )
+            tn_l.append( float(np.sum(ROC_data[method]['tn_l'][i])) )
+            fn_l.append( float(np.sum(ROC_data[method]['fn_l'][i])) )
+            fp_l.append( float(np.sum(ROC_data[method]['fp_l'][i])) )
+        tp_l = np.array(tp_l)
+        fp_l = np.array(fp_l)
+        tn_l = np.array(tn_l)
+        fn_l = np.array(fn_l)
+            
+        acc_l = (tp_l+tn_l)/( tp_l+tn_l+fp_l+fn_l )
+        ## fpr_l = fp_l/(fp_l+tn_l)
+        ## tpr_l = tp_l/(tp_l+fn_l)
+
+        best_idx = argmax(acc_l)
+        print "best idx: ", best_idx
+
+        # false negatives
+        labels    = ROC_data[method]['fn_labels'][best_idx]            
+        anomalies = [label.split('/')[-1].split('_')[0] for label in labels] # extract class
+        d         = {x: anomalies.count(x) for x in anomalies}
+        l_idx     = np.array(d.values()).argsort() #[-10:]
+
+        d_list = []
+        t_sum  = []
+        print "Max count is ", len(kFold_list)*2
+        for idx in l_idx:
+            print "Class: ", np.array(d.keys())[idx], "Count: ", np.array(d.values())[idx], \
+              " Detection rate: ", float( len(kFold_list)*2 - np.array(d.values())[idx])/float( len(kFold_list)*2)
+            t_sum.append( float( len(kFold_list)*2 - np.array(d.values())[idx])/float( len(kFold_list)*2) )
+            d_list.append([float(np.array(d.keys())[idx]), float( len(kFold_list)*2 - np.array(d.values())[idx])/float( len(kFold_list)*2)])
+
+        if len(t_sum)<12: t_sum.append(1.0)
+        print "Avg.: ", np.mean(t_sum)
+
+    d_list = np.array(d_list)
+    d_list = d_list[np.argsort(d_list[:,0])]
+    print d_list[:,0]
+    print d_list[:,1]
+
+    return d_list
+
+
 
 def acc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, save_pdf=False,\
              timeList=None, only_tpr=False, legend=False):
