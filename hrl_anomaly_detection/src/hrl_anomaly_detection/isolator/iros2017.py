@@ -1272,7 +1272,7 @@ if __name__ == '__main__':
                                                     ]]
         param_dict['SVM']['hmmgp_logp_offset'] = 0 #30.0 #50.0
         param_dict['ROC']['hmmgp1_param_range'] = np.logspace(-0., 2.3, nPoints)*-1.0+1.0
-        param_dict['ROC']['hmmgp2_param_range'] = np.logspace(-0.8, 2.6, nPoints)*-1.0+0.5
+        param_dict['ROC']['hmmgp2_param_range'] = np.logspace(-0.8, 2.7, nPoints)*-1.0+0.5
 
         # -------------------------------------------------------------------------------------
                                                              
