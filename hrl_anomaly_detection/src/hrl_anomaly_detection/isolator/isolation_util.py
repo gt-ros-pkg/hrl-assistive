@@ -572,8 +572,8 @@ def get_isolation_data(idx, kFold_list, modeling_pkl, nState, \
     return idx, gs_train, y_train, gs_test, y_test
 
 
-def get_hmm_isolation_data(idx, kFold_list, failureData_ad, failureData_static, \
-                           failureData_dynamic, failure_labels, failure_image_list,\
+def get_hmm_isolation_data(idx, kFold_list, failureData, failureData_static, \
+                           failure_labels, failure_image_list,\
                            task_name, processed_data_path, param_dict, weight,\
                            dynamic_flag=False, n_jobs=-1, window_steps=10 ):
 
@@ -583,12 +583,13 @@ def get_hmm_isolation_data(idx, kFold_list, failureData_ad, failureData_static, 
     abnormalTestIdx  = kFold_list[3]
 
     # dim x sample x length
-    abnormalTrainData_ad  = copy.copy(failureData_ad[:, abnormalTrainIdx, :])
-    abnormalTestData_ad   = copy.copy(failureData_ad[:, abnormalTestIdx, :])
+    abnormalTrainData_ad = copy.copy(failureData[0][:, abnormalTrainIdx, :])
+    abnormalTestData_ad  = copy.copy(failureData[0][:, abnormalTestIdx, :])
+    abnormalTrainData_d  = copy.copy(failureData[1][:, abnormalTrainIdx, :])
+    abnormalTestData_d   = copy.copy(failureData[1][:, abnormalTestIdx, :])
+    
     abnormalTrainData_s  = copy.copy(failureData_static[:, abnormalTrainIdx, :])
     abnormalTestData_s   = copy.copy(failureData_static[:, abnormalTestIdx, :])
-    abnormalTrainData_d  = copy.copy(failureData_dynamic[:, abnormalTrainIdx, :])
-    abnormalTestData_d   = copy.copy(failureData_dynamic[:, abnormalTestIdx, :])
     abnormalTrainLabel = copy.copy(failure_labels[abnormalTrainIdx])
     abnormalTestLabel  = copy.copy(failure_labels[abnormalTestIdx])
 

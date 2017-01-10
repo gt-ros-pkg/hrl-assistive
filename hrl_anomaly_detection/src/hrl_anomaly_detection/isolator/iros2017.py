@@ -750,8 +750,9 @@ def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data
 
         n_jobs = 1
         l_data = Parallel(n_jobs=n_jobs, verbose=10)\
-          (delayed(iutil.get_hmm_isolation_data)(idx, kFold_list[idx], failureData_ad, failureData_static, \
-                                                 failureData_dynamic, failure_labels,\
+          (delayed(iutil.get_hmm_isolation_data)(idx, kFold_list[idx], [failureData_ad, failureData_dynamic], \
+                                                 failureData_static, \
+                                                 failure_labels,\
                                                  failure_image_list,\
                                                  task_name, processed_data_path, param_dict, weight,\
                                                  dynamic_flag, n_jobs=-1, window_steps=window_steps,\
@@ -885,28 +886,30 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
 
 
     #-----------------------------------------------------------------------------------------
-    # feature selection
+    # Dynamic feature selection for detection and isolation
     print d['param_dict']['feature_names']    
     feature_idx_list = []
+    success_data_ad = []
+    failure_data_ad = []
     for i in xrange(2):
         
         feature_idx_list.append([])
         for feature in param_dict['data_param']['handFeatures'][i]:
             feature_idx_list[i].append(data_dict['isolationFeatures'].index(feature))
 
-        success_data_ad = copy.copy(successData[feature_idx_list[i]])
-        failure_data_ad = copy.copy(failureData[feature_idx_list[i]])
+        success_data_ad.append( copy.copy(successData[feature_idx_list[i]]) )
+        failure_data_ad.append( copy.copy(failureData[feature_idx_list[i]]) )
         HMM_dict_local = copy.deepcopy(HMM_dict)
         HMM_dict_local['scale'] = param_dict['HMM']['scale'][i]
 
         # Training HMM, and getting classifier training and testing data
-        dm.saveHMMinducedFeatures(kFold_list, success_data_ad, failure_data_ad,\
+        dm.saveHMMinducedFeatures(kFold_list, success_data_ad[i], failure_data_ad[i],\
                                   task_name, processed_data_path,\
                                   HMM_dict_local, data_renew, startIdx, nState, cov, \
                                   noise_mag=0.03, diag=False, suffix=str(i),\
                                   verbose=verbose)
 
-    # select features for isolation
+    # Static feature selection for isolation
     feature_list = []
     for feature in param_dict['data_param']['staticFeatures']:
         idx = [ i for i, x in enumerate(param_dict['data_param']['isolationFeatures']) if feature == x][0]
@@ -932,7 +935,7 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
         n_jobs = 1
         l_data = Parallel(n_jobs=n_jobs, verbose=10)\
           (delayed(iutil.get_hmm_isolation_data)(idx, kFold_list[idx], failureData_ad, failureData_static, \
-                                                 failureData_static, failure_labels,\
+                                                 failure_labels,\
                                                  failure_image_list,\
                                                  task_name, processed_data_path, param_dict, weight,\
                                                  dynamic_flag, n_jobs=-1, window_steps=window_steps,\
@@ -1271,8 +1274,8 @@ if __name__ == '__main__':
                                                      'crossmodal_landmarkEEDist', \
                                                     ]]
         param_dict['SVM']['hmmgp_logp_offset'] = 0 #30.0 #50.0
-        param_dict['ROC']['hmmgp1_param_range'] = np.logspace(-0., 2.3, nPoints)*-1.0+1.0
-        param_dict['ROC']['hmmgp2_param_range'] = np.logspace(-0.8, 2.7, nPoints)*-1.0+0.5
+        param_dict['ROC']['hmmgp1_param_range'] = np.logspace(-0., 2.4, nPoints)*-1.0+1.0
+        param_dict['ROC']['hmmgp2_param_range'] = np.logspace(-0.8, 2.6, nPoints)*-1.0+0.5 #2.
 
         # -------------------------------------------------------------------------------------
                                                              
@@ -1379,10 +1382,13 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        weight = -20.0
+        weight = [-20.0, -20.0]
         window_steps=5
+        nPoints = param_dict['ROC']['nPoints']
+        param_dict['ROC']['methods'] = ['hmmgp', 'hmmgp']
         param_dict['HMM']['scale'] = [7.0, 9.0]
         param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0
+        param_dict['SVM']['nugget']  = 10.0
 
         param_dict['data_param']['handFeatures'] = [['unimodal_audioWristRMS',  \
                                                     'unimodal_kinJntEff_1',\
@@ -1394,7 +1400,7 @@ if __name__ == '__main__':
                                                      'crossmodal_landmarkEEDist', \
                                                     ]]
         param_dict['ROC']['hmmgp1_param_range'] = np.logspace(-0., 2.3, nPoints)*-1.0+1.0
-        param_dict['ROC']['hmmgp2_param_range'] = np.logspace(-0.8, 2.6, nPoints)*-1.0+0.5
+        param_dict['ROC']['hmmgp2_param_range'] = np.logspace(-0.8, 2.7, nPoints)*-1.0+0.5
         
         param_dict['data_param']['staticFeatures'] = ['unimodal_audioWristFrontRMS',\
                                                       'unimodal_audioWristAzimuth',\
@@ -1404,3 +1410,11 @@ if __name__ == '__main__':
                                                       'unimodal_landmarkDist',\
                                                       'crossmodal_landmarkEEAng',\
                                                       ]                                                  
+
+        if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
+        evaluation_isolation2(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
+                              data_renew=opt.bDataRenew, svd_renew=opt.svd_renew,\
+                              save_pdf=opt.bSavePdf, \
+                              verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
+                              find_param=False, data_gen=opt.bDataGen, weight=weight, \
+                              window_steps=window_steps)
