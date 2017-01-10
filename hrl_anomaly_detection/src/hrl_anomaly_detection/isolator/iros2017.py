@@ -435,11 +435,6 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
         HMM_dict_local = copy.deepcopy(HMM_dict)
         HMM_dict_local['scale'] = param_dict['HMM']['scale'][i]
 
-        print np.shape(success_data_ad), np.shape(failure_data_ad)
-        sys.exit()
-
-        
-
         # Training HMM, and getting classifier training and testing data
         dm.saveHMMinducedFeatures(kFold_list, successData, failureData,\
                                   task_name, processed_data_path,\
