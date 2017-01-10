@@ -506,12 +506,11 @@ def anomaly_detection(X, Y, task_name, processed_data_path, param_dict, logp_viz
     nMaxData   = 20 # The maximun number of executions to train GP
     nSubSample = 50 # The number of sub-samples from each execution to train GP
     nDetector  = len(X)
-    print np.shape(X)
 
-    l_test_X = []
-    l_test_Y = []
+    l_test_X   = []
+    l_test_Y   = []
     l_test_idx = []
-    dtc_list = []
+    dtc_list   = []
     
     for ii in xrange(nDetector):
 
