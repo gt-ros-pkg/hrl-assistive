@@ -523,9 +523,6 @@ def anomaly_detection(X, Y, task_name, processed_data_path, param_dict, logp_viz
             modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
             scale = HMM_dict['scale']
 
-        print scale, nDetector
-        print modeling_pkl
-
         if verbose: print "start to load hmm data, ", modeling_pkl
         d            = ut.load_pickle(modeling_pkl)
         ## Load local variables: nState, nEmissionDim, ll_classifier_train_?, ll_classifier_test_?, nLength    
@@ -587,7 +584,7 @@ def anomaly_detection(X, Y, task_name, processed_data_path, param_dict, logp_viz
         # 2) Convert test data
         startIdx   = 4
         ll_classifier_test_X, ll_classifier_test_Y, ll_classifier_test_idx = \
-          hmm.getHMMinducedFeaturesFromRawCombinedFeatures(ml, X * scale, Y, startIdx, \
+          hmm.getHMMinducedFeaturesFromRawCombinedFeatures(ml, X[ii] * scale, Y, startIdx, \
                                                            n_jobs=n_jobs)
 
         if logp_viz:
