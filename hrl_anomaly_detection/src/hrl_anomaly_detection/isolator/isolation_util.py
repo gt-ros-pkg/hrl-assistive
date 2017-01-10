@@ -794,8 +794,6 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, \
             if not(k.find('test')>=0):
                 exec '%s = v' % k
 
-        print ii, nEmissionDim
-        
         ml = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
         ml.set_hmm_object(A,B,pi)
         ml_list.append(ml)
@@ -804,6 +802,8 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, \
     if delta_flag is False: max_step = 1
     else:                   max_step = 8
 
+
+    print ml_list[0].nEmissionDim, ml_list[1].nEmissionDim
 
     x = []
     y = []
