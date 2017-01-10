@@ -472,7 +472,7 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
 
     
     # ---------------- ROC Visualization ----------------------
-    roc_info(method_list, ROC_data, nPoints, no_plot=True, multi_ad=True)
+    roc_info(method_list, ROC_data, nPoints, no_plot=True, multi_ad=True, ROC_dict=ROC_dict)
 
 
 def evaluation_omp_isolation(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\

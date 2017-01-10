@@ -1475,7 +1475,6 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
             print method
             print tpr_l
             print fpr_l
-            print ROC_dict.keys()
             if ROC_dict is not None:
                 if multi_ad is False:
                     weight_list = ROC_dict[method+'_param_range']
