@@ -803,8 +803,6 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, \
     else:                   max_step = 8
 
 
-    print ml_list[0].nEmissionDim, ml_list[1].nEmissionDim
-
     x = []
     y = []
     x_img = []
@@ -867,7 +865,7 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, \
 
             vs = None
             for ii in xrange(nDetector):
-                v = temporal_features(abnormalData[ii][:,i], d_idx, max_step, ml,
+                v = temporal_features(abnormalData[ii][:,i], d_idx, max_step, ml_list[ii],
                                       scale_list[ii])
                 print ii, np.shape(v), np.shape(abnormalData[ii][:,i])
                 if vs is None: vs = v
