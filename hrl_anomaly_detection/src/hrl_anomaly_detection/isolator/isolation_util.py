@@ -523,7 +523,8 @@ def anomaly_detection(X, Y, task_name, processed_data_path, param_dict, logp_viz
             modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
             scale = HMM_dict['scale']
 
-        print scale
+        print scale, nDetector
+        print modeling_pkl
 
         if verbose: print "start to load hmm data, ", modeling_pkl
         d            = ut.load_pickle(modeling_pkl)
