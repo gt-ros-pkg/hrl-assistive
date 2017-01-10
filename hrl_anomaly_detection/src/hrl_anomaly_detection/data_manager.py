@@ -2933,6 +2933,7 @@ def saveHMMinducedFeatures(kFold_list, successData, failureData,\
     # HMM-induced vector with LOPO
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(kFold_list):
+        if verbose: print "dm.saveHMM ", idx
 
         # Training HMM, and getting classifier training and testing data
         if suffix is not None:
@@ -2966,6 +2967,7 @@ def saveHMMinducedFeatures(kFold_list, successData, failureData,\
             print "hmm training failed"
             sys.exit()
 
+        if verbose: print "Start to extract features "
         # Classifier training data
         ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
           hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData, \
