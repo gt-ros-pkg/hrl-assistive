@@ -795,108 +795,104 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, \
         ml.set_hmm_object(A,B,pi)
         ml_list.append(ml)
         scale_list.append( param_dict['HMM']['scale'][ii] )
-            
 
     if delta_flag is False: max_step = 1
     else:                   max_step = 8
 
 
-    sys.exit()
+    x = []
+    y = []
+    x_img = []
+    for i, d_idx in enumerate(anomaly_idx_list):
 
-        
-    ## x = []
-    ## y = []
-    ## x_img = []
-    ## for i, d_idx in enumerate(anomaly_idx_list):
+        # Skip undetected anomaly
+        if d_idx is None: continue
 
-    ##     # Skip undetected anomaly
-    ##     if d_idx is None: continue
+        cp_vecs_last = None
+        if window and False: #temp
+            for j in range(-window_step, window_step):
+                if d_idx+j <= 4: continue
+                if d_idx+j > len(abnormalData[0][0,i]): continue
 
-    ##     if plot is False:
-    ##         cp_vecs_last = None
-    ##         if window:
-    ##             for j in range(-window_step, window_step):
-    ##                 if d_idx+j <= 4: continue
-    ##                 if d_idx+j > len(abnormalData[0][0,i]): continue
+                vs = temporal_features(abnormalData[0][:,i], d_idx+j, max_step, ml_list[0],
+                                       scale_list[0])
+                if dynamic_flag or nDetector>1:
+                    vs_d = temporal_features(abnormalData[1][:,i], d_idx+j, max_step, ml_list[1], \
+                                             scale_list[1])
 
-    ##                 vs = temporal_features(abnormalData[0][:,i], d_idx+j, max_step, ml_list[0],
-    ##                                        scale_list[0])
-    ##                 if dynamic_flag or nDetector>1:
-    ##                     vs_d = temporal_features(abnormalData[1][:,i], d_idx+j, max_step, ml_list[1], \
-    ##                                              scale_list[1])
+                if dynamic_flag is False and delta_flag is False:
+                    cp_vecs = vs[0]
+                elif dynamic_flag is True and delta_flag is False:
+                    cp_vecs = np.concatenate((vs[0], vs_d[0][param_dict['data_param']['df_idx'] ]))
+                elif delta_flag is True:
+                    if dynamic_flag:
+                        v = np.hstack([vs, vs_d])
+                    else:
+                        v = vs
+                    #1
+                    cp_vecs = np.amin(v[:1], axis=0)
+                    #4
+                    cp_vecs = np.vstack([ cp_vecs, np.amin(v[:4], axis=0) ])
+                    #8
+                    cp_vecs = np.vstack([ cp_vecs, np.amin(v[:8], axis=0) ])
+                    cp_vecs = cp_vecs.flatten()
 
-    ##                 if dynamic_flag is False and delta_flag is False:
-    ##                     cp_vecs = vs[0]
-    ##                 elif dynamic_flag is True and delta_flag is False:
-    ##                     cp_vecs = np.concatenate((vs[0], vs_d[0][param_dict['data_param']['df_idx'] ]))
-    ##                 elif delta_flag is True:
-    ##                     if dynamic_flag:
-    ##                         v = np.hstack([vs, vs_d])
-    ##                     else:
-    ##                         v = vs
-    ##                     #1
-    ##                     cp_vecs = np.amin(v[:1], axis=0)
-    ##                     #4
-    ##                     cp_vecs = np.vstack([ cp_vecs, np.amin(v[:4], axis=0) ])
-    ##                     #8
-    ##                     cp_vecs = np.vstack([ cp_vecs, np.amin(v[:8], axis=0) ])
-    ##                     cp_vecs = cp_vecs.flatten()
 
-                    
-    ##                 max_vals = np.amax(abnormalData_s[:,i,:d_idx+j], axis=1)
-    ##                 min_vals = np.amin(abnormalData_s[:,i,:d_idx+j], axis=1)
-    ##                 vals = [mx if abs(mx) > abs(mi) else mi for (mx, mi) in zip(max_vals, min_vals) ]
-                    
-    ##                 cp_vecs = cp_vecs.tolist()+ vals
-    ##                 ## cp_vecs = (cp_vecs-np.amin(cp_vecs))/(np.amax(cp_vecs)-np.amin(cp_vecs))
+                max_vals = np.amax(abnormalData_s[:,i,:d_idx+j], axis=1)
+                min_vals = np.amin(abnormalData_s[:,i,:d_idx+j], axis=1)
+                vals = [mx if abs(mx) > abs(mi) else mi for (mx, mi) in zip(max_vals, min_vals) ]
 
-    ##                 if np.isnan(cp_vecs).any() or np.isinf(cp_vecs).any():
-    ##                     print "NaN in cp_vecs ", i, d_idx
-    ##                     sys.exit()
+                cp_vecs = cp_vecs.tolist()+ vals
+                ## cp_vecs = (cp_vecs-np.amin(cp_vecs))/(np.amax(cp_vecs)-np.amin(cp_vecs))
 
-    ##                 x.append( cp_vecs )
-    ##                 y.append( abnormalLabel[i] )
-    ##                 if abnormalData_img[i] is not None:
-    ##                     x_img.append( abnormalData_img[i][d_idx+j-1] )
-    ##                 else:
-    ##                     x_img.append(None)
-                    
-    ##         else:
-    ##             if d_idx <= 0: continue
-    ##             if d_idx > len(abnormalData[0][0,i]): continue                    
+                if np.isnan(cp_vecs).any() or np.isinf(cp_vecs).any():
+                    print "NaN in cp_vecs ", i, d_idx
+                    sys.exit()
 
-    ##             vs = None
-    ##             for ii in xrange(nDetector):
-    ##                 v = temporal_features(abnormalData[ii][:,i], d_idx, max_step, ml,
-    ##                                       scale_list[ii])
-    ##                 if vs is None: vs = v
-    ##                 else: vs = np.hstack([vs, v])
+                x.append( cp_vecs )
+                y.append( abnormalLabel[i] )
+                if abnormalData_img[i] is not None:
+                    x_img.append( abnormalData_img[i][d_idx+j-1] )
+                else:
+                    x_img.append(None)
 
-                
-    ##             if delta_flag:
-    ##                 #1
-    ##                 cp_vecs = np.amin(v[:1], axis=0)
-    ##                 #4
-    ##                 cp_vecs = np.vstack([ cp_vecs, np.amin(v[:4], axis=0) ])
-    ##                 #8
-    ##                 cp_vecs = np.vstack([ cp_vecs, np.amin(v[:8], axis=0) ])
-    ##                 cp_vecs = cp_vecs.flatten()
-    ##             else:
+        else:
+            if d_idx <= 0: continue
+            if d_idx > len(abnormalData[0][0,i]): continue                    
 
-                    
+            vs = None
+            for ii in xrange(nDetector):
+                v = temporal_features(abnormalData[ii][:,i], d_idx, max_step, ml,
+                                      scale_list[ii])
+                print np.shape(v)
+                if vs is None: vs = v
+                else: vs = np.hstack([vs, v])
+            sys.exit()
 
-    ##             max_vals = np.amax(abnormalData_s[:,i,:d_idx], axis=1)
-    ##             min_vals = np.amin(abnormalData_s[:,i,:d_idx], axis=1)
-    ##             vals = [mx if abs(mx) > abs(mi) else mi for (mx, mi) in zip(max_vals, min_vals) ]
-                
-    ##             cp_vecs = cp_vecs.tolist()+ vals
-    ##             ## cp_vecs = (cp_vecs-np.amin(cp_vecs))/(np.amax(cp_vecs)-np.amin(cp_vecs))
-    ##             x.append( cp_vecs )
-    ##             y.append( abnormalLabel[i] )
-    ##             if abnormalData_img[i] is not None:
-    ##                 x_img.append( abnormalData_img[i][d_idx-1] )
-    ##             else:
-    ##                 x_img.append( None )
+            ## if delta_flag:
+            ##     #1
+            ##     cp_vecs = np.amin(v[:1], axis=0)
+            ##     #4
+            ##     cp_vecs = np.vstack([ cp_vecs, np.amin(v[:4], axis=0) ])
+            ##     #8
+            ##     cp_vecs = np.vstack([ cp_vecs, np.amin(v[:8], axis=0) ])
+            ##     cp_vecs = cp_vecs.flatten()
+            ## else:
+
+
+
+            ## max_vals = np.amax(abnormalData_s[:,i,:d_idx], axis=1)
+            ## min_vals = np.amin(abnormalData_s[:,i,:d_idx], axis=1)
+            ## vals = [mx if abs(mx) > abs(mi) else mi for (mx, mi) in zip(max_vals, min_vals) ]
+
+            ## cp_vecs = cp_vecs.tolist()+ vals
+            ## ## cp_vecs = (cp_vecs-np.amin(cp_vecs))/(np.amax(cp_vecs)-np.amin(cp_vecs))
+            ## x.append( cp_vecs )
+            ## y.append( abnormalLabel[i] )
+            ## if abnormalData_img[i] is not None:
+            ##     x_img.append( abnormalData_img[i][d_idx-1] )
+            ## else:
+            ##     x_img.append( None )
 
     return x, y, x_img
 
