@@ -750,6 +750,7 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failureData_static, \
     #-----------------------------------------------------------------------------------------
     # Feature Extraction
     #-----------------------------------------------------------------------------------------
+    print "Feature extraction with training data"
     x_train, y_train, x_train_img = feature_extraction(idx, detection_train_idx_list, \
                                                        input_train_list,\
                                                        abnormalTrainData_s, abnormalTrainLabel,\
@@ -758,6 +759,7 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failureData_static, \
                                                        window=True, window_step=window_steps,\
                                                        dynamic_flag=dynamic_flag, delta_flag=True)
                                      
+    print "Feature extraction with testing data"
     x_test, y_test, x_test_img = feature_extraction(idx, detection_test_idx_list, \
                                                     input_test_list, \
                                                     abnormalTestData_s, abnormalTestLabel,\
@@ -805,11 +807,10 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, \
     y = []
     x_img = []
     for i, d_idx in enumerate(anomaly_idx_list):
-
         # Skip undetected anomaly
         if d_idx is None: continue
+        print i, d_idx
 
-        cp_vecs_last = None
         if window:
             for j in range(-window_step, window_step):
                 if d_idx+j <= 4: continue
