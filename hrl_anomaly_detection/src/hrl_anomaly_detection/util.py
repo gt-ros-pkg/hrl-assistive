@@ -1475,12 +1475,12 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
             print method
             print tpr_l
             print fpr_l
+            print ROC_dict.keys()
             if ROC_dict is not None:
                 if multi_ad is False:
                     weight_list = ROC_dict[method+'_param_range']
                     print "Weight= ", weight_list[np.argmax(acc_l)], " , acc = ", np.amax(acc_l)
                 else:
-                    print ROC_dict.keys()
                     for j in xrange(len(ROC_dict['methods'])):
                         weight_list = ROC_dict[method+str(j+1)+'_param_range']
                         print "Weight= ", weight_list[np.argmax(acc_l)], " , acc = ", np.amax(acc_l)
