@@ -1010,9 +1010,10 @@ if __name__ == '__main__':
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
 
-        param_dict['data_param']['handFeatures'] = ['unimodal_ftForce_zero',\
+        param_dict['data_param']['handFeatures'] = [
+            ## 'unimodal_ftForce_zero',\
                                                     'unimodal_ftForceZ',\
-                                                    ## 'unimodal_kinDesEEChange',\
+                                                    'unimodal_kinDesEEChange',\
                                                     'crossmodal_landmarkEEDist', \
                                                     ]
         param_dict['ROC']['hmmgp_param_range'] = np.logspace(-1, 2.7, nPoints)*-1.0 
