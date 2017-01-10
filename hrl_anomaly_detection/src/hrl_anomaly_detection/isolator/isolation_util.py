@@ -788,7 +788,7 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, \
                                         str(ii)+'.pkl')
         else:
             modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
-        d            = ut.load_pickle(modeling_pkl)
+        d = ut.load_pickle(modeling_pkl)
         for k, v in d.iteritems():
             # Ignore predefined test data in the hmm object
             if not(k.find('test')>=0):
@@ -810,15 +810,10 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, \
         # Skip undetected anomaly
         if d_idx is None: continue
 
-        # temp
-        if i<46: continue
-        print i, d_idx
-
         if window:
             for j in range(-window_step, window_step):
                 if d_idx+j <= 4: continue
                 if d_idx+j > len(abnormalData[0][0,i]): continue
-                print d_idx+j, j, len(abnormalData[0][0,i])
 
                 vs = None # step x feature
                 for ii in xrange(nDetector):
@@ -827,7 +822,6 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, \
                     if vs is None: vs = v
                     else: vs = np.hstack([vs, v])
 
-                print np.shape(vs), d_idx, d_idx+j
                 if delta_flag:
                     #1
                     cp_vecs = np.amin(vs[:1], axis=0)
@@ -900,8 +894,6 @@ def temporal_features(X, d_idx, max_step, ml, scale):
         v = ml.conditional_prob( X[:,:d_idx]*scale)
         if v is None: d_idx -= 1
         else: break
-
-    print d_idx, d_idx-max_step
 
     vs = None
     for i in xrange(d_idx, d_idx-max_step,-1):
