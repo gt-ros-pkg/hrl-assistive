@@ -1286,7 +1286,7 @@ if __name__ == '__main__':
 
         # TODO: change feature name
         param_dict['ROC']['methods'] = ['hmmgp', 'hmmgp']
-        param_dict['HMM']['scale']   = [7.0, 15.0]
+        param_dict['HMM']['scale']   = [7.0, 13.0]
         param_dict['SVM']['nugget']  = 10.0
 
         # -------------------------------------------------------------------------------------
@@ -1367,11 +1367,11 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        weight = [-30.0, -16.0]
+        weight = [-23.0, -12.0]
         window_steps=5
         nPoints = param_dict['ROC']['nPoints']
         param_dict['ROC']['methods'] = ['hmmgp', 'hmmgp']
-        param_dict['HMM']['scale'] = [7.0, 9.0]
+        param_dict['HMM']['scale'] = [7.0, 13.0]
         param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0
         param_dict['SVM']['nugget']  = 10.0
 
