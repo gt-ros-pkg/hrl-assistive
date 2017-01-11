@@ -1367,7 +1367,7 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        weight = [-20.0, -9.7]
+        weight = [-30.0, -16.0]
         window_steps=5
         nPoints = param_dict['ROC']['nPoints']
         param_dict['ROC']['methods'] = ['hmmgp', 'hmmgp']
