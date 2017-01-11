@@ -436,8 +436,8 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
         HMM_dict_local['scale'] = param_dict['HMM']['scale'][i]
 
         #
-        #temp
-        if i==0: continue
+        ## #temp
+        ## if i==0: continue
         
 
         # Training HMM, and getting classifier training and testing data
