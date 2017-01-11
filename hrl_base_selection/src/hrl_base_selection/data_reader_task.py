@@ -419,7 +419,7 @@ if __name__ == "__main__":
         rospy.spin()
     else:
         # for task in ['wiping_mouth', 'scratching_knee_left', 'scratching_knee_left', 'scratching_upper_arm_left', 'scratching_upper_arm_right', 'scratching_forearm_left', 'scratching_forearm_right']: #'wiping_face', 'scratching_knee_left', 'scratching_forearm_left','scratching_upper_arm_left']:#'scratching_knee_left', 'scratching_knee_right', 'scratching_thigh_left', 'scratching_thigh_right']:
-        for task in ['wiping_mouth']:
+        for task in ['wiping_mouth', 'scratching_knee_left']:
             subject = 'any_subject'
             #rospy.init_node(''.join(['data_reader_', subject, '_', model, '_', task]))
             this_start_time = time.time()

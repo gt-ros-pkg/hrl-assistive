@@ -980,22 +980,22 @@ class ScoreGenerator(object):
                             
                             for solution in sols:
                                  
-                                if m.degrees(solution[3])<-45:
-                                    continue
-                                else:
-                                    reached[num] = 1.
-                                    self.robot.SetDOFValues(solution, self.manip.GetArmIndices())
-                                    self.env.UpdatePublishedBodies()
+                                # if m.degrees(solution[3])<-45:
+                                #     continue
+                                # else:
+                                reached[num] = 1.
+                                self.robot.SetDOFValues(solution, self.manip.GetArmIndices())
+                                self.env.UpdatePublishedBodies()
 
-                                    J = np.matrix(np.vstack([self.manip.CalculateJacobian(), self.manip.CalculateAngularVelocityJacobian()]))
-                                    try:
-                                        joint_limit_weight = self.gen_joint_limit_weight(solution)
-                                        manip[num] = np.max([copy.copy((m.pow(np.linalg.det(J*joint_limit_weight*J.T), (1./6.)))/(np.trace(J*joint_limit_weight*J.T)/6.)), manip[num]])
-                                    except ValueError:
-                                        print 'WARNING!!'
-                                        print 'Jacobian may be singular or close to singular'
-                                        print 'Determinant of J*JT is: ', np.linalg.det(J*J.T)
-                                        manip[num] = np.max([0., manip[num]])
+                                J = np.matrix(np.vstack([self.manip.CalculateJacobian(), self.manip.CalculateAngularVelocityJacobian()]))
+                                try:
+                                    joint_limit_weight = self.gen_joint_limit_weight(solution)
+                                    manip[num] = np.max([copy.copy((m.pow(np.linalg.det(J*joint_limit_weight*J.T), (1./6.)))/(np.trace(J*joint_limit_weight*J.T)/6.)), manip[num]])
+                                except ValueError:
+                                    print 'WARNING!!'
+                                    print 'Jacobian may be singular or close to singular'
+                                    print 'Determinant of J*JT is: ', np.linalg.det(J*J.T)
+                                    manip[num] = np.max([0., manip[num]])
                                 if self.visualize:
                                     rospy.sleep(1.0)
                 for num in xrange(len(reached)):
@@ -1298,10 +1298,10 @@ class ScoreGenerator(object):
                                     #print 'I was able to find a grasp to this goal'
                                     reached[num, config_num] = 1
                                     for solution in sols:
-                                        print solution
-                                        if m.degrees(solution[3]) < -45.:
-                                            print m.degrees(solution[3])
-                                            continue
+                                        # print solution
+                                        # if m.degrees(solution[3]) < -45.:
+                                        #     print m.degrees(solution[3])
+                                        #     continue
                                         self.robot.SetDOFValues(solution, self.manip.GetArmIndices())
                                         # Tee = self.manip.GetEndEffectorTransform()
                                         self.env.UpdatePublishedBodies()
