@@ -1390,7 +1390,7 @@ if __name__ == '__main__':
         window_steps=5
         nPoints = param_dict['ROC']['nPoints']
         param_dict['ROC']['methods'] = ['hmmgp', 'hmmgp']
-        param_dict['HMM']['scale'] = [7.0, 13.0]
+        param_dict['HMM']['scale'] = [7.0, 12.0]
         param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0
         param_dict['SVM']['nugget']  = 10.0
 
