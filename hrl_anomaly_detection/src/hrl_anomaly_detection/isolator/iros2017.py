@@ -436,8 +436,8 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
         HMM_dict_local['scale'] = param_dict['HMM']['scale'][i]
 
         #
-        ## #temp
-        ## if i==0: continue
+        #temp
+        if i==0: continue
         
 
         # Training HMM, and getting classifier training and testing data
@@ -982,8 +982,14 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
         x_train = scaler.fit_transform(x_train)
         x_test  = scaler.transform(x_test)
 
-        x_train = x_train[:,:8]
-        x_test  = x_test[:,:8]
+        print np.shape(x_train)
+        ## s = [0,1,2,3,4,5,6,7,8,9,10,11, 12,13,14,15,16,17,18,19,20,21,22,23, 24,25,26,29,30]
+        ## s = [0,1,2,3,4,5,6,7,8,9,10,11, 12,13,14,15,16,17,18,19,20,21,22,23, 24,25,26,29,30]
+        ## s = [0,1,2,3,4,5,6,7,8,9,10,11, 12,         16,         20,          24,25,26,29,30]
+        # fabricforce
+        # ftforcey
+        ## x_train = x_train[:,s]
+        ## x_test  = x_test[:,s]
 
         if type(x_train) is np.ndarray:
             x_train = x_train.tolist()
@@ -1320,7 +1326,7 @@ if __name__ == '__main__':
                                                     'unimodal_ftForce_integ',\
                                                     'unimodal_kinEEChange'],
                                                     ['unimodal_ftForce_zero',\
-                                                     'unimodal_ftForceZ',\
+                                                     ## 'unimodal_ftForceZ',\
                                                      'unimodal_kinDesEEChange', \
                                                      'crossmodal_landmarkEEDist', \
                                                     ]]
