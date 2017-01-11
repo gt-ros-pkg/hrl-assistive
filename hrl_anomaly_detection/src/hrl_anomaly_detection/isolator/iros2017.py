@@ -426,10 +426,6 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
     feature_idx_list = []
     for i in xrange(2):
 
-        #
-        #temp
-        if i==0: continue
-        
         feature_idx_list.append([])
         for feature in param_dict['data_param']['handFeatures'][i]:
             feature_idx_list[i].append(data_dict['isolationFeatures'].index(feature))
@@ -438,6 +434,11 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
         failure_data_ad = copy.copy(failureData[feature_idx_list[i]])
         HMM_dict_local = copy.deepcopy(HMM_dict)
         HMM_dict_local['scale'] = param_dict['HMM']['scale'][i]
+
+        #
+        #temp
+        if i==0: continue
+        
 
         # Training HMM, and getting classifier training and testing data
         dm.saveHMMinducedFeatures(kFold_list, success_data_ad, failure_data_ad,\
