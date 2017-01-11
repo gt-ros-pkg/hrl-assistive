@@ -412,9 +412,10 @@ class ScoreGenerator(object):
         # Negative head read angle means head rest angle is a free DoF.
 
         head_x_range = [0.]
-        self.head_angles = np.array([[58, 18], [58, 0], [58, -18], [0, 0], [-58, 18], [-58, 0], [-58, -18]])
-        if self.task == 'scratching_knee_left':
-            self.head_angles = np.array([[0, 0]])
+#        self.head_angles = np.array([[58, 18], [58, 0], [58, -18], [0, 0], [-58, 18], [-58, 0], [-58, -18]])
+        self.head_angles = np.array([[68, 10], [68, 0], [68, -10], [0, 0], [-68, 10], [68, 0], [-68, -10]])
+#        if self.task == 'scratching_knee_left':
+#        self.head_angles = np.array([[0, 0]])
         head_y_range = (np.arange(11)-5)*.03
         head_rest_range = np.arange(-10, 80.1, 10.)
         head_rest_range = [-10]
@@ -484,7 +485,7 @@ class ScoreGenerator(object):
             self.headx = parameters[3]
             self.heady = parameters[4]
             self.allow_bed_movement = parameters[5]
-
+#            self.heady=0.03
             if self.model == 'chair' and num_config == 1:
                 maxiter = 10
                 # popsize = 1000
@@ -513,10 +514,13 @@ class ScoreGenerator(object):
             elif self.model == 'autobed' and num_config == 1:
                 maxiter = 10
                 # popsize = 1000
-                popsize = m.pow(6, 2)*100
-                parameters_min = np.array([0.2, 0.1, -m.pi-0.001, 0., 0., 20.*m.pi/180.])
-                parameters_max = np.array([3., 3., m.pi+.001, 0.3, 0.2, 70.*m.pi/180.])
+#                popsize = m.pow(6, 2)*100
+                popsize = 1500
+                parameters_min = np.array([0.5, 0.5, m.radians(-180.)-0.0001, 0., 0., 50.*m.pi/180.])
+                parameters_max = np.array([2.5, 2.0, m.radians(-15.)+.0001, 0.3, 0.2, 55.*m.pi/180.])
                 parameters_scaling = (parameters_max-parameters_min)/4.
+                
+                parameters_scaling[5] = 2.*m.pi/180.
                 parameters_initialization = (parameters_max+parameters_min)/2.
                 opts1 = {'seed': 1234, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter, 'maxfevals': 1e8, 'CMA_cmean': 0.25,
                          'scaling_of_variables': list(parameters_scaling),
@@ -708,8 +712,9 @@ class ScoreGenerator(object):
         return output
 
     def objective_function_one_config(self, current_parameters):
-        current_parameters = [  1.00748379,  0.94438595,  2.53470032,  0.27963767,  0.19939672, 0.38570075]
-        self.heady = -0.15
+        # current_parameters = [  1.21497982,  0.97523797, -3.14114645,  0.29979307,  0.07958062,
+        # 0.95115451]
+        # self.heady = 0.09
         if not self.a_model_is_loaded:
             print 'Somehow a model has not been loaded. This is bad!'
             return None
@@ -903,9 +908,9 @@ class ScoreGenerator(object):
             not_close_to_collision = True
             if self.manip.CheckIndependentCollision(op.CollisionReport()):
                 not_close_to_collision = False
-
-            origin_B_pr2 = np.matrix([[ m.cos(th), -m.sin(th),     0., x+.04],
-                                      [ m.sin(th),  m.cos(th),     0., y+.04],
+            '''
+            origin_B_pr2 = np.matrix([[ m.cos(th), -m.sin(th),     0., x+.02],
+                                      [ m.sin(th),  m.cos(th),     0., y+.02],
                                       [        0.,         0.,     1.,        0.],
                                       [        0.,         0.,     0.,        1.]])
             self.robot.SetTransform(np.array(origin_B_pr2))
@@ -913,8 +918,8 @@ class ScoreGenerator(object):
             if self.manip.CheckIndependentCollision(op.CollisionReport()):
                 not_close_to_collision = False
 
-            origin_B_pr2 = np.matrix([[ m.cos(th), -m.sin(th),     0., x-.04],
-                                      [ m.sin(th),  m.cos(th),     0., y+.04],
+            origin_B_pr2 = np.matrix([[ m.cos(th), -m.sin(th),     0., x-.02],
+                                      [ m.sin(th),  m.cos(th),     0., y+.02],
                                       [        0.,         0.,     1.,        0.],
                                       [        0.,         0.,     0.,        1.]])
             self.robot.SetTransform(np.array(origin_B_pr2))
@@ -922,8 +927,8 @@ class ScoreGenerator(object):
             if self.manip.CheckIndependentCollision(op.CollisionReport()):
                 not_close_to_collision = False
 
-            origin_B_pr2 = np.matrix([[ m.cos(th), -m.sin(th),     0., x-.04],
-                                      [ m.sin(th),  m.cos(th),     0., y-.04],
+            origin_B_pr2 = np.matrix([[ m.cos(th), -m.sin(th),     0., x-.02],
+                                      [ m.sin(th),  m.cos(th),     0., y-.02],
                                       [        0.,         0.,     1.,        0.],
                                       [        0.,         0.,     0.,        1.]])
             self.robot.SetTransform(np.array(origin_B_pr2))
@@ -931,8 +936,8 @@ class ScoreGenerator(object):
             if self.manip.CheckIndependentCollision(op.CollisionReport()):
                 not_close_to_collision = False
 
-            origin_B_pr2 = np.matrix([[ m.cos(th), -m.sin(th),     0., x+.04],
-                                      [ m.sin(th),  m.cos(th),     0., y-.04],
+            origin_B_pr2 = np.matrix([[ m.cos(th), -m.sin(th),     0., x+.02],
+                                      [ m.sin(th),  m.cos(th),     0., y-.02],
                                       [        0.,         0.,     1.,        0.],
                                       [        0.,         0.,     0.,        1.]])
             self.robot.SetTransform(np.array(origin_B_pr2))
@@ -946,7 +951,7 @@ class ScoreGenerator(object):
                                       [        0.,         0.,     0.,        1.]])
             self.robot.SetTransform(np.array(origin_B_pr2))
             self.env.UpdatePublishedBodies()
-
+            '''
             if not_close_to_collision:
                 # print 'No base collision! single config distance: ', distance
                 reached = np.zeros(len(self.origin_B_grasps))
@@ -972,23 +977,27 @@ class ScoreGenerator(object):
                         # manip[num] = 0.
                         # reached[num] = 0.
                         if list(sols):  # not None:
-
-                            reached[num] = 1.
+                            
                             for solution in sols:
-                                self.robot.SetDOFValues(solution, self.manip.GetArmIndices())
-                                self.env.UpdatePublishedBodies()
+                                 
+                                if m.degrees(solution[3])<-45:
+                                    continue
+                                else:
+                                    reached[num] = 1.
+                                    self.robot.SetDOFValues(solution, self.manip.GetArmIndices())
+                                    self.env.UpdatePublishedBodies()
 
-                                J = np.matrix(np.vstack([self.manip.CalculateJacobian(), self.manip.CalculateAngularVelocityJacobian()]))
-                                try:
-                                    joint_limit_weight = self.gen_joint_limit_weight(solution)
-                                    manip[num] = np.max([copy.copy((m.pow(np.linalg.det(J*joint_limit_weight*J.T), (1./6.)))/(np.trace(J*joint_limit_weight*J.T)/6.)), manip[num]])
-                                except ValueError:
-                                    print 'WARNING!!'
-                                    print 'Jacobian may be singular or close to singular'
-                                    print 'Determinant of J*JT is: ', np.linalg.det(J*J.T)
-                                    manip[num] = np.max([0., manip[num]])
-                            if self.visualize:
-                                rospy.sleep(1.0)
+                                    J = np.matrix(np.vstack([self.manip.CalculateJacobian(), self.manip.CalculateAngularVelocityJacobian()]))
+                                    try:
+                                        joint_limit_weight = self.gen_joint_limit_weight(solution)
+                                        manip[num] = np.max([copy.copy((m.pow(np.linalg.det(J*joint_limit_weight*J.T), (1./6.)))/(np.trace(J*joint_limit_weight*J.T)/6.)), manip[num]])
+                                    except ValueError:
+                                        print 'WARNING!!'
+                                        print 'Jacobian may be singular or close to singular'
+                                        print 'Determinant of J*JT is: ', np.linalg.det(J*J.T)
+                                        manip[num] = np.max([0., manip[num]])
+                                if self.visualize:
+                                    rospy.sleep(1.0)
                 for num in xrange(len(reached)):
                     manip_score += copy.copy(reached[num] * manip[num]*self.weights[num])
                     reach_score += copy.copy(reached[num] * self.weights[num])
@@ -1289,6 +1298,10 @@ class ScoreGenerator(object):
                                     #print 'I was able to find a grasp to this goal'
                                     reached[num, config_num] = 1
                                     for solution in sols:
+                                        print solution
+                                        if m.degrees(solution[3]) < -45.:
+                                            print m.degrees(solution[3])
+                                            continue
                                         self.robot.SetDOFValues(solution, self.manip.GetArmIndices())
                                         # Tee = self.manip.GetEndEffectorTransform()
                                         self.env.UpdatePublishedBodies()
@@ -2495,13 +2508,15 @@ class ScoreGenerator(object):
             self.env.Load(''.join([pkg_path, '/collada/bed_and_environment_henry_tray_rounded.dae']))
             self.autobed = self.env.GetRobots()[1]
             v = self.autobed.GetActiveDOFValues()
-
+            shift = 0.
+#            if self.task == 'scratching_knee_left':
+#            shift = 0.02
             #0 degrees, 0 height
             bth = 0
             v[self.autobed.GetJoint('autobed/tele_legs_joint').GetDOFIndex()] = 0
             v[self.autobed.GetJoint('autobed/bed_neck_base_updown_bedframe_joint').GetDOFIndex()] = 0
             v[self.autobed.GetJoint('autobed/bed_neck_base_leftright_joint').GetDOFIndex()] = 0
-            v[self.autobed.GetJoint('autobed/bed_neck_worldframe_updown_joint').GetDOFIndex()] = (bth/40)*(0.03 - 0)+0
+            v[self.autobed.GetJoint('autobed/bed_neck_worldframe_updown_joint').GetDOFIndex()] = (bth/40)*(0.03 - 0)+0+shift
             v[self.autobed.GetJoint('autobed/bed_neck_base_updown_bedframe_joint').GetDOFIndex()] = (bth/40)*(-0.13 - 0)+0
             v[self.autobed.GetJoint('autobed/head_rest_hinge').GetDOFIndex()] = m.radians(bth)
             v[self.autobed.GetJoint('autobed/headrest_bed_to_worldframe_joint').GetDOFIndex()] = -m.radians(bth)
@@ -2566,6 +2581,9 @@ class ScoreGenerator(object):
         v = self.autobed.GetActiveDOFValues()
         v[self.autobed.GetJoint('autobed/tele_legs_joint').GetDOFIndex()] = bz
         v[self.autobed.GetJoint('autobed/bed_neck_base_updown_bedframe_joint').GetDOFIndex()] = head_x
+        shift = 0.
+#        if self.task == 'scratching_knee_left':
+#        shift = 0.02
         v[self.autobed.GetJoint('autobed/bed_neck_base_leftright_joint').GetDOFIndex()] = head_y
         if bth >= 80. and bth < 85.:
             bth = 80.
@@ -2573,7 +2591,7 @@ class ScoreGenerator(object):
             bth = 0.
             # 0 degrees, 0 height
         if (bth >= 0.) and (bth <= 40.):  # between 0 and 40 degrees
-            v[self.autobed.GetJoint('autobed/bed_neck_worldframe_updown_joint').GetDOFIndex()] = (bth/40)*(0.03 - 0)+0
+            v[self.autobed.GetJoint('autobed/bed_neck_worldframe_updown_joint').GetDOFIndex()] = (bth/40)*(0.03 - 0)+0+shift
             v[self.autobed.GetJoint('autobed/bed_neck_base_updown_bedframe_joint').GetDOFIndex()] = (bth/40)*(-0.13 - 0)+0
             v[self.autobed.GetJoint('autobed/head_rest_hinge').GetDOFIndex()] = m.radians(bth)
             v[self.autobed.GetJoint('autobed/headrest_bed_to_worldframe_joint').GetDOFIndex()] = -m.radians(bth)
@@ -2599,7 +2617,7 @@ class ScoreGenerator(object):
             v[self.autobed.GetJoint('autobed/forearm_hand_left_joint').GetDOFIndex()] = 0
             v[self.autobed.GetJoint('autobed/forearm_hand_right_joint').GetDOFIndex()] = 0
         elif (bth > 40.) and (bth <= 80.):  # between 0 and 40 degrees
-            v[self.autobed.GetJoint('autobed/bed_neck_worldframe_updown_joint').GetDOFIndex()] = ((bth-40)/40)*(0.03 - (0.03))+(0.03)
+            v[self.autobed.GetJoint('autobed/bed_neck_worldframe_updown_joint').GetDOFIndex()] = ((bth-40)/40)*(0.03 - (0.03))+(0.03)+shift
             v[self.autobed.GetJoint('autobed/bed_neck_base_updown_bedframe_joint').GetDOFIndex()] = (bth/40)*(-0.18 - (-0.13))+(-0.13)
             v[self.autobed.GetJoint('autobed/head_rest_hinge').GetDOFIndex()] = m.radians(bth)
             v[self.autobed.GetJoint('autobed/headrest_bed_to_worldframe_joint').GetDOFIndex()] = -m.radians(bth)
@@ -2899,8 +2917,10 @@ class ScoreGenerator(object):
 
     def gen_joint_limit_weight(self, q):
         # define the total range limit for each joint
-        l_min = [-40., -30., -44., -133., -400., -130., -400.]
-        l_max = [130., 80., 224., 0., 400., 0., 400.]
+        l_min = np.array([-40., -30., -44., -133., -400., -130., -400.])
+        # l_min = np.array([-40., -30., -44., -45., -400., -130., -400.])
+        l_max = np.array([130., 80., 224., 0., 400., 0., 400.])
+        l_range = l_max - l_min
         # l1_max = 40.
         # l2_min = -30.
         # l2_max = 80.
@@ -2923,10 +2943,15 @@ class ScoreGenerator(object):
 
         weights = np.zeros(7)
         for joint in xrange(len(weights)):
-            weights[joint] = 1. - m.pow(0.5, np.abs((l_max[joint] - l_min[joint])/2 - m.degrees(q[joint]) - l_min[joint]))
+            weights[joint] = (1. - m.pow(0.5, ((l_range[joint])/2. - np.abs((l_range[joint])/2. - m.degrees(q[joint]) + l_min[joint]))/(l_range[joint]/40.)))
+            # weights[joint] = 1. - m.pow(0.5, (l_max[joint]-l_min[joint])/2. - np.abs((l_max[joint] - l_min[joint])/2. - m.degrees(q[joint]) + l_min[joint]))
+            if weights[joint] < 0.001:
+                weights[joint] = 0.001
+#        print 'q', q
+#        print 'weights', weights
         weights[4] = 1.
         weights[6] = 1.
-        return np.diag(weights)
+        return np.matrix(np.diag(weights))
 
 if __name__ == "__main__":
     rospy.init_node('score_generator')

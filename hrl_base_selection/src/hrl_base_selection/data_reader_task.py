@@ -423,7 +423,7 @@ if __name__ == "__main__":
             subject = 'any_subject'
             #rospy.init_node(''.join(['data_reader_', subject, '_', model, '_', task]))
             this_start_time = time.time()
-            shaving_data_reader = DataReader_Task(task, model, optimization, visualize=True)
+            shaving_data_reader = DataReader_Task(task, model, optimization, visualize=False)
             shaving_data_reader.generate_score()
             print 'Done! Time to generate all scores for this task: %fs' % (time.time() - this_start_time)
         print 'Done! Time to generate all scores for all tasks: %fs' % (time.time() - full_start_time)
