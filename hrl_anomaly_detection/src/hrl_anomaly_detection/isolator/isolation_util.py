@@ -823,12 +823,14 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, \
                     else: vs = np.hstack([vs, v])
 
                 if delta_flag:
-                    #1
-                    cp_vecs = np.amin(vs[:1], axis=0)
-                    #4
-                    cp_vecs = np.vstack([ cp_vecs, np.amin(vs[:4], axis=0) ])
-                    #8
-                    cp_vecs = np.vstack([ cp_vecs, np.amin(vs[:8], axis=0) ])
+                    #1,2,4
+                    cp_vecs = np.mean(vs[:1], axis=0)
+                    cp_vecs = np.vstack([ cp_vecs, np.mean(vs[:4], axis=0) ])
+                    cp_vecs = np.vstack([ cp_vecs, np.mean(vs[:8], axis=0) ])
+                    #1,4,8
+                    ## cp_vecs = np.amin(vs[:1], axis=0)
+                    ## cp_vecs = np.vstack([ cp_vecs, np.amin(vs[:4], axis=0) ])
+                    ## cp_vecs = np.vstack([ cp_vecs, np.amin(vs[:8], axis=0) ])
                     cp_vecs = cp_vecs.flatten()
                 else:
                     cp_vecs = np.amin(vs[:1], axis=0)
@@ -861,12 +863,14 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, \
                 else: vs = np.hstack([vs, v])
 
             if delta_flag:
-                #1
-                cp_vecs = np.amin(vs[:1], axis=0)
-                #4
-                cp_vecs = np.vstack([ cp_vecs, np.amin(vs[:4], axis=0) ])
-                #8
-                cp_vecs = np.vstack([ cp_vecs, np.amin(vs[:8], axis=0) ])
+                #1,2,4
+                cp_vecs = np.mean(vs[:1], axis=0)
+                cp_vecs = np.vstack([ cp_vecs, np.mean(vs[:4], axis=0) ])
+                cp_vecs = np.vstack([ cp_vecs, np.mean(vs[:8], axis=0) ])
+                ## #1,4,8
+                ## cp_vecs = np.amin(vs[:1], axis=0)
+                ## cp_vecs = np.vstack([ cp_vecs, np.amin(vs[:4], axis=0) ])
+                ## cp_vecs = np.vstack([ cp_vecs, np.amin(vs[:8], axis=0) ])
                 cp_vecs = cp_vecs.flatten()
             else:
                 cp_vecs = np.amin(vs[:1], axis=0)
