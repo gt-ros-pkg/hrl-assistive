@@ -989,10 +989,10 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
             y_train  = y_train.tolist()
             y_test   = y_test.tolist()
         
-        ## from sklearn.svm import SVC
-        ## clf = SVC(C=1.0, kernel='rbf') #, decision_function_shape='ovo')
-        from sklearn.ensemble import RandomForestClassifier
-        clf = RandomForestClassifier(n_estimators=400, n_jobs=-1)
+        from sklearn.svm import SVC
+        clf = SVC(C=1.0, kernel='rbf') #, decision_function_shape='ovo')
+        ## from sklearn.ensemble import RandomForestClassifier
+        ## clf = RandomForestClassifier(n_estimators=400, n_jobs=-1)
         
         clf.fit(x_train, y_train)
         ## y_pred = clf.predict(x_test.tolist())
