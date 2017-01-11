@@ -425,6 +425,10 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
     print d['param_dict']['feature_names']    
     feature_idx_list = []
     for i in xrange(2):
+
+        #
+        #temp
+        if i==0: continue
         
         feature_idx_list.append([])
         for feature in param_dict['data_param']['handFeatures'][i]:
