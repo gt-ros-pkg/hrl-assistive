@@ -54,8 +54,10 @@ from hrl_anomaly_detection import util as util
 
 
 class classifier(learning_base):
-    def __init__(self, method='svm', nPosteriors=10, nLength=200, ths_mult=-1.0,\
+    def __init__(self, method='svm', nPosteriors=10, nLength=200, startIdx=4, parallel=False,\
+                 ths_mult=-1.0,\
                  #progress time or state?
+                 std_coff = 1.0,\
                  logp_offset = 0.0,\
                  class_weight=1.0, \
                  # svm
@@ -110,6 +112,10 @@ class classifier(learning_base):
                  progress_svm_w_negative = 7.0,\
                  progress_svm_cost       = 4.,\
                  progress_svm_gamma      = 0.3,\
+                 # hmmgp
+                 theta0 = 1.0,\
+                 nugget = 100.0,\
+                 hmmgp_logp_offset = 0.0,\
                  verbose=False):
         '''
         class_weight : positive class weight for svm
@@ -119,8 +125,11 @@ class classifier(learning_base):
         self.method = method
         self.nPosteriors = nPosteriors
         self.dt     = None
+        self.nLength = nLength
+        self.startIdx = startIdx
+        self.parallel = parallel
         self.verbose = verbose
-
+                
         # constants to adjust thresholds
         self.class_weight = class_weight
         self.ths_mult = ths_mult
@@ -171,7 +180,7 @@ class classifier(learning_base):
             self.cssvm_w_negative = cssvm_w_negative 
         elif self.method == 'progress' or self.method == 'progress_state' or self.method == 'progress_diag':
             self.nLength   = nLength
-            self.std_coff  = 1.0
+            self.std_coff  = std_coff
             self.logp_offset = logp_offset
             self.ll_mu  = np.zeros(nPosteriors)
             self.ll_std = np.zeros(nPosteriors)
@@ -194,11 +203,14 @@ class classifier(learning_base):
             self.ll_std = np.zeros(nPosteriors)
         elif self.method == 'hmmgp':
             from sklearn import gaussian_process
-            self.regr = 'linear' #'linear' # 'constant', 'linear', 'quadratic'
-            self.corr = 'squared_exponential' #'squared_exponential' #'absolute_exponential', 'squared_exponential','generalized_exponential', 'cubic', 'linear'
+            self.regr = 'linear' #'constant' #'constant', 'linear', 'quadratic'
+            self.corr = 'squared_exponential' #'absolute_exponential', squared_exponential','generalized_exponential', 'cubic', 'linear'
+            self.nugget = nugget
+            self.theta0 = theta0
+            self.hmmgp_logp_offset = hmmgp_logp_offset
 
-            self.dt = gaussian_process.GaussianProcess(regr=self.regr, theta0=1.0, corr=self.corr, \
-                                                       normalize=True, nugget=100.)            
+            self.dt = gaussian_process.GaussianProcess(regr=self.regr, theta0=self.theta0, corr=self.corr, \
+                                                       normalize=True, nugget=self.nugget)            
         elif self.method == 'hmmsvr':
             self.svm_type    = svm_type
             self.kernel_type = kernel_type
@@ -211,7 +223,8 @@ class classifier(learning_base):
         learning_base.__init__(self)
 
 
-    def fit(self, X, y, ll_idx=None, parallel=True, warm_start=False):
+
+    def fit(self, X, y, ll_idx=None, warm_start=False):
         '''
         ll_idx is the index list of each sample in a sequence.
         '''
@@ -319,8 +332,12 @@ class classifier(learning_base):
         elif self.method == 'progress' or self.method == 'progress_diag':
             if type(X) == list: X = np.array(X)
             if ll_idx is None:
-                print "Error>> ll_idx is not inserted"
-                sys.exit()
+                # Need to artificially generate ll_idx....
+                nSample  = len(y)/(self.nLength-self.startIdx)
+                idx_list = range(self.nLength)[self.startIdx:]
+                ll_idx = [ idx_list[j] for j in xrange(len(idx_list)) for i in xrange(nSample) if y[i*(self.nLength-self.startIdx)+1]<0 ]
+                ## print "Error>> ll_idx is not inserted"
+                ## sys.exit()
             else: ll_idx  = [ ll_idx[i] for i in xrange(len(ll_idx)) if y[i]<0 ]
             ll_logp = [ X[i,0] for i in xrange(len(X)) if y[i]<0 ]
             ll_post = [ X[i,-self.nPosteriors:] for i in xrange(len(X)) if y[i]<0 ]
@@ -328,13 +345,16 @@ class classifier(learning_base):
             self.g_mu_list = np.linspace(0, self.nLength-1, self.nPosteriors)
             self.g_sig = float(self.nLength) / float(self.nPosteriors) * self.std_coff
 
-            if parallel:
+            if self.parallel:
                 r = Parallel(n_jobs=-1)(delayed(learn_time_clustering)(i, ll_idx, ll_logp, ll_post, \
                                                                        self.g_mu_list[i],\
                                                                        self.g_sig, self.nPosteriors)
                                                                        for i in xrange(self.nPosteriors))
                 _, self.l_statePosterior, self.ll_mu, self.ll_std = zip(*r)
             else:
+                ## print "--------------------------------"
+                ## t = time.time()
+
                 self.l_statePosterior = []
                 self.ll_mu            = []
                 self.ll_std           = []
@@ -344,6 +364,8 @@ class classifier(learning_base):
                     self.l_statePosterior.append(p)
                     self.ll_mu.append(m)
                     self.ll_std.append(s)
+
+                ## print 'One clustering takes ', time.time() - t
 
             return True
 
@@ -382,7 +404,7 @@ class classifier(learning_base):
             ll_post = [ X[i,-self.nPosteriors:] for i in xrange(len(X)) if y[i]<0 ]
 
             # to prevent multiple same input we add noise into X
-            ll_post = np.array(ll_post) + np.random.normal(-0.001, 0.001, np.shape(ll_post))
+            ll_post = np.array(ll_post) + np.random.normal(0.0, 0.001, np.shape(ll_post))
 
             if False:
                 from sklearn.utils import check_array
@@ -658,11 +680,21 @@ class classifier(learning_base):
                     y_pred, MSE = self.dt.predict(posts, eval_MSE=True)
                     sigma = np.sqrt(MSE)
                 except:
-                    for i, post in enumerate(posts):                        
-                        print i, post
-                    sys.exit()
+                    print "posterior probability is weired"
+                    ## for i, post in enumerate(posts):                        
+                    ##     print i, post
+                    #sys.exit()
+                    return np.ones(len(posts))
 
-            l_err = y_pred + self.ths_mult*sigma - logps #- self.logp_offset
+            ## mult_coeff = []
+            ## for post in posts:
+            ##     min_index = np.argmax(post)
+            ##     ## mult_coeff.append( 1.0 + 0.* float(min_index)/(float(self.nPosteriors)-1.0) )
+            ##     mult_coeff.append( 1.0 + 3.* float(min_index)/(float(self.nPosteriors)-1.0) )
+            ## mult_coeff = np.array(mult_coeff)
+
+            ## l_err = y_pred + mult_coeff*self.ths_mult*sigma - logps #- self.logp_offset
+            l_err = y_pred + self.ths_mult*sigma - logps - self.hmmgp_logp_offset
             return l_err
 
         elif self.method == 'fixed':
@@ -772,7 +804,7 @@ class classifier(learning_base):
         if self.method.find('svm')>=0 and self.method is not 'cssvm':       
             sys.path.insert(0, '/usr/lib/pymodules/python2.7')
             import svmutil as svm            
-            svm.svm_save_model(use_pkl, self.dt)
+            svm.svm_save_model(fileName, self.dt)
         elif self.method.find('sgd')>=0:            
             import pickle
             with open(fileName, 'wb') as f:
@@ -794,8 +826,8 @@ class classifier(learning_base):
         elif self.method.find('hmmgp')>=0:            
             import pickle
             with open(fileName, 'wb') as f:
+                print fileName
                 pickle.dump(self.dt, f)
-            
         else:
             print "Not available method"
 
@@ -804,7 +836,7 @@ class classifier(learning_base):
         if self.method.find('svm')>=0 and self.method is not 'cssvm':
             sys.path.insert(0, '/usr/lib/pymodules/python2.7')
             import svmutil as svm            
-            self.dt = svm.svm_load_model(use_pkl) 
+            self.dt = svm.svm_load_model(fileName) 
         elif self.method.find('sgd')>=0:
             import pickle
             with open(fileName, 'rb') as f:
@@ -904,7 +936,7 @@ def findBestPosteriorDistribution(post, l_statePosterior):
 
     for j in xrange(len(l_statePosterior)):
         dist = symmetric_entropy(post, l_statePosterior[j])
-            
+        
         if min_dist > dist:
             min_index = j
             min_dist  = dist
@@ -935,7 +967,7 @@ def learn_time_clustering(i, ll_idx, ll_logp, ll_post, g_mu, g_sig, nState):
         logp = ll_logp[j]
         post = ll_post[j]
 
-        weight    = norm(loc=g_mu, scale=g_sig).pdf(idx)
+        weight = norm(loc=g_mu, scale=g_sig).pdf(idx)
 
         if weight < 1e-3: continue
         g_post   += post * weight
@@ -1016,30 +1048,30 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
             weights = ROC_dict[method+'_param_range']
             
         dtc.set_params( class_weight=weights[j] )
-        ret = dtc.fit(X_train, Y_train, parallel=False)
+        ret = dtc.fit(X_train, Y_train)
     elif method == 'bpsvm':
         weights = ROC_dict[method+'_param_range']
         ## dtc.set_params( kernel_type=0 )
         dtc.set_params( class_weight=weights[j] )
-        ret = dtc.fit(X_train, Y_train, parallel=False)
+        ret = dtc.fit(X_train, Y_train)
     elif method == 'hmmosvm' or method == 'osvm' or method == 'progress_osvm':
         weights = ROC_dict[method+'_param_range']
         dtc.set_params( svm_type=2 )
         dtc.set_params( gamma=weights[j] )
-        ret = dtc.fit(X_train, np.array(Y_train)*-1.0, parallel=False)
+        ret = dtc.fit(X_train, np.array(Y_train)*-1.0)
     elif method == 'cssvm':
         weights = ROC_dict[method+'_param_range']
         dtc.set_params( class_weight=weights[j] )
-        ret = dtc.fit(X_train, np.array(Y_train)*-1.0, idx_train, parallel=False)                
+        ret = dtc.fit(X_train, np.array(Y_train)*-1.0, idx_train)                
     elif method == 'progress' or method == 'progress_diag' or method == 'progress_state' or method == 'fixed' \
       or method == 'kmean' or method == 'hmmgp':
         thresholds = ROC_dict[method+'_param_range']
         dtc.set_params( ths_mult = thresholds[j] )
-        if j==0: ret = dtc.fit(X_train, Y_train, idx_train, parallel=False)                
+        if j==0: ret = dtc.fit(X_train, Y_train, idx_train)                
     elif method == 'rfc':
         weights = ROC_dict[method+'_param_range']
         dtc.set_params( svm_type=2 )
-        ret = dtc.fit(X_train, np.array(Y_train)*-1.0, parallel=False)
+        ret = dtc.fit(X_train, np.array(Y_train)*-1.0)
     else:
         print "Not available method: ", method
         return "Not available method", -1
@@ -1103,9 +1135,10 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
 
 
 def run_classifiers(idx, processed_data_path, task_name, method,\
-                    ROC_data, ROC_dict, AE_dict, SVM_dict, HMM_dict,\
+                    ROC_data, ROC_dict, SVM_dict, HMM_dict,\
                     raw_data=None, startIdx=4, nState=25, \
-                    modeling_pkl_prefix=None, failsafe=False, delay_estimation=False):
+                    modeling_pkl_prefix=None, failsafe=False, delay_estimation=False,\
+                    save_model=False, load_model=False, n_jobs=-1):
 
     #-----------------------------------------------------------------------------------------
     nPoints    = ROC_dict['nPoints']
@@ -1125,8 +1158,8 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
         if method == 'osvm': raw_data_idx = 0
         elif method == 'bpsvm': raw_data_idx = 1
 
-        if modeling_pkl_prefix is not None and delay_estimation is False:
-            idx = int(modeling_pkl_prefix.split('_')[-1])
+        ## if modeling_pkl_prefix is not None and delay_estimation is False:
+        ##     idx = int(modeling_pkl_prefix.split('_')[-1])
             
         X_train_org   = raw_data[raw_data_idx][idx]['X_scaled']
         Y_train_org   = raw_data[raw_data_idx][idx]['Y_train_org']
@@ -1137,7 +1170,11 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
         ll_classifier_test_labels = None
         step_idx_l = raw_data[raw_data_idx][idx]['step_idx_l']
 
-        nLength = 200
+        # TODO: set automatically!
+        if processed_data_path.find('feeding')>=0:
+            nLength = 140
+        else:            
+            nLength = 200
     else:
 
         if modeling_pkl_prefix is not None:
@@ -1151,7 +1188,8 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             exec '%s = v' % k        
         ## nState, ll_classifier_train_?, ll_classifier_test_?, nLength    
         ll_classifier_test_labels = d.get('ll_classifier_test_labels', None)
-    
+
+        
         if 'diag' in method:
             ll_classifier_train_X   = ll_classifier_diag_train_X
             ll_classifier_train_Y   = ll_classifier_diag_train_Y
@@ -1258,9 +1296,9 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                 ll_classifier_test_X = np.delete(ll_classifier_test_X, 1, 2).tolist()
 
         if method == 'hmmgp':
-            ## nSubSample = 40 #temp!!!!!!!!!!!!!
+            ## nSubSample = 50 #temp!!!!!!!!!!!!!
             nSubSample = 20 #20 # 20 
-            nMaxData   = 50 # 40 100
+            nMaxData   = 50 #40 100
             rnd_sample = True #False
             
             ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
@@ -1288,7 +1326,6 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                         v                     = np.zeros(nState+1)
                         v[0]                  = -500
                         v[i+1]                = 1.0
-                    print np.shape(v), np.shape(X_train_org[0])
                     X_train_org.append(v.tolist())
                     Y_train_org.append(1)
                     idx_train_org.append(i)
@@ -1324,7 +1361,17 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
         if len(ll_classifier_test_X[j])==0: continue
 
         if (method.find('svm')>=0 or method.find('sgd')>=0) and not(method == 'osvm' or method == 'bpsvm'):
-            X = scaler.transform(ll_classifier_test_X[j])                                
+            try:
+                X = scaler.transform(ll_classifier_test_X[j])
+            except:
+                print "Feature: ", j, np.shape(ll_classifier_test_X)
+                for k in xrange(len(ll_classifier_test_X[j])):
+                    print ll_classifier_test_X[j][k]
+                    if np.nan in ll_classifier_test_X[j][k]:
+                        print "0-0000000000000000000000000000000000000000000000000"
+                        print k, ll_classifier_test_X[j][k]
+                        print "0-0000000000000000000000000000000000000000000000000"
+                sys.exit()
         else:
             X = ll_classifier_test_X[j]
 
@@ -1333,10 +1380,23 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
 
 
     # classifier # TODO: need to make it efficient!!
-    dtc = classifier( method=method, nPosteriors=nState, nLength=nLength )
+    if n_jobs == 1: parallel = True
+    else: parallel = False
+    dtc = classifier( method=method, nPosteriors=nState, nLength=nLength, parallel=parallel )
     for j in xrange(nPoints):
 
+        if modeling_pkl_prefix is not None:
+            clf_pkl = os.path.join(processed_data_path, 'clf_'+modeling_pkl_prefix+'_'+method+'_'+\
+                                   str(idx)+'_'+str(j)+'.pkl')
+        else:
+            clf_pkl = os.path.join(processed_data_path, 'clf_'+method+'_'+\
+                                   str(idx)+'_'+str(j)+'.pkl')
+            
+        if load_model: dtc.load_model(clf_pkl)
+
         dtc.set_params( **SVM_dict )
+        ret = True
+        
         if method == 'svm' or method == 'hmmsvm_diag' or method == 'hmmsvm_dL' or method == 'hmmsvm_LSLS' or \
           method == 'bpsvm' or method == 'hmmsvm_no_dL' or method == 'sgd' or method == 'progress_svm' or \
           method == 'svm_fixed':
@@ -1345,39 +1405,42 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             else:
                 weights = ROC_dict[method+'_param_range']
             dtc.set_params( class_weight=weights[j] )
-            ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)
+            if not load_model: ret = dtc.fit(X_scaled, Y_train_org, idx_train_org)
         elif method == 'hmmosvm' or method == 'osvm' or method == 'progress_osvm':
             weights = ROC_dict[method+'_param_range']
             dtc.set_params( svm_type=2 )
             dtc.set_params( kernel_type=2 )
             dtc.set_params( gamma=weights[j] )
-            ret = dtc.fit(X_scaled, np.array(Y_train_org)*-1.0, parallel=False)
+            if not load_model: ret = dtc.fit(X_scaled, np.array(Y_train_org)*-1.0)
         elif method == 'cssvm':
             weights = ROC_dict[method+'_param_range']
             dtc.set_params( class_weight=weights[j] )
-            ret = dtc.fit(X_scaled, np.array(Y_train_org)*-1.0, idx_train_org, parallel=False)                
+            if not load_model: ret = dtc.fit(X_scaled, np.array(Y_train_org)*-1.0, idx_train_org)                
         elif method == 'progress' or method == 'progress_diag' or method == 'progress_state' or \
           method == 'fixed' or method == 'kmean' or method == 'hmmgp' or method == 'state_kmean':
             thresholds = ROC_dict[method+'_param_range']
             dtc.set_params( ths_mult = thresholds[j] )
-            if j==0: ret = dtc.fit(X_scaled, Y_train_org, idx_train_org, parallel=False)
+            if not load_model:
+                if j==0: ret = dtc.fit(X_scaled, Y_train_org, idx_train_org)
         elif method == 'change':
             thresholds = ROC_dict[method+'_param_range']
             dtc.set_params( ths_mult = thresholds[j] )
-            if j==0: ret = dtc.fit(ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx)
+            if not load_model:                
+                if j==0: ret = dtc.fit(ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx)
         elif method == 'rnd':
             weights = ROC_dict[method+'_param_range']
             dtc.set_params( class_weight=weights[j] )
             ret = True
         else:
-            print "Not available method", method
-            return "Not available method", -1, params
+            raise ValueError("Not available method: "+method)
 
-        if ret is False:
-            print "fit failed, ", weights[j]
-            sys.exit()
-            return 'fit failed', [],[],[],[],[]
-        
+        if ret is False: raise ValueError("Classifier fitting error")
+
+        if save_model:
+            dtc.save_model(clf_pkl)
+
+        print "Start to evaluate"
+
         # evaluate the classifier
         tp_l = []
         fp_l = []
@@ -1405,25 +1468,223 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                         except:
                             print "Error!!!!!!!!!!!!!!!!!!"
                             print np.shape(ll_classifier_test_idx), ii, jj
-                        if delay_estimation:
-                            delay_l.append(delay_idx-step_idx_l[ii])
+                        if delay_estimation: # and False:
+                            if step_idx_l[ii] is None:
+                                print "Wrong step idx setting"
+                                sys.exit()
+                            if delay_idx-step_idx_l[ii]<0: continue
+                            delay_l.append( delay_idx-step_idx_l[ii] )
                         else:
-                            delay_l.append(delay_idx)
+                            delay_l.append( delay_idx )
                     if Y_test[ii][0] > 0:
                         tp_idx_l.append(ii)
 
-                    ## if Y_test[ii][0] < 0:
-                    ##     print jj, Y_test[ii][0]
                     anomaly = True
                     break        
 
             if Y_test[ii][0] > 0.0:
-                if anomaly: tp_l.append(1)
+                if anomaly:
+                    if delay_estimation and False:
+                        if delay_l[-1] >= 0:
+                            tp_l.append(1)
+                        else:
+                            fp_l.append(1)
+                            del delay_l[-1]
+                    else:
+                        tp_l.append(1)
                 else:
                     fn_l.append(1)
                     if ll_classifier_test_labels is not None:
                         fn_labels.append(ll_classifier_test_labels[ii])
             elif Y_test[ii][0] <= 0.0:
+                if anomaly: fp_l.append(1)
+                else: tn_l.append(1)
+
+        data[method]['tp_l'][j] += tp_l
+        data[method]['fp_l'][j] += fp_l
+        data[method]['fn_l'][j] += fn_l
+        data[method]['tn_l'][j] += tn_l
+        data[method]['delay_l'][j] += delay_l
+        data[method]['tp_idx_l'][j] += tp_idx_l
+        data[method]['fn_labels'][j] += fn_labels
+
+    print "finished ", idx, method
+    return data
+
+
+def run_classifiers_boost(idx, processed_data_path, task_name, method_list,\
+                          ROC_data, param_dict,\
+                          raw_data=None, startIdx=4, nState=25, \
+                          prefix=None, suffix=None,\
+                          delay_estimation=False,\
+                          save_model=False, load_model=False, n_jobs=-1):
+                          
+    HMM_dict = param_dict['HMM']
+    SVM_dict = param_dict['SVM']
+    ROC_dict = param_dict['ROC'] 
+    nPoints  = ROC_dict['nPoints']
+    method   = method_list[0]
+
+    #-----------------------------------------------------------------------------------------
+    # pass method if there is existing result
+    data = {}
+    data = util.reset_roc_data(data, [method], [], nPoints)
+    if ROC_data[method]['complete'] == True: return data
+    #-----------------------------------------------------------------------------------------
+
+    # train a classifier and evaluate it using test data.
+    X_train = []
+    Y_train = []
+    Idx_train = []
+    X_test  = []
+    Y_test  = []
+    Idx_test  = []
+
+    for clf_idx in xrange(len(method_list)):
+        
+        if prefix is not None:
+            modeling_pkl = os.path.join(processed_data_path, prefix+'_'+str(idx)+'.pkl')
+        elif suffix is not None:
+            modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+\
+                                        str(idx)+'_c'+str(clf_idx)+'.pkl')            
+        else:        
+            modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
+
+        print "start to load hmm data, ", modeling_pkl
+        d            = ut.load_pickle(modeling_pkl)
+        for k, v in d.iteritems():
+            exec '%s = v' % k        
+        ## nState, ll_classifier_train_?, ll_classifier_test_?, nLength    
+        ll_classifier_test_labels = d.get('ll_classifier_test_labels', None)
+
+        if method_list[clf_idx] == 'hmmgp':            
+            normal_idx = [x for x in range(len(ll_classifier_train_X)) if ll_classifier_train_Y[x][0]<0 ]
+            ll_classifier_train_X = np.array(ll_classifier_train_X)[normal_idx]
+            ll_classifier_train_Y = np.array(ll_classifier_train_Y)[normal_idx]
+            ll_classifier_train_idx = np.array(ll_classifier_train_idx)[normal_idx]
+
+        if method_list[clf_idx] == 'hmmgp':
+            ## nSubSample = 50 #temp!!!!!!!!!!!!!
+            nSubSample = 20 #20 # 20 
+            nMaxData   = 50 #40 100
+            rnd_sample = True #False
+
+            ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
+              dm.subsampleData(ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx,\
+                               nSubSample=nSubSample, nMaxData=nMaxData, rnd_sample=rnd_sample)
+
+        # flatten the data
+        X_train_flat, Y_train_flat, idx_train_flat = dm.flattenSample(ll_classifier_train_X, \
+                                                                      ll_classifier_train_Y, \
+                                                                      ll_classifier_train_idx,\
+                                                                      remove_fp=False)
+
+        X_train.append(X_train_flat)
+        Y_train.append(Y_train_flat)
+        Idx_train.append(idx_train_flat)
+    
+        # Generate parameter list for ROC curve
+        # pass method if there is existing result
+        # data preparation
+        X_test_flat = []
+        Y_test_flat = [] 
+        for j in xrange(len(ll_classifier_test_X)):
+            if len(ll_classifier_test_X[j])==0: continue
+
+            X = ll_classifier_test_X[j]
+            X_test_flat.append(X)
+            Y_test_flat.append(ll_classifier_test_Y[j])
+
+        X_test.append(X_test_flat)
+        Y_test.append(Y_test_flat)
+
+    #-----------------------------------------------------------------------------------------
+    # classifier # TODO: need to make it efficient!!
+    if n_jobs == 1: parallel = True
+    else: parallel = False
+    dtc = {}
+    dtc[0] = classifier( method=method_list[0], nPosteriors=nState, nLength=nLength, parallel=parallel )
+    dtc[1] = classifier( method=method_list[1], nPosteriors=nState, nLength=nLength, parallel=parallel )
+    for j in xrange(nPoints):
+
+        # Training
+        for clf_idx in xrange(len(method_list)):
+
+            X = X_train[clf_idx]
+            Y = Y_train[clf_idx]
+            inds = Idx_train[clf_idx]
+            
+            dtc[clf_idx].set_params( **SVM_dict )
+            if method_list[clf_idx] == 'progress' or method_list[clf_idx] == 'fixed' or \
+              method_list[clf_idx] == 'hmmgp':
+                thresholds = ROC_dict[method_list[clf_idx]+'_param_range']
+                dtc[clf_idx].set_params( ths_mult = thresholds[j] )
+                if not(j==0): continue
+                ret = dtc[clf_idx].fit(X, Y, inds)
+                if ret is False: raise ValueError("Classifier fitting error")
+            else:
+                raise ValueError("Not available method: "+method_list[clf_idx])
+
+
+        # evaluate the classifier
+        tp_l = []
+        fp_l = []
+        tn_l = []
+        fn_l = []
+        delay_l   = []
+        delay_idx = 0
+        tp_idx_l  = []
+        fn_labels = []
+        for ii in xrange(len(X_test[0])): # per sample
+            if len(Y_test[0][ii])==0: continue
+
+            est_y = []
+            for clf_idx in xrange(len(method_list)):
+                est_y.append(dtc[clf_idx].predict(X_test[clf_idx][ii], y=Y_test[clf_idx][ii]))
+
+            true_y = Y_test[0][ii][0]
+
+            # Combine classification result
+            anomaly = False
+            for jj in xrange(len(est_y[0])): # per time length
+                
+                if est_y[0][jj] > 0.0 or est_y[1][jj] > 0.0:
+                    if ll_classifier_test_idx is not None and true_y>0:
+                        try:
+                            delay_idx = ll_classifier_test_idx[ii][jj]
+                        except:
+                            raise ValueError("Classifier test index error")
+
+                        # Only work with simulated anomalies
+                        if delay_estimation: 
+                            if step_idx_l[ii] is None:
+                                raise ValueError("Wrong step idx setting")
+                            # Ignore early detection
+                            if delay_idx-step_idx_l[ii]<0: continue
+                            delay_l.append( delay_idx-step_idx_l[ii] )
+                        else:
+                            delay_l.append( delay_idx )
+                    if true_y > 0:
+                        tp_idx_l.append(ii)
+
+                    anomaly = True
+                    break        
+
+            if true_y > 0.0:
+                if anomaly:
+                    if delay_estimation and False:
+                        if delay_l[-1] >= 0:
+                            tp_l.append(1)
+                        else:
+                            fp_l.append(1)
+                            del delay_l[-1]
+                    else:
+                        tp_l.append(1)
+                else:
+                    fn_l.append(1)
+                    if ll_classifier_test_labels is not None:
+                        fn_labels.append(ll_classifier_test_labels[ii])
+            elif true_y <= 0.0:
                 if anomaly: fp_l.append(1)
                 else: tn_l.append(1)
 

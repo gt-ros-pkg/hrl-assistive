@@ -81,8 +81,6 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     # data
     data_dict  = param_dict['data_param']
     data_renew = data_dict['renew']
-    # AE
-    AE_dict     = param_dict['AE']
     # HMM
     HMM_dict   = param_dict['HMM']
     nState     = HMM_dict['nState']
@@ -114,7 +112,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                            processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
                            downSampleSize=data_dict['downSampleSize'], scale=1.0,\
                            handFeatures=data_dict['handFeatures'], \
-                           rawFeatures=AE_dict['rawFeatures'],\
+                           ## rawFeatures=AE_dict['rawFeatures'],\
                            data_renew=data_renew, max_time=data_dict['max_time'])
 
         # TODO: need leave-one-person-out
@@ -240,7 +238,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     l_data = Parallel(n_jobs=n_jobs, verbose=50)(delayed(cf.run_classifiers)( idx, processed_data_path, \
                                                                          task_name, \
                                                                          method, ROC_data, \
-                                                                         ROC_dict, AE_dict, \
+                                                                         ROC_dict, \
                                                                          SVM_dict, HMM_dict, \
                                                                          raw_data=(osvm_data,bpsvm_data),\
                                                                          startIdx=startIdx, nState=nState) \
@@ -286,8 +284,6 @@ def evaluation_unexp(subject_names, unexpected_subjects, task_name, raw_data_pat
     # data
     data_dict  = param_dict['data_param']
     data_renew = data_dict['renew']
-    # AE
-    AE_dict     = param_dict['AE']
     # HMM
     HMM_dict   = param_dict['HMM']
     nState     = HMM_dict['nState']
@@ -315,7 +311,7 @@ def evaluation_unexp(subject_names, unexpected_subjects, task_name, raw_data_pat
                            processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
                            downSampleSize=data_dict['downSampleSize'], scale=1.0,\
                            handFeatures=data_dict['handFeatures'], \
-                           rawFeatures=AE_dict['rawFeatures'],\
+                           ## rawFeatures=AE_dict['rawFeatures'],\
                            data_renew=data_renew, max_time=data_dict['max_time'])
 
         # TODO: need leave-one-person-out
@@ -419,21 +415,9 @@ def evaluation_unexp(subject_names, unexpected_subjects, task_name, raw_data_pat
 
     #-----------------------------------------------------------------------------------------
     roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
-    if os.path.isfile(roc_pkl) is False or HMM_dict['renew']:        
-        ROC_data = {}
-    else:
-        ROC_data = ut.load_pickle(roc_pkl)
-        
-    for i, method in enumerate(method_list):
-        if method not in ROC_data.keys() or method in ROC_dict['update_list']:            
-            ROC_data[method] = {}
-            ROC_data[method]['complete'] = False 
-            ROC_data[method]['tp_l'] = [ [] for j in xrange(nPoints) ]
-            ROC_data[method]['fp_l'] = [ [] for j in xrange(nPoints) ]
-            ROC_data[method]['tn_l'] = [ [] for j in xrange(nPoints) ]
-            ROC_data[method]['fn_l'] = [ [] for j in xrange(nPoints) ]
-            ROC_data[method]['delay_l']   = [ [] for j in xrange(nPoints) ]
-            ROC_data[method]['fn_labels'] = [ [] for j in xrange(nPoints) ]
+    if os.path.isfile(roc_pkl) is False or HMM_dict['renew']: ROC_data = {}
+    else: ROC_data = ut.load_pickle(roc_pkl)
+    ROC_data = util.reset_roc_data(ROC_data, method_list, ROC_dict['update_list'], nPoints)
 
     # parallelization
     if debug: n_jobs=1
@@ -442,31 +426,14 @@ def evaluation_unexp(subject_names, unexpected_subjects, task_name, raw_data_pat
                                                                               processed_data_path, \
                                                                               task_name, \
                                                                               method, ROC_data, \
-                                                                              ROC_dict, AE_dict, \
+                                                                              ROC_dict, \
                                                                               SVM_dict, HMM_dict, \
                                                                               startIdx=startIdx, nState=nState,\
                                                                               failsafe=False)\
                                                                               for method in method_list )
 
     print "finished to run run_classifiers"
-    for data in l_data:
-        for j in xrange(nPoints):
-            try:
-                method = data.keys()[0]
-            except:
-                print "no method key in data: ", data
-                sys.exit()
-            if ROC_data[method]['complete'] == True: continue
-            ROC_data[method]['tp_l'][j] += data[method]['tp_l'][j]
-            ROC_data[method]['fp_l'][j] += data[method]['fp_l'][j]
-            ROC_data[method]['tn_l'][j] += data[method]['tn_l'][j]
-            ROC_data[method]['fn_l'][j] += data[method]['fn_l'][j]
-            ROC_data[method]['delay_l'][j] += data[method]['delay_l'][j]
-            ROC_data[method]['fn_labels'][j] += data[method]['fn_labels'][j]
-
-    for i, method in enumerate(method_list):
-        ROC_data[method]['complete'] = True
-
+    ROC_data = util.update_roc_data(ROC_data, l_data, nPoints, method_list)
     ut.save_pickle(ROC_data, roc_pkl)
         
     # ---------------- ACC Visualization ----------------------
@@ -511,8 +478,6 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
     # data
     data_dict  = param_dict['data_param']
     data_renew = data_dict['renew']
-    # AE
-    AE_dict    = param_dict['AE']
     # HMM
     HMM_dict   = param_dict['HMM']
     nState     = HMM_dict['nState']
@@ -547,58 +512,11 @@ def evaluation_online(subject_names, task_name, raw_data_path, processed_data_pa
                            cut_data=data_dict['cut_data'], \
                            data_renew=data_renew, max_time=data_dict['max_time'])
 
-        successIdx = []
-        failureIdx = []
-        for i in xrange(len(d['successDataList'])):
-            
-            if i == 0:
-                successData = d['successDataList'][i]
-                failureData = d['failureDataList'][i]
-                successIdx.append( range(len(d['successDataList'][i][0])) )
-                failureIdx.append( range(len(d['failureDataList'][i][0])) )
-            else:
-                successData = np.vstack([ np.swapaxes(successData,0,1), \
-                                          np.swapaxes(d['successDataList'][i], 0,1)])
-                failureData = np.vstack([ np.swapaxes(failureData,0,1), \
-                                          np.swapaxes(d['failureDataList'][i], 0,1)])
-                successData = np.swapaxes(successData, 0, 1)
-                failureData = np.swapaxes(failureData, 0, 1)
-                successIdx.append( range(successIdx[-1][-1]+1, successIdx[-1][-1]+1+\
-                                         len(d['successDataList'][i][0])) )
-                failureIdx.append( range(failureIdx[-1][-1]+1, failureIdx[-1][-1]+1+\
-                                         len(d['failureDataList'][i][0])) )
-
-
-        # only for hmm tuning
-        kFold_list = []
-        # leave-one-person-out
-        for idx in xrange(len(subject_names)):
-            idx_list = range(len(subject_names))
-            train_idx = idx_list[:idx]+idx_list[idx+1:]
-            test_idx  = idx_list[idx:idx+1]        
-
-            normalTrainIdx = []
-            abnormalTrainIdx = []
-            for tidx in train_idx:
-                if many_to_one:
-                    normalTrainIdx   += successIdx[tidx]
-                    abnormalTrainIdx += failureIdx[tidx]
-                else:                
-                    normalTrainIdx   = successIdx[tidx]
-                    abnormalTrainIdx = failureIdx[tidx]
-                    normalTestIdx    = successIdx[test_idx[0]]
-                    abnormalTestIdx  = failureIdx[test_idx[0]]
-                    kFold_list.append([ normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx])
-                    
-            if many_to_one:
-                normalTestIdx = []
-                abnormalTestIdx = []
-                for tidx in test_idx:
-                    normalTestIdx   += successIdx[tidx]
-                    abnormalTestIdx += failureIdx[tidx]
-
-                kFold_list.append([ normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx])
-
+        successData, failureData, _, _, kFold_list = dm.LOPO_data_index(d['successDataList'], \
+                                                                        d['failureDataList'],\
+                                                                        d['successFileList'],\
+                                                                        d['failureFileList'],\
+                                                                        many_to_one)
 
         d['successData'] = successData
         d['failureData'] = failureData
@@ -971,8 +889,6 @@ def evaluation_acc(subject_names, task_name, raw_data_path, processed_data_path,
     # data
     data_dict  = param_dict['data_param']
     data_renew = data_dict['renew']
-    # AE
-    AE_dict     = param_dict['AE']
     # HMM
     HMM_dict   = param_dict['HMM']
     nState     = HMM_dict['nState']
@@ -1087,7 +1003,7 @@ def evaluation_acc(subject_names, task_name, raw_data_path, processed_data_path,
                                                                               processed_data_path, \
                                                                               task_name, \
                                                                               method, ROC_data, \
-                                                                              ROC_dict, AE_dict, \
+                                                                              ROC_dict, \
                                                                               SVM_dict, HMM_dict, \
                                                                               startIdx=startIdx, nState=nState,\
                                                                               failsafe=False)\
@@ -1695,7 +1611,6 @@ if __name__ == '__main__':
                        param_dict['data_param']['rf_center'], param_dict['data_param']['local_range'],\
                        downSampleSize=param_dict['data_param']['downSampleSize'], scale=scale, \
                        success_viz=success_viz, failure_viz=failure_viz,\
-                       ae_data=False,\
                        cut_data=param_dict['data_param']['cut_data'],\
                        save_pdf=opt.bSavePdf, solid_color=True,\
                        handFeatures=param_dict['data_param']['handFeatures'], data_renew=opt.bDataRenew, \

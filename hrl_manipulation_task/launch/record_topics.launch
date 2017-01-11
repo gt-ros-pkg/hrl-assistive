@@ -5,20 +5,21 @@
   <!--node pkg="topic_tools" type="throttle" name="kinect_throttle"
         args="messages /head_mount_kinect/hd/points 0.05" /-->
   <node pkg="topic_tools" type="throttle" name="tf_throttle"
-        args="messages /tf 20" />
+        args="messages /tf 50" />
   <node pkg="topic_tools" type="throttle" name="joint_states_throttle"
-        args="messages /joint_states 20" />
+        args="messages /joint_states 50" />
   <node pkg="topic_tools" type="throttle" name="netft_data_throttle"
-        args="messages /netft_data 20" />
+        args="messages /netft_data 50" />
 
   
   <node pkg="rosbag" type="record" name="rosbag" args="record -o
-                                                       /home/dpark/hrl_file_server/dpark_data/anomaly/AURO2016/$(arg fname) 
+                                                       /home/dpark/$(arg fname) 
                                                        /tf_throttle
                                                        /joint_states_throttle
                                                        /haptic_mpc/goal_pose_array
                                                        /haptic_mpc/robot_state
                                                        /right/haptic_mpc/robot_state
+                                                       /right/haptic_mpc/gripper_pose
                                                        /hrl_manipulation_task/raw_data
                                                        /hrl_manipulation_task/wrist_audio
                                                        /haptic_mpc/traj_pose
@@ -57,11 +58,10 @@
                                                        /pr2_fabric_r_upperarm_sensor/viz/taxel_array_array
                                                        /pr2_fabric_r_upperarm_sensor/viz/taxel_array_text_array
                                                        /pr2_fabric_r_upperarm_sensor/zero_sensor
+                                                       /SR300/depth_registered/sw_registered/image_rect
+                                                       /SR300/depth_registered/sw_registered/camera_info
                                                        /SR300/rgb/image_raw
-                                                       /SR300/rgb/image_color
                                                        /SR300/rgb/camera_info
-                                                       /SR300/depth_registered/image
-                                                       /SR300/depth_registered/camera_info
                                                        /SR300/depth/points
                                                        /SR300/depth/camera_info
                                                        /head_mount_kinect/hd/points

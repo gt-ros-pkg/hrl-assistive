@@ -53,7 +53,7 @@ def extrapolateData(data, maxsize):
         # need to implement incremental extrapolation
         return [x if len(x[0]) >= maxsize else x + [x[:,-1]]*(maxsize-len(x[0])) for x in data]
     else:
-        # need to implement incremental extrapolation        
+        # need to implement incremental extrapolation
         return [x if len(x) >= maxsize else x + [x[-1]]*(maxsize-len(x)) for x in data]
         
 
@@ -71,8 +71,9 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
     key_list = ['timesList', 'fileNameList',\
                 'audioTimesList', 'audioAzimuthList', 'audioPowerList',\
                 'audioWristTimesList', 'audioWristRMSList', 'audioWristFrontRMSList', 'audioWristMFCCList', \
+                'audioWristAzimuthList',\
                 'kinTimesList', 'kinEEPosList', 'kinEEQuatList', 'kinJntPosList', 'kinTargetPosList', \
-                'kinTargetQuatList', 'kinPosList', 'kinVelList',\
+                'kinTargetQuatList', 'kinPosList', 'kinVelList', 'kinJntEffList',\
                 'kinDesEEPosList', 'kinDesEEQuatList',\
                 'ftTimesList', 'ftForceList', 'ftTorqueList', \
                 'visionArtagTimesList', 'visionArtagPosList', 'visionArtagQuatList', \
@@ -107,6 +108,10 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
         print "Wrong max time!!!!!!!!!!!!!!!"
         sys.exit()
 
+
+    data_dict['success_idx_list'] = []
+    data_dict['failure_idx_list'] = []
+
     for idx, fileName in enumerate(fileNames):        
         if os.path.isdir(fileName):
             continue
@@ -116,7 +121,14 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
         ##     for c in cause:
         ##         description += c
         raw_data_dict['fileNameList'].append(fileName)
-        data_dict['fileNameList'].append(fileName)        
+        data_dict['fileNameList'].append(fileName)
+
+        cause = os.path.split(fileName)[1]
+        if cause.find('success')>=0:
+            data_dict['success_idx_list'].append(idx)
+        else:
+            data_dict['failure_idx_list'].append(idx)
+        
 
         # Load raw data
         if verbose: print fileName
@@ -234,20 +246,27 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             # Save local raw and interpolated data
             raw_data_dict['audioWristTimesList'].append(audio_time)
             raw_data_dict['audioWristRMSList'].append(audio_rms)
-            raw_data_dict['audioWristFrontRMSList'].append(audio_rms)
+            if audio_azimuth is not None:
+                raw_data_dict['audioWristFrontRMSList'].append(audio_rms)
+                raw_data_dict['audioWristAzimuthList'].append(audio_azimuth)
             ## raw_data_dict['audioWristMFCCList'].append(audio_mfcc)
-            
+
             if len(audio_time)>len(new_times):
                 data_dict['audioWristRMSList'].append(downSampleAudio(audio_time, audio_rms, new_times))
-                data_dict['audioWristFrontRMSList'].append(downSampleAudio(audio_time, audio_front_rms, \
-                                                                           new_times))
+                if audio_azimuth is not None:
+                    data_dict['audioWristFrontRMSList'].append(downSampleAudio(audio_time, audio_front_rms, \
+                                                                               new_times))
+                    data_dict['audioWristAzimuthList'].append(downSampleAudio(audio_time, audio_azimuth, new_times))
                 ## data_dict['audioWristMFCCList'].append(downSampleAudio(audio_time, audio_mfcc, new_times))
             else:
                 data_dict['audioWristRMSList'].append(interpolationData(audio_time, audio_rms, new_times))
-                data_dict['audioWristFrontRMSList'].append(interpolationData(audio_time, audio_front_rms, \
-                                                                             new_times))
+                if audio_azimuth is not None:
+                    data_dict['audioWristFrontRMSList'].append(interpolationData(audio_time, audio_front_rms, \
+                                                                                 new_times))
+                    data_dict['audioWristAzimuthList'].append(interpolationData(audio_time, audio_azimuth, new_times))
                 ## data_dict['audioWristMFCCList'].append(interpolationData(audio_time, audio_mfcc, new_times))
 
+                
         # kinematics -----------------------------------------------------------
         if 'kinematics_time' in d.keys():
             kin_time        = (np.array(d['kinematics_time']) - init_time).tolist()
@@ -256,6 +275,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             kin_target_pos  = d['kinematics_target_pos']
             kin_target_quat = d['kinematics_target_quat']
             kin_jnt_pos     = d['kinematics_jnt_pos'] # 7xN
+            kin_jnt_eff     = d['kinematics_jnt_eff'] # 7xN
             kin_des_ee_pos  = d.get('kinematics_des_ee_pos',kin_ee_pos)
             kin_des_ee_quat  = d.get('kinematics_des_ee_quat', kin_ee_quat)
 
@@ -338,6 +358,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             raw_data_dict['kinTargetPosList'].append(local_kin_target_pos)
             raw_data_dict['kinTargetQuatList'].append(local_kin_target_quat)
             raw_data_dict['kinJntPosList'].append(kin_jnt_pos)
+            raw_data_dict['kinJntEffList'].append(kin_jnt_eff)
             raw_data_dict['kinPosList'].append(local_kin_pos)
             raw_data_dict['kinVelList'].append(local_kin_vel)
             raw_data_dict['kinDesEEPosList'].append(local_kin_des_ee_pos)
@@ -349,6 +370,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             data_dict['kinTargetQuatList'].append(interpolationData(kin_time, local_kin_target_quat, \
                                                                     new_times, True))
             data_dict['kinJntPosList'].append(interpolationData(kin_time, kin_jnt_pos, new_times))
+            data_dict['kinJntEffList'].append(interpolationData(kin_time, kin_jnt_eff, new_times))
             data_dict['kinPosList'].append(interpolationData(kin_time, local_kin_pos, new_times))
             data_dict['kinVelList'].append(interpolationData(kin_time, local_kin_vel, new_times))
 
@@ -431,25 +453,39 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
                 print fileName, np.shape(local_vision_quat)
                 sys.exit()
 
-            ## plt.figure(1)
-            ## data_list = []
-            ## print fileName
-            ## for time_idx in xrange(len(vision_time)):
-
-            ##     ## startQuat = kinEEQuat[:,time_idx]
-            ##     startQuat = local_vision_quat[:,0]
-            ##     endQuat   = local_vision_quat[:,time_idx]
-            ##     diff_ang  = qt.quat_angle(startQuat, endQuat)
-            ##     data_list.append(diff_ang)
-            
-            ## plt.plot(data_list)
-            ## plt.show()
-                
-
-            vision_pos_array  = interpolationData(vision_time, local_vision_pos, new_times)
+            vision_pos_array  = interpolationData(vision_time, local_vision_pos, new_times, spline=True)
             data_dict['visionLandmarkPosList'].append(vision_pos_array)                                         
             vision_quat_array = interpolationData(vision_time, local_vision_quat, new_times, True)
             data_dict['visionLandmarkQuatList'].append(vision_quat_array)
+
+
+            ## if 'iteration_8' in fileName:
+            ##     print "aaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            ##     vision_pos_array  = interpolationData(vision_time, local_vision_pos, new_times, spline=True,\
+            ##                                           temp=True)
+            ##     plt.figure(1)
+            ##     ## data_list = []
+            ##     ## data_list2 = []
+            ##     print fileName
+            ##     ## for time_idx in xrange(len(vision_time)):
+
+            ##         ##     ## startQuat = kinEEQuat[:,time_idx]
+            ##         ##     startQuat = local_vision_quat[:,0]
+            ##         ##     endQuat   = local_vision_quat[:,time_idx]
+            ##         ##     diff_ang  = qt.quat_angle(startQuat, endQuat)
+            ##         ##     data_list.append(diff_ang)
+            ##         ## data_list.append(local_vision_pos[0,time_idx])
+            ##         ## data_list2.append(vision_pos_array[0,time_idx])
+            ##     plt.subplot(2,1,1)
+            ##     plt.plot(vision_time, local_vision_pos[0], '-*')
+            ##     plt.plot(new_times, vision_pos_array[0], '-o')
+            ##     plt.subplot(2,1,2)
+            ##     plt.plot(vision_time)
+            ##     plt.show()
+
+                
+
+
 
             
         # vision change -----------------------------------------------------------
@@ -591,6 +627,8 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
         # Extrapolate each time step
         for key in data_dict.keys():
             if 'file' in key: continue
+            if 'success_idx_list' in key: continue
+            if 'failure_idx_list' in key: continue
             if data_dict[key] == []: continue
             if 'fabric' in key:
                 data_dict[key] = [x if len(x) >= max_size else x + []*(max_size-len(x)) for x in data_dict[key]]
@@ -732,7 +770,7 @@ def downSampleAudio(time_array, data_array, new_time_array):
 
 
 
-def interpolationData(time_array, data_array, new_time_array, quat_flag=False, spline=True):
+def interpolationData(time_array, data_array, new_time_array, quat_flag=False, spline=True, temp=False):
     '''
     time_array: N - length array
     data_array: D x N - length array
@@ -747,12 +785,20 @@ def interpolationData(time_array, data_array, new_time_array, quat_flag=False, s
     n,m = np.shape(target_array)    
     if len(time_array) > m: time_array = time_array[0:m]
 
+    if time_array[-1] < new_time_array[-1]:
+        time_array[-1] = new_time_array[-1]
+
     # change quaternion sign
     if quat_flag:
         for i in xrange(m-1):            
             cosHalfTheta = np.sum(target_array[:,i]*target_array[:,i+1])
             if cosHalfTheta < 0.0:
                 target_array[:,i+1] *= -1.0
+
+    if len(time_array) < 4:
+        ## print "Time array is tooooooo short", np.shape(time_array)
+        nDim = len(target_array)
+        return np.zeros((nDim,len(new_time_array)))
 
     # remove repeated data
     if spline is True:
@@ -762,32 +808,53 @@ def interpolationData(time_array, data_array, new_time_array, quat_flag=False, s
             if time_array[i-1] != time_array[i]:
                 temp_time_array.append(time_array[i])
                 temp_data_array = np.hstack([temp_data_array, target_array[:,i:i+1]])
+            ## elif np.linalg.norm(temp_data_array[:,-1]) != np.linalg.norm(target_array[:,i]):
+            ##     temp_time_array.append(temp_time_array[-1]+0.0001)
+            ##     temp_data_array = np.hstack([temp_data_array, target_array[:,i:i+1]])
             else:
-                if np.linalg.norm(temp_data_array[:,-1]) < np.linalg.norm(target_array[:,i:i+1]):
-                    temp_data_array[:,-1:] = target_array[:,i:i+1]
+                if len(temp_data_array[0])>2:
+                    if np.linalg.norm(temp_data_array[:,-1]-temp_data_array[:,-2]) < \
+                      np.linalg.norm(target_array[:,i]-temp_data_array[:,-2]):
+                        temp_data_array[:,-1:] = target_array[:,i:i+1]
 
         time_array = temp_time_array
         target_array = temp_data_array
 
-    if len(time_array) < 4:
-        nDim = len(target_array)
-        return np.zeros((nDim,len(new_time_array)))
-    
+        
     new_data_array = None    
     for i in xrange(n):
         try:
             if spline:
-                interp = interpolate.splrep(time_array, target_array[i], s=0)
+                if len(time_array)<20:
+                    # linear interpolation time array
+                    temp_time_array = np.linspace(time_array[0], time_array[-1], 20 )
+                    interp_1d   = interpolate.interp1d(time_array, target_array[i])
+                    temp_target_array = interp_1d(temp_time_array)
+                    interp = interpolate.splrep(temp_time_array, temp_target_array, s=0)
+                else:                
+                    interp = interpolate.splrep(time_array, target_array[i], s=0)
                 interp_data = interpolate.splev(new_time_array, interp, der=0, ext=1)
+
+                ## if temp:
+                ##     print np.shape(time_array), np.shape(target_array), m
+                ##     print np.shape(new_time_array), np.shape(interp_data)
+                ##     plt.figure(1)
+                ##     plt.plot(time_array, target_array[i])
+                ##     plt.plot(new_time_array, interp_data, '-r')
+                ##     plt.show()
+                
             else:
-                if new_time_array[-1]>time_array[-1]:
-                    interp = interpolate.interp1d(time_array+[time_array[-1]+0.1], target_array[i].tolist()+[target_array[i][-1]] )
-                else:
-                    interp = interpolate.interp1d(time_array, target_array[i] )
+                interp = interpolate.interp1d([0.0]+time_array+[time_array[-1]+0.1], [target_array[i][0]]+target_array[i].tolist()+[target_array[i][-1]] )
+                ## if new_time_array[-1]>time_array[-1]:
+                ##     interp = interpolate.interp1d(time_array+[time_array[-1]+0.1], target_array[i].tolist()+[target_array[i][-1]] )
+                ## else:
+                ##     interp = interpolate.interp1d(time_array, target_array[i] )
                 interp_data = interp(new_time_array)
         except:
             print "splrep failed (maybe new_time_array is over range of time_array)", spline
             print np.shape(time_array), np.shape(target_array[i]), i,n
+            print new_time_array[0], time_array[0]
+            print new_time_array[-1], time_array[-1]
             sys.exit()
             
 
@@ -821,7 +888,10 @@ def interpolationData(time_array, data_array, new_time_array, quat_flag=False, s
         if new_data_array is None: new_data_array = interp_data
         else: new_data_array = np.vstack([new_data_array, interp_data])
 
-    return new_data_array
+    if len(np.shape(new_data_array)) < 2:
+        return [new_data_array]
+    else:
+        return new_data_array
     
 def interpolationQuatData(time_array, data_array, new_time_array):
     '''
@@ -1336,10 +1406,10 @@ def combineData(X1,X2, target_features, all_features, first_axis='dim', add_nois
         ## return X
 
 def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, save_pdf=False,\
-             timeList=None, only_tpr=False, legend=False):
+             timeList=None, only_tpr=False, legend=False, verbose=True):
     # ---------------- ROC Visualization ----------------------
     
-    print "Start to visualize ROC curves!!!"
+    if verbose: print "Start to visualize ROC curves!!!"
     ## ROC_data = ut.load_pickle(roc_pkl)
     import itertools
     colors = itertools.cycle(['g', 'm', 'c', 'k', 'y','r', 'b', ])
@@ -1377,7 +1447,7 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
         if timeList is not None:
             time_step = (timeList[-1]-timeList[0])/float(len(timeList)-1)
             ## print np.shape(timeList), timeList[0], timeList[-1], (timeList[-1]-timeList[0])/float(len(timeList))
-            print "time_step[s] = ", time_step, " length: ", timeList[-1]-timeList[0]
+            if verbose: print "time_step[s] = ", time_step, " length: ", timeList[-1]-timeList[0]
         else:
             time_step = 1.0
 
@@ -1395,25 +1465,27 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
             acc_l.append( float(np.sum(tp_ll[i]+tn_ll[i])) / float(np.sum(tp_ll[i]+fn_ll[i]+fp_ll[i]+tn_ll[i])) * 100.0 )
 
         if len(fpr_l) < nPoints:
-            print method + ' has NaN? and fitting error?'
+            if verbose: print method + ' has NaN? and fitting error?'
             continue
 
         # add edge
         ## fpr_l = [0] + fpr_l + [100]
         ## tpr_l = [0] + tpr_l + [100]
 
-        from sklearn import metrics
-        print "--------------------------------"
-        print " AUC and delay "
-        print "--------------------------------"
-        print method
-        print tpr_l
-        print fpr_l
+        from sklearn import metrics 
+        if verbose:       
+            print "--------------------------------"
+            print " AUC and delay "
+            print "--------------------------------"
+            print method
+            print tpr_l
+            print fpr_l
         if only_tpr is False:
-            auc = metrics.auc(fpr_l + [100], tpr_l + [100], True)
+            auc = metrics.auc(fpr_l, tpr_l, True)
+            ## auc = metrics.auc(fpr_l + [100], tpr_l + [100], True)
             ## auc = metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
             auc_rates[method] = auc
-        print "--------------------------------"
+            if verbose: print auc
 
         if method == 'svm': label='HMM-BPSVM'
         elif method == 'progress': label='HMM-D'
@@ -1504,8 +1576,8 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
     elif no_plot is False:
         plt.show()
 
-    for key in auc_rates.keys():
-        print key, " : ", auc_rates[key]
+    ## for key in auc_rates.keys():
+    ##     print key, " : ", auc_rates[key]
 
     return auc_rates
     
@@ -1619,6 +1691,161 @@ def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, 
             fig = plt.figure()
 
     for method in sorted(method_list):
+        print "------------ ", method , " ------------------"
+
+        tp_ll = ROC_data[method]['tp_l']
+        fp_ll = ROC_data[method]['fp_l']
+        tn_ll = ROC_data[method]['tn_l']
+        fn_ll = ROC_data[method]['fn_l']
+        delay_ll = ROC_data[method]['delay_l']
+
+        tpr_l = []
+        fpr_l = []
+        fnr_l = []
+        tnr_l = []
+        delay_mean_l = []
+        delay_std_l  = []
+        acc_l = []
+        f_score   = []
+        f05_score = []
+        f2_score  = []
+
+        if timeList is not None:
+            time_step = (timeList[-1]-timeList[0])/float(len(timeList)-1)
+            print "time_step[s] = ", time_step, " length: ", timeList[-1]-timeList[0]
+        else:
+            time_step = 1.0
+
+        for i in xrange(nPoints):
+            
+            ## fnr_l.append( 100.0 - tpr_l[-1] )
+            ## if float(np.sum(tn_ll[i])+np.sum(fn_ll[i])) > 0:            
+            ##     tnr_l.append( float(np.sum(tn_ll[i])) / float(np.sum(tn_ll[i])+np.sum(fn_ll[i])) * 100.0 )
+            ## else:
+            ##     tnr_l.append(0)
+            ## if only_tpr is False:
+            ##     fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
+            ## sen_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
+            ## spec_l.append( float(np.sum(tn_ll[i]))/float(np.sum(tn_ll[i])+np.sum(fp_ll[i]))*100.0 )
+
+            ## f_score.append(2.0*float(np.sum(tp_ll[i])) / (2.0*float(np.sum(tp_ll[i])) + float(np.sum(fn_ll[i])) + float(np.sum(fp_ll[i]))  ) )
+            ## f05_score.append((1.0+0.25)*float(np.sum(tp_ll[i])) / ((1.0+0.25)*float(np.sum(tp_ll[i])) + 0.25*float(np.sum(fn_ll[i])) + float(np.sum(fp_ll[i]))  ) )
+            ## f2_score.append((1.0+4.0)*float(np.sum(tp_ll[i])) / ((1.0+4.0)*float(np.sum(tp_ll[i])) + 4.0*float(np.sum(fn_ll[i])) + float(np.sum(fp_ll[i]))  ) )
+
+
+            if tp_ll[i] == [] and fn_ll[i] == []: tpr_l .append(0)
+            else:
+                tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
+            fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
+
+            ## delay_list = [ delay_ll[i][ii] for ii in xrange(len(delay_ll[i])) ]
+            delay_list = [ delay_ll[i][ii] for ii in xrange(len(delay_ll[i])) if delay_ll[i][ii]>=0 ]
+
+            ## ## # to handle.....
+            ## tot_pos = int(np.sum(tp_ll[i]) + np.sum(fn_ll[i]))
+            ## print tot_pos, len(delay_list)
+            ## if len(delay_list) < tot_pos:
+            ##     for k in xrange(tot_pos-len(delay_list)):
+            ##         delay_list.append(200)
+
+            
+            if len(delay_list)>0:
+                delay_mean_l.append( np.mean(np.array(delay_list)*time_step) )
+                delay_std_l.append( np.std(np.array(delay_list)*time_step) )
+            else:
+                delay_mean_l.append( 0 )
+                delay_std_l.append( 0 )
+                
+            acc_l.append( float(np.sum(tp_ll[i]+tn_ll[i])) / float(np.sum(tp_ll[i]+fn_ll[i]+fp_ll[i]+tn_ll[i])) * 100.0 )
+
+        from sklearn import metrics
+        print "--------------------------------"
+        print " AUC "
+        print "--------------------------------"
+        print method
+        print tpr_l
+        print fpr_l
+        print metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
+        print "--------------------------------"
+
+
+        if method == 'svm': label='HMM-BPSVM'
+        elif method == 'hmmgp': label='HMM-GP'
+        elif method == 'progress': label='HMM-D'
+        elif method == 'progress_state': label='HMMs with a dynamic threshold + state_clsutering'
+        elif method == 'fixed': label='HMM-F'
+        elif method == 'change': label='HMM-C'
+        elif method == 'cssvm': label='HMM-CSSVM'
+        elif method == 'sgd': label='SGD'
+        elif method == 'hmmosvm': label='HMM-OneClassSVM'
+        elif method == 'hmmsvm_diag': label='HMM-SVM with diag cov'
+        elif method == 'osvm': label='OSVM'
+        elif method == 'bpsvm': label='BPSVM'
+        else: label = method
+
+        if no_plot is False:
+            # visualization
+            color = colors.next()
+            shape = shapes.next()
+            ax1 = fig.add_subplot(111)
+
+            ## acc_l, delay_mean_l = zip(*sorted(zip(acc_l, delay_mean_l)))
+            ## plt.plot(fpr_l, delay_mean_l, '-'+shape+color, label=label, linewidth=2.0, ms=10.0)
+            plt.plot(acc_l, delay_mean_l, '-'+shape+color, label=label, linewidth=2.0, ms=10.0)
+            ## plt.plot(spec_l, delay_mean_l, '-'+shape+color, label=label, linewidth=2.0, ms=10.0)
+            ## plt.plot(f_score, delay_mean_l, '-'+shape+color, label=label, linewidth=2.0, ms=10.0)
+            
+            ## plt. plot(delay_mean_l, '-'+color, label=label, linewidth=2.0)
+            ## plt.plot(acc_l, '-'+color, label=label, linewidth=2.0)
+
+            ## plt.xlim([49, 101])
+            ## plt.ylim([0, 7.0])
+            ## plt.ylabel('Detection Time [s]', fontsize=24)
+            ## plt.xlabel('False Positive Rate (percentage)', fontsize=24)
+            plt.xlabel('F1 score', fontsize=24)
+            plt.ylabel('Detection Delay [s]', fontsize=24)
+            ## plt.xticks([50, 100], fontsize=22)                
+            plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
+
+
+    if no_plot is False:
+        #plt.xlim([0,1])
+        ## plt.xlim([0,100])
+        plt.ylim([0,5])
+        plt.legend(loc='upper left', prop={'size':24})
+
+    if save_pdf:
+        fig.savefig('test.pdf')
+        fig.savefig('test.png')
+        os.system('cp test.p* ~/Dropbox/HRL/')
+    elif no_plot is False:
+        plt.show()
+
+
+def delay_info2(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, save_pdf=False,\
+                timeList=None, only_tpr=False):
+    # ---------------- ROC Visualization ----------------------
+    
+    print "Start to visualize ROC curves!!!"
+    ## ROC_data = ut.load_pickle(roc_pkl)
+    import itertools
+    colors = itertools.cycle(['g', 'm', 'c', 'k', 'y','r', 'b', ])
+    shapes = itertools.cycle(['x','v', 'o', '+'])
+
+    matplotlib.rcParams['pdf.fonttype'] = 42
+    matplotlib.rcParams['ps.fonttype'] = 42 
+    
+    if no_plot is False:
+        if delay_plot:
+            fig = plt.figure(figsize=(5,8))
+            colors = itertools.cycle(['y', 'g', 'b', 'k', 'y','r', 'b', ])
+            
+        else:
+            fig = plt.figure()
+
+    delay_dict = {}
+
+    for method in sorted(method_list):
 
         tp_ll = ROC_data[method]['tp_l']
         fp_ll = ROC_data[method]['fp_l']
@@ -1662,6 +1889,7 @@ def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, 
             tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
             fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
 
+            delay_list = [ delay_ll[i][ii] for ii in xrange(len(delay_ll[i])) ]
             delay_list = [ delay_ll[i][ii] for ii in xrange(len(delay_ll[i])) if delay_ll[i][ii]>=0 ]
             if len(delay_list)>0:
                 delay_mean_l.append( np.mean(np.array(delay_list)*time_step) )
@@ -1683,6 +1911,44 @@ def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, 
         print "--------------------------------"
 
 
+        delay_dict[method] = {}
+        delay_dict[method]['delay_mean'] = delay_mean_l
+        delay_dict[method]['delay_std'] = delay_std_l
+        delay_dict[method]['f_score'] = f_score
+        delay_dict[method]['f05_score'] = f05_score
+        delay_dict[method]['f2_score'] = f2_score
+
+
+    f_score_init = np.amax([delay_dict[method]['f05_score'][0] for method in method_list  ])
+    x = np.linspace(f_score_init,1.0, 10)
+        
+    for method in sorted(method_list):
+
+        # interpolation
+        max_idx = argmax(delay_dict[method]['f05_score'])
+        if len(np.unique(delay_dict[method]['f05_score'])) < len(delay_dict[method]['f05_score']):
+            xx = np.array(delay_dict[method]['f05_score'])[:max_idx+2]
+            yy = np.array(delay_dict[method]['delay_mean'])[:max_idx+2]            
+        else:        
+            xx = np.array(delay_dict[method]['f05_score'])[:max_idx+2]
+            yy = np.array(delay_dict[method]['delay_mean'])[:max_idx+2]
+        print np.shape(xx), np.shape(yy)
+
+        from scipy import interpolate
+        f = interpolate.interp1d(xx,yy)
+
+        x_list = []
+        y_list = []
+        for i in xrange(len(x)):
+            if x[i] <= xx[-1]:
+                x_list.append(x[i])
+                y_list.append(float(f(x[i])))
+
+        print method
+        print x_list
+        print y_list
+       
+
         if method == 'svm': label='HMM-BPSVM'
         elif method == 'hmmgp': label='HMM-GP'
         elif method == 'progress': label='HMM-D'
@@ -1703,28 +1969,16 @@ def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, 
             shape = shapes.next()
             ax1 = fig.add_subplot(111)
 
-            ## acc_l, delay_mean_l = zip(*sorted(zip(acc_l, delay_mean_l)))
-            ## plt.plot(fpr_l, delay_mean_l, '-'+shape+color, label=label, linewidth=2.0, ms=10.0)
-            ## plt.plot(acc_l, delay_mean_l, '-'+shape+color, label=label, linewidth=2.0, ms=10.0)
-            ## plt.plot(spec_l, delay_mean_l, '-'+shape+color, label=label, linewidth=2.0, ms=10.0)
-            plt.plot(f_score, delay_mean_l, '-'+shape+color, label=label, linewidth=2.0, ms=10.0)
-            ## plt. plot(delay_mean_l, '-'+color, label=label, linewidth=2.0)
-            ## plt.plot(acc_l, '-'+color, label=label, linewidth=2.0)
-
-            ## plt.xlim([49, 101])
-            ## plt.ylim([0, 7.0])
-            ## plt.ylabel('Detection Time [s]', fontsize=24)
-            ## plt.xlabel('False Positive Rate (percentage)', fontsize=24)
+            plt.plot(x_list, y_list, '-'+shape+color, label=label, linewidth=2.0, ms=10.0)
+            
             plt.xlabel('F1 score', fontsize=24)
             plt.ylabel('Detection Delay [s]', fontsize=24)
-            ## plt.xticks([50, 100], fontsize=22)                
             plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
 
 
     if no_plot is False:
-        plt.xlim([0,1])
-        ## plt.xlim([0,100])
-        plt.ylim([0,3])
+        ## plt.xlim([0,1])
+        ## plt.ylim([0,3])
         plt.legend(loc='upper left', prop={'size':24})
 
     if save_pdf:
@@ -1733,10 +1987,10 @@ def delay_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, 
         os.system('cp test.p* ~/Dropbox/HRL/')
     elif no_plot is False:
         plt.show()
-    
+        
 
 
-def getBestParamIdx(method_list, ROC_data, nPoints, verbose=False):
+def getBestParamIdx(method_list, ROC_data, nPoints, verbose=False, nLength=200):
     '''
     Return three index of the best weight from weight list using f1, f0.5, f2 scores
     '''
@@ -1749,13 +2003,20 @@ def getBestParamIdx(method_list, ROC_data, nPoints, verbose=False):
         fp_ll = ROC_data[method]['fp_l']
         tn_ll = ROC_data[method]['tn_l']
         fn_ll = ROC_data[method]['fn_l']
+        delay_ll = ROC_data[method]['delay_l']
         tpr_l = []
         tnr_l = []
+        fpr_l = []
 
         total_cost = []
         fscore_1   = []
         fscore_0_5 = []
         fscore_2   = []
+        acc_l      = []
+        delay_mean_l = []
+        delay_std_l  = []
+        tn_l = []
+        fp_l = []
         for i in xrange(nPoints):
 
             tp = float(np.sum(tp_ll[i]))
@@ -1765,17 +2026,66 @@ def getBestParamIdx(method_list, ROC_data, nPoints, verbose=False):
 
             fscore_1.append( 2.0*tp/(2.0*tp+fn+fp) )
             fscore_0_5.append( 1.25*tp/(1.25*tp+0.25*fn+fp) )
-            fscore_2.append( 5.0*tp/(5.0*tp+4.0*fn+fp) )            
+            fscore_2.append( 5.0*tp/(5.0*tp+4.0*fn+fp) )
+            acc_l.append((tp+tn)/(tp+fn+fp+tn))
             ## total_cost.append( fp_cost*float(np.sum(fp_ll[i])) + fn_cost+float(np.sum(fn_ll[i]))  )
             tpr_l.append( tp/(tp+fn) )
             tnr_l.append( tn/(fp+tn) )
+            fpr_l.append( fp/(fp+tn) )
+            tn_l.append(tn)
+            fp_l.append(fp)
 
-        max_score_idx[0].append( np.argmax(fscore_1) )
-        max_score_idx[1].append( np.argmax(fscore_0_5) )
-        max_score_idx[2].append( np.argmax(fscore_2) )
-        
-        print "Sensitivity of ", method, " is ", tpr_l[max_score_idx[0][-1]]
+            ## delay_list = [ delay_ll[i][ii] for ii in xrange(len(delay_ll[i])) ] 
+            delay_list = [ delay_ll[i][ii] for ii in xrange(len(delay_ll[i])) if delay_ll[i][ii]>=0 ]
+            if len(delay_list)>0:
+                delay_mean_l.append( 1.0 - np.mean( np.abs(np.array(delay_list).astype(float))/float(nLength) ) )
+                ## delay_std_l.append( np.std(np.array(delay_list)) )
+            else:
+                delay_mean_l.append( 0 )
+                ## delay_std_l.append( 0 )
+
+        fscore_1   = np.array(fscore_1)
+        fscore_0_5 = np.array(fscore_0_5)
+        fscore_2   = np.array(fscore_2)
+        delay_mean_l = np.array(delay_mean_l)
+
+        ## print method
+        ## print tpr_l
+        ## print fpr_l
+        ## print acc_l
+        ## print fscore_0_5
+        ## print fscore_1
+        #print delay_mean_l
+        ## print delay_list
+        ## print np.argmax(fscore_1 + delay_mean_l )
+        ## sys.exit()
+
+        ## max_score_idx[0].append( np.argmax(fscore_1 + delay_mean_l ) )
+        ## max_score_idx[1].append( np.argmax(fscore_0_5 + delay_mean_l) )
+        ## max_score_idx[2].append( np.argmax(fscore_2 + delay_mean_l) )
+
+        max_score_idx[0].append( argmax(fscore_1) )
+        max_score_idx[1].append( argmax(fscore_0_5) )
+        max_score_idx[2].append( argmax(fscore_2) )
+
+        ## max_score_idx[0].append(np.argmin(np.abs(fscore_1-0.8)))
+        ## max_score_idx[1].append(np.argmin(np.abs(fscore_0_5-0.8)))
+        ## max_score_idx[2].append(np.argmin(np.abs(fscore_2-0.8)))
+
+        ## max_score_idx[0].append( np.argmin(fp_l) )
+        ## max_score_idx[1].append( np.argmin(fp_l) )
+        ## max_score_idx[2].append( np.argmin(fp_l) )
+
+        ## max_score_idx[0].append( argmax(tn_l) )
+        ## max_score_idx[1].append( argmax(tn_l) )
+        ## max_score_idx[2].append( argmax(tn_l) )
+
+
+
+        print "---------------------- ", method, " ----------------------"
+        print "Sensitivity of ", method, " is ", tpr_l[max_score_idx[0][-1]], ' with f1 score ', np.amax(fscore_1)
         print "Specificity of ", method, " is ", tnr_l[max_score_idx[0][-1]]
+
 
     ##     if method == 'progress' or method == 'hmmgp':
     ##         print fscore_2
@@ -1791,6 +2101,7 @@ def cost_info(param_idx, method_list, ROC_data, nPoints, \
 
     m_score_l  = [[],[],[]]
     m_delay_l = [[],[],[]]
+    m_true_detection_l = [[],[],[]]
 
 
     for mi, method in enumerate(method_list):
@@ -1812,6 +2123,19 @@ def cost_info(param_idx, method_list, ROC_data, nPoints, \
             tp = float(np.sum(tp_ll[i]))
             fn = float(np.sum(fn_ll[i]))
             fp = float(np.sum(fp_ll[i]))
+            delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) ]
+            ## delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) \
+            ##                if delay_ll[i][ii]>=0 ]
+
+            ## # to handle.....
+            tot_pos = int(np.sum(tp_ll[i]) + np.sum(fn_ll[i]))
+            n_true_detection = float(len(delay_list))/float(tot_pos)
+            if len(delay_list) < tot_pos:
+                for k in xrange(tot_pos-len(delay_list)):
+                    delay_list.append(200*time_step)
+
+            delay_list = [ delay_list[ii] for ii in xrange(len(delay_list)) if delay_list[ii]>=0 ]
+                           
 
             # 0: f1, 1: f0.5, 2: f2
             for j in xrange(3):
@@ -1822,13 +2146,11 @@ def cost_info(param_idx, method_list, ROC_data, nPoints, \
                     else: fscore = 5.0*tp/(5.0*tp+4.0*fn+fp)         
                     
                     ## cost = fp_cost*float(np.sum(fp_ll[i])) + fn_cost+float(np.sum(fn_ll[i]))  
-                    delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) \
-                                   if delay_ll[i][ii]>=0 ]
-                    ## delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) ]
-                                   
                     m_score_l[j].append( fscore )
                     m_delay_l[j].append( delay_list )
+                    m_true_detection_l[j].append( n_true_detection)
 
+                    #print "tp: ", tp, method
                     ## if method == 'progress':
                     ##     print method, " : ", i, j, nPoints 
                     ## if method == 'progress' and j==1 and i==10:
@@ -1838,8 +2160,88 @@ def cost_info(param_idx, method_list, ROC_data, nPoints, \
                     ##     print time_step
                     ##     sys.exit()
                     
+    return m_score_l, m_delay_l, m_true_detection_l
+
+def cost_info_with_max_tpr(method_list, ROC_data, nPoints, \
+                           timeList=None, verbose=True):
+
+    m_score_l  = [[],[],[]]
+    m_delay_l = [[],[],[]]
+
+
+    for mi, method in enumerate(method_list):
+        tp_ll = ROC_data[method]['tp_l']
+        fp_ll = ROC_data[method]['fp_l']
+        tn_ll = ROC_data[method]['tn_l']
+        fn_ll = ROC_data[method]['fn_l']
+        delay_ll = ROC_data[method]['delay_l']
+
+        if timeList is not None:
+            time_step = (timeList[-1]-timeList[0])/float(len(timeList)-1)
+            ## print "time_step[s] = ", time_step, " length: ", timeList[-1]-timeList[0]
+        else:
+            time_step = 1.0
+
+        tp_l = []
+        fp_l = []
+        tpr_l = []
+        f_scores = [[],[],[]]
+        for i in xrange(nPoints):
+
+            tp = float(np.sum(tp_ll[i]))
+            fn = float(np.sum(fn_ll[i]))
+            fp = float(np.sum(fp_ll[i]))
+            tp_l.append(tp)
+            fp_l.append(fp)
+            tpr_l.append( tp/(tp+fn) )
+            f_scores[0].append(2.0*tp/(2.0*tp+fn+fp))
+            f_scores[1].append(1.25*tp/(1.25*tp+0.25*fn+fp))
+            f_scores[2].append(5.0*tp/(5.0*tp+4.0*fn+fp))
+
+        ## idx = np.argmin(fp_l) 
+        ## idx = np.argmax(tp_l) 
+        ## idx = np.argmax(tpr_l) 
+        ## tp = float(np.sum(tp_ll[idx]))
+        ## fn = float(np.sum(fn_ll[idx]))
+        ## fp = float(np.sum(fp_ll[idx]))
+       
+        # 0: f1, 1: f0.5, 2: f2        
+        for j in xrange(3):
+
+            # select the best idx
+            ## idx = np.argmin(fp_l) 
+            idx = np.argmax(f_scores[j])
+            
+            print method, idx, np.shape(fp_l)
+            fscore = f_scores[j][idx]
+            ## if j==0: fscore = 2.0*tp/(2.0*tp+fn+fp)
+            ## elif j==1: fscore = 1.25*tp/(1.25*tp+0.25*fn+fp)
+            ## else: fscore = 5.0*tp/(5.0*tp+4.0*fn+fp)         
+                    
+            ## cost = fp_cost*float(np.sum(fp_ll[i])) + fn_cost+float(np.sum(fn_ll[i]))  
+            ## delay_list = [ delay_ll[i][ii]*time_step for ii in xrange(len(delay_ll[i])) \
+            ##                if delay_ll[i][ii]>=0 ]
+            delay_list = [ delay_ll[idx][ii]*time_step for ii in xrange(len(delay_ll[idx])) ]
+
+            m_score_l[j].append( fscore )
+            m_delay_l[j].append( delay_list )
+                    
     return m_score_l, m_delay_l
 
+
+def plot_delay_step_mag(delay_list, tpr_list, step_mag_list):
+    '''
+    Plot delay - step_mag graph
+    '''
+
+    print step_mag_list
+    print tpr_list
+    print delay_list
+
+    
+
+    
+    return
 
 
 def plotCostDelay(method_list, cost_list, delay_list, save_pdf=False, verbose=True):
@@ -1888,7 +2290,7 @@ def plotCostDelay(method_list, cost_list, delay_list, save_pdf=False, verbose=Tr
                      error_kw=dict(elinewidth=6, ecolor='pink'), alpha=0.5, label='F2 score')
     ax1.set_ylabel('Detection Delay [s]', fontsize=20)
     ax1.set_xlim([-0.2, ind[-1]+4.0*width])
-    ax1.set_ylim([0,2.0])
+    ax1.set_ylim([0,6.0])
     ax1.yaxis.grid()
     ax1.set_axisbelow(True) 
     plt.legend([rects1, rects2, rects3], [r'$F_{0.5}$ score', r'$F_1$ score', r'$F_2$ score'], \
@@ -2000,4 +2402,108 @@ def update_roc_data(ROC_data, new_data, nPoints, method_list):
 
     return ROC_data
 
+
+def argmax(x, last=True):
+    """
+    Return the index of the maximum values.
+    If last option is enabled, only the last occurrence is returned. 
+    """
+
+    max_val = np.amax(x)
+    cnt = list(x).count(max_val)
+
+    if cnt > 1 and last:
+        indices = [i for i, v in enumerate(x) if v == max_val]
+        return indices[len(indices)/2]
+    else:
+        return np.argmax(x)
+
+def argmin(x, last=True):
+    """
+    Return the index of the minimum values.
+    If last option is enabled, only the middle occurrence is returned. 
+    """
+
+    min_val = np.amin(x)
+    cnt = list(x).count(min_val)
+
+    if cnt > 1 and last:
+        indices = [i for i, v in enumerate(x) if v == min_val]
+        return indices[-1]
+        ## return indices[len(indices)/2]
+    else:
+        return np.argmin(x)
+
+def fscore(tp, fn, fp, beta=1.0):
+    """
+    Return f_beta score.
+    """
+    return ( (1.+beta*beta)*tp )/( (1.+beta*beta)*tp + beta*beta*fn + fp )
+
+
+def initialiseOptParser(p):
+
+    p.add_option('--dataRenew', '--dr', action='store_true', dest='bDataRenew',
+                 default=False, help='Renew pickle files.')
+    p.add_option('--hmmRenew', '--hr', action='store_true', dest='bHMMRenew',
+                 default=False, help='Renew HMM parameters.')
+    p.add_option('--cfRenew', '--cr', action='store_true', dest='bClassifierRenew',
+                 default=False, help='Renew Classifiers.')
+
+    p.add_option('--task', action='store', dest='task', type='string', default='feeding',
+                 help='type the desired task name')
+    p.add_option('--dim', action='store', dest='dim', type=int, default=4,
+                 help='type the desired dimension')
+
+    p.add_option('--rawplot', '--rp', action='store_true', dest='bRawDataPlot',
+                 default=False, help='Plot raw data.')
+    p.add_option('--interplot', '--ip', action='store_true', dest='bInterpDataPlot',
+                 default=False, help='Plot raw data.')
+    p.add_option('--feature', '--ft', action='store_true', dest='bFeaturePlot',
+                 default=False, help='Plot features.')
+    p.add_option('--likelihoodplot', '--lp', action='store_true', dest='bLikelihoodPlot',
+                 default=False, help='Plot the change of likelihood.')
+
+    p.add_option('--data_generation', action='store_true', dest='bDataGen',
+                 default=False, help='Data generation before evaluation.')
+    p.add_option('--find_param', action='store_true', dest='bFindParam',
+                 default=False, help='Find hmm parameter.')
+    p.add_option('--dataselect', '--ds', action='store_true', dest='bDataSelection',
+                 default=False, help='Plot data and select it.')
+    
+    p.add_option('--evaluation_all', '--ea', action='store_true', dest='bEvaluationAll',
+                 default=False, help='Evaluate a classifier with cross-validation.')
+    p.add_option('--evaluation_unexp', '--eu', action='store_true', dest='bEvaluationUnexpected',
+                 default=False, help='Evaluate a classifier with cross-validation.')
+    p.add_option('--evaluation_noise', '--ean', action='store_true', dest='bEvaluationWithNoise',
+                 default=False, help='Evaluate a classifier with cross-validation plus noise.')
+    p.add_option('--evaluation_acc_param', '--eaap', action='store_true', dest='bEvaluationAccParam',
+                 default=False, help='Evaluate the acc params.')
+    p.add_option('--evaluation_modality', '--em', action='store_true', dest='bEvaluationModality',
+                 default=False, help='Evaluate a classifier per modality.')    
+
+
+    p.add_option('--hmm_param', action='store_true', dest='HMM_param_search',
+                 default=False, help='Search hmm parameters.')    
+    p.add_option('--clf_param', action='store_true', dest='CLF_param_search',
+                 default=False, help='Search hmm parameters.')    
+    p.add_option('--opt_param', action='store_true', dest='param_search',
+                 default=False, help='Search hmm and classifier parameters.')    
+
+    p.add_option('--verbose', '--v', action='store_true', dest='bVerbose',
+                 default=False, help='Print out.')
+    p.add_option('--noplot', '--np', action='store_true', dest='bNoPlot',
+                 default=False, help='No Plot.')    
+    p.add_option('--noupdate', '--nu', action='store_true', dest='bNoUpdate',
+                 default=False, help='No update.')    
+    p.add_option('--debug', '--dg', action='store_true', dest='bDebug',
+                 default=False, help='Set debug mode.')
+    p.add_option('--n_jobs', action='store', dest='n_jobs', type=int, default=-1,
+                 help='number of processes for multi processing')
+    p.add_option('--savepdf', '--sp', action='store_true', dest='bSavePdf',
+                 default=False, help='Save pdf files.')    
+    p.add_option('--save', action='store_true', dest='bSave',
+                 default=False, help='Save result.')
+    
+    ## opt, args = p.parse_args()
 

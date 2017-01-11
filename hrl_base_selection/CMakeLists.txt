@@ -13,6 +13,10 @@ add_service_files(
     SetBaseModel.srv
 )
 
+add_message_files(DIRECTORY msg
+  FILES PhysxOutcome.msg
+)
+
 generate_messages(
     DEPENDENCIES geometry_msgs std_msgs sensor_msgs
 )

@@ -1,0 +1,21 @@
+<launch>
+
+
+        <!-- tf publishing -->
+        <node name="r_gripper_publisher" pkg="hrl_manipulation_task"
+              type="pub_fake_pose.py" />
+        <node pkg="tf" type="static_transform_publisher"
+              name="camera_linker1" args=" 0 0 0 0 0 0 /camera_link
+                                             /torso_lift_link
+                                             100" />
+        <node pkg="tf" type="static_transform_publisher"
+              name="camera_linker2" args=" 0 0 0 0 0 0 /camera_link
+                                             /r_gripper_tool_frame
+                                             100" />
+   
+        <!-- turn on camera -->
+        <include file='$(find freenect_launch)/launch/freenect.launch'>
+          <arg name='depth_registration' value='true' />
+        </include>
+
+</launch>

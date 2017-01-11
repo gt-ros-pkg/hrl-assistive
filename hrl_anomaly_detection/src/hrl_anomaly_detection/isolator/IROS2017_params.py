@@ -26,19 +26,18 @@ def getParams(task, bDataRenew, bHMMRenew, bCFRenew, dim, rf_center='kinEEPos',\
         sys.exit()
 
     # common params
-    if dim == 5:
-        param_dict['ROC']['methods'] = [ 'hmmgp']
-        param_dict['ROC']['update_list'] = [ 'hmmgp' ]
-    elif dim == 4:
-        param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'osvm', 'hmmosvm', 'rnd', 'hmmosvm', 'hmmgp' ]
-        # 'fixed', 'change', 'progress', 'progress_diag', 'osvm', 'hmmosvm', 'rnd' 
-        ## param_dict['ROC']['methods'] = [ 'fixed']
-        param_dict['ROC']['update_list'] = ['fixed' ]
+    if dim == 4:
+        param_dict['ROC']['methods'] = ['hmmgp']
+        param_dict['ROC']['update_list'] = []
     else:
-        param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'osvm', 'hmmosvm', 'hmmgp']
-        param_dict['ROC']['update_list'] = [ 'hmmgp', 'progress', 'fixed', 'hmmosvm']
+        param_dict['ROC']['methods'] = [ 'hmmgp']
+        param_dict['ROC']['update_list'] = [ ]
 
     param_dict['SVM']['raw_window_size'] = 5
+
+    if bDataRenew:
+        param_dict['HMM']['renew'] = True
+        param_dict['SVM']['renew'] = True
 
     return raw_data_path, save_data_path, param_dict
 
@@ -48,72 +47,17 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
 
     if nPoints is None: nPoints = 40 
 
-    if dim == 5:
+    if dim == 4:
 
-        handFeatures = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
-                        'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1', 'unimodal_landmarkDist']
-                        ## 'unimodal_kinEEChange']                        
-                        ## 'unimodal_fabricForce' ,\, 'unimodal_ftForceY'
-                        ## 'unimodal_kinEEChange']
-                        ## 'crossmodal_landmarkEEAng'
-
-            ## ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
-            ##             'crossmodal_landmarkEEDist', 'crossmodal_landmarkEEAng']
-
-        ## HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 3.75, 'scale': 15.55,\
-        ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.75, 'scale': 8.55,\
-        HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.82, 'scale': 7.0,\
-                          'add_logp_d': False}
-        SVM_param_dict = {'renew': CF_renew, 'w_negative': 1.0, 'gamma': 5.0, 'cost': 1.0,\
-                          'hmmosvm_nu': 0.000316,\
-                          'osvm_nu': 0.000359,\
-                          'logp_offset': 0,\
-                          'nugget': 80.0, 'theta0': 0.91,\
-                          'std_offset': 1.4464
-                          }
-                          ## 'nugget': 104.42, 'theta0': 1.42,\
-                          ## 'std_offset': 1.4464
-                          ## }
-
-        
-        ROC_param_dict = {'nPoints': nPoints,\
-                          'm2o': {'gp_nSubsample': 20, 'alpha_coeff': 0.15, 'hmm_scale': 9.0, 'hmm_cov': 9.0,\
-                                  'noise_max': 0.0 },\
-                          'o2o': {'gp_nSubsample': 40, 'alpha_coeff': 0.05, 'hmm_scale': 3.0, 'hmm_cov': 1.0,\
-                                  'noise_max': 0.05 },\
-                          'progress_param_range': -np.logspace(0, 1.3, nPoints)+1.0,\
-                          'kmean_param_range': -np.logspace(0, 3.0, nPoints),\
-                          'svm_param_range': np.logspace(-2.4, 0.5, nPoints),\
-                          'hmmgp_param_range':np.logspace(0.3, 1.9, nPoints)*-1.0+0.5, \
-                          'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
-                          'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
-                          'change_param_range': np.logspace(0.0, 2.6, nPoints)*-1.0,\
-                          'osvm_param_range': np.logspace(-4., 1.0, nPoints),\
-                          'bpsvm_param_range': np.logspace(-2.2, 0.5, nPoints),\
-                          'fixed_param_range': np.linspace(0.3, -0.0, nPoints),\
-                          'cssvm_param_range': np.logspace(0.0, 2.0, nPoints),\
-                          'sgd_param_range': np.logspace(-1, 1., nPoints)}
-
-        # Parameters should be determinded by optimizer.
-        if nPoints == 1:
-            ROC_param_dict['fixed_param_range'] = [-1.0]
-            ROC_param_dict['progress_param_range'] = [-1.8413]
-            ROC_param_dict['hmmgp_param_range'] = [-4.9]
-
-        AD_param_dict = {'svm_w_positive': 1.0, 'sgd_w_positive': 1.0, 'sgd_n_iter': 20}
-                          
-
-    elif dim == 4:
-
-        handFeatures = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
-                        'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
+        handFeatures  = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
+                         'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
         anomaly_dir   = [1,1,1,1]
         noise_pos_max = [0.8374, 15.5217, 19.5169, 0.2758]
         noise_neg_max = [-0.003, -11.9299, -3.4822, -0.1386]
 
         ## handFeatures = ['unimodal_audioWristRMS', 'unimodal_ftForce', \
         ##                 'crossmodal_landmarkEEDist', 'crossmodal_landmarkEEAng']
+        
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 2.645, 'scale': 6.111,\
                           'add_logp_d': False }
                           ## 'step_mag_dir': [1,-1,1,0] } #
@@ -159,6 +103,10 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
 
         handFeatures = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
                         'crossmodal_landmarkEEDist']
+        anomaly_dir   = None
+        noise_pos_max = None
+        noise_neg_max = None
+        
         ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 0.1, 'scale': 16.36,\
         HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.0, 'scale': 8.0,\
                           'add_logp_d': False}
@@ -217,19 +165,27 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                    'ft',\
                    'relativePose_landmark_EE']
 
+    # 0 1 2 3456789 10 11 12 13 14 15 16  17 18 19
     isolationFeatures = ['unimodal_kinDesEEChange',\
                          'unimodal_kinEEChange',\
                          'unimodal_audioWristRMS', \
-                         'unimodal_audioWristFrontRMS', \
-                         'unimodal_audioWristAzimuth',                         
-                         'unimodal_kinJntEff', \
-                         'unimodal_ftForceX', \
-                         'unimodal_ftForceY', \
-                         'unimodal_ftForceZ', \
+                         'unimodal_kinJntEff_1', \
+                         'unimodal_kinJntEff_2', \
+                         'unimodal_kinJntEff_3', \
+                         'unimodal_kinJntEff_4', \
+                         'unimodal_kinJntEff_5', \
+                         'unimodal_kinJntEff_6', \
+                         'unimodal_kinJntEff_7', \
+                         'unimodal_ftForce_delta',\
+                         'unimodal_ftForce_zero',\
+                         'unimodal_ftForce_integ',\
+                         'unimodal_ftForce',\
+                         'unimodal_ftForceX',\
+                         'unimodal_ftForceY',\
+                         'unimodal_ftForceZ',\
                          'crossmodal_landmarkEEDist', \
                          'crossmodal_landmarkEEAng',\
-                         'unimodal_fabricForce',\
-                         'unimodal_landmarkDist']
+                         'unimodal_landmarkDist'] 
                    
 
     modality_list   = ['ft' ,'kinematics', 'audioWrist', 'vision_landmark']
