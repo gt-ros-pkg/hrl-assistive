@@ -982,6 +982,9 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
         x_train = scaler.fit_transform(x_train)
         x_test  = scaler.transform(x_test)
 
+        x_train = x_train[:,:8]
+        x_test  = x_test[:,:8]
+
         if type(x_train) is np.ndarray:
             x_train = x_train.tolist()
             x_test  = x_test.tolist()
@@ -993,7 +996,7 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
         clf = SVC(C=1.0, kernel='rbf') #, decision_function_shape='ovo')
         ## from sklearn.ensemble import RandomForestClassifier
         ## clf = RandomForestClassifier(n_estimators=400, n_jobs=-1)
-        
+
         clf.fit(x_train, y_train)
         ## y_pred = clf.predict(x_test.tolist())
         score = clf.score(x_test, y_test)
