@@ -1,13 +1,13 @@
 <package>
-  <name>hrl_anomaly_isolation</name>
+  <name>hrl_execution_monitor</name>
   <version>0.0.0</version>
-  <description>hrl_anomaly_isolation</description>
+  <description>hrl_execution_monitor</description>
   <maintainer email="deric.park@gatech.edu">Daehyung Park Advisor: Prof. Charlie Kemp.
       Healthcare Robotics Lab, Georgia Tech</maintainer>
 
   <license>BSD</license>
 
-  <url type="website">http://ros.org/wiki/hrl_anomaly_isolation</url>
+  <url type="website">http://ros.org/wiki/hrl_execution_monitor</url>
 
   <author>Daehyung Park</author>
 

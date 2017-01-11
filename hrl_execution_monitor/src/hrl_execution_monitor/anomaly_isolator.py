@@ -67,16 +67,12 @@ class anomaly_isolator:
 
 if __name__ == '__main__':
 
-    import optparse
-    p = optparse.OptionParser()
+    ## rospy.init_node('isolator')
 
-    p.add_option('--viz', action='store_true', dest='viz',
-                 default=False, help='Visualize data.')
-    
-    opt, args = p.parse_args()
-    rospy.init_node(opt.task)
 
-    ai = anomaly_isolator(viz=opt.viz)
+    print sys.argv
+
+    ai = anomaly_isolator()
     ai.run()
 
 
