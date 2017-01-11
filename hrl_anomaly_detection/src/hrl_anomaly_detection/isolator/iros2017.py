@@ -1286,11 +1286,10 @@ if __name__ == '__main__':
 
         # TODO: change feature name
         param_dict['ROC']['methods'] = ['hmmgp', 'hmmgp']
-        param_dict['HMM']['scale']   = [7.0, 13.0]
         param_dict['SVM']['nugget']  = 10.0
 
         # -------------------------------------------------------------------------------------
-        # 80%
+        # 8%
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)        
@@ -1303,6 +1302,26 @@ if __name__ == '__main__':
                                                      'unimodal_kinDesEEChange', \
                                                      'crossmodal_landmarkEEDist', \
                                                     ]]
+        param_dict['HMM']['scale']   = [7.0, 13.0]
+        param_dict['SVM']['hmmgp_logp_offset'] = 0 #30.0 #50.0
+        param_dict['ROC']['hmmgp1_param_range'] = np.logspace(0.2, 2.5, nPoints)*-1.0+1.0
+        param_dict['ROC']['hmmgp2_param_range'] = np.logspace(-0.4, 2.5, nPoints)*-1.0+0.5 #2.
+
+        # -------------------------------------------------------------------------------------
+        # 8%
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation9/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)        
+        param_dict['data_param']['handFeatures'] = [['unimodal_audioWristRMS',  \
+                                                    'unimodal_kinJntEff_1',\
+                                                    'unimodal_ftForce_integ',\
+                                                    'unimodal_kinEEChange'],
+                                                    ['unimodal_ftForce_zero',\
+                                                     'unimodal_ftForceZ',\
+                                                     'unimodal_kinDesEEChange', \
+                                                     'crossmodal_landmarkEEDist', \
+                                                    ]]
+        param_dict['HMM']['scale']   = [7.0, 14.0]
         param_dict['SVM']['hmmgp_logp_offset'] = 0 #30.0 #50.0
         param_dict['ROC']['hmmgp1_param_range'] = np.logspace(0.2, 2.5, nPoints)*-1.0+1.0
         param_dict['ROC']['hmmgp2_param_range'] = np.logspace(-0.4, 2.5, nPoints)*-1.0+0.5 #2.
