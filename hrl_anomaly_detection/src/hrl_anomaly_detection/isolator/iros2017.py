@@ -855,8 +855,8 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
         print "CV data exists and no renew"
         d = ut.load_pickle(crossVal_pkl)
         kFold_list = d['kFoldList'] 
-        successData = d['successIsolData']
-        failureData = d['failureIsolData']        
+        successData = d['successData']
+        failureData = d['failureData']        
         success_files = d['success_files']
         failure_files = d['failure_files']
     else:
@@ -875,8 +875,8 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
           = dm.LOPO_data_index(d['successDataList'], d['failureDataList'],\
                                d['successFileList'], d['failureFileList'])
 
-        d['successIsolData'] = successData
-        d['failureIsolData'] = failureData
+        d['successData'] = successData
+        d['failureData'] = failureData
         d['success_files']   = success_files
         d['failure_files']   = failure_files
         d['kFoldList']       = kFold_list
