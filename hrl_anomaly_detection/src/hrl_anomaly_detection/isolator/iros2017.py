@@ -1227,6 +1227,7 @@ if __name__ == '__main__':
                                                     'unimodal_ftForce_integ',\
                                                     'unimodal_landmarkDist',\
                                                     'unimodal_kinEEChange',\
+                                                    'unimodal_kinDesEEChange',\
                                                     'crossmodal_landmarkEEDist', \
                                                     ]
         param_dict['HMM']['scale'] = 7.11
@@ -1370,7 +1371,7 @@ if __name__ == '__main__':
         window_steps=5
         nPoints = param_dict['ROC']['nPoints']
         param_dict['ROC']['methods'] = ['hmmgp', 'hmmgp']
-        param_dict['HMM']['scale'] = [7.0, 8] #9.0]
+        param_dict['HMM']['scale'] = [7.0, 9.0]
         param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0
         param_dict['SVM']['nugget']  = 10.0
 
