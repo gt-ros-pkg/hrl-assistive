@@ -944,7 +944,7 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
     # Training HMM, and getting classifier training and testing data
     data_dict = {}
     data_pkl = os.path.join(processed_data_path, 'isol_data.pkl')
-    if os.path.isfile(data_pkl) is False or svd_renew:
+    if os.path.isfile(data_pkl) is False or svd_renew or HMM_dict['renew']:
 
         l_data = Parallel(n_jobs=1, verbose=10)\
           (delayed(iutil.get_hmm_isolation_data)(idx, kFold_list[idx], failure_data_ad, \

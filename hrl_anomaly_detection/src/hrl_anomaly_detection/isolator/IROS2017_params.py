@@ -35,7 +35,7 @@ def getParams(task, bDataRenew, bHMMRenew, bCFRenew, dim, rf_center='kinEEPos',\
 
     param_dict['SVM']['raw_window_size'] = 5
 
-    if bDataRenew:
+    if bDataRenew or bHMMRenew:
         param_dict['HMM']['renew'] = True
         param_dict['SVM']['renew'] = True
 
