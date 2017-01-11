@@ -1286,7 +1286,7 @@ if __name__ == '__main__':
 
         # TODO: change feature name
         param_dict['ROC']['methods'] = ['hmmgp', 'hmmgp']
-        param_dict['HMM']['scale']   = [7.0, 15.0]
+        param_dict['HMM']['scale']   = [7.0, 13.0]
         param_dict['SVM']['nugget']  = 10.0
 
         # -------------------------------------------------------------------------------------
