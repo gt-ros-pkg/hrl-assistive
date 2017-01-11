@@ -1312,7 +1312,7 @@ if __name__ == '__main__':
                                                      'crossmodal_landmarkEEDist', \
                                                     ]]
         ## param_dict['HMM']['scale']   = [7.0, 13.0]
-        param_dict['HMM']['scale']   = [7.0, 10.0]
+        param_dict['HMM']['scale']   = [7.0, 13.0]
         param_dict['SVM']['hmmgp_logp_offset'] = 0 #30.0 #50.0
         param_dict['ROC']['hmmgp1_param_range'] = np.logspace(0.2, 2.5, nPoints)*-1.0+1.0
         param_dict['ROC']['hmmgp2_param_range'] = np.logspace(-0.4, 2.5, nPoints)*-1.0+0.5 #2.
@@ -1331,7 +1331,7 @@ if __name__ == '__main__':
                                                      'unimodal_kinDesEEChange', \
                                                      'crossmodal_landmarkEEDist', \
                                                     ]]
-        param_dict['HMM']['scale']   = [7.0, 12.0]
+        param_dict['HMM']['scale']   = [7.0, 11.0]
         param_dict['SVM']['hmmgp_logp_offset'] = 0 #30.0 #50.0
         param_dict['ROC']['hmmgp1_param_range'] = np.logspace(0.2, 2.5, nPoints)*-1.0+1.0
         param_dict['ROC']['hmmgp2_param_range'] = np.logspace(-0.4, 2.5, nPoints)*-1.0+0.5 #2.
