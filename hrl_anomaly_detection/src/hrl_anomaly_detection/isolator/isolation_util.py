@@ -580,7 +580,8 @@ def anomaly_detection(X, Y, task_name, processed_data_path, param_dict, logp_viz
         ret = dtc.fit(X_train, Y_train, idx_train)
         dtc_list.append(dtc)
 
-        print np.shape(X[ii]), np.shape(Y), startIdx
+        print np.shape(X[ii]), np.shape(Y), startIdx, scale
+        n_jobs = 1
 
         # 2) Convert test data
         startIdx   = 4
