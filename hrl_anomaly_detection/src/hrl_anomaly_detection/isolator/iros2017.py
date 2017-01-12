@@ -1315,7 +1315,7 @@ if __name__ == '__main__':
                                                      'crossmodal_landmarkEEDist', \
                                                     ]]
         ## param_dict['HMM']['scale']   = [7.0, 13.0]
-        param_dict['HMM']['scale']   = [7.0, 13.0]
+        param_dict['HMM']['scale']   = [7.0, 13.0] #9 nest
         param_dict['SVM']['hmmgp_logp_offset'] = 0 #30.0 #50.0
         param_dict['ROC']['hmmgp1_param_range'] = np.logspace(0.2, 2.5, nPoints)*-1.0+1.0
         param_dict['ROC']['hmmgp2_param_range'] = np.logspace(-0.4, 2.5, nPoints)*-1.0+0.5 #2.
@@ -1331,12 +1331,19 @@ if __name__ == '__main__':
 
 
     elif opt.evaluation_isolation2:
-        # c11, # 1 mean
+        # c12, # 1 mean
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         weight = [-20.0, -10.0]
-        param_dict['HMM']['scale'] = [7.0, 9.0]
+        param_dict['HMM']['scale'] = [7.0, 13.0]
+
+        # c11, # 1 mean
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## weight = [-20.0, -10.0]
+        ## param_dict['HMM']['scale'] = [7.0, 9.0]
 
         ## # ep 2,4,8 mean,
         ## save_data_path = os.path.expanduser('~')+\
