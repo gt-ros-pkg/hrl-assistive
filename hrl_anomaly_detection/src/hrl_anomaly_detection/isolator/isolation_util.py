@@ -720,11 +720,11 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failureData_static, \
     # nDetector x dim x sample x length
     abnormalTrainData_1 = copy.copy(failureData[0][:, abnormalTrainIdx, :])
     abnormalTestData_1  = copy.copy(failureData[0][:, abnormalTestIdx, :])
-    abnormalTrainData_2 = copy.copy(failureData[1][:, abnormalTrainIdx, :])
-    abnormalTestData_2  = copy.copy(failureData[1][:, abnormalTestIdx, :])
 
     if len(failureData) == 2:
         # multiple detector
+        abnormalTrainData_2 = copy.copy(failureData[1][:, abnormalTrainIdx, :])
+        abnormalTestData_2  = copy.copy(failureData[1][:, abnormalTestIdx, :])
         input_train_list = [abnormalTrainData_1, abnormalTrainData_2]
         input_test_list = [abnormalTestData_1, abnormalTestData_2]
     else:
