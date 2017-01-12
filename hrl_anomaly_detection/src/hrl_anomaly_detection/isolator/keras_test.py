@@ -602,24 +602,24 @@ def unimodal_fc(save_data_path, n_labels, nb_epoch=400, fine_tune=False):
 
 
 
-        x_train_sig_dyn1 = x_train_sig[:,:12]
-        x_train_sig_dyn2 = x_train_sig[:,12:-8]#[:,[0, 3, 6]]
-        x_train_sig_stc = x_train_sig[:,-8:][:,[0,1,2,4,5,6,7]]
+        ## x_train_sig_dyn1 = x_train_sig[:,:12]
+        ## x_train_sig_dyn2 = x_train_sig[:,12:-8]#[:,[0, 3, 6]]
+        ## x_train_sig_stc = x_train_sig[:,-8:]#[:,[0,1,2,4,5,6,7]]
 
-        ## x_train_sig_dyn1 -= np.mean(x_train_sig_dyn1, axis=1)[:,np.newaxis]
-        ## x_train_sig_dyn2 -= np.mean(x_train_sig_dyn2, axis=1)[:,np.newaxis]
-        x_train_sig = np.hstack([x_train_sig_dyn1, x_train_sig_dyn2, x_train_sig_stc])
-        ## x_train_sig = np.hstack([x_train_sig_dyn1, x_train_sig_stc])
-        ## x_train_sig = np.hstack([x_train_sig_dyn1, x_train_sig_dyn2])
+        ## ## x_train_sig_dyn1 -= np.mean(x_train_sig_dyn1, axis=1)[:,np.newaxis]
+        ## ## x_train_sig_dyn2 -= np.mean(x_train_sig_dyn2, axis=1)[:,np.newaxis]
+        ## x_train_sig = np.hstack([x_train_sig_dyn1, x_train_sig_dyn2, x_train_sig_stc])
+        ## ## x_train_sig = np.hstack([x_train_sig_dyn1, x_train_sig_stc])
+        ## ## x_train_sig = np.hstack([x_train_sig_dyn1, x_train_sig_dyn2])
         
-        x_test_sig_dyn1 = x_test_sig[:,:12]
-        x_test_sig_dyn2 = x_test_sig[:,12:-8]#[:,[0, 3, 6,]]
-        x_test_sig_stc = x_test_sig[:,-8:][:,[0,1,2,4,5,6,7]]
-        ## x_test_sig_dyn1 -= np.mean(x_test_sig_dyn1, axis=1)[:,np.newaxis]
-        ## x_test_sig_dyn2 -= np.mean(x_test_sig_dyn2, axis=1)[:,np.newaxis]
-        x_test_sig = np.hstack([x_test_sig_dyn1, x_test_sig_dyn2, x_test_sig_stc])
-        ## x_test_sig = np.hstack([x_test_sig_dyn1, x_test_sig_stc])
-        ## x_test_sig = np.hstack([x_test_sig_dyn1, x_test_sig_dyn2])
+        ## x_test_sig_dyn1 = x_test_sig[:,:12]
+        ## x_test_sig_dyn2 = x_test_sig[:,12:-8]#[:,[0, 3, 6,]]
+        ## x_test_sig_stc = x_test_sig[:,-8:]#[:,[0,1,2,4,5,6,7]]
+        ## ## x_test_sig_dyn1 -= np.mean(x_test_sig_dyn1, axis=1)[:,np.newaxis]
+        ## ## x_test_sig_dyn2 -= np.mean(x_test_sig_dyn2, axis=1)[:,np.newaxis]
+        ## x_test_sig = np.hstack([x_test_sig_dyn1, x_test_sig_dyn2, x_test_sig_stc])
+        ## ## x_test_sig = np.hstack([x_test_sig_dyn1, x_test_sig_stc])
+        ## ## x_test_sig = np.hstack([x_test_sig_dyn1, x_test_sig_dyn2])
 
         ## print np.shape(x_train_sig), np.shape(x_test_sig)
         ## print np.shape(x_train_sig_dyn1), np.shape(x_train_sig_dyn2), np.shape(x_train_sig_stc)
@@ -929,15 +929,15 @@ if __name__ == '__main__':
         plot(model, to_file='model.png')
         
     else:
-        # ep 2,4,8 mean, -> 2,4,8 amin
+        # ep 1mean all
         ## param_dict['HMM']['scale'] = [7.0, 9.0]
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation4/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## preprocess_data(save_data_path, viz=opt.viz, hog_feature=False, org_ratio=True)
+        preprocess_data(save_data_path, viz=opt.viz, hog_feature=False, org_ratio=True)
 
 
-        unimodal_fc(save_data_path, n_labels, nb_epoch=1000)        
+        unimodal_fc(save_data_path, n_labels, nb_epoch=500)        
         unimodal_fc(save_data_path, n_labels, fine_tune=True)        
         ## unimodal_cnn(save_data_path, n_labels)        
         ## unimodal_cnn(save_data_path, n_labels, fine_tune=True)        
@@ -954,32 +954,4 @@ if __name__ == '__main__':
 
         
 
-
-        
-        ## n = 102
-        ## imgs = None
-        ## for i in xrange(n):
-        ##     img = np.array([[np.ones((10,10)).tolist(),
-        ##                     np.ones((10,10)).tolist(),
-        ##                     np.ones((10,10)).tolist()]])+i
-
-        ##     if imgs is None: imgs = img
-        ##     else: imgs = np.vstack([imgs, img])
-
-        ## datagen = km.myGenerator(True)
-        
-        ## count = 0
-        ## for x1,x2,y in datagen.flow(imgs.astype(float), imgs.astype(float), range(n), \
-        ##                             batch_size=5, shuffle=True):
-        ##     print x1[:,0,0,0], x2[:,0,0,0] #, x2.shape
-        ##     count +=1
-        ##     if count > 99: break
-
-
-        
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation4/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## ## preprocess_data(save_data_path, viz=opt.viz, hog_feature=True)
-        ## evaluate_svm(save_data_path)
 
