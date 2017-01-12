@@ -824,9 +824,9 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, \
 
                 if delta_flag:
                     #1,2,4
-                    cp_vecs = np.amax(vs[:1], axis=0)
-                    cp_vecs = np.vstack([ cp_vecs, np.amax(vs[:2], axis=0) ])
-                    cp_vecs = np.vstack([ cp_vecs, np.amax(vs[:4], axis=0) ])
+                    cp_vecs = np.amin(vs[:1], axis=0)
+                    cp_vecs = np.vstack([ cp_vecs, np.amin(vs[:2], axis=0) ])
+                    cp_vecs = np.vstack([ cp_vecs, np.amin(vs[:4], axis=0) ])
                     #1,4,8
                     ## cp_vecs = np.mean(vs[:2], axis=0)
                     ## cp_vecs = np.vstack([ cp_vecs, np.mean(vs[:4], axis=0) ])
@@ -864,9 +864,9 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, \
 
             if delta_flag:
                 #1,2,4
-                cp_vecs = np.amax(vs[:1], axis=0)
-                cp_vecs = np.vstack([ cp_vecs, np.amax(vs[:2], axis=0) ])
-                cp_vecs = np.vstack([ cp_vecs, np.amax(vs[:4], axis=0) ])
+                cp_vecs = np.amin(vs[:1], axis=0)
+                cp_vecs = np.vstack([ cp_vecs, np.amin(vs[:2], axis=0) ])
+                cp_vecs = np.vstack([ cp_vecs, np.amin(vs[:4], axis=0) ])
                 ## #1,4,8
                 ## cp_vecs = np.mean(vs[:2], axis=0)
                 ## cp_vecs = np.vstack([ cp_vecs, np.mean(vs[:4], axis=0) ])
