@@ -934,12 +934,12 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation4/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        preprocess_data(save_data_path, viz=opt.viz, hog_feature=False, org_ratio=True)
+        ## preprocess_data(save_data_path, viz=opt.viz, hog_feature=False, org_ratio=True)
 
 
         ## unimodal_fc(save_data_path, n_labels, nb_epoch=500)        
         ## unimodal_fc(save_data_path, n_labels, fine_tune=True)        
-        unimodal_cnn(save_data_path, n_labels)        
+        ## unimodal_cnn(save_data_path, n_labels)        
         unimodal_cnn(save_data_path, n_labels, fine_tune=True)        
         ## multimodal_cnn_fc(save_data_path, n_labels)
         ## multimodal_cnn_fc(save_data_path, n_labels, fine_tune=True)
