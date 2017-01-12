@@ -1338,14 +1338,14 @@ if __name__ == '__main__':
         weight = [-20.0, -10.0]
         param_dict['HMM']['scale'] = [7.0, 13.0]
 
-        ## # c11 66 # 1 mean no fy fz
+        ## # c11 66 # 1 mean no fy
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         weight = [-20.0, -10.0]
         param_dict['HMM']['scale'] = [7.0, 9.0]
 
-        ## # ep 2,4,8 mean, no fy fz
+        # ep 2,4,8 mean
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation9/'+\
         ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
@@ -1381,7 +1381,7 @@ if __name__ == '__main__':
                                                       'unimodal_audioWristAzimuth',\
                                                       'unimodal_ftForceX',\
                                                       ## 'unimodal_ftForceY',\
-                                                      ## 'unimodal_ftForceZ',\
+                                                      'unimodal_ftForceZ',\
                                                       'unimodal_fabricForce',  \
                                                       'unimodal_landmarkDist',\
                                                       'crossmodal_landmarkEEAng',\
