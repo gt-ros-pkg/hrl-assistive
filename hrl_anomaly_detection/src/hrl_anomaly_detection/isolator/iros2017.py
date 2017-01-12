@@ -1298,7 +1298,8 @@ if __name__ == '__main__':
         param_dict['SVM']['nugget']  = 10.0
 
         # -------------------------------------------------------------------------------------
-        # 85 25
+        # 85 25 @ fz
+        # 86 31 @ fzero
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)        
@@ -1308,7 +1309,7 @@ if __name__ == '__main__':
                                                     'unimodal_kinEEChange'],
                                                     [
                                                      'unimodal_ftForce_zero',\
-                                                     ## 'unimodal_ftForceZ',\
+                                                     'unimodal_ftForceZ',\
                                                      'unimodal_kinDesEEChange', \
                                                      'crossmodal_landmarkEEDist', \
                                                     ]]
@@ -1393,7 +1394,7 @@ if __name__ == '__main__':
 
 
     elif opt.evaluation_isolation2:
-        # c11, # 124 min
+        # c11, # 124 max
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
@@ -1401,7 +1402,7 @@ if __name__ == '__main__':
         param_dict['HMM']['scale'] = [7.0, 12.0]
 
 
-        # c8, # 124 min
+        # c8, # 124 max
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation10/'+\
         ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
