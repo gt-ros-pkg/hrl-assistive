@@ -606,19 +606,19 @@ def unimodal_fc(save_data_path, n_labels, nb_epoch=400, fine_tune=False):
         x_train_sig_dyn2 = x_train_sig[:,12:-8][:,[0, 3, 6]]
         x_train_sig_stc = x_train_sig[:,-8:] #[:,[1,2,4,5,6,7]]
 
-        x_train_sig_dyn1 -= np.mean(x_train_sig_dyn1, axis=1)[:,np.newaxis]
+        ## x_train_sig_dyn1 -= np.mean(x_train_sig_dyn1, axis=1)[:,np.newaxis]
         ## x_train_sig_dyn2 -= np.mean(x_train_sig_dyn2, axis=1)[:,np.newaxis]
         x_train_sig = np.hstack([x_train_sig_dyn1, x_train_sig_dyn2, x_train_sig_stc])
-        ## x_train_sig = np.hstack([x_train_sig_dyn1, x_train_sig_stc])
+        x_train_sig = np.hstack([x_train_sig_dyn1, x_train_sig_stc])
         ## x_train_sig = np.hstack([x_train_sig_dyn1, x_train_sig_dyn2])
         
         x_test_sig_dyn1 = x_test_sig[:,:12]
         x_test_sig_dyn2 = x_test_sig[:,12:-8][:,[0, 3, 6,]]
         x_test_sig_stc = x_test_sig[:,-8:] #[:,[1,2,4,5,6,7]]
-        x_test_sig_dyn1 -= np.mean(x_test_sig_dyn1, axis=1)[:,np.newaxis]
+        ## x_test_sig_dyn1 -= np.mean(x_test_sig_dyn1, axis=1)[:,np.newaxis]
         ## x_test_sig_dyn2 -= np.mean(x_test_sig_dyn2, axis=1)[:,np.newaxis]
         x_test_sig = np.hstack([x_test_sig_dyn1, x_test_sig_dyn2, x_test_sig_stc])
-        ## x_test_sig = np.hstack([x_test_sig_dyn1, x_test_sig_stc])
+        x_test_sig = np.hstack([x_test_sig_dyn1, x_test_sig_stc])
         ## x_test_sig = np.hstack([x_test_sig_dyn1, x_test_sig_dyn2])
 
         ## print np.shape(x_train_sig), np.shape(x_test_sig)
@@ -637,9 +637,9 @@ def unimodal_fc(save_data_path, n_labels, nb_epoch=400, fine_tune=False):
         ## # Load pre-trained vgg16 model
         if fine_tune is False:
             model = km.sig_net(np.shape(x_train_sig)[1:], n_labels)
-            optimizer = SGD(lr=0.001, decay=1e-5, momentum=0.9, nesterov=True)
-            model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
-            ## model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
+            ## optimizer = SGD(lr=0.001, decay=1e-5, momentum=0.9, nesterov=True)
+            ## model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+            model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
         else:
             model = km.sig_net(np.shape(x_train_sig)[1:], n_labels, fine_tune=True,\
                                weights_path = full_weights_path)
