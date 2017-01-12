@@ -48,9 +48,6 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
     noise_pos_max = [0.8374, 15.5217, 19.5169, 0.2758]
     noise_neg_max = [-0.003, -11.9299, -3.4822, -0.1386]
 
-    ## handFeatures = ['unimodal_audioWristRMS', 'unimodal_ftForce', \
-    ##                 'crossmodal_landmarkEEDist', 'crossmodal_landmarkEEAng']
-
     HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 2.645, 'scale': 6.111,\
                       'add_logp_d': False }
                       ## 'step_mag_dir': [1,-1,1,0] } #
@@ -128,13 +125,13 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
     modality_list   = ['ft' ,'kinematics', 'audioWrist', 'vision_landmark']
     raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/AURO2016/'
 
-    AE_param_dict  = {'renew': False, 'switch': False, 'time_window': 4, \
-                      'layer_sizes':[64,dim], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
-                      'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
-                      'max_iteration':30000, 'min_loss':0.1, 'cuda':True, \
-                      'filter':True, 'filterDim':4,\
-                      'add_option': None, 'rawFeatures': rawFeatures,\
-                      'add_noise_option': [], 'preTrainModel': None}                      
+    ## AE_param_dict  = {'renew': False, 'switch': False, 'time_window': 4, \
+    ##                   'layer_sizes':[64,dim], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
+    ##                   'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
+    ##                   'max_iteration':30000, 'min_loss':0.1, 'cuda':True, \
+    ##                   'filter':True, 'filterDim':4,\
+    ##                   'add_option': None, 'rawFeatures': rawFeatures,\
+    ##                   'add_noise_option': [], 'preTrainModel': None}                      
 
     data_param_dict= {'renew': data_renew, 'rf_center': rf_center, 'local_range': local_range,\
                       'downSampleSize': 140, 'cut_data': None, \
@@ -150,8 +147,10 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
       '/hrl_file_server/dpark_data/anomaly/AURO2016/'+task+'_data/'+\
       str(data_param_dict['downSampleSize'])+'_'+str(dim)
 
-    param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
+    param_dict = {'data_param': data_param_dict, 'HMM': HMM_param_dict, \
                   'SVM': SVM_param_dict, 'ROC': ROC_param_dict, 'AD': AD_param_dict}
+    ## param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
+    ##               'SVM': SVM_param_dict, 'ROC': ROC_param_dict, 'AD': AD_param_dict}
 
     return raw_data_path, save_data_path, param_dict
 
