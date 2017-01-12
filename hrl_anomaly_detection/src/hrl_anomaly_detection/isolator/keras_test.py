@@ -582,7 +582,7 @@ def evaluate(save_data_path):
     return
     
 
-def unimodal_fc(save_data_path, n_labels, nb_epoch=200, fine_tune=False):
+def unimodal_fc(save_data_path, n_labels, nb_epoch=400, fine_tune=False):
 
     d = ut.load_pickle(os.path.join(save_data_path, 'isol_data.pkl'))
     nFold = len(d.keys())
@@ -600,6 +600,27 @@ def unimodal_fc(save_data_path, n_labels, nb_epoch=200, fine_tune=False):
         ## x_test_img = test_data[1]
         y_test     = test_data[2]
 
+
+
+        x_train_sig_dyn1 = x_train_sig[:,:16]
+        x_train_sig_dyn2 = x_train_sig[:,16:-8]
+        x_train_sig_stc = x_train_sig[:,-8:][:,[1,2,4,5,6,7]]
+        x_train_sig_dyn1 -= np.mean(x_train_sig_dyn1, axis=1)[:,np.newaxis]
+        x_train_sig_dyn2 -= np.mean(x_train_sig_dyn2, axis=1)[:,np.newaxis]
+        ## x_train_sig = np.hstack([x_train_sig_dyn1, x_train_sig_dyn2, x_train_sig_stc])
+        x_train_sig = np.hstack([x_train_sig_dyn1, x_train_sig_dyn2])
+        
+        x_test_sig_dyn1 = x_test_sig[:,:16]
+        x_test_sig_dyn2 = x_test_sig[:,16:-8]
+        x_test_sig_stc = x_test_sig[:,-8:][:,[1,2,4,5,6,7]]
+        x_test_sig_dyn1 -= np.mean(x_test_sig_dyn1, axis=1)[:,np.newaxis]
+        x_test_sig_dyn2 -= np.mean(x_test_sig_dyn2, axis=1)[:,np.newaxis]
+        ## x_test_sig = np.hstack([x_test_sig_dyn1, x_test_sig_dyn2, x_test_sig_stc])
+        x_test_sig = np.hstack([x_test_sig_dyn1, x_test_sig_dyn2])
+
+        ## print np.shape(x_train_sig)
+        ## sys.exit()
+
         ## scaler = preprocessing.MinMaxScaler()
         scaler      = preprocessing.StandardScaler()
         x_train_sig = scaler.fit_transform(x_train_sig)
@@ -611,14 +632,17 @@ def unimodal_fc(save_data_path, n_labels, nb_epoch=200, fine_tune=False):
         ## # Load pre-trained vgg16 model
         if fine_tune is False:
             model = km.sig_net(np.shape(x_train_sig)[1:], n_labels)
-            model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
+            optimizer = SGD(lr=0.001, decay=1e-5, momentum=0.9, nesterov=True)
+            model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+            ## model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
         else:
             model = km.sig_net(np.shape(x_train_sig)[1:], n_labels, fine_tune=True,\
                                weights_path = full_weights_path)
         
             ## optimizer = SGD(lr=0.01, decay=1e-5, momentum=0.9, nesterov=True)
-            optimizer = SGD(lr=0.0001, decay=1e-6, momentum=0.9, nesterov=True)
-            ## optimizer = RMSprop(lr=0.00001, rho=0.9, epsilon=1e-08, decay=0.0)
+            ## optimizer = SGD(lr=0.0001, decay=1e-6, momentum=0.9, nesterov=True)
+            ## optimizer = SGD(lr=0.00001, decay=1e-8, momentum=0.9, nesterov=True)
+            optimizer = RMSprop(lr=0.00001, rho=0.9, epsilon=1e-08, decay=0.0)
             model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
 
         hist = model.fit(x_train_sig, y_train,
@@ -626,8 +650,9 @@ def unimodal_fc(save_data_path, n_labels, nb_epoch=200, fine_tune=False):
                          validation_data=(x_test_sig, y_test))
         scores.append( hist.history['val_acc'][-1] )
         model.save_weights(full_weights_path)
+        del model
 
-        ## break
+        break
 
     print 
     print np.mean(scores), np.std(scores)
@@ -907,7 +932,7 @@ if __name__ == '__main__':
         ## preprocess_data(save_data_path, viz=opt.viz, hog_feature=False, org_ratio=True)
 
 
-        ## unimodal_fc(save_data_path, n_labels)        
+        unimodal_fc(save_data_path, n_labels)        
         ## unimodal_fc(save_data_path, n_labels, fine_tune=True)        
         ## unimodal_cnn(save_data_path, n_labels)        
         ## unimodal_cnn(save_data_path, n_labels, fine_tune=True)        
@@ -915,7 +940,7 @@ if __name__ == '__main__':
         ## multimodal_cnn_fc(save_data_path, n_labels, fine_tune=True)
         ## multimodal_cnn_fc(save_data_path, n_labels, fine_tune=True, test_only=True,
         ##                   save_pdf=opt.bSavePdf)
-        evaluate_svm(save_data_path)
+        ## evaluate_svm(save_data_path)
 
         ## unimodal_cnn(save_data_path, n_labels, vgg=True)        
         ## unimodal_cnn(save_data_path, n_labels, fine_tune=True, vgg=True)        
