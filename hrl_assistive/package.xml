@@ -24,7 +24,7 @@
   <run_depend>hrl_base_selection</run_depend>
   <run_depend>hrl_realsense_camera</run_depend>
   <run_depend>hrl_anomaly_detection</run_depend>
-  <run_depend>hrl_anomaly_isolation</run_depend>
+  <run_depend>hrl_execution_monitor</run_depend>
   <export>
     <metapackage/>
   </export>
