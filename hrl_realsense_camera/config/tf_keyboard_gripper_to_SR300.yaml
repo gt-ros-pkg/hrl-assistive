@@ -1,8 +1,8 @@
-initial_x: 0.126
+initial_x: 0.116
 initial_y: 0.00
-initial_z: -0.06
+initial_z: -0.058
 initial_roll: 0.0
-initial_pitch: 0
+initial_pitch: 0.0
 initial_yaw: 0.0
 from: r_gripper_palm_link
 to: SR300_link

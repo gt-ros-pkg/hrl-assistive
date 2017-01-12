@@ -67,12 +67,18 @@ if __name__ == '__main__':
 
     ## if True:
     ##     #print armReachActionLeft("movestest")
-    ##     print armReachActionLeft("getHeadPos")
-    ##     print armReachActionLeft("initFeeding2")
-    ##     print armReachActionLeft("runFeeding")
+    ##     print armReachActionLeft("getBowlPos")
+    ##     print armReachActionLeft("initScooping2")
+    ##     print armReachActionLeft("runScooping")
     ##     sys.exit()
 
-
+    ## if True:
+    ##     #print armReachActionLeft("movestest")
+    ##     print armReachActionLeft("getHeadPos")
+    ##     print armReachActionLeft("initFeeding2")
+    ##     print armReachActionLeft("initFeeding3")
+    ##     print armReachActionLeft("runFeeding")
+    ##     sys.exit()
 
     #---------------------------- Face registration ----------------------
     if True:
