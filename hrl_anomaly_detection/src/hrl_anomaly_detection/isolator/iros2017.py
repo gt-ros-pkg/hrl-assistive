@@ -1233,13 +1233,14 @@ if __name__ == '__main__':
                                                     'unimodal_kinJntEff_1',\
                                                     'unimodal_ftForce_zero',\
                                                     'unimodal_ftForce_integ',\
-                                                    'unimodal_landmarkDist',\
+                                                     'unimodal_ftForceZ',\
                                                     'unimodal_kinEEChange',\
                                                     'unimodal_kinDesEEChange',\
                                                     'crossmodal_landmarkEEDist', \
+                                                    'unimodal_landmarkDist',\
                                                     ]
-        param_dict['HMM']['scale'] = 7.11
-        param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.6, 2.5, nPoints)*-1.0
+        param_dict['HMM']['scale'] = 7.0
+        param_dict['ROC']['hmmgp_param_range'] = np.logspace(-1.0, 2.5, nPoints)*-1.0+0.1
 
 
         #  #86 or 85
