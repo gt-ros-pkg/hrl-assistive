@@ -1376,6 +1376,7 @@ if __name__ == '__main__':
                                                     'crossmodal_landmarkEEDist', \
                                                     ],
                                                     ['unimodal_ftForce_zero',\
+                                                     'unimodal_ftForceZ',\
                                                      'unimodal_kinDesEEChange', \
                                                      'crossmodal_landmarkEEDist', \
                                                     ]]
@@ -1385,9 +1386,8 @@ if __name__ == '__main__':
         
         param_dict['data_param']['staticFeatures'] = ['unimodal_audioWristFrontRMS',\
                                                       'unimodal_audioWristAzimuth',\
-                                                      ## 'unimodal_ftForceX',\
-                                                      ## 'unimodal_ftForceY',\
-                                                      'unimodal_ftForceZ',\
+                                                      'unimodal_ftForceX',\
+                                                      'unimodal_ftForceY',\
                                                       'unimodal_fabricForce',  \
                                                       'unimodal_landmarkDist',\
                                                       'crossmodal_landmarkEEAng',\
