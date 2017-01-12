@@ -1383,13 +1383,14 @@ if __name__ == '__main__':
         ##                                              'unimodal_kinDesEEChange', \
         ##                                              'crossmodal_landmarkEEDist', \
         ##                                             ]]
+        param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0., 2.3, nPoints)*-1.0+1.0
         param_dict['ROC']['hmmgp1_param_range'] = np.logspace(-0., 2.3, nPoints)*-1.0+1.0
         param_dict['ROC']['hmmgp2_param_range'] = np.logspace(-0.8, 2.7, nPoints)*-1.0+0.5
         
         param_dict['data_param']['staticFeatures'] = ['unimodal_audioWristFrontRMS',\
                                                       'unimodal_audioWristAzimuth',\
-                                                      'unimodal_ftForceX',\
-                                                      'unimodal_ftForceY',\
+                                                      ## 'unimodal_ftForceX',\
+                                                      ## 'unimodal_ftForceY',\
                                                       'unimodal_ftForceZ',\
                                                       'unimodal_fabricForce',  \
                                                       'unimodal_landmarkDist',\
