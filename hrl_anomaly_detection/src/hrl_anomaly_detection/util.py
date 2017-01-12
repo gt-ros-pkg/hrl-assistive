@@ -1625,12 +1625,12 @@ def class_info(method_list, ROC_data, nPoints, kFold_list, save_pdf=False):
         if len(t_sum)<12: t_sum.append(1.0)
         print "Avg.: ", np.mean(t_sum)
 
-    d_list = np.array(d_list)
-    d_list = d_list[np.argsort(d_list[:,0])]
-    print d_list[:,0]
-    print d_list[:,1]
+    ## d_list = np.array(d_list)
+    ## d_list = d_list[np.argsort(d_list[:,0])]
+    ## print d_list[:,0]
+    ## print d_list[:,1]
 
-    return d_list
+    ## return d_list
 
 
 
