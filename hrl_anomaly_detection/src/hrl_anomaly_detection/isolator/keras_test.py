@@ -604,19 +604,21 @@ def unimodal_fc(save_data_path, n_labels, nb_epoch=400, fine_tune=False):
 
         x_train_sig_dyn1 = x_train_sig[:,:16]
         x_train_sig_dyn2 = x_train_sig[:,16:-8]
-        x_train_sig_stc = x_train_sig[:,-8:][:,[1,2,4,5,6,7]]
+        x_train_sig_stc = x_train_sig[:,-8:] #[:,[1,2,4,5,6,7]]
         x_train_sig_dyn1 -= np.mean(x_train_sig_dyn1, axis=1)[:,np.newaxis]
         x_train_sig_dyn2 -= np.mean(x_train_sig_dyn2, axis=1)[:,np.newaxis]
         ## x_train_sig = np.hstack([x_train_sig_dyn1, x_train_sig_dyn2, x_train_sig_stc])
-        x_train_sig = np.hstack([x_train_sig_dyn1, x_train_sig_dyn2])
+        x_train_sig = np.hstack([x_train_sig_dyn1, x_train_sig_stc])
+        ## x_train_sig = np.hstack([x_train_sig_dyn1, x_train_sig_dyn2])
         
         x_test_sig_dyn1 = x_test_sig[:,:16]
         x_test_sig_dyn2 = x_test_sig[:,16:-8]
-        x_test_sig_stc = x_test_sig[:,-8:][:,[1,2,4,5,6,7]]
+        x_test_sig_stc = x_test_sig[:,-8:] #[:,[1,2,4,5,6,7]]
         x_test_sig_dyn1 -= np.mean(x_test_sig_dyn1, axis=1)[:,np.newaxis]
         x_test_sig_dyn2 -= np.mean(x_test_sig_dyn2, axis=1)[:,np.newaxis]
         ## x_test_sig = np.hstack([x_test_sig_dyn1, x_test_sig_dyn2, x_test_sig_stc])
-        x_test_sig = np.hstack([x_test_sig_dyn1, x_test_sig_dyn2])
+        x_test_sig = np.hstack([x_test_sig_dyn1, x_test_sig_stc])
+        ## x_test_sig = np.hstack([x_test_sig_dyn1, x_test_sig_dyn2])
 
         ## print np.shape(x_train_sig)
         ## sys.exit()
@@ -641,8 +643,8 @@ def unimodal_fc(save_data_path, n_labels, nb_epoch=400, fine_tune=False):
         
             ## optimizer = SGD(lr=0.01, decay=1e-5, momentum=0.9, nesterov=True)
             ## optimizer = SGD(lr=0.0001, decay=1e-6, momentum=0.9, nesterov=True)
-            ## optimizer = SGD(lr=0.00001, decay=1e-8, momentum=0.9, nesterov=True)
-            optimizer = RMSprop(lr=0.00001, rho=0.9, epsilon=1e-08, decay=0.0)
+            optimizer = SGD(lr=0.00001, decay=1e-8, momentum=0.9, nesterov=True)
+            ## optimizer = RMSprop(lr=0.00001, rho=0.9, epsilon=1e-08, decay=0.0)
             model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
 
         hist = model.fit(x_train_sig, y_train,
@@ -932,8 +934,8 @@ if __name__ == '__main__':
         ## preprocess_data(save_data_path, viz=opt.viz, hog_feature=False, org_ratio=True)
 
 
-        unimodal_fc(save_data_path, n_labels)        
-        ## unimodal_fc(save_data_path, n_labels, fine_tune=True)        
+        unimodal_fc(save_data_path, n_labels, nb_epoch=1000)        
+        unimodal_fc(save_data_path, n_labels, fine_tune=True)        
         ## unimodal_cnn(save_data_path, n_labels)        
         ## unimodal_cnn(save_data_path, n_labels, fine_tune=True)        
         ## multimodal_cnn_fc(save_data_path, n_labels)
