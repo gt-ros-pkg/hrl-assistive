@@ -1393,7 +1393,7 @@ if __name__ == '__main__':
 
 
     elif opt.evaluation_isolation2:
-        # c12, window 10 #75  # 124 min
+        # c11, # 124 min
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
@@ -1401,7 +1401,7 @@ if __name__ == '__main__':
         param_dict['HMM']['scale'] = [7.0, 12.0]
 
 
-        # c12, window 10 #75  # 124 min
+        # c8, # 124 min
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation10/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
