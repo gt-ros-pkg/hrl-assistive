@@ -1345,12 +1345,12 @@ if __name__ == '__main__':
         weight = [-20.0, -10.0]
         param_dict['HMM']['scale'] = [7.0, 9.0]
 
-        # ep 2,4,8 mean
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation9/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## weight = [-20.0, -10.0]
-        ## param_dict['HMM']['scale'] = [7.0, 9.0]
+        ## ep 2,4,8 mean no fy
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation9/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        weight = [-20.0, -10.0]
+        param_dict['HMM']['scale'] = [7.0, 9.0]
 
         ## # c8, # 248 mean, no fy, fz
         ## save_data_path = os.path.expanduser('~')+\
