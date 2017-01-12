@@ -607,7 +607,7 @@ def unimodal_fc(save_data_path, n_labels, nb_epoch=400, fine_tune=False):
         x_train_sig_stc = x_train_sig[:,-8:] #[:,[1,2,4,5,6,7]]
 
         x_train_sig_dyn1 -= np.mean(x_train_sig_dyn1, axis=1)[:,np.newaxis]
-        x_train_sig_dyn2 -= np.mean(x_train_sig_dyn2, axis=1)[:,np.newaxis]
+        ## x_train_sig_dyn2 -= np.mean(x_train_sig_dyn2, axis=1)[:,np.newaxis]
         x_train_sig = np.hstack([x_train_sig_dyn1, x_train_sig_dyn2, x_train_sig_stc])
         ## x_train_sig = np.hstack([x_train_sig_dyn1, x_train_sig_stc])
         ## x_train_sig = np.hstack([x_train_sig_dyn1, x_train_sig_dyn2])
@@ -616,7 +616,7 @@ def unimodal_fc(save_data_path, n_labels, nb_epoch=400, fine_tune=False):
         x_test_sig_dyn2 = x_test_sig[:,12:-8][:,[0, 3, 6,]]
         x_test_sig_stc = x_test_sig[:,-8:] #[:,[1,2,4,5,6,7]]
         x_test_sig_dyn1 -= np.mean(x_test_sig_dyn1, axis=1)[:,np.newaxis]
-        x_test_sig_dyn2 -= np.mean(x_test_sig_dyn2, axis=1)[:,np.newaxis]
+        ## x_test_sig_dyn2 -= np.mean(x_test_sig_dyn2, axis=1)[:,np.newaxis]
         x_test_sig = np.hstack([x_test_sig_dyn1, x_test_sig_dyn2, x_test_sig_stc])
         ## x_test_sig = np.hstack([x_test_sig_dyn1, x_test_sig_stc])
         ## x_test_sig = np.hstack([x_test_sig_dyn1, x_test_sig_dyn2])

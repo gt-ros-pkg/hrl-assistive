@@ -1214,7 +1214,7 @@ if __name__ == '__main__':
         '''
 
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation7/'+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
 
@@ -1228,11 +1228,10 @@ if __name__ == '__main__':
         ## param_dict['ROC']['hmmgp_param_range'] = np.logspace(-1.0, 2.7, nPoints)*-1.0 +0.5
         ## param_dict['HMM']['scale'] = 9.0
 
-
+        #65
         param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
-                                                    'unimodal_audioWristAzimuth',\
                                                     'unimodal_kinJntEff_1',\
-                                                    'unimodal_ftForce',\
+                                                    'unimodal_ftForce_zero',\
                                                     'unimodal_ftForce_integ',\
                                                     'unimodal_landmarkDist',\
                                                     'unimodal_kinEEChange',\
@@ -1345,12 +1344,12 @@ if __name__ == '__main__':
         ## weight = [-20.0, -10.0]
         ## param_dict['HMM']['scale'] = [7.0, 9.0]
 
-        ## ## ep 2,4,8 mean no fz
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation9/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## weight = [-20.0, -10.0]
-        ## param_dict['HMM']['scale'] = [7.0, 9.0]
+        ## ep 2,4,8 mean no fz
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation9/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        weight = [-20.0, -10.0]
+        param_dict['HMM']['scale'] = [7.0, 9.0]
 
         # c8, 63 148 mean 
         save_data_path = os.path.expanduser('~')+\
