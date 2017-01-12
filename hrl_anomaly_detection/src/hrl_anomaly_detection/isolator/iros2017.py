@@ -331,7 +331,8 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
     dm.saveHMMinducedFeatures(kFold_list, successData, failureData,\
                               task_name, processed_data_path,\
                               HMM_dict, data_renew, startIdx, nState, cov, \
-                              noise_mag=0.03, diag=False, cov_type='diag', \
+                              success_files=success_files, failure_files=failure_files,\
+                              noise_mag=0.03, diag=False, cov_type='full', \
                               verbose=verbose)
 
     #-----------------------------------------------------------------------------------------
