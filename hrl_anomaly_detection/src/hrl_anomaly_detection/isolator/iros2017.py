@@ -359,6 +359,7 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
 
     # ---------------- ROC Visualization ----------------------
     roc_info(method_list, ROC_data, nPoints, no_plot=no_plot, ROC_dict=ROC_dict)
+    class_info(method_list, ROC_data, nPoints, kFold_list)
 
 
 def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
@@ -480,7 +481,7 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
     # ---------------- ROC Visualization ----------------------
     roc_info(method_list, ROC_data, nPoints, no_plot=True, multi_ad=True, ROC_dict=ROC_dict)
 
-    class_info(method_list, ROC_data, nPoints, kFold_list)
+    ## class_info(method_list, ROC_data, nPoints, kFold_list)
 
 
 def evaluation_omp_isolation(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
@@ -1228,7 +1229,7 @@ if __name__ == '__main__':
         ## param_dict['ROC']['hmmgp_param_range'] = np.logspace(-1.0, 2.7, nPoints)*-1.0 +0.5
         ## param_dict['HMM']['scale'] = 9.0
 
-        #81
+        #84
         param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
                                                     'unimodal_audioWristAzimuth',\
                                                     'unimodal_kinJntEff_1',\
