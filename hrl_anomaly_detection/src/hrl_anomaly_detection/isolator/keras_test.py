@@ -509,19 +509,21 @@ def evaluate_svm(save_data_path):
         ## x_train = x_train_img
         ## x_test  = x_test_img
 
-        ## x_train_dyn1 = x_train[:,:5]
-        ## x_train_dyn2 = x_train[:,5:-7]
-        ## x_train_stc = x_train[:,-7:]
+        x_train_dyn1 = x_train[:,:8]
+        x_train_dyn2 = x_train[:,16:-6][:,:6]
+        x_train_stc = x_train[:,-6:]
         ## x_train_dyn1 -= np.mean(x_train_dyn1, axis=1)[:,np.newaxis]
         ## x_train_dyn2 -= np.mean(x_train_dyn2, axis=1)[:,np.newaxis]
-        ## x_train = np.hstack([x_train_dyn1, x_train_dyn2, x_train_stc])
+        x_train = np.hstack([x_train_dyn1, x_train_dyn2, x_train_stc])
+        ## x_train = np.hstack([x_train_dyn1, x_train_stc])
 
-        ## x_test_dyn1 = x_test[:,:5]
-        ## x_test_dyn2 = x_test[:,5:-7]
-        ## x_test_stc = x_test[:,-7:]
+        x_test_dyn1 = x_test[:,:8]
+        x_test_dyn2 = x_test[:,16:-6][:,:6]
+        x_test_stc = x_test[:,-6:]
         ## x_test_dyn1 -= np.mean(x_test_dyn1, axis=1)[:,np.newaxis]
         ## x_test_dyn2 -= np.mean(x_test_dyn2, axis=1)[:,np.newaxis]
-        ## x_test = np.hstack([x_test_dyn1, x_test_dyn2, x_test_stc])
+        x_test = np.hstack([x_test_dyn1, x_test_dyn2, x_test_stc])
+        ## x_test = np.hstack([x_test_dyn1, x_test_stc])
         
         ## scaler = preprocessing.MinMaxScaler()
         scaler = preprocessing.StandardScaler()
@@ -900,18 +902,18 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation4/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        preprocess_data(save_data_path, viz=opt.viz, hog_feature=False, org_ratio=True)
+        ## preprocess_data(save_data_path, viz=opt.viz, hog_feature=False, org_ratio=True)
 
 
-        unimodal_fc(save_data_path, n_labels)        
-        unimodal_fc(save_data_path, n_labels, fine_tune=True)        
-        unimodal_cnn(save_data_path, n_labels)        
-        unimodal_cnn(save_data_path, n_labels, fine_tune=True)        
-        multimodal_cnn_fc(save_data_path, n_labels)
-        multimodal_cnn_fc(save_data_path, n_labels, fine_tune=True)
+        ## unimodal_fc(save_data_path, n_labels)        
+        ## unimodal_fc(save_data_path, n_labels, fine_tune=True)        
+        ## unimodal_cnn(save_data_path, n_labels)        
+        ## unimodal_cnn(save_data_path, n_labels, fine_tune=True)        
+        ## multimodal_cnn_fc(save_data_path, n_labels)
+        ## multimodal_cnn_fc(save_data_path, n_labels, fine_tune=True)
         ## multimodal_cnn_fc(save_data_path, n_labels, fine_tune=True, test_only=True,
         ##                   save_pdf=opt.bSavePdf)
-        ## evaluate_svm(save_data_path)
+        evaluate_svm(save_data_path)
 
         ## unimodal_cnn(save_data_path, n_labels, vgg=True)        
         ## unimodal_cnn(save_data_path, n_labels, fine_tune=True, vgg=True)        
