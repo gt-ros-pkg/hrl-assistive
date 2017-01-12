@@ -899,21 +899,23 @@ if __name__ == '__main__':
         plot(model, to_file='model.png')
         
     else:
+        # ep 2,4,8 mean, -> 2,4,8 amin
+        ## param_dict['HMM']['scale'] = [7.0, 9.0]
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation4/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         ## preprocess_data(save_data_path, viz=opt.viz, hog_feature=False, org_ratio=True)
 
 
-        ## unimodal_fc(save_data_path, n_labels)        
-        ## unimodal_fc(save_data_path, n_labels, fine_tune=True)        
-        ## unimodal_cnn(save_data_path, n_labels)        
-        ## unimodal_cnn(save_data_path, n_labels, fine_tune=True)        
-        ## multimodal_cnn_fc(save_data_path, n_labels)
-        ## multimodal_cnn_fc(save_data_path, n_labels, fine_tune=True)
+        unimodal_fc(save_data_path, n_labels)        
+        unimodal_fc(save_data_path, n_labels, fine_tune=True)        
+        unimodal_cnn(save_data_path, n_labels)        
+        unimodal_cnn(save_data_path, n_labels, fine_tune=True)        
+        multimodal_cnn_fc(save_data_path, n_labels)
+        multimodal_cnn_fc(save_data_path, n_labels, fine_tune=True)
         ## multimodal_cnn_fc(save_data_path, n_labels, fine_tune=True, test_only=True,
         ##                   save_pdf=opt.bSavePdf)
-        evaluate_svm(save_data_path)
+        ## evaluate_svm(save_data_path)
 
         ## unimodal_cnn(save_data_path, n_labels, vgg=True)        
         ## unimodal_cnn(save_data_path, n_labels, fine_tune=True, vgg=True)        
