@@ -1402,11 +1402,11 @@ if __name__ == '__main__':
 
 
         # c8, # 124 min
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation10/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        weight = [-20.0, -10.0]
-        param_dict['HMM']['scale'] = [7.0, 7.0]
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation10/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## weight = [-20.0, -10.0]
+        ## param_dict['HMM']['scale'] = [7.0, 7.0]
 
         # 1,4,8 min?
         ## save_data_path = os.path.expanduser('~')+\
