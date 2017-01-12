@@ -1346,11 +1346,11 @@ if __name__ == '__main__':
         ## param_dict['HMM']['scale'] = [7.0, 9.0]
 
         # c8, # 124 max
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation10/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## weight = [-20.0, -10.0]
-        ## param_dict['HMM']['scale'] = [7.0, 7.0]
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation10/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        weight = [-20.0, -10.0]
+        param_dict['HMM']['scale'] = [7.0, 7.0]
 
         
         window_steps=5
@@ -1373,8 +1373,8 @@ if __name__ == '__main__':
         param_dict['data_param']['staticFeatures'] = ['unimodal_audioWristFrontRMS',\
                                                       'unimodal_audioWristAzimuth',\
                                                       'unimodal_ftForceX',\
-                                                      'unimodal_ftForceY',\
-                                                      'unimodal_ftForceZ',\
+                                                      ## 'unimodal_ftForceY',\
+                                                      ## 'unimodal_ftForceZ',\
                                                       'unimodal_fabricForce',  \
                                                       'unimodal_landmarkDist',\
                                                       'crossmodal_landmarkEEAng',\
