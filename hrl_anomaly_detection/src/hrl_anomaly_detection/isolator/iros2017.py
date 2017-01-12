@@ -350,7 +350,8 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
                                                                          method, ROC_data, \
                                                                          ROC_dict, \
                                                                          SVM_dict, HMM_dict, \
-                                                                         startIdx=startIdx, nState=nState) \
+                                                                         startIdx=startIdx, nState=nState,\
+                                                                         n_jobs=n_jobs) \
                                                                          for idx in xrange(len(kFold_list)) \
                                                                          for method in method_list )
 
@@ -1222,27 +1223,32 @@ if __name__ == '__main__':
         ## param_dict['HMM']['scale'] = 9.0
 
         #84
-        param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
-                                                    'unimodal_audioWristAzimuth',\
-                                                    'unimodal_kinJntEff_1',\
-                                                    'unimodal_ftForce_zero',\
-                                                    'unimodal_ftForce_integ',\
-                                                     ## 'unimodal_ftForceZ',\
-                                                    'unimodal_kinEEChange',\
-                                                    'unimodal_kinDesEEChange',\
-                                                    'crossmodal_landmarkEEDist', \
-                                                    'unimodal_landmarkDist',\
-                                                    ]
-        param_dict['HMM']['scale'] = 6.0 #7
-        param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.8, 2.5, nPoints)*-1.0+0.1
-
-
-        #  #86 or 85
         ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
+        ##                                             'unimodal_audioWristAzimuth',\
         ##                                             'unimodal_kinJntEff_1',\
+        ##                                             'unimodal_ftForce_zero',\
         ##                                             'unimodal_ftForce_integ',\
+        ##                                              ## 'unimodal_ftForceZ',\
         ##                                             'unimodal_kinEEChange',\
+        ##                                             'unimodal_kinDesEEChange',\
+        ##                                             'crossmodal_landmarkEEDist', \
+        ##                                             'unimodal_landmarkDist',\
         ##                                             ]
+        ## param_dict['HMM']['scale'] = 6.0 #7
+        ## param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.8, 2.5, nPoints)*-1.0+0.1
+
+
+        #  ep 86 or 85
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation5/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
+                                                    'unimodal_kinJntEff_1',\
+                                                    'unimodal_ftForce_integ',\
+                                                    'unimodal_kinEEChange',\
+                                                    ]
+        param_dict['HMM']['scale'] = 7.0
+        param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.8, 2.5, nPoints)*-1.0+0.1
 
         # 84.6
         ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
@@ -1263,16 +1269,6 @@ if __name__ == '__main__':
         ##                                             'unimodal_landmarkDist',\
         ##                                             ]
         
-        # 81 = 7.0
-        ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
-        ##                                             'unimodal_kinJntEff_1',\
-        ##                                             'unimodal_ftForce_integ',\
-        ##                                             'unimodal_kinEEChange', \
-        ##                                             'crossmodal_landmarkEEDist', \
-        ##                                             ]
-        ## param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.4, 2.7, nPoints)*-1.0 
-        ## param_dict['HMM']['scale'] = 7.0
-
 
         param_dict['ROC']['methods'] = ['hmmgp']
         nPoints = param_dict['ROC']['nPoints']
@@ -1369,17 +1365,29 @@ if __name__ == '__main__':
         ##                                             'crossmodal_landmarkEEDist', \
         ##                                             ]]
 
-        param_dict['data_param']['handFeatures'] = [['unimodal_audioWristRMS',  \
-                                                    'unimodal_kinJntEff_1',\
-                                                    'unimodal_ftForce_integ',\
-                                                    'unimodal_kinEEChange',\
-                                                    'crossmodal_landmarkEEDist', \
-                                                    ],
-                                                    ['unimodal_ftForce_zero',\
-                                                     'unimodal_ftForceZ',\
-                                                     'unimodal_kinDesEEChange', \
-                                                     'crossmodal_landmarkEEDist', \
-                                                    ]]
+        ## param_dict['data_param']['handFeatures'] = [['unimodal_audioWristRMS',  \
+        ##                                             'unimodal_audioWristAzimuth',\
+        ##                                             'unimodal_kinJntEff_1',\
+        ##                                             'unimodal_ftForce_zero',\
+        ##                                             'unimodal_ftForce_integ',\
+        ##                                             'unimodal_kinEEChange',\
+        ##                                             'unimodal_kinDesEEChange',\
+        ##                                             'crossmodal_landmarkEEDist', \
+        ##                                             'unimodal_landmarkDist',\
+        ##                                             ]]
+        
+
+        ## param_dict['data_param']['handFeatures'] = [['unimodal_audioWristRMS',  \
+        ##                                             'unimodal_kinJntEff_1',\
+        ##                                             'unimodal_ftForce_integ',\
+        ##                                             'unimodal_kinEEChange',\
+        ##                                             'crossmodal_landmarkEEDist', \
+        ##                                             ],
+        ##                                             ['unimodal_ftForce_zero',\
+        ##                                              'unimodal_ftForceZ',\
+        ##                                              'unimodal_kinDesEEChange', \
+        ##                                              'crossmodal_landmarkEEDist', \
+        ##                                             ]]
         param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0., 2.3, nPoints)*-1.0+1.0
         param_dict['ROC']['hmmgp1_param_range'] = np.logspace(-0., 2.3, nPoints)*-1.0+1.0
         param_dict['ROC']['hmmgp2_param_range'] = np.logspace(-0.8, 2.7, nPoints)*-1.0+0.5

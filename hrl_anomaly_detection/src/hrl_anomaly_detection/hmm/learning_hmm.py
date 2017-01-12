@@ -667,8 +667,7 @@ def getHMMinducedFlattenFeatures(ll_logp, ll_post, ll_idx, l_labels=None, c=1.0,
 
 
 def getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData=None, startIdx=4, \
-                                         add_logp_d=False,\
-                                         cov_type='full'):
+                                         add_logp_d=False, cov_type='full', n_jobs=-1):
 
     if abnormalTrainData is not None:
         testDataX = np.vstack([ np.swapaxes(normalTrainData,0,1), np.swapaxes(abnormalTrainData,0,1) ])
@@ -680,7 +679,8 @@ def getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData=
         testDataY = -np.ones(len(testDataX[0]))
         
     return getHMMinducedFeaturesFromRawCombinedFeatures(ml, testDataX, testDataY, startIdx, \
-                                                        add_logp_d=add_logp_d, cov_type=cov_type)
+                                                        add_logp_d=add_logp_d, cov_type=cov_type,
+                                                        n_jobs=n_jobs)
 
 
 def getHMMinducedFeaturesFromRawCombinedFeatures(ml, dataX, dataY, startIdx, add_logp_d=False, cov_type='full',\
