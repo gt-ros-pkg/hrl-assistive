@@ -1340,7 +1340,7 @@ if __name__ == '__main__':
         param_dict['HMM']['scale'] = [7.0, 7.0] #9.0]
 
         ## ## # c11 66 # 1 mean 
-        ## # c12 60 # 148 mean
+        ## # c12 60 # 148 min
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
@@ -1354,7 +1354,7 @@ if __name__ == '__main__':
         ## weight = [-20.0, -10.0]
         ## param_dict['HMM']['scale'] = [7.0, 9.0]
 
-        ## # c8, 63 124 min 
+        ## # c8, 60 124 min 
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation10/'+\
         ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
