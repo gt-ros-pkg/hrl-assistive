@@ -1339,18 +1339,18 @@ if __name__ == '__main__':
         param_dict['HMM']['scale'] = [7.0, 13.0]
 
         # c11, # 1 mean
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## weight = [-20.0, -10.0]
-        ## param_dict['HMM']['scale'] = [7.0, 9.0]
-
-        # ep 2,4,8 mean, -> 1,4,16 mean
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation9/'+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         weight = [-20.0, -10.0]
         param_dict['HMM']['scale'] = [7.0, 9.0]
+
+        # ep 2,4,8 mean, -> 1,4,16 mean
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation9/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## weight = [-20.0, -10.0]
+        ## param_dict['HMM']['scale'] = [7.0, 9.0]
 
         # c8, # 248 max
         ## save_data_path = os.path.expanduser('~')+\
