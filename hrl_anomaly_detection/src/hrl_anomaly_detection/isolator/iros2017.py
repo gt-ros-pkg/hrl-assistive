@@ -1239,8 +1239,8 @@ if __name__ == '__main__':
                                                     'crossmodal_landmarkEEDist', \
                                                     'unimodal_landmarkDist',\
                                                     ]
-        param_dict['HMM']['scale'] = 4.0 #7
-        param_dict['ROC']['hmmgp_param_range'] = np.logspace(-1.0, 2.5, nPoints)*-1.0+0.1
+        param_dict['HMM']['scale'] = 6.0 #7
+        param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.8, 2.5, nPoints)*-1.0+0.1
 
 
         #  #86 or 85
