@@ -4,10 +4,6 @@ find_package(catkin REQUIRED COMPONENTS message_generation std_msgs)
 
 catkin_python_setup()
 
-add_message_files(
-  DIRECTORY msg
-  FILES MultiModality.msg pclChange.msg audio.msg
-)
 
 generate_messages(
     DEPENDENCIES std_msgs
