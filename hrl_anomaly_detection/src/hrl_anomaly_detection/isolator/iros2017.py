@@ -1300,7 +1300,7 @@ if __name__ == '__main__':
                                                     'unimodal_ftForce_integ',\
                                                     'unimodal_kinEEChange',
                                                     'crossmodal_landmarkEEDist', \
-                                                    ]
+                                                    ],
                                                     [
                                                      'unimodal_ftForce_zero',\
                                                      ## 'unimodal_ftForceZ',\
