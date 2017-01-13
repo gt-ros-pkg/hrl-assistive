@@ -600,8 +600,6 @@ def unimodal_fc(save_data_path, n_labels, nb_epoch=400, fine_tune=False):
         ## x_test_img = test_data[1]
         y_test     = test_data[2]
 
-
-
         ## x_train_sig_dyn1 = x_train_sig[:,:12]
         ## x_train_sig_dyn2 = x_train_sig[:,12:-8]#[:,[0, 3, 6]]
         ## x_train_sig_stc = x_train_sig[:,-8:]#[:,[0,1,2,4,5,6,7]]
@@ -656,8 +654,6 @@ def unimodal_fc(save_data_path, n_labels, nb_epoch=400, fine_tune=False):
         scores.append( hist.history['val_acc'][-1] )
         model.save_weights(full_weights_path)
         del model
-
-        break
 
     print 
     print np.mean(scores), np.std(scores)
@@ -937,8 +933,8 @@ if __name__ == '__main__':
         ## preprocess_data(save_data_path, viz=opt.viz, hog_feature=False, org_ratio=True)
 
 
-        ## unimodal_fc(save_data_path, n_labels, nb_epoch=500)        
-        unimodal_fc(save_data_path, n_labels, fine_tune=True)        
+        unimodal_fc(save_data_path, n_labels, nb_epoch=400)        
+        unimodal_fc(save_data_path, n_labels, fine_tune=True, nb_epoch=400)        
         ## unimodal_cnn(save_data_path, n_labels)        
         ## unimodal_cnn(save_data_path, n_labels, fine_tune=True)        
         multimodal_cnn_fc(save_data_path, n_labels)
