@@ -934,8 +934,8 @@ if __name__ == '__main__':
         ## preprocess_data(save_data_path, viz=opt.viz, hog_feature=False, org_ratio=True)
 
 
-        unimodal_fc(save_data_path, n_labels, nb_epoch=200)        
-        unimodal_fc(save_data_path, n_labels, fine_tune=True, nb_epoch=400)        
+        #unimodal_fc(save_data_path, n_labels, nb_epoch=200)        
+        #unimodal_fc(save_data_path, n_labels, fine_tune=True, nb_epoch=400)        
         ## unimodal_cnn(save_data_path, n_labels)        
         ## unimodal_cnn(save_data_path, n_labels, fine_tune=True)        
         ## multimodal_cnn_fc(save_data_path, n_labels)
