@@ -829,7 +829,7 @@ def evaluation_omp_isolation(subject_names, task_name, raw_data_path, processed_
 def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
                           data_renew=False, svd_renew=False, save_pdf=False, verbose=False, debug=False,\
                           no_plot=False, delay_plot=True, find_param=False, data_gen=False, \
-                          save_viz_data=False, weight=-5.0, window_steps=10):
+                          save_viz_data=False, weight=-5.0, window_steps=10, single_detector=False):
     ## Parameters
     # data
     data_dict  = param_dict['data_param']
@@ -953,6 +953,7 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
                                                  failure_labels,\
                                                  failure_image_list,\
                                                  task_name, processed_data_path, param_dict, weight,\
+                                                 single_detector=single_detector,\
                                                  n_jobs=-1, window_steps=window_steps, verbose=verbose\
                                                  ) for idx in xrange(len(kFold_list)) )
         
@@ -1321,6 +1322,8 @@ if __name__ == '__main__':
 
 
     elif opt.evaluation_isolation2:
+        single_detector = False
+
         # c11, 61 # 148 min - no dynamic features
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation7/'+\
@@ -1336,12 +1339,13 @@ if __name__ == '__main__':
         weight = [-20.0, -10.0]
         param_dict['HMM']['scale'] = [7.0, 9.0]
 
-        ## c12 1,4,8 min
+        ## c12 1 min
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation9/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         weight = [-20.0, -10.0]
         param_dict['HMM']['scale'] = [7.0, 9.0]
+        single_detector = True
 
         ## # c8, 60 124 min 
         ## save_data_path = os.path.expanduser('~')+\
@@ -1357,7 +1361,6 @@ if __name__ == '__main__':
         param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0
         param_dict['SVM']['nugget']  = 10.0
 
-        # c11
         param_dict['data_param']['handFeatures'] = [['unimodal_audioWristRMS',  \
                                                     'unimodal_kinJntEff_1',\
                                                     'unimodal_ftForce_integ',\
@@ -1411,7 +1414,7 @@ if __name__ == '__main__':
                               save_pdf=opt.bSavePdf, \
                               verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                               find_param=False, data_gen=opt.bDataGen, weight=weight, \
-                              window_steps=window_steps)
+                              window_steps=window_steps, single_detector=single_detector)
 
         # options
         # 1. window diff

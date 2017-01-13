@@ -494,7 +494,7 @@ def plot_decoder(x1,x2):
 ##     return detection_idx
 
 def anomaly_detection(X, Y, task_name, processed_data_path, param_dict, logp_viz=False, verbose=False,
-                      weight=0.0, idx=0, n_jobs=-1):
+                      weight=0.0, idx=0, n_jobs=-1, single_detector=False):
     ''' Anomaly detector that return anomalous point on each data using two HMMs.
     '''
     HMM_dict = param_dict['HMM']
@@ -596,7 +596,8 @@ def anomaly_detection(X, Y, task_name, processed_data_path, param_dict, logp_viz
         l_test_Y.append(ll_classifier_test_Y)
         l_test_idx.append(ll_classifier_test_idx)
 
-    
+        if single_detector: break
+        
 
     # anomaly detection
     detection_idx = [None for i in xrange(len(ll_classifier_test_X))]
@@ -604,11 +605,11 @@ def anomaly_detection(X, Y, task_name, processed_data_path, param_dict, logp_viz
         if len(ll_classifier_test_Y[i])==0: continue
 
         y_pred1 = dtc_list[0].predict(l_test_X[0][i], y=l_test_Y[0][i])
-        if nDetector > 1:
+        if nDetector > 1 and single_detector is False:
             y_pred2 = dtc_list[1].predict(l_test_X[1][i], y=l_test_Y[1][i])
 
         for j in xrange(len(y_pred1)):
-            if nDetector > 1:
+            if nDetector > 1 and single_detector is False:
                 if y_pred1[j] > 0 or y_pred2[j] > 0:                
                     if ll_classifier_test_Y[i][0] > 0:
                         detection_idx[i] = ll_classifier_test_idx[i][j]
@@ -703,6 +704,7 @@ def get_isolation_data(idx, kFold_list, modeling_pkl, nState, \
 def get_hmm_isolation_data(idx, kFold_list, failureData, failureData_static, \
                            failure_labels, failure_image_list,\
                            task_name, processed_data_path, param_dict, weight,\
+                           single_detector=False,\
                            n_jobs=-1, window_steps=10, verbose=False ):
 
     normalTrainIdx   = kFold_list[0]
@@ -739,13 +741,13 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failureData_static, \
                                                  [1]*len(abnormalTrainData_1[0]), \
                                                  task_name, processed_data_path, param_dict,\
                                                  logp_viz=False, verbose=False, \
-                                                 weight=weight,\
+                                                 weight=weight, single_detector=single_detector,\
                                                  idx=idx, n_jobs=n_jobs)
     detection_test_idx_list = anomaly_detection(input_test_list, \
                                                 [1]*len(abnormalTestData_1[0]), \
                                                 task_name, processed_data_path, param_dict,\
                                                 logp_viz=False, verbose=False, \
-                                                weight=weight,\
+                                                weight=weight, single_detector=single_detector,\
                                                 idx=idx, n_jobs=n_jobs)
 
     #-----------------------------------------------------------------------------------------
