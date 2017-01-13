@@ -938,7 +938,7 @@ if __name__ == '__main__':
 
 
         ## unimodal_fc(save_data_path, n_labels, nb_epoch=500)        
-        ## unimodal_fc(save_data_path, n_labels, fine_tune=True)        
+        unimodal_fc(save_data_path, n_labels, fine_tune=True)        
         ## unimodal_cnn(save_data_path, n_labels)        
         ## unimodal_cnn(save_data_path, n_labels, fine_tune=True)        
         multimodal_cnn_fc(save_data_path, n_labels)
