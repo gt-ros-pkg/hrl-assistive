@@ -1348,13 +1348,13 @@ if __name__ == '__main__':
         param_dict['HMM']['scale'] = [7.0, 13.0]
         single_detector = False #True
 
-        ## # ep  # 148 min 67
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## weight = [-20.0, -50]
-        ## param_dict['HMM']['scale'] = [7.0, 13.0]
-        ## single_detector = False 
+        # ep  # 148 min, window 3
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        weight = [-20.0, -50]
+        param_dict['HMM']['scale'] = [7.0, 13.0]
+        single_detector = False 
 
         ## ## c12 148 min 70 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! in keras_test
         ## save_data_path = os.path.expanduser('~')+\
@@ -1373,7 +1373,7 @@ if __name__ == '__main__':
         ## single_detector = False 
 
         
-        window_steps= 10 #5
+        window_steps= 3 #10 #5
         nPoints = param_dict['ROC']['nPoints']
         param_dict['ROC']['methods'] = ['hmmgp', 'hmmgp']
         param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0
