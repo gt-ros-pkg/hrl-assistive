@@ -300,6 +300,7 @@ class armReacherGUI:
                 self.logRequestPub.publish("No feedback requested")
             self.ScoopNumber = 0
             break
+        self.inputStatus = False
 
     
     def feeding(self, armReachActionLeft, armReachActionRight, log, detection_flag):
@@ -371,6 +372,7 @@ class armReacherGUI:
 
             self.FeedNumber = 0            
             break
+        self.inputStatus=False
 
 
     def cleanMotion(self, armReachActionLeft, armReachActionRight):
@@ -385,6 +387,7 @@ class armReacherGUI:
         #self.proceedPub.publish("Start: Scooping 1, Scooping 2") #TODO need to fix?
         #self.proceedPub.publish("Next: Scooping 3")
         #self.proceedPub.publish("Set: Scooping 1, Scooping 2, Scooping 3")
+        self.inputStatus = False
 
             
     def ServiceCallLeft(self, cmd):
