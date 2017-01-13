@@ -85,14 +85,6 @@ def preprocess_data(save_data_path, scaler=4, n_labels=12, viz=False, hog_featur
         print "Training data: ", np.shape(x_train_img), np.shape(x_train_sig), np.shape(y_train)
         print "Testing data: ", np.shape(x_test_img), np.shape(x_test_sig), np.shape(y_test)
 
-        ## if idx == 0:
-        ##     x = np.vstack([x_train_sig, x_test_sig])
-        ##     x_train_sig = scaler.fit_transform(x_train_sig)
-        ##     x_test_sig  = scaler.transform(x_test_sig)
-            
-        ## x_train_sig = scaler.fit_transform(x_train_sig)
-        ## x_test_sig  = scaler.transform(x_test_sig)
-
         #--------------------------------------------------------------------
         # check images
         rm_idx = []
@@ -109,8 +101,15 @@ def preprocess_data(save_data_path, scaler=4, n_labels=12, viz=False, hog_featur
                     height, width = np.array(img).shape[:2]
                     img = cv2.resize(img,(width/scaler, height/scaler), interpolation = cv2.INTER_CUBIC)
                     img = img.astype(np.float32)
-                else:                    
-                    img = cv2.resize(cv2.imread(f), (224, 224)).astype(np.float32)
+                else:
+                    # BGR, vgg
+                    img_size = (256,256)
+                    img = cv2.resize(cv2.imread(f), img_size).astype(np.float32)
+                    crop_size = (224,224)
+                    img = img[(img_size[0]-crop_size[0])//2:(img_size[0]+crop_size[0])//2
+                              ,(img_size[1]-crop_size[1])//2:(img_size[1]+crop_size[1])//2,:]
+
+                # for vgg but lets use
                 img[:,:,0] -= 103.939
                 img[:,:,1] -= 116.779
                 img[:,:,2] -= 123.68
@@ -928,28 +927,27 @@ if __name__ == '__main__':
         plot(model, to_file='model.png')
         
     else:
-        # ep 1mean all
-        ## param_dict['HMM']['scale'] = [7.0, 9.0]
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation4/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        # 148 amin
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation4/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         ## preprocess_data(save_data_path, viz=opt.viz, hog_feature=False, org_ratio=True)
 
 
-        ## unimodal_fc(save_data_path, n_labels, nb_epoch=200)        
-        ## unimodal_fc(save_data_path, n_labels, fine_tune=True, nb_epoch=400)        
+        unimodal_fc(save_data_path, n_labels, nb_epoch=200)        
+        unimodal_fc(save_data_path, n_labels, fine_tune=True, nb_epoch=400)        
         ## unimodal_cnn(save_data_path, n_labels)        
         ## unimodal_cnn(save_data_path, n_labels, fine_tune=True)        
         ## multimodal_cnn_fc(save_data_path, n_labels)
-        multimodal_cnn_fc(save_data_path, n_labels, fine_tune=True)
+        ## multimodal_cnn_fc(save_data_path, n_labels, fine_tune=True)
         ## multimodal_cnn_fc(save_data_path, n_labels, fine_tune=True, test_only=True,
         ##                   save_pdf=opt.bSavePdf)
         ## evaluate_svm(save_data_path)
 
-        ## unimodal_cnn(save_data_path, n_labels, vgg=True)        
-        ## unimodal_cnn(save_data_path, n_labels, fine_tune=True, vgg=True)        
-        ## multimodal_cnn_fc(save_data_path, n_labels, vgg=True)
-        ## multimodal_cnn_fc(save_data_path, n_labels, fine_tune=True, vgg=True)
+        unimodal_cnn(save_data_path, n_labels, vgg=True)        
+        unimodal_cnn(save_data_path, n_labels, fine_tune=True, vgg=True)        
+        multimodal_cnn_fc(save_data_path, n_labels, vgg=True)
+        multimodal_cnn_fc(save_data_path, n_labels, fine_tune=True, vgg=True)
 
         
 
