@@ -1349,21 +1349,21 @@ if __name__ == '__main__':
         single_detector = False #True
 
         ## ## # c11 66 # 1 mean 
-        ## # ep  # 1 min
+        ## # ep  # 124 min
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        weight = [-20.0, -50] #-10.0]
+        weight = [-20.0, -50]
         param_dict['HMM']['scale'] = [7.0, 13.0]
         single_detector = False #True
 
-        ## c12 128 min 50
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation9/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        weight = [-20.0, -50.0]
-        param_dict['HMM']['scale'] = [7.0, 13.0]
-        single_detector = False #True
+        ## ## c12 128 min 70
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation9/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## weight = [-20.0, -50.0]
+        ## param_dict['HMM']['scale'] = [7.0, 13.0]
+        ## single_detector = False #True
 
         ## # c8, 60 128 min 
         ## save_data_path = os.path.expanduser('~')+\
