@@ -1340,7 +1340,7 @@ if __name__ == '__main__':
     elif opt.evaluation_isolation2:
         single_detector = False
 
-        # c11, 18 min 
+        # c11, 148 min , window10
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation7/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
@@ -1373,7 +1373,7 @@ if __name__ == '__main__':
         ## single_detector = False 
 
         
-        window_steps=5
+        window_steps= 10 #5
         nPoints = param_dict['ROC']['nPoints']
         param_dict['ROC']['methods'] = ['hmmgp', 'hmmgp']
         param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0
