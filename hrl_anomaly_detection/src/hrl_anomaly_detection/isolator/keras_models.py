@@ -296,10 +296,10 @@ def sig_net(input_shape, n_labels, weights_path=None, fine_tune=False):
     ## model.add(BatchNormalization())
     model.add(Activation('relu'))
     model.add(Dropout(0.5))
-    model.add(Dense(64, init='uniform', name='fc2_2'))
-    ## model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(Dropout(0.5))
+    ## model.add(Dense(64, init='uniform', name='fc2_2'))
+    ## ## model.add(BatchNormalization())
+    ## model.add(Activation('relu'))
+    ## model.add(Dropout(0.5))
 
     if fine_tune:
         for layer in model.layers:
