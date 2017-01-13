@@ -1807,7 +1807,7 @@ if __name__ == '__main__':
         ## from hrl_anomaly_detection.AURO2016_params import *
         from hrl_anomaly_detection.params import *
         raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
-                                                              opt.bHMMRenew, opt.bClassifierRenew, opt.dim,\
+                                                              opt.bHMMRenew, opt.bCLFRenew, opt.dim,\
                                                               rf_center, local_range)
         param_dict['HMM']['nState'] = 20
         param_dict['HMM']['scale']  = 11.
@@ -1821,7 +1821,7 @@ if __name__ == '__main__':
     else:
         from hrl_anomaly_detection.params import *
         raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
-                                                              opt.bHMMRenew, opt.bClassifierRenew, opt.dim,\
+                                                              opt.bHMMRenew, opt.bCLFRenew, opt.dim,\
                                                               rf_center, local_range)
         
     
@@ -1883,7 +1883,7 @@ if __name__ == '__main__':
 
         plotDecisionBoundaries(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
                                methods,\
-                               success_viz, failure_viz, save_pdf=opt.bSavePdf, db_renew=opt.bClassifierRenew)
+                               success_viz, failure_viz, save_pdf=opt.bSavePdf, db_renew=opt.bCLFRenew)
 
     elif opt.bAEDataExtraction:
         param_dict['AE']['switch']     = True

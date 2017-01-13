@@ -417,7 +417,7 @@ if __name__ == '__main__':
 
     from hrl_anomaly_detection.isolator.IROS2017_params import *
     raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
-                                                          opt.bHMMRenew, opt.bClassifierRenew, opt.dim,\
+                                                          opt.bHMMRenew, opt.bCLFRenew, opt.dim,\
                                                           rf_center, local_range, nPoints=nPoints)
     if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
     # Mikako - bad camera

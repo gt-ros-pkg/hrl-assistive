@@ -2499,7 +2499,7 @@ def initialiseOptParser(p):
                  default=False, help='Renew pickle files.')
     p.add_option('--hmmRenew', '--hr', action='store_true', dest='bHMMRenew',
                  default=False, help='Renew HMM parameters.')
-    p.add_option('--cfRenew', '--cr', action='store_true', dest='bClassifierRenew',
+    p.add_option('--cfRenew', '--cr', action='store_true', dest='bCLFRenew',
                  default=False, help='Renew Classifiers.')
 
     p.add_option('--task', action='store', dest='task', type='string', default='feeding',

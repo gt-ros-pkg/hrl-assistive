@@ -54,7 +54,7 @@ from hrl_anomaly_detection import util as util
 
 
 class classifier(learning_base):
-    def __init__(self, method='svm', nPosteriors=10, nLength=200, startIdx=4, parallel=False,\
+    def __init__(self, method='svm', nPosteriors=10, nLength=None, startIdx=4, parallel=False,\
                  ths_mult=-1.0,\
                  #progress time or state?
                  std_coff = 1.0,\
@@ -86,8 +86,6 @@ class classifier(learning_base):
                  sgd_gamma      = 2.0,\
                  sgd_w_negative = 1.0,\
                  sgd_n_iter     = 10,\
-                 # minibatchkmean
-                 mbkmean_batch_size = 100,\
                  # progress svm
                  progress_svm_w_negative = 7.0,\
                  progress_svm_cost       = 4.,\
@@ -138,7 +136,11 @@ class classifier(learning_base):
             self.progress_svm_cost       = progress_svm_cost
             self.progress_svm_gamma      = progress_svm_gamma
         elif self.method == 'progress' or self.method == 'progress_state' or self.method == 'progress_diag':
-            self.nLength   = nLength
+            if nLength is None:
+                print "Need to input nLength or automatically set to 200"
+                self.nLength   = 200
+            else:
+                self.nLength   = nLength
             self.std_coff  = std_coff
             self.logp_offset = logp_offset
             self.ll_mu  = np.zeros(nPosteriors)
@@ -156,10 +158,6 @@ class classifier(learning_base):
             self.sgd_gamma      = sgd_gamma
             self.sgd_n_iter     = sgd_n_iter 
             ## self.cost         = cost
-        elif self.method == 'mbkmean' or self.method == 'kmean' or self.method == 'state_kmean':
-            self.mbkmean_batch_size = mbkmean_batch_size
-            self.ll_mu  = np.zeros(nPosteriors)
-            self.ll_std = np.zeros(nPosteriors)
         elif self.method == 'hmmgp':
             from sklearn import gaussian_process
             self.regr = 'linear' #'constant' #'constant', 'linear', 'quadratic'
@@ -287,9 +285,6 @@ class classifier(learning_base):
                                                                        for i in xrange(self.nPosteriors))
                 _, self.l_statePosterior, self.ll_mu, self.ll_std = zip(*r)
             else:
-                ## print "--------------------------------"
-                ## t = time.time()
-
                 self.l_statePosterior = []
                 self.ll_mu            = []
                 self.ll_std           = []
@@ -299,8 +294,6 @@ class classifier(learning_base):
                     self.l_statePosterior.append(p)
                     self.ll_mu.append(m)
                     self.ll_std.append(s)
-
-                ## print 'One clustering takes ', time.time() - t
 
             return True
 
@@ -314,9 +307,6 @@ class classifier(learning_base):
             ll_logp = [ X[i,0] for i in xrange(len(X)) if y[i]<0 ]
             ll_post = [ X[i,-self.nPosteriors:] for i in xrange(len(X)) if y[i]<0 ]
             
-            ## init_center = np.eye(self.nPosteriors, self.nPosteriors)
-            ## self.dt     = KMeans(self.nPosteriors, init=init_center)
-            ## idx_list    = self.km.fit_predict(state_mat.transpose())
             self.progress_neighbors = 10
             
             from sklearn.neighbors import NearestNeighbors
@@ -404,73 +394,6 @@ class classifier(learning_base):
                                         eta0=1e-2, shuffle=True, average=True, fit_intercept=True)
             self.dt.fit(X_features, y)
 
-        elif self.method == 'mbkmean':
-            from sklearn.cluster import MiniBatchKMeans
-            init_list = []
-            for i in xrange(self.nPosteriors):
-                init_array = np.zeros(self.nPosteriors)
-                init_array[i] = 1.0
-                init_list.append(init_array)
-                
-            if type(X) == list: X = np.array(X)
-            posts = X[:,-self.nPosteriors:]
-            logps = X[:,0]
-                
-            self.dt = MiniBatchKMeans(n_clusters=self.nPosteriors, \
-                                      batch_size=self.mbkmean_batch_size,\
-                                      init=np.array(init_list))
-            labels = self.dt.fit_predict(posts)
-            # clustering likelihoods
-            ll_logp = [[] for i in xrange(self.nPosteriors)]
-            for i, label in enumerate(labels):
-                ll_logp[label].append(logps[i])
-            self.ll_nData = [len(ll_logp[i]) for i in xrange(self.nPosteriors)]
-            for i in xrange(self.nPosteriors):
-                self.ll_mu[i]  = np.mean(ll_logp[i])
-                self.ll_std[i] = np.std(ll_logp[i])
-            
-        elif self.method == 'kmean':
-            from sklearn.cluster import KMeans
-            init_list = []
-            for i in xrange(self.nPosteriors):
-                init_array = np.zeros(self.nPosteriors)
-                init_array[i] = 1.0
-                init_list.append(init_array)
-                
-            if type(X) == list: X = np.array(X)
-            posts = X[:,-self.nPosteriors:]
-            logps = X[:,0]
-                
-            self.dt = KMeans(n_clusters=self.nPosteriors, \
-                             init=np.array(init_list), n_init=1)
-            labels = self.dt.fit_predict(posts)
-            # clustering likelihoods
-            ll_logp = [[] for i in xrange(self.nPosteriors)]
-            for i, label in enumerate(labels):
-                ll_logp[label].append(logps[i])
-            self.ll_nData = [len(ll_logp[i]) for i in xrange(self.nPosteriors)]
-            for i in xrange(self.nPosteriors):
-                self.ll_mu[i]  = np.mean(ll_logp[i])
-                self.ll_std[i] = np.std(ll_logp[i])
-
-        elif self.method == 'state_kmean':
-            init_list = []
-            for i in xrange(self.nPosteriors):
-                init_list.append( float(i) )
-                
-            if type(X) == list: X = np.array(X)
-            states = np.argmax(X[:,-self.nPosteriors:], axis=1)
-            logps = X[:,0]
-                
-            ll_logp = [[] for i in xrange(self.nPosteriors)]
-            for i, state in enumerate(states):
-                ll_logp[state].append(logps[i])
-            self.ll_nData = [len(ll_logp[i]) for i in xrange(self.nPosteriors)]
-            for i in xrange(self.nPosteriors):
-                self.ll_mu[i]  = np.mean(ll_logp[i])
-                self.ll_std[i] = np.std(ll_logp[i])
-
-
 
 
     def partial_fit(self, X, y=None, classes=None, sample_weight=None, n_iter=1, shuffle=True):
@@ -495,25 +418,6 @@ class classifier(learning_base):
             X_features = self.rbf_feature.transform(X)
             for i in xrange(n_iter):
                 self.dt.partial_fit(X_features,y, classes=classes, sample_weight=sample_weight)
-        elif self.method == 'mbkmean':
-            if type(X) == list: X = np.array(X)
-            posts = X[:,-self.nPosteriors:]
-            logps = X[:,0]
-            labels = self.dt.predict(posts)
-            # clustering likelihoods
-            ll_logp = [[] for i in xrange(self.nPosteriors)]
-            for i, label in enumerate(labels):
-                ll_logp[label].append(logps[i])
-            for i in xrange(self.nPosteriors):
-                n = float(len(ll_logp[i]))
-                N = float(self.ll_nData[i])
-                last_mu  = self.ll_mu[i]
-                last_std = self.ll_std[i] 
-                self.ll_mu[i] = ((N)*last_mu + n*np.sum(ll_logp[i])) / N+n
-                self.ll_std[i]= np.sqrt( ((N)*( last_std*last_std + last_mu*last_mu)+\
-                                          n*self.ll_mu[i]*self.ll_mu[i])/\
-                                          (N+n) - self.ll_mu[i]*self.ll_mu[i] )
-                
             
         else:
             print "Not available method, ", self.method
@@ -653,31 +557,6 @@ class classifier(learning_base):
             X_features = self.rbf_feature.transform(X)
             return self.dt.predict(X_features)
 
-        elif self.method == 'mbkmean' or self.method == 'kmean':
-            if type(X) == list: X = np.array(X)
-            posts  = X[:,-self.nPosteriors:]            
-            labels = self.dt.predict(posts)
-
-            l_err = []
-            for i in xrange(len(X)):
-                logp = X[i][0]                
-                err = self.ll_mu[labels[i]]+self.ths_mult*self.ll_std[labels[i]] - logp
-                l_err.append(err)
-
-            return l_err
-
-        elif self.method == 'state_kmean':
-            if type(X) == list: X = np.array(X)
-            states = np.argmax(X[:,-self.nPosteriors:], axis=1)
-
-            l_err = []
-            for i in xrange(len(X)):
-                logp = X[i][0]                
-                err = self.ll_mu[states[i]]+self.ths_mult*self.ll_std[states[i]] - logp
-                l_err.append(err)
-
-            return l_err
-
         elif self.method == 'hmmsvr':
             
             sys.path.insert(0, '/usr/lib/pymodules/python2.7')
@@ -741,24 +620,18 @@ class classifier(learning_base):
             with open(fileName, 'wb') as f:
                 pickle.dump(self.dt, f)
                 pickle.dump(self.rbf_feature, f)
-            ## joblib.dump(self.dt, fileName)
         elif self.method.find('progress')>=0 :
             d = {'g_mu_list': self.g_mu_list, 'g_sig': self.g_sig, \
                  'l_statePosterior': self.l_statePosterior,\
                  'll_mu': self.ll_mu, 'll_std': self.ll_std}
             ut.save_pickle(d, fileName)            
-        elif self.method.find('mbkmean')>=0 or self.method.find('kmean')>=0:
-            ## d = {'ll_mu': self.ll_mu, 'll_std': self.ll_std}
-            ## ut.save_pickle(d, fileName)            
-            ## import pickle
-            ## with open(fileName, 'wb') as f:
-            ##     pickle.dump(self.dt, f)
-            print "Not able to save mbkmean or kmean"
         elif self.method.find('hmmgp')>=0:            
             import pickle
             with open(fileName, 'wb') as f:
                 print fileName
                 pickle.dump(self.dt, f)
+                pickle.dump(self.ths_mult, f)
+                pickle.dump(self.hmmgp_logp_offset, f)
         else:
             print "Not available method"
 
@@ -773,7 +646,6 @@ class classifier(learning_base):
             with open(fileName, 'rb') as f:
                 self.dt = pickle.load(f)
                 self.rbf_feature = pickle.load(f)
-            ## self.dt = joblib.load(fileName)
         elif self.method.find('progress')>=0:
             print "Start to load a progress based classifier"
             d = ut.load_pickle(fileName)
@@ -785,7 +657,9 @@ class classifier(learning_base):
         elif self.method.find('hmmgp')>=0:
             import pickle
             with open(fileName, 'rb') as f:
-                self.dt = pickle.load(f)
+                self.dt       = pickle.load(f)
+                self.ths_mult = pickle.load(f)
+                self.hmmgp_logp_offset = pickle.load(f)
         else:
             print "Not available method"
         
@@ -990,8 +864,8 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
         dtc.set_params( svm_type=2 )
         dtc.set_params( gamma=weights[j] )
         ret = dtc.fit(X_train, np.array(Y_train)*-1.0)
-    elif method == 'progress' or method == 'progress_diag' or method == 'progress_state' or method == 'fixed' \
-      or method == 'kmean' or method == 'hmmgp':
+    elif method == 'progress' or method == 'progress_diag' or method == 'progress_state' \
+      or method == 'fixed' or method == 'hmmgp':
         thresholds = ROC_dict[method+'_param_range']
         dtc.set_params( ths_mult = thresholds[j] )
         if j==0: ret = dtc.fit(X_train, Y_train, idx_train)                
@@ -1199,8 +1073,20 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
     # pass method if there is existing result
     # data preparation
     if (method.find('svm')>=0 or method.find('sgd')>=0) and not(method == 'osvm' or method == 'bpsvm'):
-        scaler = preprocessing.StandardScaler()
+        scr_pkl  = os.path.join(processed_data_path, 'scr_'+method+'_'+str(idx)+'.pkl')
+
+        import pickle
+        if load_model:
+            with open(scr_pkl, 'rb') as f:            
+                scaler = pickle.load(f)
+                
+        scaler   = preprocessing.StandardScaler()
         X_scaled = scaler.fit_transform(X_train_org)
+
+        if save_model:
+            with open(scr_pkl, 'wb') as f:
+                pickle.dump(scaler, f)
+                
     else:
         X_scaled = X_train_org
     print method, " : Before classification : ", np.shape(X_scaled), np.shape(Y_train_org)
@@ -1218,9 +1104,9 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                 for k in xrange(len(ll_classifier_test_X[j])):
                     print ll_classifier_test_X[j][k]
                     if np.nan in ll_classifier_test_X[j][k]:
-                        print "0-0000000000000000000000000000000000000000000000000"
+                        print "00000000000000000000000000000000000000000000000000"
                         print k, ll_classifier_test_X[j][k]
-                        print "0-0000000000000000000000000000000000000000000000000"
+                        print "00000000000000000000000000000000000000000000000000"
                 sys.exit()
         else:
             X = ll_classifier_test_X[j]
@@ -1263,7 +1149,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             dtc.set_params( gamma=weights[j] )
             if not load_model: ret = dtc.fit(X_scaled, np.array(Y_train_org)*-1.0)
         elif method == 'progress' or method == 'progress_diag' or method == 'progress_state' or \
-          method == 'fixed' or method == 'kmean' or method == 'hmmgp' or method == 'state_kmean':
+          method == 'fixed' or method == 'hmmgp':
             thresholds = ROC_dict[method+'_param_range']
             dtc.set_params( ths_mult = thresholds[j] )
             if not load_model:
@@ -1281,12 +1167,9 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             raise ValueError("Not available method: "+method)
 
         if ret is False: raise ValueError("Classifier fitting error")
-
-        if save_model:
-            dtc.save_model(clf_pkl)
+        if save_model: dtc.save_model(clf_pkl)
 
         print "Start to evaluate"
-
         # evaluate the classifier
         tp_l = []
         fp_l = []

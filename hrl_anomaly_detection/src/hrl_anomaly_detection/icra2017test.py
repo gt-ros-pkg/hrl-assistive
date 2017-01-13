@@ -1459,7 +1459,7 @@ if __name__ == '__main__':
                  default=False, help='Renew AE data.')
     p.add_option('--hmmRenew', '--hr', action='store_true', dest='bHMMRenew',
                  default=False, help='Renew HMM parameters.')
-    p.add_option('--cfRenew', '--cr', action='store_true', dest='bClassifierRenew',
+    p.add_option('--cfRenew', '--cr', action='store_true', dest='bCLFRenew',
                  default=False, help='Renew Classifiers.')
 
     p.add_option('--task', action='store', dest='task', type='string', default='feeding',
@@ -1563,7 +1563,7 @@ if __name__ == '__main__':
             sys.exit()
 
                                                           
-    if opt.bClassifierRenew: param_dict['SVM']['renew'] = True
+    if opt.bCLFRenew: param_dict['SVM']['renew'] = True
     
     #---------------------------------------------------------------------------           
     if opt.bRawDataPlot or opt.bInterpDataPlot:

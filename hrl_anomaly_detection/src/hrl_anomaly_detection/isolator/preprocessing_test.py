@@ -947,7 +947,7 @@ if __name__ == '__main__':
 
     from hrl_anomaly_detection.AURO2016_params import *
     raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
-                                                          opt.bHMMRenew, opt.bClassifierRenew, opt.dim,\
+                                                          opt.bHMMRenew, opt.bCLFRenew, opt.dim,\
                                                           rf_center, local_range)
     save_data_path = os.path.expanduser('~')+\
       '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation/'+\
