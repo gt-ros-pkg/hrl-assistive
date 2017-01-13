@@ -439,8 +439,8 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
         HMM_dict_local['scale'] = param_dict['HMM']['scale'][i]
 
         #
-        #temp
-        if i==0: continue
+        ## #temp
+        ## if i==0: continue
         
 
         # Training HMM, and getting classifier training and testing data
@@ -913,11 +913,9 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
         failure_data_ad.append( copy.copy(failureData[feature_idx_list[i]]) )
         HMM_dict_local = copy.deepcopy(HMM_dict)
         HMM_dict_local['scale'] = param_dict['HMM']['scale'][i]
-
         
         #temp
         ## if i==0: continue
-        
 
         # Training HMM, and getting classifier training and testing data
         dm.saveHMMinducedFeatures(kFold_list, success_data_ad[i], failure_data_ad[i],\
@@ -1204,23 +1202,23 @@ if __name__ == '__main__':
 
     elif opt.evaluation_single:
         '''
-        evaluation with selected feature set
+        evaluation with selected feature set 5,6
         '''
 
-        # 78% scale?,  82% scale 1
+        # 
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation5/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         param_dict['data_param']['handFeatures'] = [
                                                     'unimodal_ftForce_zero',\
-                                                    'unimodal_ftForceZ',\
+                                                    ## 'unimodal_ftForceZ',\
                                                     'unimodal_kinDesEEChange',\
                                                     'crossmodal_landmarkEEDist', \
                                                     ]
         param_dict['ROC']['hmmgp_param_range'] = np.logspace(-1.0, 2.7, nPoints)*-1.0 +0.5
-        param_dict['HMM']['scale'] = 9.0
+        param_dict['HMM']['scale'] = 7.0
 
-        #84
+        #  84
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
         ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
@@ -1239,7 +1237,7 @@ if __name__ == '__main__':
         ## param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.8, 2.5, nPoints)*-1.0+0.1
 
 
-        ## #  ep 87
+        ## ep 87
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation5/'+\
         ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
@@ -1338,12 +1336,12 @@ if __name__ == '__main__':
         weight = [-20.0, -10.0]
         param_dict['HMM']['scale'] = [7.0, 9.0]
 
-        ## ## c12 1,4,8 min
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation9/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## weight = [-20.0, -10.0]
-        ## param_dict['HMM']['scale'] = [7.0, 9.0]
+        ## c12 1,4,8 min
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation9/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        weight = [-20.0, -10.0]
+        param_dict['HMM']['scale'] = [7.0, 9.0]
 
         ## # c8, 60 124 min 
         ## save_data_path = os.path.expanduser('~')+\
@@ -1364,7 +1362,6 @@ if __name__ == '__main__':
                                                     'unimodal_kinJntEff_1',\
                                                     'unimodal_ftForce_integ',\
                                                     'unimodal_kinEEChange',\
-                                                    'crossmodal_landmarkEEDist', \
                                                     ],\
                                                     ['unimodal_ftForce_zero',\
                                                      'unimodal_ftForceZ',\
