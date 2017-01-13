@@ -118,7 +118,7 @@ class armReacherGUI:
                 if self.inputMSG == 'Start':
                     self.ScoopNumber = 0
                     self.FeedNumber = 0
-                if self.gui_status == 'wait start' or self.gui_status = 'stopped':#self.inputMSG == 'Start' or self.inputMSG == 'Continue':
+                if self.gui_status == 'wait start' or self.gui_status == 'stopped':#self.inputMSG == 'Start' or self.inputMSG == 'Continue':
                     self.inputStatus = True
                     #Maybe had to add if statement.
                     self.emergencyStatus = False
@@ -154,6 +154,7 @@ class armReacherGUI:
         while not rospy.is_shutdown():
             #print "Waiting aborting Sequence"
             if self.gui_status == 'wait start' or self.gui_status == 'stopped':
+                self.emergencyStatus = False
                 return
             if self.left_mtx is False and self.right_mtx is False: break
             emergency_wait_rate.sleep()
