@@ -58,7 +58,7 @@ from keras.layers.normalization import BatchNormalization
 
 from hrl_anomaly_detection.isolator import keras_models as km
 
-vgg_model_weights_path = '/home/dpark/git/keras_test/vgg16_weights.h5'
+vgg_model_weights_path = os.path.expanduser('~')+'/git/keras_test/vgg16_weights.h5'
 ## nb_train_samples = 1000 #len(x_train)
 ## nb_validation_samples = 200 #len(x_test)
 ## nb_train_samples = 500 #2000
