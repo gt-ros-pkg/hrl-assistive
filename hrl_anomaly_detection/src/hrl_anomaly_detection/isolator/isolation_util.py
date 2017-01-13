@@ -703,7 +703,7 @@ def get_isolation_data(idx, kFold_list, modeling_pkl, nState, \
 def get_hmm_isolation_data(idx, kFold_list, failureData, failureData_static, \
                            failure_labels, failure_image_list,\
                            task_name, processed_data_path, param_dict, weight,\
-                           dynamic_flag=False, n_jobs=-1, window_steps=10, verbose=False ):
+                           n_jobs=-1, window_steps=10, verbose=False ):
 
     normalTrainIdx   = kFold_list[0]
     abnormalTrainIdx = kFold_list[1]
@@ -736,17 +736,17 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failureData_static, \
     # Anomaly Detection
     #-----------------------------------------------------------------------------------------        
     detection_train_idx_list = anomaly_detection(input_train_list, \
-                                                  [1]*len(abnormalTrainData_1[0]), \
-                                                  task_name, processed_data_path, param_dict,\
-                                                  logp_viz=False, verbose=False, \
-                                                  weight=weight,\
-                                                  idx=idx, n_jobs=n_jobs)
-    detection_test_idx_list = anomaly_detection(input_test_list, \
-                                                 [1]*len(abnormalTestData_1[0]), \
+                                                 [1]*len(abnormalTrainData_1[0]), \
                                                  task_name, processed_data_path, param_dict,\
                                                  logp_viz=False, verbose=False, \
                                                  weight=weight,\
                                                  idx=idx, n_jobs=n_jobs)
+    detection_test_idx_list = anomaly_detection(input_test_list, \
+                                                [1]*len(abnormalTestData_1[0]), \
+                                                task_name, processed_data_path, param_dict,\
+                                                logp_viz=False, verbose=False, \
+                                                weight=weight,\
+                                                idx=idx, n_jobs=n_jobs)
 
     #-----------------------------------------------------------------------------------------
     # Feature Extraction
@@ -758,7 +758,7 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failureData_static, \
                                                        abnormalTrainData_img,\
                                                        task_name, processed_data_path, param_dict, \
                                                        window=True, window_step=window_steps,\
-                                                       dynamic_flag=dynamic_flag, delta_flag=True)
+                                                       delta_flag=True)
                                      
     print "Feature extraction with testing data"
     x_test, y_test, x_test_img = feature_extraction(idx, detection_test_idx_list, \
@@ -766,7 +766,7 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failureData_static, \
                                                     abnormalTestData_s, abnormalTestLabel,\
                                                     abnormalTestData_img,\
                                                     task_name, processed_data_path, param_dict, \
-                                                    dynamic_flag=dynamic_flag, delta_flag=True)
+                                                    delta_flag=True)
 
     return idx, [x_train, x_train_img], y_train, [x_test, x_test_img], y_test
 
@@ -776,7 +776,7 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, \
                        abnormalLabel, abnormalData_img,\
                        task_name, processed_data_path, param_dict,\
                        window_step=10, verbose=False, plot=False,\
-                       window=False, delta_flag=False, dynamic_flag=False):
+                       window=False, delta_flag=False):
     ''' Get conditional probability vector when anomalies are detected '''
     nDetector = len(abnormalData)
 
@@ -830,8 +830,8 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, \
                     ## cp_vecs = np.vstack([ cp_vecs, np.amin(vs[:4], axis=0) ])
                     #2,4,8
                     cp_vecs = np.amin(vs[:1], axis=0)
-                    cp_vecs = np.vstack([ cp_vecs, np.amin(vs[:4], axis=0) ])
-                    cp_vecs = np.vstack([ cp_vecs, np.amin(vs[:8], axis=0) ])
+                    ## cp_vecs = np.vstack([ cp_vecs, np.amin(vs[:4], axis=0) ])
+                    ## cp_vecs = np.vstack([ cp_vecs, np.amin(vs[:8], axis=0) ])
                     cp_vecs = cp_vecs.flatten()
                 else:
                     cp_vecs = np.amin(vs[:1], axis=0)
@@ -870,8 +870,8 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, \
                 ## cp_vecs = np.vstack([ cp_vecs, np.amin(vs[:4], axis=0) ])
                 ## #2,4,8
                 cp_vecs = np.amin(vs[:1], axis=0)
-                cp_vecs = np.vstack([ cp_vecs, np.amin(vs[:4], axis=0) ])
-                cp_vecs = np.vstack([ cp_vecs, np.amin(vs[:8], axis=0) ])
+                ## cp_vecs = np.vstack([ cp_vecs, np.amin(vs[:4], axis=0) ])
+                ## cp_vecs = np.vstack([ cp_vecs, np.amin(vs[:8], axis=0) ])
                 cp_vecs = cp_vecs.flatten()
             else:
                 cp_vecs = np.amin(vs[:1], axis=0)
