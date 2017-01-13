@@ -78,30 +78,10 @@ class classifier(learning_base):
                  hmmsvm_diag_w_negative  = 7.0,\
                  hmmsvm_diag_cost        = 4.,\
                  hmmsvm_diag_gamma       = 0.3,\
-                 # hmmsvm_dL
-                 hmmsvm_dL_nu         = 0.5,\
-                 hmmsvm_dL_w_negative = 7.0,\
-                 hmmsvm_dL_cost       = 4.,\
-                 hmmsvm_dL_gamma      = 0.3,\
-                 # hmmsvm_LSLS
-                 hmmsvm_LSLS_nu         = 0.5,\
-                 hmmsvm_LSLS_w_negative = 7.0,\
-                 hmmsvm_LSLS_cost       = 4.,\
-                 hmmsvm_LSLS_gamma      = 0.3,\
-                 # hmmsvm_dL
-                 hmmsvm_no_dL_nu         = 0.5,\
-                 hmmsvm_no_dL_w_negative = 7.0,\
-                 hmmsvm_no_dL_cost       = 4.,\
-                 hmmsvm_no_dL_gamma      = 0.3,\
                  # hmmosvm
                  hmmosvm_nu  = 0.00316,\
                  # osvm
                  osvm_nu     = 0.00316,\
-                 # cssvm
-                 cssvm_degree      = 3,\
-                 cssvm_gamma       = 0.3,\
-                 cssvm_cost        = 4.,\
-                 cssvm_w_negative  = 7.0,\
                  # sgd
                  sgd_gamma      = 2.0,\
                  sgd_w_negative = 1.0,\
@@ -134,7 +114,7 @@ class classifier(learning_base):
         self.class_weight = class_weight
         self.ths_mult = ths_mult
 
-        if self.method.find('svm')>=0 and self.method is not 'cssvm':
+        if self.method.find('svm')>=0:
             sys.path.insert(0, '/usr/lib/pymodules/python2.7')
             import svmutil as svm
             self.svm_type    = svm_type
@@ -151,33 +131,12 @@ class classifier(learning_base):
             self.hmmsvm_diag_w_negative = hmmsvm_diag_w_negative
             self.hmmsvm_diag_cost       = hmmsvm_diag_cost
             self.hmmsvm_diag_gamma      = hmmsvm_diag_gamma
-            self.hmmsvm_dL_nu         = hmmsvm_dL_nu
-            self.hmmsvm_dL_w_negative = hmmsvm_dL_w_negative
-            self.hmmsvm_dL_cost       = hmmsvm_dL_cost
-            self.hmmsvm_dL_gamma      = hmmsvm_dL_gamma
-            self.hmmsvm_LSLS_nu       = hmmsvm_LSLS_nu
-            self.hmmsvm_LSLS_w_negative = hmmsvm_LSLS_w_negative
-            self.hmmsvm_LSLS_cost       = hmmsvm_LSLS_cost
-            self.hmmsvm_LSLS_gamma      = hmmsvm_LSLS_gamma                        
-            self.hmmsvm_no_dL_nu         = hmmsvm_no_dL_nu
-            self.hmmsvm_no_dL_w_negative = hmmsvm_no_dL_w_negative
-            self.hmmsvm_no_dL_cost       = hmmsvm_no_dL_cost
-            self.hmmsvm_no_dL_gamma      = hmmsvm_no_dL_gamma
             self.hmmosvm_nu  = hmmosvm_nu
             self.osvm_nu     = osvm_nu
             self.nu          = nu
             self.progress_svm_w_negative = progress_svm_w_negative
             self.progress_svm_cost       = progress_svm_cost
             self.progress_svm_gamma      = progress_svm_gamma
-        elif self.method == 'cssvm':
-            sys.path.insert(0, os.path.expanduser('~')+'/git/cssvm/python')
-            import cssvmutil as cssvm
-            self.svm_type    = svm_type
-            self.kernel_type = kernel_type
-            self.cssvm_degree     = cssvm_degree 
-            self.cssvm_gamma      = cssvm_gamma 
-            self.cssvm_cost       = cssvm_cost 
-            self.cssvm_w_negative = cssvm_w_negative 
         elif self.method == 'progress' or self.method == 'progress_state' or self.method == 'progress_diag':
             self.nLength   = nLength
             self.std_coff  = std_coff
@@ -204,7 +163,7 @@ class classifier(learning_base):
         elif self.method == 'hmmgp':
             from sklearn import gaussian_process
             self.regr = 'linear' #'constant' #'constant', 'linear', 'quadratic'
-            self.corr = 'squared_exponential' #'absolute_exponential', squared_exponential','generalized_exponential', 'cubic', 'linear'
+            self.corr = 'squared_exponential' 
             self.nugget = nugget
             self.theta0 = theta0
             self.hmmgp_logp_offset = hmmgp_logp_offset
@@ -234,7 +193,7 @@ class classifier(learning_base):
         ##     ## y_train=y
         ##     K_train = custom_kernel(self.X_train, self.X_train, gamma=self.gamma)
 
-        if self.method.find('svm')>=0 and self.method is not 'cssvm':
+        if self.method.find('svm')>=0 :
             sys.path.insert(0, '/usr/lib/pymodules/python2.7')
             import svmutil as svm
 
@@ -252,15 +211,6 @@ class classifier(learning_base):
             elif self.method == 'hmmsvm_diag':
                 commands = commands+' -n '+str(self.hmmsvm_diag_nu)+' -g '+str(self.hmmsvm_diag_gamma)\
                   +' -w-1 '+str(self.hmmsvm_diag_w_negative)+' -c '+str(self.hmmsvm_diag_cost)
-            elif self.method == 'hmmsvm_dL':
-                commands = commands+' -n '+str(self.hmmsvm_dL_nu)+' -g '+str(self.hmmsvm_dL_gamma)\
-                  +' -w-1 '+str(self.hmmsvm_dL_w_negative)+' -c '+str(self.hmmsvm_dL_cost)
-            elif self.method == 'hmmsvm_LSLS':
-                commands = commands+' -n '+str(self.hmmsvm_LSLS_nu)+' -g '+str(self.hmmsvm_LSLS_gamma)\
-                  +' -w-1 '+str(self.hmmsvm_LSLS_w_negative)+' -c '+str(self.hmmsvm_LSLS_cost)
-            elif self.method == 'hmmsvm_no_dL':
-                commands = commands+' -n '+str(self.hmmsvm_no_dL_nu)+' -g '+str(self.hmmsvm_no_dL_gamma)\
-                  +' -w-1 '+str(self.hmmsvm_no_dL_w_negative)+' -c '+str(self.hmmsvm_no_dL_cost)
             elif self.method == 'bpsvm':
                 commands = commands+' -n '+str(self.nu)+' -g '+str(self.bpsvm_gamma)\
                   +' -w-1 '+str(self.bpsvm_w_negative)+' -c '+str(self.bpsvm_cost)
@@ -313,22 +263,7 @@ class classifier(learning_base):
                 print commands                
                 return False
             return True
-              
         
-        elif self.method == 'cssvm':
-            sys.path.insert(0, os.path.expanduser('~')+'/git/cssvm/python')
-            import cssvmutil as cssvm
-            if type(X) is not list: X=X.tolist()
-            commands = '-q -C 1 -s '+str(self.svm_type)+' -t '+str(self.kernel_type)\
-              +' -d '+str(self.cssvm_degree)\
-              +' -g '+str(self.cssvm_gamma)\
-              +' -c '+str(self.cssvm_cost)+' -w1 '+str(self.class_weight)\
-              +' -w-1 '+str(self.cssvm_w_negative) \
-              +' -m 200'
-            try: self.dt = cssvm.svm_train(y, X, commands )
-            except: return False
-            return True
-            
         elif self.method == 'progress' or self.method == 'progress_diag':
             if type(X) == list: X = np.array(X)
             if ll_idx is None:
@@ -593,12 +528,8 @@ class classifier(learning_base):
         
         if self.method.find('svm')>=0:
             
-            if self.method.find('cssvm')>=0:
-                sys.path.insert(0, os.path.expanduser('~')+'/git/cssvm/python')
-                import cssvmutil as svm
-            else:
-                sys.path.insert(0, '/usr/lib/pymodules/python2.7')
-                import svmutil as svm
+            sys.path.insert(0, '/usr/lib/pymodules/python2.7')
+            import svmutil as svm
 
             if self.verbose:
                 print svm.__file__
@@ -789,7 +720,7 @@ class classifier(learning_base):
         return 
         
     def score(self, X, y):
-        if self.method.find('svm')>=0 and self.method is not 'cssvm':
+        if self.method.find('svm')>=0:
             return self.dt.score(X,y)
         else:
             print "Not implemented funciton Score"
@@ -801,7 +732,7 @@ class classifier(learning_base):
             print "No trained classifier"
             return
         
-        if self.method.find('svm')>=0 and self.method is not 'cssvm':       
+        if self.method.find('svm')>=0:       
             sys.path.insert(0, '/usr/lib/pymodules/python2.7')
             import svmutil as svm            
             svm.svm_save_model(fileName, self.dt)
@@ -833,7 +764,7 @@ class classifier(learning_base):
 
             
     def load_model(self, fileName):        
-        if self.method.find('svm')>=0 and self.method is not 'cssvm':
+        if self.method.find('svm')>=0:
             sys.path.insert(0, '/usr/lib/pymodules/python2.7')
             import svmutil as svm            
             self.dt = svm.svm_load_model(fileName) 
@@ -1040,8 +971,8 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
     if dtc is None:
         dtc = classifier( method=method, nPosteriors=nState, nLength=nLength )        
     dtc.set_params( **param_dict )
-    if method == 'svm' or method == 'hmmsvm_diag' or method == 'hmmsvm_dL' or method == 'hmmsvm_LSLS' or\
-      method == 'hmmsvm_no_dL' or method == 'sgd' or method == 'progress_svm' or method == 'svm_fixed':
+    if method == 'svm' or method == 'hmmsvm_diag' or\
+      method == 'sgd' or method == 'progress_svm' or method == 'svm_fixed':
         if method == 'svm_fixed': 
             weights = ROC_dict['svm_param_range']
         else:
@@ -1059,10 +990,6 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
         dtc.set_params( svm_type=2 )
         dtc.set_params( gamma=weights[j] )
         ret = dtc.fit(X_train, np.array(Y_train)*-1.0)
-    elif method == 'cssvm':
-        weights = ROC_dict[method+'_param_range']
-        dtc.set_params( class_weight=weights[j] )
-        ret = dtc.fit(X_train, np.array(Y_train)*-1.0, idx_train)                
     elif method == 'progress' or method == 'progress_diag' or method == 'progress_state' or method == 'fixed' \
       or method == 'kmean' or method == 'hmmgp':
         thresholds = ROC_dict[method+'_param_range']
@@ -1091,7 +1018,7 @@ def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
     for ii in xrange(len(X_test)):
         if len(Y_test[ii])==0: continue
 
-        if method.find('osvm')>=0 or method == 'cssvm':
+        if method.find('osvm')>=0:
             est_y = dtc.predict(X_test[ii], y=np.array(Y_test[ii])*-1.0)
             est_y = np.array(est_y)* -1.0
         else:
@@ -1320,8 +1247,8 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
         dtc.set_params( **SVM_dict )
         ret = True
         
-        if method == 'svm' or method == 'hmmsvm_diag' or method == 'hmmsvm_dL' or method == 'hmmsvm_LSLS' or \
-          method == 'bpsvm' or method == 'hmmsvm_no_dL' or method == 'sgd' or method == 'progress_svm' or \
+        if method == 'svm' or method == 'hmmsvm_diag' or \
+          method == 'bpsvm' or method == 'sgd' or method == 'progress_svm' or \
           method == 'svm_fixed':
             if method == 'svm_fixed': 
                 weights = ROC_dict['svm_param_range']
@@ -1335,10 +1262,6 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             dtc.set_params( kernel_type=2 )
             dtc.set_params( gamma=weights[j] )
             if not load_model: ret = dtc.fit(X_scaled, np.array(Y_train_org)*-1.0)
-        elif method == 'cssvm':
-            weights = ROC_dict[method+'_param_range']
-            dtc.set_params( class_weight=weights[j] )
-            if not load_model: ret = dtc.fit(X_scaled, np.array(Y_train_org)*-1.0, idx_train_org)                
         elif method == 'progress' or method == 'progress_diag' or method == 'progress_state' or \
           method == 'fixed' or method == 'kmean' or method == 'hmmgp' or method == 'state_kmean':
             thresholds = ROC_dict[method+'_param_range']
@@ -1376,7 +1299,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
         for ii in xrange(len(X_test)):
             if len(Y_test[ii])==0: continue
 
-            if method.find('osvm')>=0 or method == 'cssvm':
+            if method.find('osvm')>=0:
                 est_y = dtc.predict(X_test[ii], y=np.array(Y_test[ii])*-1.0)
                 est_y = np.array(est_y)* -1.0
             else:

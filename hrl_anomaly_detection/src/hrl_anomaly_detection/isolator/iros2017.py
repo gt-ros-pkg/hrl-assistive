@@ -1348,15 +1348,15 @@ if __name__ == '__main__':
         param_dict['HMM']['scale'] = [7.0, 13.0]
         single_detector = False #True
 
-        ## ## # ep  # 148 min 67
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## weight = [-20.0, -60]
-        ## param_dict['HMM']['scale'] = [7.0, 13.0]
-        ## single_detector = False 
+        ## # ep  # 148 min 67
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        weight = [-20.0, -50]
+        param_dict['HMM']['scale'] = [7.0, 13.0]
+        single_detector = False 
 
-        ## ## c12 148 min 70
+        ## ## c12 148 min 70 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! in keras_test
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation9/'+\
         ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
@@ -1403,17 +1403,6 @@ if __name__ == '__main__':
         ##                                             ]]
         
 
-        ## param_dict['data_param']['handFeatures'] = [['unimodal_audioWristRMS',  \
-        ##                                             'unimodal_kinJntEff_1',\
-        ##                                             'unimodal_ftForce_integ',\
-        ##                                             'unimodal_kinEEChange',\
-        ##                                             'crossmodal_landmarkEEDist', \
-        ##                                             ],
-        ##                                             ['unimodal_ftForce_zero',\
-        ##                                              'unimodal_ftForceZ',\
-        ##                                              'unimodal_kinDesEEChange', \
-        ##                                              'crossmodal_landmarkEEDist', \
-        ##                                             ]]
         param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0., 2.3, nPoints)*-1.0+1.0
         param_dict['ROC']['hmmgp1_param_range'] = np.logspace(-0., 2.3, nPoints)*-1.0+1.0
         param_dict['ROC']['hmmgp2_param_range'] = np.logspace(-0.8, 2.7, nPoints)*-1.0+0.5

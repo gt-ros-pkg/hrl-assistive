@@ -117,7 +117,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
         # TODO: need leave-one-person-out
         # Task-oriented hand-crafted features        
-        kFold_list = dm.kFold_data_index2(len(d['successData'][0]), len(d['failureData'][0]), \
+        kFold_list = dm.kFold_data_index(len(d['successData'][0]), len(d['failureData'][0]), \
                                           data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
         d['kFoldList']   = kFold_list
         ut.save_pickle(d, crossVal_pkl)
@@ -316,7 +316,7 @@ def evaluation_unexp(subject_names, unexpected_subjects, task_name, raw_data_pat
 
         # TODO: need leave-one-person-out
         # Task-oriented hand-crafted features        
-        kFold_list = dm.kFold_data_index2(len(d['successData'][0]), len(d['failureData'][0]), \
+        kFold_list = dm.kFold_data_index(len(d['successData'][0]), len(d['failureData'][0]), \
                                           data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
         d['kFoldList']   = kFold_list
         ut.save_pickle(d, crossVal_pkl)

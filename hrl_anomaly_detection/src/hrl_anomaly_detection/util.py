@@ -57,7 +57,7 @@ def extrapolateData(data, maxsize):
         return [x if len(x) >= maxsize else x + [x[-1]]*(maxsize-len(x)) for x in data]
         
 
-def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.3, rf_center='kinEEPos', \
+def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=10.0, rf_center='kinEEPos', \
              global_data=False, verbose=False, renew=True, save_pkl=None, plot_data=False, max_time=None):
 
     if save_pkl is not None:
