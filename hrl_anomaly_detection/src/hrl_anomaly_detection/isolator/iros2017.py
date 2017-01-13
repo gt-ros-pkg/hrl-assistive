@@ -1211,13 +1211,13 @@ if __name__ == '__main__':
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation5/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         param_dict['data_param']['handFeatures'] = [
-                                                    ## 'unimodal_ftForce_zero',\
-                                                    'unimodal_ftForceZ',\
+                                                    'unimodal_ftForce_zero',\
+                                                    ## 'unimodal_ftForceZ',\
                                                     'unimodal_kinDesEEChange',\
                                                     'crossmodal_landmarkEEDist', \
                                                     ]
         param_dict['ROC']['hmmgp_param_range'] = np.logspace(-1.0, 2.7, nPoints)*-1.0 +0.5
-        param_dict['HMM']['scale'] = 5.0
+        param_dict['HMM']['scale'] = 3.0
 
         #  84
         ## save_data_path = os.path.expanduser('~')+\
