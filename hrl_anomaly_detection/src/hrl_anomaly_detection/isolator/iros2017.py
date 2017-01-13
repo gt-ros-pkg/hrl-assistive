@@ -1212,6 +1212,7 @@ if __name__ == '__main__':
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         param_dict['data_param']['handFeatures'] = [
                                                     'unimodal_ftForce_zero',\
+                                                    ## 'unimodal_ftForceX',\
                                                     ## 'unimodal_ftForceZ',\
                                                     'unimodal_kinDesEEChange',\
                                                     'crossmodal_landmarkEEDist', \
@@ -1354,13 +1355,13 @@ if __name__ == '__main__':
         weight = [-20.0, -10.0]
         param_dict['HMM']['scale'] = [7.0, 9.0]
 
-        ## c12 1 min
+        ## c12 1 min 50
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation9/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         weight = [-20.0, -10.0]
         param_dict['HMM']['scale'] = [7.0, 9.0]
-        single_detector = True
+        single_detector = False #True
 
         ## # c8, 60 124 min 
         ## save_data_path = os.path.expanduser('~')+\
@@ -1380,7 +1381,7 @@ if __name__ == '__main__':
                                                     'unimodal_kinJntEff_1',\
                                                     'unimodal_ftForce_integ',\
                                                     'unimodal_kinEEChange',\
-                                                     'crossmodal_landmarkEEDist'
+                                                    'crossmodal_landmarkEEDist'
                                                     ],\
                                                     ['unimodal_ftForce_zero',\
                                                      'unimodal_ftForceZ',\
