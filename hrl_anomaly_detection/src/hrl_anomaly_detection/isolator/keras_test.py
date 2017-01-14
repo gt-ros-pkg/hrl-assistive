@@ -928,9 +928,9 @@ if __name__ == '__main__':
         
     else:
         # 148 amin
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation4/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation4/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         ## preprocess_data(save_data_path, viz=opt.viz, hog_feature=False, org_ratio=True)
 
 
@@ -940,14 +940,14 @@ if __name__ == '__main__':
         ## unimodal_cnn(save_data_path, n_labels, fine_tune=True)        
         ## multimodal_cnn_fc(save_data_path, n_labels)
         ## multimodal_cnn_fc(save_data_path, n_labels, fine_tune=True)
-        ## multimodal_cnn_fc(save_data_path, n_labels, fine_tune=True, test_only=True,
-        ##                   save_pdf=opt.bSavePdf)
+        multimodal_cnn_fc(save_data_path, n_labels, fine_tune=True, test_only=True,
+                          save_pdf=opt.bSavePdf)
         ## evaluate_svm(save_data_path)
 
-        unimodal_cnn(save_data_path, n_labels, vgg=True)        
-        unimodal_cnn(save_data_path, n_labels, fine_tune=True, vgg=True)        
-        multimodal_cnn_fc(save_data_path, n_labels, vgg=True)
-        multimodal_cnn_fc(save_data_path, n_labels, fine_tune=True, vgg=True)
+        ## unimodal_cnn(save_data_path, n_labels, vgg=True)        
+        ## unimodal_cnn(save_data_path, n_labels, fine_tune=True, vgg=True)        
+        ## multimodal_cnn_fc(save_data_path, n_labels, vgg=True)
+        ## multimodal_cnn_fc(save_data_path, n_labels, fine_tune=True, vgg=True)
 
         
 
