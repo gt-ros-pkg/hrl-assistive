@@ -31,11 +31,15 @@
 import rospy, os, sys, threading, datetime
 import random, numpy as np
 
-import hrl_lib.util as ut
 import hrl_lib.quaternion as qt
-from sound_play.libsoundplay import SoundClient
 from sklearn import preprocessing
 
+# Utility
+import hrl_lib.util as ut
+from hrl_execution_monitor import anomaly_isolator_util as aiu
+from hrl_execution_monitor import util as autil
+
+#msg
 from hrl_anomaly_detection.msg import MultiModality
 from std_msgs.msg import String, Float64
 from hrl_srvs.srv import Bool_None, Bool_NoneResponse, StringArray_None
@@ -44,14 +48,37 @@ from hrl_msgs.msg import FloatArray, StringArray
 QUEUE_SIZE = 10
 
 class anomaly_isolator:
-    def __init__(self, verbose=False):
+    def __init__(self, subject_names, task_name, method, raw_data_path, save_data_path,\
+                 param_dict, verbose=False):
         rospy.loginfo('Initializing anomaly detector')
+
+        self.subject_names   = subject_names
+        self.task_name       = task_name.lower()
+        self.method          = method
+        self.raw_data_path   = raw_data_path
+        self.save_data_path  = save_data_path        
         self.verbose = verbose
 
+        # Important containers
+        self.enable_isolator = False
+        self.dataList        = []
+        
+        # Params
+        self.param_dict      = param_dict        
+
+        # HMM, Classifier
+        self.ml           = None
+        self.classifier   = None
+
+        # Comms
+        self.lock = threading.Lock()        
+        self.initParams()
+        self.initComms()
+        self.initDetector()
 
         if self.verbose:
             rospy.loginfo( "==========================================================")
-            rospy.loginfo( "AI initialization completed!! ")
+            rospy.loginfo( "Isolator initialized!! : %s", self.task_name)
             rospy.loginfo( "==========================================================")
 
 

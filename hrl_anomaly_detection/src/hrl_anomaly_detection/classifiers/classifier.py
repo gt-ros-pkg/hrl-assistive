@@ -1115,21 +1115,20 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
         Y_test.append(ll_classifier_test_Y[j])
 
 
+    if modeling_pkl_prefix is not None:
+        clf_pkl = os.path.join(processed_data_path, 'clf_'+modeling_pkl_prefix+'_'+method+'_'+\
+                               str(idx)+'.pkl')
+    else:
+        clf_pkl = os.path.join(processed_data_path, 'clf_'+method+'_'+\
+                               str(idx)+'.pkl')
+
     # classifier # TODO: need to make it efficient!!
     if n_jobs == 1: parallel = True
     else: parallel = False
     dtc = classifier( method=method, nPosteriors=nState, nLength=nLength, parallel=parallel )
     for j in xrange(nPoints):
-
-        if modeling_pkl_prefix is not None:
-            clf_pkl = os.path.join(processed_data_path, 'clf_'+modeling_pkl_prefix+'_'+method+'_'+\
-                                   str(idx)+'_'+str(j)+'.pkl')
-        else:
-            clf_pkl = os.path.join(processed_data_path, 'clf_'+method+'_'+\
-                                   str(idx)+'_'+str(j)+'.pkl')
             
         if load_model: dtc.load_model(clf_pkl)
-
         dtc.set_params( **SVM_dict )
         ret = True
         
@@ -1148,7 +1147,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             dtc.set_params( kernel_type=2 )
             dtc.set_params( gamma=weights[j] )
             if not load_model: ret = dtc.fit(X_scaled, np.array(Y_train_org)*-1.0)
-        elif method == 'progress' or method == 'progress_diag' or method == 'progress_state' or \
+        elif method == 'progress' or method == 'progress_diag' or \
           method == 'fixed' or method == 'hmmgp':
             thresholds = ROC_dict[method+'_param_range']
             dtc.set_params( ths_mult = thresholds[j] )
@@ -1167,9 +1166,8 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             raise ValueError("Not available method: "+method)
 
         if ret is False: raise ValueError("Classifier fitting error")
-        if save_model: dtc.save_model(clf_pkl)
+        if j==0 and save_model: dtc.save_model(clf_pkl)
 
-        print "Start to evaluate"
         # evaluate the classifier
         tp_l = []
         fp_l = []
