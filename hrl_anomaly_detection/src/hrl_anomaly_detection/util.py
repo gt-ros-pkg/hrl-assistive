@@ -325,20 +325,27 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=10
 
             # Change the sign of quaternion            
 
+            local_kin_ee_pos = kin_ee_pos
+            local_kin_ee_quat = kin_ee_quat
+            local_kin_target_pos = kin_target_pos
+            local_kin_target_quat = kin_target_quat
+            local_kin_des_ee_pos = kin_des_ee_pos
+            local_kin_des_ee_quat = kin_des_ee_quat
+
             # extract local feature
-            data_set = [kin_time, kin_ee_pos, kin_ee_quat]
-            [local_kin_ee_pos, local_kin_ee_quat] = extractLocalData(rf_time, rf_traj, local_range, data_set,\
-                                                                     global_data=global_data)
-            data_set = [kin_time, kin_target_pos, kin_target_quat]
-            [local_kin_target_pos, local_kin_target_quat] = extractLocalData(rf_time, rf_traj, local_range, \
-                                                                             data_set, global_data=global_data)
-            ## data_set = [kin_time, kin_forearm_pos, kin_forearm_vel]
-            ## [local_kin_forearm_pos, local_kin_forearm_vel] = extractLocalData(rf_time, rf_traj, local_range, \
-            ##                                                                   data_set, global_data=global_data)
-            data_set = [kin_time, kin_des_ee_pos, kin_des_ee_quat]
-            [local_kin_des_ee_pos, local_kin_des_ee_quat] = extractLocalData(rf_time, rf_traj, local_range, \
-                                                                             data_set,\
-                                                                             global_data=True)
+            ## data_set = [kin_time, kin_ee_pos, kin_ee_quat]
+            ## [local_kin_ee_pos, local_kin_ee_quat] = extractLocalData(rf_time, rf_traj, local_range, data_set,\
+            ##                                                          global_data=global_data)
+            ## data_set = [kin_time, kin_target_pos, kin_target_quat]
+            ## [local_kin_target_pos, local_kin_target_quat] = extractLocalData(rf_time, rf_traj, local_range, \
+            ##                                                                  data_set, global_data=global_data)
+            ## ## data_set = [kin_time, kin_forearm_pos, kin_forearm_vel]
+            ## ## [local_kin_forearm_pos, local_kin_forearm_vel] = extractLocalData(rf_time, rf_traj, local_range, \
+            ## ##                                                                   data_set, global_data=global_data)
+            ## data_set = [kin_time, kin_des_ee_pos, kin_des_ee_quat]
+            ## [local_kin_des_ee_pos, local_kin_des_ee_quat] = extractLocalData(rf_time, rf_traj, local_range, \
+            ##                                                                  data_set,\
+            ##                                                                  global_data=True)
 
             raw_data_dict['kinTimesList'].append(kin_time)
             raw_data_dict['kinEEPosList'].append(local_kin_ee_pos)
@@ -427,53 +434,19 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=10
             if vision_time[-1] < new_times[0] or vision_time[0] > new_times[-1]:
                 vision_time = np.linspace(new_times[0], new_times[-1], len(vision_time))
 
-            # extract local feature
-            data_set = [vision_time, vision_pos, vision_quat]
-            local_vision_pos  = vision_pos
-            local_vision_quat = vision_quat
-
             raw_data_dict['visionLandmarkTimesList'].append(vision_time)
-            raw_data_dict['visionLandmarkPosList'].append(local_vision_pos)
-            raw_data_dict['visionLandmarkQuatList'].append(local_vision_quat)
+            raw_data_dict['visionLandmarkPosList'].append(vision_pos)
+            raw_data_dict['visionLandmarkQuatList'].append(vision_quat)
 
-            if len(np.shape(local_vision_quat)) == 1:
+            if len(np.shape(vision_quat)) == 1:
                 print "Wrong quat file"
-                print fileName, np.shape(local_vision_quat)
+                print fileName, np.shape(vision_quat)
                 sys.exit()
 
-            vision_pos_array  = interpolationData(vision_time, local_vision_pos, new_times, spline=True)
+            vision_pos_array  = interpolationData(vision_time, vision_pos, new_times, spline=True)
             data_dict['visionLandmarkPosList'].append(vision_pos_array)                                         
-            vision_quat_array = interpolationData(vision_time, local_vision_quat, new_times, True)
+            vision_quat_array = interpolationData(vision_time, vision_quat, new_times, True)
             data_dict['visionLandmarkQuatList'].append(vision_quat_array)
-
-
-            ## if 'iteration_8' in fileName:
-            ##     print "aaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-            ##     vision_pos_array  = interpolationData(vision_time, local_vision_pos, new_times, spline=True,\
-            ##                                           temp=True)
-            ##     plt.figure(1)
-            ##     ## data_list = []
-            ##     ## data_list2 = []
-            ##     print fileName
-            ##     ## for time_idx in xrange(len(vision_time)):
-
-            ##         ##     ## startQuat = kinEEQuat[:,time_idx]
-            ##         ##     startQuat = local_vision_quat[:,0]
-            ##         ##     endQuat   = local_vision_quat[:,time_idx]
-            ##         ##     diff_ang  = qt.quat_angle(startQuat, endQuat)
-            ##         ##     data_list.append(diff_ang)
-            ##         ## data_list.append(local_vision_pos[0,time_idx])
-            ##         ## data_list2.append(vision_pos_array[0,time_idx])
-            ##     plt.subplot(2,1,1)
-            ##     plt.plot(vision_time, local_vision_pos[0], '-*')
-            ##     plt.plot(new_times, vision_pos_array[0], '-o')
-            ##     plt.subplot(2,1,2)
-            ##     plt.plot(vision_time)
-            ##     plt.show()
-
-                
-
-
 
             
         # vision change -----------------------------------------------------------
