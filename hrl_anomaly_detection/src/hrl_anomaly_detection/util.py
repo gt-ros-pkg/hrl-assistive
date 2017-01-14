@@ -383,12 +383,15 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=10
             kin_time   = (np.array(d['kinematics_time']) - init_time).tolist()
             kin_ee_pos = d['kinematics_ee_pos'] # 3xN
             ft_pos     = interpolationData(kin_time, kin_ee_pos, ft_time)
+
+            local_ft_force = ft_force
+            local_ft_torque = ft_torque
            
             # extract local feature
-            data_set = [ft_time, ft_pos, ft_force]
-            [ _, local_ft_force] = extractLocalData(rf_time, rf_traj, local_range, data_set)
-            data_set = [ft_time, ft_pos, ft_torque]
-            [ _, local_ft_torque] = extractLocalData(rf_time, rf_traj, local_range, data_set)
+            ## data_set = [ft_time, ft_pos, ft_force]
+            ## [ _, local_ft_force] = extractLocalData(rf_time, rf_traj, local_range, data_set)
+            ## data_set = [ft_time, ft_pos, ft_torque]
+            ## [ _, local_ft_torque] = extractLocalData(rf_time, rf_traj, local_range, data_set)
 
             raw_data_dict['ftTimesList'].append(ft_time)
             raw_data_dict['ftForceList'].append(local_ft_force)
@@ -410,7 +413,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=10
                 vision_time = np.linspace(new_times[0], new_times[-1], len(vision_time))
 
             # extract local feature
-            data_set = [vision_time, vision_pos, vision_quat]
+            ## data_set = [vision_time, vision_pos, vision_quat]
             ## [ local_vision_pos, local_vision_quat] = extractLocalData(rf_time, rf_traj, local_range, data_set)
             local_vision_pos = vision_pos
             local_vision_quat = vision_quat
