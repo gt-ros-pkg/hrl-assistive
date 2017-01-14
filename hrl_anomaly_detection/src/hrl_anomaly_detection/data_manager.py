@@ -214,7 +214,8 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path,
                success_viz=False, failure_viz=False, \
                save_pdf=False, solid_color=True, \
                handFeatures=[], data_renew=False,\
-               time_sort=False, max_time=None, ros_bag_image=False, verbose=False):
+               time_sort=False, max_time=None, ros_bag_image=False, rndFold=False,
+               verbose=False):
     '''
     '''
 
@@ -327,6 +328,13 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path,
         data_dict['success_image_list'] = success_image_list
         data_dict['failure_image_list'] = failure_image_list
         data_dict['param_dict'] = param_dict
+
+
+        if rndFold:
+            # split data with 80:20 ratio
+            kFold_list = autil.rnd_fold_index(len(successData[0]), len(failureData[0]), \
+                                              train_ratio=0.8, nSet=3 )
+            data_dict['kFold_list'] = kFold_list
         
         ut.save_pickle(data_dict, save_pkl)
 

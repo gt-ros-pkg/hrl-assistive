@@ -47,5 +47,85 @@ import hrl_anomaly_detection.classifiers.classifier as cf
 
 from joblib import Parallel, delayed
 
-def train_detectior_modules(subject_names, task_name, raw_data_path, save_data_path, method,
+def train_isolator_modules(subject_names, task_name, raw_data_path, save_data_path, method,
                             param_dict, verbose=False):
+
+    # load params (param_dict)
+    data_dict  = param_dict['data_param']
+    data_renew = data_dict['renew']
+    # HMM
+    HMM_dict   = param_dict['HMM']
+    nState     = HMM_dict['nState']
+    cov        = HMM_dict['cov']
+    # SVM
+    SVM_dict   = param_dict['SVM']
+    # ROC
+    ROC_dict = param_dict['ROC']
+
+    # parameters
+    startIdx    = 4
+    nPoints     = ROC_dict['nPoints']
+    
+
+    # load data (mix) -------------------------------------------------
+    d = dm.getDataSet(subject_names, task_name, raw_data_path, \
+                      save_data_path,\
+                      downSampleSize=data_dict['downSampleSize'],\
+                      handFeatures=data_dict['isolationFeatures'], \
+                      data_renew=data_renew, max_time=data_dict['max_time'],\
+                      ros_bag_image=True, rndFold=True)
+                      
+    # split data with 80:20 ratio, 3set
+    kFold_list = d['kFold_list']
+
+    # flattening image list
+    success_image_list = iutil.image_list_flatten( d.get('success_image_list',[]) )
+    failure_image_list = iutil.image_list_flatten( d.get('failure_image_list',[]) )
+
+    failure_labels = []
+    for f in failure_files:
+        failure_labels.append( int( f.split('/')[-1].split('_')[0] ) )
+    failure_labels = np.array( failure_labels )
+
+
+
+    # select feature for detection
+    feature_list = []
+    for feature in data_dict['handFeatures']:
+        idx = [ i for i, x in enumerate(data_dict['isolationFeatures']) if feature == x][0]
+        feature_list.append(idx)
+    
+    successData = d['successData'][feature_list]
+    failureData = d['failureData'][feature_list]
+
+
+
+    return
+
+
+
+
+
+if __name__ == '__main__':
+
+    import optparse
+    p = optparse.OptionParser()
+    util.initialiseOptParser(p)
+    opt, args = p.parse_args()
+
+    from hrl_execution_monitor.params.IROS2017_params import *
+    # IROS2017
+    subject_names = ['s2', 's3','s4','s5', 's6','s7','s8', 's9']
+    raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
+                                                          opt.bHMMRenew, opt.bCLFRenew)
+    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo'
+
+    task_name = 'feeding'
+    method    = 'hmmgp'
+
+    train_isolator_modules(subject_names, task_name, raw_data_path, save_data_path, method,\
+                            param_dict, verbose=False)
+
+
+    get_isolator_modules(save_data_path, task_name, method, param_dict, fold_idx=0,\
+                          verbose=False)

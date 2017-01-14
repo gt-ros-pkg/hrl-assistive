@@ -49,14 +49,14 @@ from joblib import Parallel, delayed
 
 
 
-def train_detectior_modules(subject_names, task_name, raw_data_path, save_data_path, method,
+def train_detector_modules(subject_names, task_name, raw_data_path, save_data_path, method,
                             param_dict, verbose=False):
 
     # load params (param_dict)
     data_dict  = param_dict['data_param']
     data_renew = data_dict['renew']
-    nNormalFold   = data_dict['nNormalFold']
-    nAbnormalFold = data_dict['nAbnormalFold']
+    ## nNormalFold   = data_dict['nNormalFold']
+    ## nAbnormalFold = data_dict['nAbnormalFold']
     
     # HMM
     HMM_dict   = param_dict['HMM']
@@ -78,14 +78,11 @@ def train_detectior_modules(subject_names, task_name, raw_data_path, save_data_p
                       downSampleSize=data_dict['downSampleSize'],\
                       handFeatures=data_dict['isolationFeatures'], \
                       data_renew=data_renew, max_time=data_dict['max_time'],\
-                      ros_bag_image=True)
+                      ros_bag_image=True, rndFold=True)
                       
-    # split data with 80:20 ratio
-    kFold_list = autil.rnd_fold_index(len(d['successData'][0]), len(d['failureData'][0]), \
-                                      train_ratio=0.8, nSet=3 )
-    ## kFold_list = dm.kFold_data_index(len(d['successData'][0]), len(d['failureData'][0]), \
-    ##                                  nNormalFold, nAbnormalFold )
-
+    # split data with 80:20 ratio, 3set
+    kFold_list = d['kFold_list']
+    
     # select feature for detection
     feature_list = []
     for feature in data_dict['handFeatures']:
@@ -132,7 +129,7 @@ def train_detectior_modules(subject_names, task_name, raw_data_path, save_data_p
     return 
 
 
-## def test_detectior_modules(save_data_path, task_name):
+## def test_detector_modules(save_data_path, task_name):
 ##     return
     
 
@@ -189,7 +186,7 @@ if __name__ == '__main__':
     task_name = 'feeding'
     method    = 'hmmgp'
 
-    train_detectior_modules(subject_names, task_name, raw_data_path, save_data_path, method,\
+    train_detector_modules(subject_names, task_name, raw_data_path, save_data_path, method,\
                             param_dict, verbose=False)
 
 
