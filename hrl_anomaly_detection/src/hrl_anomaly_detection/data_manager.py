@@ -248,11 +248,14 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path,
                     failureData = np.swapaxes(failureData, 0, 1)
             data_dict['successData'] = successData
             data_dict['failureData'] = failureData
-
         else:
             successData = data_dict['successData'] 
             failureData = data_dict['failureData']
 
+        ## success_list = data_dict['successFiles']
+        ## failure_list = data_dict['failureFiles']
+        ## success_image_list  = data_dict.get('success_image_list',[])
+        ## failure_image_list  = data_dict.get('failure_image_list',[])
         param_dict      = data_dict['param_dict']
 
     else:
@@ -295,6 +298,8 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path,
         failureData, _      = extractHandFeature(failure_data_dict, handFeatures, \
                                                  init_param_dict=param_dict, cut_data=cut_data)
 
+        success_image_list = []
+        failure_image_list = []
         if ros_bag_image:
             new_success_list = []
             for f in success_list:
