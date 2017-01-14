@@ -214,7 +214,7 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path,
                success_viz=False, failure_viz=False, \
                save_pdf=False, solid_color=True, \
                handFeatures=[], data_renew=False,\
-               time_sort=False, max_time=None, verbose=False):
+               time_sort=False, max_time=None, ros_bag_image=False, verbose=False):
     '''
     '''
 
@@ -295,12 +295,32 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path,
         failureData, _      = extractHandFeature(failure_data_dict, handFeatures, \
                                                  init_param_dict=param_dict, cut_data=cut_data)
 
+        if ros_bag_image:
+            new_success_list = []
+            for f in success_list:
+                root_dir = os.path.split(f)[0]+'_rosbag'
+                sub_dir  = os.path.split(f)[1].split('.pkl')[0]
+                new_success_list.append( os.path.join(root_dir, sub_dir) )
+            new_failure_list = []
+            for f in failure_list:
+                root_dir = os.path.split(f)[0]+'_rosbag'
+                sub_dir  = os.path.split(f)[1].split('.pkl')[0]
+                new_failure_list.append( os.path.join(root_dir, sub_dir) )
+
+            success_image_list.append(export_images(new_success_list, success_data_dict, \
+                                                    downSampleSize) )
+            failure_image_list.append(export_images(new_failure_list, failure_data_dict, \
+                                                    downSampleSize) )
+
+
         data_dict = {}
         data_dict['allData']      = allData = np.array(allData)
         data_dict['successData']  = successData = np.array(successData)
         data_dict['failureData']  = failureData = np.array(failureData)
         data_dict['successFiles'] = success_list
         data_dict['failureFiles'] = failure_list
+        data_dict['success_image_list'] = success_image_list
+        data_dict['failure_image_list'] = failure_image_list
         data_dict['param_dict'] = param_dict
         
         ut.save_pickle(data_dict, save_pkl)
