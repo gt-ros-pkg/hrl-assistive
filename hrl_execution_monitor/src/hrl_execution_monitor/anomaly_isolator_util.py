@@ -98,6 +98,34 @@ def train_isolator_modules(subject_names, task_name, raw_data_path, save_data_pa
     successData = d['successData'][feature_list]
     failureData = d['failureData'][feature_list]
 
+    #-----------------------------------------------------------------------------------------
+    # Dynamic feature selection for detection and isolation
+    print d['param_dict']['feature_names']    
+    feature_idx_list = []
+    success_data_ad = []
+    failure_data_ad = []
+    nDetector = len(param_dict['data_param']['handFeatures'])
+    for i in xrange(nDetector):
+        
+        feature_idx_list.append([])
+        for feature in param_dict['data_param']['handFeatures'][i]:
+            feature_idx_list[i].append(data_dict['isolationFeatures'].index(feature))
+
+        success_data_ad.append( copy.copy(successData[feature_idx_list[i]]) )
+        failure_data_ad.append( copy.copy(failureData[feature_idx_list[i]]) )
+        HMM_dict_local = copy.deepcopy(HMM_dict)
+        HMM_dict_local['scale'] = param_dict['HMM']['scale'][i]
+        
+        #temp
+        ## if i==0: continue
+
+        # Training HMM, and getting classifier training and testing data
+        dm.saveHMMinducedFeatures(kFold_list, success_data_ad[i], failure_data_ad[i],\
+                                  task_name, processed_data_path,\
+                                  HMM_dict_local, data_renew, startIdx, nState, cov, \
+                                  noise_mag=0.03, diag=False, suffix=str(i),\
+                                  verbose=verbose)
+
 
 
     return

@@ -178,6 +178,26 @@ def LOPO_data_index(success_data_list, failure_data_list, \
     return success_data, failure_data, success_files, failure_files, kFold_list
 
 
+def rnd_fold_index(nNormal, nAbnormal, train_ratio=0.8, nSet=1):
+    """
+    Return completed set of success and failure data with random fold list
+    """
+
+    kFold_list = []
+    for i in xrange(nSet):
+        # divide into training and param estimation set
+        nor_train_idx = random.sample(range(nNormal), int( train_ratio*nNormal ) )
+        nor_test_idx  = [x for x in range(nNormal) if not x in nor_train_idx] 
+        
+        abr_train_idx = random.sample(range(nAbnormal), int( train_ratio*nAbnormal ) )
+        abr_test_idx  = [x for x in range(nAbnormal) if not x in abr_train_idx] 
+        
+        index_list = [nor_train_idx, abr_train_idx, nor_test_idx, abr_test_idx]
+        kFold_list.append(index_list)
+
+    return kFold_list
+
+
 #-------------------------------------------------------------------------------------------------
 def getDataList(fileNames, rf_center, local_range, param_dict, downSampleSize=200, \
                 cut_data=None, \
@@ -253,10 +273,6 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path,
             successData = data_dict['successData'] 
             failureData = data_dict['failureData']
 
-        ## success_list = data_dict['successFiles']
-        ## failure_list = data_dict['failureFiles']
-        ## success_image_list  = data_dict.get('success_image_list',[])
-        ## failure_image_list  = data_dict.get('failure_image_list',[])
         param_dict      = data_dict['param_dict']
 
     else:
@@ -332,8 +348,8 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path,
 
         if rndFold:
             # split data with 80:20 ratio
-            kFold_list = autil.rnd_fold_index(len(successData[0]), len(failureData[0]), \
-                                              train_ratio=0.8, nSet=3 )
+            kFold_list = rnd_fold_index(len(successData[0]), len(failureData[0]), \
+                                        train_ratio=0.8, nSet=3 )
             data_dict['kFold_list'] = kFold_list
         
         ut.save_pickle(data_dict, save_pkl)

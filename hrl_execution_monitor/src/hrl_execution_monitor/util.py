@@ -142,20 +142,3 @@ def extract_feature(msg, handFeatures, param_dict):
     return data
 
 
-def rnd_fold_index(nNormal, nAbnormal, train_ratio=0.8, nSet=1):
-    
-    import random
-
-    kFold_list = []
-    for i in xrange(nSet):
-        # divide into training and param estimation set
-        nor_train_idx = random.sample(range(nNormal), int( train_ratio*nNormal ) )
-        nor_test_idx  = [x for x in range(nNormal) if not x in nor_train_idx] 
-        
-        abr_train_idx = random.sample(range(nAbnormal), int( train_ratio*nAbnormal ) )
-        abr_test_idx  = [x for x in range(nAbnormal) if not x in abr_train_idx] 
-        
-        index_list = [nor_train_idx, abr_train_idx, nor_test_idx, abr_test_idx]
-        kFold_list.append(index_list)
-
-    return kFold_list
