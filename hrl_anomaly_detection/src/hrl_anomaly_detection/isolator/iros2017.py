@@ -1340,21 +1340,21 @@ if __name__ == '__main__':
     elif opt.evaluation_isolation2:
         single_detector = False
 
-        # c11, 148 min , window10
+        # c11, 148 min
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation7/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        weight = [-20.0, -50.0]
+        weight = [-22.0, -50.0]
         param_dict['HMM']['scale'] = [7.0, 13.0]
         single_detector = False #True
 
-        # ep  # 148 min
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        weight = [-25.0, -50]
-        param_dict['HMM']['scale'] = [7.0, 13.0]
-        single_detector = False 
+        ## # ep  # 148 min
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## weight = [-25.0, -50]
+        ## param_dict['HMM']['scale'] = [7.0, 13.0]
+        ## single_detector = False 
 
         ## ## c12 148 min 70 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! in keras_test
         ## save_data_path = os.path.expanduser('~')+\
