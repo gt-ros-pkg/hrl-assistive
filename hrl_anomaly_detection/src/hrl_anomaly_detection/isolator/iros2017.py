@@ -1352,7 +1352,7 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        weight = [-18.0, -50]
+        weight = [-20.0, -50]
         param_dict['HMM']['scale'] = [7.0, 13.0]
         single_detector = False 
 
@@ -1386,7 +1386,7 @@ if __name__ == '__main__':
                                                     'crossmodal_landmarkEEDist'
                                                     ],\
                                                     ['unimodal_ftForce_zero',\
-                                                     'unimodal_ftForceZ',\
+                                                     ## 'unimodal_ftForceZ',\
                                                      'unimodal_kinDesEEChange', \
                                                      'crossmodal_landmarkEEDist'
                                                     ]]
