@@ -1255,7 +1255,9 @@ if __name__ == '__main__':
         # 86 37 @ fzero 
         # 85.5 31 @ fzero fz
 
-        # ep with des change?
+        # c8 w/ eedist
+        # c8 w/o eedist
+        
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
@@ -1266,7 +1268,7 @@ if __name__ == '__main__':
                                                     'unimodal_kinJntEff_1',\
                                                     'unimodal_ftForce_integ',\
                                                     'unimodal_kinEEChange',
-                                                    'crossmodal_landmarkEEDist', \
+                                                    ## 'crossmodal_landmarkEEDist', \
                                                     ],
                                                     ['unimodal_kinVel',\
                                                      'unimodal_ftForce_zero',\
