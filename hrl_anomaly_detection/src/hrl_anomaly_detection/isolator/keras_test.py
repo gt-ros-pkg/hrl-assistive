@@ -55,7 +55,7 @@ from keras.models import Sequential, Model
 from keras.utils.np_utils import to_categorical
 from keras.optimizers import SGD, Adagrad, Adadelta, RMSprop
 from keras.utils.visualize_util import plot
-from keras.callbacks import EarlyStopping
+from keras.callbacks import EarlyStopping, ReduceLROnPlateau
 
 from hrl_anomaly_detection.isolator import keras_models as km
 
@@ -482,13 +482,15 @@ def fine_tune(save_data_path, n_labels, augmentation=False, nb_epoch=10):
     print np.mean(scores), np.std(scores)
     return
 
-def evaluate_svm(save_data_path):
+def evaluate_svm(save_data_path, viz=False):
 
     d = ut.load_pickle(os.path.join(save_data_path, 'isol_data.pkl'))
     nFold = len(d.keys())
     del d
 
     scores = []
+    y_test_list = []
+    y_pred_list = []
     for idx in xrange(nFold):
         train_data, test_data = km.load_data(idx, save_data_path, viz=False)      
         x_train_sig = train_data[0]
@@ -512,23 +514,20 @@ def evaluate_svm(save_data_path):
 
         print np.shape(x_train)
 
-        ## x_train_dyn1 = x_train[:,:8]
-        ## x_train_dyn2 = x_train[:,16:-6][:,:6]
-        ## x_train_stc = x_train[:,-6:]
-        ## ## x_train_dyn1 -= np.mean(x_train_dyn1, axis=1)[:,np.newaxis]
-        ## ## x_train_dyn2 -= np.mean(x_train_dyn2, axis=1)[:,np.newaxis]
-        ## x_train = np.hstack([x_train_dyn1, x_train_dyn2, x_train_stc])
-        ## ## x_train = np.hstack([x_train_dyn1, x_train_stc])
+        x_train_dyn1 = x_train[:,:24]
+        x_train_dyn2 = x_train[:,24:-7]#[:,:6]
+        x_train_stc = x_train[:,-7:]#[:,[0,1,3,4,5,6]]
+        ## x_train_dyn1 -= np.mean(x_train_dyn1, axis=1)[:,np.newaxis]
+        ## x_train_dyn2 -= np.mean(x_train_dyn2, axis=1)[:,np.newaxis]
+        x_train = np.hstack([x_train_dyn1, x_train_dyn2, x_train_stc])
 
-        ## x_test_dyn1 = x_test[:,:8]
-        ## x_test_dyn2 = x_test[:,16:-6][:,:6]
-        ## x_test_stc = x_test[:,-6:]
-        ## ## x_test_dyn1 -= np.mean(x_test_dyn1, axis=1)[:,np.newaxis]
-        ## ## x_test_dyn2 -= np.mean(x_test_dyn2, axis=1)[:,np.newaxis]
-        ## x_test = np.hstack([x_test_dyn1, x_test_dyn2, x_test_stc])
-        ## ## x_test = np.hstack([x_test_dyn1, x_test_stc])
+        x_test_dyn1 = x_test[:,:24]
+        x_test_dyn2 = x_test[:,24:-7]#[:,:6]
+        x_test_stc = x_test[:,-7:]#[:,[0,1,3,4,5,6]]
+        ## x_test_dyn1 -= np.mean(x_test_dyn1, axis=1)[:,np.newaxis]
+        ## x_test_dyn2 -= np.mean(x_test_dyn2, axis=1)[:,np.newaxis]
+        x_test = np.hstack([x_test_dyn1, x_test_dyn2, x_test_stc])
         
-        ## scaler = preprocessing.MinMaxScaler()
         scaler = preprocessing.StandardScaler()
         x_train = scaler.fit_transform(x_train)
         x_test  = scaler.transform(x_test)
@@ -540,16 +539,22 @@ def evaluate_svm(save_data_path):
         clf = RandomForestClassifier(n_estimators=400, n_jobs=-1)
         ## from sklearn.neighbors import KNeighborsClassifier
         ## clf = KNeighborsClassifier(n_neighbors=10, n_jobs=-1)
-        
         clf.fit(x_train, y_train)
 
         # classify and get scores
         score = clf.score(x_test, y_test)
         scores.append(score)
         print "score: ", score
+
+        if viz:
+            y_pred = clf.predict(x_test)
+            y_pred_list += y_pred.tolist()
+            y_test_list += y_test.tolist()
+            
         
     print scores
     print np.mean(scores), np.std(scores)
+    if viz: plot_confusion_matrix(y_test_list, y_pred_list)
     
 
 
@@ -585,51 +590,51 @@ def evaluate(save_data_path):
     return
     
 
-def unimodal_fc(save_data_path, n_labels, nb_epoch=400, fine_tune=False, activ_type='relu'):
+def unimodal_fc(save_data_path, n_labels, nb_epoch=400, fine_tune=False, activ_type='relu',
+                test_only=False, save_pdf=False):
 
     d = ut.load_pickle(os.path.join(save_data_path, 'isol_data.pkl'))
     nFold = len(d.keys())
     del d
 
-    callbacks = [EarlyStopping(monitor='val_loss', min_delta=0, patience=5, verbose=0, mode='auto')]
+    callbacks = [EarlyStopping(monitor='val_loss', min_delta=0, patience=10, verbose=0, mode='auto')]
+    ## callbacks = [EarlyStopping(monitor='val_loss', min_delta=0, patience=3, verbose=0, mode='auto')]
+    ## callbacks = [ReduceLROnPlateau(monitor='val_loss', factor=0.2,
+    ##                                patience=5, min_lr=0.0001)]
 
     scores= []
+    y_test_list = []
+    y_pred_list = []
     for idx in xrange(nFold):
 
         # Loading data
         train_data, test_data = km.load_data(idx, save_data_path, viz=False)      
         x_train_sig = train_data[0]
-        ## x_train_img = train_data[1]
         y_train     = train_data[2]
         x_test_sig = test_data[0]
-        ## x_test_img = test_data[1]
         y_test     = test_data[2]
 
-        ## x_train_sig_dyn1 = x_train_sig[:,:12]
-        ## x_train_sig_dyn2 = x_train_sig[:,12:-8]#[:,[0, 3, 6]]
-        ## x_train_sig_stc = x_train_sig[:,-8:]#[:,[0,1,2,4,5,6,7]]
+        ## x_train_sig_dyn1 = x_train_sig[:,:15]
+        ## x_train_sig_dyn2 = x_train_sig[:,15:-7]#[:,[0, 3, 6]]
+        ## x_train_sig_stc = x_train_sig[:,-7:]#[:,[0,1,2,4,5,6,7]]
 
-        ## ## x_train_sig_dyn1 -= np.mean(x_train_sig_dyn1, axis=1)[:,np.newaxis]
-        ## ## x_train_sig_dyn2 -= np.mean(x_train_sig_dyn2, axis=1)[:,np.newaxis]
+        ## ## x_train_sig_dyn1 /= np.amax(x_train_sig_dyn1, axis=1)[:,np.newaxis]
+        ## ## x_train_sig_dyn2 /= np.amax(x_train_sig_dyn2, axis=1)[:,np.newaxis]
         ## x_train_sig = np.hstack([x_train_sig_dyn1, x_train_sig_dyn2, x_train_sig_stc])
-        ## ## x_train_sig = np.hstack([x_train_sig_dyn1, x_train_sig_stc])
-        ## ## x_train_sig = np.hstack([x_train_sig_dyn1, x_train_sig_dyn2])
         
-        ## x_test_sig_dyn1 = x_test_sig[:,:12]
-        ## x_test_sig_dyn2 = x_test_sig[:,12:-8]#[:,[0, 3, 6,]]
-        ## x_test_sig_stc = x_test_sig[:,-8:]#[:,[0,1,2,4,5,6,7]]
-        ## ## x_test_sig_dyn1 -= np.mean(x_test_sig_dyn1, axis=1)[:,np.newaxis]
-        ## ## x_test_sig_dyn2 -= np.mean(x_test_sig_dyn2, axis=1)[:,np.newaxis]
+        ## x_test_sig_dyn1 = x_test_sig[:,:15]
+        ## x_test_sig_dyn2 = x_test_sig[:,15:-7]#[:,[0, 3, 6,]]
+        ## x_test_sig_stc = x_test_sig[:,-7:]#[:,[0,1,2,4,5,6,7]]
+        ## ## x_test_sig_dyn1 /= np.amax(x_test_sig_dyn1, axis=1)[:,np.newaxis]
+        ## ## x_test_sig_dyn2 /= np.amax(x_test_sig_dyn2, axis=1)[:,np.newaxis]
         ## x_test_sig = np.hstack([x_test_sig_dyn1, x_test_sig_dyn2, x_test_sig_stc])
-        ## ## x_test_sig = np.hstack([x_test_sig_dyn1, x_test_sig_stc])
-        ## ## x_test_sig = np.hstack([x_test_sig_dyn1, x_test_sig_dyn2])
 
-        print np.shape(x_train_sig), np.shape(x_test_sig)
-        ## print np.shape(x_train_sig_dyn1), np.shape(x_train_sig_dyn2), np.shape(x_train_sig_stc)
-        ## print np.shape(x_test_sig_dyn1), np.shape(x_test_sig_dyn2), np.shape(x_test_sig_stc)
-        sys.exit()
+        ## print np.shape(x_train_sig), np.shape(x_test_sig)
+        ## ## sys.exit()
 
         ## scaler = preprocessing.MinMaxScaler()
+        ## x_train_sig = scaler.fit_transform(x_train_sig)
+        ## x_test_sig  = scaler.transform(x_test_sig)        
         scaler      = preprocessing.StandardScaler()
         x_train_sig = scaler.fit_transform(x_train_sig)
         x_test_sig  = scaler.transform(x_test_sig)
@@ -641,28 +646,49 @@ def unimodal_fc(save_data_path, n_labels, nb_epoch=400, fine_tune=False, activ_t
         if fine_tune is False:
             model = km.sig_net(np.shape(x_train_sig)[1:], n_labels, activ_type=activ_type)
             ## optimizer = SGD(lr=0.001, decay=1e-5, momentum=0.9, nesterov=True)
-            ## model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
-            model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
+            optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.0)
+            model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+            ## model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
         else:
             model = km.sig_net(np.shape(x_train_sig)[1:], n_labels, fine_tune=True,\
                                weights_path = full_weights_path, activ_type=activ_type)
         
             ## optimizer = SGD(lr=0.01, decay=1e-5, momentum=0.9, nesterov=True)
             ## optimizer = SGD(lr=0.0001, decay=1e-6, momentum=0.9, nesterov=True)
-            optimizer = SGD(lr=0.0001, decay=1e-8, momentum=0.9, nesterov=True)
+            optimizer = SGD(lr=0.0001, decay=1e-7, momentum=0.9, nesterov=True)
             ## optimizer = RMSprop(lr=0.00001, rho=0.9, epsilon=1e-08, decay=0.0)
             model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
 
-        hist = model.fit(x_train_sig, y_train,
-                         nb_epoch=nb_epoch, batch_size=16, shuffle=True,
-                         validation_data=(x_test_sig, y_test),
-                         callbacks=callbacks)
-        scores.append( hist.history['val_acc'][-1] )
-        model.save_weights(full_weights_path)
-        del model
+        if test_only is False:
+            train_datagen = km.sigGenerator(augmentation=True, noise_mag=0.05 )
+            test_datagen = km.sigGenerator(augmentation=False)
+            train_generator = train_datagen.flow(x_train_sig, y_train, batch_size=128)
+            test_generator = test_datagen.flow(x_test_sig, y_test, batch_size=128)
+
+            hist = model.fit_generator(train_generator,
+                                       samples_per_epoch=len(y_train),
+                                       nb_epoch=nb_epoch,
+                                       validation_data=test_generator,
+                                       nb_val_samples=len(y_test),
+                                       callbacks=callbacks)
+
+            scores.append( hist.history['val_acc'][-1] )
+            model.save_weights(full_weights_path)
+            del model
+        else:
+            model.load_weights(full_weights_path)
+            y_pred = model.predict(x_test_sig)
+            y_pred_list += np.argmax(y_pred, axis=1).tolist()
+            y_test_list += np.argmax(y_test, axis=1).tolist()
+            
+            from sklearn.metrics import accuracy_score
+            print "score : ", accuracy_score(y_test_list, y_pred_list)
+
+            
 
     print 
     print np.mean(scores), np.std(scores)
+    if test_only: plot_confusion_matrix(y_test_list, y_pred_list, save_pdf=save_pdf)
     return
 
     
@@ -837,21 +863,23 @@ def multimodal_cnn_fc(save_data_path, n_labels, nb_epoch=100, fine_tune=False,
             ## break
 
 
-    if test_only is False:
-        print np.mean(scores), np.std(scores)
-    else:
-        classes = ['Object collision', 'Noisy environment', 'Spoon miss by a user', 'Spoon collision by a user', 'Robot-body collision by a user', 'Aggressive eating', 'Anomalous sound from a user', 'Unreachable mouth pose', 'Face occlusion by a user', 'Spoon miss by system fault', 'Spoon collision by system fault', 'Freeze by system fault']
-
-        print len(np.unique(y_test_list)), np.shape(y_test_list)
-        print len(np.unique(y_pred_list)), np.shape(y_pred_list)
-        print np.shape(classes),
-        
-        from sklearn.metrics import confusion_matrix
-        cm = confusion_matrix(y_test_list, y_pred_list)
-
-        iviz.plot_confusion_matrix(cm, classes=classes, normalize=True,
-                                   title='Anomaly Isolation', save_pdf=save_pdf)
+    print np.mean(scores), np.std(scores)
+    if test_only: plot_confusion_matrix(y_test_list, y_pred_list, save_pdf)
     
+    
+
+def plot_confusion_matrix(y_test_list, y_pred_list, save_pdf=False):
+    classes = ['Object collision', 'Noisy environment', 'Spoon miss by a user', 'Spoon collision by a user', 'Robot-body collision by a user', 'Aggressive eating', 'Anomalous sound from a user', 'Unreachable mouth pose', 'Face occlusion by a user', 'Spoon miss by system fault', 'Spoon collision by system fault', 'Freeze by system fault']
+
+    print len(np.unique(y_test_list)), np.shape(y_test_list)
+    print len(np.unique(y_pred_list)), np.shape(y_pred_list)
+    print np.shape(classes),
+
+    from sklearn.metrics import confusion_matrix
+    cm = confusion_matrix(y_test_list, y_pred_list)
+
+    iviz.plot_confusion_matrix(cm, classes=classes, normalize=True,
+                               title='Anomaly Isolation', save_pdf=save_pdf)
     
 
 
@@ -933,25 +961,33 @@ if __name__ == '__main__':
         plot(model, to_file='model.png')
         
     else:
-        # 148 amin
+        # 148 amin - nofz        
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation4/'+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation3/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        
+        # 148 amin
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation4/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         ## preprocess_data(save_data_path, viz=opt.viz, hog_feature=False, org_ratio=True)
 
         ## unimodal_fc(save_data_path, n_labels, nb_epoch=200, activ_type='PReLU')        
         ## unimodal_fc(save_data_path, n_labels, nb_epoch=200, fine_tune=True, activ_type='PReLU')        
 
         # relu
-        unimodal_fc(save_data_path, n_labels, nb_epoch=200)        
-        unimodal_fc(save_data_path, n_labels, fine_tune=True, nb_epoch=400)        
+        ## unimodal_fc(save_data_path, n_labels, nb_epoch=200)        
+        ## unimodal_fc(save_data_path, n_labels, fine_tune=True, nb_epoch=400)        
         ## unimodal_cnn(save_data_path, n_labels)        
         ## unimodal_cnn(save_data_path, n_labels, fine_tune=True)        
         ## multimodal_cnn_fc(save_data_path, n_labels)
         ## multimodal_cnn_fc(save_data_path, n_labels, fine_tune=True)
+
+        
+        ## unimodal_fc(save_data_path, n_labels, nb_epoch=200, test_only=True)        
         ## multimodal_cnn_fc(save_data_path, n_labels, fine_tune=True, test_only=True,
         ##                   save_pdf=opt.bSavePdf)
-        ## evaluate_svm(save_data_path)
+        evaluate_svm(save_data_path, viz=True)
 
         ## unimodal_cnn(save_data_path, n_labels, vgg=True)        
         ## unimodal_cnn(save_data_path, n_labels, fine_tune=True, vgg=True)        

@@ -302,9 +302,9 @@ def sig_net(input_shape, n_labels, weights_path=None, fine_tune=False, activ_typ
     ## model.add(BatchNormalization())
     model.add(Activation(activ_type))
     model.add(Dropout(0.5))
-    ## model.add(Dense(64, init='uniform', name='fc2_2'))
+    ## model.add(Dense(128, init='uniform', name='fc2_2'))
     ## ## model.add(BatchNormalization())
-    ## model.add(Activation('relu'))
+    ## model.add(Activation(activ_type))
     ## model.add(Dropout(0.5))
 
     if fine_tune:
@@ -488,3 +488,75 @@ class myGenerator():
             ##     if i%125==0:
             ##         print "i = " + str(i)
             ##     yield X_train[i*32:(i+1)*32], y_train[i*32:(i+1)*32]
+
+
+class sigGenerator():
+    ''' signal data augmentation
+    Signals should be normalized before.
+    '''
+    
+    
+    def __init__(self, augmentation=False, noise_mag=0.05):
+
+        self.augmentation  = augmentation
+        self.noise_mag     = noise_mag
+        pass
+
+    def flow(self, x, y, batch_size=32, shuffle=True):
+
+        assert len(x) == len(y), "data should have the same length"
+        
+        if type(x) is not np.ndarray: x = np.array(x)
+        if type(y) is not np.ndarray: y = np.array(y)
+        
+        while 1:
+
+            idx_list = range(len(x))
+            if shuffle: random.shuffle(idx_list)
+            
+            x_new = copy.copy(x[idx_list])
+            y_new = y[idx_list]
+
+            if self.augmentation:
+                x_new += np.random.normal(0.0, self.noise_mag, \
+                                          np.shape(x_new)) 
+            
+            for idx in range(0,len(y_new), batch_size):
+                if idx >= len(y_new):
+                    break
+                else:
+                    yield x_new[idx:idx+batch_size], y_new[idx:idx+batch_size]
+
+            gc.collect()
+
+
+
+
+if __name__ == '__main__':
+
+    n = 102
+    imgs = None
+    for i in xrange(n):
+        img = np.array([[np.ones((10,10)).tolist(),
+                         np.ones((10,10)).tolist(),
+                         np.ones((10,10)).tolist()]])+i
+        
+        if imgs is None: imgs = img
+        else: imgs = np.vstack([imgs, img])
+            
+    ## datagen = myGenerator(True)            
+    ## count = 0
+    ## for x,y in datagen.flow(imgs.astype(float), imgs.astype(float), range(n), batch_size=5, shuffle=False):
+    ##     (x1,x2) = x
+    ##     print x1[:,0,0,0], x2[:,0,0,0] #, x2.shape
+    ##     count +=1
+    ##     if count > 99: break
+
+    print np.shape(imgs), i
+
+    datagen = sigGenerator(True)            
+    count = 0
+    for x,y in datagen.flow(imgs.astype(float), range(n), batch_size=5, shuffle=False):
+        print x[:,0,0,0] #, x2.shape
+        count +=1
+        if count > 99: break
