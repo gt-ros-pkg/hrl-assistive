@@ -552,12 +552,14 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
         colors = itertools.cycle(['g', 'm', 'c', 'k', 'y','r', 'b', ])
         shapes = itertools.cycle(['x','v', 'o', '+'])
 
-        fig = plt.figure()
+        fig = plt.figure()        
 
         for successData in successDataList:
             n,m,k = np.shape(successData)
             nPlot = n
             color = colors.next()
+
+            print "successData shape: ", n,m,k
 
             for i in xrange(n):
                 if n>9:
@@ -1521,12 +1523,12 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
         if 'unimodal_kinVel' in feature_list:
             unimodal_kinVel = d['kinVelList'][idx]
 
-            if dataSample is None: dataSample = np.array(unimodal_kinVel)
-            else: dataSample = np.vstack([dataSample, unimodal_kinVel])
-            if 'kinVel_x' not in param_dict['feature_names']:
-                param_dict['feature_names'].append('kinVel_x')
-                param_dict['feature_names'].append('kinVel_y')
-                param_dict['feature_names'].append('kinVel_z')
+            vel = np.linalg.norm(unimodal_kinVel, axis=0)
+
+            if dataSample is None: dataSample = np.array(vel)
+            else: dataSample = np.vstack([dataSample, vel])
+            if 'kinVel' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('kinVel')
 
         # Unimodal feature - Kinematics --------------------------------------
         for jnt_idx in xrange(7):

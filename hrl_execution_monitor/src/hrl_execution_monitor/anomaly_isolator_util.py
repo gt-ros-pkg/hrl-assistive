@@ -112,11 +112,57 @@ def train_isolator_modules(subject_names, task_name, raw_data_path, save_data_pa
                                   noise_mag=0.03, diag=False, suffix=str(i),\
                                   verbose=verbose)
 
+    # Static feature selection for isolation
+    feature_list = []
+    for feature in param_dict['data_param']['staticFeatures']:
+        idx = [ i for i, x in enumerate(param_dict['data_param']['isolationFeatures']) if feature == x][0]
+        feature_list.append(idx)
+    successData_static = np.array(successData)[feature_list]
+    failureData_static = np.array(failureData)[feature_list]
 
+    # ---------------------------------------------------------------
+
+    # training with signals
+
+    # training_with images
+
+    # training_with all
 
     return
 
 
+def get_isolator_modules(save_data_path, task_name, method, param_dict, fold_idx=0, \
+                          verbose=False):
+
+    # load param
+    scr_pkl = os.path.join(save_data_path, 'ai_scr_'+method+'_'+str(fold_idx)+'.pkl')
+    hmm_pkl = os.path.join(save_data_path, 'hmm_'+task_name+'_'+str(fold_idx)+'.pkl')
+    clf_pkl = os.path.join(save_data_path, 'ai_clf_'+method+'_'+\
+                           str(fold_idx)+'.pkl')
+
+    # load scaler
+    import pickle
+    if os.path.isfile(scr_pkl):
+        with open(scr_pkl, 'rb') as f:
+            m_scr = pickle.load(f)
+    else: m_scr = None
+
+    # load hmm
+    if os.path.isfile(hmm_pkl) is False:
+        print "No HMM pickle file: ", hmm_pkl
+        sys.exit()
+        
+    d     = ut.load_pickle(hmm_pkl)
+    print d.keys()
+    m_gen = hmm.learning_hmm(d['nState'], d['nEmissionDim'], verbose=verbose)
+    m_gen.set_hmm_object(d['A'], d['B'], d['pi'])
+
+
+    # load classifier
+    ## m_clf = cf.classifier( method=method, nPosteriors=d['nState'], parallel=True )
+    ## m_clf.load_model(clf_pkl)
+
+    return m_scr, m_gen, m_clf
 
 
 

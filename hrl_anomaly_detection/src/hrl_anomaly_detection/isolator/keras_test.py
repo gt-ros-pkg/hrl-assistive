@@ -515,15 +515,15 @@ def evaluate_svm(save_data_path, viz=False):
         print np.shape(x_train)
 
         x_train_dyn1 = x_train[:,:24]
-        x_train_dyn2 = x_train[:,24:-7]#[:,:6]
-        x_train_stc = x_train[:,-7:]#[:,[0,1,3,4,5,6]]
+        x_train_dyn2 = x_train[:,24:-8]#[:,:6]
+        x_train_stc = x_train[:,-8:][:,[0,1,2,3,5,6,7]]
         ## x_train_dyn1 -= np.mean(x_train_dyn1, axis=1)[:,np.newaxis]
         ## x_train_dyn2 -= np.mean(x_train_dyn2, axis=1)[:,np.newaxis]
         x_train = np.hstack([x_train_dyn1, x_train_dyn2, x_train_stc])
 
         x_test_dyn1 = x_test[:,:24]
-        x_test_dyn2 = x_test[:,24:-7]#[:,:6]
-        x_test_stc = x_test[:,-7:]#[:,[0,1,3,4,5,6]]
+        x_test_dyn2 = x_test[:,24:-8]#[:,:6]
+        x_test_stc = x_test[:,-8:][:,[0,1,2,3,5,6,7]]
         ## x_test_dyn1 -= np.mean(x_test_dyn1, axis=1)[:,np.newaxis]
         ## x_test_dyn2 -= np.mean(x_test_dyn2, axis=1)[:,np.newaxis]
         x_test = np.hstack([x_test_dyn1, x_test_dyn2, x_test_stc])
@@ -970,6 +970,7 @@ if __name__ == '__main__':
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation4/'+\
         ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        
         ## preprocess_data(save_data_path, viz=opt.viz, hog_feature=False, org_ratio=True)
 
         ## unimodal_fc(save_data_path, n_labels, nb_epoch=200, activ_type='PReLU')        
