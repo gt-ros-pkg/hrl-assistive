@@ -1307,20 +1307,16 @@ if __name__ == '__main__':
         # 85 25 @ fz
         # 86 37 @ fzero 
         # 85.5 31 @ fzero fz
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation7/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        #c12
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)        
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation7/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         param_dict['data_param']['handFeatures'] = [['unimodal_audioWristRMS',  \
                                                     'unimodal_kinJntEff_1',\
                                                     'unimodal_ftForce_integ',\
                                                     'unimodal_kinEEChange',
                                                     'crossmodal_landmarkEEDist', \
                                                     ],
-                                                    [
+                                                    ['unimodal_kinVel',\
                                                      'unimodal_ftForce_zero',\
                                                      ## 'unimodal_ftForceZ',\
                                                      'unimodal_kinDesEEChange', \
@@ -1404,7 +1400,7 @@ if __name__ == '__main__':
                                                       'unimodal_audioWristAzimuth',\
                                                       'unimodal_ftForceX',\
                                                       'unimodal_ftForceY',\
-                                                      'unimodal_ftForceZ',\
+                                                      ## 'unimodal_ftForceZ',\
                                                       'unimodal_fabricForce',  \
                                                       'unimodal_landmarkDist',\
                                                       'crossmodal_landmarkEEAng',\
