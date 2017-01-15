@@ -915,7 +915,7 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
         HMM_dict_local['scale'] = param_dict['HMM']['scale'][i]
         
         #temp
-        ## if i==0: continue
+        if i==0: continue
 
         # Training HMM, and getting classifier training and testing data
         dm.saveHMMinducedFeatures(kFold_list, success_data_ad[i], failure_data_ad[i],\
@@ -1341,7 +1341,7 @@ if __name__ == '__main__':
                                                     ],\
                                                     ['unimodal_kinVel',\
                                                      'unimodal_ftForce_zero',\
-                                                     'unimodal_kinDesEEChange',\
+                                                     ## 'unimodal_kinDesEEChange',\
                                                      'crossmodal_landmarkEEDist'
                                                     ]]
 
