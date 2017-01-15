@@ -44,6 +44,7 @@ from keras.preprocessing.image import ImageDataGenerator
 from keras.models import Sequential, Model
 from keras.layers import Convolution2D, MaxPooling2D, ZeroPadding2D, Merge, Input
 from keras.layers import Activation, Dropout, Flatten, Dense, merge
+from keras.layers.advanced_activations import PReLU
 from keras.utils.np_utils import to_categorical
 from keras.optimizers import SGD, Adagrad, Adadelta, RMSprop
 from keras.utils.visualize_util import plot
@@ -234,7 +235,7 @@ def get_top_model(input_shape_img, input_shape_sig, weights_path=None, n_labels=
 
 
 def cnn_net(input_shape, n_labels, weights_path=None, with_top=False, input_shape2=None,
-            fine_tune=False):
+            fine_tune=False, activ_type='relu'):
 
     model = Sequential()
     model.add(Convolution2D(32, 3, 3, input_shape=input_shape, name='conv1_1'))
@@ -288,13 +289,18 @@ def cnn_net(input_shape, n_labels, weights_path=None, with_top=False, input_shap
         return model
 
 
-def sig_net(input_shape, n_labels, weights_path=None, fine_tune=False):
+def sig_net(input_shape, n_labels, weights_path=None, fine_tune=False, activ_type='relu'):
+
+    if activ_type == 'PReLU':
+        activ_type = PReLU(init='zero', weights=None)
+
+
     
     model = Sequential()
     model.add(Dense(128, init='uniform', input_shape=input_shape,\
                     name='fc2_1'))
     ## model.add(BatchNormalization())
-    model.add(Activation('relu'))
+    model.add(Activation(activ_type))
     model.add(Dropout(0.5))
     ## model.add(Dense(64, init='uniform', name='fc2_2'))
     ## ## model.add(BatchNormalization())

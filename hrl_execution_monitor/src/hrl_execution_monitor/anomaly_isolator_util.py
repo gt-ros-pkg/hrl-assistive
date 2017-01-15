@@ -83,21 +83,10 @@ def train_isolator_modules(subject_names, task_name, raw_data_path, save_data_pa
     failure_image_list = iutil.image_list_flatten( d.get('failure_image_list',[]) )
 
     failure_labels = []
-    for f in failure_files:
+    for f in d['failureFiles']:
         failure_labels.append( int( f.split('/')[-1].split('_')[0] ) )
     failure_labels = np.array( failure_labels )
-
-
-
-    # select feature for detection
-    feature_list = []
-    for feature in data_dict['handFeatures']:
-        idx = [ i for i, x in enumerate(data_dict['isolationFeatures']) if feature == x][0]
-        feature_list.append(idx)
     
-    successData = d['successData'][feature_list]
-    failureData = d['failureData'][feature_list]
-
     #-----------------------------------------------------------------------------------------
     # Dynamic feature selection for detection and isolation
     print d['param_dict']['feature_names']    
@@ -116,9 +105,6 @@ def train_isolator_modules(subject_names, task_name, raw_data_path, save_data_pa
         HMM_dict_local = copy.deepcopy(HMM_dict)
         HMM_dict_local['scale'] = param_dict['HMM']['scale'][i]
         
-        #temp
-        ## if i==0: continue
-
         # Training HMM, and getting classifier training and testing data
         dm.saveHMMinducedFeatures(kFold_list, success_data_ad[i], failure_data_ad[i],\
                                   task_name, processed_data_path,\

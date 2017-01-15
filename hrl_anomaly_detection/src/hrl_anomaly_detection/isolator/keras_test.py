@@ -49,12 +49,13 @@ import cv2
 
 from keras.preprocessing.image import ImageDataGenerator
 from keras.models import Sequential, Model
-from keras.layers import Convolution2D, MaxPooling2D, ZeroPadding2D, Merge, Input
-from keras.layers import Activation, Dropout, Flatten, Dense, merge
+## from keras.layers import Convolution2D, MaxPooling2D, ZeroPadding2D, Merge, Input
+## from keras.layers import Activation, Dropout, Flatten, Dense, merge
+## from keras.layers.normalization import BatchNormalization
 from keras.utils.np_utils import to_categorical
 from keras.optimizers import SGD, Adagrad, Adadelta, RMSprop
 from keras.utils.visualize_util import plot
-from keras.layers.normalization import BatchNormalization
+from keras.callbacks import EarlyStopping
 
 from hrl_anomaly_detection.isolator import keras_models as km
 
@@ -584,11 +585,13 @@ def evaluate(save_data_path):
     return
     
 
-def unimodal_fc(save_data_path, n_labels, nb_epoch=400, fine_tune=False):
+def unimodal_fc(save_data_path, n_labels, nb_epoch=400, fine_tune=False, activ_type='relu'):
 
     d = ut.load_pickle(os.path.join(save_data_path, 'isol_data.pkl'))
     nFold = len(d.keys())
     del d
+
+    callbacks = [EarlyStopping(monitor='val_loss', min_delta=0, patience=5, verbose=0, mode='auto')]
 
     scores= []
     for idx in xrange(nFold):
@@ -621,10 +624,10 @@ def unimodal_fc(save_data_path, n_labels, nb_epoch=400, fine_tune=False):
         ## ## x_test_sig = np.hstack([x_test_sig_dyn1, x_test_sig_stc])
         ## ## x_test_sig = np.hstack([x_test_sig_dyn1, x_test_sig_dyn2])
 
-        ## print np.shape(x_train_sig), np.shape(x_test_sig)
+        print np.shape(x_train_sig), np.shape(x_test_sig)
         ## print np.shape(x_train_sig_dyn1), np.shape(x_train_sig_dyn2), np.shape(x_train_sig_stc)
         ## print np.shape(x_test_sig_dyn1), np.shape(x_test_sig_dyn2), np.shape(x_test_sig_stc)
-        ## sys.exit()
+        sys.exit()
 
         ## scaler = preprocessing.MinMaxScaler()
         scaler      = preprocessing.StandardScaler()
@@ -636,23 +639,24 @@ def unimodal_fc(save_data_path, n_labels, nb_epoch=400, fine_tune=False):
 
         ## # Load pre-trained vgg16 model
         if fine_tune is False:
-            model = km.sig_net(np.shape(x_train_sig)[1:], n_labels)
+            model = km.sig_net(np.shape(x_train_sig)[1:], n_labels, activ_type=activ_type)
             ## optimizer = SGD(lr=0.001, decay=1e-5, momentum=0.9, nesterov=True)
             ## model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
             model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
         else:
             model = km.sig_net(np.shape(x_train_sig)[1:], n_labels, fine_tune=True,\
-                               weights_path = full_weights_path)
+                               weights_path = full_weights_path, activ_type=activ_type)
         
             ## optimizer = SGD(lr=0.01, decay=1e-5, momentum=0.9, nesterov=True)
             ## optimizer = SGD(lr=0.0001, decay=1e-6, momentum=0.9, nesterov=True)
-            optimizer = SGD(lr=0.00001, decay=1e-8, momentum=0.9, nesterov=True)
+            optimizer = SGD(lr=0.0001, decay=1e-8, momentum=0.9, nesterov=True)
             ## optimizer = RMSprop(lr=0.00001, rho=0.9, epsilon=1e-08, decay=0.0)
             model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
 
         hist = model.fit(x_train_sig, y_train,
-                         nb_epoch=nb_epoch, batch_size=32, shuffle=True,
-                         validation_data=(x_test_sig, y_test))
+                         nb_epoch=nb_epoch, batch_size=16, shuffle=True,
+                         validation_data=(x_test_sig, y_test),
+                         callbacks=callbacks)
         scores.append( hist.history['val_acc'][-1] )
         model.save_weights(full_weights_path)
         del model
@@ -697,7 +701,7 @@ def unimodal_cnn(save_data_path, n_labels, nb_epoch=100, fine_tune=False, vgg=Fa
             model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
         else:
             if vgg: model = km.vgg16_net(np.shape(x_train_img)[1:], n_labels, vgg_model_weights_path,\
-                                         full_weights_path)
+                                        full_weights_path)
             else: model = km.cnn_net(np.shape(x_train_img)[1:], n_labels, full_weights_path)
             optimizer = SGD(lr=0.0001, decay=1e-8, momentum=0.9, nesterov=True)
             ## optimizer = RMSprop(lr=0.00001, rho=0.9, epsilon=1e-08, decay=0.0)
@@ -716,8 +720,8 @@ def unimodal_cnn(save_data_path, n_labels, nb_epoch=100, fine_tune=False, vgg=Fa
         test_datagen = ImageDataGenerator(rescale=1./255,\
                                           dim_ordering="th")
 
-        train_generator = train_datagen.flow(x_train_img, y_train, batch_size=32)
-        test_generator = test_datagen.flow(x_test_img, y_test, batch_size=32)
+        train_generator = train_datagen.flow(x_train_img, y_train, batch_size=16)
+        test_generator = test_datagen.flow(x_test_img, y_test, batch_size=16)
 
         hist = model.fit_generator(train_generator,
                                    samples_per_epoch=len(y_train),
@@ -798,7 +802,7 @@ def multimodal_cnn_fc(save_data_path, n_labels, nb_epoch=100, fine_tune=False,
                                    with_top=True, fine_tune=True,
                                    input_shape2=np.shape(x_train_sig)[1:] )
             model.load_weights( os.path.join(save_data_path,prefix+'cnn_fc_weights_'+str(idx)+'.h5') )
-            optimizer = SGD(lr=0.000001, decay=1e-8, momentum=0.9, nesterov=True)
+            optimizer = SGD(lr=0.00001, decay=1e-8, momentum=0.9, nesterov=True)
             ## optimizer = RMSprop(lr=0.00001, rho=0.9, epsilon=1e-08, decay=0.0)
             model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
 
@@ -807,14 +811,16 @@ def multimodal_cnn_fc(save_data_path, n_labels, nb_epoch=100, fine_tune=False,
         if test_only is False:
             train_datagen = km.myGenerator(augmentation=True, rescale=1./255.)
             test_datagen = km.myGenerator(augmentation=False, rescale=1./255.)
-            train_generator = train_datagen.flow(x_train_img, x_train_sig, y_train, batch_size=32)
-            test_generator = test_datagen.flow(x_test_img, x_test_sig, y_test, batch_size=32)
+            train_generator = train_datagen.flow(x_train_img, x_train_sig, y_train, batch_size=16)
+            test_generator = test_datagen.flow(x_test_img, x_test_sig, y_test, batch_size=16)
+            callbacks = [EarlyStopping(monitor='val_loss', min_delta=0, patience=0, verbose=0, mode='auto')]
         
             hist = model.fit_generator(train_generator,
                                        samples_per_epoch=len(y_train),
                                        nb_epoch=50,
                                        validation_data=test_generator,
-                                       nb_val_samples=len(y_test))
+                                       nb_val_samples=len(y_test),
+                                       callbacks=callbacks)
 
             full_weights_path = os.path.join(save_data_path,prefix+'cnn_fc_weights_'+str(idx)+'.h5')
             model.save_weights(full_weights_path)
@@ -933,11 +939,14 @@ if __name__ == '__main__':
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         ## preprocess_data(save_data_path, viz=opt.viz, hog_feature=False, org_ratio=True)
 
+        ## unimodal_fc(save_data_path, n_labels, nb_epoch=200, activ_type='PReLU')        
+        ## unimodal_fc(save_data_path, n_labels, nb_epoch=200, fine_tune=True, activ_type='PReLU')        
 
-        #unimodal_fc(save_data_path, n_labels, nb_epoch=200)        
-        #unimodal_fc(save_data_path, n_labels, fine_tune=True, nb_epoch=400)        
+        # relu
+        unimodal_fc(save_data_path, n_labels, nb_epoch=200)        
+        unimodal_fc(save_data_path, n_labels, fine_tune=True, nb_epoch=400)        
         ## unimodal_cnn(save_data_path, n_labels)        
-        unimodal_cnn(save_data_path, n_labels, fine_tune=True)        
+        ## unimodal_cnn(save_data_path, n_labels, fine_tune=True)        
         ## multimodal_cnn_fc(save_data_path, n_labels)
         ## multimodal_cnn_fc(save_data_path, n_labels, fine_tune=True)
         ## multimodal_cnn_fc(save_data_path, n_labels, fine_tune=True, test_only=True,
