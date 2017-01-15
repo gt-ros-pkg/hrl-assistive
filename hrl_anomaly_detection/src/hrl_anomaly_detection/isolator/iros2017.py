@@ -1292,7 +1292,7 @@ if __name__ == '__main__':
                                                     'unimodal_kinJntEff_1',\
                                                     'unimodal_ftForce_integ',\
                                                     'unimodal_kinEEChange',
-                                                    ## 'crossmodal_landmarkEEDist', \
+                                                    'crossmodal_landmarkEEDist', \
                                                     ],
                                                     ['unimodal_kinVel',\
                                                      'unimodal_ftForce_zero',\
