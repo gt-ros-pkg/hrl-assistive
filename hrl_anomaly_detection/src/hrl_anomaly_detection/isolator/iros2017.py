@@ -1091,7 +1091,7 @@ if __name__ == '__main__':
                                                     ## 'unimodal_audioWristFrontRMS', \
                                                     ## 'unimodal_audioWristAzimuth',\
                                                     'unimodal_kinVel',\
-                                                    'unimodal_kinJntEff', \
+                                                    ## 'unimodal_kinJntEff', \
                                                     ## 'unimodal_ftForce_integ', \
                                                     ## 'unimodal_ftForce_delta', \
                                                     ## 'unimodal_ftForce_zero', \

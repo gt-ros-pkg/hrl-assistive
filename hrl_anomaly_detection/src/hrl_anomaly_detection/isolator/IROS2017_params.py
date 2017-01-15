@@ -95,10 +95,11 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                    'ft',\
                    'relativePose_landmark_EE']
 
-    # 012 3456789 10111213 141516 17 18 1920 2122
+    # 012 3 45678910 11121314 151617 18 19 2021 2223
     isolationFeatures = ['unimodal_audioWristRMS', \
                          'unimodal_audioWristFrontRMS',\
                          'unimodal_audioWristAzimuth',\
+                         'unimodal_kinVel',\
                          'unimodal_kinJntEff_1', \
                          'unimodal_kinJntEff_2', \
                          'unimodal_kinJntEff_3', \
