@@ -1807,10 +1807,11 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
         if 'unimodal_kinEEChange' in feature_list:
             kinEEPos     = d['kinEEPosList'][idx]
 
-            if offset_flag:
-                offset = np.mean(kinEEPos[:,:startOffsetSize], axis=1)
-                for i in xrange(len(offset)):
-                    kinEEPos[i] -= offset[i]
+            ## if offset_flag:
+            ##     offset = np.mean(kinEEPos[:,:startOffsetSize], axis=1)
+            ##     for i in xrange(len(offset)):
+            ##         kinEEPos[i] -= offset[i]
+            kinEEPos -= np.mean(kinEEPos[:,:startOffsetSize], axis=1)[:,np.newaxis]
             dist = np.linalg.norm(kinEEPos, axis=0)
 
             if dataSample is None: dataSample = np.array(dist)
@@ -1821,7 +1822,7 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
 
         # Unimodal feature - Desired EE change --------------------------
         if 'unimodal_kinDesEEChange' in feature_list:
-            kinEEPos     = d['kinEEPosList'][idx]
+            ## kinEEPos     = d['kinEEPosList'][idx]
             kinDesEEPos  = d['kinDesEEPosList'][idx]
 
             kinDesEEPos -= np.mean(kinDesEEPos[:,:startOffsetSize], axis=1)[:,np.newaxis]
