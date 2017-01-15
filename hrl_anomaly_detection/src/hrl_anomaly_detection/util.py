@@ -270,18 +270,17 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=10
             # local kinematics feature
             if rf_center == 'kinEEPos':
                 local_kin_pos = kin_ee_pos
-                last_kin_pos = np.zeros((3,1))
+                last_kin_pos = kin_ee_pos[:,0:1] #np.zeros((3,1))
                 last_time    = 0.0
-                local_kin_vel= None
+                local_kin_vel= np.zeros((3,1))
                 for i in xrange(len(kin_ee_pos[0])):
-                    if len(kin_time)-1 < i: break
-                    if abs(kin_time[i]-last_time) < 0.00000001:
-                        if local_kin_vel is None: local_kin_vel = np.zeros((3,1))
-                    else:                    
-                        local_kin_vel = (kin_ee_pos[:,i:i+1] - last_kin_pos)/(kin_time[i] - last_time)
+                    if i > len(kin_time)-1: break
+                    if abs(kin_time[i]-last_time) > 0.00000001:
+                        vel = (kin_ee_pos[:,i:i+1] - last_kin_pos)/(kin_time[i] - last_time)
+                        local_kin_vel = np.hstack([local_kin_vel, vel])
+                        
                     last_kin_pos = kin_ee_pos[:,i:i+1]
                     last_time    = kin_time[i]
-
             else:
                 if rf_center == 'kinForearmPos':
                     frame_list = ['l_forearm_link', 'l_wrist_flex_link']

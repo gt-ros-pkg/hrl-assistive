@@ -563,9 +563,9 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
 
             for i in xrange(n):
                 if n>9:
-                    ax = fig.add_subplot(nPlot/2,2,i)
+                    ax = fig.add_subplot(nPlot/2,2,i+1)
                 else:
-                    ax = fig.add_subplot(n*100+10+i)
+                    ax = fig.add_subplot(n*100+10+i+1)
                 if solid_color: ax.plot(successData[i].T, c='b')
                 else: ax.plot(successData[i].T)
 
@@ -596,9 +596,9 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
 
             for i in xrange(n): # per feature                
                 if n>9:
-                    ax = fig.add_subplot(nPlot/2,2,i)
+                    ax = fig.add_subplot(nPlot/2,2,i+1)
                 else:
-                    ax = fig.add_subplot(n*100+10+i)
+                    ax = fig.add_subplot(n*100+10+i+1)
                 if solid_color: ax.plot(failure_data[i].T, c='r')
                 else: ax.plot(failure_data[i].T)
                 ax.set_title( AddFeature_names[i] )
@@ -1521,9 +1521,14 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
 
         # Unimodal feature - Kinematics --------------------------------------
         if 'unimodal_kinVel' in feature_list:
-            unimodal_kinVel = d['kinVelList'][idx]
 
-            vel = np.linalg.norm(unimodal_kinVel, axis=0)
+            kinEEPos        = d['kinEEPosList'][idx]            
+            ## unimodal_kinVel = d['kinVelList'][idx]
+
+            vel = np.linalg.norm( kinEEPos[:,1:] - kinEEPos[:,:-1], axis=0 )
+            
+            vel = np.array( [0] + vel.tolist() )
+            ## vel = np.linalg.norm(unimodal_kinVel, axis=0)
 
             if dataSample is None: dataSample = np.array(vel)
             else: dataSample = np.vstack([dataSample, vel])
