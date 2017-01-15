@@ -1296,7 +1296,7 @@ if __name__ == '__main__':
                                                     ],
                                                     ['unimodal_kinVel',\
                                                      'unimodal_ftForce_zero',\
-                                                     ## 'unimodal_kinDesEEChange', \
+                                                     'unimodal_kinDesEEChange', \
                                                      'crossmodal_landmarkEEDist', \
                                                     ]]
         param_dict['HMM']['scale']   = [7.0, 13.0] #9 nest
@@ -1365,6 +1365,7 @@ if __name__ == '__main__':
                                                     ],\
                                                     ['unimodal_kinVel',\
                                                      'unimodal_ftForce_zero',\
+                                                     'unimodal_kinDesEEChange',\
                                                      'crossmodal_landmarkEEDist'
                                                     ]]
 
