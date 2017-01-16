@@ -603,25 +603,25 @@ def anomaly_detection(nDetector, task_name, processed_data_path, scales, logp_vi
 
     # anomaly detection for test data
     detection_train_idx = [None for i in xrange(len(l_train_X[0]))]
-    ## for i in xrange(len(l_train_X[0])):
-    ##     if len(l_train_Y[0][i])<1: continue
-    ##     if l_train_Y[0][i][0] <1: continue
+    for i in xrange(len(l_train_X[0])):
+        if len(l_train_Y[0][i])<1: continue
+        if l_train_Y[0][i][0] <1: continue
 
-    ##     y_pred1 = dtc_list[0].predict(l_train_X[0][i], y=l_train_Y[0][i])
-    ##     if nDetector > 1 and single_detector is False:
-    ##         y_pred2 = dtc_list[1].predict(l_train_X[1][i], y=l_train_Y[1][i])
+        y_pred1 = dtc_list[0].predict(l_train_X[0][i], y=l_train_Y[0][i])
+        if nDetector > 1 and single_detector is False:
+            y_pred2 = dtc_list[1].predict(l_train_X[1][i], y=l_train_Y[1][i])
 
-    ##     for j in xrange(len(y_pred1)):
-    ##         if nDetector > 1 and single_detector is False:
-    ##             if y_pred1[j] > 0 or y_pred2[j] > 0:                
-    ##                 if l_train_Y[0][i][0] > 0:
-    ##                     detection_train_idx[i] = l_train_idx[0][i][j]
-    ##                 break
-    ##         else:
-    ##             if y_pred1[j] > 0 :                
-    ##                 if l_train_Y[0][i][0] > 0:
-    ##                     detection_train_idx[i] = l_train_idx[0][i][j]
-    ##                 break
+        for j in xrange(len(y_pred1)):
+            if nDetector > 1 and single_detector is False:
+                if y_pred1[j] > 0 or y_pred2[j] > 0:                
+                    if l_train_Y[0][i][0] > 0:
+                        detection_train_idx[i] = l_train_idx[0][i][j]
+                    break
+            else:
+                if y_pred1[j] > 0 :                
+                    if l_train_Y[0][i][0] > 0:
+                        detection_train_idx[i] = l_train_idx[0][i][j]
+                    break
 
     # anomaly detection for test data
     detection_test_idx = [None for i in xrange(len(l_test_X[0]))]
