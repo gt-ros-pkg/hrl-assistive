@@ -493,16 +493,12 @@ def plot_decoder(x1,x2):
 
 ##     return detection_idx
 
-def anomaly_detection(X, Y, task_name, processed_data_path, param_dict, logp_viz=False, verbose=False,
-                      weight=0.0, idx=0, n_jobs=-1, single_detector=False):
+def anomaly_detection(X, Y, task_name, processed_data_path, scales, logp_viz=False, verbose=False,
+                      weight=0.0, idx=0, n_jobs=-1, single_detector=False, method='hmmgp'):
     ''' Anomaly detector that return anomalous point on each data using two HMMs.
     '''
-    HMM_dict = param_dict['HMM']
-    SVM_dict = param_dict['SVM']
-    ROC_dict = param_dict['ROC']
     
     # set parameters
-    method  = 'hmmgp' #'progress'
     nMaxData   = 20 # The maximun number of executions to train GP
     nSubSample = 50 # The number of sub-samples from each execution to train GP
     nDetector  = len(X)
@@ -517,11 +513,11 @@ def anomaly_detection(X, Y, task_name, processed_data_path, param_dict, logp_viz
         if nDetector > 1:
             modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+\
                                         '_c'+str(ii)+'.pkl')
-            scale = HMM_dict['scale'][ii]
+            scale = scales[ii]
         else:
             modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
-            if type(HMM_dict['scale'] ) is list: scale = HMM_dict['scale'][ii]
-            else: scale = HMM_dict['scale']
+            if type(scales ) is list: scale = scales[ii]
+            else: scale = scales
 
         if verbose: print "start to load hmm data, ", modeling_pkl
         d            = ut.load_pickle(modeling_pkl)
@@ -655,7 +651,7 @@ def get_isolation_data(idx, kFold_list, modeling_pkl, nState, \
             abnormalTestFileList.append(f.split('/')[-1])    
 
     detection_test_idx_list = anomaly_detection(abnormalTestData, testDataY, \
-                                                task_name, processed_data_path, param_dict,\
+                                                task_name, processed_data_path, param_dict['HMM']['scale'],\
                                                 logp_viz=False, verbose=False, weight=weight,\
                                                 idx=idx, n_jobs=n_jobs)
 
@@ -740,13 +736,15 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failureData_static, \
     #-----------------------------------------------------------------------------------------        
     detection_train_idx_list = anomaly_detection(input_train_list, \
                                                  [1]*len(abnormalTrainData_1[0]), \
-                                                 task_name, processed_data_path, param_dict,\
+                                                 task_name, processed_data_path, \
+                                                 param_dict['HMM']['scale'],\
                                                  logp_viz=False, verbose=False, \
                                                  weight=weight, single_detector=single_detector,\
                                                  idx=idx, n_jobs=n_jobs)
     detection_test_idx_list = anomaly_detection(input_test_list, \
                                                 [1]*len(abnormalTestData_1[0]), \
-                                                task_name, processed_data_path, param_dict,\
+                                                task_name, processed_data_path, \
+                                                param_dict['HMM']['scale'],\
                                                 logp_viz=False, verbose=False, \
                                                 weight=weight, single_detector=single_detector,\
                                                 idx=idx, n_jobs=n_jobs)

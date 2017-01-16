@@ -1261,14 +1261,13 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation7/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation7/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         param_dict['data_param']['handFeatures'] = [['unimodal_audioWristRMS',  \
                                                     'unimodal_kinJntEff_1',\
                                                     'unimodal_ftForce_integ',\
                                                     'unimodal_kinEEChange',
-                                                    ## 'crossmodal_landmarkEEDist', \
                                                     ],
                                                     ['unimodal_kinVel',\
                                                      'unimodal_ftForce_zero',\
@@ -1339,7 +1338,6 @@ if __name__ == '__main__':
                                                     'unimodal_kinJntEff_1',\
                                                     'unimodal_ftForce_integ',\
                                                     'unimodal_kinEEChange',\
-                                                    ## 'crossmodal_landmarkEEDist'
                                                     ],\
                                                     ['unimodal_kinVel',\
                                                      'unimodal_ftForce_zero',\

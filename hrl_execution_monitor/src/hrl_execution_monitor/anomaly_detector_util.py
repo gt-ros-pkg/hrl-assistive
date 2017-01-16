@@ -167,6 +167,36 @@ def get_detector_modules(save_data_path, task_name, method, param_dict, fold_idx
     return m_scr, m_gen, m_clf
 
 
+def anomaly_detection_batch(X, save_data_path, task_name, method, param_dict, Y=None, verbose=False):
+    
+    m_scr, m_gen, m_clf = get_detector_modules(save_data_path, task_name, method, param_dict, fold_idx=0,\
+                                               verbose=False)
+
+    if Y is None:
+        Y = [1]*len(X)
+
+    nDetector = 2 # temp
+    startIdx  = 4
+    scale     =
+    n_jobs    = -1
+
+    # get individual detection result
+    y_preds_list = []
+    for ii in xrange(nDetector):
+        # Convert test data
+        ll_classifier_test_X, ll_classifier_test_Y, ll_classifier_test_idx = \
+          hmm.getHMMinducedFeaturesFromRawCombinedFeatures(m_gen[ii], X[ii] * scale, Y,
+                                                           startIdx, \
+                                                           n_jobs=n_jobs)
+
+        y_preds = []
+        for i in xrange(len(ll_classifier_test_X)):
+            y_preds.append( m_clf[ii].predict(ll_classifier_test_X[i], y=ll_classifier_test_Y[i]) )
+        y_preds_list.append(y_preds)
+
+    if len(y_preds_list)>1:
+        
+        
 
 
 if __name__ == '__main__':
