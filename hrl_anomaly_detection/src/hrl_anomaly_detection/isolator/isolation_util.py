@@ -530,6 +530,15 @@ def anomaly_detection(nDetector, task_name, processed_data_path, scales, logp_vi
             ## if not(k.find('test')>=0):
             ##     exec '%s = v' % k
 
+        print np.unique(np.array(ll_classifier_train_Y).flatten())
+        print np.unique(np.array(ll_classifier_test_Y).flatten())
+        continue
+        sys.exit()
+        
+        l_train_X.append(ll_classifier_train_X)
+        l_train_Y.append(ll_classifier_train_Y)
+        l_train_idx.append(ll_classifier_train_idx)
+
         # 1) Convert training data
         if method == 'hmmgp':
 
@@ -565,7 +574,6 @@ def anomaly_detection(nDetector, task_name, processed_data_path, scales, logp_vi
                                                        ll_classifier_train_idx,\
                                                        remove_fp=False)
         if verbose: print method, " : Before classification : ", np.shape(X_train), np.shape(Y_train)
-        ## del ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx
 
         # Create anomaly classifier
         dtc = cf.classifier( method=method, nPosteriors=nState, nLength=nLength, parallel=True )
@@ -578,22 +586,21 @@ def anomaly_detection(nDetector, task_name, processed_data_path, scales, logp_vi
         ret = dtc.fit(X_train, Y_train, idx_train)
         dtc_list.append(dtc)
 
-
-        l_train_X.append(ll_classifier_train_X)
-        l_train_Y.append(ll_classifier_train_Y)
-        l_train_idx.append(ll_classifier_train_idx)
-
         l_test_X.append(ll_classifier_test_X)
         l_test_Y.append(ll_classifier_test_Y)
         l_test_idx.append(ll_classifier_test_idx)
 
         if single_detector: break
         
+    del d
+    del ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx
+    del ll_classifier_test_X, ll_classifier_test_Y, ll_classifier_test_idx
+    del X_train, Y_train, idx_train 
 
     # anomaly detection for test data
-    detection_train_idx = [None for i in xrange(len(ll_classifier_train_X))]
-    for i in xrange(len(ll_classifier_train_X)):
-        if len(ll_classifier_train_Y[i])<1: continue
+    detection_train_idx = [None for i in xrange(len(l_train_X[0]))]
+    for i in xrange(len(l_train_X[0])):
+        if len(l_train_Y[0][i])<1: continue
 
         y_pred1 = dtc_list[0].predict(l_train_X[0][i], y=l_train_Y[0][i])
         if nDetector > 1 and single_detector is False:
@@ -602,19 +609,19 @@ def anomaly_detection(nDetector, task_name, processed_data_path, scales, logp_vi
         for j in xrange(len(y_pred1)):
             if nDetector > 1 and single_detector is False:
                 if y_pred1[j] > 0 or y_pred2[j] > 0:                
-                    if ll_classifier_train_Y[i][0] > 0:
-                        detection_train_idx[i] = ll_classifier_train_idx[i][j]
+                    if l_train_Y[0][i][0] > 0:
+                        detection_train_idx[i] = l_train_idx[0][i][j]
                     break
             else:
                 if y_pred1[j] > 0 :                
-                    if ll_classifier_train_Y[i][0] > 0:
-                        detection_train_idx[i] = ll_classifier_train_idx[i][j]
+                    if l_train_Y[0][i][0] > 0:
+                        detection_train_idx[i] = l_train_idx[0][i][j]
                     break
 
     # anomaly detection for test data
-    detection_test_idx = [None for i in xrange(len(ll_classifier_test_X))]
-    for i in xrange(len(ll_classifier_test_X)):
-        if len(ll_classifier_test_Y[i])<1: continue
+    detection_test_idx = [None for i in xrange(len(l_test_X[0]))]
+    for i in xrange(len(l_test_X[0])):
+        if len(l_test_Y[0][i])<1: continue
 
         y_pred1 = dtc_list[0].predict(l_test_X[0][i], y=l_test_Y[0][i])
         if nDetector > 1 and single_detector is False:
@@ -623,13 +630,13 @@ def anomaly_detection(nDetector, task_name, processed_data_path, scales, logp_vi
         for j in xrange(len(y_pred1)):
             if nDetector > 1 and single_detector is False:
                 if y_pred1[j] > 0 or y_pred2[j] > 0:                
-                    if ll_classifier_test_Y[i][0] > 0:
-                        detection_test_idx[i] = ll_classifier_test_idx[i][j]
+                    if l_test_Y[0][i][0] > 0:
+                        detection_test_idx[i] = l_test_idx[0][i][j]
                     break
             else:
                 if y_pred1[j] > 0 :                
-                    if ll_classifier_test_Y[i][0] > 0:
-                        detection_test_idx[i] = ll_classifier_test_idx[i][j]
+                    if l_test_Y[0][i][0] > 0:
+                        detection_test_idx[i] = l_test_idx[0][i][j]
                     break
 
     return detection_train_idx, detection_test_idx
@@ -717,7 +724,7 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failureData_static, \
                            failure_labels, failure_image_list,\
                            task_name, processed_data_path, param_dict, weight,\
                            single_detector=False,\
-                           n_jobs=-1, window_steps=10, verbose=False ):
+                           n_jobs=1, window_steps=10, verbose=False ):
 
     normalTrainIdx   = kFold_list[0]
     abnormalTrainIdx = kFold_list[1]
@@ -758,8 +765,14 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failureData_static, \
                                                                           weight=weight, \
                                                                           single_detector=single_detector,\
                                                                           idx=idx, n_jobs=n_jobs)
+
+    print np.shape(detection_train_idx_list), np.shape(detection_test_idx_list)
+                                                                          
     detection_train_idx_list = np.array(detection_train_idx_list)[len(normalTrainIdx):]
     detection_test_idx_list  = np.array(detection_test_idx_list)[len(normalTestIdx):]
+
+    print np.shape(detection_train_idx_list), np.shape(detection_test_idx_list)
+    sys.exit()
     
     #-----------------------------------------------------------------------------------------
     # Feature Extraction

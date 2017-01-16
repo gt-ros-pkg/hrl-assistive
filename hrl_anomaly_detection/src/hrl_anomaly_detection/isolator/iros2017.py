@@ -910,15 +910,15 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
         HMM_dict_local = copy.deepcopy(HMM_dict)
         HMM_dict_local['scale'] = param_dict['HMM']['scale'][i]
         
-        #temp
-        if i==0: continue
+        ## #temp
+        ## if i==0: continue
 
         # Training HMM, and getting classifier training and testing data
         dm.saveHMMinducedFeatures(kFold_list, success_data_ad[i], failure_data_ad[i],\
                                   task_name, processed_data_path,\
                                   HMM_dict_local, data_renew, startIdx, nState, cov, \
                                   noise_mag=0.03, diag=False, suffix=str(i),\
-                                  verbose=verbose)
+                                  verbose=verbose, one_class=False)
 
     # Static feature selection for isolation
     feature_list = []
@@ -944,7 +944,7 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
     data_pkl = os.path.join(processed_data_path, 'isol_data.pkl')
     if os.path.isfile(data_pkl) is False or HMM_dict['renew'] or SVM_dict['renew']:
 
-        l_data = Parallel(n_jobs=-1, verbose=10)\
+        l_data = Parallel(n_jobs=1, verbose=10)\
           (delayed(iutil.get_hmm_isolation_data)(idx, kFold_list[idx], failure_data_ad, \
                                                  failureData_static, \
                                                  failure_labels,\
@@ -1331,12 +1331,12 @@ if __name__ == '__main__':
         single_detector = False 
 
         # c11, 148 min #nodes 65
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation11/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        weight = [-23.0, -50.0]
-        param_dict['HMM']['scale'] = [7.0, 13.0]
-        single_detector = False #True
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation11/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## weight = [-23.0, -50.0]
+        ## param_dict['HMM']['scale'] = [7.0, 13.0]
+        ## single_detector = False #True
 
         # br, 148 min #nodes
         ## save_data_path = os.path.expanduser('~')+\
