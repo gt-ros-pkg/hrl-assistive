@@ -759,7 +759,7 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failureData_static, \
                                                        abnormalTrainData_img,\
                                                        task_name, processed_data_path, param_dict, \
                                                        window=True, window_step=window_steps,\
-                                                       delta_flag=True)
+                                                       delta_flag=False)
                                      
     print "Feature extraction with testing data"
     x_test, y_test, x_test_img = feature_extraction(idx, detection_test_idx_list, \
@@ -767,7 +767,7 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failureData_static, \
                                                     abnormalTestData_s, abnormalTestLabel,\
                                                     abnormalTestData_img,\
                                                     task_name, processed_data_path, param_dict, \
-                                                    delta_flag=True)
+                                                    delta_flag=False)
 
     return idx, [x_train, x_train_img], y_train, [x_test, x_test_img], y_test
 
@@ -825,10 +825,6 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, \
                     else: vs = np.hstack([vs, v])
 
                 if delta_flag:
-                    #1,2,4
-                    ## cp_vecs = np.amin(vs[:1], axis=0)
-                    ## cp_vecs = np.vstack([ cp_vecs, np.amin(vs[:2], axis=0) ])
-                    ## cp_vecs = np.vstack([ cp_vecs, np.amin(vs[:4], axis=0) ])
                     #2,4,8
                     cp_vecs = np.amin(vs[:1], axis=0)
                     cp_vecs = np.vstack([ cp_vecs, np.amin(vs[:4], axis=0) ])
@@ -865,11 +861,7 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, \
                 else: vs = np.hstack([vs, v])
 
             if delta_flag:
-                #1,2,4
-                ## cp_vecs = np.amin(vs[:1], axis=0)
-                ## cp_vecs = np.vstack([ cp_vecs, np.amin(vs[:2], axis=0) ])
-                ## cp_vecs = np.vstack([ cp_vecs, np.amin(vs[:4], axis=0) ])
-                ## #2,4,8
+                #2,4,8
                 cp_vecs = np.amin(vs[:1], axis=0)
                 cp_vecs = np.vstack([ cp_vecs, np.amin(vs[:4], axis=0) ])
                 cp_vecs = np.vstack([ cp_vecs, np.amin(vs[:8], axis=0) ])
@@ -893,7 +885,7 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, \
     return x, y, x_img
 
 
-## def feature_extraction_single(window, window_step):
+## def feature_extraction_single(window, window_step, d_idx, abnormalData, max_step):
 
 ##     if window:
 ##         for j in range(-window_step, window_step):
