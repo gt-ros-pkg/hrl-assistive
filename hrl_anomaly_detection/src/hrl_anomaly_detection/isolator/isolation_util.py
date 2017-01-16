@@ -494,7 +494,7 @@ def plot_decoder(x1,x2):
 ##     return detection_idx
 
 def anomaly_detection(nDetector, task_name, processed_data_path, scales, logp_viz=False, verbose=False,
-                      weight=0.0, idx=0, n_jobs=-1, single_detector=False, method='hmmgp'):
+                      weight=0.0, idx=0, single_detector=False, method='hmmgp'):
     ''' Anomaly detector that return anomalous point on each data using two HMMs.
     '''
     
@@ -595,7 +595,7 @@ def anomaly_detection(nDetector, task_name, processed_data_path, scales, logp_vi
         l_test_idx.append(ll_classifier_test_idx)
 
         if single_detector: break
-        
+
     del d
     del ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx
     del ll_classifier_test_X, ll_classifier_test_Y, ll_classifier_test_idx
@@ -603,31 +603,31 @@ def anomaly_detection(nDetector, task_name, processed_data_path, scales, logp_vi
 
     # anomaly detection for test data
     detection_train_idx = [None for i in xrange(len(l_train_X[0]))]
-    for i in xrange(len(l_train_X[0])):
-        if len(l_train_Y[0][i])<1: continue
-        if l_train_Y[0][i][0] <1: continue
+    ## for i in xrange(len(l_train_X[0])):
+    ##     if len(l_train_Y[0][i])<1: continue
+    ##     if l_train_Y[0][i][0] <1: continue
 
-        y_pred1 = dtc_list[0].predict(l_train_X[0][i], y=l_train_Y[0][i])
-        if nDetector > 1 and single_detector is False:
-            y_pred2 = dtc_list[1].predict(l_train_X[1][i], y=l_train_Y[1][i])
+    ##     y_pred1 = dtc_list[0].predict(l_train_X[0][i], y=l_train_Y[0][i])
+    ##     if nDetector > 1 and single_detector is False:
+    ##         y_pred2 = dtc_list[1].predict(l_train_X[1][i], y=l_train_Y[1][i])
 
-        for j in xrange(len(y_pred1)):
-            if nDetector > 1 and single_detector is False:
-                if y_pred1[j] > 0 or y_pred2[j] > 0:                
-                    if l_train_Y[0][i][0] > 0:
-                        detection_train_idx[i] = l_train_idx[0][i][j]
-                    break
-            else:
-                if y_pred1[j] > 0 :                
-                    if l_train_Y[0][i][0] > 0:
-                        detection_train_idx[i] = l_train_idx[0][i][j]
-                    break
+    ##     for j in xrange(len(y_pred1)):
+    ##         if nDetector > 1 and single_detector is False:
+    ##             if y_pred1[j] > 0 or y_pred2[j] > 0:                
+    ##                 if l_train_Y[0][i][0] > 0:
+    ##                     detection_train_idx[i] = l_train_idx[0][i][j]
+    ##                 break
+    ##         else:
+    ##             if y_pred1[j] > 0 :                
+    ##                 if l_train_Y[0][i][0] > 0:
+    ##                     detection_train_idx[i] = l_train_idx[0][i][j]
+    ##                 break
 
     # anomaly detection for test data
     detection_test_idx = [None for i in xrange(len(l_test_X[0]))]
     for i in xrange(len(l_test_X[0])):
         if len(l_test_Y[0][i])<1: continue
-        if l_train_Y[0][i][0] <1: continue
+        if l_test_Y[0][i][0] <1: continue
 
         y_pred1 = dtc_list[0].predict(l_test_X[0][i], y=l_test_Y[0][i])
         if nDetector > 1 and single_detector is False:
@@ -748,14 +748,11 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failureData_static, \
                                                                           logp_viz=False, verbose=False, \
                                                                           weight=weight, \
                                                                           single_detector=single_detector,\
-                                                                          idx=idx, n_jobs=n_jobs)
+                                                                          idx=idx)
 
     detection_train_idx_list = np.array(detection_train_idx_list)[len(normalTrainIdx):]
     detection_test_idx_list  = np.array(detection_test_idx_list)[len(normalTestIdx):]
 
-    print np.shape(detection_test_idx_list)
-    print detection_test_idx_list
-    
     #-----------------------------------------------------------------------------------------
     # Feature Extraction
     #-----------------------------------------------------------------------------------------
@@ -784,13 +781,13 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failureData_static, \
 
     
     print "Feature extraction with training data"
-    ## x_train, y_train, x_train_img = feature_extraction(idx, detection_train_idx_list, \
-    ##                                                    input_train_list,\
-    ##                                                    abnormalTrainData_s, abnormalTrainLabel,\
-    ##                                                    abnormalTrainData_img,\
-    ##                                                    task_name, processed_data_path, param_dict, \
-    ##                                                    window=True, window_step=window_steps,\
-    ##                                                    delta_flag=True)
+    x_train, y_train, x_train_img = feature_extraction(idx, detection_train_idx_list, \
+                                                       input_train_list,\
+                                                       abnormalTrainData_s, abnormalTrainLabel,\
+                                                       abnormalTrainData_img,\
+                                                       task_name, processed_data_path, param_dict, \
+                                                       window=True, window_step=window_steps,\
+                                                       delta_flag=True)
                                      
     print "Feature extraction with testing data"
     x_test, y_test, x_test_img = feature_extraction(idx, detection_test_idx_list, \
@@ -799,9 +796,6 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failureData_static, \
                                                     abnormalTestData_img,\
                                                     task_name, processed_data_path, param_dict, \
                                                     delta_flag=True)
-
-    print np.shape(x_test), np.shape(y_test)
-    sys.exit()
 
     return idx, [x_train, x_train_img], y_train, [x_test, x_test_img], y_test
 
