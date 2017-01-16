@@ -39,7 +39,7 @@ from hrl_anomaly_detection import util as util
 import hrl_anomaly_detection.isolator.isolation_util as iutil
 from hrl_execution_monitor.keras import keras_model as km
 from hrl_execution_monitor.keras import keras_util as kutil
-from hrl_execution_monitor import eviz
+from hrl_execution_monitor import viz as eviz
 from hrl_anomaly_detection.isolator import keras_models as km_old
 from joblib import Parallel, delayed
 
@@ -270,15 +270,15 @@ def evaluate_svm(save_data_path, viz=False):
         print np.shape(x_train)
 
         x_train_dyn1 = x_train[:,:24]
-        x_train_dyn2 = x_train[:,24:-8]#[:,:6]
-        x_train_stc = x_train[:,-8:][:,[0,1,2,3,5,6,7]]
+        x_train_dyn2 = x_train[:,24:-7]#[:,:6]
+        x_train_stc = x_train[:,-7:][:,[0,1,2,4,5,6]]
         ## x_train_dyn1 -= np.mean(x_train_dyn1, axis=1)[:,np.newaxis]
         ## x_train_dyn2 -= np.mean(x_train_dyn2, axis=1)[:,np.newaxis]
         x_train = np.hstack([x_train_dyn1, x_train_dyn2, x_train_stc])
 
         x_test_dyn1 = x_test[:,:24]
-        x_test_dyn2 = x_test[:,24:-8]#[:,:6]
-        x_test_stc = x_test[:,-8:][:,[0,1,2,3,5,6,7]]
+        x_test_dyn2 = x_test[:,24:-7]#[:,:6]
+        x_test_stc = x_test[:,-7:][:,[0,1,2,4,5,6]]
         ## x_test_dyn1 -= np.mean(x_test_dyn1, axis=1)[:,np.newaxis]
         ## x_test_dyn2 -= np.mean(x_test_dyn2, axis=1)[:,np.newaxis]
         x_test = np.hstack([x_test_dyn1, x_test_dyn2, x_test_stc])
@@ -593,12 +593,11 @@ def multimodal_cnn_fc(save_data_path, n_labels, nb_epoch=100, fine_tune=False,
 def plot_confusion_matrix(y_test_list, y_pred_list, save_pdf=False):
     classes = ['Object collision', 'Noisy environment', 'Spoon miss by a user', 'Spoon collision by a user', 'Robot-body collision by a user', 'Aggressive eating', 'Anomalous sound from a user', 'Unreachable mouth pose', 'Face occlusion by a user', 'Spoon miss by system fault', 'Spoon collision by system fault', 'Freeze by system fault']
 
-    print len(np.unique(y_test_list)), np.shape(y_test_list)
-    print len(np.unique(y_pred_list)), np.shape(y_pred_list)
-    print np.shape(classes),
 
     from sklearn.metrics import confusion_matrix
     cm = confusion_matrix(y_test_list, y_pred_list)
+
+    print np.sum(cm,axis=1)
 
     eviz.plot_confusion_matrix(cm, classes=classes, normalize=True,
                                title='Anomaly Isolation', save_pdf=save_pdf)
@@ -704,13 +703,13 @@ if __name__ == '__main__':
         ## unimodal_cnn(save_data_path, n_labels)        
         ## unimodal_cnn(save_data_path, n_labels, fine_tune=True)        
         ## multimodal_cnn_fc(save_data_path, n_labels)
-        multimodal_cnn_fc(save_data_path, n_labels, fine_tune=True)
+        ## multimodal_cnn_fc(save_data_path, n_labels, fine_tune=True)
 
         
         ## unimodal_fc(save_data_path, n_labels, nb_epoch=200, test_only=True)        
         ## multimodal_cnn_fc(save_data_path, n_labels, fine_tune=True, test_only=True,
         ##                   save_pdf=opt.bSavePdf)
-        ## evaluate_svm(save_data_path, viz=True)
+        evaluate_svm(save_data_path, viz=True)
 
         ## unimodal_cnn(save_data_path, n_labels, vgg=True)        
         ## unimodal_cnn(save_data_path, n_labels, fine_tune=True, vgg=True)        
