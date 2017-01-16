@@ -38,6 +38,9 @@ from hrl_anomaly_detection import data_manager as dm
 from hrl_anomaly_detection import util as util
 import hrl_anomaly_detection.isolator.isolation_util as iutil
 import hrl_anomaly_detection.isolator.isolation_viz as iviz
+from hrl_execution_monitor.keras import keras_model as km
+from hrl_execution_monitor.keras import keras_util as kutil
+from hrl_anomaly_detection.isolator import keras_models as km_old
 from joblib import Parallel, delayed
 
 random.seed(3334)
@@ -57,7 +60,6 @@ from keras.optimizers import SGD, Adagrad, Adadelta, RMSprop
 from keras.utils.visualize_util import plot
 from keras.callbacks import EarlyStopping, ReduceLROnPlateau
 
-from hrl_anomaly_detection.isolator import keras_models as km
 
 vgg_model_weights_path = os.path.expanduser('~')+'/git/keras_test/vgg16_weights.h5'
 ## nb_train_samples = 1000 #len(x_train)
@@ -660,8 +662,8 @@ def unimodal_fc(save_data_path, n_labels, nb_epoch=400, fine_tune=False, activ_t
             model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
 
         if test_only is False:
-            train_datagen = km.sigGenerator(augmentation=True, noise_mag=0.05 )
-            test_datagen = km.sigGenerator(augmentation=False)
+            train_datagen = kutil.sigGenerator(augmentation=True, noise_mag=0.05 )
+            test_datagen = kutil.sigGenerator(augmentation=False)
             train_generator = train_datagen.flow(x_train_sig, y_train, batch_size=128)
             test_generator = test_datagen.flow(x_test_sig, y_test, batch_size=128)
 
@@ -835,8 +837,8 @@ def multimodal_cnn_fc(save_data_path, n_labels, nb_epoch=100, fine_tune=False,
                 
 
         if test_only is False:
-            train_datagen = km.myGenerator(augmentation=True, rescale=1./255.)
-            test_datagen = km.myGenerator(augmentation=False, rescale=1./255.)
+            train_datagen = kutil.myGenerator(augmentation=True, rescale=1./255.)
+            test_datagen = kutil.myGenerator(augmentation=False, rescale=1./255.)
             train_generator = train_datagen.flow(x_train_img, x_train_sig, y_train, batch_size=16)
             test_generator = test_datagen.flow(x_test_img, x_test_sig, y_test, batch_size=16)
             callbacks = [EarlyStopping(monitor='val_loss', min_delta=0, patience=0, verbose=0, mode='auto')]
