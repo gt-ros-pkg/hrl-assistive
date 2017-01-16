@@ -758,7 +758,9 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failureData_static, \
                                                                           weight=weight, \
                                                                           single_detector=single_detector,\
                                                                           idx=idx, n_jobs=n_jobs)
-
+    detection_train_idx_list = np.array(detection_train_idx_list)[len(normalTrainIdx)]
+    detection_test_idx_list  = np.array(detection_test_idx_list)[len(normalTestIdx)]
+    
     #-----------------------------------------------------------------------------------------
     # Feature Extraction
     #-----------------------------------------------------------------------------------------
