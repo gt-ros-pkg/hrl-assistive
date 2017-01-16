@@ -1258,10 +1258,15 @@ if __name__ == '__main__':
         # c8 w/ eedist
         # c8 w/o eedist
 
-        #c12
+        #c8
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation5/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+
+        #c12 13
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
           
         ## #c11 11
         ## save_data_path = os.path.expanduser('~')+\
@@ -1274,7 +1279,7 @@ if __name__ == '__main__':
                                                     ],
                                                     ['unimodal_kinVel',\
                                                      'unimodal_ftForce_zero',\
-                                                     'unimodal_kinDesEEChange', \
+                                                     ## 'unimodal_kinDesEEChange', \
                                                      'crossmodal_landmarkEEDist', \
                                                     ]]
         param_dict['HMM']['scale']   = [7.0, 13.0] #9 nest
