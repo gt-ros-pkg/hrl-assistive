@@ -529,11 +529,6 @@ def anomaly_detection(nDetector, task_name, processed_data_path, scales, logp_vi
             exec '%s = v' % k
             ## if not(k.find('test')>=0):
             ##     exec '%s = v' % k
-
-        print np.unique(np.array(ll_classifier_train_Y).flatten())
-        print np.unique(np.array(ll_classifier_test_Y).flatten())
-        continue
-        sys.exit()
         
         l_train_X.append(ll_classifier_train_X)
         l_train_Y.append(ll_classifier_train_Y)
