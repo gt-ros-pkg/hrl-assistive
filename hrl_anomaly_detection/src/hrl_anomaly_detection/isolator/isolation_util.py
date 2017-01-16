@@ -893,6 +893,91 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, \
     return x, y, x_img
 
 
+def feature_extraction_single(window, window_step):
+
+    if window:
+        for j in range(-window_step, window_step):
+            if d_idx+j <= 4: continue
+            if d_idx+j > len(abnormalData[0][0,i]): continue
+
+            vs = None # step x feature
+            for ii in xrange(nDetector):
+                v = temporal_features(abnormalData[ii][:,i], d_idx+j, max_step, ml_list[ii],
+                                      scale_list[ii])
+                if vs is None: vs = v
+                else: vs = np.hstack([vs, v])
+
+            if delta_flag:
+                #1,2,4
+                ## cp_vecs = np.amin(vs[:1], axis=0)
+                ## cp_vecs = np.vstack([ cp_vecs, np.amin(vs[:2], axis=0) ])
+                ## cp_vecs = np.vstack([ cp_vecs, np.amin(vs[:4], axis=0) ])
+                #2,4,8
+                cp_vecs = np.amin(vs[:1], axis=0)
+                cp_vecs = np.vstack([ cp_vecs, np.amin(vs[:4], axis=0) ])
+                cp_vecs = np.vstack([ cp_vecs, np.amin(vs[:8], axis=0) ])
+                cp_vecs = cp_vecs.flatten()
+            else:
+                cp_vecs = np.amin(vs[:1], axis=0)
+
+            max_vals = np.amax(abnormalData_s[:,i,:d_idx+j], axis=1)
+            min_vals = np.amin(abnormalData_s[:,i,:d_idx+j], axis=1)
+            vals = [mx if abs(mx) > abs(mi) else mi for (mx, mi) in zip(max_vals, min_vals) ]
+
+            cp_vecs = cp_vecs.tolist()+ vals
+            if np.isnan(cp_vecs).any() or np.isinf(cp_vecs).any():
+                print "NaN in cp_vecs ", i, d_idx
+                sys.exit()
+
+            x.append( cp_vecs )
+            y.append( abnormalLabel[i] )
+            if abnormalData_img[i] is not None:
+                x_img.append( abnormalData_img[i][d_idx+j-1] )
+            else:
+                x_img.append(None)
+
+    else:
+        if d_idx <= 0: continue
+        if d_idx > len(abnormalData[0][0,i]): continue                    
+
+        vs = None # step x feature
+        for ii in xrange(nDetector):
+            v = temporal_features(abnormalData[ii][:,i], d_idx, max_step, ml_list[ii],
+                                  scale_list[ii])
+            if vs is None: vs = v
+            else: vs = np.hstack([vs, v])
+
+        if delta_flag:
+            #1,2,4
+            ## cp_vecs = np.amin(vs[:1], axis=0)
+            ## cp_vecs = np.vstack([ cp_vecs, np.amin(vs[:2], axis=0) ])
+            ## cp_vecs = np.vstack([ cp_vecs, np.amin(vs[:4], axis=0) ])
+            ## #2,4,8
+            cp_vecs = np.amin(vs[:1], axis=0)
+            cp_vecs = np.vstack([ cp_vecs, np.amin(vs[:4], axis=0) ])
+            cp_vecs = np.vstack([ cp_vecs, np.amin(vs[:8], axis=0) ])
+            cp_vecs = cp_vecs.flatten()
+        else:
+            cp_vecs = np.amin(vs[:1], axis=0)
+
+
+        max_vals = np.amax(abnormalData_s[:,i,:d_idx], axis=1)
+        min_vals = np.amin(abnormalData_s[:,i,:d_idx], axis=1)
+        vals = [mx if abs(mx) > abs(mi) else mi for (mx, mi) in zip(max_vals, min_vals) ]
+
+        cp_vecs = cp_vecs.tolist()+ vals
+        x.append( cp_vecs )
+        y.append( abnormalLabel[i] )
+        if abnormalData_img[i] is not None:
+            x_img.append( abnormalData_img[i][d_idx-1] )
+        else:
+            x_img.append( None )
+
+
+
+    return cp_vecs, label, img
+    
+
 def temporal_features(X, d_idx, max_step, ml, scale):
     ''' Return n_step x n_features'''
 
