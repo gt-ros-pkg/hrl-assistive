@@ -1259,10 +1259,10 @@ if __name__ == '__main__':
         # c8 w/ eedist
         # c8 w/o eedist
 
-        #c8 13  nokindesee
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation5/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## #c8 13  nokindesee
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation5/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
         #c12 13
         ## save_data_path = os.path.expanduser('~')+\
