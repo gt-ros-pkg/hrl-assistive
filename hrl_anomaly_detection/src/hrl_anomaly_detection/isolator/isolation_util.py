@@ -787,7 +787,7 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failureData_static, \
                                                        abnormalTrainData_img,\
                                                        task_name, processed_data_path, param_dict, \
                                                        window=True, window_step=window_steps,\
-                                                       delta_flag=True)
+                                                       delta_flag=False)
                                      
     print "Feature extraction with testing data"
     x_test, y_test, x_test_img = feature_extraction(idx, detection_test_idx_list, \
@@ -795,7 +795,7 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failureData_static, \
                                                     abnormalTestData_s, abnormalTestLabel,\
                                                     abnormalTestData_img,\
                                                     task_name, processed_data_path, param_dict, \
-                                                    delta_flag=True)
+                                                    delta_flag=False)
 
     return idx, [x_train, x_train_img], y_train, [x_test, x_test_img], y_test
 
@@ -872,10 +872,10 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, \
 
                 x.append( cp_vecs )
                 y.append( abnormalLabel[i] )
-                ## if abnormalData_img[i] is not None:
-                ##     x_img.append( abnormalData_img[i][d_idx+j-1] )
-                ## else:
-                ##     x_img.append(None)
+                if abnormalData_img[i] is not None:
+                    x_img.append( abnormalData_img[i][d_idx+j-1] )
+                else:
+                    x_img.append(None)
 
         else:
             if d_idx <= 0: continue
@@ -905,10 +905,10 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, \
             cp_vecs = cp_vecs.tolist()+ vals
             x.append( cp_vecs )
             y.append( abnormalLabel[i] )
-            ## if abnormalData_img[i] is not None:
-            ##     x_img.append( abnormalData_img[i][d_idx-1] )
-            ## else:
-            ##     x_img.append( None )
+            if abnormalData_img[i] is not None:
+                x_img.append( abnormalData_img[i][d_idx-1] )
+            else:
+                x_img.append( None )
 
     return x, y, x_img
 
