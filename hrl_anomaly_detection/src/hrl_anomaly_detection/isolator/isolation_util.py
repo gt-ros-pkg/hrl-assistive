@@ -752,6 +752,9 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failureData_static, \
 
     detection_train_idx_list = np.array(detection_train_idx_list)[len(normalTrainIdx):]
     detection_test_idx_list  = np.array(detection_test_idx_list)[len(normalTestIdx):]
+
+    print np.shape(detection_test_idx_list)
+    print detection_test_idx_list
     
     #-----------------------------------------------------------------------------------------
     # Feature Extraction
@@ -781,13 +784,13 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failureData_static, \
 
     
     print "Feature extraction with training data"
-    x_train, y_train, x_train_img = feature_extraction(idx, detection_train_idx_list, \
-                                                       input_train_list,\
-                                                       abnormalTrainData_s, abnormalTrainLabel,\
-                                                       abnormalTrainData_img,\
-                                                       task_name, processed_data_path, param_dict, \
-                                                       window=True, window_step=window_steps,\
-                                                       delta_flag=True)
+    ## x_train, y_train, x_train_img = feature_extraction(idx, detection_train_idx_list, \
+    ##                                                    input_train_list,\
+    ##                                                    abnormalTrainData_s, abnormalTrainLabel,\
+    ##                                                    abnormalTrainData_img,\
+    ##                                                    task_name, processed_data_path, param_dict, \
+    ##                                                    window=True, window_step=window_steps,\
+    ##                                                    delta_flag=True)
                                      
     print "Feature extraction with testing data"
     x_test, y_test, x_test_img = feature_extraction(idx, detection_test_idx_list, \
@@ -796,6 +799,9 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failureData_static, \
                                                     abnormalTestData_img,\
                                                     task_name, processed_data_path, param_dict, \
                                                     delta_flag=True)
+
+    print np.shape(x_test), np.shape(y_test)
+    sys.exit()
 
     return idx, [x_train, x_train_img], y_train, [x_test, x_test_img], y_test
 
