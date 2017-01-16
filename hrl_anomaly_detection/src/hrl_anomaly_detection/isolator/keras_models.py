@@ -419,21 +419,6 @@ def vgg16_net(input_shape, n_labels, imagenet_weights_path=None, weights_path=No
         return model
 
 
-def load_data(idx, save_data_path, viz=False):
-    ''' Load selected fold's data '''
-
-    assert os.path.isfile(os.path.join(save_data_path,'x_train_img_'+str(idx)+'.npy')) == True, \
-      "No preprocessed data"
-        
-    x_train_sig = np.load(open(os.path.join(save_data_path,'x_train_sig_'+str(idx)+'.npy')))
-    x_train_img = np.load(open(os.path.join(save_data_path,'x_train_img_'+str(idx)+'.npy')))
-    y_train = np.load(open(os.path.join(save_data_path,'y_train_'+str(idx)+'.npy')))
-
-    x_test_sig = np.load(open(os.path.join(save_data_path,'x_test_sig_'+str(idx)+'.npy')))
-    x_test_img = np.load(open(os.path.join(save_data_path,'x_test_img_'+str(idx)+'.npy')))
-    y_test = np.load(open(os.path.join(save_data_path,'y_test_'+str(idx)+'.npy')))
-
-    return (x_train_sig, x_train_img, y_train), (x_test_sig, x_test_img, y_test)
 
 
 

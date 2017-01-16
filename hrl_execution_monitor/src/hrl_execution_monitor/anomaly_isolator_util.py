@@ -89,7 +89,6 @@ def train_isolator_modules(subject_names, task_name, raw_data_path, save_data_pa
     
     #-----------------------------------------------------------------------------------------
     # Dynamic feature selection for detection and isolation
-    print d['param_dict']['feature_names']    
     feature_idx_list = []
     success_data_ad = []
     failure_data_ad = []
@@ -100,8 +99,8 @@ def train_isolator_modules(subject_names, task_name, raw_data_path, save_data_pa
         for feature in param_dict['data_param']['handFeatures'][i]:
             feature_idx_list[i].append(data_dict['isolationFeatures'].index(feature))
 
-        success_data_ad.append( copy.copy(successData[feature_idx_list[i]]) )
-        failure_data_ad.append( copy.copy(failureData[feature_idx_list[i]]) )
+        success_data_ad.append( copy.copy(d['successData'][feature_idx_list[i]]) )
+        failure_data_ad.append( copy.copy(d['failureData'][feature_idx_list[i]]) )
         HMM_dict_local = copy.deepcopy(HMM_dict)
         HMM_dict_local['scale'] = param_dict['HMM']['scale'][i]
         
@@ -117,18 +116,54 @@ def train_isolator_modules(subject_names, task_name, raw_data_path, save_data_pa
     for feature in param_dict['data_param']['staticFeatures']:
         idx = [ i for i, x in enumerate(param_dict['data_param']['isolationFeatures']) if feature == x][0]
         feature_list.append(idx)
-    successData_static = np.array(successData)[feature_list]
-    failureData_static = np.array(failureData)[feature_list]
+    successData_static = np.array(d['successData'])[feature_list]
+    failureData_static = np.array(d['failureData'])[feature_list]
+    del d
 
     # ---------------------------------------------------------------
+    # get data
+    data_dict = {}
+    data_pkl = os.path.join(processed_data_path, 'isol_data.pkl')
+    if os.path.isfile(data_pkl) is False or HMM_dict['renew'] or SVM_dict['renew']:
+
+        l_data = Parallel(n_jobs=1, verbose=10)\
+          (delayed(iutil.get_hmm_isolation_data)(idx, kFold_list[idx], failure_data_ad, \
+                                                 failureData_static, \
+                                                 failure_labels,\
+                                                 failure_image_list,\
+                                                 task_name, processed_data_path, param_dict, weight,\
+                                                 single_detector=single_detector,\
+                                                 n_jobs=-1, window_steps=window_steps, verbose=verbose\
+                                                 ) for idx in xrange(len(kFold_list)) )
+        
+        data_dict = {}
+        for i in xrange(len(l_data)):
+            idx = l_data[i][0]
+            data_dict[idx] = (l_data[i][1],l_data[i][2],l_data[i][3],l_data[i][4] )
+            
+        print "save pkl: ", data_pkl
+        ut.save_pickle(data_dict, data_pkl)            
+    else:
+        data_dict = ut.load_pickle(data_pkl)
+
+    
+
+    # ---------------------------------------------------------------
+    # preprocessing data
 
     # training with signals
+    train_with_signal()
 
     # training_with images
+    train_with_image()
 
     # training_with all
+    train_with_all()
 
     return
+
+
+
 
 
 def get_isolator_modules(save_data_path, task_name, method, param_dict, fold_idx=0, \

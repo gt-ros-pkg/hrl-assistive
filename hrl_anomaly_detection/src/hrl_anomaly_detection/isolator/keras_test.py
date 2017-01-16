@@ -37,9 +37,9 @@ import hrl_lib.util as ut
 from hrl_anomaly_detection import data_manager as dm
 from hrl_anomaly_detection import util as util
 import hrl_anomaly_detection.isolator.isolation_util as iutil
-import hrl_anomaly_detection.isolator.isolation_viz as iviz
 from hrl_execution_monitor.keras import keras_model as km
 from hrl_execution_monitor.keras import keras_util as kutil
+from hrl_execution_monitor import eviz
 from hrl_anomaly_detection.isolator import keras_models as km_old
 from joblib import Parallel, delayed
 
@@ -67,6 +67,23 @@ vgg_model_weights_path = os.path.expanduser('~')+'/git/keras_test/vgg16_weights.
 ## nb_train_samples = 500 #2000
 ## nb_validation_samples = 200 #800
 ## nb_epoch = 200
+
+
+def load_data(idx, save_data_path, viz=False):
+    ''' Load selected fold's data '''
+
+    assert os.path.isfile(os.path.join(save_data_path,'x_train_img_'+str(idx)+'.npy')) == True, \
+      "No preprocessed data"
+        
+    x_train_sig = np.load(open(os.path.join(save_data_path,'x_train_sig_'+str(idx)+'.npy')))
+    x_train_img = np.load(open(os.path.join(save_data_path,'x_train_img_'+str(idx)+'.npy')))
+    y_train = np.load(open(os.path.join(save_data_path,'y_train_'+str(idx)+'.npy')))
+
+    x_test_sig = np.load(open(os.path.join(save_data_path,'x_test_sig_'+str(idx)+'.npy')))
+    x_test_img = np.load(open(os.path.join(save_data_path,'x_test_img_'+str(idx)+'.npy')))
+    y_test = np.load(open(os.path.join(save_data_path,'y_test_'+str(idx)+'.npy')))
+
+    return (x_train_sig, x_train_img, y_train), (x_test_sig, x_test_img, y_test)
 
 
 def preprocess_data(save_data_path, scaler=4, n_labels=12, viz=False, hog_feature=False,
@@ -219,270 +236,6 @@ def hog(img, bin_n=16):
     return hist
 
 
-def bottom_feature_extraction(save_data_path, n_labels, augmentation=False, model_viz=False):
-
-    d = ut.load_pickle(os.path.join(save_data_path, 'isol_data.pkl'))
-    nFold = len(d.keys())
-    del d
-
-    for idx in xrange(nFold):
-        train_data, test_data = km.load_data(idx, save_data_path, viz=False)      
-        x_train_sig = train_data[0]
-        x_train_img = train_data[1]
-        y_train = train_data[2]
-        x_test_sig  = test_data[0]
-        x_test_img  = test_data[1]
-        y_test  = test_data[2]        
-        print "Data: ", np.shape(x_train_img), np.shape(y_train), np.shape(x_test_img), np.shape(y_test)
-        
-        img_width, img_height =  np.shape(x_train_img)[2:]
-        print "width, height: ", img_width, img_height
-
-        # Load pre-trained vgg16 model
-        model = km.get_vgg16_model(img_width, img_height, vgg_model_weights_path)
-        if model_viz:
-            plot(model, to_file='model.png')
-            sys.exit()
-
-        if augmentation:
-            x_trains_sig = None
-            x_trains_img = None
-            y_trains = None
-            
-            print "Extracting training features"
-            for i in xrange(len(y_train)):
-                datagen = ImageDataGenerator(
-                    rotation_range=20,
-                    rescale=1./255,
-                    width_shift_range=0.4,
-                    height_shift_range=0.2,
-                    zoom_range=0.1,
-                    horizontal_flip=False,
-                    fill_mode='nearest',
-                    dim_ordering="th")
-
-                count = 0
-                for x_batch, y_batch in datagen.flow(x_train_img[i:i+1], y_train[i:i+1], batch_size=32,\
-                      save_to_dir='preview', save_prefix='cat', save_format='jpeg'):
-
-                    # TODO: add noise to signal                    
-                    x_feature = model.predict(x_batch)
-                    if x_trains_img is None:
-                        x_trains_img = x_feature
-                        x_trains_sig = x_train_sig[i:i+1] + np.random.normal(0.0, 0.001, \
-                                                                             np.shape(x_train_sig[i:i+1]))
-                        y_trains = y_batch
-                    else:
-                        x_trains_img = np.vstack([x_trains_img, x_feature])
-                        x_trains_sig = np.vstack([x_trains_sig, x_train_sig[i:i+1] + \
-                                                  np.random.normal(0.0, 0.001, \
-                                                                   np.shape(x_train_sig[i:i+1])) ])
-                        y_trains = np.vstack([y_trains, y_batch])
-
-                    ## ## temp = x_train_img[0]
-                    ## temp = x_batch[0] #* 255
-                    ## temp = temp.astype(np.uint8)                    
-                    ## temp = np.swapaxes(temp,0,1)
-                    ## temp = np.swapaxes(temp,1,2)
-                    ## print np.amin(temp), np.amax(temp)
-                    ## cv2.imshow('image',temp)
-                    ## cv2.waitKey(0)
-                    ## cv2.destroyAllWindows()        
-                    ## sys.exit()
-                    
-                    count += 1
-                    if count==3: break
-
-            np.save(open(os.path.join(save_data_path,'x_train_img_bottom_'+str(idx)+'.npy'), 'w'),\
-                    x_trains_img)
-            np.save(open(os.path.join(save_data_path,'x_train_sig_bottom_'+str(idx)+'.npy'), 'w'),\
-                    x_trains_sig)            
-            np.save(open(os.path.join(save_data_path,'y_train_bottom_'+str(idx)+'.npy'), 'w'), y_trains)
-        else:
-            print "Extracting training features"
-            x_train_feature = model.predict(x_train_img/255)
-            np.save(open(os.path.join(save_data_path,'x_train_img_bottom_'+str(idx)+'.npy'), 'w'),\
-                    x_train_feature)
-            np.save(open(os.path.join(save_data_path,'x_train_sig_bottom_'+str(idx)+'.npy'), 'w'),\
-                    x_train_sig)
-            np.save(open(os.path.join(save_data_path,'y_train_bottom_'+str(idx)+'.npy'), 'w'), y_train)
-            
-        print "Extracting testing features"
-        x_test_feature = model.predict(x_test_img/255)
-        np.save(open(os.path.join(save_data_path,'x_test_img_bottom_'+str(idx)+'.npy'), 'w'), x_test_feature)
-        np.save(open(os.path.join(save_data_path,'x_test_sig_bottom_'+str(idx)+'.npy'), 'w'), x_test_sig)
-        np.save(open(os.path.join(save_data_path,'y_test_bottom_'+str(idx)+'.npy'), 'w'), y_test)
-
-        #temp
-        ## break
-        
-
-
-def top_model_train(n_labels, nb_epoch=200):
-
-    d = ut.load_pickle(os.path.join(save_data_path, 'isol_data.pkl'))
-    nFold = len(d.keys())
-    del d
-
-    scores = []
-    for idx in xrange(nFold):
-        ## if idx < nFold-1: continue
-        ## if idx > 0: continue
-
-        # Loading data
-        x_train_sig = np.load(open(os.path.join(save_data_path,'x_train_sig_bottom_'+str(idx)+'.npy')))
-        x_train_img = np.load(open(os.path.join(save_data_path,'x_train_img_bottom_'+str(idx)+'.npy')))
-        y_train     = np.load(open(os.path.join(save_data_path,'y_train_bottom_'+str(idx)+'.npy')))
-        x_test_sig  = np.load(open(os.path.join(save_data_path,'x_test_sig_bottom_'+str(idx)+'.npy')))
-        x_test_img  = np.load(open(os.path.join(save_data_path,'x_test_img_bottom_'+str(idx)+'.npy')))
-        y_test      = np.load(open(os.path.join(save_data_path,'y_test_bottom_'+str(idx)+'.npy')))
-
-        # Preprocessing
-        ## scaler = preprocessing.MinMaxScaler()
-        scaler = preprocessing.StandardScaler()
-        x_train_sig = scaler.fit_transform(x_train_sig)
-        x_test_sig  = scaler.transform(x_test_sig)
-
-        model = km.get_top_model(x_train_img.shape[1:], x_train_sig.shape[1:], n_labels=n_labels)
-        ## plot(model, to_file='model.png')
-        ## sys.exit()
-
-        ## sgd = SGD(lr=0.0001, decay=5e-7, momentum=0.9, nesterov=True)
-        ## optimizer = SGD(lr=0.001, decay=5e-7, momentum=0.9, nesterov=True)
-        ## sgd = Adagrad(lr=0.001, epsilon=1e-08, decay=0.0)
-        ## sgd = Adadelta(lr=1.0, rho=0.95, epsilon=1e-08, decay=0.0)
-        ## optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.001)
-        ## model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
-        model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
-
-        hist = model.fit([x_train_img, x_train_sig], y_train,
-                         nb_epoch=nb_epoch, batch_size=32, shuffle=True,
-                         validation_data=([x_test_img, x_test_sig], y_test))
-
-        top_model_weights_path = os.path.join(save_data_path,'fc_weights_'+str(idx)+'.h5')
-        model.save_weights(top_model_weights_path)
-
-        scores.append( hist.history['val_acc'][-1] )
-        break
-
-    print 
-    print np.mean(scores), np.std(scores)
-    return
-
-
-def top_model_train2(save_data_path, n_labels, augmentation=False, nb_epoch=200):
-
-    d = ut.load_pickle(os.path.join(save_data_path, 'isol_data.pkl'))
-    nFold = len(d.keys())
-    del d
-
-    scores = []
-    for idx in xrange(nFold):
-        train_data, test_data = km.load_data(idx, save_data_path, viz=False)      
-        x_train_sig = train_data[0]
-        x_train_img = train_data[1]
-        y_train     = train_data[2]
-        x_test_sig  = test_data[0]
-        x_test_img  = test_data[1]
-        y_test      = test_data[2]        
-        print "Train Data: ", np.shape(x_train_sig), np.shape(y_train)
-        print "Test data: ", np.shape(x_test_sig), np.shape(y_test)
-        
-        img_width, img_height =  np.shape(x_train_img)[2:]
-        print "width, height: ", img_width, img_height
-
-        scaler = preprocessing.StandardScaler()
-        x_train_sig = scaler.fit_transform(x_train_sig)
-        x_test_sig  = scaler.transform(x_test_sig)
-        
-        # ---------------------------------------------------------------
-        ## top_model_weights_path = os.path.join(save_data_path,'fc_weights_'+str(idx)+'.h5')
-        model = km.get_vgg16_model(img_width, img_height, vgg_model_weights_path, \
-                                x_train_sig.shape[1:],\
-                                with_top=True, vgg_hold=True)
-            
-        ## sgd = SGD(lr=0.0001, decay=5e-7, momentum=0.9, nesterov=True)
-        ## model.compile(optimizer=sgd, loss='categorical_crossentropy', metrics=['accuracy'])
-        optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.0)
-        model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
-
-        hist = model.fit([x_train_img, x_train_sig], y_train,
-                         nb_epoch=nb_epoch, batch_size=32, shuffle=True,
-                         validation_data=([x_test_img, x_test_sig], y_test))
-        
-        full_model_weights_path = os.path.join(save_data_path,'full_weights_'+str(idx)+'.h5')
-        model.save_weights(full_model_weights_path)
-
-        scores.append( hist.history['val_acc'][-1] )
-
-    print np.mean(scores), np.std(scores)
-    return
-
-
-
-
-def fine_tune(save_data_path, n_labels, augmentation=False, nb_epoch=10):
-
-    d = ut.load_pickle(os.path.join(save_data_path, 'isol_data.pkl'))
-    nFold = len(d.keys())
-    del d
-
-    scores = []
-    for idx in xrange(nFold):
-        train_data, test_data = km.load_data(idx, save_data_path, viz=False)      
-        x_train_sig = train_data[0]
-        x_train_img = train_data[1]
-        y_train     = train_data[2]
-        x_test_sig  = test_data[0]
-        x_test_img  = test_data[1]
-        y_test      = test_data[2]        
-        print "Train Data: ", np.shape(x_train_sig), np.shape(y_train),
-        print "Test data: ", np.shape(x_test_sig), np.shape(y_test)
-        
-        img_width, img_height =  np.shape(x_train_img)[2:]
-        print "width, height: ", img_width, img_height
-
-        scaler = preprocessing.StandardScaler()
-        x_train_sig = scaler.fit_transform(x_train_sig)
-        x_test_sig  = scaler.transform(x_test_sig)
-        
-        # ---------------------------------------------------------------
-        top_model_weights_path = os.path.join(save_data_path,'full_weights_'+str(idx)+'.h5')
-        model = km.get_vgg16_model(img_width, img_height, vgg_model_weights_path, \
-                                x_train_sig.shape[1:],\
-                                top_model_weights_path, with_top=True)
-        ## plot(model, to_file='model.png')
-        ## sys.exit()
-        ## for layer in model.layers[:25]:
-        ##     layer.trainable = False
-            
-        ## sgd = SGD(lr=0.0001, decay=5e-7, momentum=0.9, nesterov=True)
-        ## model.compile(optimizer=sgd, loss='categorical_crossentropy', metrics=['accuracy'])
-        ## optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.0)
-        optimizer = RMSprop(lr=0.00001, rho=0.9, epsilon=1e-08, decay=0.0)
-        model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
-
-        hist = model.fit([x_train_img, x_train_sig], y_train,
-                         nb_epoch=nb_epoch, batch_size=32, shuffle=True,
-                         validation_data=([x_test_img, x_test_sig], y_test))
-        scores.append( hist.history['val_acc'][-1] )
-        
-        ## from sklearn.metrics import accuracy_score
-        ## y_pred = model.predict([x_train_img, x_train_sig])
-        ## train_score = accuracy_score(np.argmax(y_train, axis=1), np.argmax(y_pred, axis=1))
-        ## y_pred = model.predict([x_test_img, x_test_sig])
-        ## test_score = accuracy_score(np.argmax(y_test, axis=1), np.argmax(y_pred, axis=1))
-        
-        ## print "score: ", train_score, test_score
-        ## scores.append(test_score)
-
-        ## full_model_weights_path = os.path.join(save_data_path,'full_weights_'+str(idx)+'.h5')
-        ## model.save_weights(full_model_weights_path)
-
-        ## break
-
-    print np.mean(scores), np.std(scores)
-    return
 
 def evaluate_svm(save_data_path, viz=False):
 
@@ -494,7 +247,7 @@ def evaluate_svm(save_data_path, viz=False):
     y_test_list = []
     y_pred_list = []
     for idx in xrange(nFold):
-        train_data, test_data = km.load_data(idx, save_data_path, viz=False)      
+        train_data, test_data = load_data(idx, save_data_path, viz=False)      
         x_train_sig = train_data[0]
         x_train_img = train_data[1].astype(np.float32)
         y_train = train_data[2]
@@ -557,40 +310,7 @@ def evaluate_svm(save_data_path, viz=False):
     print scores
     print np.mean(scores), np.std(scores)
     if viz: plot_confusion_matrix(y_test_list, y_pred_list)
-    
 
-
-def evaluate(save_data_path):
-
-    d = ut.load_pickle(os.path.join(save_data_path, 'isol_data.pkl'))
-    nFold = len(d.keys())
-    del d
-
-    for idx in xrange(nFold):
-
-        # Loading data
-        train_data, test_data = km.load_data(idx, save_data_path, viz=False)      
-        x_test_sig = test_data[0]
-        x_test_img = test_data[1]
-        y_test    = test_data[2]
-
-        img_width, img_height =  np.shape(x_train)[2:]
-        print "width, height: ", img_width, img_height
-
-        top_model_weights_path = os.path.join(save_data_path,'fc_weights_'+str(idx)+'.h5')
-
-        # Load pre-trained vgg16 model
-        model = km.get_all_model(img_width, img_height, vgg_weights_path, fc_weights_path)
-        
-        y_pred = model.predict([x_test_img, x_test_sig])
-
-        from sklearn.metrics import accuracy_score
-        score = accuracy_score(y_test, y_pred)
-
-        sys.exit()
-    
-    return
-    
 
 def unimodal_fc(save_data_path, n_labels, nb_epoch=400, fine_tune=False, activ_type='relu',
                 test_only=False, save_pdf=False):
@@ -610,7 +330,7 @@ def unimodal_fc(save_data_path, n_labels, nb_epoch=400, fine_tune=False, activ_t
     for idx in xrange(nFold):
 
         # Loading data
-        train_data, test_data = km.load_data(idx, save_data_path, viz=False)      
+        train_data, test_data = load_data(idx, save_data_path, viz=False)      
         x_train_sig = train_data[0]
         y_train     = train_data[2]
         x_test_sig = test_data[0]
@@ -707,7 +427,7 @@ def unimodal_cnn(save_data_path, n_labels, nb_epoch=100, fine_tune=False, vgg=Fa
     for idx in xrange(nFold):
 
         # Loading data
-        train_data, test_data = km.load_data(idx, save_data_path, viz=False)      
+        train_data, test_data = load_data(idx, save_data_path, viz=False)      
         x_train_sig = train_data[0]
         x_train_img = train_data[1]
         y_train     = train_data[2]
@@ -781,7 +501,7 @@ def multimodal_cnn_fc(save_data_path, n_labels, nb_epoch=100, fine_tune=False,
     for idx in xrange(nFold):
 
         # Loading data
-        train_data, test_data = km.load_data(idx, save_data_path, viz=False)      
+        train_data, test_data = load_data(idx, save_data_path, viz=False)      
         x_train_sig = train_data[0]
         x_train_img = train_data[1]
         y_train     = train_data[2]
@@ -880,7 +600,7 @@ def plot_confusion_matrix(y_test_list, y_pred_list, save_pdf=False):
     from sklearn.metrics import confusion_matrix
     cm = confusion_matrix(y_test_list, y_pred_list)
 
-    iviz.plot_confusion_matrix(cm, classes=classes, normalize=True,
+    eviz.plot_confusion_matrix(cm, classes=classes, normalize=True,
                                title='Anomaly Isolation', save_pdf=save_pdf)
     
 
@@ -957,7 +677,7 @@ if __name__ == '__main__':
 
         
     elif opt.viz:
-        x_train, y_train, x_test, y_test = km.load_data(save_data_path, True)
+        x_train, y_train, x_test, y_test = load_data(save_data_path, True)
     elif opt.viz_model:
         model = km.vgg16_net((3,120,160), 12, with_top=True, input_shape2=(14,), viz=True)
         plot(model, to_file='model.png')
@@ -984,13 +704,13 @@ if __name__ == '__main__':
         ## unimodal_cnn(save_data_path, n_labels)        
         ## unimodal_cnn(save_data_path, n_labels, fine_tune=True)        
         ## multimodal_cnn_fc(save_data_path, n_labels)
-        ## multimodal_cnn_fc(save_data_path, n_labels, fine_tune=True)
+        multimodal_cnn_fc(save_data_path, n_labels, fine_tune=True)
 
         
         ## unimodal_fc(save_data_path, n_labels, nb_epoch=200, test_only=True)        
         ## multimodal_cnn_fc(save_data_path, n_labels, fine_tune=True, test_only=True,
         ##                   save_pdf=opt.bSavePdf)
-        evaluate_svm(save_data_path, viz=True)
+        ## evaluate_svm(save_data_path, viz=True)
 
         ## unimodal_cnn(save_data_path, n_labels, vgg=True)        
         ## unimodal_cnn(save_data_path, n_labels, fine_tune=True, vgg=True)        
