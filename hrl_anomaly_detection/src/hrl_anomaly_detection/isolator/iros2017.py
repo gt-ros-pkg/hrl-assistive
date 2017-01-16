@@ -1323,17 +1323,17 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation10/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        weight = [-23.0, -50.0]
+        weight = [-20.0, -50.0]
         param_dict['HMM']['scale'] = [7.0, 13.0]
         single_detector = False 
 
-        # c11, 148 min 
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation11/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        weight = [-23.0, -23.0]
-        param_dict['HMM']['scale'] = [7.0, 13.0]
-        single_detector = False #True
+        ## # c11, 148 min 
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation11/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## weight = [-23.0, -23.0]
+        ## param_dict['HMM']['scale'] = [7.0, 13.0]
+        ## single_detector = False #True
 
 
         
@@ -1347,6 +1347,7 @@ if __name__ == '__main__':
                                                     'unimodal_kinJntEff_1',\
                                                     'unimodal_ftForce_integ',\
                                                     'unimodal_kinEEChange',\
+                                                    'crossmodal_landmarkEEDist'
                                                     ],\
                                                     ['unimodal_kinVel',\
                                                      'unimodal_ftForce_zero',\
