@@ -537,10 +537,19 @@ def anomaly_detection(nDetector, task_name, processed_data_path, scales, logp_vi
         # 1) Convert training data
         if method == 'hmmgp':
 
+            # take only normal data
+            idx_list = []
+            for i in xrange(len(ll_classifier_train_Y)):
+                if ll_classifier_train_Y[i][0]>0: continue
+                idx_list.append(i)
+            ll_classifier_train_X   = np.array(ll_classifier_train_X)[idx_list].tolist()
+            ll_classifier_train_Y   = np.array(ll_classifier_train_Y)[idx_list].tolist()
+            ll_classifier_train_idx = np.array(ll_classifier_train_idx)[idx_list].tolist()
+
             idx_list = range(len(ll_classifier_train_X))
             random.shuffle(idx_list)
-            ll_classifier_train_X = np.array(ll_classifier_train_X)[idx_list[:nMaxData]].tolist()
-            ll_classifier_train_Y = np.array(ll_classifier_train_Y)[idx_list[:nMaxData]].tolist()
+            ll_classifier_train_X   = np.array(ll_classifier_train_X)[idx_list[:nMaxData]].tolist()
+            ll_classifier_train_Y   = np.array(ll_classifier_train_Y)[idx_list[:nMaxData]].tolist()
             ll_classifier_train_idx = np.array(ll_classifier_train_idx)[idx_list[:nMaxData]].tolist()
 
             new_X = []
@@ -596,6 +605,7 @@ def anomaly_detection(nDetector, task_name, processed_data_path, scales, logp_vi
     detection_train_idx = [None for i in xrange(len(l_train_X[0]))]
     for i in xrange(len(l_train_X[0])):
         if len(l_train_Y[0][i])<1: continue
+        if l_train_Y[0][i][0] <1: continue
 
         y_pred1 = dtc_list[0].predict(l_train_X[0][i], y=l_train_Y[0][i])
         if nDetector > 1 and single_detector is False:
@@ -617,6 +627,7 @@ def anomaly_detection(nDetector, task_name, processed_data_path, scales, logp_vi
     detection_test_idx = [None for i in xrange(len(l_test_X[0]))]
     for i in xrange(len(l_test_X[0])):
         if len(l_test_Y[0][i])<1: continue
+        if l_train_Y[0][i][0] <1: continue
 
         y_pred1 = dtc_list[0].predict(l_test_X[0][i], y=l_test_Y[0][i])
         if nDetector > 1 and single_detector is False:
@@ -726,6 +737,32 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failureData_static, \
     normalTestIdx    = kFold_list[2]
     abnormalTestIdx  = kFold_list[3]
 
+    nDetector = len(failureData)
+
+    #-----------------------------------------------------------------------------------------
+    # Anomaly Detection
+    #-----------------------------------------------------------------------------------------        
+    detection_train_idx_list, detection_test_idx_list = anomaly_detection(nDetector, \
+                                                                          task_name, processed_data_path, \
+                                                                          param_dict['HMM']['scale'],\
+                                                                          logp_viz=False, verbose=False, \
+                                                                          weight=weight, \
+                                                                          single_detector=single_detector,\
+                                                                          idx=idx, n_jobs=n_jobs)
+
+    print np.shape(detection_train_idx_list), np.shape(detection_test_idx_list)
+                                                                          
+    detection_train_idx_list = np.array(detection_train_idx_list)[len(normalTrainIdx):]
+    detection_test_idx_list  = np.array(detection_test_idx_list)[len(normalTestIdx):]
+
+    print np.shape(detection_train_idx_list), np.shape(detection_test_idx_list)
+    sys.exit()
+
+    
+    #-----------------------------------------------------------------------------------------
+    # Feature Extraction
+    #-----------------------------------------------------------------------------------------
+
     abnormalTrainData_s  = copy.copy(failureData_static[:, abnormalTrainIdx, :])
     abnormalTestData_s   = copy.copy(failureData_static[:, abnormalTestIdx, :])
     abnormalTrainLabel = copy.copy(failure_labels[abnormalTrainIdx])
@@ -748,30 +785,7 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failureData_static, \
         input_train_list = [abnormalTrainData_1]
         input_test_list  = [abnormalTestData_1]
 
-    nDetector = len(failureData)
-
-    #-----------------------------------------------------------------------------------------
-    # Anomaly Detection
-    #-----------------------------------------------------------------------------------------        
-    detection_train_idx_list, detection_test_idx_list = anomaly_detection(nDetector, \
-                                                                          task_name, processed_data_path, \
-                                                                          param_dict['HMM']['scale'],\
-                                                                          logp_viz=False, verbose=False, \
-                                                                          weight=weight, \
-                                                                          single_detector=single_detector,\
-                                                                          idx=idx, n_jobs=n_jobs)
-
-    print np.shape(detection_train_idx_list), np.shape(detection_test_idx_list)
-                                                                          
-    detection_train_idx_list = np.array(detection_train_idx_list)[len(normalTrainIdx):]
-    detection_test_idx_list  = np.array(detection_test_idx_list)[len(normalTestIdx):]
-
-    print np.shape(detection_train_idx_list), np.shape(detection_test_idx_list)
-    sys.exit()
     
-    #-----------------------------------------------------------------------------------------
-    # Feature Extraction
-    #-----------------------------------------------------------------------------------------
     print "Feature extraction with training data"
     x_train, y_train, x_train_img = feature_extraction(idx, detection_train_idx_list, \
                                                        input_train_list,\
