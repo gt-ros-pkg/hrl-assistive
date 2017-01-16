@@ -1314,7 +1314,7 @@ if __name__ == '__main__':
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation10/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         weight = [-23.0, -20.0]
-        param_dict['HMM']['scale'] = [7.0, 13.0]
+        param_dict['HMM']['scale'] = [7.0, 11.0]
         single_detector = False 
 
         ## # c11, 148 min 
@@ -1337,18 +1337,18 @@ if __name__ == '__main__':
                                                     'unimodal_kinJntEff_1',\
                                                     'unimodal_ftForce_integ',\
                                                     'unimodal_kinEEChange',\
-                                                    'crossmodal_landmarkEEDist'
+                                                    ## 'crossmodal_landmarkEEDist'
                                                     ],\
                                                     ['unimodal_kinVel',\
                                                      'unimodal_ftForce_zero',\
-                                                     ## 'unimodal_kinDesEEChange',\
+                                                     'unimodal_kinDesEEChange',\
                                                      'crossmodal_landmarkEEDist'
                                                     ]]
 
 
         param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0., 2.3, nPoints)*-1.0+1.0
         param_dict['ROC']['hmmgp1_param_range'] = np.logspace(-0., 2.3, nPoints)*-1.0+1.0
-        param_dict['ROC']['hmmgp2_param_range'] = np.logspace(-0.8, 2.7, nPoints)*-1.0+0.5
+        param_dict['ROC']['hmmgp2_param_range'] = np.logspace(-0., 2.5, nPoints)*-1.0+0.5
         
         param_dict['data_param']['staticFeatures'] = ['unimodal_audioWristFrontRMS',\
                                                       'unimodal_audioWristAzimuth',\
