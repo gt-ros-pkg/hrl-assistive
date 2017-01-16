@@ -1269,10 +1269,10 @@ if __name__ == '__main__':
         ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
         ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
           
-        ## #c11 11
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation7/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        #c11 11
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation7/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         param_dict['data_param']['handFeatures'] = [['unimodal_audioWristRMS',  \
                                                     'unimodal_kinJntEff_1',\
                                                     'unimodal_ftForce_integ',\
@@ -1283,10 +1283,10 @@ if __name__ == '__main__':
                                                      ## 'unimodal_kinDesEEChange', \
                                                      'crossmodal_landmarkEEDist', \
                                                     ]]
-        param_dict['HMM']['scale']   = [7.0, 13.0] #9 nest
+        param_dict['HMM']['scale']   = [7.0, 11.0] #9 nest
         param_dict['SVM']['hmmgp_logp_offset'] = 0 #30.0 #50.0
-        param_dict['ROC']['hmmgp1_param_range'] = np.logspace(0.7, 1.5, nPoints)*-1.0+1.0
-        param_dict['ROC']['hmmgp2_param_range'] = np.logspace(0.7, 1.5, nPoints)*-1.0+0.5 #2.
+        param_dict['ROC']['hmmgp1_param_range'] = np.logspace(0.7, 2.0, nPoints)*-1.0+1.0
+        param_dict['ROC']['hmmgp2_param_range'] = np.logspace(0.7, 2.0, nPoints)*-1.0+0.5 #2.
         ## param_dict['ROC']['hmmgp1_param_range'] = np.logspace(0.2, 2.5, nPoints)*-1.0+1.0
         ## param_dict['ROC']['hmmgp2_param_range'] = np.logspace(0.2, 2.5, nPoints)*-1.0+0.5 #2.
         # -------------------------------------------------------------------------------------
