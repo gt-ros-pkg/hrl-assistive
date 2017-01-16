@@ -1314,8 +1314,7 @@ def run_classifiers_boost(idx, processed_data_path, task_name, method_list,\
         for j in xrange(len(ll_classifier_test_X)):
             if len(ll_classifier_test_X[j])==0: continue
 
-            X = ll_classifier_test_X[j]
-            X_test_flat.append(X)
+            X_test_flat.append(ll_classifier_test_X[j])
             Y_test_flat.append(ll_classifier_test_Y[j])
 
         X_test.append(X_test_flat)

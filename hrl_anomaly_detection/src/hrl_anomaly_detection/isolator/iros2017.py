@@ -438,10 +438,8 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
         HMM_dict_local = copy.deepcopy(HMM_dict)
         HMM_dict_local['scale'] = param_dict['HMM']['scale'][i]
 
-        #
         ## #temp
         ## if i==0: continue
-        
 
         # Training HMM, and getting classifier training and testing data
         dm.saveHMMinducedFeatures(kFold_list, success_data_ad, failure_data_ad,\
@@ -459,7 +457,6 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
     if os.path.isfile(roc_pkl) is False or HMM_dict['renew'] or SVM_dict['renew']: ROC_data = {}
     else: ROC_data = ut.load_pickle(roc_pkl)
     ROC_data = util.reset_roc_data(ROC_data, [method_list[0]], ROC_dict['update_list'], nPoints)
-
 
     # temp
     kFold_list = kFold_list[:8]
@@ -828,7 +825,7 @@ def evaluation_omp_isolation(subject_names, task_name, raw_data_path, processed_
 
 def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
                           data_renew=False, svd_renew=False, save_pdf=False, verbose=False, debug=False,\
-                          no_plot=False, delay_plot=True, find_param=False, data_gen=False, \
+                          no_plot=False, delay_plot=True, find_param=False, \
                           save_viz_data=False, weight=-5.0, window_steps=10, single_detector=False):
     ## Parameters
     # data
@@ -854,7 +851,7 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
 
     crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
 
-    if os.path.isfile(crossVal_pkl) and data_renew is False and data_gen is False:
+    if os.path.isfile(crossVal_pkl) and data_renew is False :
         print "CV data exists and no renew"
         d = ut.load_pickle(crossVal_pkl)
         kFold_list = d['kFoldList'] 
@@ -884,7 +881,6 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
         d['failure_files']   = failure_files
         d['kFoldList']       = kFold_list
         ut.save_pickle(d, crossVal_pkl)
-        if data_gen: sys.exit()
 
     # flattening image list
     success_image_list = iutil.image_list_flatten( d.get('success_image_list',[]) )
@@ -948,7 +944,7 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
     data_pkl = os.path.join(processed_data_path, 'isol_data.pkl')
     if os.path.isfile(data_pkl) is False or HMM_dict['renew'] or SVM_dict['renew']:
 
-        l_data = Parallel(n_jobs=-1, verbose=10)\
+        l_data = Parallel(n_jobs=1, verbose=10)\
           (delayed(iutil.get_hmm_isolation_data)(idx, kFold_list[idx], failure_data_ad, \
                                                  failureData_static, \
                                                  failure_labels,\
@@ -1301,7 +1297,6 @@ if __name__ == '__main__':
 
 
     elif opt.evaluation_isolation2:
-        single_detector = False
 
         ## ## c8 148 min 70 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! in keras_test
         ## save_data_path = os.path.expanduser('~')+\
@@ -1327,15 +1322,15 @@ if __name__ == '__main__':
         param_dict['HMM']['scale'] = [7.0, 13.0]
         single_detector = False
 
-        ## # c12, 60 148 min  
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation10/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## weight = [-20.0, -50.0]
-        ## param_dict['HMM']['scale'] = [7.0, 13.0]
-        ## single_detector = False 
+        ## # c12, 60 148 min  66
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation10/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        weight = [-20.0, -50.0]
+        param_dict['HMM']['scale'] = [7.0, 13.0]
+        single_detector = False 
 
-        ## # c11, 148 min #nodes
+        ## # c11, 148 min #nodes 65
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation11/'+\
         ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
@@ -1343,6 +1338,13 @@ if __name__ == '__main__':
         ## param_dict['HMM']['scale'] = [7.0, 13.0]
         ## single_detector = False #True
 
+        # br, 148 min #nodes
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation12/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])
+        ## weight = [-20.0, -23.0]
+        ## param_dict['HMM']['scale'] = [7.0, 13.0]
+        ## single_detector = False 
 
         
         window_steps= 5
@@ -1357,7 +1359,7 @@ if __name__ == '__main__':
                                                     'unimodal_kinEEChange',\
                                                     'crossmodal_landmarkEEDist'
                                                     ],\
-                                                    [#'unimodal_kinVel',\
+                                                    ['unimodal_kinVel',\
                                                      'unimodal_ftForce_zero',\
                                                      'unimodal_kinDesEEChange',\
                                                      'crossmodal_landmarkEEDist'
@@ -1383,14 +1385,6 @@ if __name__ == '__main__':
                               data_renew=opt.bDataRenew, svd_renew=opt.svd_renew,\
                               save_pdf=opt.bSavePdf, \
                               verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
-                              find_param=False, data_gen=opt.bDataGen, weight=weight, \
+                              find_param=False, weight=weight, \
                               window_steps=window_steps, single_detector=single_detector)
-
-        # options
-        # 1. window diff
-        # 2. noise
-        # 3. add feature (in classifier layer)
-        # ------------
-        # 4. change
-
 
