@@ -935,6 +935,7 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
     # ---------------------------------------------------------------
     #temp
     ## kFold_list = kFold_list[:1]
+    kFold_list = kFold_list[:8]
 
     # set parameters
     method     = 'hmmgp'
@@ -1258,7 +1259,7 @@ if __name__ == '__main__':
         # c8 w/ eedist
         # c8 w/o eedist
 
-        #c8
+        #c8 13  nokindesee
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation5/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
