@@ -1359,9 +1359,9 @@ if __name__ == '__main__':
                                                     'unimodal_kinEEChange',\
                                                     'crossmodal_landmarkEEDist'
                                                     ],\
-                                                    [#'unimodal_kinVel',\
+                                                    ['unimodal_kinVel',\
                                                      'unimodal_ftForce_zero',\
-                                                     'unimodal_kinDesEEChange',\
+                                                     ## 'unimodal_kinDesEEChange',\
                                                      'crossmodal_landmarkEEDist'
                                                     ]]
 
