@@ -52,13 +52,13 @@ from joblib import Parallel, delayed
 def train_isolator_modules(task_name, save_data_path, method, param_dict, verbose=False):
 
     # training with signals
-    train_with_signal()
+    train_with_signal(save_data_path, n_labels, nb_epoch=200, patience=10)
 
     # training_with images
-    train_with_image()
+    train_with_image(save_data_path, n_labels, fine_tune=True, patience=10)
 
     # training_with all
-    train_with_all()
+    train_with_all(save_data_path, n_labels, fine_tune=True, patience=10)
 
     return
 
