@@ -37,7 +37,6 @@ np.random.seed(3334)
 
 # Private utils
 from hrl_anomaly_detection import util as util
-## from hrl_anomaly_detection.util_viz import *
 from hrl_anomaly_detection import data_manager as dm
 from hrl_execution_monitor import util as autil
 
@@ -49,15 +48,12 @@ from joblib import Parallel, delayed
 
 
 
-def train_detector_modules(subject_names, task_name, raw_data_path, save_data_path, method,
+def train_detector_modules(subject_names, task_name, raw_data_path, save_data_path,
                             param_dict, verbose=False):
 
     # load params (param_dict)
     data_dict  = param_dict['data_param']
     data_renew = data_dict['renew']
-    ## nNormalFold   = data_dict['nNormalFold']
-    ## nAbnormalFold = data_dict['nAbnormalFold']
-    
     # HMM
     HMM_dict   = param_dict['HMM']
     nState     = HMM_dict['nState']
@@ -66,11 +62,11 @@ def train_detector_modules(subject_names, task_name, raw_data_path, save_data_pa
     SVM_dict   = param_dict['SVM']
     # ROC
     ROC_dict = param_dict['ROC']
+    method_list = ROC_dict['methods']
 
     # parameters
     startIdx    = 4
     nPoints     = ROC_dict['nPoints']
-    
 
     # load data (mix) -------------------------------------------------
     d = dm.getDataSet(subject_names, task_name, raw_data_path, \
@@ -83,46 +79,54 @@ def train_detector_modules(subject_names, task_name, raw_data_path, save_data_pa
     # split data with 80:20 ratio, 3set
     kFold_list = d['kFold_list']
     
-    # select feature for detection
-    feature_list = []
-    for feature in data_dict['handFeatures']:
-        idx = [ i for i, x in enumerate(data_dict['isolationFeatures']) if feature == x][0]
-        feature_list.append(idx)
-    
-    successData = d['successData'][feature_list]
-    failureData = d['failureData'][feature_list]
-
-
     # Train a generative model ----------------------------------------
     # Training HMM, and getting classifier training and testing data
-    dm.saveHMMinducedFeatures(kFold_list, successData, failureData,\
-                              task_name, save_data_path,\
-                              HMM_dict, data_renew, startIdx, nState, cov, \
-                              success_files=d['successFiles'], failure_files=d['failureFiles'],\
-                              noise_mag=0.03, cov_type='full', verbose=verbose)
+    feature_idx_list = []
+    success_data_ad = []
+    failure_data_ad = []
+    nDetector = len(param_dict['data_param']['handFeatures'])
+    for i in xrange(nDetector):
+        
+        feature_idx_list.append([])
+        for feature in param_dict['data_param']['handFeatures'][i]:
+            feature_idx_list[i].append(data_dict['isolationFeatures'].index(feature))
+
+        success_data_ad.append( copy.copy(d['successData'][feature_idx_list[i]]) )
+        failure_data_ad.append( copy.copy(d['failureData'][feature_idx_list[i]]) )
+        HMM_dict_local = copy.deepcopy(HMM_dict)
+        HMM_dict_local['scale'] = param_dict['HMM']['scale'][i]
+    
+        # Training HMM, and getting classifier training and testing data
+        dm.saveHMMinducedFeatures(kFold_list, success_data_ad[i], failure_data_ad[i],\
+                                  task_name, save_data_path,\
+                                  HMM_dict_local, data_renew, startIdx, nState, cov, \
+                                  success_files=d['successFiles'], failure_files=d['failureFiles'],\
+                                  noise_mag=0.03, diag=False, suffix=str(i),\
+                                  verbose=verbose, one_class=True)
 
     # Train a classifier ----------------------------------------------
     roc_pkl = os.path.join(save_data_path, 'roc_'+task_name+'.pkl')
 
     if os.path.isfile(roc_pkl) is False or HMM_dict['renew'] or SVM_dict['renew']: ROC_data = {}
     else: ROC_data = ut.load_pickle(roc_pkl)
-    ROC_data = util.reset_roc_data(ROC_data, [method], ROC_dict['update_list'], nPoints)
+    ROC_data = autil.reset_roc_data(ROC_data, [method_list[0][:-1]], ROC_dict['update_list'], nPoints)
 
-    l_data = Parallel(n_jobs=-1, verbose=10)(delayed(cf.run_classifiers)( idx, save_data_path, \
-                                                                          task_name, method, \
-                                                                          ROC_data, ROC_dict, \
-                                                                          SVM_dict, HMM_dict, \
-                                                                          startIdx=startIdx, nState=nState,\
-                                                                          save_model=True) \
-                                                                          for idx in xrange(len(kFold_list)))
+    l_data = Parallel(n_jobs=-1, verbose=10)\
+      (delayed(cf.run_classifiers_boost)( idx, save_data_path, task_name, \
+                                          method_list, ROC_data, \
+                                          param_dict,\
+                                          startIdx=startIdx, nState=nState,\
+                                          save_model=True) \
+      for idx in xrange(len(kFold_list)) )
     
-    ROC_data = util.update_roc_data(ROC_data, l_data, nPoints, [method])
+    ROC_data = autil.update_roc_data(ROC_data, l_data, nPoints, [method_list[0][:-1]])
     ut.save_pickle(ROC_data, roc_pkl)
     
     # ROC Visualization ------------------------------------------------
-    util.roc_info([method], ROC_data, nPoints, no_plot=True)
+    util.roc_info(ROC_data, nPoints, no_plot=True, ROC_dict=ROC_dict,
+                  multi_ad=True, verbose=True)
 
-    # TODO: 
+    # TODO
     # need to print the best weight out
     # need to save acc list
 
@@ -133,43 +137,54 @@ def train_detector_modules(subject_names, task_name, raw_data_path, save_data_pa
 ##     return
     
 
-def get_detector_modules(save_data_path, task_name, method, param_dict, fold_idx=0, \
-                          verbose=False):
+def get_detector_modules(save_data_path, task_name, param_dict, fold_idx=0, \
+                         verbose=False):
+                         
+    nDetector   = len(param_dict['data_param']['handFeatures'])
+    method_list = param_dict['ROC']['methods']
+    method      = method_list[0]
 
-    # load param
-    scr_pkl = os.path.join(save_data_path, 'scr_'+method+'_'+str(fold_idx)+'.pkl')
-    hmm_pkl = os.path.join(save_data_path, 'hmm_'+task_name+'_'+str(fold_idx)+'.pkl')
-    clf_pkl = os.path.join(save_data_path, 'clf_'+method+'_'+\
-                           str(fold_idx)+'.pkl')
+    scr_list = []
+    hmm_list = []
+    clf_list = []
+    for i in xrange(nDetector):
+        # load param
+        scr_pkl = os.path.join(save_data_path, 'scr_'+method+'_'+str(fold_idx)+'_c'+str(i)+'.pkl')
+        hmm_pkl = os.path.join(save_data_path, 'hmm_'+task_name+'_'+str(fold_idx)+'_c'+str(i)+'.pkl')
+        clf_pkl = os.path.join(save_data_path, 'clf_'+method+'_'+str(fold_idx)+'.pkl')
 
-    # load scaler
-    import pickle
-    if os.path.isfile(scr_pkl):
-        with open(scr_pkl, 'rb') as f:
-            m_scr = pickle.load(f)
-    else: m_scr = None
+        # load scaler
+        import pickle
+        if os.path.isfile(scr_pkl):
+            with open(scr_pkl, 'rb') as f:
+                m_scr = pickle.load(f)
+        else: m_scr = None
+        scr_list.append(m_scr)
 
-    # load hmm
-    if os.path.isfile(hmm_pkl) is False:
-        print "No HMM pickle file: ", hmm_pkl
-        sys.exit()
-        
-    d     = ut.load_pickle(hmm_pkl)
-    print d.keys()
-    m_gen = hmm.learning_hmm(d['nState'], d['nEmissionDim'], verbose=verbose)
-    m_gen.set_hmm_object(d['A'], d['B'], d['pi'])
+        # load hmm
+        if os.path.isfile(hmm_pkl) is False:
+            print "No HMM pickle file: ", hmm_pkl
+            sys.exit()
+
+        d     = ut.load_pickle(hmm_pkl)
+        m_gen = hmm.learning_hmm(d['nState'], d['nEmissionDim'], verbose=verbose)
+        m_gen.set_hmm_object(d['A'], d['B'], d['pi'])
+        hmm_list.append(m_gen)
+
+        # load classifier
+        m_clf = cf.classifier( method=method, nPosteriors=d['nState'], parallel=True )
+        m_clf.load_model(clf_pkl)
+        clf_list.append(m_clf)
+
+    ## return m_scr, m_gen, m_clf
+    return scr_list, hmm_list, clf_list
 
 
-    # load classifier
-    m_clf = cf.classifier( method=method, nPosteriors=d['nState'], parallel=True )
-    m_clf.load_model(clf_pkl)
-
-    return m_scr, m_gen, m_clf
-
-
-def anomaly_detection_batch(X, save_data_path, task_name, method, param_dict, Y=None, verbose=False):
+def anomaly_detection_batch(X, save_data_path, task_name, method_list, param_dict,
+                            Y=None, verbose=False):
     
-    m_scr, m_gen, m_clf = get_detector_modules(save_data_path, task_name, method, param_dict, fold_idx=0,\
+    m_scr, m_gen, m_clf = get_detector_modules(save_data_path, task_name, method,
+                                               param_dict, fold_idx=0,\
                                                verbose=False)
 
     if Y is None:
@@ -177,7 +192,7 @@ def anomaly_detection_batch(X, save_data_path, task_name, method, param_dict, Y=
 
     nDetector = 2 # temp
     startIdx  = 4
-    scale     =
+    ## scale     =
     n_jobs    = -1
 
     # get individual detection result
@@ -194,7 +209,7 @@ def anomaly_detection_batch(X, save_data_path, task_name, method, param_dict, Y=
             y_preds.append( m_clf[ii].predict(ll_classifier_test_X[i], y=ll_classifier_test_Y[i]) )
         y_preds_list.append(y_preds)
 
-    if len(y_preds_list)>1:
+    ## if len(y_preds_list)>1:
         
         
 
@@ -214,11 +229,9 @@ if __name__ == '__main__':
     save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo'
 
     task_name = 'feeding'
-    method    = 'hmmgp'
+    param_dict['ROC']['methods'] = ['hmmgp0', 'hmmgp1']
 
-    train_detector_modules(subject_names, task_name, raw_data_path, save_data_path, method,\
+    train_detector_modules(subject_names, task_name, raw_data_path, save_data_path,\
                             param_dict, verbose=False)
 
-
-    get_detector_modules(save_data_path, task_name, method, param_dict, fold_idx=0,\
-                          verbose=False)
+    get_detector_modules(save_data_path, task_name, param_dict, fold_idx=0, verbose=False)

@@ -246,6 +246,24 @@ class armReachAction(mpcBaseAction):
            ['PAUSE', 0.0],
            ['MOVES', '[ 0.05, 0.0-self.highBowlDiff[1],  -0.1, 0, 1.3, 0]', 3, 'self.bowl_frame'],]
 
+
+        self.motions['runWiping'] = {}
+        self.motions['runWiping']['left'] = \
+          [['MOVES', '[-0.05, 0.0-self.highBowlDiff[1],  0.04, 0, 0.7, 0]', 3, 'self.bowl_frame'],
+           ['PAUSE', 0.0],
+           ['MOVEL', '[ 0.05, 0.0-self.highBowlDiff[1],  0.03, 0, 0.8, 0]', 3, 'self.bowl_frame'],
+           ['PAUSE', 0.0],
+           ['MOVES', '[ 0.05-0.01, 0.0-self.highBowlDiff[1],  -0.065, 0, 1.5, 0]', 3, 'self.bowl_frame'],
+           ['PAUSE', 0.0],
+           ['MOVES', '[ 0.05-0.01, 0.05-self.highBowlDiff[1],  -0.065, 0, 1.5, 0]', 3, 'self.bowl_frame'],
+           ['PAUSE', 0.0],
+           ['MOVES', '[ 0.05-0.0, 0.05-self.highBowlDiff[1],  -0.04, 0, 1.5, 0]', 3, 'self.bowl_frame'],
+           ['PAUSE', 0.0],
+           ['MOVES', '[ 0.05-0.05, 0.05-self.highBowlDiff[1],  -0.04, 0, 1.5, 0]', 3, 'self.bowl_frame'],
+           ['PAUSE', 0.0],
+           ['MOVES', '[ 0.05, 0.0-self.highBowlDiff[1],  -0.1, 0, 1.5, 0]', 3, 'self.bowl_frame'],]
+
+
         ## Feeding motoins --------------------------------------------------------
         # It uses the l_gripper_spoon_frame aligned with mouth
         self.motions['initFeeding'] = {}

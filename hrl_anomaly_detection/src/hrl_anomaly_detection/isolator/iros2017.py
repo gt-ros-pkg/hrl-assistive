@@ -456,7 +456,7 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
 
     if os.path.isfile(roc_pkl) is False or HMM_dict['renew'] or SVM_dict['renew']: ROC_data = {}
     else: ROC_data = ut.load_pickle(roc_pkl)
-    ROC_data = util.reset_roc_data(ROC_data, [method_list[0]], ROC_dict['update_list'], nPoints)
+    ROC_data = util.reset_roc_data(ROC_data, [method_list[0][:-1]], ROC_dict['update_list'], nPoints)
 
     # temp
     kFold_list = kFold_list[:8]
@@ -473,12 +473,12 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
       for idx in xrange(len(kFold_list)) )
 
     print "finished to run run_classifiers"
-    ROC_data = util.update_roc_data(ROC_data, l_data, nPoints, method_list)
+    ROC_data = util.update_roc_data(ROC_data, l_data, nPoints, [method_list[0][:-1]])
     ut.save_pickle(ROC_data, roc_pkl)
 
     
     # ---------------- ROC Visualization ----------------------
-    roc_info(method_list, ROC_data, nPoints, no_plot=True, multi_ad=True, ROC_dict=ROC_dict)
+    roc_info(ROC_data, nPoints, no_plot=True, multi_ad=True, ROC_dict=ROC_dict)
 
     class_info(method_list, ROC_data, nPoints, kFold_list)
 
@@ -911,7 +911,7 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
         HMM_dict_local['scale'] = param_dict['HMM']['scale'][i]
         
         ## #temp
-        if i==0: continue
+        ## if i==0: continue
 
         # Training HMM, and getting classifier training and testing data
         dm.saveHMMinducedFeatures(kFold_list, success_data_ad[i], failure_data_ad[i],\
@@ -1244,7 +1244,7 @@ if __name__ == '__main__':
     elif opt.evaluation_double:
 
         # TODO: change feature name
-        param_dict['ROC']['methods'] = ['hmmgp', 'hmmgp']
+        param_dict['ROC']['methods'] = ['hmmgp0', 'hmmgp1']
         param_dict['SVM']['nugget']  = 10.0
 
         # -------------------------------------------------------------------------------------
@@ -1272,17 +1272,18 @@ if __name__ == '__main__':
         param_dict['data_param']['handFeatures'] = [['unimodal_audioWristRMS',  \
                                                     'unimodal_kinJntEff_1',\
                                                     'unimodal_ftForce_integ',\
-                                                    'unimodal_kinEEChange',
+                                                    'unimodal_kinEEChange',\
+                                                    'crossmodal_landmarkEEDist', \
                                                     ],
                                                     ['unimodal_kinVel',\
                                                      'unimodal_ftForce_zero',\
-                                                     'unimodal_kinDesEEChange', \
+                                                     ## 'unimodal_kinDesEEChange', \
                                                      'crossmodal_landmarkEEDist', \
                                                     ]]
         param_dict['HMM']['scale']   = [7.0, 13.0] #9 nest
         param_dict['SVM']['hmmgp_logp_offset'] = 0 #30.0 #50.0
-        param_dict['ROC']['hmmgp1_param_range'] = np.logspace(0.7, 2.0, nPoints)*-1.0+1.0
-        param_dict['ROC']['hmmgp2_param_range'] = np.logspace(0.7, 2.0, nPoints)*-1.0+0.5 #2.
+        param_dict['ROC']['hmmgp0_param_range'] = np.logspace(0.7, 2.0, nPoints)*-1.0+1.0
+        param_dict['ROC']['hmmgp1_param_range'] = np.logspace(0.7, 2.0, nPoints)*-1.0+0.5 #2.
         ## param_dict['ROC']['hmmgp1_param_range'] = np.logspace(0.2, 2.5, nPoints)*-1.0+1.0
         ## param_dict['ROC']['hmmgp2_param_range'] = np.logspace(0.2, 2.5, nPoints)*-1.0+0.5 #2.
         # -------------------------------------------------------------------------------------

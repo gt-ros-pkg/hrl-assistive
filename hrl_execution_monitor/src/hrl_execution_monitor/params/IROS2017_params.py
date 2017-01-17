@@ -42,12 +42,16 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
 
     if nPoints is None: nPoints = 40 
 
-    handFeatures  = ['unimodal_audioWristRMS',  \
+    handFeatures  = [['unimodal_audioWristRMS',  \
                      'unimodal_kinJntEff_1',\
                      'unimodal_ftForce_integ',\
                      'unimodal_kinEEChange',\
                      'crossmodal_landmarkEEDist'
-                     ]
+                     ],
+                     ['unimodal_kinVel',\
+                      'unimodal_ftForce_zero',\
+                      'crossmodal_landmarkEEDist']]
+
 
     staticFeatures = ['unimodal_audioWristFrontRMS',\
                       'unimodal_audioWristAzimuth',\
@@ -59,7 +63,7 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                       ]                                                  
         
 
-    HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 2.645, 'scale': 7.0,\
+    HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 2.645, 'scale': [7.0, 13.0],\
                       'add_logp_d': False }
     SVM_param_dict = {'renew': CF_renew,\
                       'logp_offset': 0,\
@@ -67,21 +71,24 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                       'std_offset': 1.4464
                       }
 
-
     ROC_param_dict = {'nPoints': nPoints,\
                       'progress_param_range': -np.logspace(0.6, 0.9, nPoints)+1.0,\
                       'hmmgp_param_range': np.logspace(-0., 2.3, nPoints)*-1.0+1.0, \
                       'change_param_range': np.logspace(0.5, 2.1, nPoints)*-1.0,\
                       'fixed_param_range': np.linspace(0.1, 0.01, nPoints),\
-                      'rnd_param_range': 1.0-np.logspace(-1, -0.75, nPoints)+0.1}
+                      'rnd_param_range': 1.0-np.logspace(-1, -0.75, nPoints)+0.1,\
+                      'hmmgp0_param_range': np.logspace(-0., 2.3, nPoints)*-1.0+1.0,\
+                      'hmmgp1_param_range': np.logspace(-0., 2.5, nPoints)*-1.0+0.5}
+        
 
     AD_param_dict = {'svm_w_positive': 1.0, 'sgd_w_positive': 1.0, 'sgd_n_iter': 20}
 
 
-    # 012 3456789 10111213 141516 17 18 1920 2122
+    # 012 3 45678910 11121314 151617 18 19 2021 2223
     isolationFeatures = ['unimodal_audioWristRMS', \
                          'unimodal_audioWristFrontRMS',\
                          'unimodal_audioWristAzimuth',\
+                         'unimodal_kinVel',\
                          'unimodal_kinJntEff_1', \
                          'unimodal_kinJntEff_2', \
                          'unimodal_kinJntEff_3', \

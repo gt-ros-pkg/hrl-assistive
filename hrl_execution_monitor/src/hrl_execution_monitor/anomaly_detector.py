@@ -558,7 +558,6 @@ if __name__ == '__main__':
     opt, args = p.parse_args()
     rospy.init_node(opt.task)
 
-
     if True:
         from hrl_anomaly_detection.isolator.IROS2017_params import *
         # IROS2017

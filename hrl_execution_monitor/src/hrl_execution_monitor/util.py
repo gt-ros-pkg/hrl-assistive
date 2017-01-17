@@ -142,3 +142,45 @@ def extract_feature(msg, handFeatures, param_dict):
     return data
 
 
+def reset_roc_data(ROC_data, method_list, update_list, nPoints):
+
+    for i, method in enumerate(method_list):
+        if method not in ROC_data.keys() or method in update_list: 
+        ## if method not in ROC_data.keys() or method in ROC_dict['update_list']: 
+            ROC_data[method] = {}
+            ROC_data[method]['complete'] = False 
+            ROC_data[method]['tp_l'] = [ [] for j in xrange(nPoints) ]
+            ROC_data[method]['fp_l'] = [ [] for j in xrange(nPoints) ]
+            ROC_data[method]['tn_l'] = [ [] for j in xrange(nPoints) ]
+            ROC_data[method]['fn_l'] = [ [] for j in xrange(nPoints) ]
+            ROC_data[method]['delay_l'] = [ [] for j in xrange(nPoints) ]
+            ROC_data[method]['tp_delay_l'] = [ [] for j in xrange(nPoints) ]
+            ROC_data[method]['tp_idx_l'] = [ [] for j in xrange(nPoints) ]
+            ROC_data[method]['fn_labels'] = [ [] for j in xrange(nPoints) ]
+    
+    return ROC_data
+
+def update_roc_data(ROC_data, new_data, nPoints, method_list):
+
+    for i in xrange(len(new_data)):
+        for j in xrange(nPoints):
+            try:
+                method = new_data[i].keys()[0]
+            except:                
+                print "Error when collect ROC data:", new_data[i]
+                sys.exit()
+            if ROC_data[method]['complete'] == True: continue
+            ROC_data[method]['tp_l'][j] += new_data[i][method]['tp_l'][j]
+            ROC_data[method]['fp_l'][j] += new_data[i][method]['fp_l'][j]
+            ROC_data[method]['tn_l'][j] += new_data[i][method]['tn_l'][j]
+            ROC_data[method]['fn_l'][j] += new_data[i][method]['fn_l'][j]
+            ROC_data[method]['delay_l'][j] += new_data[i][method]['delay_l'][j]
+            ROC_data[method]['tp_delay_l'][j].append( new_data[i][method]['delay_l'][j] )
+            ROC_data[method]['tp_idx_l'][j].append( new_data[i][method]['tp_idx_l'][j] )
+            ROC_data[method]['fn_labels'][j] += new_data[i][method]['fn_labels'][j]
+
+    for i, method in enumerate(method_list):
+        ROC_data[method]['complete'] = True
+
+    return ROC_data
+

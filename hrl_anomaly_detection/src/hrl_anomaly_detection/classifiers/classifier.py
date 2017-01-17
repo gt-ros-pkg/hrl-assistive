@@ -1037,36 +1037,6 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                                                                    ll_classifier_train_idx,\
                                                                    remove_fp=remove_fp)
 
-        # Add failure safe data
-        if failsafe and False:
-            if ( (method.find('svm')>=0 or method.find('sgd')>=0) ) and False:
-                for i in xrange(nState):
-                    if len(X_train_org[0])>nState+1:
-                        v                     = np.zeros(nState*2+1)
-                        v[0]                  = -500
-                        v[i+1]                = 1.0
-                        v[i+1+nState] = 1.0
-                    else:
-                        v                     = np.zeros(nState+1)
-                        v[0]                  = -500
-                        v[i+1]                = 1.0
-                    X_train_org.append(v.tolist())
-                    Y_train_org.append(1)
-                    idx_train_org.append(i)
-            elif method == 'progress_svm':
-                min_likelihood = np.amin(ll_classifier_train_X[:,:,0])
-                min_selfInfo   = np.amin(ll_classifier_train_X[:,:,2])
-                
-                for i in xrange(nState):
-                    v    = np.zeros(3)
-                    v[0] = min_likelihood
-                    v[1] = float(i)
-                    v[2] = min_selfInfo
-                    
-                    X_train_org.append(v.tolist())
-                    Y_train_org.append(1)
-                    idx_train_org.append(i)
-                    
 
     #-----------------------------------------------------------------------------------------
     # Generate parameter list for ROC curve
@@ -1244,13 +1214,13 @@ def run_classifiers_boost(idx, processed_data_path, task_name, method_list,\
                           raw_data=None, startIdx=4, nState=25, \
                           prefix=None, suffix=None,\
                           delay_estimation=False,\
-                          save_model=False, load_model=False, n_jobs=-1):
+                          save_model=False, n_jobs=-1):
                           
     HMM_dict = param_dict['HMM']
     SVM_dict = param_dict['SVM']
     ROC_dict = param_dict['ROC'] 
     nPoints  = ROC_dict['nPoints']
-    method   = method_list[0]
+    method   = method_list[0][:-1]
 
     #-----------------------------------------------------------------------------------------
     # pass method if there is existing result
@@ -1269,9 +1239,6 @@ def run_classifiers_boost(idx, processed_data_path, task_name, method_list,\
 
     for clf_idx in xrange(len(method_list)):
         
-        ## if prefix is not None:
-        ##     modeling_pkl = os.path.join(processed_data_path, prefix+'_'+str(idx)+'.pkl')
-        ## else:
         modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+\
                                     str(idx)+'_c'+str(clf_idx)+'.pkl')            
 
@@ -1282,13 +1249,12 @@ def run_classifiers_boost(idx, processed_data_path, task_name, method_list,\
         ## nState, ll_classifier_train_?, ll_classifier_test_?, nLength    
         ll_classifier_test_labels = d.get('ll_classifier_test_labels', None)
 
-        if method_list[clf_idx] == 'hmmgp':            
+        if method_list[clf_idx].find('hmmgp')>=0:            
             normal_idx = [x for x in range(len(ll_classifier_train_X)) if ll_classifier_train_Y[x][0]<0 ]
             ll_classifier_train_X = np.array(ll_classifier_train_X)[normal_idx]
             ll_classifier_train_Y = np.array(ll_classifier_train_Y)[normal_idx]
             ll_classifier_train_idx = np.array(ll_classifier_train_idx)[normal_idx]
 
-        if method_list[clf_idx] == 'hmmgp':
             ## nSubSample = 50 #temp!!!!!!!!!!!!!
             nSubSample = 20 #20 # 20 
             nMaxData   = 50 #40 100
@@ -1325,8 +1291,11 @@ def run_classifiers_boost(idx, processed_data_path, task_name, method_list,\
     if n_jobs == 1: parallel = True
     else: parallel = False
     dtc = {}
-    dtc[0] = classifier( method=method_list[0], nPosteriors=nState, nLength=nLength, parallel=parallel )
-    dtc[1] = classifier( method=method_list[1], nPosteriors=nState, nLength=nLength, parallel=parallel )
+    dtc[0] = classifier( method=method_list[0][:-1], nPosteriors=nState, nLength=nLength, parallel=parallel )
+    dtc[1] = classifier( method=method_list[1][:-1], nPosteriors=nState, nLength=nLength, parallel=parallel )
+    clf_pkl = []
+    clf_pkl.append(os.path.join(processed_data_path, 'clf_'+method_list[0]+'_'+str(idx)+'.pkl'))
+    clf_pkl.append(os.path.join(processed_data_path, 'clf_'+method_list[1]+'_'+str(idx)+'.pkl'))
     for j in xrange(nPoints):
 
         # Training
@@ -1338,14 +1307,16 @@ def run_classifiers_boost(idx, processed_data_path, task_name, method_list,\
             
             dtc[clf_idx].set_params( **SVM_dict )
             if method_list[clf_idx] == 'progress' or method_list[clf_idx] == 'fixed' or \
-              method_list[clf_idx] == 'hmmgp':
-                thresholds = ROC_dict[method_list[clf_idx]+str(clf_idx+1)+'_param_range']
+              method_list[clf_idx].find('hmmgp')>=0:
+                thresholds = ROC_dict[method_list[clf_idx]+'_param_range']
                 dtc[clf_idx].set_params( ths_mult = thresholds[j] )
                 if not(j==0): continue
                 ret = dtc[clf_idx].fit(X, Y, inds)
                 if ret is False: raise ValueError("Classifier fitting error")
             else:
                 raise ValueError("Not available method: "+method_list[clf_idx])
+
+            if j==0 and save_model: dtc[clf_idx].save_model(clf_pkl[clf_idx])
 
 
         # evaluate the classifier
