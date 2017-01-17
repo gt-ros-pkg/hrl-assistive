@@ -911,7 +911,7 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
         HMM_dict_local['scale'] = param_dict['HMM']['scale'][i]
         
         ## #temp
-        ## if i==0: continue
+        if i==0: continue
 
         # Training HMM, and getting classifier training and testing data
         dm.saveHMMinducedFeatures(kFold_list, success_data_ad[i], failure_data_ad[i],\
@@ -1314,21 +1314,21 @@ if __name__ == '__main__':
         param_dict['HMM']['scale'] = [7.0, 13.0]
         single_detector = False 
 
-        ## ## ep  min novel w/ des 68
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation9/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## weight = [-20.0, -30.0]
-        ## param_dict['HMM']['scale'] = [7.0, 13.0]
-        ## single_detector = False
+        ## ep  148 min 68
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation9/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        weight = [-20.0, -30.0]
+        param_dict['HMM']['scale'] = [7.0, 15.0]
+        single_detector = False
 
         ## c12, 68
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation10/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        weight = [-23.0, -23.0] #23
-        param_dict['HMM']['scale'] = [7.0, 13.0]
-        single_detector = False 
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation10/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## weight = [-23.0, -23.0] #23
+        ## param_dict['HMM']['scale'] = [7.0, 13.0]
+        ## single_detector = False 
 
         ## ## c11, #nodes 66
         ## save_data_path = os.path.expanduser('~')+\
