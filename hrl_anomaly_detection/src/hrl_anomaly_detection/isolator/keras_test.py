@@ -37,6 +37,7 @@ import hrl_lib.util as ut
 from hrl_anomaly_detection import data_manager as dm
 from hrl_anomaly_detection import util as util
 import hrl_anomaly_detection.isolator.isolation_util as iutil
+## from hrl_execution_monitor import anomaly_isolator_util as aiu
 from hrl_execution_monitor.keras import keras_model as km
 from hrl_execution_monitor.keras import keras_util as kutil
 from hrl_execution_monitor import viz as eviz
@@ -189,7 +190,13 @@ def preprocess_data(save_data_path, scaler=4, n_labels=12, viz=False, hog_featur
                     img = cv2.resize(img,(width/scaler, height/scaler), interpolation = cv2.INTER_CUBIC)
                     img = img.astype(np.float32)
                 else:                    
-                    img = cv2.resize(cv2.imread(f), (224, 224)).astype(np.float32)
+                    # BGR, vgg
+                    img_size = (256,256)
+                    img = cv2.resize(cv2.imread(f), img_size).astype(np.float32)
+                    crop_size = (224,224)
+                    img = img[(img_size[0]-crop_size[0])//2:(img_size[0]+crop_size[0])//2
+                              ,(img_size[1]-crop_size[1])//2:(img_size[1]+crop_size[1])//2,:]
+                    ## img = cv2.resize(cv2.imread(f), (224, 224)).astype(np.float32)
                 img[:,:,0] -= 103.939
                 img[:,:,1] -= 116.779
                 img[:,:,2] -= 123.68
@@ -319,7 +326,7 @@ def unimodal_fc(save_data_path, n_labels, nb_epoch=400, fine_tune=False, activ_t
     nFold = len(d.keys())
     del d
 
-    callbacks = [EarlyStopping(monitor='val_loss', min_delta=0, patience=10, verbose=0, mode='auto')]
+    callbacks = [EarlyStopping(monitor='val_loss', min_delta=0, patience=30, verbose=0, mode='auto')]
     ## callbacks = [EarlyStopping(monitor='val_loss', min_delta=0, patience=3, verbose=0, mode='auto')]
     ## callbacks = [ReduceLROnPlateau(monitor='val_loss', factor=0.2,
     ##                                patience=5, min_lr=0.0001)]
@@ -422,6 +429,7 @@ def unimodal_cnn(save_data_path, n_labels, nb_epoch=100, fine_tune=False, vgg=Fa
 
     if vgg: prefix = 'vgg_'
     else: prefix = ''
+    callbacks = [EarlyStopping(monitor='val_loss', min_delta=0, patience=30, verbose=0, mode='auto')]
 
     scores= []
     for idx in xrange(nFold):
@@ -436,12 +444,6 @@ def unimodal_cnn(save_data_path, n_labels, nb_epoch=100, fine_tune=False, vgg=Fa
         y_test     = test_data[2]
         
         full_weights_path = os.path.join(save_data_path,prefix+'cnn_weights_'+str(idx)+'.h5')
-
-        # Load pre-trained vgg16 model
-        ## model = km.vgg16_net(np.shape(x_train_img)[1:], n_labels, vgg_model_weights_path, \
-        ##                      full_weights_path, fine_tune=False)
-        ## model = km.vgg16_net(np.shape(x_train_img)[1:], n_labels, vgg_model_weights_path, \
-        ##                      fine_tune=False)
 
         if fine_tune is False:
             if vgg: model = km.vgg16_net(np.shape(x_train_img)[1:], n_labels, vgg_model_weights_path)
@@ -468,14 +470,15 @@ def unimodal_cnn(save_data_path, n_labels, nb_epoch=100, fine_tune=False, vgg=Fa
         test_datagen = ImageDataGenerator(rescale=1./255,\
                                           dim_ordering="th")
 
-        train_generator = train_datagen.flow(x_train_img, y_train, batch_size=16)
-        test_generator = test_datagen.flow(x_test_img, y_test, batch_size=16)
+        train_generator = train_datagen.flow(x_train_img, y_train, batch_size=128)
+        test_generator = test_datagen.flow(x_test_img, y_test, batch_size=128)
 
         hist = model.fit_generator(train_generator,
                                    samples_per_epoch=len(y_train),
                                    nb_epoch=nb_epoch,
                                    validation_data=test_generator,
-                                   nb_val_samples=len(y_test))
+                                   nb_val_samples=len(y_test),
+                                   callbacks=callbacks)
 
         model.save_weights(full_weights_path)
 
@@ -550,7 +553,7 @@ def multimodal_cnn_fc(save_data_path, n_labels, nb_epoch=100, fine_tune=False,
                                    with_top=True, fine_tune=True,
                                    input_shape2=np.shape(x_train_sig)[1:] )
             model.load_weights( os.path.join(save_data_path,prefix+'cnn_fc_weights_'+str(idx)+'.h5') )
-            optimizer = SGD(lr=0.00001, decay=1e-8, momentum=0.9, nesterov=True)
+            optimizer = SGD(lr=0.0001, decay=1e-8, momentum=0.9, nesterov=True)
             ## optimizer = RMSprop(lr=0.00001, rho=0.9, epsilon=1e-08, decay=0.0)
             model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
 
@@ -559,9 +562,9 @@ def multimodal_cnn_fc(save_data_path, n_labels, nb_epoch=100, fine_tune=False,
         if test_only is False:
             train_datagen = kutil.myGenerator(augmentation=True, rescale=1./255.)
             test_datagen = kutil.myGenerator(augmentation=False, rescale=1./255.)
-            train_generator = train_datagen.flow(x_train_img, x_train_sig, y_train, batch_size=16)
-            test_generator = test_datagen.flow(x_test_img, x_test_sig, y_test, batch_size=16)
-            callbacks = [EarlyStopping(monitor='val_loss', min_delta=0, patience=0, verbose=0, mode='auto')]
+            train_generator = train_datagen.flow(x_train_img, x_train_sig, y_train, batch_size=128)
+            test_generator = test_datagen.flow(x_test_img, x_test_sig, y_test, batch_size=128)
+            callbacks = [EarlyStopping(monitor='val_loss', min_delta=0, patience=30, verbose=0, mode='auto')]
         
             hist = model.fit_generator(train_generator,
                                        samples_per_epoch=len(y_train),
@@ -652,29 +655,27 @@ if __name__ == '__main__':
     # s1 - kaci - before camera calibration
     subjects = ['s2', 's3','s4','s5', 's6','s7','s8', 's9']
 
+    # 148 amin - nofz        
     save_data_path = os.path.expanduser('~')+\
       '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation3/'+\
       str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+
+    # 148 amin
+    ## save_data_path = os.path.expanduser('~')+\
+    ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation4/'+\
+    ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
     n_labels = 12 #len(np.unique(y_train))
     
     # ---------------------------------------------------------------------
     # 1st pre_train top layer
     if opt.preprocessing:
-        preprocess_data(save_data_path, viz=opt.viz)
+        ## preprocess_data(save_data_path, viz=opt.viz, hog_feature=False, org_ratio=True)
 
-    elif opt.bottom_train:
-        bottom_feature_extraction(save_data_path, n_labels, augmentation=True)
-                                 
-    elif opt.top_train:
-        top_model_train(n_labels)
-        ## top_model_train2(save_data_path, n_labels, augmentation=False, nb_epoch=10)
+        src_pkl = os.path.join(save_data_path, 'isol_data.pkl')
+        kutil.preprocess_data(src_pkl, save_data_path, img_scale=0.25, nb_classes=12,
+                            img_feature_type='vgg')
 
-    elif opt.fine_tune:
-        fine_tune(save_data_path, n_labels)
-
-
-        
     elif opt.viz:
         x_train, y_train, x_test, y_test = load_data(save_data_path, True)
     elif opt.viz_model:
@@ -682,34 +683,23 @@ if __name__ == '__main__':
         plot(model, to_file='model.png')
         
     else:
-        # 148 amin - nofz        
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation3/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        
-        # 148 amin
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation4/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        
-        ## preprocess_data(save_data_path, viz=opt.viz, hog_feature=False, org_ratio=True)
-
+       
         ## unimodal_fc(save_data_path, n_labels, nb_epoch=200, activ_type='PReLU')        
         ## unimodal_fc(save_data_path, n_labels, nb_epoch=200, fine_tune=True, activ_type='PReLU')        
 
         # relu
-        ## unimodal_fc(save_data_path, n_labels, nb_epoch=200)        
-        ## unimodal_fc(save_data_path, n_labels, fine_tune=True, nb_epoch=400)        
-        ## unimodal_cnn(save_data_path, n_labels)        
-        ## unimodal_cnn(save_data_path, n_labels, fine_tune=True)        
-        ## multimodal_cnn_fc(save_data_path, n_labels)
-        ## multimodal_cnn_fc(save_data_path, n_labels, fine_tune=True)
+        unimodal_fc(save_data_path, n_labels, nb_epoch=200)        
+        unimodal_fc(save_data_path, n_labels, fine_tune=True, nb_epoch=400)        
+        unimodal_cnn(save_data_path, n_labels)        
+        unimodal_cnn(save_data_path, n_labels, fine_tune=True)        
+        multimodal_cnn_fc(save_data_path, n_labels)
+        multimodal_cnn_fc(save_data_path, n_labels, fine_tune=True)
 
         
         ## unimodal_fc(save_data_path, n_labels, nb_epoch=200, test_only=True)        
         ## multimodal_cnn_fc(save_data_path, n_labels, fine_tune=True, test_only=True,
         ##                   save_pdf=opt.bSavePdf)
-        evaluate_svm(save_data_path, viz=True)
+        ## evaluate_svm(save_data_path, viz=True)
 
         ## unimodal_cnn(save_data_path, n_labels, vgg=True)        
         ## unimodal_cnn(save_data_path, n_labels, fine_tune=True, vgg=True)        
