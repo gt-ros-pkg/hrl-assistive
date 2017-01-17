@@ -320,13 +320,14 @@ def evaluate_svm(save_data_path, viz=False):
 
 
 def unimodal_fc(save_data_path, n_labels, nb_epoch=400, fine_tune=False, activ_type='relu',
-                test_only=False, save_pdf=False):
+                test_only=False, save_pdf=False, patience=30):
 
     d = ut.load_pickle(os.path.join(save_data_path, 'isol_data.pkl'))
     nFold = len(d.keys())
     del d
 
-    callbacks = [EarlyStopping(monitor='val_loss', min_delta=0, patience=30, verbose=0, mode='auto')]
+    callbacks = [EarlyStopping(monitor='val_loss', min_delta=0, patience=patience,
+                               verbose=0, mode='auto')]
     ## callbacks = [EarlyStopping(monitor='val_loss', min_delta=0, patience=3, verbose=0, mode='auto')]
     ## callbacks = [ReduceLROnPlateau(monitor='val_loss', factor=0.2,
     ##                                patience=5, min_lr=0.0001)]
@@ -421,7 +422,7 @@ def unimodal_fc(save_data_path, n_labels, nb_epoch=400, fine_tune=False, activ_t
     return
 
     
-def unimodal_cnn(save_data_path, n_labels, nb_epoch=100, fine_tune=False, vgg=False):
+def unimodal_cnn(save_data_path, n_labels, nb_epoch=100, fine_tune=False, vgg=False, patience=30):
 
     d = ut.load_pickle(os.path.join(save_data_path, 'isol_data.pkl'))
     nFold = len(d.keys())
@@ -429,7 +430,7 @@ def unimodal_cnn(save_data_path, n_labels, nb_epoch=100, fine_tune=False, vgg=Fa
 
     if vgg: prefix = 'vgg_'
     else: prefix = ''
-    callbacks = [EarlyStopping(monitor='val_loss', min_delta=0, patience=30, verbose=0, mode='auto')]
+    callbacks = [EarlyStopping(monitor='val_loss', min_delta=0, patience=patience, verbose=0, mode='auto')]
 
     scores= []
     for idx in xrange(nFold):
@@ -489,7 +490,7 @@ def unimodal_cnn(save_data_path, n_labels, nb_epoch=100, fine_tune=False, vgg=Fa
     return
     
 def multimodal_cnn_fc(save_data_path, n_labels, nb_epoch=100, fine_tune=False,
-                      test_only=False, save_pdf=False, vgg=False):
+                      test_only=False, save_pdf=False, vgg=False, patience=30):
 
     d = ut.load_pickle(os.path.join(save_data_path, 'isol_data.pkl'))
     nFold = len(d.keys())
@@ -564,7 +565,8 @@ def multimodal_cnn_fc(save_data_path, n_labels, nb_epoch=100, fine_tune=False,
             test_datagen = kutil.myGenerator(augmentation=False, rescale=1./255.)
             train_generator = train_datagen.flow(x_train_img, x_train_sig, y_train, batch_size=128)
             test_generator = test_datagen.flow(x_test_img, x_test_sig, y_test, batch_size=128)
-            callbacks = [EarlyStopping(monitor='val_loss', min_delta=0, patience=30, verbose=0, mode='auto')]
+            callbacks = [EarlyStopping(monitor='val_loss', min_delta=0, patience=patience,
+                                       verbose=0, mode='auto')]
         
             hist = model.fit_generator(train_generator,
                                        samples_per_epoch=len(y_train),
@@ -688,12 +690,12 @@ if __name__ == '__main__':
         ## unimodal_fc(save_data_path, n_labels, nb_epoch=200, fine_tune=True, activ_type='PReLU')        
 
         # relu
-        unimodal_fc(save_data_path, n_labels, nb_epoch=200)        
-        unimodal_fc(save_data_path, n_labels, fine_tune=True, nb_epoch=400)        
-        unimodal_cnn(save_data_path, n_labels)        
-        unimodal_cnn(save_data_path, n_labels, fine_tune=True)        
-        multimodal_cnn_fc(save_data_path, n_labels)
-        multimodal_cnn_fc(save_data_path, n_labels, fine_tune=True)
+        unimodal_fc(save_data_path, n_labels, nb_epoch=200, patience=10)        
+        unimodal_fc(save_data_path, n_labels, fine_tune=True, nb_epoch=400, patience=10)        
+        unimodal_cnn(save_data_path, n_labels, patience=10)        
+        unimodal_cnn(save_data_path, n_labels, fine_tune=True, patience=10)        
+        multimodal_cnn_fc(save_data_path, n_labels, patience=10)
+        multimodal_cnn_fc(save_data_path, n_labels, fine_tune=True, patience=10)
 
         
         ## unimodal_fc(save_data_path, n_labels, nb_epoch=200, test_only=True)        
