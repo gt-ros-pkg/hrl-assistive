@@ -697,9 +697,9 @@ if __name__ == '__main__':
         # relu
         ## unimodal_fc(save_data_path, n_labels, nb_epoch=200, patience=10)        
         ## unimodal_fc(save_data_path, n_labels, fine_tune=True, nb_epoch=400, patience=10)        
-        unimodal_cnn(save_data_path, n_labels, patience=10)        
-        unimodal_cnn(save_data_path, n_labels, fine_tune=True, patience=10)        
-        multimodal_cnn_fc(save_data_path, n_labels, patience=10)
+        ## unimodal_cnn(save_data_path, n_labels, patience=10)        
+        ## unimodal_cnn(save_data_path, n_labels, fine_tune=True, patience=10)        
+        ## multimodal_cnn_fc(save_data_path, n_labels, patience=10)
         multimodal_cnn_fc(save_data_path, n_labels, fine_tune=True, patience=10)
 
         
