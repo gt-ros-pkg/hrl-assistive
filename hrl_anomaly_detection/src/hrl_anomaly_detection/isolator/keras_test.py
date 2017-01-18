@@ -700,12 +700,12 @@ if __name__ == '__main__':
         ## unimodal_cnn(save_data_path, n_labels, patience=10)        
         ## unimodal_cnn(save_data_path, n_labels, fine_tune=True, patience=10)        
         ## multimodal_cnn_fc(save_data_path, n_labels, patience=10)
-        multimodal_cnn_fc(save_data_path, n_labels, fine_tune=True, patience=10)
+        ## multimodal_cnn_fc(save_data_path, n_labels, fine_tune=True, patience=10)
 
         
         ## unimodal_fc(save_data_path, n_labels, nb_epoch=200, test_only=True)        
-        ## multimodal_cnn_fc(save_data_path, n_labels, fine_tune=True, test_only=True,
-        ##                   save_pdf=opt.bSavePdf)
+        multimodal_cnn_fc(save_data_path, n_labels, fine_tune=True, test_only=True,
+                          save_pdf=opt.bSavePdf)
         ## evaluate_svm(save_data_path, viz=True)
 
         ## unimodal_cnn(save_data_path, n_labels, vgg=True)        
