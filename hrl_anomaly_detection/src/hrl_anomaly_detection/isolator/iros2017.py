@@ -885,6 +885,7 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
     success_image_list = iutil.image_list_flatten( d.get('success_image_list',[]) )
     failure_image_list = iutil.image_list_flatten( d.get('failure_image_list',[]) )
 
+
     failure_labels = []
     for f in failure_files:
         failure_labels.append( int( f.split('/')[-1].split('_')[0] ) )
@@ -1318,7 +1319,7 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation9/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        weight = [-18.0, -18.0]
+        weight = [-19.0, -20.0]
         param_dict['HMM']['scale'] = [7.0, 13.0]
         single_detector = False
 
