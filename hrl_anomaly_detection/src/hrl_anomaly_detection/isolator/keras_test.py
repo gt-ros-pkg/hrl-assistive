@@ -50,6 +50,7 @@ np.random.seed(3334)
 from sklearn import preprocessing
 import h5py
 import cv2
+import gc
 
 from keras.preprocessing.image import ImageDataGenerator
 from keras.models import Sequential, Model
@@ -472,8 +473,8 @@ def unimodal_cnn(save_data_path, n_labels, nb_epoch=100, fine_tune=False, vgg=Fa
         test_datagen = ImageDataGenerator(rescale=1./255,\
                                           dim_ordering="th")
 
-        train_generator = train_datagen.flow(x_train_img, y_train, batch_size=64) #128)
-        test_generator = test_datagen.flow(x_test_img, y_test, batch_size=64) #128)
+        train_generator = train_datagen.flow(x_train_img, y_train, batch_size=32) #128)
+        test_generator = test_datagen.flow(x_test_img, y_test, batch_size=32) #128)
 
         hist = model.fit_generator(train_generator,
                                    samples_per_epoch=len(y_train),
@@ -565,8 +566,8 @@ def multimodal_cnn_fc(save_data_path, n_labels, nb_epoch=100, fine_tune=False,
         if test_only is False:
             train_datagen = kutil.myGenerator(augmentation=True, rescale=1./255.)
             test_datagen = kutil.myGenerator(augmentation=False, rescale=1./255.)
-            train_generator = train_datagen.flow(x_train_img, x_train_sig, y_train, batch_size=64) #128)
-            test_generator = test_datagen.flow(x_test_img, x_test_sig, y_test, batch_size=64) #128)
+            train_generator = train_datagen.flow(x_train_img, x_train_sig, y_train, batch_size=32) #128)
+            test_generator = test_datagen.flow(x_test_img, x_test_sig, y_test, batch_size=32) #128)
             callbacks = [EarlyStopping(monitor='val_loss', min_delta=0, patience=patience,
                                        verbose=0, mode='auto')]
         
@@ -696,9 +697,9 @@ if __name__ == '__main__':
         # relu
         ## unimodal_fc(save_data_path, n_labels, nb_epoch=200, patience=10)        
         ## unimodal_fc(save_data_path, n_labels, fine_tune=True, nb_epoch=400, patience=10)        
-        unimodal_cnn(save_data_path, n_labels, patience=10)        
-        unimodal_cnn(save_data_path, n_labels, fine_tune=True, patience=10)        
-        multimodal_cnn_fc(save_data_path, n_labels, patience=10)
+        ## unimodal_cnn(save_data_path, n_labels, patience=10)        
+        ## unimodal_cnn(save_data_path, n_labels, fine_tune=True, patience=10)        
+        ## multimodal_cnn_fc(save_data_path, n_labels, patience=10)
         multimodal_cnn_fc(save_data_path, n_labels, fine_tune=True, patience=10)
 
         

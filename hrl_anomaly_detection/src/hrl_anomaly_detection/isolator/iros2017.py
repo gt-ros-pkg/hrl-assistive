@@ -885,6 +885,7 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
     success_image_list = iutil.image_list_flatten( d.get('success_image_list',[]) )
     failure_image_list = iutil.image_list_flatten( d.get('failure_image_list',[]) )
 
+
     failure_labels = []
     for f in failure_files:
         failure_labels.append( int( f.split('/')[-1].split('_')[0] ) )
@@ -1281,10 +1282,10 @@ if __name__ == '__main__':
                                                     ]]
         param_dict['HMM']['scale']   = [7.0, 13.0] #9 nest
         param_dict['SVM']['hmmgp_logp_offset'] = 0 #30.0 #50.0
-        param_dict['ROC']['hmmgp0_param_range'] = np.logspace(0.7, 2.0, nPoints)*-1.0+1.0
-        param_dict['ROC']['hmmgp1_param_range'] = np.logspace(0.7, 2.0, nPoints)*-1.0+0.5 #2.
-        ## param_dict['ROC']['hmmgp1_param_range'] = np.logspace(0.2, 2.5, nPoints)*-1.0+1.0
-        ## param_dict['ROC']['hmmgp2_param_range'] = np.logspace(0.2, 2.5, nPoints)*-1.0+0.5 #2.
+        ## param_dict['ROC']['hmmgp0_param_range'] = np.logspace(0.7, 2.0, nPoints)*-1.0+1.0
+        ## param_dict['ROC']['hmmgp1_param_range'] = np.logspace(0.7, 2.0, nPoints)*-1.0+0.5 #2.
+        param_dict['ROC']['hmmgp1_param_range'] = np.logspace(0.2, 2.5, nPoints)*-1.0+1.0
+        param_dict['ROC']['hmmgp2_param_range'] = np.logspace(0.2, 2.5, nPoints)*-1.0+0.5 #2.
         # -------------------------------------------------------------------------------------
                                                              
         
@@ -1318,7 +1319,7 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation9/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        weight = [-18.0, -18.0]
+        weight = [-19.0, -20.0]
         param_dict['HMM']['scale'] = [7.0, 13.0]
         single_detector = False
 
