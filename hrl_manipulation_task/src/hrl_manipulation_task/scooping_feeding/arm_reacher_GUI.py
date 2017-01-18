@@ -81,7 +81,7 @@ class armReacherGUI:
 
     def initComms(self):
         #Publisher:
-        self.emergencyPub = rospy.Publisher("/hrl_manipulation_task/InterruptAction", String, queue_size=QUEUE_SIZE)        
+        self.emergencyPub = rospy.Publisher("/manipulation_task/InterruptAction", String, queue_size=QUEUE_SIZE)        
         self.logRequestPub  = rospy.Publisher("/manipulation_task/feedbackRequest", String, queue_size=QUEUE_SIZE)
         self.availablePub = rospy.Publisher("/manipulation_task/available", String, queue_size=QUEUE_SIZE)
         self.proceedPub   = rospy.Publisher("/manipulation_task/proceed", String, queue_size=10, latch=True) 

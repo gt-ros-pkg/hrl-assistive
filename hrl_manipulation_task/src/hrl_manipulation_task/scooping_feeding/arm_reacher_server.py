@@ -130,7 +130,7 @@ class armReachAction(mpcBaseAction):
             self.feeding_dist_pub.publish(msg)
 
         # subscribers
-        rospy.Subscriber('/hrl_manipulation_task/InterruptAction', String, self.stopCallback)
+        rospy.Subscriber('/manipulation_task/InterruptAction', String, self.stopCallback)
         rospy.Subscriber('/hrl_manipulation_task/bowl_highest_point', Point, self.highestBowlPointCallback)
         ## rospy.Subscriber('/ar_track_alvar/bowl_cen_pose',
         ##                  PoseStamped, self.bowlPoseCallback)

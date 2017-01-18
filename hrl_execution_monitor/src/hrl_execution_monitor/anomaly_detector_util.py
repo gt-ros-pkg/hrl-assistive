@@ -154,8 +154,7 @@ def get_detector_modules(save_data_path, task_name, param_dict, detector_id, fol
 
 
     d = ut.load_pickle(feature_pkl) 
-
-    # TODO: need to get normal train data with specific features
+    # TODO: need to get normal train data with specific feature names
     feature_idx_list = []
     for feature in param_dict['data_param']['handFeatures'][detector_id]:
         feature_idx_list.append(param_dict['data_param']['isolationFeatures'].index(feature))
@@ -164,10 +163,7 @@ def get_detector_modules(save_data_path, task_name, param_dict, detector_id, fol
     m_param_dict = {}
     m_param_dict['feature_params'] = d['param_dict']
     m_param_dict['successData'] = success_data 
-    
-    
-    
-
+           
     ## # load scaler
     ## import pickle
     ## if os.path.isfile(scr_pkl):

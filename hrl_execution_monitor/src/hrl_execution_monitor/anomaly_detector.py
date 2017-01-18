@@ -130,7 +130,7 @@ class anomaly_detector:
 
     def initComms(self):
         # Publisher
-        self.action_interruption_pub = rospy.Publisher('/hrl_manipulation_task/InterruptAction', String,
+        self.action_interruption_pub = rospy.Publisher('/manipulation_task/InterruptAction', String,
                                                        queue_size=QUEUE_SIZE)
         self.task_interruption_pub   = rospy.Publisher("/manipulation_task/emergency", String,
                                                        queue_size=QUEUE_SIZE)
@@ -221,9 +221,9 @@ class anomaly_detector:
                 self.dataList[i][0] = self.dataList[i][0] + [newData[i][0][0]]
                        
         self.lock.release()
-        self.t2 = datetime.datetime.now()
-        print "time: ", self.t2 - self.t1
-        self.t1 = self.t2
+        ## self.t2 = datetime.datetime.now()
+        ## print "time: ", self.t2 - self.t1
+        ## self.t1 = self.t2
 
 
     def statusCallback(self, msg):
@@ -295,7 +295,7 @@ class anomaly_detector:
                 self.reset()
                 continue
 
-            print "logp: ", logp, "  state: ", np.argmax(post)
+            rospy.loginfo("logp: ", logp, "  state: ", np.argmax(post))
             if np.argmax(post)==0 and logp < 0.0: continue
             if np.argmax(post)>self.param_dict['HMM']['nState']*0.9: continue
 
