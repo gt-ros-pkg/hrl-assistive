@@ -84,14 +84,14 @@ if __name__ == '__main__':
     ## print armReachActionLeft("initArms")
     ## print armReachActionRight("initArms")
 
-    leftProc = multiprocessing.Process(target=armReachLeft, args=('initScooping1',))
-    rightProc = multiprocessing.Process(target=armReachRight, args=('initScooping1',))
-    print armReachActionLeft('getBowlPos')
-    print armReachActionLeft('lookAtBowl')
-    print armReachActionLeft('initScooping2')
-    print armReachActionLeft('runWiping')
-    ## print armReachActionLeft('runScooping')
-    sys.exit()
+    ## leftProc = multiprocessing.Process(target=armReachLeft, args=('initScooping1',))
+    ## rightProc = multiprocessing.Process(target=armReachRight, args=('initScooping1',))
+    ## print armReachActionLeft('getBowlPos')
+    ## print armReachActionLeft('lookAtBowl')
+    ## print armReachActionLeft('initScooping2')
+    ## print armReachActionLeft('runWiping')
+    ## ## print armReachActionLeft('runScooping')
+    ## sys.exit()
 
 
     #---------------------------- Face registration ----------------------

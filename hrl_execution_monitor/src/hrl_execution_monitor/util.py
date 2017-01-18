@@ -35,7 +35,7 @@ from hrl_anomaly_detection import data_manager as dm
 
 
 
-def extract_feature(msg, handFeatures, param_dict):
+def extract_feature(msg, last_msg, handFeatures, param_dict):
     ''' Run it on every time step '''
 
     d = {}
@@ -58,8 +58,12 @@ def extract_feature(msg, handFeatures, param_dict):
         d['audioWristAzimuthList'] = [msg.audio_azimuth]
 
     # Unimodal feature - Kinematics --------------------------------------
+    if 'unimodal_kinVel' in handFeatures:
+        d['kinEEPosList_last'] = [ np.array([last_msg.kinematics_ee_pos]).T ]
+
+    # Unimodal feature - Kinematics --------------------------------------
     if 'unimodal_kinJntEff_1' in handFeatures:
-        d['kinJntEffList'] = msg.kinematics_jnt_eff
+        d['kinJntEffList'] = [msg.kinematics_jnt_eff]
 
     # Unimodal feature - Force -------------------------------------------
     if 'unimodal_ftForce' in handFeatures or 'unimodal_ftForce_zero' in handFeatures or\
@@ -84,14 +88,12 @@ def extract_feature(msg, handFeatures, param_dict):
 
     # Unimodal feature - EE change --------------------------
     if 'unimodal_kinEEChange' in handFeatures:
-        d['kinEEPosList']  = [np.array([msg.kin_ee_pos]).T]
+        d['kinEEPosList']  = [np.array([msg.kinematics_ee_pos]).T]
 
     # Unimodal feature - Desired EE change --------------------------
     if 'unimodal_kinDesEEChange' in handFeatures:
-        d['kinEEPosList']  = [np.array([msg.kin_ee_pos]).T]
+        d['kinEEPosList']  = [np.array([msg.kinematics_ee_pos]).T]
         d['kinDesEEPosList'] = [np.array([msg.kinematics_des_ee_pos]).T]
-        
-        
     
     # Crossmodal feature - relative dist --------------------------
     if 'crossmodal_targetEEDist' in handFeatures:

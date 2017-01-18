@@ -146,16 +146,34 @@ def get_detector_modules(save_data_path, task_name, param_dict, detector_id, fol
     i           = detector_id
 
     # load param
-    scr_pkl = os.path.join(save_data_path, 'scr_'+method+'_'+str(fold_idx)+'_c'+str(i)+'.pkl')
+    feature_pkl = os.path.join(save_data_path, 'feature_extraction_kinEEPos_'+\
+                            str(10.0) )
+    ## scr_pkl = os.path.join(save_data_path, 'scr_'+method+'_'+str(fold_idx)+'_c'+str(i)+'.pkl')
     hmm_pkl = os.path.join(save_data_path, 'hmm_'+task_name+'_'+str(fold_idx)+'_c'+str(i)+'.pkl')
     clf_pkl = os.path.join(save_data_path, 'clf_'+method+'_'+str(fold_idx)+'.pkl')
 
-    # load scaler
-    import pickle
-    if os.path.isfile(scr_pkl):
-        with open(scr_pkl, 'rb') as f:
-            m_scr = pickle.load(f)
-    else: m_scr = None
+
+    d = ut.load_pickle(feature_pkl) 
+
+    # TODO: need to get normal train data with specific features
+    feature_idx_list = []
+    for feature in param_dict['data_param']['handFeatures'][detector_id]:
+        feature_idx_list.append(param_dict['data_param']['isolationFeatures'].index(feature))
+    success_data = d['successData'][feature_idx_list] 
+    ## failure_data = d['failureData'][feature_idx_list]
+    m_param_dict = {}
+    m_param_dict['feature_params'] = d['param_dict']
+    m_param_dict['successData'] = success_data 
+    
+    
+    
+
+    ## # load scaler
+    ## import pickle
+    ## if os.path.isfile(scr_pkl):
+    ##     with open(scr_pkl, 'rb') as f:
+    ##         m_scr = pickle.load(f)
+    ## else: m_scr = None
 
     # load hmm
     if os.path.isfile(hmm_pkl) is False:
@@ -170,7 +188,7 @@ def get_detector_modules(save_data_path, task_name, param_dict, detector_id, fol
     m_clf = cf.classifier( method=method, nPosteriors=d['nState'], parallel=True )
     m_clf.load_model(clf_pkl)
 
-    return m_scr, m_gen, m_clf
+    return m_param_dict, m_gen, m_clf
 
 
 def anomaly_detection_batch(X, save_data_path, task_name, method_list, param_dict,

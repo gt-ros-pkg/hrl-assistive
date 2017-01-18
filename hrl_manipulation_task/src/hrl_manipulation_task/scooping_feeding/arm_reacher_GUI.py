@@ -444,38 +444,29 @@ if __name__ == '__main__':
     p = optparse.OptionParser()
     p.add_option('--data_pub', '--dp', action='store_true', dest='bDataPub',
                  default=False, help='Continuously publish data.')
-    p.add_option('--en_anomaly_detector', '--ad', action='store_true', dest='bAD',
+    p.add_option('--en_anomaly_detector', '--ad', action='store_true', dest='en_ad',
                  default=False, help='Enable anomaly detector.')
     p.add_option('--en_logger', '--l', action='store_true', dest='bLog',
                  default=False, help='Enable logger.')
     p.add_option('--en_quick_feeding', '--eqf', action='store_true', dest='bQuickFeeding',
                  default=False, help='Enable a quick feeding mode.')
     p.add_option('--data_path', action='store', dest='sRecordDataPath',
-                 default='/home/dpark/hrl_file_server/dpark_data/anomaly/AURO2016', \
+                 default='/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017', \
                  help='Enter a record data path')
-                 ## default='/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2017', \
  
     opt, args = p.parse_args()
     rospy.init_node('arm_reach_client')
 
-    ## rospy.sleep(2.0)    
-    ## #print armReachActionLeft('lookAtMouth')
-    ## print armReachActionLeft('lookAtBowl')
-    
     if opt.bLog or opt.bDataPub:
         # for adaptation, please add 'new' as the subject.         
         log = logger(ft=True, audio=False, audio_wrist=True, kinematics=True, vision_artag=False, \
-                     vision_landmark=True, vision_change=False, pps=False, skin=True, \
-                     subject="Heryung", task='feeding', data_pub=opt.bDataPub, detector=opt.bAD, \
-                     record_root_path=opt.sRecordDataPath, verbose=False)
-        ## log = logger(ft=False, audio=False, audio_wrist=False, kinematics=True, vision_artag=False, \
-        ##              vision_landmark=True, vision_change=False, pps=False, skin=True, \
-        ##              subject="test", task='feeding', data_pub=opt.bDataPub, detector=opt.bAD, \
-        ##              record_root_path=opt.sRecordDataPath, verbose=False)
+                     vision_landmark=True, vision_change=False, pps=False, skin=False, \
+                     subject="test", task='feeding', data_pub=opt.bDataPub, en_ad=opt.en_ad, \
+                     record_root_path=opt.sRecordDataPath)
     else:
         log = None
 
-    gui = armReacherGUI(detection_flag=opt.bAD, log=log, quick_feeding=opt.bQuickFeeding)
+    gui = armReacherGUI(detection_flag=opt.en_ad, log=log, quick_feeding=opt.bQuickFeeding)
     rospy.spin()
 
 

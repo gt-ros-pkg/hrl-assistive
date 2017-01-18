@@ -1525,12 +1525,16 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
             kinEEPos        = d['kinEEPosList'][idx]            
             ## unimodal_kinVel = d['kinVelList'][idx]
 
-            vel = np.linalg.norm( kinEEPos[:,1:] - kinEEPos[:,:-1], axis=0 )
-            
-            vel = np.array( [0] + vel.tolist() )
+            if len(kinEEPos[0])>2:
+                vel = np.linalg.norm( kinEEPos[:,1:] - kinEEPos[:,:-1], axis=0 )
+                vel = np.array( [0] + vel.tolist() )
+            else:
+                vel = np.linalg.norm( kinEEPos[:,-1:] -
+                                      d['kinEEPosList_last'][idx][:,-1:], axis=0 )
+                
             ## vel = np.linalg.norm(unimodal_kinVel, axis=0)
 
-            if dataSample is None: dataSample = np.array(vel)
+            if dataSample is None: dataSample = vel
             else: dataSample = np.vstack([dataSample, vel])
             if 'kinVel' not in param_dict['feature_names']:
                 param_dict['feature_names'].append('kinVel')
@@ -1544,7 +1548,6 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
                     offset = np.mean(unimodal_kinJntEff[:,:startOffsetSize], axis=1)
                     for i in xrange(len(offset)):
                         unimodal_kinJntEff[i] -= offset[i]
-
 
                 if dataSample is None: dataSample = np.array( unimodal_kinJntEff[jnt_idx:jnt_idx+1] )
                 else: dataSample = np.vstack([ dataSample, unimodal_kinJntEff[jnt_idx:jnt_idx+1] ])

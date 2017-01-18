@@ -65,17 +65,17 @@ class logger:
                  vision_change=False, vision_landmark=False, pps=False, skin=False, \
                  subject=None, task=None, \
                  record_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016',
-                 data_pub= False, detector=False, verbose=False):
+                 data_pub= False, en_ad=False, verbose=False):
         rospy.logout('ADLs_log node subscribing..')
 
         self.subject  = subject
         self.task     = task
         self.data_pub = data_pub
-        self.ad_flag  = detector
         self.record_root_path = record_root_path
         self.verbose  = verbose
         self.enable_log_thread = False
-
+        self.enable_detector = en_ad
+        
         # GUI
         self.feedbackMSG = 0
         self.feedbackStatus = 0        
@@ -107,6 +107,8 @@ class logger:
         '''        
         # File saving
         self.folderName = os.path.join(self.record_root_path, self.subject + '_' + self.task)
+        self.nDetector  = rospy.get_param(self.task+'/nDetector')
+
         
     def initComms(self):
         '''
@@ -120,12 +122,17 @@ class logger:
         rospy.Subscriber("/manipulation_task/user_feedback", StringArray,
                          self.feedbackCallback)
             
-        if self.ad_flag:
-            print "Wait anomaly detector service"
-            rospy.wait_for_service('/'+self.task+'/anomaly_detector_enable')
-            self.ad_srv = rospy.ServiceProxy('/'+self.task+'/anomaly_detector_enable', Bool_None)
-            self.ad_update_srv = rospy.ServiceProxy('/'+self.task+'/anomaly_detector_update', StringArray_None)
-            print "Detected anomaly detector service"
+        if self.nDetector>0:
+            self.ad_srv = []
+            ## self.ad_u_srv = []
+            for i in xrange(self.nDetector):
+                print "Wait anomaly detector service"
+                rospy.wait_for_service('/'+self.task+'/anomaly_detector'+str(i)+'_enable')
+                self.ad_srv.append(rospy.ServiceProxy('/'+self.task+'/anomaly_detector'+str(i)+'_enable',
+                                                      Bool_None))
+                ## self.ad_u_srv.append(rospy.ServiceProxy('/'+self.task+'/anomaly_detector'+str(i)+'_update',
+                ##                                         StringArray_None))
+                print "Detected anomaly detector service"
 
     
     def feedbackCallback(self, data):
@@ -158,11 +165,14 @@ class logger:
         if self.vision_artag is not None:
             self.vision_artag  = artag_vision(self.task, False, viz=False) 
 
-        if self.ad_flag:
-            print "Wait anomaly detector service"
-            rospy.wait_for_service('/'+self.task+'/anomaly_detector_enable')
-            self.ad_srv = rospy.ServiceProxy('/'+self.task+'/anomaly_detector_enable', Bool_None)
-            print "Detected anomaly detector service"
+        if self.nDetector>0:
+            self.ad_srv = []
+            for i in xrange(self.nDetector):            
+                print "Wait anomaly detector service"
+                rospy.wait_for_service('/'+self.task+'/anomaly_detector'+str(i)+'_enable')
+                self.ad_srv.append(rospy.ServiceProxy('/'+self.task+'/anomaly_detector'+str(i)+'_enable',
+                                                      Bool_None))
+                print "Detected anomaly detector service"
             
         
     def log_start(self):
@@ -180,9 +190,6 @@ class logger:
         self.logger = threading.Thread(target=self.runDataLogger)
         self.logger.setDaemon(True)
         self.logger.start()
-
-        # special treament for audio
-        ## self.audio_wrist.log_start()
 
 
     def log_stop(self):
@@ -289,20 +296,21 @@ class logger:
 
 
     def enableDetector(self, enableFlag):
-        ret = self.ad_srv(enableFlag)
+        for i in xrange(self.nDetector):
+            ret = self.ad_srv[i](enableFlag)
 
-    def updateDetector(self):
-        '''
-        It is called by arm_reacher_logging...
-        '''
+    ## def updateDetector(self):
+    ##     '''
+    ##     It is called by arm_reacher_logging...
+    ##     '''
 
-        fileList = util.getSubjectFileList(self.record_root_path, [self.subject], self.task)
-        unused_fileList = [filename for filename in fileList if filename.find('used')<0]
+    ##     fileList = util.getSubjectFileList(self.record_root_path, [self.subject], self.task)
+    ##     unused_fileList = [filename for filename in fileList if filename.find('used')<0]
         
-        ret = self.ad_update_srv(unused_fileList)
-        for f in unused_fileList:
-            name = f.split('.pkl')[0]
-            os.system('mv '+f + ' '+ name+'_used.pkl')
+    ##     ret = self.ad_u_srv(unused_fileList)
+    ##     for f in unused_fileList:
+    ##         name = f.split('.pkl')[0]
+    ##         os.system('mv '+f + ' '+ name+'_used.pkl')
         
         
     def waitForReady(self):

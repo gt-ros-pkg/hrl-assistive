@@ -27,7 +27,7 @@
 
 # system
 import rospy
-import random, os, sys, threading
+import random, os, sys, threading, copy
 from joblib import Parallel, delayed
 import datetime
 import numpy as np
@@ -64,15 +64,18 @@ class anomaly_detector:
         # Important containers
         self.enable_detector = False
         self.dataList        = []
-        self.anomaly_flag    = False
-        
+        self.anomaly_flag    = False        
+        self.last_msg        = None
+        self.refData         = None
+
         # Params
         self.param_dict      = param_dict        
+        self.f_param_dict    = None
         self.startOffsetSize = 4
         self.startCheckIdx   = 10
 
         # HMM, Classifier
-        self.nEmissionDim = None
+        self.nEmissionDim = len(param_dict['data_param']['handFeatures'][detector_id])
         self.ml           = None
         self.classifier   = None
         self.soundHandle  = SoundClient()
@@ -82,6 +85,7 @@ class anomaly_detector:
         if self.bSim: self.cur_task = self.task_name
         else:         self.cur_task = None
         self.sim_subject_names = sim_subject_names
+        self.t1 = datetime.datetime.now()
         # -------------------------------------------------
 
         # Comms
@@ -147,10 +151,13 @@ class anomaly_detector:
         ''' init detector ''' 
         rospy.loginfo( "Initializing a detector with %s of %s", self.method, self.task_name)
         
-        self.scaler, self.ml, self.classifier = adu.get_detector_modules(self.save_data_path,
-                                                                          self.task_name,
-                                                                          self.param_dict,
-                                                                          self.id)
+        self.f_param_dict, self.ml, self.classifier = adu.get_detector_modules(self.save_data_path,
+                                                                               self.task_name,
+                                                                               self.param_dict,
+                                                                               self.id)
+        normalTrainData = self.f_param_dict['successData']*self.scale
+        self.refData = np.reshape( np.mean(normalTrainData[:,:,:self.startOffsetSize], axis=(1,2)), \
+                                  (self.nEmissionDim,1,1) ) # 4,1,1
 
         # info for GUI
         self.pubSensitivity()
@@ -176,27 +183,31 @@ class anomaly_detector:
         '''
         Subscribe raw data
         '''
+        if self.f_param_dict is None or self.refData is None: return
         if self.cur_task is None: return
         if self.cur_task.find(self.task_name) < 0: return
 
         # If detector is disbled, detector does not fill out the dataList.
         if self.enable_detector is False: return
-        
+
         self.lock.acquire()
         ########################################################################
-        # Run your custom feature extraction function 
-        newData = np.array( autil.extract_feature(msg, self.handFeatures, self.param_dict) ) \
-          * self.scale 
+        # Run your custom feature extraction function
+        if self.last_msg is None:
+            self.last_msg = copy.copy(msg)
+            self.lock.release()
+            return
+        newData = np.array( autil.extract_feature(msg, self.last_msg, self.handFeatures,
+                                                  self.f_param_dict['feature_params']) ) * self.scale
+        self.last_msg = copy.copy(msg)
         ########################################################################
 
         # Subtract white noise by measuing offset
         if self.dataList == [] or len(self.dataList[0][0]) < self.startOffsetSize:
             self.offsetData = np.zeros(np.shape(newData))            
         elif len(self.dataList[0][0]) == self.startOffsetSize:
-            refData = np.reshape( np.mean(self.normalTrainData[:,:,:self.startOffsetSize], axis=(1,2)), \
-                                  (self.nEmissionDim,1,1) ) # 4,1,1
             curData = np.reshape( np.mean(self.dataList, axis=(1,2)), (self.nEmissionDim,1,1) ) # 4,1,1
-            self.offsetData = refData - curData
+            self.offsetData = self.refData - curData
                                   
             for i in xrange(self.nEmissionDim):
                 self.dataList[i] = (np.array(self.dataList[i]) + self.offsetData[i][0][0]).tolist()
@@ -210,9 +221,9 @@ class anomaly_detector:
                 self.dataList[i][0] = self.dataList[i][0] + [newData[i][0][0]]
                        
         self.lock.release()
-        ## self.t2 = datetime.datetime.now()
-        ## rospy.loginfo( "time: ", self.t2 - self.t1
-        ## self.t1 = self.t1
+        self.t2 = datetime.datetime.now()
+        print "time: ", self.t2 - self.t1
+        self.t1 = self.t2
 
 
     def statusCallback(self, msg):
@@ -495,12 +506,9 @@ class anomaly_detector:
     def applying_offset(self, data):
 
         # get offset
-        refData = np.reshape( np.mean(self.normalTrainData[:,:,:self.startOffsetSize], axis=(1,2)), \
-                              (self.nEmissionDim,1,1) ) # 4,1,1
-
         curData = np.reshape( np.mean(data[:,:,:self.startOffsetSize], axis=(1,2)), \
                               (self.nEmissionDim,1,1) ) # 4,1,1
-        offsetData = refData - curData
+        offsetData = self.refData - curData
                                   
         for i in xrange(self.nEmissionDim):
             data[i] = (np.array(data[i]) + offsetData[i][0][0]).tolist()

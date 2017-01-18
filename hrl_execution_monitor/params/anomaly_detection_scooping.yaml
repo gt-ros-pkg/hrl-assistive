@@ -1,3 +1,4 @@
+nDetector: 1
 cov_mult: 10.0
 downSampleSize: 200
 feature_list: [unimodal_ftForce, crossmodal_targetEEDist]
