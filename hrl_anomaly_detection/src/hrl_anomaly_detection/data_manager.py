@@ -1544,6 +1544,7 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
             if 'unimodal_kinJntEff_'+str(jnt_idx+1) in feature_list:
                 unimodal_kinJntEff = d['kinJntEffList'][idx]
 
+                # TODO: need to simplify!
                 if offset_flag:
                     offset = np.mean(unimodal_kinJntEff[:,:startOffsetSize], axis=1)
                     for i in xrange(len(offset)):
