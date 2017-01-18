@@ -70,7 +70,7 @@ class armReacherGUI:
         self.expected_emergency = 0
         self.guiStatusReady = False
         self.gui_status = None
-        self.feedback_received = False
+        self.feedback_received = True
         self.quick_feeding = quick_feeding
         self.quick_feeding_ready=False
         ##manipulation_task/user_input (user_feedback)(emergency)(status)
@@ -118,13 +118,13 @@ class armReacherGUI:
                 if self.inputMSG == 'Start':
                     self.ScoopNumber = 0
                     self.FeedNumber = 0
-
-                self.inputStatus = True
-                #Maybe had to add if statement.
-                self.emergencyStatus = False
-                self.guiStatusPub.publish("in motion")
-                print "Input received"
-                self.feedback_received = False
+                if self.gui_status == 'wait start' or self.gui_status == 'stopped':#self.inputMSG == 'Start' or self.inputMSG == 'Continue':
+                    self.inputStatus = True
+                    #Maybe had to add if statement.
+                    self.emergencyStatus = False
+                    print "Input received"
+                    self.feedback_received = False
+                    self.guiStatusPub.publish("in motion")
 
     def emergencyCallback(self, msg):
         #Emergency status button.
@@ -153,6 +153,9 @@ class armReacherGUI:
         emergency_wait_rate = rospy.Rate(30)
         while not rospy.is_shutdown():
             #print "Waiting aborting Sequence"
+            if self.gui_status == 'wait start' or self.gui_status == 'stopped':
+                self.emergencyStatus = False
+                return
             if self.left_mtx is False and self.right_mtx is False: break
             emergency_wait_rate.sleep()
         self.safetyMotion(self.armReachActionLeft, self.armReachActionRight)
@@ -463,11 +466,11 @@ if __name__ == '__main__':
         # for adaptation, please add 'new' as the subject.         
         log = logger(ft=True, audio=False, audio_wrist=True, kinematics=True, vision_artag=False, \
                      vision_landmark=True, vision_change=False, pps=False, skin=True, \
-                     subject="van", task='feeding', data_pub=opt.bDataPub, detector=opt.bAD, \
+                     subject="Heryung", task='feeding', data_pub=opt.bDataPub, detector=opt.bAD, \
                      record_root_path=opt.sRecordDataPath, verbose=False)
-        ## log = logger(ft=True, audio=False, audio_wrist=True, kinematics=True, vision_artag=False, \
-        ##              vision_landmark=True, vision_change=False, pps=True, skin=True, \
-        ##              subject="bang", task='feeding', data_pub=opt.bDataPub, detector=opt.bAD, \
+        ## log = logger(ft=False, audio=False, audio_wrist=False, kinematics=True, vision_artag=False, \
+        ##              vision_landmark=True, vision_change=False, pps=False, skin=True, \
+        ##              subject="test", task='feeding', data_pub=opt.bDataPub, detector=opt.bAD, \
         ##              record_root_path=opt.sRecordDataPath, verbose=False)
     else:
         log = None

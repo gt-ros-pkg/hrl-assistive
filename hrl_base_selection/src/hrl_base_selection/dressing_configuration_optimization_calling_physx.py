@@ -12,7 +12,7 @@ roslib.load_manifest('hrl_base_selection')
 roslib.load_manifest('hrl_haptic_mpc')
 import rospy, rospkg
 import tf
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, Pose, PoseArray
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
@@ -61,6 +61,9 @@ class ScoreGeneratorDressingwithPhysx(object):
         self.arm = 'leftarm'
         self.opposite_arm = 'rightarm'
 
+        rospack = rospkg.RosPack()
+        self.pkg_path = rospack.get_path('hrl_base_selection')
+
         self.human_rot_correction = None
 
         self.human_arm = None
@@ -77,6 +80,12 @@ class ScoreGeneratorDressingwithPhysx(object):
         self.task_dict = None
 
         self.reference_names = None
+
+        self.best_physx_score = 100.
+        self.best_openrave_results = []
+
+        self.arm_traj_parameters = []
+        self.pr2_parameters = []
 
         # self.head_angles = []
 
@@ -116,6 +125,203 @@ class ScoreGeneratorDressingwithPhysx(object):
         self.traj_to_simulator_pub = rospy.Publisher('physx_simulator_input', FloatArrayBare, queue_size=1)
         self.simulator_result_sub = rospy.Subscriber('physx_simulator_result', PhysxOutcome, self.simulator_result_cb)
 
+    def output_results_for_use(self):
+        traj_and_arm_config_results = load_pickle(self.pkg_path+'/data/saved_results/large_search_space/best_trajectory_and_arm_config.pkl')
+        pr2_config_results = load_pickle(self.pkg_path+'/data/saved_results/large_search_space/best_pr2_config.pkl')
+        traj_and_arm_config = traj_and_arm_config_results[0]
+        params = traj_and_arm_config
+        pr2_config = pr2_config_results[0]
+        self.set_human_model_dof([traj_and_arm_config[7], traj_and_arm_config[8], -traj_and_arm_config[9], traj_and_arm_config[6], 0, 0, 0], 'rightarm', 'green_kevin')
+
+        uabl = self.human_model.GetLink('green_kevin/arm_left_base_link')
+        uabr = self.human_model.GetLink('green_kevin/arm_right_base_link')
+        ual = self.human_model.GetLink('green_kevin/arm_left_link')
+        uar = self.human_model.GetLink('green_kevin/arm_right_link')
+        fal = self.human_model.GetLink('green_kevin/forearm_left_link')
+        far = self.human_model.GetLink('green_kevin/forearm_right_link')
+        hl = self.human_model.GetLink('green_kevin/hand_left_link')
+        hr = self.human_model.GetLink('green_kevin/hand_right_link')
+        origin_B_uabl = np.matrix(uabl.GetTransform())
+        origin_B_uabr = np.matrix(uabr.GetTransform())
+        origin_B_ual = np.matrix(ual.GetTransform())
+        origin_B_uar = np.matrix(uar.GetTransform())
+        origin_B_fal = np.matrix(fal.GetTransform())
+        origin_B_far = np.matrix(far.GetTransform())
+        origin_B_hl = np.matrix(hl.GetTransform())
+        origin_B_hr = np.matrix(hr.GetTransform())
+
+        uabr_B_uabr_corrected = np.matrix([[ 0.,  0., -1., 0.],
+                                           [ 1.,  0.,  0., 0.],
+                                           [ 0., -1.,  0., 0.],
+                                           [ 0.,  0.,  0., 1.]])
+
+        z_origin = np.array([0., 0., 1.])
+        x_vector = np.reshape(np.array(origin_B_hr[0:3, 0]), [1, 3])[0]
+        y_orth = np.cross(z_origin, x_vector)
+        y_orth = y_orth/np.linalg.norm(y_orth)
+        z_orth = np.cross(x_vector, y_orth)
+        z_orth = z_orth/np.linalg.norm(z_orth)
+        origin_B_hr_rotated = np.matrix(np.eye(4))
+        # print 'x_vector'
+        # print x_vector
+        # print 'origin_B_hr_rotated'
+        # print origin_B_hr_rotated
+        # print 'np.reshape(x_vector, [3, 1])'
+        # print np.reshape(x_vector, [3, 1])
+        # print 'origin_B_hr_rotated[0:3, 0]'
+        # print origin_B_hr_rotated[0:3, 0]
+        origin_B_hr_rotated[0:3, 0] = copy.copy(np.reshape(x_vector, [3, 1]))
+        origin_B_hr_rotated[0:3, 1] = copy.copy(np.reshape(y_orth, [3, 1]))
+        origin_B_hr_rotated[0:3, 2] = copy.copy(np.reshape(z_orth, [3, 1]))
+        origin_B_hr_rotated[0:3, 3] = copy.copy(origin_B_hr[0:3, 3])
+        origin_B_hr_rotated = np.matrix(origin_B_hr_rotated)
+
+        hr_rotated_B_traj_start_pos = np.matrix(np.eye(4))
+        hr_rotated_B_traj_start_pos[0:3, 3] = copy.copy(np.reshape([params[0:3]], [3, 1]))
+        hr_rotated_B_traj_start_pos[0, 3] = hr_rotated_B_traj_start_pos[0, 3] + 0.07
+
+        origin_B_traj_start_pos = origin_B_hr_rotated*hr_rotated_B_traj_start_pos
+
+        # print 'origin_B_traj_start_pos'
+        # print origin_B_traj_start_pos
+
+        # origin_B_world_rotated_shoulder = createBMatrix(np.reshape(np.array(origin_B_uabr[0:3, 3]), [1, 3])[0], list(tft.quaternion_from_euler(params[7], -params[8], params[9], 'rzxy')))
+
+        origin_B_world_rotated_shoulder = origin_B_uar*uabr_B_uabr_corrected
+
+        # Because green kevin has the upper with a bend in it, I shift the shoulder location by that bend offset.
+        shoulder_origin_B_should_origin_shifted_green_kevin = np.matrix(np.eye(4))
+        shoulder_origin_B_should_origin_shifted_green_kevin[1, 3] = -0.04953
+        origin_B_world_rotated_shoulder = origin_B_world_rotated_shoulder*shoulder_origin_B_should_origin_shifted_green_kevin
+
+        origin_B_uabr[0:3, 3] = origin_B_world_rotated_shoulder[0:3, 3]
+        origin_B_uar[0:3, 3] = origin_B_world_rotated_shoulder[0:3, 3]
+
+        z_origin = np.array([0., 0., 1.])
+        x_vector = np.reshape(np.array(-1*origin_B_world_rotated_shoulder[0:3, 2]), [1, 3])[0]
+        y_orth = np.cross(z_origin, x_vector)
+        y_orth = y_orth/np.linalg.norm(y_orth)
+        z_orth = np.cross(x_vector, y_orth)
+        z_orth = z_orth/np.linalg.norm(z_orth)
+        origin_B_rotated_pointed_down_shoulder = np.matrix(np.eye(4))
+        origin_B_rotated_pointed_down_shoulder[0:3, 0] = np.reshape(x_vector, [3, 1])
+        origin_B_rotated_pointed_down_shoulder[0:3, 1] = np.reshape(y_orth, [3, 1])
+        origin_B_rotated_pointed_down_shoulder[0:3, 2] = np.reshape(z_orth, [3, 1])
+        origin_B_rotated_pointed_down_shoulder[0:3, 3] = origin_B_uabr[0:3, 3]
+        # origin_B_rotated_pointed_down_shoulder = origin_B_uabr*uabr_B_uabr_corrected*np.matrix(shoulder_origin_B_rotated_pointed_down_shoulder)
+        # print 'origin_B_rotated_pointed_down_shoulder'
+        # print origin_B_rotated_pointed_down_shoulder
+
+        # origin_B_rotated_pointed_down_shoulder[0:3, 3] = origin_B_world_rotated_shoulder[0:3, 3]
+
+        rotated_pointed_down_shoulder_B_traj_end_pos = np.matrix(np.eye(4))
+        rotated_pointed_down_shoulder_B_traj_end_pos[0:3, 3] = copy.copy(np.reshape([params[3:6]], [3, 1]))
+
+        # print 'rotated_pointed_down_shoulder_B_traj_end_pos'
+        # print rotated_pointed_down_shoulder_B_traj_end_pos
+        # print 'origin_B_traj_start_pos'
+        # print origin_B_traj_start_pos
+        origin_B_traj_end_pos = origin_B_rotated_pointed_down_shoulder*rotated_pointed_down_shoulder_B_traj_end_pos
+        # print 'origin_B_traj_end_pos'
+        # print origin_B_traj_end_pos
+
+        # print 'origin_B_uabr_corrected'
+        # print origin_B_uabr*uabr_B_uabr_corrected
+
+        th = m.radians(180.)
+        #
+        # x_vector = np.array(params[0:3])-np.array(params[3:6])
+        # x_vector /= np.linalg.norm(x_vector)
+        # y_orth = np.cross(z_origin, x_vector)
+        # y_orth = y_orth/np.linalg.norm(y_orth)
+        # z_orth = np.cross(x_vector, y_orth)
+        # z_orth = z_orth/np.linalg.norm(z_orth)
+        # origin_B_traj_start = np.eye(4)
+        # origin_B_traj_start[0:3, 0] = np.reshape(x_vector, [3, 1])
+        # origin_B_traj_start[0:3, 1] = np.reshape(y_orth, [3, 1])
+        # origin_B_traj_start[0:3, 2] = np.reshape(z_orth, [3, 1])
+        # origin_B_traj_start[0:3, 3] = np.reshape(params[0:3], [3, 1])
+        # origin_B_traj_start = np.matrix(origin_B_traj_start)
+
+        z_origin = np.array([0., 0., 1.])
+        x_vector = np.reshape(np.array(origin_B_traj_end_pos[0:3, 3] - origin_B_traj_start_pos[0:3, 3]), [1, 3])[0]
+        x_vector = x_vector/np.linalg.norm(x_vector)
+        y_orth = np.cross(z_origin, x_vector)
+        y_orth = y_orth/np.linalg.norm(y_orth)
+        z_orth = np.cross(x_vector, y_orth)
+        z_orth = z_orth/np.linalg.norm(z_orth)
+        origin_B_traj_start = np.matrix(np.eye(4))
+        origin_B_traj_start[0:3, 0] = np.reshape(x_vector, [3, 1])
+        origin_B_traj_start[0:3, 1] = np.reshape(y_orth, [3, 1])
+        origin_B_traj_start[0:3, 2] = np.reshape(z_orth, [3, 1])
+        origin_B_traj_start[0:3, 3] = copy.copy(origin_B_traj_start_pos[0:3, 3])
+
+        # print 'origin_B_traj_start'
+        # print origin_B_traj_start
+
+        path_distance = np.linalg.norm(np.reshape(np.array(origin_B_traj_end_pos[0:3, 3] - origin_B_traj_start_pos[0:3, 3]), [1, 3])[0])
+        # print 'path_distance'
+        # print path_distance
+        uabr_corrected_B_traj_start = uabr_B_uabr_corrected.I*origin_B_uabr.I*origin_B_traj_start
+        # test_world_shoulder_B_sleeve_start_rotz = np.matrix([[ m.cos(th), -m.sin(th),     0.],
+        #                                                      [ m.sin(th),  m.cos(th),     0.],
+        #                                                       [        0.,         0.,     1.]])
+        # hr_rotated_B_traj_start = createBMatrix([params[0], params[1], params[2]],
+        #                                   tft.quaternion_from_euler(params[3], params[4], params[5], 'rzyx'))
+        pos_t, quat_t = Bmat_to_pos_quat(uabr_corrected_B_traj_start)
+
+        path_waypoints = np.arange(0., path_distance+path_distance*0.01, path_distance/5.)
+
+        self.goals = []
+        for goal in path_waypoints:
+            traj_start_B_traj_waypoint = np.matrix(np.eye(4))
+            traj_start_B_traj_waypoint[0, 3] = goal
+            origin_B_traj_waypoint = origin_B_traj_start*traj_start_B_traj_waypoint
+            self.goals.append(copy.copy(origin_B_traj_waypoint))
+
+        self.origin_B_grasps = []
+        for num in xrange(len(self.goals)):
+            self.origin_B_grasps.append(np.array(np.matrix(self.goals[num])*np.matrix(self.gripper_B_tool.I)))
+
+        x = pr2_config[0]
+        y = pr2_config[1]
+        th = pr2_config[2]
+        z = pr2_config[3]
+
+        origin_B_pr2 = np.matrix([[ m.cos(th), -m.sin(th),     0.,         x],
+                                  [ m.sin(th),  m.cos(th),     0.,         y],
+                                  [        0.,         0.,     1.,        0.],
+                                  [        0.,         0.,     0.,        1.]])
+
+        self.robot.SetTransform(np.array(origin_B_pr2))
+        v = self.robot.GetActiveDOFValues()
+        v[self.robot.GetJoint('torso_lift_joint').GetDOFIndex()] = z
+        self.robot.SetActiveDOFValues(v, 2)
+        self.env.UpdatePublishedBodies()
+
+        self.pr2_B_grasps = []
+        for num in xrange(len(self.origin_B_grasps)):
+            self.pr2_B_grasps.append(origin_B_pr2.I*np.matrix(self.origin_B_grasps[num]))
+        # self.pr2_B_grasps.append(np.matrix(np.eye(4)))
+        # poseArray = PoseArray()
+        # poseArray.header.stamp = rospy.Time.now()
+        # poseArray.header.frame_id = 'base_footprint'
+        # for pose in self.pr2_B_grasps:
+        #     newPose = Pose()
+        #     pos_g, ori_g = Bmat_to_pos_quat(pose)
+        #     newPose.position.x = pos_g[0]
+        #     newPose.position.y = pos_g[1]
+        #     newPose.position.z = pos_g[2]
+        #     newPose.orientation.x = ori_g[0]
+        #     newPose.orientation.y = ori_g[1]
+        #     newPose.orientation.z = ori_g[2]
+        #     newPose.orientation.w = ori_g[3]
+        #     poseArray.poses.append(copy.copy(newPose))
+
+        save_pickle(self.pr2_B_grasps, self.pkg_path+'/data/saved_results/large_search_space/pr2_grasps.pkl')
+        print 'Saved!'
+        rospy.spin()
+
     def simulator_result_cb(self, msg):
         with self.frame_lock:
             self.physx_output = True
@@ -125,44 +331,87 @@ class ScoreGeneratorDressingwithPhysx(object):
             for force in forces:
                 temp_force_cost += np.max([0., force - 1.0])/9.0
 
-            temp_force_cost/=len(forces)
+            temp_force_cost /= len(forces)
             self.force_cost = copy.copy(temp_force_cost)
+            print 'Force cost from physx: ', self.force_cost
+            print 'Physx simulation outcome: ', self.physx_outcome
 
     def run_interleaving_optimization_outer_level(self):
 
         maxiter = 30
         popsize = m.pow(5, 2)*100
         maxiter = 5
-        popsize = 5
+        popsize = 100
+        ## OLD: For position, orientation, and path distance
         # cma parameters: [end_effector_trajectory_start_position: x,y,z,
         #                  end_effector_trajectory_start_orientation(euler:zxy): y, r, p,
         #                  end_effector_trajectory_move_distance,
         #                  human_arm_elbow_angle,
         #                  human_upper_arm_quaternion(euler:zyx): y, p, r ]
-        parameters_min = np.array([-2., -2., -2.,
-                                   -m.pi-.001, -m.pi-.001, -m.pi-.001,
+        # parameters_min = np.array([-2., -2., -2.,
+        #                            -m.pi-.001, -m.pi-.001, -m.pi-.001,
+        #                            0.,
+        #                            0.,
+        #                            -0.1, -0.1, -2.0])
+        # parameters_max = np.array([2., 2., 2.,
+        #                            m.pi+.001, m.pi+.001, m.pi+.001,
+        #                            2.,
+        #                            m.radians(115.),
+        #                            0.1, 2., 0.35])
+        # parameters_min = np.array([0.65, -0.02, 0.05,
+        #                            m.radians(179), -m.radians(1)-.001, -m.radians(1)-.001,
+        #                            0.5,
+        #                            0.,
+        #                            -0.01, -0.1, m.radians(-100)])
+        # parameters_max = np.array([0.8, 0.02, 0.15,
+        #                            m.radians(181), m.radians(1)+.001, m.radians(1)+.001,
+        #                            1.0,
+        #                            m.radians(5.),
+        #                            0.01, .1, m.radians(-80)])
+
+        ### Current: Two positions, first with respect to the fist, second with respect to the upper arm, centered at
+        # the shoulder and pointing X down the upper arm
+        # cma parameters: [end_effector_trajectory_start_position (from fist): x,y,z,
+        #                  end_effector_trajectory_end_position (centered at shoulder, pointing down arm): x, y, z,
+        #                  human_arm_elbow_angle,
+        #                  human_upper_arm_quaternion(euler:zyx): y, p, r ]
+        # parameters_min = np.array([-2., -2., -2.,
+        #                            -m.pi-.001, -m.pi-.001, -m.pi-.001,
+        #                            0.,
+        #                            0.,
+        #                            -0.1, -0.1, -2.0])
+        # parameters_max = np.array([2., 2., 2.,
+        #                            m.pi+.001, m.pi+.001, m.pi+.001,
+        #                            2.,
+        #                            m.radians(115.),
+        #                            0.1, 2., 0.35])
+        parameters_min = np.array([0.1, -0.07, 0.05,
+                                   -0.15, -0.05, 0.05,
                                    0.,
-                                   0.,
-                                   -0.1, -0.1, -2.0])
-        parameters_max = np.array([2., 2., 2.,
-                                   m.pi+.001, m.pi+.001, m.pi+.001,
-                                   2.,
+                                   m.radians(-15), -0.1, m.radians(-120)])
+        parameters_max = np.array([0.25, 0.07, 0.2,
+                                   0.05, 0.05, 0.2,
                                    m.radians(115.),
-                                   0.1, 2., 0.35])
-        parameters_min = np.array([0.65, -0.02, 0.05,
-                                   m.radians(179), -m.radians(1)-.001, -m.radians(1)-.001,
-                                   0.5,
-                                   0.,
-                                   -0.01, -0.1, m.radians(-100)])
-        parameters_max = np.array([0.8, 0.02, 0.15,
-                                   m.radians(181), m.radians(1)+.001, m.radians(1)+.001,
-                                   1.0,
-                                   m.radians(5.),
-                                   0.01, .1, m.radians(-80)])
+                                   m.radians(15), m.radians(115), m.radians(10)])
+        # parameters_min = np.array([0.1, -0.07, 0.05,
+        #                            -0.15, -0.02, 0.05,
+        #                            0.,
+        #                            -0.01, -0.1, m.radians(-100)])
+        # parameters_max = np.array([0.25, 0.07, 0.15,
+        #                            0.05, 0.02, 0.15,
+        #                            m.radians(5.),
+        #                            0.01, .1, m.radians(-80)])
         parameters_scaling = (parameters_max-parameters_min)/4.
         parameters_initialization = (parameters_max+parameters_min)/2.
-        opts1 = {'seed': 1234, 'ftarget': 0., 'popsize': popsize, 'maxiter': maxiter, 'maxfevals': 1e8,
+        parameters_initialization[6] = 0.001
+        parameters_initialization[8] = 0.
+        parameters_initialization[9] = m.radians(-90)
+        parameters_scaling[6] = m.radians(90)
+        parameters_scaling[8] = m.radians(110)
+        parameters_scaling[9] = m.radians(110)
+        opts1 = {'seed': 1234, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter, 'maxfevals': 1e8,
                  'CMA_cmean': 0.25,
+                 'verb_filenameprefix': 'outcma_arm_and_trajectory',
                  'scaling_of_variables': list(parameters_scaling),
                  'bounds': [list(parameters_min), list(parameters_max)]}
 
@@ -175,14 +424,21 @@ class ScoreGeneratorDressingwithPhysx(object):
         print 'Outcome is: '
         print self.optimization_results
         opt_traj_arm_output = [self.optimization_results[0], self.optimization_results[1]]
-        opt_pr2_output = [self.openrave_optimization_results[0], self.openrave_optimization_results[1]]
-        rospack = rospkg.RosPack()
-        pkg_path = rospack.get_path('hrl_base_selection')
+        opt_pr2_output = [self.best_openrave_results[0], self.best_openrave_results[1]]
 
-        save_pickle(opt_traj_arm_output, pkg_path+'/data/best_trajectory_and_arm_config.pkl')
-        save_pickle(opt_pr2_output, pkg_path+'/data/best_pr2_config.pkl')
+        save_pickle(opt_traj_arm_output, self.pkg_path+'/data/best_trajectory_and_arm_config.pkl')
+        save_pickle(opt_pr2_output, self.pkg_path+'/data/best_pr2_config.pkl')
 
     def objective_function_traj_and_arm_config(self, params):
+        # params[7:] = [0., 0., 1.]
+        # params = [0., 0.,  0.2,
+        #           -0.2,  0.0, 0.2,
+        #           0.,
+        #           0.0,  m.radians(0), m.radians(-90)]
+        # params = [1.71860146e-01,  -9.45158225e-03,   8.73129841e-02,
+        #  3.03018418e-02,  -7.06433255e-03,   1.68311316e-01,
+        #  1.37321557e-03,  -1.48717942e-01,   4.26887851e-01,
+        # -1.95806881e+00]
         testing = False
         if testing:
             th = m.radians(0.)
@@ -215,95 +471,314 @@ class ScoreGeneratorDressingwithPhysx(object):
             pos_r, rot_r = Bmat_to_pos_quat(shoulder_origin_B_rotated_shoulder_rotx)
             # self.set_simulation([0., 0., 0.], [.15, 0., 0.], 0, [0., 0., 0., 0.])
             params = list(flatten([0.7, 0., 0.1, m.radians(180.), 0., 0., 0.85, m.radians(0), m.radians(0.), m.radians(0), m.radians(-90)]))
+        pos_ori_distance = False
+        if pos_ori_distance:
+            path_distance = params[6]
+            self.set_human_model_dof([params[8], params[9], -params[10], params[7], 0, 0, 0], 'rightarm', 'green_kevin')
+            uabl = self.human_model.GetLink('green_kevin/arm_left_base_link')
+            uabr = self.human_model.GetLink('green_kevin/arm_right_base_link')
+            ual = self.human_model.GetLink('green_kevin/arm_left_link')
+            uar = self.human_model.GetLink('green_kevin/arm_right_link')
+            fal = self.human_model.GetLink('green_kevin/forearm_left_link')
+            far = self.human_model.GetLink('green_kevin/forearm_right_link')
+            hl = self.human_model.GetLink('green_kevin/hand_left_link')
+            hr = self.human_model.GetLink('green_kevin/hand_right_link')
+            origin_B_uabl = np.matrix(uabl.GetTransform())
+            origin_B_uabr = np.matrix(uabr.GetTransform())
+            origin_B_ual = np.matrix(ual.GetTransform())
+            origin_B_uar = np.matrix(uar.GetTransform())
+            origin_B_fal = np.matrix(fal.GetTransform())
+            origin_B_far = np.matrix(far.GetTransform())
+            origin_B_hl = np.matrix(hl.GetTransform())
+            origin_B_hr = np.matrix(hr.GetTransform())
 
-        path_distance = params[6]
-        self.set_human_model_dof([params[8], params[9], -params[10], params[7], 0, 0, 0], 'rightarm', 'green_kevin')
-        uabl = self.human_model.GetLink('green_kevin/arm_left_base_link')
-        uabr = self.human_model.GetLink('green_kevin/arm_right_base_link')
-        ual = self.human_model.GetLink('green_kevin/arm_left_link')
-        uar = self.human_model.GetLink('green_kevin/arm_right_link')
-        fal = self.human_model.GetLink('green_kevin/forearm_left_link')
-        far = self.human_model.GetLink('green_kevin/forearm_right_link')
-        hl = self.human_model.GetLink('green_kevin/hand_left_link')
-        hr = self.human_model.GetLink('green_kevin/hand_right_link')
-        origin_B_uabl = np.matrix(uabl.GetTransform())
-        origin_B_uabr = np.matrix(uabr.GetTransform())
-        origin_B_ual = np.matrix(ual.GetTransform())
-        origin_B_uar = np.matrix(uar.GetTransform())
-        origin_B_fal = np.matrix(fal.GetTransform())
-        origin_B_far = np.matrix(far.GetTransform())
-        origin_B_hl = np.matrix(hl.GetTransform())
-        origin_B_hr = np.matrix(hr.GetTransform())
+            uabr_B_uabr_corrected = np.matrix([[ 0.,  0., -1., 0.],
+                                               [ 1.,  0.,  0., 0.],
+                                               [ 0., -1.,  0., 0.],
+                                               [ 0.,  0.,  0., 1.]])
 
-        uabr_B_uabr_corrected = np.matrix([[ 0.,  0., -1., 0.],
-                                           [ 1.,  0.,  0., 0.],
-                                           [ 0., -1.,  0., 0.],
-                                           [ 0.,  0.,  0., 1.]])
+            uabr_corrected_B_traj_start = createBMatrix([params[0], params[1], params[2]],
+                                              tft.quaternion_from_euler(params[3], params[4], params[5], 'rzyx'))
+            pos_t, quat_t = Bmat_to_pos_quat(uabr_corrected_B_traj_start)
+            if np.linalg.norm([params[0]-pos_t[0], params[1]-pos_t[1], params[2]-pos_t[2]]) > 0.01:
+                print 'Somehow I have mysteriously gotten error in my trajectory start position in openrave. Abort!'
+                return 100.
+            # uar_base_B_uar = createBMatrix([0, 0, 0], tft.quaternion_from_euler(params[10], params[11], params[12], 'rzxy'))
+            hr_B_traj_start = origin_B_hr.I*origin_B_uabr*uabr_B_uabr_corrected*uabr_corrected_B_traj_start
+            traj_start_B_traj_end = np.matrix(np.eye(4))
+            traj_start_B_traj_end[0, 3] = params[6]
+            uabr_B_traj_end = uabr_B_uabr_corrected*uabr_corrected_B_traj_start*traj_start_B_traj_end
+            uar_B_traj_end = origin_B_uar.I*origin_B_uabr*uabr_B_traj_end
 
-        uabr_corrected_B_traj_start = createBMatrix([params[0], params[1], params[2]],
-                                          tft.quaternion_from_euler(params[3], params[4], params[5], 'rzyx'))
-        pos_t, quat_t = Bmat_to_pos_quat(uabr_corrected_B_traj_start)
-        if np.linalg.norm([params[0]-pos_t[0], params[1]-pos_t[1], params[2]-pos_t[2]]) > 0.01:
-            print 'Somehow I have mysteriously gotten error in my trajectory start position in openrave. Abort!'
-            return 100.
-        # uar_base_B_uar = createBMatrix([0, 0, 0], tft.quaternion_from_euler(params[10], params[11], params[12], 'rzxy'))
-        hr_B_traj_start = origin_B_hr.I*origin_B_uabr*uabr_B_uabr_corrected*uabr_corrected_B_traj_start
-        traj_start_B_traj_end = np.matrix(np.eye(4))
-        traj_start_B_traj_end[0, 3] = params[6]
-        uabr_B_traj_end = uabr_B_uabr_corrected*uabr_corrected_B_traj_start*traj_start_B_traj_end
-        uar_B_traj_end = origin_B_uar.I*origin_B_uabr*uabr_B_traj_end
-
-        # print 'origin_B_hr'
-        # print origin_B_hr
-        # print 'origin_B_uabr'
-        # print origin_B_uabr
-        # print 'uabr_corrected_B_traj_start'
-        # print uabr_corrected_B_traj_start
-        if not testing:
-            if np.linalg.norm(hr_B_traj_start[0:3, 3]) > 0.3:
-                print 'traj start too far away'
-                return 10. + np.linalg.norm(hr_B_traj_start[0:3, 3])
-            if np.linalg.norm(uabr_B_traj_end[0:3, 3]) > 0.3:
-                print 'traj end too far away'
-                return 10. + np.linalg.norm(uabr_B_traj_end[0:3, 3])
-            if hr_B_traj_start[0, 3] > 0.2 or hr_B_traj_start[0, 3] < 0.:
-                print 'traj start relation to hand is too close or too far'
-                return 10. + np.abs(hr_B_traj_start[0, 3])
-            if uar_B_traj_end[0, 3] > 0.05:
-                print 'traj ends too far from upper arm'
-                return 10. + uar_B_traj_end[0, 3]
-            if uar_B_traj_end[0, 3] < -0.15:
-                print 'traj ends too far behind upper arm'
-                return 10. - uar_B_traj_end[0, 3]
-        path_waypoints = np.arange(0., path_distance, path_distance/5.)
-        # print path_waypoints
-        self.goals = []
-        for goal in path_waypoints:
-            traj_start_B_traj_waypoint = np.matrix(np.eye(4))
-            traj_start_B_traj_waypoint[0, 3] = goal
-            origin_B_traj_waypoint = origin_B_uabr*uabr_B_uabr_corrected*uabr_corrected_B_traj_start*traj_start_B_traj_waypoint
+            # print 'origin_B_hr'
+            # print origin_B_hr
             # print 'origin_B_uabr'
             # print origin_B_uabr
-            # print 'uabr_B_uabr_corrected'
-            # print uabr_B_uabr_corrected
             # print 'uabr_corrected_B_traj_start'
             # print uabr_corrected_B_traj_start
-            # print 'traj_start_B_traj_waypoint'
-            # print traj_start_B_traj_waypoint
-            # print 'origin_B_traj_waypoint'
-            # print origin_B_traj_waypoint
-            self.goals.append(copy.copy(origin_B_traj_waypoint))
-            min_distance = np.min([np.linalg.norm((origin_B_uar.I*origin_B_traj_waypoint)[1:3, 3]),
-                                   np.linalg.norm((origin_B_far.I*origin_B_traj_waypoint)[1:3, 3]),
-                                   np.linalg.norm((origin_B_hr.I*origin_B_traj_waypoint)[1:3, 3])])
             if not testing:
-                if min_distance > 0.28:  # goals too far from any arm segment. The gown sleeve opening is 28 cm long
-                    print 'goals too far from arm segments'
-                    return 10 + min_distance  # distance from arm segment
+                if np.linalg.norm(hr_B_traj_start[0:3, 3]) > 0.35:
+                    print 'traj start too far away'
+                    return 10. + np.linalg.norm(hr_B_traj_start[0:3, 3])
+                if np.linalg.norm(uabr_B_traj_end[0:3, 3]) > 0.3:
+                    print 'traj end too far away'
+                    return 10. + np.linalg.norm(uabr_B_traj_end[0:3, 3])
+                if hr_B_traj_start[0, 3] > 0.2 or hr_B_traj_start[0, 3] < 0.:
+                    print 'traj start relation to hand is too close or too far'
+                    return 10. + np.abs(hr_B_traj_start[0, 3])
+                if uar_B_traj_end[0, 3] > 0.05:
+                    print 'traj ends too far from upper arm'
+                    return 10. + uar_B_traj_end[0, 3]
+                if uar_B_traj_end[0, 3] < -0.15:
+                    print 'traj ends too far behind upper arm'
+                    return 10. - uar_B_traj_end[0, 3]
+            path_waypoints = np.arange(0., path_distance+path_distance*0.01, path_distance/5.)
+            # print 'length of path waypoints'
+            # print len(path_waypoints)
+            # print path_waypoints
+            # print path_waypoints
+            self.goals = []
+            for goal in path_waypoints:
+                traj_start_B_traj_waypoint = np.matrix(np.eye(4))
+                traj_start_B_traj_waypoint[0, 3] = goal
+                origin_B_traj_waypoint = origin_B_uabr*uabr_B_uabr_corrected*uabr_corrected_B_traj_start*traj_start_B_traj_waypoint
+                # print 'origin_B_uabr'
+                # print origin_B_uabr
+                # print 'uabr_B_uabr_corrected'
+                # print uabr_B_uabr_corrected
+                # print 'uabr_corrected_B_traj_start'
+                # print uabr_corrected_B_traj_start
+                # print 'traj_start_B_traj_waypoint'
+                # print traj_start_B_traj_waypoint
+                # print 'origin_B_traj_waypoint'
+                # print origin_B_traj_waypoint
+                self.goals.append(copy.copy(origin_B_traj_waypoint))
+                min_distance = np.min([np.linalg.norm((origin_B_uar.I*origin_B_traj_waypoint)[1:3, 3]),
+                                       np.linalg.norm((origin_B_far.I*origin_B_traj_waypoint)[1:3, 3]),
+                                       np.linalg.norm((origin_B_hr.I*origin_B_traj_waypoint)[1:3, 3])])
+                if not testing:
+                    if min_distance > 0.28:  # goals too far from any arm segment. The gown sleeve opening is 28 cm long
+                        print 'goals too far from arm segments'
+                        return 10 + min_distance  # distance from arm segment
+        else:  # Based on two 3-D positions
+            # path_distance = np.linalg.norm(np.array(params[0:3])-np.array(params[3:6]))
+            print 'params'
+            print params
+            self.set_human_model_dof([params[7], params[8], -params[9], params[6], 0, 0, 0], 'rightarm', 'green_kevin')
+            uabl = self.human_model.GetLink('green_kevin/arm_left_base_link')
+            uabr = self.human_model.GetLink('green_kevin/arm_right_base_link')
+            ual = self.human_model.GetLink('green_kevin/arm_left_link')
+            uar = self.human_model.GetLink('green_kevin/arm_right_link')
+            fal = self.human_model.GetLink('green_kevin/forearm_left_link')
+            far = self.human_model.GetLink('green_kevin/forearm_right_link')
+            hl = self.human_model.GetLink('green_kevin/hand_left_link')
+            hr = self.human_model.GetLink('green_kevin/hand_right_link')
+            origin_B_uabl = np.matrix(uabl.GetTransform())
+            origin_B_uabr = np.matrix(uabr.GetTransform())
+            origin_B_ual = np.matrix(ual.GetTransform())
+            origin_B_uar = np.matrix(uar.GetTransform())
+            origin_B_fal = np.matrix(fal.GetTransform())
+            origin_B_far = np.matrix(far.GetTransform())
+            origin_B_hl = np.matrix(hl.GetTransform())
+            origin_B_hr = np.matrix(hr.GetTransform())
+
+            uabr_B_uabr_corrected = np.matrix([[ 0.,  0., -1., 0.],
+                                               [ 1.,  0.,  0., 0.],
+                                               [ 0., -1.,  0., 0.],
+                                               [ 0.,  0.,  0., 1.]])
+
+            # print 'origin_B_uabr_corrected'
+            # print origin_B_uabr*uabr_B_uabr_corrected
+
+            z_origin = np.array([0., 0., 1.])
+            x_vector = np.reshape(np.array(origin_B_hr[0:3, 0]), [1, 3])[0]
+            y_orth = np.cross(z_origin, x_vector)
+            y_orth = y_orth/np.linalg.norm(y_orth)
+            z_orth = np.cross(x_vector, y_orth)
+            z_orth = z_orth/np.linalg.norm(z_orth)
+            origin_B_hr_rotated = np.matrix(np.eye(4))
+            # print 'x_vector'
+            # print x_vector
+            # print 'origin_B_hr_rotated'
+            # print origin_B_hr_rotated
+            # print 'np.reshape(x_vector, [3, 1])'
+            # print np.reshape(x_vector, [3, 1])
+            # print 'origin_B_hr_rotated[0:3, 0]'
+            # print origin_B_hr_rotated[0:3, 0]
+            origin_B_hr_rotated[0:3, 0] = copy.copy(np.reshape(x_vector, [3, 1]))
+            origin_B_hr_rotated[0:3, 1] = copy.copy(np.reshape(y_orth, [3, 1]))
+            origin_B_hr_rotated[0:3, 2] = copy.copy(np.reshape(z_orth, [3, 1]))
+            origin_B_hr_rotated[0:3, 3] = copy.copy(origin_B_hr[0:3, 3])
+            origin_B_hr_rotated = np.matrix(origin_B_hr_rotated)
+
+            hr_rotated_B_traj_start_pos = np.matrix(np.eye(4))
+            hr_rotated_B_traj_start_pos[0:3, 3] = copy.copy(np.reshape([params[0:3]], [3, 1]))
+            hr_rotated_B_traj_start_pos[0, 3] = hr_rotated_B_traj_start_pos[0, 3] + 0.07
+
+            origin_B_traj_start_pos = origin_B_hr_rotated*hr_rotated_B_traj_start_pos
+
+            # print 'origin_B_traj_start_pos'
+            # print origin_B_traj_start_pos
+
+            # origin_B_world_rotated_shoulder = createBMatrix(np.reshape(np.array(origin_B_uabr[0:3, 3]), [1, 3])[0], list(tft.quaternion_from_euler(params[7], -params[8], params[9], 'rzxy')))
+
+            origin_B_world_rotated_shoulder = origin_B_uar*uabr_B_uabr_corrected
+
+            # Because green kevin has the upper with a bend in it, I shift the shoulder location by that bend offset.
+            shoulder_origin_B_should_origin_shifted_green_kevin = np.matrix(np.eye(4))
+            shoulder_origin_B_should_origin_shifted_green_kevin[1, 3] = -0.04953
+            origin_B_world_rotated_shoulder = origin_B_world_rotated_shoulder*shoulder_origin_B_should_origin_shifted_green_kevin
+
+            origin_B_uabr[0:3, 3] = origin_B_world_rotated_shoulder[0:3, 3]
+            origin_B_uar[0:3, 3] = origin_B_world_rotated_shoulder[0:3, 3]
+
+            z_origin = np.array([0., 0., 1.])
+            x_vector = np.reshape(np.array(-1*origin_B_world_rotated_shoulder[0:3, 2]), [1, 3])[0]
+            y_orth = np.cross(z_origin, x_vector)
+            y_orth = y_orth/np.linalg.norm(y_orth)
+            z_orth = np.cross(x_vector, y_orth)
+            z_orth = z_orth/np.linalg.norm(z_orth)
+            origin_B_rotated_pointed_down_shoulder = np.matrix(np.eye(4))
+            origin_B_rotated_pointed_down_shoulder[0:3, 0] = np.reshape(x_vector, [3, 1])
+            origin_B_rotated_pointed_down_shoulder[0:3, 1] = np.reshape(y_orth, [3, 1])
+            origin_B_rotated_pointed_down_shoulder[0:3, 2] = np.reshape(z_orth, [3, 1])
+            origin_B_rotated_pointed_down_shoulder[0:3, 3] = origin_B_uabr[0:3, 3]
+            # origin_B_rotated_pointed_down_shoulder = origin_B_uabr*uabr_B_uabr_corrected*np.matrix(shoulder_origin_B_rotated_pointed_down_shoulder)
+            # print 'origin_B_rotated_pointed_down_shoulder'
+            # print origin_B_rotated_pointed_down_shoulder
+
+            # origin_B_rotated_pointed_down_shoulder[0:3, 3] = origin_B_world_rotated_shoulder[0:3, 3]
+
+            rotated_pointed_down_shoulder_B_traj_end_pos = np.matrix(np.eye(4))
+            rotated_pointed_down_shoulder_B_traj_end_pos[0:3, 3] = copy.copy(np.reshape([params[3:6]], [3, 1]))
+
+            # print 'rotated_pointed_down_shoulder_B_traj_end_pos'
+            # print rotated_pointed_down_shoulder_B_traj_end_pos
+            # print 'origin_B_traj_start_pos'
+            # print origin_B_traj_start_pos
+            origin_B_traj_end_pos = origin_B_rotated_pointed_down_shoulder*rotated_pointed_down_shoulder_B_traj_end_pos
+            # print 'origin_B_traj_end_pos'
+            # print origin_B_traj_end_pos
+
+            # print 'origin_B_uabr_corrected'
+            # print origin_B_uabr*uabr_B_uabr_corrected
+
+            th = m.radians(180.)
+            #
+            # x_vector = np.array(params[0:3])-np.array(params[3:6])
+            # x_vector /= np.linalg.norm(x_vector)
+            # y_orth = np.cross(z_origin, x_vector)
+            # y_orth = y_orth/np.linalg.norm(y_orth)
+            # z_orth = np.cross(x_vector, y_orth)
+            # z_orth = z_orth/np.linalg.norm(z_orth)
+            # origin_B_traj_start = np.eye(4)
+            # origin_B_traj_start[0:3, 0] = np.reshape(x_vector, [3, 1])
+            # origin_B_traj_start[0:3, 1] = np.reshape(y_orth, [3, 1])
+            # origin_B_traj_start[0:3, 2] = np.reshape(z_orth, [3, 1])
+            # origin_B_traj_start[0:3, 3] = np.reshape(params[0:3], [3, 1])
+            # origin_B_traj_start = np.matrix(origin_B_traj_start)
+
+            z_origin = np.array([0., 0., 1.])
+            x_vector = np.reshape(np.array(origin_B_traj_end_pos[0:3, 3] - origin_B_traj_start_pos[0:3, 3]), [1, 3])[0]
+            x_vector = x_vector/np.linalg.norm(x_vector)
+            y_orth = np.cross(z_origin, x_vector)
+            y_orth = y_orth/np.linalg.norm(y_orth)
+            z_orth = np.cross(x_vector, y_orth)
+            z_orth = z_orth/np.linalg.norm(z_orth)
+            origin_B_traj_start = np.matrix(np.eye(4))
+            origin_B_traj_start[0:3, 0] = np.reshape(x_vector, [3, 1])
+            origin_B_traj_start[0:3, 1] = np.reshape(y_orth, [3, 1])
+            origin_B_traj_start[0:3, 2] = np.reshape(z_orth, [3, 1])
+            origin_B_traj_start[0:3, 3] = copy.copy(origin_B_traj_start_pos[0:3, 3])
+
+            # print 'origin_B_traj_start'
+            # print origin_B_traj_start
+
+            path_distance = np.linalg.norm(np.reshape(np.array(origin_B_traj_end_pos[0:3, 3] - origin_B_traj_start_pos[0:3, 3]), [1, 3])[0])
+            # print 'path_distance'
+            # print path_distance
+            uabr_corrected_B_traj_start = uabr_B_uabr_corrected.I*origin_B_uabr.I*origin_B_traj_start
+            # test_world_shoulder_B_sleeve_start_rotz = np.matrix([[ m.cos(th), -m.sin(th),     0.],
+            #                                                      [ m.sin(th),  m.cos(th),     0.],
+            #                                                       [        0.,         0.,     1.]])
+            # hr_rotated_B_traj_start = createBMatrix([params[0], params[1], params[2]],
+            #                                   tft.quaternion_from_euler(params[3], params[4], params[5], 'rzyx'))
+            pos_t, quat_t = Bmat_to_pos_quat(uabr_corrected_B_traj_start)
+            # if np.linalg.norm([params[0]-pos_t[0], params[1]-pos_t[1], params[2]-pos_t[2]]) > 0.01:
+            #     print 'Somehow I have mysteriously gotten error in my trajectory start position in openrave. Abort!'
+            #     return 100.
+            # uar_base_B_uar = createBMatrix([0, 0, 0], tft.quaternion_from_euler(params[10], params[11], params[12], 'rzxy'))
+            # hr_B_traj_start = origin_B_hr_rotated.I*origin_B_uabr*uabr_B_uabr_corrected*uabr_corrected_B_traj_start
+            # traj_start_B_traj_end = np.matrix(np.eye(4))
+            # traj_start_B_traj_end[0, 3] = params[6]
+            # uabr_B_traj_end = uabr_B_uabr_corrected*uabr_corrected_B_traj_start*traj_start_B_traj_end
+            # uar_B_traj_end = origin_B_uar.I*origin_B_uabr*uabr_B_traj_end
+
+            # print 'origin_B_hr'
+            # print origin_B_hr
+            # print 'origin_B_uabr'
+            # print origin_B_uabr
+            # print 'uabr_corrected_B_traj_start'
+            # print uabr_corrected_B_traj_start
+            testing = True
+            if not testing:
+                if np.linalg.norm(hr_rotated_B_traj_start_pos[0:3, 3]) > 0.3:
+                    print 'traj start too far away'
+                    return 10. + np.linalg.norm(hr_rotated_B_traj_start_pos[0:3, 3])
+                if np.linalg.norm(rotated_pointed_down_shoulder_B_traj_end_pos[0:3, 3]) > 0.3:
+                    print 'traj end too far away'
+                    return 10. + np.linalg.norm(rotated_pointed_down_shoulder_B_traj_end_pos[0:3, 3])
+                if hr_rotated_B_traj_start_pos[0, 3] > 0.3 or hr_rotated_B_traj_start_pos[0, 3] < 0.:
+                    print 'traj start relation to hand is too close or too far'
+                    return 10. + np.abs(hr_rotated_B_traj_start_pos[0, 3])
+                if rotated_pointed_down_shoulder_B_traj_end_pos[0, 3] > 0.05:
+                    print 'traj ends too far from upper arm'
+                    return 10. + rotated_pointed_down_shoulder_B_traj_end_pos[0, 3]
+                if rotated_pointed_down_shoulder_B_traj_end_pos[0, 3] < -0.15:
+                    print 'traj ends too far behind upper arm'
+                    return 10. - rotated_pointed_down_shoulder_B_traj_end_pos[0, 3]
+            testing = False
+            path_waypoints = np.arange(0., path_distance+path_distance*0.01, path_distance/5.)
+            # print 'path_distance'
+            # print path_distance
+            # print 'number of path waypoints'
+            # print len(path_waypoints)
+            # print 'path_waypoints'
+            # print path_waypoints
+            self.goals = []
+            for goal in path_waypoints:
+                traj_start_B_traj_waypoint = np.matrix(np.eye(4))
+                traj_start_B_traj_waypoint[0, 3] = goal
+                origin_B_traj_waypoint = copy.copy(np.matrix(origin_B_traj_start)*np.matrix(traj_start_B_traj_waypoint))
+                # print 'origin_B_traj_start'
+                # print origin_B_traj_start
+                # print 'traj_start_B_traj_waypoint'
+                # print traj_start_B_traj_waypoint
+                # print 'origin_B_traj_waypoint'
+                # print origin_B_traj_waypoint
+                # print 'origin_B_uabr'
+                # print origin_B_uabr
+                # print 'uabr_B_uabr_corrected'
+                # print uabr_B_uabr_corrected
+                # print 'uabr_corrected_B_traj_start'
+                # print uabr_corrected_B_traj_start
+                # print 'traj_start_B_traj_waypoint'
+                # print traj_start_B_traj_waypoint
+                # print 'origin_B_traj_waypoint'
+                # print origin_B_traj_waypoint
+                self.goals.append(copy.copy(origin_B_traj_waypoint))
+                min_distance = np.min([np.linalg.norm((origin_B_uar.I*origin_B_traj_waypoint)[1:3, 3]),
+                                       np.linalg.norm((origin_B_far.I*origin_B_traj_waypoint)[1:3, 3]),
+                                       np.linalg.norm((origin_B_hr.I*origin_B_traj_waypoint)[1:3, 3])])
+                if not testing:
+                    if min_distance > 0.28:  # goals too far from any arm segment. The gown sleeve opening is 28 cm long
+                        print 'goals too far from arm segments'
+                        return 10 + min_distance  # distance from arm segment
+
         start_time = rospy.Time.now()
         self.set_goals()
         # print self.origin_B_grasps
-        maxiter = 10
+        maxiter = 5
         popsize = 4*20
         # cma parameters: [pr2_base_x, pr2_base_y, pr2_base_theta, pr2_base_height,
         # human_arm_dof_1, human_arm_dof_2, human_arm_dof_3, human_arm_dof_4, human_arm_dof_5,
@@ -314,6 +789,7 @@ class ScoreGeneratorDressingwithPhysx(object):
         parameters_initialization = (parameters_max+parameters_min)/2.
         opts1 = {'seed': 1234, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter, 'maxfevals': 1e8,
                  'CMA_cmean': 0.25,
+                 'verb_filenameprefix': 'outcma_pr2_base',
                  'scaling_of_variables': list(parameters_scaling),
                  'tolfun': 1e-3,
                  'bounds': [list(parameters_min), list(parameters_max)]}
@@ -321,14 +797,23 @@ class ScoreGeneratorDressingwithPhysx(object):
                                                       list(parameters_initialization),
                                                       1.,
                                                       options=opts1)
-        print self.openrave_optimization_results
+
+        self.pr2_parameters.append([self.openrave_optimization_results[0], self.openrave_optimization_results[1]])
+        save_pickle(self.pr2_parameters, self.pkg_path+'/data/all_pr2_configs.pkl')
         elapsed_time = rospy.Time.now()-start_time
         print 'Done with openrave round. Time elapsed:', elapsed_time.to_sec()
+        print 'Openrave results:'
+        print self.openrave_optimization_results
         if self.openrave_optimization_results[1] < 0.:
-            # pos_a, quat_a = Bmat_to_pos_quat()
-            quat_a = list(tft.quaternion_from_euler(params[8], -params[9], params[10], 'rzxy'))
+            pos_a, quat_a = Bmat_to_pos_quat(origin_B_world_rotated_shoulder)
+            # print 'quat_a'
+            # print quat_a
+            # quat_a =
+            # quat_a = list(tft.quaternion_from_euler(params[7], -params[8], params[9], 'rzxy'))
+            # print 'quat_a'
+            # print quat_a
             out_msg = FloatArrayBare()
-            out_msg.data = [float(t) for t in list(flatten([pos_t, quat_t, params[6], params[7], quat_a]))]
+            out_msg.data = [float(t) for t in list(flatten([pos_t, quat_t, path_distance, params[6], quat_a]))]
                 # float(list(flatten([pos_t, quat_t, params[6], params[7], quat_a])))
             self.physx_output = None
             self.traj_to_simulator_pub.publish(out_msg)
@@ -340,15 +825,30 @@ class ScoreGeneratorDressingwithPhysx(object):
                     self.physx_outcome = None
                     self.physx_output = None
                     alpha = 1.  # cost on forces
-                    beta = 10.  # cost on manipulability
-                    return self.force_cost*alpha + self.openrave_optimization_results[1]*beta
-            else:
-                with self.frame_lock:
-                    self.physx_outcome = None
-                    self.physx_output = None
-                    alpha = 1.  # cost on forces
-                    beta = 10.  # cost on manipulability
-                    return 10. + self.force_cost*alpha + self.openrave_optimization_results[1]*beta
+                    beta = 1.  # cost on manipulability
+                    physx_score = self.force_cost*alpha + self.openrave_optimization_results[1]*beta
+                    if physx_score < self.best_physx_score:
+                        self.best_physx_score = physx_score
+                        self.best_openrave_results = self.openrave_optimization_results
+                    self.arm_traj_parameters.append([params, physx_score])
+
+                    save_pickle(self.arm_traj_parameters, self.pkg_path+'/data/all_arm_traj_configs.pkl')
+                    print 'Force cost was: ', self.force_cost
+                    print 'Physx score was: ', physx_score
+                    return physx_score
+        with self.frame_lock:
+            self.physx_outcome = None
+            self.physx_output = None
+            alpha = 1.  # cost on forces
+            beta = 1.  # cost on manipulability
+            self.arm_traj_parameters.append([params, 10. + self.force_cost*alpha + self.openrave_optimization_results[1]*beta])
+            save_pickle(self.arm_traj_parameters, self.pkg_path+'/data/all_arm_traj_configs.pkl')
+            physx_score = 10. + self.force_cost*alpha + self.openrave_optimization_results[1]*beta
+            print 'Force cost was: ', self.force_cost
+            print 'Physx score was: ', physx_score
+            return physx_score
+        # else:
+        #     print ''
 
             # optimization_results[<model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_bed_movement>]
 
@@ -583,9 +1083,7 @@ class ScoreGeneratorDressingwithPhysx(object):
 
     def objective_function_one_config(self, current_parameters):
         # start_time = rospy.Time.now()
-        # current_parameters = [-0.51079047,  0.29280798, -0.25168599,  0.27497463, -0.01284536,
-        #                       0.25523379, -0.26786303,  0.05807374,  0.20383625, -0.09342414,
-        #                       -0.45891824]
+        # current_parameters = [0.70538102, -0.36536968, -1.4965914,  0.12652826]
         x = current_parameters[0]
         y = current_parameters[1]
         th = current_parameters[2]
@@ -600,6 +1098,8 @@ class ScoreGeneratorDressingwithPhysx(object):
         v[self.robot.GetJoint('torso_lift_joint').GetDOFIndex()] = z
         self.robot.SetActiveDOFValues(v, 2)
         self.env.UpdatePublishedBodies()
+
+        # return -0.5
 
         distance = 10000000.
         out_of_reach = True
@@ -731,7 +1231,7 @@ class ScoreGeneratorDressingwithPhysx(object):
                                 print 'Determinant of J*JT is: ', np.linalg.det(J*J.T)
                                 manip[num] = np.max([0., manip[num]])
                         if self.visualize:
-                            rospy.sleep(0.05)
+                            rospy.sleep(1.5)
                 for num in xrange(len(reached)):
                     manip_score += copy.copy(reached[num] * manip[num])
                     reach_score += copy.copy(reached[num])
@@ -746,9 +1246,19 @@ class ScoreGeneratorDressingwithPhysx(object):
         # torque_cost = np.linalg.norm(human_torques)/10.
 
         # angle_cost = np.sum(np.abs(human_dof))
+        # print 'len(self.goals)'
+        # print len(self.goals)
+
+        # print 'reached'
+        # print reached
 
         reach_score /= len(self.goals)
         manip_score /= len(self.goals)
+
+        # print 'reach_score'
+        # print reach_score
+        # print 'manip_score'
+        # print manip_score
 
         # Set the weights for the different scores.
         beta = 10.  # Weight on number of reachable goals
@@ -1000,6 +1510,233 @@ class ScoreGeneratorDressingwithPhysx(object):
         self.human_model.SetActiveDOFValues(v, 2)
         # self.env.UpdatePublishedBodies()
 
+    def visualize_many_configurations(self):
+        arm_traj_configs = load_pickle(self.pkg_path+'/data/saved_results/large_search_space/all_arm_traj_configs.pkl')
+        pr2_configs = load_pickle(self.pkg_path+'/data/saved_results/large_search_space/all_pr2_configs.pkl')
+        # arm_traj_configs = load_pickle(self.pkg_path+'/data/all_arm_traj_configs.pkl')
+        # pr2_configs = load_pickle(self.pkg_path+'/data/all_pr2_configs.pkl')
+        print len(arm_traj_configs)
+        print len(pr2_configs)
+
+        for i in xrange(len(arm_traj_configs)):
+            print arm_traj_configs[i]
+            traj_and_arm_config = arm_traj_configs[i][0]
+            params = traj_and_arm_config
+            pr2_config = pr2_configs[i][0]
+            self.set_human_model_dof([traj_and_arm_config[7], traj_and_arm_config[8], -traj_and_arm_config[9], traj_and_arm_config[6], 0, 0, 0], 'rightarm', 'green_kevin')
+
+            uabl = self.human_model.GetLink('green_kevin/arm_left_base_link')
+            uabr = self.human_model.GetLink('green_kevin/arm_right_base_link')
+            ual = self.human_model.GetLink('green_kevin/arm_left_link')
+            uar = self.human_model.GetLink('green_kevin/arm_right_link')
+            fal = self.human_model.GetLink('green_kevin/forearm_left_link')
+            far = self.human_model.GetLink('green_kevin/forearm_right_link')
+            hl = self.human_model.GetLink('green_kevin/hand_left_link')
+            hr = self.human_model.GetLink('green_kevin/hand_right_link')
+            origin_B_uabl = np.matrix(uabl.GetTransform())
+            origin_B_uabr = np.matrix(uabr.GetTransform())
+            origin_B_ual = np.matrix(ual.GetTransform())
+            origin_B_uar = np.matrix(uar.GetTransform())
+            origin_B_fal = np.matrix(fal.GetTransform())
+            origin_B_far = np.matrix(far.GetTransform())
+            origin_B_hl = np.matrix(hl.GetTransform())
+            origin_B_hr = np.matrix(hr.GetTransform())
+
+            uabr_B_uabr_corrected = np.matrix([[ 0.,  0., -1., 0.],
+                                               [ 1.,  0.,  0., 0.],
+                                               [ 0., -1.,  0., 0.],
+                                               [ 0.,  0.,  0., 1.]])
+
+            z_origin = np.array([0., 0., 1.])
+            x_vector = np.reshape(np.array(origin_B_hr[0:3, 0]), [1, 3])[0]
+            y_orth = np.cross(z_origin, x_vector)
+            y_orth = y_orth/np.linalg.norm(y_orth)
+            z_orth = np.cross(x_vector, y_orth)
+            z_orth = z_orth/np.linalg.norm(z_orth)
+            origin_B_hr_rotated = np.matrix(np.eye(4))
+            # print 'x_vector'
+            # print x_vector
+            # print 'origin_B_hr_rotated'
+            # print origin_B_hr_rotated
+            # print 'np.reshape(x_vector, [3, 1])'
+            # print np.reshape(x_vector, [3, 1])
+            # print 'origin_B_hr_rotated[0:3, 0]'
+            # print origin_B_hr_rotated[0:3, 0]
+            origin_B_hr_rotated[0:3, 0] = copy.copy(np.reshape(x_vector, [3, 1]))
+            origin_B_hr_rotated[0:3, 1] = copy.copy(np.reshape(y_orth, [3, 1]))
+            origin_B_hr_rotated[0:3, 2] = copy.copy(np.reshape(z_orth, [3, 1]))
+            origin_B_hr_rotated[0:3, 3] = copy.copy(origin_B_hr[0:3, 3])
+            origin_B_hr_rotated = np.matrix(origin_B_hr_rotated)
+
+            hr_rotated_B_traj_start_pos = np.matrix(np.eye(4))
+            hr_rotated_B_traj_start_pos[0:3, 3] = copy.copy(np.reshape([params[0:3]], [3, 1]))
+            hr_rotated_B_traj_start_pos[0, 3] = hr_rotated_B_traj_start_pos[0, 3] + 0.07
+
+            origin_B_traj_start_pos = origin_B_hr_rotated*hr_rotated_B_traj_start_pos
+
+            # print 'origin_B_traj_start_pos'
+            # print origin_B_traj_start_pos
+
+            # origin_B_world_rotated_shoulder = createBMatrix(np.reshape(np.array(origin_B_uabr[0:3, 3]), [1, 3])[0], list(tft.quaternion_from_euler(params[7], -params[8], params[9], 'rzxy')))
+
+            origin_B_world_rotated_shoulder = origin_B_uar*uabr_B_uabr_corrected
+
+            # Because green kevin has the upper with a bend in it, I shift the shoulder location by that bend offset.
+            shoulder_origin_B_should_origin_shifted_green_kevin = np.matrix(np.eye(4))
+            shoulder_origin_B_should_origin_shifted_green_kevin[1, 3] = -0.04953
+            origin_B_world_rotated_shoulder = origin_B_world_rotated_shoulder*shoulder_origin_B_should_origin_shifted_green_kevin
+
+            origin_B_uabr[0:3, 3] = origin_B_world_rotated_shoulder[0:3, 3]
+            origin_B_uar[0:3, 3] = origin_B_world_rotated_shoulder[0:3, 3]
+
+            z_origin = np.array([0., 0., 1.])
+            x_vector = np.reshape(np.array(-1*origin_B_world_rotated_shoulder[0:3, 2]), [1, 3])[0]
+            y_orth = np.cross(z_origin, x_vector)
+            y_orth = y_orth/np.linalg.norm(y_orth)
+            z_orth = np.cross(x_vector, y_orth)
+            z_orth = z_orth/np.linalg.norm(z_orth)
+            origin_B_rotated_pointed_down_shoulder = np.matrix(np.eye(4))
+            origin_B_rotated_pointed_down_shoulder[0:3, 0] = np.reshape(x_vector, [3, 1])
+            origin_B_rotated_pointed_down_shoulder[0:3, 1] = np.reshape(y_orth, [3, 1])
+            origin_B_rotated_pointed_down_shoulder[0:3, 2] = np.reshape(z_orth, [3, 1])
+            origin_B_rotated_pointed_down_shoulder[0:3, 3] = origin_B_uabr[0:3, 3]
+            # origin_B_rotated_pointed_down_shoulder = origin_B_uabr*uabr_B_uabr_corrected*np.matrix(shoulder_origin_B_rotated_pointed_down_shoulder)
+            # print 'origin_B_rotated_pointed_down_shoulder'
+            # print origin_B_rotated_pointed_down_shoulder
+
+            # origin_B_rotated_pointed_down_shoulder[0:3, 3] = origin_B_world_rotated_shoulder[0:3, 3]
+
+            rotated_pointed_down_shoulder_B_traj_end_pos = np.matrix(np.eye(4))
+            rotated_pointed_down_shoulder_B_traj_end_pos[0:3, 3] = copy.copy(np.reshape([params[3:6]], [3, 1]))
+
+            # print 'rotated_pointed_down_shoulder_B_traj_end_pos'
+            # print rotated_pointed_down_shoulder_B_traj_end_pos
+            # print 'origin_B_traj_start_pos'
+            # print origin_B_traj_start_pos
+            origin_B_traj_end_pos = origin_B_rotated_pointed_down_shoulder*rotated_pointed_down_shoulder_B_traj_end_pos
+            # print 'origin_B_traj_end_pos'
+            # print origin_B_traj_end_pos
+
+            # print 'origin_B_uabr_corrected'
+            # print origin_B_uabr*uabr_B_uabr_corrected
+
+            th = m.radians(180.)
+            #
+            # x_vector = np.array(params[0:3])-np.array(params[3:6])
+            # x_vector /= np.linalg.norm(x_vector)
+            # y_orth = np.cross(z_origin, x_vector)
+            # y_orth = y_orth/np.linalg.norm(y_orth)
+            # z_orth = np.cross(x_vector, y_orth)
+            # z_orth = z_orth/np.linalg.norm(z_orth)
+            # origin_B_traj_start = np.eye(4)
+            # origin_B_traj_start[0:3, 0] = np.reshape(x_vector, [3, 1])
+            # origin_B_traj_start[0:3, 1] = np.reshape(y_orth, [3, 1])
+            # origin_B_traj_start[0:3, 2] = np.reshape(z_orth, [3, 1])
+            # origin_B_traj_start[0:3, 3] = np.reshape(params[0:3], [3, 1])
+            # origin_B_traj_start = np.matrix(origin_B_traj_start)
+
+            z_origin = np.array([0., 0., 1.])
+            x_vector = np.reshape(np.array(origin_B_traj_end_pos[0:3, 3] - origin_B_traj_start_pos[0:3, 3]), [1, 3])[0]
+            x_vector = x_vector/np.linalg.norm(x_vector)
+            y_orth = np.cross(z_origin, x_vector)
+            y_orth = y_orth/np.linalg.norm(y_orth)
+            z_orth = np.cross(x_vector, y_orth)
+            z_orth = z_orth/np.linalg.norm(z_orth)
+            origin_B_traj_start = np.matrix(np.eye(4))
+            origin_B_traj_start[0:3, 0] = np.reshape(x_vector, [3, 1])
+            origin_B_traj_start[0:3, 1] = np.reshape(y_orth, [3, 1])
+            origin_B_traj_start[0:3, 2] = np.reshape(z_orth, [3, 1])
+            origin_B_traj_start[0:3, 3] = copy.copy(origin_B_traj_start_pos[0:3, 3])
+
+            # print 'origin_B_traj_start'
+            # print origin_B_traj_start
+
+            path_distance = np.linalg.norm(np.reshape(np.array(origin_B_traj_end_pos[0:3, 3] - origin_B_traj_start_pos[0:3, 3]), [1, 3])[0])
+            # print 'path_distance'
+            # print path_distance
+            uabr_corrected_B_traj_start = uabr_B_uabr_corrected.I*origin_B_uabr.I*origin_B_traj_start
+            # test_world_shoulder_B_sleeve_start_rotz = np.matrix([[ m.cos(th), -m.sin(th),     0.],
+            #                                                      [ m.sin(th),  m.cos(th),     0.],
+            #                                                       [        0.,         0.,     1.]])
+            # hr_rotated_B_traj_start = createBMatrix([params[0], params[1], params[2]],
+            #                                   tft.quaternion_from_euler(params[3], params[4], params[5], 'rzyx'))
+            pos_t, quat_t = Bmat_to_pos_quat(uabr_corrected_B_traj_start)
+
+            path_waypoints = np.arange(0., path_distance+path_distance*0.01, path_distance/5.)
+
+            self.goals = []
+            for goal in path_waypoints:
+                traj_start_B_traj_waypoint = np.matrix(np.eye(4))
+                traj_start_B_traj_waypoint[0, 3] = goal
+                origin_B_traj_waypoint = origin_B_traj_start*traj_start_B_traj_waypoint
+                self.goals.append(copy.copy(origin_B_traj_waypoint))
+
+            self.set_goals()
+
+            x = pr2_config[0]
+            y = pr2_config[1]
+            th = pr2_config[2]
+            z = pr2_config[3]
+
+            origin_B_pr2 = np.matrix([[ m.cos(th), -m.sin(th),     0.,         x],
+                                      [ m.sin(th),  m.cos(th),     0.,         y],
+                                      [        0.,         0.,     1.,        0.],
+                                      [        0.,         0.,     0.,        1.]])
+
+            self.robot.SetTransform(np.array(origin_B_pr2))
+            v = self.robot.GetActiveDOFValues()
+            v[self.robot.GetJoint('torso_lift_joint').GetDOFIndex()] = z
+            self.robot.SetActiveDOFValues(v, 2)
+            self.env.UpdatePublishedBodies()
+
+            rospy.sleep(4.0)
+
+            with self.robot:
+                sign_flip = 1.
+                if 'right' in self.arm:
+                    sign_flip = -1.
+                v = self.robot.GetActiveDOFValues()
+                v[self.robot.GetJoint(self.opposite_arm[0]+'_shoulder_pan_joint').GetDOFIndex()] = -sign_flip*3.14/2
+                v[self.robot.GetJoint(self.opposite_arm[0]+'_shoulder_lift_joint').GetDOFIndex()] = -0.52
+                v[self.robot.GetJoint(self.opposite_arm[0]+'_upper_arm_roll_joint').GetDOFIndex()] = 0.
+                v[self.robot.GetJoint(self.opposite_arm[0]+'_elbow_flex_joint').GetDOFIndex()] = -3.14*2/3
+                v[self.robot.GetJoint(self.opposite_arm[0]+'_forearm_roll_joint').GetDOFIndex()] = 0.
+                v[self.robot.GetJoint(self.opposite_arm[0]+'_wrist_flex_joint').GetDOFIndex()] = 0.
+                v[self.robot.GetJoint(self.opposite_arm[0]+'_wrist_roll_joint').GetDOFIndex()] = 0.
+                self.robot.SetActiveDOFValues(v, 2)
+                self.env.UpdatePublishedBodies()
+                not_close_to_collision = True
+                if self.manip.CheckIndependentCollision(op.CollisionReport()):
+                    not_close_to_collision = False
+
+                if not_close_to_collision:
+                    for num, Tgrasp in enumerate(self.origin_B_grasps):
+                        sols = []
+                        sols = self.manip.FindIKSolutions(Tgrasp, filteroptions=op.IkFilterOptions.CheckEnvCollisions)
+                        if not list(sols):
+                            sign_flip = 1.
+                            if 'right' in self.arm:
+                                sign_flip = -1.
+                            v = self.robot.GetActiveDOFValues()
+                            v[self.robot.GetJoint(self.opposite_arm[0]+'_shoulder_pan_joint').GetDOFIndex()] = -sign_flip*0.023593
+                            v[self.robot.GetJoint(self.opposite_arm[0]+'_shoulder_lift_joint').GetDOFIndex()] = 1.1072800
+                            v[self.robot.GetJoint(self.opposite_arm[0]+'_upper_arm_roll_joint').GetDOFIndex()] = -sign_flip*1.5566882
+                            v[self.robot.GetJoint(self.opposite_arm[0]+'_elbow_flex_joint').GetDOFIndex()] = -2.124408
+                            v[self.robot.GetJoint(self.opposite_arm[0]+'_forearm_roll_joint').GetDOFIndex()] = -sign_flip*1.4175
+                            v[self.robot.GetJoint(self.opposite_arm[0]+'_wrist_flex_joint').GetDOFIndex()] = -1.8417
+                            v[self.robot.GetJoint(self.opposite_arm[0]+'_wrist_roll_joint').GetDOFIndex()] = 0.21436
+                            self.robot.SetActiveDOFValues(v, 2)
+                            self.env.UpdatePublishedBodies()
+                            sols = self.manip.FindIKSolutions(Tgrasp, filteroptions=op.IkFilterOptions.CheckEnvCollisions)
+
+                        if list(sols):  # not None:
+                            # for solution in sols:
+                            #     self.robot.SetDOFValues(solution, self.manip.GetArmIndices())
+                            #     self.env.UpdatePublishedBodies()
+                            self.robot.SetDOFValues(sols[0], self.manip.GetArmIndices())
+                            self.env.UpdatePublishedBodies()
+                            rospy.sleep(1.5)
+
     def show_rviz(self):
         #rospy.init_node(''.join(['base_selection_goal_visualization']))
         sub_pos, sub_ori = Bmat_to_pos_quat(self.originsubject_B_originworld)
@@ -1172,9 +1909,19 @@ if __name__ == "__main__":
     mytask = 'shoulder'
     mymodel = 'chair'
     #mytask = 'all_goals'
-    start_time = time.time()
-    selector = ScoreGeneratorDressingwithPhysx(visualize=False)
+    # start_time = time.time()
+    outer_start_time = rospy.Time.now()
+    selector = ScoreGeneratorDressingwithPhysx(visualize=True)
+    # selector.visualize_many_configurations()
+    # selector.output_results_for_use()
     selector.run_interleaving_optimization_outer_level()
+    outer_elapsed_time = rospy.Time.now()-outer_start_time
+    print 'Done with openrave round. Time elapsed:', outer_elapsed_time.to_sec()
+    print 'Everything is complete!'
+    rospy.spin()
+
+
+
     #selector.choose_task(mytask)
     # score_sheet = selector.handle_score_generation()
 
