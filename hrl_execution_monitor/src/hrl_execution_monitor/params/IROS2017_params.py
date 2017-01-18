@@ -2,7 +2,7 @@ import os, sys
 import numpy as np
 
 
-def getParams(task, bDataRenew, bHMMRenew, bCFRenew, dim=0, rf_center='kinEEPos',\
+def getParams(task, bDataRenew=False, bHMMRenew=False, bCFRenew=False, dim=0, rf_center='kinEEPos',\
               local_range=10.0, nPoints=None ):
 
     #---------------------------------------------------------------------------
@@ -26,7 +26,7 @@ def getParams(task, bDataRenew, bHMMRenew, bCFRenew, dim=0, rf_center='kinEEPos'
         sys.exit()
 
     # common params
-    param_dict['ROC']['methods'] = [ 'hmmgp']
+    param_dict['ROC']['methods'] = [ 'hmmgp0', 'hmmgp1']
     param_dict['ROC']['update_list'] = [ ]
     param_dict['SVM']['raw_window_size'] = 5
 

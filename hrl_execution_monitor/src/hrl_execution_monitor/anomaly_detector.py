@@ -51,12 +51,13 @@ from hrl_msgs.msg import FloatArray, StringArray
 QUEUE_SIZE = 10
 
 class anomaly_detector:
-    def __init__(self, task_name, method, save_data_path,\
+    def __init__(self, task_name, method, detector_id, save_data_path,\
                  param_dict, debug=False, sim=False, sim_subject_names=None):
         rospy.loginfo('Initializing anomaly detector')
 
         self.task_name       = task_name.lower()
         self.method          = method
+        self.id              = detector_id
         self.save_data_path  = save_data_path
         self.debug           = debug
 
@@ -100,13 +101,13 @@ class anomaly_detector:
     def initParams(self):
 
         # Features and parameters
-        self.handFeatures = self.param_dict['data_param']['handFeatures']
+        self.handFeatures = self.param_dict['data_param']['handFeatures'][self.id]
         self.nState = self.param_dict['HMM']['nState']
-        self.scale  = self.param_dict['HMM']['scale']
+        self.scale  = self.param_dict['HMM']['scale'][self.id]
         
-        self.w_positive = rospy.get_param(self.method+'_ths_mult')
-        self.w_max = self.param_dict['ROC'][self.method+'_param_range'][-1]
-        self.w_min = self.param_dict['ROC'][self.method+'_param_range'][0]
+        self.w_positive = rospy.get_param(self.method+str(self.id)+'_ths_mult')
+        self.w_max = self.param_dict['ROC'][self.method+str(self.id)+'_param_range'][-1]
+        self.w_min = self.param_dict['ROC'][self.method+str(self.id)+'_param_range'][0]
         self.exp_sensitivity = False
 
         # Weight ordering
@@ -115,7 +116,7 @@ class anomaly_detector:
 
         if self.w_positive > self.w_max: self.w_positive = self.w_max
         elif self.w_positive < self.w_min: self.w_positive = self.w_min
-        rospy.set_param(self.method+'_ths_mult', float(self.w_positive))
+        rospy.set_param(self.method+str(self.id)+'_ths_mult', float(self.w_positive))
 
         # we use logarlism for the sensitivity
         if self.exp_sensitivity:
@@ -138,7 +139,8 @@ class anomaly_detector:
         rospy.Subscriber('manipulation_task/ad_sensitivity_request', Float64, self.sensitivityCallback)
 
         # Service
-        self.detection_service = rospy.Service('anomaly_detector_enable', Bool_None, self.enablerCallback)
+        self.detection_service = rospy.Service('anomaly_detector'+str(self.id)+'_enable',
+                                               Bool_None, self.enablerCallback)
 
 
     def initDetector(self):
@@ -147,8 +149,8 @@ class anomaly_detector:
         
         self.scaler, self.ml, self.classifier = adu.get_detector_modules(self.save_data_path,
                                                                           self.task_name,
-                                                                          self.method,
-                                                                          self.param_dict)
+                                                                          self.param_dict,
+                                                                          self.id)
 
         # info for GUI
         self.pubSensitivity()
@@ -158,12 +160,12 @@ class anomaly_detector:
     def enablerCallback(self, msg):
 
         if msg.data is True:
-            rospy.loginfo("%s anomaly detector enabled", self.task_name)
+            rospy.loginfo("%s anomaly detector %s enabled", self.task_name, str(self.id))
             self.enable_detector = True
             self.anomaly_flag    = False            
             self.pubSensitivity()                    
         else:
-            rospy.loginfo("%s anomaly detector disabled", self.task_name)
+            rospy.loginfo("%s anomaly detector %s disabled", self.task_name, str(self.id))
             self.enable_detector = False
             self.reset() #TODO: may be it should be removed
 
@@ -183,7 +185,7 @@ class anomaly_detector:
         self.lock.acquire()
         ########################################################################
         # Run your custom feature extraction function 
-        newData = np.array( autil.extract_feature(msg, handFeatures, self.param_dict) ) \
+        newData = np.array( autil.extract_feature(msg, self.handFeatures, self.param_dict) ) \
           * self.scale 
         ########################################################################
 
@@ -538,20 +540,13 @@ if __name__ == '__main__':
                  help='type the desired task name')
     p.add_option('--method', '--m', action='store', dest='method', type='string', default='hmmgp',
                  help='type the method name')
-    p.add_option('--dim', action='store', dest='dim', type=int, default=4,
-                 help='type the desired dimension')
+    p.add_option('--id', action='store', dest='id', type=int, default=0,
+                 help='type the detector id')
     p.add_option('--debug', '--d', action='store_true', dest='bDebug',
                  default=False, help='Enable debugging mode.')
     p.add_option('--simulation', '--sim', action='store_true', dest='bSim',
                  default=False, help='Enable a simulation mode.')
     
-
-    p.add_option('--dataRenew', '--dr', action='store_true', dest='bDataRenew',
-                 default=False, help='Renew pickle files.')
-    p.add_option('--hmmRenew', '--hr', action='store_true', dest='bHMMRenew',
-                 default=False, help='Renew HMM parameters.')
-    p.add_option('--clfRenew', '--cr', action='store_true', dest='bCLFRenew',
-                 default=False, help='Renew classifier.')
     p.add_option('--viz', action='store_true', dest='bViz',
                  default=False, help='Visualize data.')
     
@@ -559,11 +554,10 @@ if __name__ == '__main__':
     rospy.init_node(opt.task)
 
     if True:
-        from hrl_anomaly_detection.isolator.IROS2017_params import *
+        from hrl_execution_monitor.params.IROS2017_params import *
         # IROS2017
         subject_names = ['s2', 's3','s4','s5', 's6','s7','s8', 's9']
-        raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
-                                                              opt.bHMMRenew, opt.bCLFRenew)
+        raw_data_path, save_data_path, param_dict = getParams(opt.task)
         save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo'
         
     else:
@@ -571,7 +565,7 @@ if __name__ == '__main__':
         sys.exit()
 
 
-    ad = anomaly_detector(opt.task, opt.method, save_data_path, \
+    ad = anomaly_detector(opt.task, opt.method, opt.id, save_data_path, \
                           param_dict, debug=opt.bDebug)
                           
     if opt.bSim is False: ad.run()

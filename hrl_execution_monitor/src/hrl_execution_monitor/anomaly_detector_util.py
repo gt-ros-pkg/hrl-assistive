@@ -137,47 +137,40 @@ def train_detector_modules(subject_names, task_name, raw_data_path, save_data_pa
 ##     return
     
 
-def get_detector_modules(save_data_path, task_name, param_dict, fold_idx=0, \
+def get_detector_modules(save_data_path, task_name, param_dict, detector_id, fold_idx=0, \
                          verbose=False):
-                         
+
     nDetector   = len(param_dict['data_param']['handFeatures'])
     method_list = param_dict['ROC']['methods']
-    method      = method_list[0]
+    method      = method_list[detector_id]
+    i           = detector_id
 
-    scr_list = []
-    hmm_list = []
-    clf_list = []
-    for i in xrange(nDetector):
-        # load param
-        scr_pkl = os.path.join(save_data_path, 'scr_'+method+'_'+str(fold_idx)+'_c'+str(i)+'.pkl')
-        hmm_pkl = os.path.join(save_data_path, 'hmm_'+task_name+'_'+str(fold_idx)+'_c'+str(i)+'.pkl')
-        clf_pkl = os.path.join(save_data_path, 'clf_'+method+'_'+str(fold_idx)+'.pkl')
+    # load param
+    scr_pkl = os.path.join(save_data_path, 'scr_'+method+'_'+str(fold_idx)+'_c'+str(i)+'.pkl')
+    hmm_pkl = os.path.join(save_data_path, 'hmm_'+task_name+'_'+str(fold_idx)+'_c'+str(i)+'.pkl')
+    clf_pkl = os.path.join(save_data_path, 'clf_'+method+'_'+str(fold_idx)+'.pkl')
 
-        # load scaler
-        import pickle
-        if os.path.isfile(scr_pkl):
-            with open(scr_pkl, 'rb') as f:
-                m_scr = pickle.load(f)
-        else: m_scr = None
-        scr_list.append(m_scr)
+    # load scaler
+    import pickle
+    if os.path.isfile(scr_pkl):
+        with open(scr_pkl, 'rb') as f:
+            m_scr = pickle.load(f)
+    else: m_scr = None
 
-        # load hmm
-        if os.path.isfile(hmm_pkl) is False:
-            print "No HMM pickle file: ", hmm_pkl
-            sys.exit()
+    # load hmm
+    if os.path.isfile(hmm_pkl) is False:
+        print "No HMM pickle file: ", hmm_pkl
+        sys.exit()
 
-        d     = ut.load_pickle(hmm_pkl)
-        m_gen = hmm.learning_hmm(d['nState'], d['nEmissionDim'], verbose=verbose)
-        m_gen.set_hmm_object(d['A'], d['B'], d['pi'])
-        hmm_list.append(m_gen)
+    d     = ut.load_pickle(hmm_pkl)
+    m_gen = hmm.learning_hmm(d['nState'], d['nEmissionDim'], verbose=verbose)
+    m_gen.set_hmm_object(d['A'], d['B'], d['pi'])
 
-        # load classifier
-        m_clf = cf.classifier( method=method, nPosteriors=d['nState'], parallel=True )
-        m_clf.load_model(clf_pkl)
-        clf_list.append(m_clf)
+    # load classifier
+    m_clf = cf.classifier( method=method, nPosteriors=d['nState'], parallel=True )
+    m_clf.load_model(clf_pkl)
 
-    ## return m_scr, m_gen, m_clf
-    return scr_list, hmm_list, clf_list
+    return m_scr, m_gen, m_clf
 
 
 def anomaly_detection_batch(X, save_data_path, task_name, method_list, param_dict,
@@ -231,7 +224,10 @@ if __name__ == '__main__':
     task_name = 'feeding'
     param_dict['ROC']['methods'] = ['hmmgp0', 'hmmgp1']
 
-    train_detector_modules(subject_names, task_name, raw_data_path, save_data_path,\
-                            param_dict, verbose=False)
+    ## train_detector_modules(subject_names, task_name, raw_data_path, save_data_path,\
+    ##                         param_dict, verbose=False)
 
-    get_detector_modules(save_data_path, task_name, param_dict, fold_idx=0, verbose=False)
+    get_detector_modules(save_data_path, task_name, param_dict, detector_id=0,
+                         fold_idx=0, verbose=False)
+    get_detector_modules(save_data_path, task_name, param_dict, detector_id=1,
+                         fold_idx=0, verbose=False)

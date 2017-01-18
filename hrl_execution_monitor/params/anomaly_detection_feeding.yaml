@@ -1,4 +1,5 @@
 
 
 progress_ths_mult: -1.625
-hmmgp_ths_mult: -22.0
+hmmgp0_ths_mult: -20.0
+hmmgp1_ths_mult: -20.0
