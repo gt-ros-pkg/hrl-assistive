@@ -535,42 +535,42 @@ def anomaly_detection(nDetector, task_name, processed_data_path, scales, logp_vi
         l_train_idx.append(ll_classifier_train_idx)
 
         # 1) Convert training data
-        if method == 'hmmgp':
+        ## if method == 'hmmgp':
 
-            # take only normal data
-            idx_list = []
-            for i in xrange(len(ll_classifier_train_Y)):
-                if ll_classifier_train_Y[i][0]>0: continue
-                idx_list.append(i)
-            ll_classifier_train_X   = np.array(ll_classifier_train_X)[idx_list].tolist()
-            ll_classifier_train_Y   = np.array(ll_classifier_train_Y)[idx_list].tolist()
-            ll_classifier_train_idx = np.array(ll_classifier_train_idx)[idx_list].tolist()
+        # take only normal data
+        idx_list = []
+        for i in xrange(len(ll_classifier_train_Y)):
+            if ll_classifier_train_Y[i][0]>0: continue
+            idx_list.append(i)
+        ll_classifier_train_X   = np.array(ll_classifier_train_X)[idx_list].tolist()
+        ll_classifier_train_Y   = np.array(ll_classifier_train_Y)[idx_list].tolist()
+        ll_classifier_train_idx = np.array(ll_classifier_train_idx)[idx_list].tolist()
 
-            idx_list = range(len(ll_classifier_train_X))
+        idx_list = range(len(ll_classifier_train_X))
+        random.shuffle(idx_list)
+        ll_classifier_train_X   = np.array(ll_classifier_train_X)[idx_list[:nMaxData]].tolist()
+        ll_classifier_train_Y   = np.array(ll_classifier_train_Y)[idx_list[:nMaxData]].tolist()
+        ll_classifier_train_idx = np.array(ll_classifier_train_idx)[idx_list[:nMaxData]].tolist()
+
+        new_X = []
+        new_Y = []
+        new_idx = []
+        for i in xrange(len(ll_classifier_train_X)):
+            idx_list = range(len(ll_classifier_train_X[i]))
             random.shuffle(idx_list)
-            ll_classifier_train_X   = np.array(ll_classifier_train_X)[idx_list[:nMaxData]].tolist()
-            ll_classifier_train_Y   = np.array(ll_classifier_train_Y)[idx_list[:nMaxData]].tolist()
-            ll_classifier_train_idx = np.array(ll_classifier_train_idx)[idx_list[:nMaxData]].tolist()
+            new_X.append( np.array(ll_classifier_train_X)[i,idx_list[:nSubSample]].tolist() )
+            new_Y.append( np.array(ll_classifier_train_Y)[i,idx_list[:nSubSample]].tolist() )
+            new_idx.append( np.array(ll_classifier_train_idx)[i,idx_list[:nSubSample]].tolist() )
 
-            new_X = []
-            new_Y = []
-            new_idx = []
-            for i in xrange(len(ll_classifier_train_X)):
-                idx_list = range(len(ll_classifier_train_X[i]))
-                random.shuffle(idx_list)
-                new_X.append( np.array(ll_classifier_train_X)[i,idx_list[:nSubSample]].tolist() )
-                new_Y.append( np.array(ll_classifier_train_Y)[i,idx_list[:nSubSample]].tolist() )
-                new_idx.append( np.array(ll_classifier_train_idx)[i,idx_list[:nSubSample]].tolist() )
+        ll_classifier_train_X = new_X
+        ll_classifier_train_Y = new_Y
+        ll_classifier_train_idx = new_idx
 
-            ll_classifier_train_X = new_X
-            ll_classifier_train_Y = new_Y
-            ll_classifier_train_idx = new_idx
-
-            if len(ll_classifier_train_X)*len(ll_classifier_train_X[0]) > 1000:
-                print "Too many input data for GP"
-                sys.exit()
-        else:
+        if len(ll_classifier_train_X)*len(ll_classifier_train_X[0]) > 1000:
+            print "Too many input data for GP"
             sys.exit()
+        ## else:
+        ##     sys.exit()
 
         #
         X_train, Y_train, idx_train = dm.flattenSample(ll_classifier_train_X, \

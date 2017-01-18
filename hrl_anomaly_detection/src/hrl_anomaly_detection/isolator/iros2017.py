@@ -1298,7 +1298,7 @@ if __name__ == '__main__':
 
     elif opt.evaluation_isolation2:
 
-        ## ## c8 148 min 70 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! in keras_test
+        ## ## c8 148 min 70 
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation9/'+\
         ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
@@ -1314,13 +1314,13 @@ if __name__ == '__main__':
         param_dict['HMM']['scale'] = [7.0, 15.0]
         single_detector = False 
 
-        ## ep  148 min 68
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation9/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## weight = [-20.0, -30.0]
-        ## param_dict['HMM']['scale'] = [7.0, 15.0]
-        ## single_detector = False
+        ## ep 148 min 68
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation9/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        weight = [-18.0, -18.0]
+        param_dict['HMM']['scale'] = [7.0, 13.0]
+        single_detector = False
 
         ## c12, 68
         ## save_data_path = os.path.expanduser('~')+\
@@ -1330,13 +1330,13 @@ if __name__ == '__main__':
         ## param_dict['HMM']['scale'] = [7.0, 13.0]
         ## single_detector = False 
 
-        ## c11, #nodes 69 ============== BEST
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation11/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        weight = [-23.0, -35.0]  #23
-        param_dict['HMM']['scale'] = [7.0, 13.0]
-        single_detector = False #True
+        ## ## c11, #nodes 69 ============== BEST
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation11/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## weight = [-23.0, -35.0]  #23
+        ## param_dict['HMM']['scale'] = [7.0, 13.0]
+        ## single_detector = False #True
 
         # br, 148 min #nodes
         ## save_data_path = os.path.expanduser('~')+\
@@ -1349,7 +1349,7 @@ if __name__ == '__main__':
         
         window_steps= 5
         nPoints = param_dict['ROC']['nPoints']
-        param_dict['ROC']['methods'] = ['hmmgp', 'hmmgp']
+        param_dict['ROC']['methods'] = ['hmmgp0', 'hmmgp1']
         param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0
         param_dict['SVM']['nugget']  = 10.0
 
