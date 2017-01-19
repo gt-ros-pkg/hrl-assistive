@@ -1227,6 +1227,7 @@ if __name__ == '__main__':
                                                     'unimodal_kinJntEff_1',\
                                                     'unimodal_ftForce_integ',\
                                                     'unimodal_kinEEChange',\
+                                                    'crossmodal_landmarkEEDist', \
                                                     ]
         param_dict['HMM']['scale'] = 7.0
         param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.2, 2.5, nPoints)*-1.0+1.0
