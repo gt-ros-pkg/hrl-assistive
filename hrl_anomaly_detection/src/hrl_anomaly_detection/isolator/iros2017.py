@@ -1081,7 +1081,7 @@ if __name__ == '__main__':
 
     elif opt.bFeaturePlot:
         success_viz = True
-        failure_viz = False
+        failure_viz = True
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
@@ -1207,29 +1207,29 @@ if __name__ == '__main__':
         '''
 
         # ep  13-78 9-76 11-77 15-78 17-79 20-79
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation5/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        param_dict['data_param']['handFeatures'] = ['unimodal_kinVel',\
-                                                     'unimodal_ftForce_zero',\
-                                                     'unimodal_kinDesEEChange', \
-                                                     'crossmodal_landmarkEEDist', \
-                                                    ]        
-        param_dict['HMM']['scale'] = 11.0
-        param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.0, 2.5, nPoints)*-1.0 +0.5
-       
-
-        ## ep 87
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation5/'+\
         ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
-        ##                                             'unimodal_kinJntEff_1',\
-        ##                                             'unimodal_ftForce_integ',\
-        ##                                             'unimodal_kinEEChange',\
-        ##                                             ]
-        ## param_dict['HMM']['scale'] = 7.0
-        ## param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.8, 2.5, nPoints)*-1.0+0.1
+        ## param_dict['data_param']['handFeatures'] = ['unimodal_kinVel',\
+        ##                                              'unimodal_ftForce_zero',\
+        ##                                              'unimodal_kinDesEEChange', \
+        ##                                              'crossmodal_landmarkEEDist', \
+        ##                                             ]        
+        ## param_dict['HMM']['scale'] = 11.0
+        ## param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.0, 2.5, nPoints)*-1.0 +0.5
+       
+
+        ## ep 87
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation5/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
+                                                    'unimodal_kinJntEff_1',\
+                                                    'unimodal_ftForce_integ',\
+                                                    'unimodal_kinEEChange',\
+                                                    ]
+        param_dict['HMM']['scale'] = 7.0
+        param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.8, 2.5, nPoints)*-1.0+0.1
 
 
         param_dict['ROC']['methods'] = ['hmmgp']
