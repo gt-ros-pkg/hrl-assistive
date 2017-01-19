@@ -1512,7 +1512,7 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
             unimodal_audioWristAzimuth = d['audioWristAzimuthList'][idx]
             ## if offset_flag:
             ##     unimodal_audioWristAzimuth -= np.mean(unimodal_audioWristAzimuth[:startOffsetSize])
-            unimodal_audioWristAzimuth = abs(unimodal_audioWristAzimuth)
+            unimodal_audioWristAzimuth = np.abs(unimodal_audioWristAzimuth)
             
             if dataSample is None: dataSample = copy.copy(np.array(unimodal_audioWristAzimuth))
             else: dataSample = np.vstack([dataSample, copy.copy(unimodal_audioWristAzimuth)])
@@ -1526,9 +1526,12 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
             ## unimodal_kinVel = d['kinVelList'][idx]
 
             if len(kinEEPos[0])>2:
-                vel = np.linalg.norm( kinEEPos[:,1:] - kinEEPos[:,:-1], axis=0 )
+                vel = np.linalg.norm( kinEEPos[:,1:]-kinEEPos[:,:-1], axis=0 )
+                vel /= timeList[1:]-timeList[:-1]
                 vel = np.array( [0] + vel.tolist() )
             else:
+                print "not available in kinvel"
+                sys.exit()
                 vel = np.linalg.norm( kinEEPos[:,-1:] -
                                       d['kinEEPosList_last'][idx][:,-1:], axis=0 )
                 
@@ -1620,22 +1623,14 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
 
             if offset_flag: 
                 ftForce -= np.mean(ftForce[:,:startOffsetSize], axis=1)[:,np.newaxis]
-                
-            # magnitude
             mag = np.linalg.norm(ftForce, axis=0)
-            #???????????? NOTE: may not necessary
-            ## if offset_flag: 
-            ##     unimodal_ftForce_mag -= np.mean(unimodal_ftForce_mag[:startOffsetSize])
 
             # cumulation
             if len(mag)>1:
                 unimodal_ftForce_integ = [0.0]                
                 for i in xrange(1,len(mag)):
-                    ## unimodal_ftForce_mag[i] += unimodal_ftForce_mag[i-1]
                     unimodal_ftForce_integ.append( unimodal_ftForce_integ[-1] +
                                                    (mag[i]+mag[i-1])*(timeList[i]-timeList[i-1])/2.0 )
-            ## else:
-            ##     # last integ before scaling
                 
             if dataSample is None: dataSample = np.array(unimodal_ftForce_integ)
             else: dataSample = np.vstack([dataSample, unimodal_ftForce_integ])
