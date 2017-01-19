@@ -1471,7 +1471,6 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
         dataSample = None
         if len(timeList) < 2: offset_flag=False
         else: offset_flag=True
-            
 
         # Unimoda feature - Audio --------------------------------------------
         if 'unimodal_audioPower' in feature_list:

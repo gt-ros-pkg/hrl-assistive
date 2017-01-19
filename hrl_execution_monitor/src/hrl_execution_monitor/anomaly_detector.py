@@ -307,7 +307,7 @@ class anomaly_detector:
     def run(self, freq=20):
         ''' Run detector '''
         rospy.loginfo("Start to run anomaly detection: " + self.task_name)
-        rate = rospy.Rate(freq) # 25Hz, nominally.
+        rate = rospy.Rate(freq) # 20Hz, nominally.
         while not rospy.is_shutdown():
 
             if self.enable_detector is False: 

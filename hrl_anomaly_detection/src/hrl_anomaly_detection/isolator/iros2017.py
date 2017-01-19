@@ -1206,7 +1206,7 @@ if __name__ == '__main__':
         evaluation with selected feature set 5,6
         '''
 
-        # c12  13-78 9-76 11-77 15-78 17-79 20-79
+        # c12  13-76 9-76 11-77 15-78 17-79 20-79
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
@@ -1215,7 +1215,7 @@ if __name__ == '__main__':
                                                      ## 'unimodal_kinDesEEChange', \
                                                      'crossmodal_landmarkEEDist', \
                                                     ]        
-        param_dict['HMM']['scale'] = 13.0
+        param_dict['HMM']['scale'] = 15.0
         param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.0, 2.5, nPoints)*-1.0 +0.5
        
 
@@ -1258,20 +1258,20 @@ if __name__ == '__main__':
         # c8 w/ eedist
         # c8 w/o eedist
 
-        ## #c8 13  nokindesee
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation5/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        #c8 9
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation5/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
-        #c12 9
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## #c12 9
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
           
-        #c11 13  
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation7/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## #c11 13  
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation7/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         param_dict['data_param']['handFeatures'] = [['unimodal_audioWristRMS',  \
                                                     'unimodal_kinJntEff_1',\
                                                     'unimodal_ftForce_integ',\
@@ -1334,13 +1334,13 @@ if __name__ == '__main__':
         ## param_dict['HMM']['scale'] = [7.0, 13.0]
         ## single_detector = False 
 
-        ## ## c11, #nodes 69 ============== BEST
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation11/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## weight = [-23.0, -35.0]  #23
-        ## param_dict['HMM']['scale'] = [7.0, 13.0]
-        ## single_detector = False #True
+        ## c11, #nodes 69 ============== BEST
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation11/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        weight = [-23.0, -35.0]  #23
+        param_dict['HMM']['scale'] = [7.0, 13.0]
+        single_detector = False #True
 
         # br, 148 min #nodes
         ## save_data_path = os.path.expanduser('~')+\
