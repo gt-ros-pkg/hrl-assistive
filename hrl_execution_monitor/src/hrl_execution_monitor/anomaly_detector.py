@@ -212,8 +212,8 @@ class anomaly_detector:
         '''
         if msg is None: return
         if self.f_param_dict is None or self.refData is None: return
-        ## if self.cur_task is None: return
-        ## if self.cur_task.find(self.task_name) < 0: return
+        if self.cur_task is None: return
+        if self.cur_task.find(self.task_name) < 0: return
 
         # If detector is disbled, detector does not fill out the dataList.
         if self.enable_detector is False or self.init_msg is None:
@@ -237,16 +237,16 @@ class anomaly_detector:
         self.last_data = copy.copy(dataSample)
         ########################################################################
 
-        # Subtract white noise by measuring offset
-        ## if self.dataList == [] or len(self.dataList[0][0]) < self.startOffsetSize:
-        ##     self.offsetData = np.zeros(np.shape(newData))            
-        ## elif len(self.dataList[0][0]) == self.startOffsetSize:
-        ##     curData = np.reshape( np.mean(self.dataList, axis=(1,2)), (self.nEmissionDim,1,1) ) # 4,1,1
-        ##     self.offsetData = self.refData - curData
-        ##     for i in xrange(self.nEmissionDim):
-        ##         self.dataList[i] = (np.array(self.dataList[i]) + self.offsetData[i][0][0]).tolist()
+        # Subtract white noise by measuring offset using scaled data
+        if self.dataList == [] or len(self.dataList[0][0]) < self.startOffsetSize:
+            self.offsetData = np.zeros(np.shape(scaled_dataSample))            
+        elif len(self.dataList[0][0]) == self.startOffsetSize:
+            curData = np.reshape( np.mean(self.dataList, axis=(1,2)), (self.nEmissionDim,1,1) ) # 4,1,1
+            self.offsetData = self.refData - curData
+            for i in xrange(self.nEmissionDim):
+                self.dataList[i] = (np.array(self.dataList[i]) + self.offsetData[i][0][0]).tolist()
 
-        ## newData = newData+ self.offsetData
+        scaled_dataSample += self.offsetData
 
         
         if len(self.dataList) == 0:
