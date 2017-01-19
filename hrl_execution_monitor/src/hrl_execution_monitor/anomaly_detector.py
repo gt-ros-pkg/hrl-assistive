@@ -342,7 +342,7 @@ class anomaly_detector:
                 rospy.loginfo( "logp is None => anomaly" )
                 self.action_interruption_pub.publish(self.task_name+'_anomaly')
                 self.task_interruption_pub.publish(self.task_name+'_anomaly')
-                self.soundHandle.play(2)
+                self.soundHandle.play(1)
                 self.enable_detector = False
                 self.reset()
                 continue
@@ -367,7 +367,7 @@ class anomaly_detector:
                 rospy.loginfo( '-'*15 +  'Anomaly has occured!' + '-'*15 )
                 self.action_interruption_pub.publish(self.task_name+'_anomaly')
                 self.task_interruption_pub.publish(self.task_name+'_anomaly')
-                self.soundHandle.play(2)
+                self.soundHandle.play(1)
                 self.anomaly_flag    = True                
                 self.enable_detector = False
                 self.reset()
@@ -648,7 +648,7 @@ if __name__ == '__main__':
 
 
     ad = anomaly_detector(opt.task, opt.method, opt.id, save_data_path, \
-                          param_dict, debug=opt.bDebug, viz=False)
+                          param_dict, debug=opt.bDebug, viz=True)
                           
     if opt.bSim is False: ad.run()
     else:                 ad.runSim(subject_names=test_subject, raw_data_path=raw_data_path)
