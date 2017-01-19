@@ -43,16 +43,19 @@ from hrl_execution_monitor import util as autil
 
 # msg
 from hrl_anomaly_detection.msg import MultiModality
-from std_msgs.msg import String, Float64
+from std_msgs.msg import String, Float64, Bool
 from hrl_srvs.srv import Bool_None, Bool_NoneResponse, StringArray_None
 from hrl_msgs.msg import FloatArray, StringArray
+
+from matplotlib import pyplot as plt
 
 
 QUEUE_SIZE = 10
 
 class anomaly_detector:
     def __init__(self, task_name, method, detector_id, save_data_path,\
-                 param_dict, debug=False, sim=False, sim_subject_names=None):
+                 param_dict, debug=False, sim=False, sim_subject_names=None,
+                 viz=False):
         rospy.loginfo('Initializing anomaly detector')
 
         self.task_name       = task_name.lower()
@@ -60,12 +63,15 @@ class anomaly_detector:
         self.id              = detector_id
         self.save_data_path  = save_data_path
         self.debug           = debug
+        self.viz             = viz
 
         # Important containers
         self.enable_detector = False
         self.dataList        = []
-        self.anomaly_flag    = False        
+        self.anomaly_flag    = False
+        self.init_msg        = None
         self.last_msg        = None
+        self.last_data       = None
         self.refData         = None
 
         # Params
@@ -73,7 +79,7 @@ class anomaly_detector:
         self.f_param_dict    = None
         self.startOffsetSize = 4
         self.startCheckIdx   = 10
-        self.yaml_file       = '/home/dpark/catkin_ws/src/hrl-assistive/hrl_execution_monitor/params/anomaly_detection_'+self.task_name+'.yaml')
+        self.yaml_file       = '/home/dpark/catkin_ws/src/hrl-assistive/hrl_execution_monitor/params/anomaly_detection_'+self.task_name+'.yaml'
 
         # HMM, Classifier
         self.nEmissionDim = len(param_dict['data_param']['handFeatures'][detector_id])
@@ -92,8 +98,15 @@ class anomaly_detector:
         # Comms
         self.lock = threading.Lock()        
         self.initParams()
-        self.initComms()
         self.initDetector()
+        self.initComms()
+
+        # -------------------------------------------------
+        self.viz = viz
+        if viz:
+            rospy.loginfo( "Visualization enabled!!!")
+            self.figure_flag = False
+        # -------------------------------------------------
         
         self.reset()
         rospy.loginfo( "==========================================================")
@@ -143,9 +156,13 @@ class anomaly_detector:
         rospy.Subscriber('/manipulation_task/status', String, self.statusCallback)
         rospy.Subscriber('manipulation_task/ad_sensitivity_request', Float64, self.sensitivityCallback)
 
+        rospy.Subscriber('/manipulation_task/proceed', String, self.debugCallback)
+
         # Service
         self.detection_service = rospy.Service('anomaly_detector'+str(self.id)+'_enable',
                                                Bool_None, self.enablerCallback)
+        # info for GUI
+        self.pubSensitivity()
 
 
     def initDetector(self):
@@ -156,13 +173,13 @@ class anomaly_detector:
                                                                                self.task_name,
                                                                                self.param_dict,
                                                                                self.id)
-        normalTrainData = self.f_param_dict['successData']*self.scale
+        normalTrainData = self.f_param_dict['successData'] * self.scale
         self.refData = np.reshape( np.mean(normalTrainData[:,:,:self.startOffsetSize], axis=(1,2)), \
                                   (self.nEmissionDim,1,1) ) # 4,1,1
         self.classifier.set_params( ths_mult=self.w_positive )
-
-        # info for GUI
-        self.pubSensitivity()
+        
+        if self.viz or True:
+            self.mean_train = np.mean(normalTrainData, axis=1)
         
 
     #-------------------------- Communication fuctions --------------------------
@@ -185,45 +202,52 @@ class anomaly_detector:
         '''
         Subscribe raw data
         '''
+        if msg is None: return
         if self.f_param_dict is None or self.refData is None: return
-        if self.cur_task is None: return
-        if self.cur_task.find(self.task_name) < 0: return
+        ## if self.cur_task is None: return
+        ## if self.cur_task.find(self.task_name) < 0: return
 
         # If detector is disbled, detector does not fill out the dataList.
-        if self.enable_detector is False: return
+        if self.enable_detector is False or self.init_msg is None:
+            self.init_msg = copy.copy(msg)
+            return
 
         self.lock.acquire()
         ########################################################################
         # Run your custom feature extraction function
-        if self.last_msg is None:
-            self.last_msg = copy.copy(msg)
-            self.lock.release()
-            return
-        newData = autil.extract_feature(msg, self.last_msg, self.handFeatures,
-                                        self.f_param_dict['feature_params'])
-        newData *= self.scale
-        self.last_msg = copy.copy(msg)
+        dataSample, scaled_dataSample = autil.extract_feature(msg,
+                                                              self.init_msg,
+                                                              self.last_msg,
+                                                              self.last_data,
+                                                              self.handFeatures,
+                                                              self.f_param_dict['feature_params'],
+                                                              count=len(self.dataList[0][0])
+                                                              if len(self.dataList)>0 else 0)
+        scaled_dataSample = np.array(scaled_dataSample)*self.scale
+        self.last_msg  = copy.copy(msg)
+        self.last_data = copy.copy(dataSample)
         ########################################################################
 
-        # Subtract white noise by measuing offset
-        if self.dataList == [] or len(self.dataList[0][0]) < self.startOffsetSize:
-            self.offsetData = np.zeros(np.shape(newData))            
-        elif len(self.dataList[0][0]) == self.startOffsetSize:
-            curData = np.reshape( np.mean(self.dataList, axis=(1,2)), (self.nEmissionDim,1,1) ) # 4,1,1
-            self.offsetData = self.refData - curData
-                                  
-            for i in xrange(self.nEmissionDim):
-                self.dataList[i] = (np.array(self.dataList[i]) + self.offsetData[i][0][0]).tolist()
-        newData += self.offsetData
+        # Subtract white noise by measuring offset
+        ## if self.dataList == [] or len(self.dataList[0][0]) < self.startOffsetSize:
+        ##     self.offsetData = np.zeros(np.shape(newData))            
+        ## elif len(self.dataList[0][0]) == self.startOffsetSize:
+        ##     curData = np.reshape( np.mean(self.dataList, axis=(1,2)), (self.nEmissionDim,1,1) ) # 4,1,1
+        ##     self.offsetData = self.refData - curData
+        ##     for i in xrange(self.nEmissionDim):
+        ##         self.dataList[i] = (np.array(self.dataList[i]) + self.offsetData[i][0][0]).tolist()
+
+        ## newData = newData+ self.offsetData
+
         
         if len(self.dataList) == 0:
-            self.dataList = np.array(newData).tolist()
+            self.dataList = np.reshape(scaled_dataSample, (self.nEmissionDim,1,1) ).tolist() # = newData.tolist()
         else:                
             # dim x sample x length
             for i in xrange(self.nEmissionDim):
-                self.dataList[i][0] = self.dataList[i][0] + [newData[i][0][0]]
-                       
+                self.dataList[i][0] = self.dataList[i][0] + [scaled_dataSample[i]]
         self.lock.release()
+
         ## self.t2 = datetime.datetime.now()
         ## print "time: ", self.t2 - self.t1
         ## self.t1 = self.t2
@@ -251,7 +275,18 @@ class anomaly_detector:
 
         rospy.loginfo( "Classifier is updated!")
         self.pubSensitivity()
-            
+
+
+    def debugCallback(self, msg):
+        if msg.data.find("Set: Feeding 3, Feeding 4, retrieving")>=0:            
+            rospy.loginfo("%s anomaly detector %s enabled", self.task_name, str(self.id))
+            self.enable_detector = True
+            self.anomaly_flag    = False            
+            self.pubSensitivity()                    
+        else:
+            rospy.loginfo("%s anomaly detector %s disabled", self.task_name, str(self.id))
+            self.enable_detector = False
+            self.reset() #TODO: may be it should be removed
 
     #-------------------------- General fuctions --------------------------
     def pubSensitivity(self):
@@ -263,8 +298,11 @@ class anomaly_detector:
         
     def reset(self):
         ''' Reset parameters '''
+        self.lock.acquire()
         self.dataList = []
         self.enable_detector = False
+        self.lock.release()
+
 
     def run(self, freq=20):
         ''' Run detector '''
@@ -274,21 +312,29 @@ class anomaly_detector:
 
             if self.enable_detector is False: 
                 self.dataList = []
-                rate.sleep()                
-                continue
-
-            if len(self.dataList) == 0 or len(self.dataList[0][0]) < self.startCheckIdx:
+                self.count = 0
                 rate.sleep()                
                 continue
 
             #-----------------------------------------------------------------------
             self.lock.acquire()
-            cur_length = len(self.dataList[0][0])
-            logp, post = self.ml.loglikelihood(self.dataList, bPosterior=True)
-            post = post[cur_length-1]
+            if len(self.dataList) == 0 or len(self.dataList[0][0]) < self.startCheckIdx:
+                rate.sleep()                
+                self.lock.release()
+                continue
+            ## if self.viz: self.viz_raw_input(self.dataList)
+
+            ## cur_length = len(self.dataList[0][0])
+            ## logp, post = self.ml.loglikelihood(self.dataList, bPosterior=True)
             self.lock.release()
+            self.count+=1
             #-----------------------------------------------------------------------
 
+            print self.count, ": ", self.dataList[2][0][-1], self.mean_train[2][0], self.mean_train[2][-1]
+            rate.sleep()                
+            continue
+
+            
             if logp is None: 
                 rospy.loginfo( "logp is None => anomaly" )
                 self.action_interruption_pub.publish(self.task_name+'_anomaly')
@@ -298,10 +344,10 @@ class anomaly_detector:
                 self.reset()
                 continue
 
-            rospy.loginfo("logp: ", logp, "  state: ", np.argmax(post))
             if np.argmax(post)==0 and logp < 0.0: continue
             if np.argmax(post)>self.param_dict['HMM']['nState']*0.9: continue
 
+            post = post[cur_length-1]
             ll_classifier_test_X = [logp] + post.tolist()                
             if 'svm' in self.method or 'sgd' in self.method:
                 X = self.scaler.transform([ll_classifier_test_X])
@@ -310,6 +356,7 @@ class anomaly_detector:
 
             # anomal classification
             y_pred = self.classifier.predict(X)
+            print "logp: ", logp, "  state: ", np.argmax(post), " y_pred: ", y_pred
             if type(y_pred) == list: y_pred = y_pred[-1]
 
             if y_pred > 0.0:
@@ -492,7 +539,7 @@ class anomaly_detector:
         ''' Save detector '''
         # name matches with detector parameter file name.
         param_namespace = '/'+self.task_name 
-        os.system('rosparam dump '+yaml_file+' '+param_namespace)
+        os.system('rosparam dump '+self.yaml_file+' '+param_namespace)
 
         ## # Save scaler
         ## if 'svm' in self.method or 'sgd' in self.method:
@@ -541,6 +588,27 @@ class anomaly_detector:
 
     
 
+    def viz_raw_input(self, x):
+
+        if self.figure_flag is False:
+            self.fig = plt.figure()
+            plt.ion()
+            plt.show()
+            print 
+        ## else:            
+        ##     del self.ax.collections[:]
+
+        for i in xrange(self.nEmissionDim):
+            self.ax = self.fig.add_subplot(100*self.nEmissionDim+10+i+1)
+            self.ax.plot(np.array(x)[i,0], 'r-')
+            self.ax.plot(self.mean_train[i], 'b-', lw=3.0)
+
+        plt.axis('tight')
+        plt.draw()
+        self.figure_flag = True
+        ## ut.get_keystroke('Hit a key')
+
+
 
 if __name__ == '__main__':
 
@@ -576,7 +644,7 @@ if __name__ == '__main__':
 
 
     ad = anomaly_detector(opt.task, opt.method, opt.id, save_data_path, \
-                          param_dict, debug=opt.bDebug)
+                          param_dict, debug=opt.bDebug, viz=True)
                           
     if opt.bSim is False: ad.run()
     else:                 ad.runSim(subject_names=test_subject, raw_data_path=raw_data_path)

@@ -1081,7 +1081,7 @@ if __name__ == '__main__':
 
     elif opt.bFeaturePlot:
         success_viz = True
-        failure_viz = True
+        failure_viz = False
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
@@ -1090,20 +1090,21 @@ if __name__ == '__main__':
                                                     ## 'unimodal_audioWristAzimuth',\
                                                     'unimodal_kinVel',\
                                                     ## 'unimodal_kinJntEff', \
-                                                    ## 'unimodal_ftForce_integ', \
+                                                    'unimodal_ftForce_integ', \
                                                     ## 'unimodal_ftForce_delta', \
                                                     ## 'unimodal_ftForce_zero', \
                                                     ## 'unimodal_ftForce', \
                                                     ## 'unimodal_ftForceX', \
                                                     ## 'unimodal_ftForceY', \
                                                     ## 'unimodal_ftForceZ', \
-                                                    'unimodal_kinEEChange', \
-                                                    'unimodal_kinDesEEChange', \
+                                                    ## 'unimodal_kinEEChange', \
+                                                    ## 'unimodal_kinDesEEChange', \
                                                     'crossmodal_landmarkEEDist', \
                                                     ## 'crossmodal_landmarkEEAng',\
                                                     ## 'unimodal_fabricForce',\
-                                                    'unimodal_landmarkDist']
-        target_class = [13]
+                                                    ## 'unimodal_landmarkDist'
+                                                    ]
+        ## target_class = [13]
 
                                                     
         dm.getDataLOPO(subjects, opt.task, raw_data_path, save_data_path,
@@ -1114,7 +1115,7 @@ if __name__ == '__main__':
                        save_pdf=opt.bSavePdf, solid_color=True,\
                        handFeatures=param_dict['data_param']['handFeatures'], data_renew=opt.bDataRenew, \
                        ## max_time=param_dict['data_param']['max_time'])
-                       max_time=param_dict['data_param']['max_time'], target_class=target_class)
+                       max_time=param_dict['data_param']['max_time']) #, target_class=target_class)
 
     elif opt.bLikelihoodPlot:
         save_data_path = os.path.expanduser('~')+\

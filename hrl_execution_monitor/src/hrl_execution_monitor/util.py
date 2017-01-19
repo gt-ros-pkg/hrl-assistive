@@ -35,42 +35,84 @@ from hrl_anomaly_detection import data_manager as dm
 
 
 
-def extract_feature(msg, last_msg, handFeatures, param_dict):
+def extract_feature(msg, init_msg, last_msg, last_data, handFeatures, param_dict, count):
     ''' Run it on every time step '''
-
-    d = {}
-    d['timesList'] = [[0.]]
+    dataSample = []
 
     # Unimodal feature - AudioWrist ---------------------------------------
     if 'unimodal_audioWristRMS' in handFeatures:
-        d['audioWristRMSList'] = [msg.audio_wrist_rms]
+        dataSample.append(msg.audio_wrist_rms-init_msg.audio_wrist_rms)
+        if 'audioWristRMS' not in param_dict['feature_names']:
+            param_dict['feature_names'].append('audioWristRMS')
 
     # Unimoda feature - AudioWristFront------------------------------------
     if 'unimodal_audioWristFrontRMS' in handFeatures:
         ang_range = 15.0
         audio_front_rms = msg.audio_wrist_rms*stats.norm.pdf(
             msg.audio_wrist_azimuth,scale=ang_range)\
-          /stats.norm.pdf(0.0,scale=ang_range)            
-        d['audioWristFrontRMSList'] = [audio_front_rms]
+          /stats.norm.pdf(0.0,scale=ang_range)
+        dataSample.append(audio_front_rms)           
+        if 'audioWristFrontRMS' not in param_dict['feature_names']:
+            param_dict['feature_names'].append('audioWristFrontRMS')
 
     # Unimoda feature - AudioWristAzimuth------------------------------------
     if 'unimodal_audioWristAzimuth' in handFeatures:
-        d['audioWristAzimuthList'] = [msg.audio_azimuth]
+        dataSample.append( abs(msg.audio_azimuth) )
+        if 'audioWristAzimuth' not in param_dict['feature_names']:
+            param_dict['feature_names'].append('audioWristAzimuth')
 
     # Unimodal feature - Kinematics --------------------------------------
     if 'unimodal_kinVel' in handFeatures:
-        d['kinEEPosList_last'] = [ np.array([last_msg.kinematics_ee_pos]).T ]
+        vel = np.array(msg.kinematics_ee_pos) - np.array(last_msg.kinematics_ee_pos)
+        vel = np.linalg.norm(vel)
+        dataSample.append( vel )
+        if 'kinVel' not in param_dict['feature_names']:
+            param_dict['feature_names'].append('kinVel')
 
     # Unimodal feature - Kinematics --------------------------------------
     if 'unimodal_kinJntEff_1' in handFeatures:
-        d['kinJntEffList'] = [msg.kinematics_jnt_eff]
+        jnt_idx = 0
+        dataSample.append( msg.kinematics_jnt_eff[jnt_idx] - init_msg.kinematics_jnt_eff[jnt_idx] )
+        if 'kinJntEff_1' not in param_dict['feature_names']:           
+            param_dict['feature_names'].append( 'kinJntEff_1')
 
     # Unimodal feature - Force -------------------------------------------
-    if 'unimodal_ftForce' in handFeatures or 'unimodal_ftForce_zero' in handFeatures or\
-        'unimodal_ftForce_integ' in handFeatures or 'unimodal_ftForceX' in handFeatures or\
-        'unimodal_ftForceY' in handFeatures or 'unimodal_ftForceZ' in handFeatures:
-        d['ftForceList']  = [np.array([msg.ft_force]).T]
-        ## d['ftTorqueList'] = [np.array([msg.ft_torque]).T]
+    if 'unimodal_ftForce_zero' in handFeatures:      
+        mag = np.linalg.norm(np.array(msg.ft_force) - np.array(init_msg.ft_force) )
+        dataSample.append(mag)
+        if 'ftForce_mag_zero' not in param_dict['feature_names']:
+            param_dict['feature_names'].append('ftForce_mag_zero')
+
+    # Unimodal feature - Force zeroing -------------------------------------------
+    if 'unimodal_ftForce_integ' in handFeatures:
+        mag = np.linalg.norm(np.array(msg.ft_force) - np.array(init_msg.ft_force) )
+        ## mag -= init_mag
+
+        if count >0:
+            fidx = param_dict['feature_names'].tolist().index('ftForce_mag_integ')
+            mag += last_data[fidx]
+
+        dataSample.append(mag)
+        if 'ftForce_mag_integ' not in param_dict['feature_names']:
+            param_dict['feature_names'].append('ftForce_mag_integ')
+
+    # Unimodal feature - Force -------------------------------------------
+    if 'unimodal_ftForceX' in handFeatures:
+        dataSample.append( msg.ft_force[0]-init_msg.ft_force[0] )
+        if 'ftForce_x' not in param_dict['feature_names']:
+            param_dict['feature_names'].append('ftForce_x')
+
+    # Unimodal feature - Force -------------------------------------------
+    if 'unimodal_ftForceY' in handFeatures:
+        dataSample.append( msg.ft_force[1]-init_msg.ft_force[1] )
+        if 'ftForce_y' not in param_dict['feature_names']:
+            param_dict['feature_names'].append('ftForce_y')
+
+    # Unimodal feature - Force -------------------------------------------
+    if 'unimodal_ftForceZ' in handFeatures:
+        dataSample.append( msg.ft_force[2]-init_msg.ft_force[2] )
+        if 'ftForce_z' not in param_dict['feature_names']:
+            param_dict['feature_names'].append('ftForce_z')
 
     # Unimodal feature - fabric skin ------------------------------------
     if 'unimodal_fabricForce' in handFeatures:
@@ -78,60 +120,66 @@ def extract_feature(msg, last_msg, handFeatures, param_dict):
                                msg.fabric_skin_values_y, \
                                msg.fabric_skin_values_z]
         if not fabric_skin_values[0]:
-            d['fabricMagList'] = [0]
+            mag = 0
         else:
-            d['fabricMagList'] = [np.sum( np.linalg.norm(np.array(fabric_skin_values), axis=0) )]
+            mag = np.sum( np.linalg.norm(np.array(fabric_skin_values), axis=0) )
+
+        fabric_skin_values  = [init_msg.fabric_skin_values_x,
+                               init_msg.fabric_skin_values_y, \
+                               init_msg.fabric_skin_values_z]
+        if not fabric_skin_values[0]:
+            init_mag = 0
+        else:
+            init_mag = np.sum( np.linalg.norm(np.array(fabric_skin_values), axis=0) )
+
+        dataSample.append( mag - init_mag )
+        if 'fabricForce' not in param_dict['feature_names']:
+            param_dict['feature_names'].append('fabricForce')
 
     # Unimodal feature - landmark motion --------------------------
     if 'unimodal_landmarkDist' in handFeatures:
-        d['visionLandmarkPosList'] = [np.array([msg.vision_landmark_pos]).T]
+        dist = np.linalg.norm(msg.vision_landmark_pos[:3])-np.linalg.norm(init_msg.vision_landmark_pos[:3])
+        dataSample.append(dist)
+        if 'landmarkDist' not in param_dict['feature_names']:
+            param_dict['feature_names'].append('landmarkDist')
 
     # Unimodal feature - EE change --------------------------
     if 'unimodal_kinEEChange' in handFeatures:
-        d['kinEEPosList']  = [np.array([msg.kinematics_ee_pos]).T]
+        dist = np.linalg.norm(np.array(msg.kinematics_ee_pos) - np.array(init_msg.kinematics_ee_pos))
+        dataSample.append(dist)
+        if 'EEChange' not in param_dict['feature_names']:
+            param_dict['feature_names'].append('EEChange')
 
     # Unimodal feature - Desired EE change --------------------------
     if 'unimodal_kinDesEEChange' in handFeatures:
-        d['kinEEPosList']  = [np.array([msg.kinematics_ee_pos]).T]
-        d['kinDesEEPosList'] = [np.array([msg.kinematics_des_ee_pos]).T]
-    
-    # Crossmodal feature - relative dist --------------------------
-    if 'crossmodal_targetEEDist' in handFeatures:
-        d['kinEEPosList']     = [np.array([msg.kinematics_ee_pos]).T]
-        d['kinTargetPosList'] = [np.array([msg.kinematics_target_pos]).T]
+        dist = np.linalg.norm(np.array(msg.kinematics_ee_pos) -
+                              np.array(msg.kinematics_des_ee_pos))
+        init_dist = np.linalg.norm(np.array(init_msg.kinematics_ee_pos) -
+                                   np.array(init_msg.kinematics_des_ee_pos))
+        
+        dataSample.append(dist-init_dist)
+        if 'DesEEChange' not in param_dict['feature_names']:
+            param_dict['feature_names'].append('DesEEChange')
 
-    # Crossmodal feature - relative Velocity --------------------------
-    if 'crossmodal_targetEEVel' in handFeatures:
-        rospy.loginfo( "Not available")
+    ## # Crossmodal feature - relative dist --------------------------
+    ## if 'crossmodal_targetEEDist' in handFeatures:
+    ##     d['kinEEPosList']     = [np.array([msg.kinematics_ee_pos]).T]
+    ##     d['kinTargetPosList'] = [np.array([msg.kinematics_target_pos]).T]
 
-    # Crossmodal feature - relative angle --------------------------
-    if 'crossmodal_targetEEAng' in handFeatures:
-        d['kinEEQuatList'] = [np.array([msg.kinematics_ee_quat]).T]
-        d['kinTargetQuatList'] = [np.array([msg.kinematics_target_quat]).T]
-
-    # Crossmodal feature - vision relative dist with main(first) vision target----
-    if 'crossmodal_artagEEDist' in handFeatures:
-        d['kinEEPosList']     = [np.array([msg.kinematics_ee_pos]).T]
-        d['visionArtagPosList'] = [np.array([msg.vision_artag_pos]).T]
-
-    # Crossmodal feature - vision relative angle --------------------------
-    if 'crossmodal_artagEEAng' in handFeatures:
-        d['kinEEQuatList'] = [np.array([msg.kinematics_ee_quat]).T]
-        d['visionArtagPosList'] = [np.array([msg.vision_artag_pos]).T]
-        d['visionArtagQuatList'] = [np.array([msg.vision_artag_quat]).T]
-
-    # Crossmodal feature - vision relative dist with sub vision target----
-    if 'crossmodal_subArtagEEDist' in handFeatures:
-        rospy.loginfo( "Not available" )
-
-    # Crossmodal feature - vision relative angle --------------------------
-    if 'crossmodal_subArtagEEAng' in handFeatures:                
-        rospy.loginfo( "Not available" )
+    ## # Crossmodal feature - relative angle --------------------------
+    ## if 'crossmodal_targetEEAng' in handFeatures:
+    ##     d['kinEEQuatList'] = [np.array([msg.kinematics_ee_quat]).T]
+    ##     d['kinTargetQuatList'] = [np.array([msg.kinematics_target_quat]).T]
 
     # Crossmodal feature - vision relative dist with main(first) vision target----
     if 'crossmodal_landmarkEEDist' in handFeatures:
-        d['kinEEPosList']     = [np.array([msg.kinematics_ee_pos]).T]
-        d['visionLandmarkPosList'] = [np.array([msg.vision_landmark_pos]).T]
+        dist = np.linalg.norm(np.array(msg.vision_landmark_pos)[:3] -
+                              np.array(msg.kinematics_ee_pos))
+        dist -= np.linalg.norm(np.array(init_msg.vision_landmark_pos)[:3] -
+                               np.array(init_msg.kinematics_ee_pos))
+        dataSample.append(dist)
+        if 'landmarkEEDist' not in param_dict['feature_names']:
+            param_dict['feature_names'].append('landmarkEEDist')
 
     # Crossmodal feature - vision relative angle --------------------------
     if 'crossmodal_landmarkEEAng' in handFeatures:
@@ -139,9 +187,29 @@ def extract_feature(msg, last_msg, handFeatures, param_dict):
         d['visionLandmarkPosList'] = [np.array([msg.vision_landmark_pos]).T]
         d['visionLandmarkQuatList'] = [np.array([msg.vision_landmark_quat]).T]
 
-    data, _ = dm.extractHandFeature(d, handFeatures, init_param_dict = param_dict)
+        startQuat = np.array(msg.kinematics_ee_quat)
+        endQuat   = np.array(msg.vision_landmark_quat)[:4]
+        diff_ang  = abs(qt.quat_angle(startQuat, endQuat))
 
-    return data
+        startQuat = np.array(init_msg.kinematics_ee_quat)
+        endQuat   = np.array(init_msg.vision_landmark_quat)[:4]
+        diff_ang -= abs(qt.quat_angle(startQuat, endQuat))
+        dataSample.append( abs(diff_ang) )
+
+        if 'landmarkEEAng' not in param_dict['feature_names']:
+            param_dict['feature_names'].append('landmarkEEAng')
+
+    # --------------------------------------------------------------------
+    # scaling?
+    scaled_dataSample = []    
+    for i in xrange(len(dataSample)):
+        if abs( param_dict['feature_max'][i] - param_dict['feature_min'][i]) < 1e-3:
+            scaled_dataSample.append( dataSample[i] )
+        else:
+            scaled_dataSample.append( ( dataSample[i] - param_dict['feature_min'][i] )\
+                                    /( param_dict['feature_max'][i] - param_dict['feature_min'][i]) )
+
+    return dataSample, scaled_dataSample
 
 
 def reset_roc_data(ROC_data, method_list, update_list, nPoints):
