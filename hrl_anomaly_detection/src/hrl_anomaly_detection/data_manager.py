@@ -1632,12 +1632,13 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
                 unimodal_ftForce_integ = [0.0]                
                 for i in xrange(1,len(mag)):
                     ## unimodal_ftForce_mag[i] += unimodal_ftForce_mag[i-1]
-                    integ.append( integ[-1] + (mag[i]+mag[i-1])*(timeList[i]-timeList[i-1])/2.0
+                    unimodal_ftForce_integ.append( integ[-1] +
+                                                   (mag[i]+mag[i-1])*(timeList[i]-timeList[i-1])/2.0 )
             ## else:
             ##     # last integ before scaling
                 
-            if dataSample is None: dataSample = np.array(integ)
-            else: dataSample = np.vstack([dataSample, integ])
+            if dataSample is None: dataSample = np.array(unimodal_ftForce_integ)
+            else: dataSample = np.vstack([dataSample, unimodal_ftForce_integ])
 
             if 'ftForce_mag_integ' not in param_dict['feature_names']:
                 param_dict['feature_names'].append('ftForce_mag_integ')
