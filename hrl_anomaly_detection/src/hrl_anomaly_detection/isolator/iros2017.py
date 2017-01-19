@@ -1206,7 +1206,7 @@ if __name__ == '__main__':
         evaluation with selected feature set 5,6
         '''
 
-        # ep  13-78 9-76 11-77 15-78 17-79 20-79
+        # c12  13-78 9-76 11-77 15-78 17-79 20-79
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
@@ -1219,7 +1219,7 @@ if __name__ == '__main__':
         param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.0, 2.5, nPoints)*-1.0 +0.5
        
 
-        ## ep 87
+        ## c11 87
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation5/'+\
         ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
