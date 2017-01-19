@@ -122,7 +122,7 @@ class logger:
         rospy.Subscriber("/manipulation_task/user_feedback", StringArray,
                          self.feedbackCallback)
             
-        if self.nDetector>0:
+        if self.nDetector>0 and self.enable_detector:
             self.ad_srv = []
             ## self.ad_u_srv = []
             for i in xrange(self.nDetector):
@@ -165,7 +165,7 @@ class logger:
         if self.vision_artag is not None:
             self.vision_artag  = artag_vision(self.task, False, viz=False) 
 
-        if self.nDetector>0:
+        if self.nDetector>0 and self.enable_detector:
             self.ad_srv = []
             for i in xrange(self.nDetector):            
                 print "Wait anomaly detector service"

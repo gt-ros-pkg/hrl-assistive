@@ -1510,8 +1510,8 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
         # Unimoda feature - AudioWristAzimuth------------------------------------
         if 'unimodal_audioWristAzimuth' in feature_list:
             unimodal_audioWristAzimuth = d['audioWristAzimuthList'][idx]
-            if offset_flag:
-                unimodal_audioWristAzimuth -= np.mean(unimodal_audioWristAzimuth[:startOffsetSize])
+            ## if offset_flag:
+            ##     unimodal_audioWristAzimuth -= np.mean(unimodal_audioWristAzimuth[:startOffsetSize])
             unimodal_audioWristAzimuth = abs(unimodal_audioWristAzimuth)
             
             if dataSample is None: dataSample = copy.copy(np.array(unimodal_audioWristAzimuth))
@@ -1546,9 +1546,8 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
 
                 # TODO: need to simplify!
                 if offset_flag:
-                    offset = np.mean(unimodal_kinJntEff[:,:startOffsetSize], axis=1)
-                    for i in xrange(len(offset)):
-                        unimodal_kinJntEff[i] -= offset[i]
+                    offset = np.mean(unimodal_kinJntEff[jnt_idx,:startOffsetSize])
+                    unimodal_kinJntEff[jnt_idx] -= offset
 
                 if dataSample is None: dataSample = np.array( unimodal_kinJntEff[jnt_idx:jnt_idx+1] )
                 else: dataSample = np.vstack([ dataSample, unimodal_kinJntEff[jnt_idx:jnt_idx+1] ])
@@ -1576,24 +1575,24 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
             ftForce = d['ftForceList'][idx]
             
             # magnitude
-            if len(np.shape(ftForce)) > 1:
-                unimodal_ftForce_mag = np.linalg.norm(ftForce, axis=0)
-                if offset_flag: #correct???????
-                    unimodal_ftForce_mag -= np.mean(unimodal_ftForce_mag[:startOffsetSize])
-                
-                if dataSample is None: dataSample = np.array(unimodal_ftForce_mag)
-                else: dataSample = np.vstack([dataSample, unimodal_ftForce_mag])
+            ## if len(np.shape(ftForce)) > 1:
+            unimodal_ftForce_mag = np.linalg.norm(ftForce, axis=0)
+            if offset_flag: #correct???????
+                unimodal_ftForce_mag -= np.mean(unimodal_ftForce_mag[:startOffsetSize])
 
-                if 'ftForce_mag' not in param_dict['feature_names']:
-                    param_dict['feature_names'].append('ftForce_mag')
-            else:                
-                unimodal_ftForce_mag = ftForce
+            if dataSample is None: dataSample = np.array(unimodal_ftForce_mag)
+            else: dataSample = np.vstack([dataSample, unimodal_ftForce_mag])
+
+            if 'ftForce_mag' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('ftForce_mag')
+            ## else:                
+            ##     unimodal_ftForce_mag = ftForce
             
-                if dataSample is None: dataSample = np.array(unimodal_ftForce_mag)
-                else: dataSample = np.vstack([dataSample, unimodal_ftForce_mag])
+            ##     if dataSample is None: dataSample = np.array(unimodal_ftForce_mag)
+            ##     else: dataSample = np.vstack([dataSample, unimodal_ftForce_mag])
 
-                if 'ftForce_mag' not in param_dict['feature_names']:
-                    param_dict['feature_names'].append('ftForce_mag')
+            ##     if 'ftForce_mag' not in param_dict['feature_names']:
+            ##         param_dict['feature_names'].append('ftForce_mag')
 
         # Unimodal feature - Force zeroing -------------------------------------------
         if 'unimodal_ftForce_zero' in feature_list:
@@ -1602,15 +1601,11 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
             unimodal_ftForce_mean = np.mean(ftForce[:,:startOffsetSize], axis=1)
             for i in xrange(len(ftForce)):
                 ftForce[i] -= unimodal_ftForce_mean[i]
-                
-            ## ftForce = ftForce[[0,1,2]]
-            ## ftForce = ftForce[[0,1,]]
             
             # magnitude
             unimodal_ftForce_mag = np.linalg.norm(ftForce, axis=0)
-            ## unimodal_ftForce_mag = np.sum(ftForce**2, axis=0)
-            if offset_flag: #correct???????
-                unimodal_ftForce_mag -= np.mean(unimodal_ftForce_mag[:startOffsetSize])
+            ## if offset_flag: #correct???????
+            ##     unimodal_ftForce_mag -= np.mean(unimodal_ftForce_mag[:startOffsetSize])
 
             if dataSample is None: dataSample = np.array(unimodal_ftForce_mag)
             else: dataSample = np.vstack([dataSample, unimodal_ftForce_mag])
@@ -1623,22 +1618,23 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
         if 'unimodal_ftForce_integ' in feature_list:
             ftForce = d['ftForceList'][idx]
 
-            unimodal_ftForce_mean = np.mean(ftForce[:,:startOffsetSize], axis=1)
-            for i in xrange(len(ftForce)):
-                ftForce[i] -= unimodal_ftForce_mean[i]
+            if offset_flag: 
+                ftForce -= np.mean(ftForce[:,:startOffsetSize], axis=1)[:,np.newaxis]
+            ## else:
+            ##     ftForce -= d['ftForceList_init'][0]
                 
             # magnitude
             unimodal_ftForce_mag = np.linalg.norm(ftForce, axis=0)
-            ## unimodal_ftForce_mag = np.sum(ftForce**2, axis=0)
-            ## if offset_flag: #correct???????
-            ##     unimodal_ftForce_mag -= np.mean(unimodal_ftForce_mag[:startOffsetSize])
+            if offset_flag: 
+                unimodal_ftForce_mag -= np.mean(unimodal_ftForce_mag[:startOffsetSize])
 
             # cumulation
-            for i in xrange(1,len(unimodal_ftForce_mag)):
-                unimodal_ftForce_mag[i] += unimodal_ftForce_mag[i-1]
-
-            ## unimodal_ftForce_mag -= np.array([unimodal_ftForce_mag[0]]+unimodal_ftForce_mag.tolist()[:-1])
-
+            if len(unimodal_ftForce_mag)>1:
+                for i in xrange(1,len(unimodal_ftForce_mag)):
+                    unimodal_ftForce_mag[i] += unimodal_ftForce_mag[i-1]
+            ## else:
+            ##     # last integ before scaling
+                
             if dataSample is None: dataSample = np.array(unimodal_ftForce_mag)
             else: dataSample = np.vstack([dataSample, unimodal_ftForce_mag])
 
@@ -1795,14 +1791,14 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
             if len(np.shape(visionLandmarkPos)) == 1:
                 visionLandmarkPos = np.reshape(visionLandmarkPos, (3,1))
 
-            visionLandmarkPos_mean = np.mean(visionLandmarkPos[:,:startOffsetSize], axis=1)
-            for i in xrange(len(visionLandmarkPos)):
-                visionLandmarkPos[i] -= visionLandmarkPos_mean[i]
-                            
+            ## if offset_flag:
+            ##     visionLandmarkPos_mean = np.mean(visionLandmarkPos[:,:startOffsetSize], axis=1)
+            ##     for i in xrange(len(visionLandmarkPos)):
+            ##         visionLandmarkPos[i] -= visionLandmarkPos_mean[i]
             dist = np.linalg.norm(visionLandmarkPos, axis=0)
             if offset_flag:
                 dist -= np.mean(dist[:startOffsetSize])
-            
+
             crossmodal_landmarkDist = []
             for time_idx in xrange(len(timeList)):
                 crossmodal_landmarkDist.append(dist[time_idx])
@@ -1822,7 +1818,8 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
             ##     offset = np.mean(kinEEPos[:,:startOffsetSize], axis=1)
             ##     for i in xrange(len(offset)):
             ##         kinEEPos[i] -= offset[i]
-            kinEEPos -= np.mean(kinEEPos[:,:startOffsetSize], axis=1)[:,np.newaxis]
+            if offset_flag:
+                kinEEPos -= np.mean(kinEEPos[:,:startOffsetSize], axis=1)[:,np.newaxis]
             dist = np.linalg.norm(kinEEPos, axis=0)
 
             if dataSample is None: dataSample = np.array(dist)
@@ -1877,7 +1874,6 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
             if offset_flag:
                 dist -= np.mean(dist[:startOffsetSize])
 
-            print np.shape(dist)
             vel = dist[1:]-dist[:-1]
             ## vel =
             sys.exit()
@@ -2100,9 +2096,6 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
                 param_dict['feature_max'][idx] = np.max(np.array(features[idx][success_idx]).flatten())
                 param_dict['feature_min'][idx] = np.min(np.array(features[idx][success_idx]).flatten())
 
-
-
-        
     scaled_features = []
     for i, feature in enumerate(features):
         if abs( param_dict['feature_max'][i] - param_dict['feature_min'][i]) < 1e-3:

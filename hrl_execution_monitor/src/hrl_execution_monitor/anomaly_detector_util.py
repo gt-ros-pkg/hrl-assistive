@@ -140,7 +140,7 @@ def train_detector_modules(subject_names, task_name, raw_data_path, save_data_pa
 def get_detector_modules(save_data_path, task_name, param_dict, detector_id, fold_idx=0, \
                          verbose=False):
 
-    nDetector   = len(param_dict['data_param']['handFeatures'])
+    ## nDetector   = len(param_dict['data_param']['handFeatures'])
     method_list = param_dict['ROC']['methods']
     method      = method_list[detector_id]
     i           = detector_id
@@ -158,12 +158,17 @@ def get_detector_modules(save_data_path, task_name, param_dict, detector_id, fol
     feature_idx_list = []
     for feature in param_dict['data_param']['handFeatures'][detector_id]:
         feature_idx_list.append(param_dict['data_param']['isolationFeatures'].index(feature))
-    success_data = d['successData'][feature_idx_list] 
-    ## failure_data = d['failureData'][feature_idx_list]
+
+    d['param_dict']['feature_names'] = np.array(d['param_dict']['feature_names'])[feature_idx_list]
+    d['param_dict']['feature_min'] = np.array(d['param_dict']['feature_min'])[feature_idx_list]
+    d['param_dict']['feature_max'] = np.array(d['param_dict']['feature_max'])[feature_idx_list]   
+
     m_param_dict = {}
     m_param_dict['feature_params'] = d['param_dict']
-    m_param_dict['successData'] = success_data 
-           
+    m_param_dict['successData']    = d['successData'][feature_idx_list]
+    m_param_dict['failureData']    = d['failureData'][feature_idx_list]
+
+    
     ## # load scaler
     ## import pickle
     ## if os.path.isfile(scr_pkl):
@@ -243,5 +248,5 @@ if __name__ == '__main__':
 
     get_detector_modules(save_data_path, task_name, param_dict, detector_id=0,
                          fold_idx=0, verbose=False)
-    get_detector_modules(save_data_path, task_name, param_dict, detector_id=1,
-                         fold_idx=0, verbose=False)
+    ## get_detector_modules(save_data_path, task_name, param_dict, detector_id=1,
+    ##                      fold_idx=0, verbose=False)

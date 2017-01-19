@@ -68,8 +68,10 @@ class anomaly_detector:
         # Important containers
         self.enable_detector = False
         self.dataList        = []
-        self.anomaly_flag    = False        
+        self.anomaly_flag    = False
+        self.init_msg        = None
         self.last_msg        = None
+        self.last_data       = None
         self.refData         = None
 
         # Params
@@ -166,7 +168,7 @@ class anomaly_detector:
                                                                                self.task_name,
                                                                                self.param_dict,
                                                                                self.id)
-        normalTrainData = self.f_param_dict['successData'] #*self.scale
+        normalTrainData = self.f_param_dict['successData'] * self.scale
         self.refData = np.reshape( np.mean(normalTrainData[:,:,:self.startOffsetSize], axis=(1,2)), \
                                   (self.nEmissionDim,1,1) ) # 4,1,1
 
@@ -174,14 +176,7 @@ class anomaly_detector:
         self.pubSensitivity()
 
         if self.viz:
-            self.mean_train = np.mean(normalTrainData, axis=(1,2))
-            self.max_train = np.amax(normalTrainData, axis=(1,2))
-            self.min_train = np.amin(normalTrainData, axis=(1,2))
-            print self.mean_train
-            print
-            print self.max_train
-            print
-            print self.min_train
+            self.mean_train = np.mean(normalTrainData, axis=1)
         
 
     #-------------------------- Communication fuctions --------------------------
@@ -209,19 +204,22 @@ class anomaly_detector:
         if self.cur_task.find(self.task_name) < 0: return
 
         # If detector is disbled, detector does not fill out the dataList.
-        if self.enable_detector is False: return
+        if self.enable_detector is False:
+            self.init_msg = copy.copy(msg)
+            return
 
         self.lock.acquire()
         ########################################################################
         # Run your custom feature extraction function
-        if self.last_msg is None:
-            self.last_msg = copy.copy(msg)
-            self.lock.release()
-            return
-        newData = np.array( autil.extract_feature(msg, self.last_msg, self.handFeatures,
-                                                  self.f_param_dict['feature_params']) )
-        ## newData *= self.scale
-        self.last_msg = copy.copy(msg)
+        newData = np.array( autil.extract_feature(msg,
+                                                  self.init_msg,
+                                                  self.last_msg,
+                                                  self.last_data,
+                                                  self.handFeatures,
+                                                  self.f_param_dict['feature_params'])
+                                                  )*self.scale
+        self.last_msg  = copy.copy(msg)
+        self.last_data = copy.copy(newData)
         ########################################################################
 
         # Subtract white noise by measuring offset
@@ -230,12 +228,10 @@ class anomaly_detector:
         elif len(self.dataList[0][0]) == self.startOffsetSize:
             curData = np.reshape( np.mean(self.dataList, axis=(1,2)), (self.nEmissionDim,1,1) ) # 4,1,1
             self.offsetData = self.refData - curData
-                                  
             for i in xrange(self.nEmissionDim):
                 self.dataList[i] = (np.array(self.dataList[i]) + self.offsetData[i][0][0]).tolist()
 
-            print np.shape(newData), newData[1], self.offsetData[1]
-        newData -= self.offsetData
+        newData = newData+ self.offsetData
         
         if len(self.dataList) == 0:
             self.dataList = newData.tolist()
@@ -285,8 +281,10 @@ class anomaly_detector:
         
     def reset(self):
         ''' Reset parameters '''
+        self.lock.acquire()
         self.dataList = []
         self.enable_detector = False
+        self.lock.release()
 
     def run(self, freq=20):
         ''' Run detector '''
@@ -309,10 +307,13 @@ class anomaly_detector:
 
             cur_length = len(self.dataList[0][0])
             logp, post = self.ml.loglikelihood(self.dataList, bPosterior=True)
-            print "current data length: ", cur_length, logp, np.shape(self.dataList)
             self.lock.release()
             #-----------------------------------------------------------------------
 
+            print logp
+            continue
+
+            
             if logp is None: 
                 rospy.loginfo( "logp is None => anomaly" )
                 self.action_interruption_pub.publish(self.task_name+'_anomaly')
@@ -347,6 +348,7 @@ class anomaly_detector:
                 self.reset()
 
             rate.sleep()
+
 
         # save model and params
         self.save_config()
