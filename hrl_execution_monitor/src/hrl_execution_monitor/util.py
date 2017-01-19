@@ -96,6 +96,9 @@ def extract_feature(msg, init_msg, last_msg, last_data, handFeatures, param_dict
             last_mag = np.linalg.norm(np.array(last_msg.ft_force) - np.array(init_msg.ft_force))
             mag = last_data[fidx] + (mag + last_mag )*dt/2.0
 
+            fidx = param_dict['feature_names'].tolist().index('ftForce_mag_integ')
+            ## print count, " : ", last_data[fidx], dt, " => ", mag
+
         dataSample.append(mag)
         if 'ftForce_mag_integ' not in param_dict['feature_names']:
             param_dict['feature_names'].append('ftForce_mag_integ')

@@ -1268,7 +1268,7 @@ if __name__ == '__main__':
         ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
         ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
           
-        #c8 13  
+        #c8 15 w(23,24)
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation7/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
@@ -1334,12 +1334,12 @@ if __name__ == '__main__':
         ## param_dict['HMM']['scale'] = [7.0, 13.0]
         ## single_detector = False 
 
-        ## c11, #nodes 69 
+        ## c11
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation11/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        weight = [-17.0, -17.0]  #23
-        param_dict['HMM']['scale'] = [7.0, 13.0]
+        weight = [-23.0, -24.0]  
+        param_dict['HMM']['scale'] = [7.0, 15.0]
         single_detector = False #True
 
         # br, 148 min #nodes

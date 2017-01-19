@@ -13,16 +13,16 @@
     </group>
 
     <group ns="feeding" >
-      <!--arg name="ad_param" default="$(find hrl_execution_monitor)/params/anomaly_detection_feeding.yaml" /-->    
-      <!--rosparam command="load" file="$(arg ad_param)" /-->
+      <arg name="ad_param" default="$(find hrl_execution_monitor)/params/anomaly_detection_feeding.yaml" />    
+      <rosparam command="load" file="$(arg ad_param)" />
 
       <!--node name="soundplay_node" pkg="sound_play" type="soundplay_node.py"/-->
       <node name="anomaly_detector0" pkg="hrl_execution_monitor"
             type="anomaly_detector.py" args="--task feeding --id 0"
             output="screen" />
-      <!--node name="anomaly_detector1" pkg="hrl_execution_monitor"
-            type="anomaly_detector.py" args="-task feeding -id 1"
-            output="screen" /-->
+      <node name="anomaly_detector1" pkg="hrl_execution_monitor"
+            type="anomaly_detector.py" args="--task feeding --id 1"
+            output="screen" />
       <!--node name="anomaly_isolator" pkg="hrl_execution_monitor"
             type="anomaly_isolator.py" args="-task feeding -au "
             output="screen" /-->

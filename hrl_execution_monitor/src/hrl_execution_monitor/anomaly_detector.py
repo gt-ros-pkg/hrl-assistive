@@ -178,10 +178,17 @@ class anomaly_detector:
         self.refData = np.reshape( np.mean(normalTrainData[:,:,:self.startOffsetSize], axis=(1,2)), \
                                   (self.nEmissionDim,1,1) ) # 4,1,1
         self.classifier.set_params( ths_mult=self.w_positive )
+        self.classifier.set_params( hmmgp_logp_offset=self.param_dict['SVM']['logp_offset'] )
         
         if self.viz or True:
-            self.mean_train = np.mean(normalTrainData, axis=1)
-        
+            self.mean_train = np.mean(normalTrainData/self.scale, axis=1)
+
+            self.max_train = np.amax(normalTrainData/self.scale, axis=(1,2))
+            self.min_train = np.amin(normalTrainData/self.scale, axis=(1,2))
+            print self.max_train
+            print self.min_train
+
+            
 
     #-------------------------- Communication fuctions --------------------------
     def enablerCallback(self, msg):
@@ -327,16 +334,10 @@ class anomaly_detector:
             self.lock.release()
             self.count+=1
             if self.viz: self.viz_raw_input(self.dataList)
+            cur_length = len(dataList[0][0])
+            logp, post = self.ml.loglikelihood(dataList, bPosterior=True)
                 
             #-----------------------------------------------------------------------
-        
-            cur_length = len(dataList[0][0])
-            ## logp, post = self.ml.loglikelihood(dataList, bPosterior=True)
-
-            print self.count, ": ", dataList[2][0][-1], self.mean_train[2][0], self.mean_train[2][-1]
-            rate.sleep()                
-            continue
-            
             if logp is None: 
                 rospy.loginfo( "logp is None => anomaly" )
                 self.action_interruption_pub.publish(self.task_name+'_anomaly')
@@ -346,10 +347,11 @@ class anomaly_detector:
                 self.reset()
                 continue
 
-            if np.argmax(post)==0 and logp < 0.0: continue
+            post = post[cur_length-1]
+
+            if np.argmax(post)==0: continue # and logp < 0.0: continue
             if np.argmax(post)>self.param_dict['HMM']['nState']*0.9: continue
 
-            post = post[cur_length-1]
             ll_classifier_test_X = [logp] + post.tolist()                
             if 'svm' in self.method or 'sgd' in self.method:
                 X = self.scaler.transform([ll_classifier_test_X])
@@ -358,7 +360,7 @@ class anomaly_detector:
 
             # anomal classification
             y_pred = self.classifier.predict(X)
-            print "logp: ", logp, "  state: ", np.argmax(post), " y_pred: ", y_pred
+            print self.count, " : logp: ", logp, "  state: ", np.argmax(post), " y_pred: ", y_pred[-1], self.id
             if type(y_pred) == list: y_pred = y_pred[-1]
 
             if y_pred > 0.0:

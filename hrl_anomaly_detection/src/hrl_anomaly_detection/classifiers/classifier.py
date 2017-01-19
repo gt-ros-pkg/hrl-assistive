@@ -498,7 +498,7 @@ class classifier(learning_base):
 
             return l_err            
 
-        elif self.method == 'hmmgp':
+        elif self.method.find('hmmgp')>=0:
             '''
             gaussian process
             '''
