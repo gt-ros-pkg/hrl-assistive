@@ -186,3 +186,11 @@ def update_roc_data(ROC_data, new_data, nPoints, method_list):
 
     return ROC_data
 
+def image_list_flatten(image_list):
+    ''' flatten image list '''
+    if len(image_list) == 0: return []
+    new_list = []
+    for i in xrange(len(image_list)):
+        for j in xrange(len(image_list[i])):
+            new_list.append(image_list[i][j])
+    return np.array(new_list)

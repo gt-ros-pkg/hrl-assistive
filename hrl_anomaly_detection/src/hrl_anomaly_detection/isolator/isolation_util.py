@@ -1056,11 +1056,3 @@ def save_data_labels(data, labels, processed_data_path='./'):
     os.system('mv *.tsv ~/Dropbox/HRL/')        
 
 
-def image_list_flatten(image_list):
-    ''' flatten image list '''
-    if len(image_list) == 0: return []
-    new_list = []
-    for i in xrange(len(image_list)):
-        for j in xrange(len(image_list[i])):
-            new_list.append(image_list[i][j])
-    return np.array(new_list)

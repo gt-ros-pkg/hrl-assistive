@@ -131,13 +131,21 @@ def get_isolation_data(subject_names, task_name, raw_data_path, save_data_path, 
     kFold_list = d['kFold_list']
 
     # flattening image list
-    success_image_list = iutil.image_list_flatten( d.get('success_image_list',[]) )
-    failure_image_list = iutil.image_list_flatten( d.get('failure_image_list',[]) )
+    success_image_list = autil.image_list_flatten( d.get('success_image_list',[]) )
+    failure_image_list = autil.image_list_flatten( d.get('failure_image_list',[]) )
 
     failure_labels = []
     for f in d['failureFiles']:
         failure_labels.append( int( f.split('/')[-1].split('_')[0] ) )
     failure_labels = np.array( failure_labels )
+
+    # Static feature selection for isolation
+    feature_list = []
+    for feature in param_dict['data_param']['staticFeatures']:
+        idx = [ i for i, x in enumerate(param_dict['data_param']['isolationFeatures']) if feature == x][0]
+        feature_list.append(idx)
+    successData_static = np.array(d['successData'])[feature_list]
+    failureData_static = np.array(d['failureData'])[feature_list]
     
     #-----------------------------------------------------------------------------------------
     # Dynamic feature selection for detection and isolation
@@ -156,20 +164,14 @@ def get_isolation_data(subject_names, task_name, raw_data_path, save_data_path, 
         HMM_dict_local = copy.deepcopy(HMM_dict)
         HMM_dict_local['scale'] = param_dict['HMM']['scale'][i]
         
-        # Training HMM, and getting classifier training and testing data
-        dm.saveHMMinducedFeatures(kFold_list, success_data_ad[i], failure_data_ad[i],\
-                                  task_name, save_data_path,\
-                                  HMM_dict_local, data_renew, startIdx, nState, cov, \
-                                  noise_mag=0.03, diag=False, suffix=str(i),\
-                                  verbose=verbose)
+        ## # Training HMM, and getting classifier training and testing data
+        ## dm.saveHMMinducedFeatures(kFold_list, success_data_ad[i], failure_data_ad[i],\
+        ##                           task_name, save_data_path,\
+        ##                           HMM_dict_local, data_renew, startIdx, nState, cov, \
+        ##                           success_files=d['successFiles'], failure_files=d['failureFiles'],\
+        ##                           noise_mag=0.03, suffix=str(i),\
+        ##                           verbose=verbose, one_class=False)
 
-    # Static feature selection for isolation
-    feature_list = []
-    for feature in param_dict['data_param']['staticFeatures']:
-        idx = [ i for i, x in enumerate(param_dict['data_param']['isolationFeatures']) if feature == x][0]
-        feature_list.append(idx)
-    successData_static = np.array(d['successData'])[feature_list]
-    failureData_static = np.array(d['failureData'])[feature_list]
     del d
 
     # ---------------------------------------------------------------

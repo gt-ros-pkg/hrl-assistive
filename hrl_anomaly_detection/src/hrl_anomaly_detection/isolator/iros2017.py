@@ -39,6 +39,7 @@ from hrl_anomaly_detection.util import *
 from hrl_anomaly_detection.util_viz import *
 from hrl_anomaly_detection import data_manager as dm
 from hrl_anomaly_detection import util as util
+from hrl_execution_monitor import util as autil
 
 # Private learners
 from hrl_anomaly_detection.hmm import learning_hmm as hmm
@@ -683,8 +684,8 @@ def evaluation_omp_isolation(subject_names, task_name, raw_data_path, processed_
 ##         if data_gen: sys.exit()
 
 ##     # flattening image list
-##     success_image_list = iutil.image_list_flatten( d.get('success_image_list',[]) )
-##     failure_image_list = iutil.image_list_flatten( d.get('failure_image_list',[]) )
+##     success_image_list = autil.image_list_flatten( d.get('success_image_list',[]) )
+##     failure_image_list = autil.image_list_flatten( d.get('failure_image_list',[]) )
 
 ##     failure_labels = []
 ##     for f in failure_files:
@@ -882,8 +883,8 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
         ut.save_pickle(d, crossVal_pkl)
 
     # flattening image list
-    success_image_list = iutil.image_list_flatten( d.get('success_image_list',[]) )
-    failure_image_list = iutil.image_list_flatten( d.get('failure_image_list',[]) )
+    success_image_list = autil.image_list_flatten( d.get('success_image_list',[]) )
+    failure_image_list = autil.image_list_flatten( d.get('failure_image_list',[]) )
 
 
     failure_labels = []

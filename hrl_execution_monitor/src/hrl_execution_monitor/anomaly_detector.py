@@ -73,6 +73,7 @@ class anomaly_detector:
         self.f_param_dict    = None
         self.startOffsetSize = 4
         self.startCheckIdx   = 10
+        self.yaml_file       = '/home/dpark/catkin_ws/src/hrl-assistive/hrl_execution_monitor/params/anomaly_detection_'+self.task_name+'.yaml')
 
         # HMM, Classifier
         self.nEmissionDim = len(param_dict['data_param']['handFeatures'][detector_id])
@@ -158,6 +159,7 @@ class anomaly_detector:
         normalTrainData = self.f_param_dict['successData']*self.scale
         self.refData = np.reshape( np.mean(normalTrainData[:,:,:self.startOffsetSize], axis=(1,2)), \
                                   (self.nEmissionDim,1,1) ) # 4,1,1
+        self.classifier.set_params( ths_mult=self.w_positive )
 
         # info for GUI
         self.pubSensitivity()
@@ -197,8 +199,9 @@ class anomaly_detector:
             self.last_msg = copy.copy(msg)
             self.lock.release()
             return
-        newData = np.array( autil.extract_feature(msg, self.last_msg, self.handFeatures,
-                                                  self.f_param_dict['feature_params']) ) * self.scale
+        newData = autil.extract_feature(msg, self.last_msg, self.handFeatures,
+                                        self.f_param_dict['feature_params'])
+        newData *= self.scale
         self.last_msg = copy.copy(msg)
         ########################################################################
 
@@ -488,19 +491,18 @@ class anomaly_detector:
     def save_config(self):
         ''' Save detector '''
         # name matches with detector parameter file name.
-        yaml_file = os.path.join(self.save_data_path, 'anomaly_detection_'+self.task_name+'.yaml')
         param_namespace = '/'+self.task_name 
         os.system('rosparam dump '+yaml_file+' '+param_namespace)
 
-        # Save scaler
-        if 'svm' in self.method or 'sgd' in self.method:
-            with open(self.scaler_model_file, 'wb') as f:
-                pickle.dump(self.scaler, f)
+        ## # Save scaler
+        ## if 'svm' in self.method or 'sgd' in self.method:
+        ##     with open(self.scaler_model_file, 'wb') as f:
+        ##         pickle.dump(self.scaler, f)
                 
-        # Save classifier
-        if self.bSim is False:
-            print "save model"
-            self.classifier.save_model(self.classifier_model_file)
+        ## # Save classifier
+        ## if self.bSim is False:
+        ##     print "save model"
+        ##     self.classifier.save_model(self.classifier_model_file)
         
 
     def applying_offset(self, data):

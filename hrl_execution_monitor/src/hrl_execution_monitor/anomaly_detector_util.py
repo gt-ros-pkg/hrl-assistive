@@ -101,8 +101,8 @@ def train_detector_modules(subject_names, task_name, raw_data_path, save_data_pa
                                   task_name, save_data_path,\
                                   HMM_dict_local, data_renew, startIdx, nState, cov, \
                                   success_files=d['successFiles'], failure_files=d['failureFiles'],\
-                                  noise_mag=0.03, diag=False, suffix=str(i),\
-                                  verbose=verbose, one_class=True)
+                                  noise_mag=0.03, suffix=str(i),\
+                                  verbose=verbose, one_class=False)
 
     # Train a classifier ----------------------------------------------
     roc_pkl = os.path.join(save_data_path, 'roc_'+task_name+'.pkl')
@@ -238,8 +238,8 @@ if __name__ == '__main__':
     task_name = 'feeding'
     param_dict['ROC']['methods'] = ['hmmgp0', 'hmmgp1']
 
-    ## train_detector_modules(subject_names, task_name, raw_data_path, save_data_path,\
-    ##                         param_dict, verbose=False)
+    train_detector_modules(subject_names, task_name, raw_data_path, save_data_path,\
+                            param_dict, verbose=False)
 
     get_detector_modules(save_data_path, task_name, param_dict, detector_id=0,
                          fold_idx=0, verbose=False)
