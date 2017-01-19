@@ -319,23 +319,23 @@ class anomaly_detector:
                 continue
 
             #-----------------------------------------------------------------------
-            self.lock.acquire()
             if len(self.dataList) == 0 or len(self.dataList[0][0]) < self.startCheckIdx:
                 rate.sleep()                
-                self.lock.release()
                 continue
-            ## if self.viz: self.viz_raw_input(self.dataList)
-
-            ## cur_length = len(self.dataList[0][0])
-            ## logp, post = self.ml.loglikelihood(self.dataList, bPosterior=True)
+            self.lock.acquire()
+            dataList = copy.copy(self.dataList)
             self.lock.release()
             self.count+=1
+            if self.viz: self.viz_raw_input(self.dataList)
+                
             #-----------------------------------------------------------------------
+        
+            cur_length = len(dataList[0][0])
+            ## logp, post = self.ml.loglikelihood(dataList, bPosterior=True)
 
-            print self.count, ": ", self.dataList[2][0][-1], self.mean_train[2][0], self.mean_train[2][-1]
+            print self.count, ": ", dataList[2][0][-1], self.mean_train[2][0], self.mean_train[2][-1]
             rate.sleep()                
             continue
-
             
             if logp is None: 
                 rospy.loginfo( "logp is None => anomaly" )
@@ -646,7 +646,7 @@ if __name__ == '__main__':
 
 
     ad = anomaly_detector(opt.task, opt.method, opt.id, save_data_path, \
-                          param_dict, debug=opt.bDebug, viz=True)
+                          param_dict, debug=opt.bDebug, viz=False)
                           
     if opt.bSim is False: ad.run()
     else:                 ad.runSim(subject_names=test_subject, raw_data_path=raw_data_path)

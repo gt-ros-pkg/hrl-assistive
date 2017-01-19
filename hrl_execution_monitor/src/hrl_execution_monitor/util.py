@@ -35,7 +35,7 @@ from hrl_anomaly_detection import data_manager as dm
 
 
 
-def extract_feature(msg, init_msg, last_msg, last_data, handFeatures, param_dict, count):
+def extract_feature(msg, init_msg, last_msg, last_data, handFeatures, param_dict, count=0):
     ''' Run it on every time step '''
     dataSample = []
 
@@ -89,8 +89,6 @@ def extract_feature(msg, init_msg, last_msg, last_data, handFeatures, param_dict
     if 'unimodal_ftForce_integ' in handFeatures:
         mag = np.linalg.norm(np.array(msg.ft_force) - np.array(init_msg.ft_force))
         ## mag -= init_mag
-
-        print "Count : ", count, dt
 
         if count >0:
             fidx = param_dict['feature_names'].tolist().index('ftForce_mag_integ')
