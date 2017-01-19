@@ -1229,7 +1229,7 @@ if __name__ == '__main__':
                                                     'unimodal_kinEEChange',\
                                                     ]
         param_dict['HMM']['scale'] = 7.0
-        param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.8, 2.5, nPoints)*-1.0+0.1
+        param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.2, 2.5, nPoints)*-1.0+1.0
 
 
         param_dict['ROC']['methods'] = ['hmmgp']
