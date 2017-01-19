@@ -248,5 +248,5 @@ if __name__ == '__main__':
 
     get_detector_modules(save_data_path, task_name, param_dict, detector_id=0,
                          fold_idx=0, verbose=False)
-    ## get_detector_modules(save_data_path, task_name, param_dict, detector_id=1,
-    ##                      fold_idx=0, verbose=False)
+    get_detector_modules(save_data_path, task_name, param_dict, detector_id=1,
+                         fold_idx=0, verbose=False)
