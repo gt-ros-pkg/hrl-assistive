@@ -1632,7 +1632,7 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
                 unimodal_ftForce_integ = [0.0]                
                 for i in xrange(1,len(mag)):
                     ## unimodal_ftForce_mag[i] += unimodal_ftForce_mag[i-1]
-                    unimodal_ftForce_integ.append( integ[-1] +
+                    unimodal_ftForce_integ.append( unimodal_ftForce_integ[-1] +
                                                    (mag[i]+mag[i-1])*(timeList[i]-timeList[i-1])/2.0 )
             ## else:
             ##     # last integ before scaling
