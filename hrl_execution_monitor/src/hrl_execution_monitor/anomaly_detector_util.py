@@ -247,13 +247,13 @@ if __name__ == '__main__':
     save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
     param_dict['HMM']['scale'] = [7.0, 9.0] #[7.0, 11.0]
 
-    ## #c11
+    #c11 83
     save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
-    param_dict['HMM']['scale'] = [3.0, 11.0]
+    param_dict['HMM']['scale'] = [1.,11.] #[3.0, 11.0]
 
     ## #c8 78
-    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
-    param_dict['HMM']['scale'] = [7.0, 13.0]
+    ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
+    ## param_dict['HMM']['scale'] = [7.0, 13.0]
     
 
     train_detector_modules(subject_names, task_name, raw_data_path, save_data_path,\
