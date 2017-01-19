@@ -243,10 +243,17 @@ if __name__ == '__main__':
     task_name = 'feeding'
     param_dict['ROC']['methods'] = ['hmmgp0', 'hmmgp1']
 
+    #c12
+    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
+    param_dict['HMM']['scale'] = [7.0, 11.0]
+
+
+    
+
     train_detector_modules(subject_names, task_name, raw_data_path, save_data_path,\
                             param_dict, verbose=False)
 
-    get_detector_modules(save_data_path, task_name, param_dict, detector_id=0,
-                         fold_idx=0, verbose=False)
-    get_detector_modules(save_data_path, task_name, param_dict, detector_id=1,
-                         fold_idx=0, verbose=False)
+    ## get_detector_modules(save_data_path, task_name, param_dict, detector_id=0,
+    ##                      fold_idx=0, verbose=False)
+    ## get_detector_modules(save_data_path, task_name, param_dict, detector_id=1,
+    ##                      fold_idx=0, verbose=False)
