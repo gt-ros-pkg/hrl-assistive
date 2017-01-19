@@ -198,7 +198,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
         if os.path.isfile(roc_pkl) is False: continue
         ROC_data = ut.load_pickle(roc_pkl)        
-        ## auc = roc_info(method_list, ROC_data, nPoints, no_plot=True, verbose=False)
+        ## auc = roc_info(ROC_data, nPoints, no_plot=True, verbose=False)
 
 
         modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(0)+'.pkl')
@@ -361,7 +361,7 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
     ut.save_pickle(ROC_data, roc_pkl)
 
     # ---------------- ROC Visualization ----------------------
-    roc_info(method_list, ROC_data, nPoints, no_plot=no_plot, ROC_dict=ROC_dict)
+    roc_info(ROC_data, nPoints, no_plot=no_plot, ROC_dict=ROC_dict)
     class_info(method_list, ROC_data, nPoints, kFold_list)
 
 
