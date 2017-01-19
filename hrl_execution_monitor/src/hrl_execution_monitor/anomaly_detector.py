@@ -103,6 +103,7 @@ class anomaly_detector:
 
         # -------------------------------------------------
         self.viz = viz
+        self.count = 0
         if viz:
             rospy.loginfo( "Visualization enabled!!!")
             self.figure_flag = False
@@ -210,6 +211,7 @@ class anomaly_detector:
         # If detector is disbled, detector does not fill out the dataList.
         if self.enable_detector is False or self.init_msg is None:
             self.init_msg = copy.copy(msg)
+            self.last_msg = copy.copy(msg)
             return
 
         self.lock.acquire()

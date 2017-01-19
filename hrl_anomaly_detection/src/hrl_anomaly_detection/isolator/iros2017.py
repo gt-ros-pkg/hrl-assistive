@@ -1283,7 +1283,7 @@ if __name__ == '__main__':
                                                      ## 'unimodal_kinDesEEChange', \
                                                      'crossmodal_landmarkEEDist', \
                                                     ]]
-        param_dict['HMM']['scale']   = [7.0, 15.0] #9 nest
+        param_dict['HMM']['scale']   = [7.0, 15.0] # 13 #9 nest
         param_dict['SVM']['hmmgp_logp_offset'] = 0 #30.0 #50.0
         ## param_dict['ROC']['hmmgp0_param_range'] = np.logspace(0.7, 2.0, nPoints)*-1.0+1.0
         ## param_dict['ROC']['hmmgp1_param_range'] = np.logspace(0.7, 2.0, nPoints)*-1.0+0.5 #2.
@@ -1319,12 +1319,12 @@ if __name__ == '__main__':
         single_detector = False 
 
         ## ep 148 min #nodes 68
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation9/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## weight = [-25.0, -25.0]
-        ## param_dict['HMM']['scale'] = [7.0, 13.0]
-        ## single_detector = False
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation9/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        weight = [-24.0, -24.0]
+        param_dict['HMM']['scale'] = [7.0, 15.0]
+        single_detector = False
 
         ## c12, 68
         ## save_data_path = os.path.expanduser('~')+\
@@ -1335,12 +1335,12 @@ if __name__ == '__main__':
         ## single_detector = False 
 
         ## c11, #nodes 69 ============== BEST
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation11/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        weight = [-23.0, -35.0]  #23
-        param_dict['HMM']['scale'] = [7.0, 13.0]
-        single_detector = False #True
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation11/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## weight = [-23.0, -35.0]  #23
+        ## param_dict['HMM']['scale'] = [7.0, 13.0]
+        ## single_detector = False #True
 
         # br, 148 min #nodes
         ## save_data_path = os.path.expanduser('~')+\

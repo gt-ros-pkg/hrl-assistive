@@ -39,6 +39,8 @@ def extract_feature(msg, init_msg, last_msg, last_data, handFeatures, param_dict
     ''' Run it on every time step '''
     dataSample = []
 
+    dt = msg.header.stamp.to_sec() - last_msg.header.stamp.to_sec()
+
     # Unimodal feature - AudioWrist ---------------------------------------
     if 'unimodal_audioWristRMS' in handFeatures:
         dataSample.append(msg.audio_wrist_rms-init_msg.audio_wrist_rms)
@@ -83,14 +85,18 @@ def extract_feature(msg, init_msg, last_msg, last_data, handFeatures, param_dict
         if 'ftForce_mag_zero' not in param_dict['feature_names']:
             param_dict['feature_names'].append('ftForce_mag_zero')
 
-    # Unimodal feature - Force zeroing -------------------------------------------
+    # Unimodal feature - Force integ -------------------------------------------
     if 'unimodal_ftForce_integ' in handFeatures:
-        mag = np.linalg.norm(np.array(msg.ft_force) - np.array(init_msg.ft_force) )
+        mag = np.linalg.norm(np.array(msg.ft_force) - np.array(init_msg.ft_force))
         ## mag -= init_mag
+
+        print "Count : ", count, dt
 
         if count >0:
             fidx = param_dict['feature_names'].tolist().index('ftForce_mag_integ')
-            mag += last_data[fidx]
+
+            last_mag = np.linalg.norm(np.array(last_msg.ft_force) - np.array(init_msg.ft_force))
+            mag = last_data[fidx] + (mag + last_mag )*dt/2.0
 
         dataSample.append(mag)
         if 'ftForce_mag_integ' not in param_dict['feature_names']:
