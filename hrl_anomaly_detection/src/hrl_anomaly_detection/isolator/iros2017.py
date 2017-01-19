@@ -932,7 +932,7 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
     # ---------------------------------------------------------------
     #temp
     ## kFold_list = kFold_list[:1]
-    kFold_list = kFold_list[:8]
+    ## kFold_list = kFold_list[:8]
 
     # set parameters
     method     = 'hmmgp'
