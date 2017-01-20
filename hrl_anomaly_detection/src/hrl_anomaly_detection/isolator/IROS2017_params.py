@@ -48,7 +48,7 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
     noise_pos_max = [0.8374, 15.5217, 19.5169, 0.2758]
     noise_neg_max = [-0.003, -11.9299, -3.4822, -0.1386]
 
-    HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 2.645, 'scale': 6.111,\
+    HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 2.64, 'scale': 6.111,\
                       'add_logp_d': False }
                       ## 'step_mag_dir': [1,-1,1,0] } #
     SVM_param_dict = {'renew': CF_renew, 'w_negative': 1.0, 'gamma': 5.0, 'cost': 1.0,\
