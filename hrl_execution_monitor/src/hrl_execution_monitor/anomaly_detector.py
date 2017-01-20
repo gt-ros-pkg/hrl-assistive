@@ -332,7 +332,7 @@ class anomaly_detector:
                 continue
 
             #-----------------------------------------------------------------------
-            if len(self.dataList) == 0 or len(self.dataList[0][0]) < self.startCheckIdx:
+            if len(self.dataList) == 0 or len(self.dataList[0][0]) <= self.startCheckIdx:
                 rate.sleep()                
                 continue
             self.lock.acquire()
@@ -368,6 +368,8 @@ class anomaly_detector:
             else:
                 X = ll_classifier_test_X
 
+            print self.classifier.method
+            
             # anomal classification
             err, y_pred, sigma = self.classifier.predict(X)
             if self.viz:
@@ -376,6 +378,11 @@ class anomaly_detector:
                 self.viz_decision_boundary(dataList, self.logpDataList)
             
             print len(dataList[0][0]), " : logp: ", logp, "  state: ", np.argmax(post), " y_pred: ", y_pred, sigma, self.id #err[-1]+logp, self.id
+
+            
+            rate.sleep()            
+            continue
+        
             if type(err) == list: err = err[-1]
 
             if err > 0.0:
