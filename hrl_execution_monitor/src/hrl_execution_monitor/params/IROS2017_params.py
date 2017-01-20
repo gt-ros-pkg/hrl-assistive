@@ -67,7 +67,7 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                       'add_logp_d': False }
     SVM_param_dict = {'renew': CF_renew,\
                       'logp_offset': 0.,\
-                      'nugget': 1.0, 'theta0': 1.0,\
+                      'nugget': 10.0, 'theta0': 1.0,\
                       'std_offset': 1.4464
                       }
 
