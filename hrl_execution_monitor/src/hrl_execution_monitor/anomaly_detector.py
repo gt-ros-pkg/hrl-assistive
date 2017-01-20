@@ -169,7 +169,7 @@ class anomaly_detector:
 
     def initDetector(self):
         ''' init detector ''' 
-        rospy.loginfo( "Initializing a detector with %s of %s", self.method, self.task_name)
+        rospy.loginfo( "Initializing a detector (%s) for %s", self.method, self.task_name)
         
         self.f_param_dict, self.ml, self.classifier = adu.get_detector_modules(self.save_data_path,
                                                                                self.task_name,
@@ -285,7 +285,7 @@ class anomaly_detector:
 
         self.w_positive = sensitivity_des
         self.classifier.set_params( ths_mult=self.w_positive )
-        rospy.set_param(self.method+'_ths_mult', float(sensitivity_des))            
+        rospy.set_param(self.method+str(self.id)+'_ths_mult', float(sensitivity_des))            
 
         rospy.loginfo( "Classifier is updated!")
         self.pubSensitivity()
