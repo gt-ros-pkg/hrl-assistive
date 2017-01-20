@@ -111,12 +111,12 @@ def train_detector_modules(subject_names, task_name, raw_data_path, save_data_pa
     else: ROC_data = ut.load_pickle(roc_pkl)
     ROC_data = autil.reset_roc_data(ROC_data, [method_list[0][:-1]], ROC_dict['update_list'], nPoints)
 
-    l_data = Parallel(n_jobs=-1, verbose=10)\
+    l_data = Parallel(n_jobs=1, verbose=10)\
       (delayed(cf.run_classifiers_boost)( idx, save_data_path, task_name, \
                                           method_list, ROC_data, \
                                           param_dict, nSubSample=80,\
                                           startIdx=startIdx, nState=nState,\
-                                          save_model=True) \
+                                          save_model=True, n_jobs=-1) \
       for idx in xrange(len(kFold_list)) )
     
     ROC_data = autil.update_roc_data(ROC_data, l_data, nPoints, [method_list[0][:-1]])
@@ -129,7 +129,6 @@ def train_detector_modules(subject_names, task_name, raw_data_path, save_data_pa
     # TODO
     # need to print the best weight out
     # need to save acc list
-
     return 
 
 
