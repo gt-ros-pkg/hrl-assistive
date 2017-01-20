@@ -157,7 +157,7 @@ class anomaly_detector:
         rospy.Subscriber('/manipulation_task/status', String, self.statusCallback)
         rospy.Subscriber('manipulation_task/ad_sensitivity_request', Float64, self.sensitivityCallback)
 
-        rospy.Subscriber('/manipulation_task/proceed', String, self.debugCallback)
+        ## rospy.Subscriber('/manipulation_task/proceed', String, self.debugCallback)
 
         # Service
         self.detection_service = rospy.Service('anomaly_detector'+str(self.id)+'_enable',
@@ -181,10 +181,10 @@ class anomaly_detector:
         self.classifier.set_params( hmmgp_logp_offset=self.param_dict['SVM']['logp_offset'] )
         
         if self.viz or True:
-            self.mean_train = np.mean(normalTrainData/self.scale, axis=1)
+            self.mean_train = np.mean(normalTrainData, axis=1)
 
-            self.max_train = np.amax(normalTrainData/self.scale, axis=(1,2))
-            self.min_train = np.amin(normalTrainData/self.scale, axis=(1,2))
+            self.max_train = np.amax(normalTrainData, axis=(1,2))
+            self.min_train = np.amin(normalTrainData, axis=(1,2))
             print self.max_train
             print self.min_train
 
@@ -245,7 +245,8 @@ class anomaly_detector:
             self.offsetData = self.refData - curData
             for i in xrange(self.nEmissionDim):
                 self.dataList[i] = (np.array(self.dataList[i]) + self.offsetData[i][0][0]).tolist()
-
+            self.offsetData = self.offsetData[:,0,0]
+            
         scaled_dataSample += self.offsetData
 
         
