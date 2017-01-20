@@ -1375,8 +1375,8 @@ def combineData(X1,X2, target_features, all_features, first_axis='dim', add_nois
         ## return X
 
 def roc_info(ROC_data, nPoints, delay_plot=False, no_plot=False, save_pdf=False,\
-             timeList=None, only_tpr=False, legend=False, verbose=True, ROC_dict=None,\
-             multi_ad=False):
+             timeList=None, legend=False, verbose=True, ROC_dict=None,\
+             multi_ad=False, padding=False):
     # ---------------- ROC Visualization ----------------------
     
     if verbose: print "Start to visualize ROC curves!!!"
@@ -1423,11 +1423,7 @@ def roc_info(ROC_data, nPoints, delay_plot=False, no_plot=False, save_pdf=False,
         for i in xrange(nPoints):
             tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
             fnr_l.append( 100.0 - tpr_l[-1] )
-            if only_tpr is False:
-                try:
-                    fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
-                except:
-                    continue
+            fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
 
             delay_mean_l.append( np.mean(np.array(delay_ll[i])*time_step) )
             delay_std_l.append( np.std(np.array(delay_ll[i])*time_step) )
@@ -1456,13 +1452,14 @@ def roc_info(ROC_data, nPoints, delay_plot=False, no_plot=False, save_pdf=False,
                         print ROC_dict['methods'][j], "Weight= ", weight_list[np.argmax(acc_l)],
                         " , acc = ", np.amax(acc_l)
                         print
-                    
-        if only_tpr is False:
+
+        if padding:
+            auc = metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
+        else:
             auc = metrics.auc(fpr_l, tpr_l, True)
-            ## auc = metrics.auc(fpr_l + [100], tpr_l + [100], True)
-            ## auc = metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
-            auc_rates[method] = auc
-            if verbose: print auc
+        ## auc = metrics.auc(fpr_l + [100], tpr_l + [100], True)
+        auc_rates[method] = auc
+        if verbose: print auc
 
         if method == 'svm': label='HMM-BPSVM'
         elif method == 'progress': label='HMM-D'
