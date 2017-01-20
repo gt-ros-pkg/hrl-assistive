@@ -1265,6 +1265,9 @@ def run_classifiers_boost(idx, processed_data_path, task_name, method_list,\
               dm.subsampleData(ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx,\
                                nSubSample=nSubSample, nMaxData=nMaxData, rnd_sample=rnd_sample)
 
+        
+                               
+
         # flatten the data
         X_train_flat, Y_train_flat, idx_train_flat = dm.flattenSample(ll_classifier_train_X, \
                                                                       ll_classifier_train_Y, \
