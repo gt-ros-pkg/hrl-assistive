@@ -498,10 +498,6 @@ def anomaly_detection(nDetector, task_name, processed_data_path, scales, logp_vi
     ''' Anomaly detector that return anomalous point on each data using two HMMs.
     '''
     
-    # set parameters
-    nMaxData   = 20 # The maximun number of executions to train GP
-    nSubSample = 50 # The number of sub-samples from each execution to train GP
-
     l_train_X   = []
     l_train_Y   = []
     l_train_idx = []
@@ -545,6 +541,10 @@ def anomaly_detection(nDetector, task_name, processed_data_path, scales, logp_vi
         ll_classifier_train_idx = np.array(ll_classifier_train_idx)[idx_list].tolist()
 
         if method.find('hmmgp')>=0:
+            # set parameters
+            nMaxData   = 20 # The maximun number of executions to train GP
+            nSubSample = 50 # The number of sub-samples from each execution to train GP
+    
             idx_list = range(len(ll_classifier_train_X))
             random.shuffle(idx_list)
             ll_classifier_train_X   = np.array(ll_classifier_train_X)[idx_list[:nMaxData]].tolist()
@@ -741,14 +741,15 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failureData_static, \
     #-----------------------------------------------------------------------------------------
     # Anomaly Detection
     #-----------------------------------------------------------------------------------------        
-    detection_train_idx_list, detection_test_idx_list = anomaly_detection(nDetector, \
-                                                                          task_name, processed_data_path, \
-                                                                          param_dict['HMM']['scale'],\
-                                                                          logp_viz=False, verbose=False, \
-                                                                          weight=weight, \
-                                                                          single_detector=single_detector,\
-                                                                          idx=idx,\
-                                                                          method=param_dict['ROC']['methods'][0][:-1])
+    detection_train_idx_list, detection_test_idx_list
+    = anomaly_detection(nDetector, \
+                        task_name, processed_data_path, \
+                        param_dict['HMM']['scale'],\
+                        logp_viz=False, verbose=False, \
+                        weight=weight, \
+                        single_detector=single_detector,\
+                        idx=idx,\
+                        method=param_dict['ROC']['methods'][0][:-1])
 
     detection_train_idx_list = np.array(detection_train_idx_list)[len(normalTrainIdx):]
     detection_test_idx_list  = np.array(detection_test_idx_list)[len(normalTestIdx):]
