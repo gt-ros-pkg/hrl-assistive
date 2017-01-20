@@ -1313,6 +1313,7 @@ def run_classifiers_boost(idx, processed_data_path, task_name, method_list,\
             if method_list[clf_idx].find('progress')>=0 or method_list[clf_idx] == 'fixed' or \
               method_list[clf_idx].find('hmmgp')>=0:
                 thresholds = ROC_dict[method_list[clf_idx]+'_param_range']
+                print len(method_list), clf_idx, len(dtc), len(thresholds),j
                 dtc[clf_idx].set_params( ths_mult = thresholds[j] )
                 if not(j==0): continue
                 ret = dtc[clf_idx].fit(X, Y, inds)
