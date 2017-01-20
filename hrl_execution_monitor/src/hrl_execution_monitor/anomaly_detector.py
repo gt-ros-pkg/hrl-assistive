@@ -518,8 +518,8 @@ if __name__ == '__main__':
         # IROS2017
         subject_names = ['s2', 's3','s4','s5', 's6','s7','s8', 's9']
         raw_data_path, save_data_path, param_dict = getParams(opt.task)
-        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo'
-        ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
+        ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo'
+        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
         
     else:
         rospy.loginfo( "Not supported task")
@@ -527,8 +527,7 @@ if __name__ == '__main__':
 
 
     ad = anomaly_detector(opt.task, opt.method, opt.id, save_data_path, \
-                          param_dict, debug=opt.bDebug, viz=True)
-                          
+                          param_dict, debug=opt.bDebug, viz=False)
     ad.run()
 
 
