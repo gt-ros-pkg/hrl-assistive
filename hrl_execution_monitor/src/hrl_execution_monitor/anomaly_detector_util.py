@@ -245,7 +245,7 @@ if __name__ == '__main__':
 
     #c12 83
     save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
-    param_dict['HMM']['scale'] = [5.0, 12.0]
+    param_dict['HMM']['scale'] = [7.0, 15.0]
 
     #c11 85
     ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
