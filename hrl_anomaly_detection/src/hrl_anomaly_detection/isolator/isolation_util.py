@@ -741,7 +741,7 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failureData_static, \
     #-----------------------------------------------------------------------------------------
     # Anomaly Detection
     #-----------------------------------------------------------------------------------------        
-    detection_train_idx_list, detection_test_idx_list
+    detection_train_idx_list, detection_test_idx_list\
     = anomaly_detection(nDetector, \
                         task_name, processed_data_path, \
                         param_dict['HMM']['scale'],\
