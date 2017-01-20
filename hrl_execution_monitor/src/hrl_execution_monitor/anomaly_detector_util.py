@@ -114,7 +114,7 @@ def train_detector_modules(subject_names, task_name, raw_data_path, save_data_pa
     l_data = Parallel(n_jobs=-1, verbose=10)\
       (delayed(cf.run_classifiers_boost)( idx, save_data_path, task_name, \
                                           method_list, ROC_data, \
-                                          param_dict, nSubSample=80,\
+                                          param_dict, nSubSample=100,\
                                           startIdx=startIdx, nState=nState,\
                                           save_model=True) \
       for idx in xrange(len(kFold_list)) )
@@ -243,17 +243,17 @@ if __name__ == '__main__':
     task_name = 'feeding'
     param_dict['ROC']['methods'] = ['hmmgp0', 'hmmgp1']
 
-    #c12 84
+    #c12 84 - s100
     save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
-    param_dict['HMM']['scale'] = [5.0, 5.0]
+    param_dict['HMM']['scale'] = [7.0, 7.0]
 
     ## #c11 85
     ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
     ## param_dict['HMM']['scale'] = [7.,7.] #[1.0, 11.0]
 
     #c8 85
-    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
-    param_dict['HMM']['scale'] = [7.0, 9.0]
+    ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
+    ## param_dict['HMM']['scale'] = [7.0, 9.0]
     
 
     train_detector_modules(subject_names, task_name, raw_data_path, save_data_path,\
