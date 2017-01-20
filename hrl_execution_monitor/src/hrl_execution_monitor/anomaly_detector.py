@@ -369,7 +369,7 @@ class anomaly_detector:
                 X = ll_classifier_test_X
 
             # anomal classification
-            err, y_pred, sigma = self.classifier.predict(X)
+            err, y_pred, sigma = self.classifier.predict(X, debug=True)
             if self.viz:
                 self.logpDataList.append([logp, y_pred, y_pred-sigma ])
                 ## self.viz_raw_input(self.dataList)
