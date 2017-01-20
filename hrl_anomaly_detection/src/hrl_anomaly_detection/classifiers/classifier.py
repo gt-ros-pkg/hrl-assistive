@@ -1260,6 +1260,7 @@ def run_classifiers_boost(idx, processed_data_path, task_name, method_list,\
             nMaxData   = 50 #40 100
             rnd_sample = True #False
 
+            print "nSubsample : ", nSubSample
             ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
               dm.subsampleData(ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx,\
                                nSubSample=nSubSample, nMaxData=nMaxData, rnd_sample=rnd_sample)
