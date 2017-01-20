@@ -101,7 +101,7 @@ def train_detector_modules(subject_names, task_name, raw_data_path, save_data_pa
                                   task_name, save_data_path,\
                                   HMM_dict_local, data_renew, startIdx, nState, cov, \
                                   success_files=d['successFiles'], failure_files=d['failureFiles'],\
-                                  noise_mag=0.015 suffix=str(i),\
+                                  noise_mag=0.05, suffix=str(i),\
                                   verbose=verbose, one_class=False)
 
     # Train a classifier ----------------------------------------------
