@@ -257,6 +257,8 @@ class anomaly_detector:
             # dim x sample x length
             for i in xrange(self.nEmissionDim):
                 self.dataList[i][0] = self.dataList[i][0] + [scaled_dataSample[i]]
+
+        
         self.lock.release()
 
         ## self.t2 = datetime.datetime.now()
@@ -338,6 +340,12 @@ class anomaly_detector:
             self.lock.release()
             self.count+=1
             cur_length = len(dataList[0][0])
+
+            # moving avg filter
+            for i in xrange(self.nEmissionDim):
+                x = autil.running_mean(dataList[i][0], 4)
+                dataList[i][0] = [x[0]]*4 + x.tolist()                
+            
             logp, post = self.ml.loglikelihood(dataList, bPosterior=True)
                 
             #-----------------------------------------------------------------------

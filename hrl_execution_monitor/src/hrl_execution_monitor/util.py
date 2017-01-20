@@ -269,3 +269,7 @@ def image_list_flatten(image_list):
         for j in xrange(len(image_list[i])):
             new_list.append(image_list[i][j])
     return np.array(new_list)
+
+def running_mean(x, N):
+    cumsum = np.cumsum(np.insert(x, 0, 0))
+    return (cumsum[N:] - cumsum[:-N]) / N
