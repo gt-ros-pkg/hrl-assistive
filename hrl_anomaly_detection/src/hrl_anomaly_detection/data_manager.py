@@ -345,7 +345,6 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path,
         data_dict['failure_image_list'] = failure_image_list
         data_dict['param_dict'] = param_dict
 
-
         if rndFold:
             # split data with 80:20 ratio
             kFold_list = rnd_fold_index(len(successData[0]), len(failureData[0]), \

@@ -607,7 +607,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=10
     
     
 def getSubjectFileList(root_path, subject_names, task_name, exact_name=True, time_sort=False, \
-                       no_split=False, ros_bag_image=False):
+                       no_split=False):
     # List up recorded files
     folder_list  = [d for d in os.listdir(root_path) if os.path.isdir(os.path.join(root_path,d))]   
     success_list = []
@@ -623,19 +623,14 @@ def getSubjectFileList(root_path, subject_names, task_name, exact_name=True, tim
                     if d.split(name+'_')[1] == task_name: name_flag = True
                 else:
                     name_flag = True                    
-                                    
-        if name_flag and ((d.find(task_name) >= 0 and exact_name is False) or \
-                          (d==subject_names[0]+'_'+task_name and exact_name) ):
-            files = os.listdir(os.path.join(root_path,d))
 
+        if name_flag and d.find(task_name) >= 0:
+            files = os.listdir(os.path.join(root_path,d))
+            
             for f in files:
                 # pickle file name with full path
                 target = os.path.join(root_path,d,f)
-
-                if ros_bag_image:
-                    if not os.path.isdir(target): continue
-                else:
-                    if os.path.isdir(target): continue
+                if os.path.isdir(target): continue
                     
                 if f.find('success') >= 0:
                     success_list.append(target)
