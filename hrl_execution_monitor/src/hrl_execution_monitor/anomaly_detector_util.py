@@ -91,8 +91,8 @@ def train_detector_modules(subject_names, task_name, raw_data_path, save_data_pa
         for feature in param_dict['data_param']['handFeatures'][i]:
             feature_idx_list[i].append(data_dict['isolationFeatures'].index(feature))
 
-        success_data_ad.append( copy.copy(d['successData'][feature_idx_list[i]]) )
-        failure_data_ad.append( copy.copy(d['failureData'][feature_idx_list[i]]) )
+        success_data_ad.append( copy.deepcopy(d['successData'][feature_idx_list[i]]) )
+        failure_data_ad.append( copy.deepcopy(d['failureData'][feature_idx_list[i]]) )
         HMM_dict_local = copy.deepcopy(HMM_dict)
         HMM_dict_local['scale'] = param_dict['HMM']['scale'][i]
     
@@ -101,7 +101,7 @@ def train_detector_modules(subject_names, task_name, raw_data_path, save_data_pa
                                   task_name, save_data_path,\
                                   HMM_dict_local, data_renew, startIdx, nState, cov, \
                                   success_files=d['successFiles'], failure_files=d['failureFiles'],\
-                                  noise_mag=0.2, suffix=str(i),\
+                                  noise_mag=0.1, suffix=str(i),\
                                   verbose=verbose, one_class=False)
 
     # Train a classifier ----------------------------------------------
