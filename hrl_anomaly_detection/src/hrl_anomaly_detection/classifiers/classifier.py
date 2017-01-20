@@ -1211,7 +1211,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
 
 def run_classifiers_boost(idx, processed_data_path, task_name, method_list,\
                           ROC_data, param_dict,\
-                          raw_data=None, startIdx=4, nState=25, \
+                          raw_data=None, startIdx=4, nState=25, nSubSample=20, \
                           prefix=None, suffix=None,\
                           delay_estimation=False,\
                           save_model=False, n_jobs=-1):
@@ -1256,7 +1256,7 @@ def run_classifiers_boost(idx, processed_data_path, task_name, method_list,\
             ll_classifier_train_idx = np.array(ll_classifier_train_idx)[normal_idx]
 
             ## nSubSample = 50 #temp!!!!!!!!!!!!!
-            nSubSample = 40 #20 #20 # 20 
+            #nSubSample = 20 #20 # 20 
             nMaxData   = 50 #40 100
             rnd_sample = True #False
 
