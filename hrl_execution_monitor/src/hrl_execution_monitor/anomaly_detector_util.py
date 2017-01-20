@@ -253,19 +253,19 @@ if __name__ == '__main__':
     param_dict['ROC']['progress0_param_range'] = -np.logspace(-1, 0.9, nPoints)
     param_dict['ROC']['progress1_param_range'] = -np.logspace(-0.5, 0.8, nPoints),\
 
-    ## ## #c12 84. - 10
-    ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
-    ## param_dict['ROC']['methods'] = ['progress0', 'progress1']
-    ## param_dict['HMM']['scale'] = [5, 3.25]
-    ## param_dict['ROC']['progress0_param_range'] = -np.logspace(-1., 0.9, nPoints)
-    ## param_dict['ROC']['progress1_param_range'] = -np.logspace(-0.8, 0.7, nPoints)
+    ## #c12 84. - 10
+    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
+    param_dict['ROC']['methods'] = ['progress0', 'progress1']
+    param_dict['HMM']['scale'] = [5, 3.25]
+    param_dict['ROC']['progress0_param_range'] = -np.logspace(-1., 0.9, nPoints)
+    param_dict['ROC']['progress1_param_range'] = -np.logspace(-0.8, 0.7, nPoints)
 
     ## #c8 87.5 - 80
-    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
-    param_dict['ROC']['methods'] = ['progress0', 'progress1']
-    param_dict['HMM']['scale'] = [5.0, 3.5] #15.0]
-    param_dict['ROC']['progress0_param_range'] = -np.logspace(-1, 0.9, nPoints)
-    param_dict['ROC']['progress1_param_range'] = -np.logspace(-0.8, 0.8, nPoints)
+    ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
+    ## param_dict['ROC']['methods'] = ['progress0', 'progress1']
+    ## param_dict['HMM']['scale'] = [5.0, 3.5] #15.0]
+    ## param_dict['ROC']['progress0_param_range'] = -np.logspace(-1, 0.9, nPoints)
+    ## param_dict['ROC']['progress1_param_range'] = -np.logspace(-0.8, 0.8, nPoints)
 
     
 
