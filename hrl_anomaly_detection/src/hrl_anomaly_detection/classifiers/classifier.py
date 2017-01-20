@@ -429,7 +429,7 @@ class classifier(learning_base):
         X is single sample
         return predicted values (not necessarily binaries)
         '''
-        
+
         if self.method.find('svm')>=0:
             
             sys.path.insert(0, '/usr/lib/pymodules/python2.7')
@@ -480,7 +480,9 @@ class classifier(learning_base):
                     err = (self.ll_mu[min_index] + self.ths_mult*self.ll_std[min_index]) - logp - self.logp_offset
 
                 l_err.append(err)
-            return l_err
+
+            return l_err, self.ll_mu[min_index], self.ll_std[min_index]
+            ## return l_err
 
         elif self.method == 'progress_state':
             if len(np.shape(X))==1: X = [X]

@@ -26,7 +26,8 @@ def getParams(task, bDataRenew=False, bHMMRenew=False, bCFRenew=False, dim=0, rf
         sys.exit()
 
     # common params
-    param_dict['ROC']['methods'] = [ 'hmmgp0', 'hmmgp1']
+    ## param_dict['ROC']['methods'] = [ 'hmmgp0', 'hmmgp1']
+    param_dict['ROC']['methods'] = [ 'progress0', 'progress1']
     param_dict['ROC']['update_list'] = [ ]
     param_dict['SVM']['raw_window_size'] = 5
 
@@ -63,7 +64,7 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                       ]                                                  
         
 
-    HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.0, 'scale': [4.0, 6.0],\
+    HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 3.0, 'scale': [5.0, 3.5],\
                       'add_logp_d': False }
     SVM_param_dict = {'renew': CF_renew,\
                       'logp_offset': 0.,\

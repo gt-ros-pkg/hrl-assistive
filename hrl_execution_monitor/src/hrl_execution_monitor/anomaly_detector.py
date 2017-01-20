@@ -183,12 +183,12 @@ class anomaly_detector:
         self.classifier.set_params( hmmgp_logp_offset=self.param_dict['SVM']['logp_offset'] )
         
         if self.viz or True:
-            self.mean_train = np.mean(normalTrainData, axis=1)
-
-            self.max_train = np.amax(normalTrainData, axis=(1,2))
-            self.min_train = np.amin(normalTrainData, axis=(1,2))
-            print self.max_train
-            print self.min_train
+            self.mean_train = np.mean(normalTrainData/self.scale, axis=1)
+            self.std_train = np.std(normalTrainData/self.scale, axis=1)
+            ## self.max_train = np.amax(normalTrainData, axis=(1,2))
+            ## self.min_train = np.amin(normalTrainData, axis=(1,2))
+            ## print self.max_train
+            ## print self.min_train
 
             
 
@@ -368,20 +368,16 @@ class anomaly_detector:
             else:
                 X = ll_classifier_test_X
 
-            print self.classifier.method
-            
             # anomal classification
             err, y_pred, sigma = self.classifier.predict(X)
             if self.viz:
-                self.logpDataList.append([logp, err[-1]+logp ])
+                self.logpDataList.append([logp, y_pred, y_pred-sigma ])
                 ## self.viz_raw_input(self.dataList)
-                self.viz_decision_boundary(dataList, self.logpDataList)
+                self.viz_decision_boundary(np.array(dataList)/self.scale, self.logpDataList)
             
-            print len(dataList[0][0]), " : logp: ", logp, "  state: ", np.argmax(post), " y_pred: ", y_pred, sigma, self.id #err[-1]+logp, self.id
-
-            
-            rate.sleep()            
-            continue
+            print len(dataList[0][0]), " : logp: ", logp, "  state: ", np.argmax(post), " y_pred: ", y_pred, sigma, self.id #err[-1]+logp, self.id            
+            ## rate.sleep()            
+            ## continue
         
             if type(err) == list: err = err[-1]
 
@@ -400,196 +396,13 @@ class anomaly_detector:
         self.save_config()
         rospy.loginfo( "Saved current parameters")
 
-    def runSim(self, auto=True, subject_names=['ari'], raw_data_path=None):
-        '''
-        Run detector with offline data
-        '''
-        from hrl_anomaly_detection import data_manager as dm
-        from hrl_anomaly_detection.hmm import learning_hmm
-        from hrl_anomaly_detection import util
-        import hrl_manipulation_task.record_data as rd
-
-        self.rf_radius = self.param_dict['data_param']['local_range'] #temp
-        self.rf_center = self.param_dict['data_param']['rf_center']   #temp
-        checked_fileList = []
-        self.unused_fileList = []
-
-        ## fb = ut.get_keystroke('Hit a key to load a new file')
-        ## sys.exit()
-
-
-        print "############## CUMULATIVE / REF EVAL ###################"
-        self.acc_all, _, _ = evaluation(list(self.ll_test_X), list(self.ll_test_Y), self.classifier)
-        ## self.acc_ref, _, _ = self.evaluation_ref()
-        self.update_list.append(0)
-        self.cum_acc_list.append(self.acc_all)
-        self.ref_acc_list.append(self.acc_ref)
-        print "######################################################"
-
-
-        for i in xrange(100):
-
-            if rospy.is_shutdown(): break
-
-            if auto:
-                if i < len(self.eval_run_fileList):
-                    ## import shutil
-                    ## tgt_dir = os.path.join(raw_data_path, 'new_'+self.task_name)
-                    ## shutil.copy2(self.eval_run_fileList[i], tgt_dir)
-                    self.new_run_file = self.eval_run_fileList[i:i+1]
-                    unused_fileList = self.new_run_file
-                else:
-                    print "no more file"
-                    fb = ut.get_keystroke('Hit a key to exit')
-                    sys.exit()                    
-            else:            
-                # load new file            
-                fb = ut.get_keystroke('Hit a key to load a new file')
-                if fb == 'z' or fb == 's': break
-                                                          
-                unused_fileList = util.getSubjectFileList(raw_data_path, \
-                                                          subject_names, \
-                                                          self.task_name, \
-                                                          time_sort=True,\
-                                                          no_split=True)                
-                unused_fileList = [filename for filename in unused_fileList \
-                                   if filename not in self.used_file_list]
-                unused_fileList = [filename for filename in unused_fileList if filename not in checked_fileList]
-
-
-            rospy.loginfo( "New file list ------------------------")
-            for f in unused_fileList:
-                rospy.loginfo( os.path.split(f)[1] )
-            rospy.loginfo( "-----------------------------------------")
-
-            if len(unused_fileList)>1:
-                print "Unexpected addition of files"
-                break
-
-            for j in xrange(len(unused_fileList)):
-                self.anomaly_flag = False
-                if unused_fileList[j] in checked_fileList: continue
-                if unused_fileList[j].find('success')>=0: label = -1
-                else: label = 1
-                    
-                trainData,_ = dm.getDataList([unused_fileList[j]], self.rf_center, self.rf_radius,\
-                                           self.handFeatureParams,\
-                                           downSampleSize = self.param_dict['data_param']['downSampleSize'], \
-                                           handFeatures   = self.handFeatures)
-                                           
-                # scaling and subtracting offset
-                trainData = np.array(trainData)*self.scale
-                trainData = self.applying_offset(trainData)
-                                
-                ll_logp, ll_post = self.ml.loglikelihoods(trainData, bPosterior=True)
-                X, Y = learning_hmm.getHMMinducedFeatures(ll_logp, ll_post, [label])
-                X_test, Y_train_org, _ = dm.flattenSample(X, Y)
-
-                if 'svm' in self.method or 'sgd' in self.method:
-                    X_scaled = self.scaler.transform(X_test)
-                    y_est    = self.classifier.predict(X_scaled)
-                else:
-                    X_scaled = X_test
-                    y_est    = self.classifier.predict(X_scaled)
-
-                for ii in xrange(len(y_est[self.startCheckIdx:])):
-                    if y_est[ii] > 0.0:
-                        rospy.loginfo('Anomaly has occured! idx=%s', str(ii) )
-                        self.anomaly_flag    = True
-                        break
-
-                self.unused_fileList.append( unused_fileList[j] )
-                # Quick feedback
-                msg = StringArray()
-                if label == 1:
-                    msg.data = ['FALSE', 'TRUE', 'TRUE']
-                    self.userfbCallback(msg)
-                else:
-                    msg.data = ['TRUE', 'FALSE', 'FALSE']
-                    self.userfbCallback(msg)
-
-                    
-                true_label = rd.feedback_to_label(msg.data)
-                update_flag  = False          
-                if true_label == "success":
-                    if self.anomaly_flag is True:
-                        update_flag = True
-                else:
-                    if self.anomaly_flag is False:
-                        update_flag = True
-
-                print "############## CUMULATIVE / REF EVAL ###################"
-                self.acc_all, _, _ = evaluation(list(self.ll_test_X), list(self.ll_test_Y), self.classifier)
-                print "######################################################"
-                ## self.acc_ref, _, _ = self.evaluation_ref()
-                if update_flag:
-                    self.update_list.append(1)
-                else:
-                    self.update_list.append(0)
-                self.cum_acc_list.append(self.acc_all)
-                self.ref_acc_list.append(self.acc_ref)
-                print self.cum_acc_list
-                print self.ref_acc_list
-                print self.update_list
-                print self.w_positive, self.classifier.ths_mult
-                print "######################################################"
-                ## sys.exit()
-                                
-                ## if (label ==1 and self.anomaly_flag is False) or \
-                ##   (label ==-1 and self.anomaly_flag is True):
-                ##     print "Before######################################33"
-                ##     print y_est
-                ##     print "Before######################################33"
-
-                ##     print "Confirm######################################33"
-                ##     y_est    = self.classifier.predict(X_scaled)
-                ##     print y_est
-                ##     print "Confirm######################################33"
-
-                if auto is False:
-                    fb =  ut.get_keystroke('Hit a key after providing user fb')
-                    if fb == 'z' or fb == 's': break
-
-            checked_fileList = [filename for filename in self.unused_fileList if filename not in self.used_file_list]
-            print "===================================================================="
-            # check anomaly
-            # send feedback
-
-        # save model and param
-        if fb == 's':
-            self.save()
-            rospy.loginfo( "Saved current parameters")
-
 
     def save_config(self):
         ''' Save detector '''
         # name matches with detector parameter file name.
         param_namespace = '/'+self.task_name 
         os.system('rosparam dump '+self.yaml_file+' '+param_namespace)
-
-        ## # Save scaler
-        ## if 'svm' in self.method or 'sgd' in self.method:
-        ##     with open(self.scaler_model_file, 'wb') as f:
-        ##         pickle.dump(self.scaler, f)
-                
-        ## # Save classifier
-        ## if self.bSim is False:
-        ##     print "save model"
-        ##     self.classifier.save_model(self.classifier_model_file)
         
-
-    def applying_offset(self, data):
-
-        # get offset
-        curData = np.reshape( np.mean(data[:,:,:self.startOffsetSize], axis=(1,2)), \
-                              (self.nEmissionDim,1,1) ) # 4,1,1
-        offsetData = self.refData - curData
-                                  
-        for i in xrange(self.nEmissionDim):
-            data[i] = (np.array(data[i]) + offsetData[i][0][0]).tolist()
-
-        return data
-
 
     def sensitivity_clf_to_GUI(self):
         if self.exp_sensitivity:
@@ -646,6 +459,7 @@ class anomaly_detector:
 
         logp      = np.array(logpDataList)[:,0]
         logp_pred = np.array(logpDataList)[:,1]
+        logp_sig  = np.array(logpDataList)[:,2]
 
         for i in xrange(self.nEmissionDim+1):
             self.ax = self.fig.add_subplot(100*(self.nEmissionDim+1)+10+i+1)
@@ -653,9 +467,12 @@ class anomaly_detector:
             if i < self.nEmissionDim:
                 self.ax.plot(np.array(x)[i,0], 'r-')
                 self.ax.plot(self.mean_train[i], 'b-', lw=3.0)
+                self.ax.plot(self.mean_train[i]+self.std_train[i], 'b--', lw=1.0)
+                self.ax.plot(self.mean_train[i]-self.std_train[i], 'b--', lw=1.0)
             else:
                 self.ax.plot(logp, 'r-')
                 self.ax.plot(logp_pred, 'b-', lw=3.0)
+                self.ax.plot(logp_sig, 'b--', lw=1.0)
 
         plt.axis('tight')
         plt.draw()
@@ -691,7 +508,7 @@ if __name__ == '__main__':
         subject_names = ['s2', 's3','s4','s5', 's6','s7','s8', 's9']
         raw_data_path, save_data_path, param_dict = getParams(opt.task)
         ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo'
-        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
+        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
         
     else:
         rospy.loginfo( "Not supported task")
@@ -701,8 +518,7 @@ if __name__ == '__main__':
     ad = anomaly_detector(opt.task, opt.method, opt.id, save_data_path, \
                           param_dict, debug=opt.bDebug, viz=True)
                           
-    if opt.bSim is False: ad.run()
-    else:                 ad.runSim(subject_names=test_subject, raw_data_path=raw_data_path)
+    ad.run()
 
 
 
