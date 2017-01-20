@@ -1295,10 +1295,12 @@ def run_classifiers_boost(idx, processed_data_path, task_name, method_list,\
     else: parallel = False
     dtc = {}
     dtc[0] = classifier( method=method_list[0][:-1], nPosteriors=nState, nLength=nLength, parallel=parallel )
-    dtc[1] = classifier( method=method_list[1][:-1], nPosteriors=nState, nLength=nLength, parallel=parallel )
     clf_pkl = []
     clf_pkl.append(os.path.join(processed_data_path, 'clf_'+method_list[0]+'_'+str(idx)+'.pkl'))
-    clf_pkl.append(os.path.join(processed_data_path, 'clf_'+method_list[1]+'_'+str(idx)+'.pkl'))
+    if len(method_list)>1:
+        dtc[1] = classifier( method=method_list[1][:-1], nPosteriors=nState, nLength=nLength, parallel=parallel )
+        clf_pkl.append(os.path.join(processed_data_path, 'clf_'+method_list[1]+'_'+str(idx)+'.pkl'))
+        
     for j in xrange(nPoints):
 
         # Training
