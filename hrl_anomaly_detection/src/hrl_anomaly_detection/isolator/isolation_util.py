@@ -565,11 +565,11 @@ def anomaly_detection(nDetector, task_name, processed_data_path, scales, logp_vi
             ll_classifier_train_Y = new_Y
             ll_classifier_train_idx = new_idx
 
-        if len(ll_classifier_train_X)*len(ll_classifier_train_X[0]) > 1000:
-            print "Too many input data for GP"
-            sys.exit()
-        ## else:
-        ##     sys.exit()
+            if len(ll_classifier_train_X)*len(ll_classifier_train_X[0]) > 1000:
+                print "Too many input data for GP"
+                sys.exit()
+                ## else:
+                ##     sys.exit()
 
         #
         X_train, Y_train, idx_train = dm.flattenSample(ll_classifier_train_X, \
