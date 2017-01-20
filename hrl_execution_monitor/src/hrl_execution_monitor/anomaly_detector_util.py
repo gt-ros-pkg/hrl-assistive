@@ -239,19 +239,20 @@ if __name__ == '__main__':
                                                           opt.bHMMRenew, opt.bCLFRenew)
     task_name = 'feeding'
 
-    #c8 85 - s80 #best
+    #c11 85 - s80 #best
     save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
     param_dict['ROC']['methods'] = ['hmmgp0', 'hmmgp1']
     param_dict['HMM']['scale'] = [4.0, 4.0]
 
     #c12 84. - 10
-    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
-    param_dict['ROC']['methods'] = ['progress0', 'progress1']
-    param_dict['HMM']['scale'] = [4.0, 4.0]
+    ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
+    ## param_dict['ROC']['methods'] = ['progress0', 'progress1']
+    ## param_dict['HMM']['scale'] = [4.0, 4.0]
 
-    #c11 84.7 - 10
-    ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
-    ## param_dict['HMM']['scale'] = [3.5,3.5] #[4.,4.] #[1.0, 11.0]
+    #c8 84.7 - 10
+    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
+    param_dict['ROC']['methods'] = ['progress0', 'progress1']
+    param_dict['HMM']['scale'] = [7.0, 15.0]
 
     
 
