@@ -607,7 +607,7 @@ class classifier(learning_base):
 
         
     def save_model(self, fileName):
-        if self.dt is None: 
+        if self.dt is None and self.method.find('progress')<0: 
             print "No trained classifier"
             return
         
@@ -628,7 +628,6 @@ class classifier(learning_base):
         elif self.method.find('hmmgp')>=0:            
             import pickle
             with open(fileName, 'wb') as f:
-                print fileName
                 pickle.dump(self.dt, f)
                 pickle.dump(self.ths_mult, f)
                 pickle.dump(self.hmmgp_logp_offset, f)
@@ -1313,7 +1312,7 @@ def run_classifiers_boost(idx, processed_data_path, task_name, method_list,\
             if method_list[clf_idx].find('progress')>=0 or method_list[clf_idx] == 'fixed' or \
               method_list[clf_idx].find('hmmgp')>=0:
                 thresholds = ROC_dict[method_list[clf_idx]+'_param_range']
-                print len(method_list), clf_idx, len(dtc), len(thresholds),j
+                print ROC_dict[method_list[clf_idx]+'_param_range'], len(thresholds),j
                 dtc[clf_idx].set_params( ths_mult = thresholds[j] )
                 if not(j==0): continue
                 ret = dtc[clf_idx].fit(X, Y, inds)

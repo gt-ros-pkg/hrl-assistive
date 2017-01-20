@@ -238,7 +238,7 @@ if __name__ == '__main__':
     raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
                                                           opt.bHMMRenew, opt.bCLFRenew)
     task_name = 'feeding'
-    nPoints = 40
+    nPoints = 20
 
     #c11 85 - s80 #best
     save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
@@ -257,7 +257,7 @@ if __name__ == '__main__':
     param_dict['ROC']['methods'] = ['progress0', 'progress1']
     param_dict['HMM']['scale'] = [3.0, 2.0] #15.0]
     param_dict['ROC']['progress0_param_range'] = -np.logspace(0.4, 1.3, nPoints)
-    param_dict['ROC']['progress1_param_range'] = -np.logspace(0.4, 1.3, nPoints),\
+    param_dict['ROC']['progress1_param_range'] = -np.logspace(0.4, 1.3, nPoints)
 
     
 
