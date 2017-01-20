@@ -65,7 +65,7 @@ class armReachAction(mpcBaseAction):
         self.highBowlDiff = np.array([0, 0, 0])
         self.bowlPosition = np.array([0, 0, 0])
         # vertical x side x depth
-        self.mouthManOffset = np.array([-0.03, 0.0, 0.04]) # -0.02, 0., 0.05
+        self.mouthManOffset = np.array([-0.05, 0.0, 0.04]) # -0.03, 0., 0.05
         ## self.mouthManOffset = np.array([-0.04, 0.02, 0.09]) # -0.02, 0., 0.05
         self.mouthNoise     = np.array([0., 0., 0.])
         self.mouthOffset    = self.mouthManOffset+self.mouthNoise 

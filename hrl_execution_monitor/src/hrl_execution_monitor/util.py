@@ -66,7 +66,7 @@ def extract_feature(msg, init_msg, last_msg, last_data, handFeatures, param_dict
     # Unimodal feature - Kinematics --------------------------------------
     if 'unimodal_kinVel' in handFeatures:
         vel = np.array(msg.kinematics_ee_pos) - np.array(last_msg.kinematics_ee_pos)
-        vel = np.linalg.norm(vel)
+        vel = np.linalg.norm(vel)/dt
         dataSample.append( vel )
         if 'kinVel' not in param_dict['feature_names']:
             param_dict['feature_names'].append('kinVel')

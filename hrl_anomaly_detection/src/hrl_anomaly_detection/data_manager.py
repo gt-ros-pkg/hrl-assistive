@@ -1600,14 +1600,11 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
         if 'unimodal_ftForce_zero' in feature_list:
             ftForce = d['ftForceList'][idx]
 
-            unimodal_ftForce_mean = np.mean(ftForce[:,:startOffsetSize], axis=1)
-            for i in xrange(len(ftForce)):
-                ftForce[i] -= unimodal_ftForce_mean[i]
+            if offset_flag: 
+                ftForce -= np.mean(ftForce[:,:startOffsetSize], axis=1)[:,np.newaxis]
             
             # magnitude
             unimodal_ftForce_mag = np.linalg.norm(ftForce, axis=0)
-            ## if offset_flag: #correct???????
-            ##     unimodal_ftForce_mag -= np.mean(unimodal_ftForce_mag[:startOffsetSize])
 
             if dataSample is None: dataSample = np.array(unimodal_ftForce_mag)
             else: dataSample = np.vstack([dataSample, unimodal_ftForce_mag])
@@ -2013,7 +2010,7 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
         # Crossmodal feature - vision relative dist with main(first) vision target----
         if 'crossmodal_landmarkEEDist' in feature_list:
             kinEEPos  = d['kinEEPosList'][idx]
-            visionLandmarkPos = d['visionLandmarkPosList'][idx] # originally length x 3*tags
+            visionLandmarkPos = d['visionLandmarkPosList'][idx] # originally length 
 
             if len(np.shape(visionLandmarkPos)) == 1:
                 visionLandmarkPos = np.reshape(visionLandmarkPos, (3,1))
