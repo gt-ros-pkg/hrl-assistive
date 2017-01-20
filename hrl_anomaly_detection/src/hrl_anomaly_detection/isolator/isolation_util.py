@@ -741,15 +741,14 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failureData_static, \
     #-----------------------------------------------------------------------------------------
     # Anomaly Detection
     #-----------------------------------------------------------------------------------------        
-    detection_train_idx_list, detection_test_idx_list\
-    = anomaly_detection(nDetector, \
-                        task_name, processed_data_path, \
-                        param_dict['HMM']['scale'],\
-                        logp_viz=False, verbose=False, \
-                        weight=weight, \
-                        single_detector=single_detector,\
-                        idx=idx,\
-                        method=param_dict['ROC']['methods'][0][:-1])
+    detection_train_idx_list, detection_test_idx_list = anomaly_detection(nDetector, \
+                                                                          task_name, processed_data_path, \
+                                                                          param_dict['HMM']['scale'],\
+                                                                          logp_viz=False, verbose=False, \
+                                                                          weight=weight, \
+                                                                          single_detector=single_detector,\
+                                                                          idx=idx,\
+                                                                          method=param_dict['ROC']['methods'][0][:-1])
 
     detection_train_idx_list = np.array(detection_train_idx_list)[len(normalTrainIdx):]
     detection_test_idx_list  = np.array(detection_test_idx_list)[len(normalTestIdx):]
