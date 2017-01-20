@@ -68,6 +68,7 @@ class anomaly_detector:
         # Important containers
         self.enable_detector = False
         self.dataList        = []
+        self.logpDataList    = []
         self.anomaly_flag    = False
         self.init_msg        = None
         self.last_msg        = None
@@ -310,6 +311,7 @@ class anomaly_detector:
         ''' Reset parameters '''
         self.lock.acquire()
         self.dataList = []
+        self.logpDataList = []
         self.enable_detector = False
         self.lock.release()
 
@@ -322,6 +324,7 @@ class anomaly_detector:
 
             if self.enable_detector is False: 
                 self.dataList = []
+                self.logpDataList = []
                 self.count = 0
                 rate.sleep()                
                 continue
@@ -334,7 +337,6 @@ class anomaly_detector:
             dataList = copy.copy(self.dataList)
             self.lock.release()
             self.count+=1
-            if self.viz: self.viz_raw_input(self.dataList)
             cur_length = len(dataList[0][0])
             logp, post = self.ml.loglikelihood(dataList, bPosterior=True)
                 
@@ -361,6 +363,11 @@ class anomaly_detector:
 
             # anomal classification
             y_pred = self.classifier.predict(X)
+            if self.viz:
+                self.logpDataList.append([logp, y_pred[-1]+logp+self.classifier.hmmgp_logp_offset])
+                ## self.viz_raw_input(self.dataList)
+                self.viz_decision_boundary(self.dataList, self.logpDataList)
+            
             print self.count, " : logp: ", logp, "  state: ", np.argmax(post), " y_pred: ", y_pred[-1], self.id
             if type(y_pred) == list: y_pred = y_pred[-1]
 
@@ -613,6 +620,34 @@ class anomaly_detector:
         self.figure_flag = True
         ## ut.get_keystroke('Hit a key')
 
+    def viz_decision_boundary(self, x, logpDataList):
+
+        if self.figure_flag is False:
+            self.fig = plt.figure()
+            plt.ion()
+            plt.show()
+            print 
+        ## else:            
+        ##     del self.ax.collections[:]
+
+        logp      = np.array(logpDataList)[:,0]
+        logp_pred = np.array(logpDataList)[:,1]
+
+        for i in xrange(self.nEmissionDim+1):
+            self.ax = self.fig.add_subplot(100*(self.nEmissionDim+1)+10+i+1)
+
+            if i < self.nEmissionDim:
+                self.ax.plot(np.array(x)[i,0], 'r-')
+                self.ax.plot(self.mean_train[i], 'b-', lw=3.0)
+            else:
+                self.ax.plot(logp, 'r-')
+                self.ax.plot(logp_pred, 'b-', lw=3.0)
+
+        plt.axis('tight')
+        plt.draw()
+        self.figure_flag = True
+        ## ut.get_keystroke('Hit a key')
+
 
 
 if __name__ == '__main__':
@@ -642,7 +677,7 @@ if __name__ == '__main__':
         subject_names = ['s2', 's3','s4','s5', 's6','s7','s8', 's9']
         raw_data_path, save_data_path, param_dict = getParams(opt.task)
         ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo'
-        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
+        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
         
     else:
         rospy.loginfo( "Not supported task")
