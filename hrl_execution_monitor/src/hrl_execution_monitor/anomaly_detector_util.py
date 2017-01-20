@@ -111,6 +111,7 @@ def train_detector_modules(subject_names, task_name, raw_data_path, save_data_pa
     else: ROC_data = ut.load_pickle(roc_pkl)
     ROC_data = autil.reset_roc_data(ROC_data, [method_list[0][:-1]], ROC_dict['update_list'], nPoints)
 
+
     l_data = Parallel(n_jobs=1, verbose=10)\
       (delayed(cf.run_classifiers_boost)( idx, save_data_path, task_name, \
                                           method_list, ROC_data, \
@@ -261,7 +262,7 @@ if __name__ == '__main__':
 
     #c8 87.5 - 10
     save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
-    param_dict['ROC']['methods'] = ['progress0'] #, 'progress1']
+    param_dict['ROC']['methods'] = ['progress0', 'progress1']
     param_dict['HMM']['scale'] = [2.0, 3.0] #15.0]
     param_dict['ROC']['progress0_param_range'] = -np.logspace(0.1, 1.0, nPoints)
     param_dict['ROC']['progress1_param_range'] = -np.logspace(0.1, 2.0, nPoints)

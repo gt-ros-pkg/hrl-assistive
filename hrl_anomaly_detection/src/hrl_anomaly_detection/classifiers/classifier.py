@@ -1220,6 +1220,7 @@ def run_classifiers_boost(idx, processed_data_path, task_name, method_list,\
     ROC_dict = param_dict['ROC'] 
     nPoints  = ROC_dict['nPoints']
     method   = method_list[0][:-1]
+    nDetector = len(method_list)
 
     #-----------------------------------------------------------------------------------------
     # pass method if there is existing result
@@ -1297,14 +1298,14 @@ def run_classifiers_boost(idx, processed_data_path, task_name, method_list,\
     dtc[0] = classifier( method=method_list[0][:-1], nPosteriors=nState, nLength=nLength, parallel=parallel )
     clf_pkl = []
     clf_pkl.append(os.path.join(processed_data_path, 'clf_'+method_list[0]+'_'+str(idx)+'.pkl'))
-    if len(method_list)>1:
+    if nDetector>1:
         dtc[1] = classifier( method=method_list[1][:-1], nPosteriors=nState, nLength=nLength, parallel=parallel )
         clf_pkl.append(os.path.join(processed_data_path, 'clf_'+method_list[1]+'_'+str(idx)+'.pkl'))
         
     for j in xrange(nPoints):
 
         # Training
-        for clf_idx in xrange(len(method_list)):
+        for clf_idx in xrange(nDetector):
 
             X = X_train[clf_idx]
             Y = Y_train[clf_idx]
@@ -1337,7 +1338,7 @@ def run_classifiers_boost(idx, processed_data_path, task_name, method_list,\
             if len(Y_test[0][ii])==0: continue
 
             est_y = []
-            for clf_idx in xrange(len(method_list)):
+            for clf_idx in xrange(nDetector):
                 est_y.append(dtc[clf_idx].predict(X_test[clf_idx][ii], y=Y_test[clf_idx][ii]))
 
             true_y = Y_test[0][ii][0]
@@ -1345,8 +1346,15 @@ def run_classifiers_boost(idx, processed_data_path, task_name, method_list,\
             # Combine classification result
             anomaly = False
             for jj in xrange(len(est_y[0])): # per time length
+
+
+                detection_flag = False
+                for kk in xrange(nDetector):
+                    if est_y[kk][jj] > 0.0:
+                        detection_flag = True
+                        break
                 
-                if est_y[0][jj] > 0.0 or est_y[1][jj] > 0.0:
+                if detection_flag:
                     if ll_classifier_test_idx is not None and true_y>0:
                         try:
                             delay_idx = ll_classifier_test_idx[ii][jj]
