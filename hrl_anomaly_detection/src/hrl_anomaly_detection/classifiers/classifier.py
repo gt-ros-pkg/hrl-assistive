@@ -530,7 +530,7 @@ class classifier(learning_base):
 
             ## l_err = y_pred + mult_coeff*self.ths_mult*sigma - logps #- self.logp_offset
             l_err = y_pred + self.ths_mult*sigma - logps - self.hmmgp_logp_offset
-            return l_err
+            return l_err, y_pred, sigma
 
         elif self.method == 'fixed':
             if len(np.shape(X))==1: X = [X]

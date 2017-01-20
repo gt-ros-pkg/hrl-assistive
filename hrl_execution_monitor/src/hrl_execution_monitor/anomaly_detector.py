@@ -327,7 +327,6 @@ class anomaly_detector:
             if self.enable_detector is False: 
                 self.dataList = []
                 self.logpDataList = []
-                self.count = 0
                 rate.sleep()                
                 continue
 
@@ -336,16 +335,15 @@ class anomaly_detector:
                 rate.sleep()                
                 continue
             self.lock.acquire()
-            dataList = copy.copy(self.dataList)
+            dataList = copy.deepcopy(self.dataList)
             self.lock.release()
-            self.count+=1
             cur_length = len(dataList[0][0])
 
-            # moving avg filter
-            for i in xrange(self.nEmissionDim):
-                x = autil.running_mean(dataList[i][0], 4)
-                dataList[i][0] = [x[0]]*4 + x.tolist()                
-            
+            ## # moving avg filter
+            ## for i in xrange(self.nEmissionDim):
+            ##     x = autil.running_mean(dataList[i][0], 4)
+            ##     dataList[i][0] = x.tolist() #[x[0]]*4 + x.tolist()
+    
             logp, post = self.ml.loglikelihood(dataList, bPosterior=True)
                 
             #-----------------------------------------------------------------------
@@ -360,8 +358,8 @@ class anomaly_detector:
 
             post = post[cur_length-1]
 
-            if np.argmax(post)==0: continue # and logp < 0.0: continue
-            if np.argmax(post)>self.param_dict['HMM']['nState']*0.9: continue
+            if np.argmax(post)==0 and logp < 0.0: continue
+            ## if np.argmax(post)>self.param_dict['HMM']['nState']*0.9: continue
 
             ll_classifier_test_X = [logp] + post.tolist()                
             if 'svm' in self.method or 'sgd' in self.method:
@@ -370,16 +368,16 @@ class anomaly_detector:
                 X = ll_classifier_test_X
 
             # anomal classification
-            y_pred = self.classifier.predict(X)
+            err, y_pred, sigma = self.classifier.predict(X)
             if self.viz:
-                self.logpDataList.append([logp, y_pred[-1]+logp+self.classifier.hmmgp_logp_offset])
+                self.logpDataList.append([logp, err[-1]+logp ])
                 ## self.viz_raw_input(self.dataList)
-                self.viz_decision_boundary(self.dataList, self.logpDataList)
+                self.viz_decision_boundary(dataList, self.logpDataList)
             
-            print self.count, " : logp: ", logp, "  state: ", np.argmax(post), " y_pred: ", y_pred[-1], self.id
-            if type(y_pred) == list: y_pred = y_pred[-1]
+            print len(dataList[0][0]), " : logp: ", logp, "  state: ", np.argmax(post), " y_pred: ", y_pred, sigma, self.id #err[-1]+logp, self.id
+            if type(err) == list: err = err[-1]
 
-            if y_pred > 0.0:
+            if err > 0.0:
                 rospy.loginfo( '-'*15 +  'Anomaly has occured!' + '-'*15 )
                 self.action_interruption_pub.publish(self.task_name+'_anomaly')
                 self.task_interruption_pub.publish(self.task_name+'_anomaly')
@@ -635,8 +633,8 @@ class anomaly_detector:
             plt.ion()
             plt.show()
             print 
-        ## else:            
-        ##     del self.ax.collections[:]
+        else:            
+            del self.ax.collections[:]
 
         logp      = np.array(logpDataList)[:,0]
         logp_pred = np.array(logpDataList)[:,1]
