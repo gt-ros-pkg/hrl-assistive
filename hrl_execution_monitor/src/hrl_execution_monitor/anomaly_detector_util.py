@@ -243,13 +243,13 @@ if __name__ == '__main__':
     task_name = 'feeding'
     param_dict['ROC']['methods'] = ['hmmgp0', 'hmmgp1']
 
-    #c8 85 - s100
+    #c8 85 - s80
     save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
     param_dict['HMM']['scale'] = [6.0, 10.0]
 
     #c11 84 - s80
-    ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
-    ## param_dict['HMM']['scale'] = [7.0, 10.0]
+    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
+    param_dict['HMM']['scale'] = [7.0, 5.0]
 
     #c12 85 - s100
     ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
