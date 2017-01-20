@@ -179,6 +179,7 @@ class anomaly_detector:
         self.refData = np.reshape( np.mean(normalTrainData[:,:,:self.startOffsetSize], axis=(1,2)), \
                                   (self.nEmissionDim,1,1) ) # 4,1,1
         self.classifier.set_params( ths_mult=self.w_positive )
+        self.classifier.set_params( logp_offset=self.param_dict['SVM']['logp_offset'] )
         self.classifier.set_params( hmmgp_logp_offset=self.param_dict['SVM']['logp_offset'] )
         
         if self.viz or True:
@@ -662,7 +663,7 @@ if __name__ == '__main__':
     p = optparse.OptionParser()
     p.add_option('--task', action='store', dest='task', type='string', default='feeding',
                  help='type the desired task name')
-    p.add_option('--method', '--m', action='store', dest='method', type='string', default='hmmgp',
+    p.add_option('--method', '--m', action='store', dest='method', type='string', default='progress',
                  help='type the method name')
     p.add_option('--id', action='store', dest='id', type=int, default=0,
                  help='type the detector id')
@@ -683,7 +684,7 @@ if __name__ == '__main__':
         subject_names = ['s2', 's3','s4','s5', 's6','s7','s8', 's9']
         raw_data_path, save_data_path, param_dict = getParams(opt.task)
         ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo'
-        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
+        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
         
     else:
         rospy.loginfo( "Not supported task")
