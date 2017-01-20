@@ -886,7 +886,6 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
     success_image_list = autil.image_list_flatten( d.get('success_image_list',[]) )
     failure_image_list = autil.image_list_flatten( d.get('failure_image_list',[]) )
 
-
     failure_labels = []
     for f in failure_files:
         failure_labels.append( int( f.split('/')[-1].split('_')[0] ) )
@@ -933,11 +932,6 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
     #temp
     ## kFold_list = kFold_list[:1]
     ## kFold_list = kFold_list[:8]
-
-    # set parameters
-    method     = 'hmmgp'
-    nMaxData   = 20 # The maximun number of executions to train GP
-    nSubSample = 50 # The number of sub-samples from each execution to train GP
 
     #-----------------------------------------------------------------------------------------
     # Training HMM, and getting classifier training and testing data
@@ -1309,14 +1303,16 @@ if __name__ == '__main__':
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation11/'+\
         ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## param_dict['ROC']['methods'] = ['hmmgp0', 'hmmgp1']
         ## weight = [-23.0, -35.0]  #23
         ## param_dict['HMM']['scale'] = [7.0, 13.0]
         ## single_detector = False #True
 
-        ## # c8  # 1 min #nodes 69.6  => 148
+        ## c8  # 1 min #nodes 69.6  => 148
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        param_dict['ROC']['methods'] = ['hmmgp0', 'hmmgp1']
         weight = [-30.0, -50.]
         param_dict['HMM']['scale'] = [7.0, 13.0]
         single_detector = False 
@@ -1325,6 +1321,7 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation9/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        param_dict['ROC']['methods'] = ['hmmgp0', 'hmmgp1']
         weight = [-20.0, -40.0]
         param_dict['HMM']['scale'] = [7.0, 15.0]
         single_detector = False
@@ -1333,30 +1330,23 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation10/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        param_dict['ROC']['methods'] = ['hmmgp0', 'hmmgp1']
         weight = [-23.0, -50.0] #23
         param_dict['HMM']['scale'] = [7.0, 15.0]
         single_detector = False 
 
         ## ## c11
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation11/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## weight = [-23.0, -24.0]  
-        ## param_dict['HMM']['scale'] = [7.0, 15.0]
-        ## single_detector = False #True
-
-        # br, 148 min #nodes
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation12/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])
-        ## weight = [-20.0, -23.0]
-        ## param_dict['HMM']['scale'] = [7.0, 13.0]
-        ## single_detector = False 
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation11/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        param_dict['ROC']['methods'] = ['progress0', 'progress1']
+        weight = [-1.0, -1.0]  
+        param_dict['HMM']['scale'] = [7.0, 15.0]
+        single_detector = False #True
 
         
         window_steps= 5
         nPoints = param_dict['ROC']['nPoints']
-        param_dict['ROC']['methods'] = ['hmmgp0', 'hmmgp1']
         param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0
         param_dict['SVM']['nugget']  = 10.0
 
@@ -1374,6 +1364,8 @@ if __name__ == '__main__':
 
 
         param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0., 2.3, nPoints)*-1.0+1.0
+        param_dict['ROC']['progress0_param_range'] = -np.logspace(0., 0.9, nPoints)
+        param_dict['ROC']['progress1_param_range'] = -np.logspace(0., 0.9, nPoints)
         param_dict['ROC']['hmmgp1_param_range'] = np.logspace(-0., 2.3, nPoints)*-1.0+1.0
         param_dict['ROC']['hmmgp2_param_range'] = np.logspace(-0., 2.5, nPoints)*-1.0+0.5
         
