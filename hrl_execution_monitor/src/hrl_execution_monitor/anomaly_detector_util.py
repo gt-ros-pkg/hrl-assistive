@@ -77,7 +77,7 @@ def train_detector_modules(subject_names, task_name, raw_data_path, save_data_pa
                       ros_bag_image=True, rndFold=True)
                       
     # split data with 80:20 ratio, 3set
-    kFold_list = d['kFold_list']
+    kFold_list = d['kFold_list'][:1]
     
     # Train a generative model ----------------------------------------
     # Training HMM, and getting classifier training and testing data
