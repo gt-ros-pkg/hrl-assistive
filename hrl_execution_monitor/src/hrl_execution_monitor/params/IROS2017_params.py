@@ -78,7 +78,7 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                       'fixed_param_range': np.linspace(0.1, 0.01, nPoints),\
                       'rnd_param_range': 1.0-np.logspace(-1, -0.75, nPoints)+0.1,\
                       'hmmgp0_param_range': np.logspace(0.5, 2.0, nPoints)*-1.0+0.5,\
-                      'hmmgp1_param_range': np.logspace(0.8, 1.7, nPoints)*-1.0+0.5}
+                      'hmmgp1_param_range': np.logspace(0.5, 2.0, nPoints)*-1.0+0.5}
         
 
     AD_param_dict = {'svm_w_positive': 1.0, 'sgd_w_positive': 1.0, 'sgd_n_iter': 20}
