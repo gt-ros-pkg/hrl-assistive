@@ -107,6 +107,9 @@ class anomaly_detector:
         self.count = 0
         if viz:
             rospy.loginfo( "Visualization enabled!!!")
+            self.fig = plt.figure()
+            plt.ion()
+            plt.show()            
             self.figure_flag = False
         # -------------------------------------------------
         
@@ -199,7 +202,11 @@ class anomaly_detector:
             rospy.loginfo("%s anomaly detector %s enabled", self.task_name, str(self.id))
             self.enable_detector = True
             self.anomaly_flag    = False            
-            self.pubSensitivity()                    
+            self.pubSensitivity()
+            if self.viz:
+                self.fig.clf()
+                self.figure_flag=False
+
         else:
             rospy.loginfo("%s anomaly detector %s disabled", self.task_name, str(self.id))
             self.enable_detector = False
@@ -344,6 +351,8 @@ class anomaly_detector:
             ## for i in xrange(self.nEmissionDim):
             ##     x = autil.running_mean(dataList[i][0], 4)
             ##     dataList[i][0] = x.tolist() #[x[0]]*4 + x.tolist()
+
+            print self.id, " : ", np.shape(dataList)
     
             logp, post = self.ml.loglikelihood(dataList, bPosterior=True)
                 
@@ -371,7 +380,7 @@ class anomaly_detector:
             # anomal classification
             err, y_pred, sigma = self.classifier.predict(X, debug=True)
             if self.viz:
-                self.logpDataList.append([logp, y_pred, y_pred-sigma ])
+                self.logpDataList.append([len(dataList[0][0]), logp, y_pred, y_pred-sigma ])
                 ## self.viz_raw_input(self.dataList)
                 self.viz_decision_boundary(np.array(dataList)/self.scale, self.logpDataList)
             
@@ -450,16 +459,17 @@ class anomaly_detector:
     def viz_decision_boundary(self, x, logpDataList):
 
         if self.figure_flag is False:
-            self.fig = plt.figure()
-            plt.ion()
-            plt.show()
+            ## self.fig = plt.figure()
+            ## plt.ion()
+            ## plt.show()
             print 
         else:            
             del self.ax.collections[:]
 
-        logp      = np.array(logpDataList)[:,0]
-        logp_pred = np.array(logpDataList)[:,1]
-        logp_sig  = np.array(logpDataList)[:,2]
+        idx_lst   = np.array(logpDataList)[:,0]
+        logp      = np.array(logpDataList)[:,1]
+        logp_pred = np.array(logpDataList)[:,2]
+        logp_sig  = np.array(logpDataList)[:,3]
 
         for i in xrange(self.nEmissionDim+1):
             self.ax = self.fig.add_subplot(100*(self.nEmissionDim+1)+10+i+1)
@@ -470,9 +480,10 @@ class anomaly_detector:
                 self.ax.plot(self.mean_train[i]+self.std_train[i], 'b--', lw=1.0)
                 self.ax.plot(self.mean_train[i]-self.std_train[i], 'b--', lw=1.0)
             else:
-                self.ax.plot(logp, 'r-')
-                self.ax.plot(logp_pred, 'b-', lw=3.0)
-                self.ax.plot(logp_sig, 'b--', lw=1.0)
+                self.ax.plot(idx_lst, logp, 'r-')
+                self.ax.plot(idx_lst, logp_pred, 'b-', lw=3.0)
+                self.ax.plot(idx_lst, logp_sig, 'b--', lw=1.0)
+                self.ax.set_xlim([0,140])
 
         plt.axis('tight')
         plt.draw()

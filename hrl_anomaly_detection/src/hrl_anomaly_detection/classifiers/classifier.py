@@ -140,6 +140,7 @@ class classifier(learning_base):
                 print "Need to input nLength or automatically set to 200"
                 self.nLength   = 200
             else:
+                print "Set data length to ", nLength
                 self.nLength   = nLength
             self.std_coff  = std_coff
             self.logp_offset = logp_offset
