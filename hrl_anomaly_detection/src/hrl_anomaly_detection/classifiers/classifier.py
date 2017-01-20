@@ -424,7 +424,7 @@ class classifier(learning_base):
             sys.exit()
 
 
-    def predict(self, X, y=None, temp=True):
+    def predict(self, X, y=None, debug=False):
         '''
         X is single sample
         return predicted values (not necessarily binaries)
@@ -481,8 +481,10 @@ class classifier(learning_base):
 
                 l_err.append(err)
 
-            return l_err, self.ll_mu[min_index], self.ll_std[min_index]
-            ## return l_err
+            if debug:
+                return l_err, self.ll_mu[min_index], self.ll_std[min_index]
+            else:
+                return l_err
 
         elif self.method == 'progress_state':
             if len(np.shape(X))==1: X = [X]
@@ -1268,8 +1270,6 @@ def run_classifiers_boost(idx, processed_data_path, task_name, method_list,\
                                nSubSample=nSubSample, nMaxData=nMaxData, rnd_sample=rnd_sample)
 
         
-                               
-
         # flatten the data
         X_train_flat, Y_train_flat, idx_train_flat = dm.flattenSample(ll_classifier_train_X, \
                                                                       ll_classifier_train_Y, \
@@ -1317,6 +1317,7 @@ def run_classifiers_boost(idx, processed_data_path, task_name, method_list,\
             if method_list[clf_idx].find('progress')>=0 or method_list[clf_idx] == 'fixed' or \
               method_list[clf_idx].find('hmmgp')>=0:
                 thresholds = ROC_dict[method_list[clf_idx]+'_param_range']
+                print thresholds[j]
                 dtc[clf_idx].set_params( ths_mult = thresholds[j] )
                 if not(j==0): continue
                 ret = dtc[clf_idx].fit(X, Y, inds)
