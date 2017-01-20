@@ -1256,7 +1256,7 @@ def run_classifiers_boost(idx, processed_data_path, task_name, method_list,\
             ll_classifier_train_idx = np.array(ll_classifier_train_idx)[normal_idx]
 
             ## nSubSample = 50 #temp!!!!!!!!!!!!!
-            nSubSample = 20 #20 # 20 
+            nSubSample = 40 #20 #20 # 20 
             nMaxData   = 50 #40 100
             rnd_sample = True #False
 
