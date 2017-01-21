@@ -589,6 +589,8 @@ if __name__ == '__main__':
     raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
                                                           opt.bHMMRenew, opt.bCLFRenew)
     ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
+
+    #window 0-5
     save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
 
     task_name = 'feeding'
