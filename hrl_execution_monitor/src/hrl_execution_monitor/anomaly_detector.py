@@ -89,11 +89,11 @@ class anomaly_detector:
         self.soundHandle  = SoundClient()
 
         # sim  ---------------------------------------------
-        self.bSim         = sim
-        if self.bSim: self.cur_task = self.task_name
-        else:         self.cur_task = None
-        self.sim_subject_names = sim_subject_names
-        self.t1 = datetime.datetime.now()
+        ## self.bSim         = sim
+        ## if self.bSim: self.cur_task = self.task_name
+        ## else:         self.cur_task = None
+        ## self.sim_subject_names = sim_subject_names
+        ## self.t1 = datetime.datetime.now()
         # -------------------------------------------------
 
         # Comms
@@ -435,6 +435,7 @@ class anomaly_detector:
         return sensitivity_des
 
     
+    #-------------------------- ETC --------------------------
 
     def viz_raw_input(self, x):
 
@@ -504,14 +505,12 @@ if __name__ == '__main__':
                  help='type the detector id')
     p.add_option('--debug', '--d', action='store_true', dest='bDebug',
                  default=False, help='Enable debugging mode.')
-    p.add_option('--simulation', '--sim', action='store_true', dest='bSim',
-                 default=False, help='Enable a simulation mode.')
     
     p.add_option('--viz', action='store_true', dest='bViz',
                  default=False, help='Visualize data.')
     
     opt, args = p.parse_args()
-    rospy.init_node(opt.task)
+    rospy.init_node(opt.task+'_detector')
 
     if True:
         from hrl_execution_monitor.params.IROS2017_params import *

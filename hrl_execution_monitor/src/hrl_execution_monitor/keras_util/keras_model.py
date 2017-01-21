@@ -34,9 +34,6 @@ import scipy, numpy as np
 import hrl_lib.util as ut
 import gc
 
-random.seed(3334)
-np.random.seed(3334)
-
 import h5py
 import cv2
 
@@ -48,6 +45,10 @@ from keras.utils.np_utils import to_categorical
 from keras.optimizers import SGD, Adagrad, Adadelta, RMSprop
 from keras.utils.visualize_util import plot
 from keras.layers.normalization import BatchNormalization
+
+random.seed(3334)
+np.random.seed(3334)
+
 
 
 def cnn_net(input_shape, n_labels, weights_path=None, with_top=False, input_shape2=None,

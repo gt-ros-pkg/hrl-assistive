@@ -42,39 +42,36 @@ from hrl_execution_monitor import util as autil
 #msg
 from hrl_anomaly_detection.msg import MultiModality
 from std_msgs.msg import String, Float64
-from hrl_srvs.srv import Bool_None, Bool_NoneResponse, StringArray_None
-from hrl_msgs.msg import FloatArray, StringArray
+from sensor_msgs.msg import CameraInfo, Image
 
 QUEUE_SIZE = 10
 
 class anomaly_isolator:
-    def __init__(self, subject_names, task_name, method, raw_data_path, save_data_path,\
-                 param_dict, verbose=False):
-        rospy.loginfo('Initializing anomaly detector')
+    def __init__(self, task_name, save_data_path, param_dict, verbose=False):
+        rospy.loginfo('Initializing anomaly isolator')
 
-        self.subject_names   = subject_names
-        self.task_name       = task_name.lower()
-        self.method          = method
-        self.raw_data_path   = raw_data_path
-        self.save_data_path  = save_data_path        
-        self.verbose = verbose
+        self.task_name      = task_name.lower()
+        self.save_data_path = save_data_path        
+        self.verbose        = verbose
+        self.debug           = debug
+        self.viz             = viz
 
         # Important containers
         self.enable_isolator = False
         self.dataList        = []
+        self.refData         = None
         
         # Params
         self.param_dict      = param_dict        
 
         # HMM, Classifier
-        self.ml           = None
-        self.classifier   = None
+        ## self.ml           = None
 
         # Comms
         self.lock = threading.Lock()        
         self.initParams()
         self.initComms()
-        self.initDetector()
+        self.initIsolator()
 
         if self.verbose:
             rospy.loginfo( "==========================================================")
@@ -83,23 +80,102 @@ class anomaly_isolator:
 
 
     def initParams(self):
-        return
+
+        # Features and parameters
+        self.staticFeatures = self.param_dict['data_param']['staticFeatures']
+        self.nState = self.param_dict['HMM']['nState']
+        self.scale  = self.param_dict['HMM']['scale']
+        
+        self.nStaticDim = len(staticFeatures)
 
 
     def initComms(self):
-        return
+        # Publisher
+        self.isolation_info_pub = rospy.Publisher("/manipulation_task/anomaly_type", String,
+                                                  queue_size=QUEUE_SIZE)
+        
+        # Subscriber # TODO: topic should include task name prefix?
+        rospy.Subscriber('/hrl_manipulation_task/raw_data', MultiModality, self.rawDataCallback)
+        rospy.Subscriber('/manipulation_task/dtc1_data', FloatArray, self.dtc1DataCallback)
+        rospy.Subscriber('/manipulation_task/dtc2_data', FloatArray, self.dtc2DataCallback)
+        rospy.Subscriber('/SR300/rgb/image_raw_rotated', Image, self.imgDataCallback)
+
+        rospy.Subscriber('/manipulation_task/status', String, self.statusCallback)
+
+
+    def initIsolator(self):
+        ''' init detector ''' 
+        rospy.loginfo( "Initializing a detector for %s", self.task_name)
+
+        self.f_param_dict, _, _ = adu.get_isolator_modules(self.save_data_path,
+                                                           self.task_name,
+                                                           self.param_dict)
+        normalTrainData = self.f_param_dict['successData'] 
+        self.refData = np.reshape( np.mean(normalTrainData[:,:,:self.startOffsetSize], axis=(1,2)), \
+                                  (self.nStaticDim,1,1) ) # 4,1,1
+
+    #-------------------------- Communication fuctions --------------------------
+    def imgDataCallback(self, msg):
+        '''
+        capture image
+        '''
+        msg.data
+        
+    def dtc1DataCallback(self, msg):
+        '''
+        Subscribe raw data
+        '''
+
+    def dtc2DataCallback(self, msg):
+        '''
+        Subscribe raw data
+        '''
+
+    def rawDataCallback(self, msg):
+        '''
+        Subscribe raw data
+        '''
+
+    #-------------------------- General fuctions --------------------------
+    def reset(self):
+        ''' Reset parameters '''
+        self.lock.acquire()
+        self.dataList = []
+        self.enable_isolator = False
+        self.lock.release()
+
+
+    def run(self, freq=5):
+        ''' Run detector '''
+        rospy.loginfo("Start to run anomaly isolation: " + self.task_name)
+        rate = rospy.Rate(freq) # 20Hz, nominally.
+        while not rospy.is_shutdown():
+            rate.sleep()
+
+
 
 
 
 
 if __name__ == '__main__':
 
-    ## rospy.init_node('isolator')
+    import optparse
+    p = optparse.OptionParser()
+    p.add_option('--task', action='store', dest='task', type='string', default='feeding',
+                 help='type the desired task name')
+    p.add_option('--debug', '--d', action='store_true', dest='bDebug',
+                 default=False, help='Enable debugging mode.')
+    
+    p.add_option('--viz', action='store_true', dest='bViz',
+                 default=False, help='Visualize data.')
+    
+    opt, args = p.parse_args()
+    rospy.init_node(opt.task+'_isolator')
 
 
-    print sys.argv
+    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
 
-    ai = anomaly_isolator()
+    ai = anomaly_isolator(opt.task, save_data_path, param_dict, debug=opt.bDebug, viz=False)
     ai.run()
 
 
