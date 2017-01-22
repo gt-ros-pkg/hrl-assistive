@@ -9,6 +9,7 @@ import hrl_lib.quaternion as qt
 from tf_conversions import posemath
 
 from geometry_msgs.msg import PoseStamped, Quaternion
+from std_msgs.msg import String
 
 class MouthPoseFilter():
     def __init__(self):
@@ -27,6 +28,7 @@ class MouthPoseFilter():
             self.min = [-999, -999, -999]
             self.max = [999, 999, 999]
         rospy.Subscriber('/hrl_manipulation_task/mouth_pose_backpack_unfiltered', PoseStamped, self.callback, queue_size=10)
+        rospy.Subscriber('/hrl_manipulation_task/mouth_pose_reset', String, self.reset_callback, queue_size=10)
         self.pub=rospy.Publisher('/hrl_manipulation_task/mouth_pose_backpack', PoseStamped, queue_size=10)
         self.quat_pub=rospy.Publisher('/hrl_manipulation_task/mouth_pose_backpack_filtered_quat', Quaternion, queue_size=10)
 
@@ -55,6 +57,11 @@ class MouthPoseFilter():
                     self.quat_buf.append(cur_q)
             self.publish_current()
 
+    def reset_callback(self, data):
+        with self.lock:
+            self.pos_buf    = cb.CircularBuffer(4, (3,))
+            self.quat_buf   = cb.CircularBuffer(4, (4,))
+
                 
     def publish_current(self):
         positions = self.pos_buf.get_array()
@@ -74,8 +81,6 @@ class MouthPoseFilter():
             q = qt.quat_normal(q)
             temp_q = PyKDL.Rotation.Quaternion(q[0], q[1], q[2], q[3])
             q = np.array(temp_q.GetQuaternion())
-            print q, np.linalg.norm(q)
-
             """
             p = np.median(position, axis=0)
             q = np.median(quaternion, axis=0)

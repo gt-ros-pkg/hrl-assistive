@@ -66,6 +66,7 @@ var ManipulationTask = function (ros) {
     manTask.handshaked = false;
     manTask.current_task = 'Init';
     manTask.anomaly_detected = false;
+    manTask.anomaly_stop = false;
     //status_topic and publishing
     manTask.statusPub = new manTask.ros.Topic({
         name: manTask.STATUS_TOPIC,
@@ -177,6 +178,7 @@ var ManipulationTask = function (ros) {
         var msg = new manTask.ros.Message({
           data: 'STOP'
         });
+        manTask.anomaly_stop = false;
         manTask.emergencyPub.publish(msg);
         assistive_teleop.log('Stopping the manipulation task');
         assistive_teleop.log('Please, press "Continue" to re-start the action. Or re-start from step 1.');
@@ -432,6 +434,10 @@ var ManipulationTask = function (ros) {
             enableButton('#ad_feeding_sense_max');
             enableButton('#ad_feeding_slider');
             manTask.available=true;
+            if (manTask.anomaly_detected) {
+                document.getElementById('anomaly_disp').style.display = 'none';
+                document.getElementById('non_anomaly_disp').style.display = '';
+            }
             manTask.anomaly_detected = false;
         } else if (msg.data == 'request feedback') {
             disableButton('#man_task_Scooping');
@@ -548,6 +554,21 @@ var ManipulationTask = function (ros) {
         }
     });
 
+    //part added 1/20/17 to display anomaly type
+
+    manTask.anomalyResultSub = new manTask.ros.Topic({
+        name: 'manipulation_task/anomaly_type',
+        messageType: 'std_msgs/String'});
+    manTask.anomalyResultSub.subscribe( function(msg) {
+        if (msg.data == '') {
+            document.getElementById('anomaly_type').innerHTML = 'Classifying';
+        } else {
+            document.getElementById('anomaly_type').innerHTML = msg.data;
+        }
+        document.getElementById('anomaly_type').style.display = '';
+        document.getElementById('anomaly_disp').style.display = '';
+        document.getElementById('non_anomaly_disp').style.display='none';
+    });
     //part added on 4/7 to accomodate anomaly signal.
     manTask.emergencySub = new manTask.ros.Topic({
         name: 'manipulation_task/emergency',
@@ -555,6 +576,11 @@ var ManipulationTask = function (ros) {
     manTask.emergencySub.subscribe(function (msg) {
         if(msg.data!="STOP") {
             manTask.anomaly_detected = true;
+            if (manTask.anomaly_stop == false) {
+                document.getElementById('anomaly_type').innerHTML = 'Classifying';
+                document.getElementById('non_anomaly_disp').style.display='none';
+                document.getElementById('anomaly_disp').style.display='';
+            }
         }
 
     });

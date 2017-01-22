@@ -16,6 +16,7 @@ import hrl_lib.quaternion as qt
 from sensor_msgs.msg import CameraInfo, Image, PointCloud2
 from geometry_msgs.msg import PoseStamped, PoseArray, Pose, Point32, PolygonStamped, Vector3, Quaternion
 from std_msgs.msg import Float32 as rosFloat
+from std_msgs.msg import String
 import matplotlib.pyplot as plt
 from scipy.spatial import Delaunay
 from skimage.transform import radon, rescale
@@ -23,7 +24,7 @@ from cv_bridge import CvBridge, CvBridgeError
 
 class MouthPoseDetector:
     def __init__(self, camera_link, rgb_image, depth_image, rgb_info, depth_info, depth_scale, offset,
-                 display_2d=True, display_3d=True, flipped=False, rgb_mode="bgr8", save_loc=None, load_loc=None):
+                 display_2d=True, display_3d=True, flipped=False, rgb_mode="bgr8", save_name=None, load_name=None, record_root_path=None):
         #display registration
         self.display_2d = display_2d
         self.display_3d = display_3d
@@ -53,31 +54,38 @@ class MouthPoseDetector:
         gripper           = "/right/haptic_mpc/gripper_pose"
         
         #for initializing frontal face data
-        self.save_loc          = save_loc
+        if record_root_path is None:
+            record_root_path = os.path.expanduser('~')
+        self.save_loc          = save_name
         if self.save_loc is not None:
-            self.save_loc = os.path.expanduser('~') + save_loc
-        self.first                 = True
-        self.relation              = None
-        self.dist                  = []
-        self.reverse_dist          = []
-        self.half_dist             = []
-        self.point_set             = []
-        self.current_positions     = []
-        self.object_points         = []
-        self.point_set_index       = []
-        self.sizes                 = []
-        self.lm_coor               = []
-        self.registered_eye_vertical   = []
-        self.registered_eye_horizontal = []
-        self.registered_faces      = 0
-        self.min_w                 = 0
-        self.min_h                 = 0
-        self.previous_position     = (0.0, 0.0, 0.0)
-        self.previous_orientation  = (0.0, 0.0, 0.0, 0.0)
+            self.save_loc = os.path.join(record_root_path, save_name)#os.path.expanduser('~') + save_loc
+            self.save_loc = self.save_loc + ".pkl"
 
-        if load_loc is not None:
-            self.load_loc = os.path.expanduser('~') + load_loc
+        if load_name is not None:
+            self.load_loc = os.path.join(record_root_path, load_name)#os.path.expanduser('~') + load_loc
+            self.load_loc = self.load_loc + ".pkl"
             self.load(self.load_loc)
+        else:
+            self.first                 = True
+            self.relation              = None
+            self.dist                  = []
+            self.reverse_dist          = []
+            self.half_dist             = []
+            self.point_set             = []
+            self.current_positions     = []
+            self.object_points         = []
+            self.point_set_index       = []
+            self.sizes                 = []
+            self.lm_coor               = []
+            self.registered_eye_vertical   = []
+            self.registered_eye_horizontal = []
+            self.registered_faces      = 0
+            self.min_w                 = 0
+            self.min_h                 = 0
+            self.previous_position     = (0.0, 0.0, 0.0)
+            self.previous_orientation  = (0.0, 0.0, 0.0, 0.0)
+            self.prev_pose             = None
+        self.reset_pose = False
 
         """
         rate = rospy.Rate(10) # 25Hz, nominally.    
@@ -93,7 +101,8 @@ class MouthPoseDetector:
                 break
             rate.sleep()
         """
-        self.gripper_to_sensor =  [[-0.072,-0.011,-0.068], [0.479, -0.514, 0.464, -0.540]]
+        #self.gripper_to_sensor =  [[-0.072,-0.011,-0.068], [0.479, -0.514, 0.464, -0.540]]
+        self.gripper_to_sensor =  [[-0.044,0.006,-0.058], [-0.488, 0.512, -0.471, 0.527]]
         #if self.gripper_to_sensor is None:
         #    self.gripper_to_sensor = np.array([[ 0.04152687,  0.00870336,  0.99909948,  -0.072        ],\
         #                                       [-0.99300273,  0.11099984,  0.04030652,  -0.011        ],\
@@ -116,6 +125,7 @@ class MouthPoseDetector:
         self.info_ts.registerCallback(self.initialize_frames)
         self.ts             = message_filters.ApproximateTimeSynchronizer([self.image_sub, self.depth_sub, self.gripper_sub], 10, 100)
         self.ts.registerCallback(self.callback)
+        self.reset_sub      = rospy.Subscriber('/hrl_manipulation_task/mouth_pose_reset', String, self.reset_callback)
         
         self.subscribed_success          = False
         
@@ -147,7 +157,9 @@ class MouthPoseDetector:
 
     def load(self, load_loc):
         if os.path.isfile(load_loc) == False:
+            print "failed to load from " + load_loc
             return
+        print "loading"
         d = ut.load_pickle(load_loc)
         self.first             = d['first']
         self.relation          = d['relation'] 
@@ -162,8 +174,20 @@ class MouthPoseDetector:
         self.lm_coor           = d['lm_coor']
         self.gripper_to_sensor = d['gripper_to_sensor']
         self.wrong_coor        = d['wrong_coor']
-        self.previous_position = (0.0, 0.0, 0.0)
-        self.previous_orientation = (0.0, 0.0, 0.0, 0.0)
+        self.prev_pose         = None
+        self.previous_position = (0.0, 0.0, 0.0)#d['previous_position']
+        self.previous_orientation = (0.0, 0.0, 0.0, 0.0)#d['previous_orientation']
+        self.registered_eye_vertical   = d['registered_eye_vertical']
+        self.registered_eye_horizontal = d['registered_eye_horizontal']
+        self.registered_faces      = d['registered_faces']
+        self.previous_face         = d['previous_face']
+        self.min_w                 = d['min_w']
+        self.min_h                 = d['min_h']
+        if self.registered_faces >= 45:
+            self.eye_horizontal_model = self.find_mean_var(self.registered_eye_horizontal)
+            self.eye_vertical_model = self.find_mean_var(self.registered_eye_vertical)
+        print "loaded"
+        print self.registered_faces
         
 
     def save(self, save_loc):
@@ -183,6 +207,15 @@ class MouthPoseDetector:
         d['wrong_coor']        = self.wrong_coor
         d['previous_position'] = self.previous_position
         d['previous_orientation'] = self.previous_orientation
+        d['previous_position']    = self.previous_position
+        d['previous_orientation']      = self.previous_orientation
+        d['previous_face']             = self.previous_face
+        d['registered_eye_vertical']   = self.registered_eye_vertical
+        d['registered_eye_horizontal'] = self.registered_eye_horizontal
+        d['registered_faces'] = self.registered_faces
+        d['min_w'] = self.min_w
+        d['min_h'] = self.min_h
+
         ut.save_pickle(d, save_loc)
 
     def callback(self, data, depth_data, gripper_pose):
@@ -191,8 +224,7 @@ class MouthPoseDetector:
         self.subscribed_success = True
         if data.header.stamp.to_sec() - rospy.get_time() < -.1 or not self.frame_ready:# or abs(data.header.stamp.to_sec() - depth_data.header.stamp.to_sec()) > 0.1 or abs(depth_data.header.stamp.to_sec() - gripper_pose.header.stamp.to_sec()) > 0.1:
             return
-            
-        
+        reset_pose = self.reset_pose
         #print "hello world"
         #print "difference in time on camera images", data.header.stamp.to_sec() - depth_data.header.stamp.to_sec()
         #print "difference in image and tf", data.header.stamp.to_sec() - gripper_pose.header.stamp.to_sec()
@@ -231,6 +263,7 @@ class MouthPoseDetector:
             if self.first:
                 return
             faces = dlib.dlib.rectangles()
+            print self.registered_faces
             if self.registered_faces <45:
                 faces.append(dlib.dlib.rectangle(self.previous_face[0].left() - 15, self.previous_face[0].top(), self.previous_face[0].right()- 15, self.previous_face[0].bottom()))
                 faces.append(dlib.dlib.rectangle(self.previous_face[0].left() + 15, self.previous_face[0].top(), self.previous_face[0].right()+ 15, self.previous_face[0].bottom()))
@@ -307,6 +340,7 @@ class MouthPoseDetector:
                         #self.face_vertical_model  = self.find_mean_var(self.registered_vertical)
                         self.eye_horizontal_model = self.find_mean_var(self.registered_eye_horizontal)
                         self.eye_vertical_model = self.find_mean_var(self.registered_eye_vertical)
+                        self.save(self.save_loc)
                         #print self.eye_horizontal_model
                         #print "finished registering!"
                         #print self.registered_vertical
@@ -329,6 +363,11 @@ class MouthPoseDetector:
                     if not valid_registration:
                         continue
                     self.point_set_index=self.find_best_set(landmarks, depth)
+                if reset_pose:
+                    print "resetting pose"
+                    self.reset_pose = False
+                    self.previous_position = (0.0, 0.0, 0.0)
+                    self.previous_orientation = (0.0, 0.0, 0.0, 0.0)
                 point_set, points_ordered = self.retrieve_points(landmarks, depth)
                 #print points_ordered
 
@@ -527,8 +566,14 @@ class MouthPoseDetector:
             try:
                 temp_pose.header.stamp = data.header.stamp#rospy.Time.now() #
                 temp_pose.header.frame_id = "torso_lift_link"
+                if no_jump:
+                    self.mouth_calc_pub.publish(temp_pose)
+                    self.prev_pose = temp_pose
+                else:
+                    if self.prev_pose is not None:
+                        self.mouth_calc_pub.publish(self.prev_pose)
                 #temp_pose = self.tf_listnr.transformPose("torso_lift_link", temp_pose)
-                self.mouth_calc_pub.publish(temp_pose)
+                #self.mouth_calc_pub.publish(temp_pose)
                 #print "pose time", temp_pose.header.stamp.to_sec()
                 #print "image times", data.header.stamp.to_sec(), depth_data.header.stamp.to_sec()
             except:
@@ -688,6 +733,9 @@ class MouthPoseDetector:
         self.rgb_info_sub   = None
         self.cam_matrix =  np.asarray(rgb_info.K).reshape((3,3)).astype('float32')
         self.frame_ready = True
+
+    def reset_callback(self, data):
+        self.reset_pose = True
 
     def use_pnp_ransac(self, landmarks, cam_matrix, distortion=None, tvec=None):
         marks = []
@@ -1408,11 +1456,12 @@ if __name__ == '__main__':
     p.add_option("--display_3d", dest="display_3d", action="store_true", default=False)
     p.add_option("--save", dest="save")
     p.add_option("--load", dest="load")
+    record_root_path = os.path.expanduser('~')
     (options, args) = p.parse_args()
     #print options.offset
     detector = MouthPoseDetector(options.rgb_camera_link, options.rgb_image,
                                  options.depth_image, options.rgb_info, 
                                  options.depth_info, options.depth_scale, options.offset,
                                  options.display_2d, options.display_3d,
-                                 options.flipped, options.rgb_mode, options.save, options.load)
+                                 options.flipped, options.rgb_mode, options.save, options.load, record_root_path)
     rospy.spin()
