@@ -94,7 +94,7 @@
             <label> yes </label>
           </td>
           <td style="text-align:center" id="feeding_questions1_no" onclick="manTask_no(this.id)" value="false">
-            <label> no </label> 
+            <label> no </label>
           </td>
         </tr>
         <tr>
@@ -447,6 +447,25 @@
                         </table>
                       </td>
                     </tr>
+                    <tr>
+                      <td colspan='5'>
+                        <table style="width:100%;font-size:150%;text-align:center;table-layout:fixed;font-weight:bold">
+                          <tr id="anomaly_disp" style="display:none">
+                            <td colspan="1">
+                              <label style="color:red"> Detected Anomaly: </label>
+                            </td>
+                            <td colspan="1">
+                              <label id="anomaly_type" style="color:red"> Classifying</label>
+                            </td>
+                          </tr>
+                          <tr id="non_anomaly_disp">
+                            <td colspan="2">
+                              <label style="color:green"> No anomaly detected</label>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
                     <tr style="height:10px"><td></td></tr>
                     <tr>
                       <th colspan='5'
@@ -470,16 +489,19 @@
                       </td>
                     </tr>
                     <tr>
-                      <td colspan='5'>
+                      <td colspan='5' style="height:1px">
                         <table style="width:100%">
                           <tr>
-                            <td colspan='1' style="width:50%;text-align:right">
+                            <td colspan='1' style="font-size:0%;width:50%;text-align:right"-->
+                              <!--delete font-size style -->
                               <label>
                                 Accuracy with <br>
                                 most recent 10 data
                               </label>
                             </td>
-                            <td colspan='1' style="width:50%;font-size:200%;text-align:left">
+                            <td colspan='1'
+                              style="height:0px;width:50%;font-size:0%;text-align:left">
+                              <!-- change font size to 200% -->
                               :
                               <label id="ad_scooping_result_2" style="text-align:center"> 0.0% </label>
                             </td>
@@ -513,13 +535,15 @@
                       <td colspan='5'>
                         <table style="width:100%">
                           <tr>
-                            <td colspan='1' style="width:50%;text-align:right">
+                            <td colspan='1' style="font-size:0%;width:50%;text-align:right">
+                              <!--delete font-size style -->
                               <label>
                                 Accuracy with <br>
                                 most recent 10 data
                               </label>
                             </td>
-                            <td colspan='1' style="width:50%;text-align:left;font-size:200%">
+                            <td colspan='1' style="width:50%;text-align:left;font-size:0%">
+                              <!-- change font-size style to 200% -->
                               :
                               <label id="ad_feeding_result_2"> 0.0% </label>
                             </td>
@@ -549,7 +573,7 @@
                               </select>
                             </td>
                           </tr>
-                      </table>
+                        </table>
                       </td>
                     </tr>
                   </table>
