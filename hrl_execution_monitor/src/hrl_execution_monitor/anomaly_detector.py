@@ -127,7 +127,8 @@ class anomaly_detector:
         self.handFeatures = self.param_dict['data_param']['handFeatures'][self.id]
         self.nState = self.param_dict['HMM']['nState']
         self.scale  = self.param_dict['HMM']['scale'][self.id]
-        
+
+        self.nDetector = rospy.get_param('nDetector')
         self.w_positive = rospy.get_param(self.method+str(self.id)+'_ths_mult')
         self.w_max = self.param_dict['ROC'][self.method+str(self.id)+'_param_range'][-1]
         self.w_min = self.param_dict['ROC'][self.method+str(self.id)+'_param_range'][0]
@@ -173,6 +174,7 @@ class anomaly_detector:
     def initDetector(self):
         ''' init detector ''' 
         rospy.loginfo( "Initializing a detector (%s) for %s", self.method, self.task_name)
+        if self.nDetector == 0: return
         
         self.f_param_dict, self.ml, self.classifier = adu.get_detector_modules(self.save_data_path,
                                                                                self.task_name,
@@ -311,6 +313,7 @@ class anomaly_detector:
 
     #-------------------------- General fuctions --------------------------
     def pubSensitivity(self):
+        if self.classifier is None: return
         sensitivity = self.sensitivity_clf_to_GUI()
         rospy.loginfo( "Current sensitivity is [0~1]: "+ str(sensitivity)+ \
                        ', internal multiplier is '+ str(self.classifier.ths_mult) )
@@ -332,7 +335,7 @@ class anomaly_detector:
         rate = rospy.Rate(freq) # 20Hz, nominally.
         while not rospy.is_shutdown():
 
-            if self.enable_detector is False: 
+            if self.enable_detector is False or self.classifier is None: 
                 self.dataList = []
                 self.logpDataList = []
                 rate.sleep()                

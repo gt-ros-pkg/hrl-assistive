@@ -27,7 +27,6 @@ def getParams(task, bDataRenew=False, bHMMRenew=False, bCFRenew=False, dim=0, rf
 
     # common params
     ## param_dict['ROC']['methods'] = [ 'hmmgp0', 'hmmgp1']
-    param_dict['ROC']['methods'] = [ 'progress0', 'progress1']
     param_dict['ROC']['update_list'] = [ ]
     param_dict['SVM']['raw_window_size'] = 5
 
@@ -72,7 +71,8 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                       'std_offset': 1.4464
                       }
 
-    ROC_param_dict = {'nPoints': nPoints,\
+    ROC_param_dict = {'methods': [ 'progress0', 'progress1'],\
+                      'nPoints': nPoints,\
                       'progress_param_range': -np.logspace(0.6, 0.9, nPoints)+1.0,\
                       'hmmgp_param_range': np.logspace(-0., 2.3, nPoints)*-1.0+1.0, \
                       'change_param_range': np.logspace(0.5, 2.1, nPoints)*-1.0,\
@@ -138,11 +138,11 @@ def getScooping(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos', loc
 
     if nPoints is None: nPoints = 20  
 
-    handFeatures = ['unimodal_ftForce',\
+    handFeatures = [['unimodal_ftForce',\
                     'crossmodal_targetEEDist', \
                     'crossmodal_targetEEAng', \
-                    'unimodal_audioWristRMS']
-    HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 3.566, 'scale': 1.0,
+                    'unimodal_audioWristRMS']]
+    HMM_param_dict = {'renew': HMM_renew, 'nState': 20, 'cov': 3.566, 'scale': [1.0],
                       'add_logp_d': False}
     SVM_param_dict = {'renew': CF_renew, 'w_negative': 0.2, 'gamma': 0.01, 'cost': 15.0,\
                       'hmmosvm_nu': 0.00316,\
@@ -153,33 +153,56 @@ def getScooping(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos', loc
                       'hmmsvm_dL_gamma': 0.50749,
                       }
 
-    ROC_param_dict = {'nPoints': nPoints,\
+    ROC_param_dict = {'methods': [ 'progress0'],\
+                      'nPoints': nPoints,\
                       'hmmgp_param_range':np.linspace(0, -40.0, nPoints), \
                       'progress_param_range':np.linspace(0.0, -7., nPoints), \
-                      'svm_param_range': np.logspace(-4, 1.2, nPoints),\
                       'change_param_range': np.logspace(-0.8, 1.0, nPoints)*-1.0,\
                       'fixed_param_range': np.logspace(0.0, 0.5, nPoints)*-1.0+1.3,\
-                      'cssvm_param_range': np.logspace(-4.0, 2.0, nPoints),\
-                      'hmmosvm_param_range': np.logspace(-4.0, 1.0, nPoints),\
-                      'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
-                      'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
-                      'osvm_param_range': np.logspace(-5., 0.0, nPoints),\
-                      'sgd_param_range': np.logspace(-4.0, 1.3, nPoints)}
+                      'sgd_param_range': np.logspace(-4.0, 1.3, nPoints),\
+                      'progress0_param_range': -np.logspace(-0.3, 0.8, nPoints),\
+                      'progress1_param_range': -np.logspace(-0.3, 0.8, nPoints),\
+                      }
 
     AD_param_dict = {}
-       
+
+    # 012 3 45678910 11121314 151617 18 19 2021 2223
+    isolationFeatures = ['unimodal_audioWristRMS', \
+                         'unimodal_audioWristFrontRMS',\
+                         'unimodal_audioWristAzimuth',\
+                         'unimodal_kinVel',\
+                         'unimodal_kinJntEff_1', \
+                         'unimodal_kinJntEff_2', \
+                         'unimodal_kinJntEff_3', \
+                         'unimodal_kinJntEff_4', \
+                         'unimodal_kinJntEff_5', \
+                         'unimodal_kinJntEff_6', \
+                         'unimodal_kinJntEff_7', \
+                         'unimodal_ftForce',\
+                         'unimodal_ftForce_zero',\
+                         'unimodal_ftForce_integ',\
+                         'unimodal_ftForce_delta',\
+                         'unimodal_ftForceX',\
+                         'unimodal_ftForceY',\
+                         'unimodal_ftForceZ',\
+                         'unimodal_fabricForce',\
+                         'unimodal_landmarkDist',\
+                         'unimodal_kinEEChange',\
+                         'unimodal_kinDesEEChange',\
+                         'crossmodal_landmarkEEDist', \
+                         'crossmodal_landmarkEEAng',\
+                         ] 
+    
     raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/AURO2016/'
 
     data_param_dict= {'renew': data_renew, 'rf_center': rf_center, 'local_range': local_range,\
                       'downSampleSize': 140, 'cut_data': None, \
                       'nNormalFold':3, 'nAbnormalFold':3,\
                       'handFeatures': handFeatures, 'lowVarDataRemv': False,\
+                      'isolationFeatures': isolationFeatures,\
                       'handFeatures_noise': True, 'max_time': None}
 
-    save_data_path = os.path.expanduser('~')+\
-      '/hrl_file_server/dpark_data/anomaly/AURO2016/'+task+'_data/'+\
-      str(data_param_dict['downSampleSize'])+'_'+str(dim)
-      
+    save_data_path = None
     param_dict = {'data_param': data_param_dict, 'HMM': HMM_param_dict, \
                   'SVM': SVM_param_dict, 'ROC': ROC_param_dict, 'AD': AD_param_dict}
       

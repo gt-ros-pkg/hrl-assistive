@@ -65,7 +65,8 @@ class armReachAction(mpcBaseAction):
         self.highBowlDiff = np.array([0, 0, 0])
         self.bowlPosition = np.array([0, 0, 0])
         # vertical x side x depth
-        self.mouthManOffset = np.array([-0.05, 0.0, 0.04]) # -0.03, 0., 0.05
+        self.mouthManOffset = np.array([-0.03, 0.0, 0.04]) # -0.03, 0., 0.05
+        ## self.mouthManOffset = np.array([-0.05, 0.0, 0.04]) # -0.03, 0., 0.05
         ## self.mouthManOffset = np.array([-0.04, 0.02, 0.09]) # -0.02, 0., 0.05
         self.mouthNoise     = np.array([0., 0., 0.])
         self.mouthOffset    = self.mouthManOffset+self.mouthNoise 
@@ -205,26 +206,36 @@ class armReachAction(mpcBaseAction):
 
         ## Init arms ---------------------------------------------------------------
         self.motions['cleanSpoon1'] = {}
-        self.motions['cleanSpoon1']['left']  = [['MOVEL', '[ 0.0, 0.0,  -0.01, 0, 1.4, 0]', 3, 'self.bowl_frame'],\
-                                                ['PAUSE', 3.0],\
-                                                ['MOVEL', '[ 0.0, 0.0,  -0.1, 0, 1.4, 0]', 3, 'self.bowl_frame']]
-        self.motions['cleanSpoon1']['right'] = [['PAUSE', 3.0],\
-                                                ['MOVET', '[0., -0.1, 0.0, 0., 0., 0.]', 3., 'self.default_frame'],\
-                                                ['PAUSE', 2.0],\
-                                                ['MOVET', '[0., 0.1, 0.0, 0., 0., 0.]', 3., 'self.default_frame'] ]
+        self.motions['cleanSpoon1']['left'] = \
+          [['MOVEL', '[ 0.05+0.005, 0.05-self.highBowlDiff[1],  -0.06, 0, 1.5, 0]', 3, 'self.bowl_frame'],
+           ['PAUSE', 0.0],
+           ['MOVEL', '[ 0.05+0.005, 0.05-self.highBowlDiff[1],  -0.03, 0, 1.5, 0]', 3, 'self.bowl_frame'],
+           ['PAUSE', 0.0],
+           ['MOVEL', '[ 0.05-0.07, 0.02-self.highBowlDiff[1],  -0.03, 0, 1.5, 0]', 3, 'self.bowl_frame'],
+           ['PAUSE', 0.0],
+           ['MOVEL', '[ 0.05, 0.0-self.highBowlDiff[1],  -0.06, 0, 1.5, 0]', 3, 'self.bowl_frame'],]
+        self.motions['cleanSpoon1']['right'] = []
+
+        
+        ## self.motions['cleanSpoon1']['left']  = [['MOVEL', '[ 0.0, 0.0,  -0.01, 0, 1.4, 0]', 3, 'self.bowl_frame'],\
+        ##                                         ['PAUSE', 3.0],\
+        ##                                         ['MOVEL', '[ 0.0, 0.0,  -0.1, 0, 1.4, 0]', 3, 'self.bowl_frame']]
+        ## self.motions['cleanSpoon1']['right'] = [['PAUSE', 3.0],\
+        ##                                         ['MOVET', '[0., -0.1, 0.0, 0., 0., 0.]', 3., 'self.default_frame'],\
+        ##                                         ['PAUSE', 2.0],\
+        ##                                         ['MOVET', '[0., 0.1, 0.0, 0., 0., 0.]', 3., 'self.default_frame'] ]
                                                 
 
         ## Scooping motoins --------------------------------------------------------
         # Used to perform motions relative to bowl/mouth positions > It should use relative frame
-        # [shoulder (towards left shoulder), arm pitch on shoulder (towards ground), whole arm roll (rotates right), elbow pitch (rotates towards outer arm),
+        # [shoulder (towards left shoulder), arm pitch on shoulder (towards ground),
+        # whole arm roll (rotates right), elbow pitch (rotates towards outer arm),
         # elbow roll (rotates left), wrist pitch (towards top of forearm), wrist roll (rotates right)] (represents positive values)
         self.motions['initScooping1'] = {}
         self.motions['initScooping1']['left'] = [['PAUSE', 2.0],
                                                  ['MOVEJ', '[0.6447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 1.1291]', 5.0]]
         self.motions['initScooping1']['right'] = [['MOVEJ', '[-0.59, 0.131, -1.55, -1.041, 0.098, -1.136, -1.4]', 5.0],
                                                   ['MOVES', '[0.7, -0.15, -0., -3.1415, 0.0, 1.574]', 2.]]
-        ## 
-                                                  
 
         self.motions['initScooping2'] = {}
         self.motions['initScooping2']['left'] = [['MOVES', '[-0.04, 0.0, -0.15, 0, 0.5, 0]', 3, 'self.bowl_frame']]
@@ -245,24 +256,25 @@ class armReachAction(mpcBaseAction):
            ['PAUSE', 0.0],
            ['MOVEL', '[ 0.05, 0.0-self.highBowlDiff[1],  0.03, 0, 0.8, 0]', 3, 'self.bowl_frame'],
            ['PAUSE', 0.0],
-           ['MOVES', '[ 0.05, 0.0-self.highBowlDiff[1],  -0.1, 0, 1.3, 0]', 3, 'self.bowl_frame'],]
+           ['MOVES', '[ 0.05, 0.0-self.highBowlDiff[1],  -0.06, 0, 1.5, 0]', 3, 'self.bowl_frame'],]
+           ## ['MOVES', '[ 0.05, 0.0-self.highBowlDiff[1],  -0.1, 0, 1.3, 0]', 3, 'self.bowl_frame'],]
 
 
-        self.motions['runWiping'] = {}
-        self.motions['runWiping']['left'] = \
-          [['MOVES', '[-0.05, 0.0-self.highBowlDiff[1],  0.04, 0, 0.7, 0]', 3, 'self.bowl_frame'],
-           ['PAUSE', 0.0],
-           ['MOVEL', '[ 0.05, 0.0-self.highBowlDiff[1],  0.03, 0, 0.8, 0]', 3, 'self.bowl_frame'],
-           ['PAUSE', 0.0],
-           ['MOVES', '[ 0.05-0.01, 0.0-self.highBowlDiff[1],  -0.065, 0, 1.5, 0]', 3, 'self.bowl_frame'],
-           ['PAUSE', 0.0],
-           ['MOVES', '[ 0.05-0.01, 0.05-self.highBowlDiff[1],  -0.065, 0, 1.5, 0]', 3, 'self.bowl_frame'],
-           ['PAUSE', 0.0],
-           ['MOVES', '[ 0.05-0.0, 0.05-self.highBowlDiff[1],  -0.04, 0, 1.5, 0]', 3, 'self.bowl_frame'],
-           ['PAUSE', 0.0],
-           ['MOVES', '[ 0.05-0.05, 0.05-self.highBowlDiff[1],  -0.04, 0, 1.5, 0]', 3, 'self.bowl_frame'],
-           ['PAUSE', 0.0],
-           ['MOVES', '[ 0.05, 0.0-self.highBowlDiff[1],  -0.1, 0, 1.5, 0]', 3, 'self.bowl_frame'],]
+        ## self.motions['runWiping'] = {}
+        ## self.motions['runWiping']['left'] = \
+        ##   [['MOVES', '[-0.05, 0.0-self.highBowlDiff[1],  0.04, 0, 0.7, 0]', 3, 'self.bowl_frame'],
+        ##    ['PAUSE', 0.0],
+        ##    ['MOVEL', '[ 0.05, 0.0-self.highBowlDiff[1],  0.03, 0, 0.8, 0]', 3, 'self.bowl_frame'],
+        ##    ['PAUSE', 0.0],
+        ##    ['MOVEL', '[ 0.05-0.005, 0.0-self.highBowlDiff[1],  -0.06, 0, 1.5, 0]', 3, 'self.bowl_frame'],
+        ##    ['PAUSE', 0.0],
+        ##    ['MOVEL', '[ 0.05+0.005, 0.05-self.highBowlDiff[1],  -0.06, 0, 1.5, 0]', 3, 'self.bowl_frame'],
+        ##    ['PAUSE', 0.0],
+        ##    ['MOVEL', '[ 0.05+0.005, 0.05-self.highBowlDiff[1],  -0.03, 0, 1.5, 0]', 3, 'self.bowl_frame'],
+        ##    ['PAUSE', 0.0],
+        ##    ['MOVEL', '[ 0.05-0.07, 0.05-self.highBowlDiff[1],  -0.03, 0, 1.5, 0]', 3, 'self.bowl_frame'],
+        ##    ['PAUSE', 0.0],
+        ##    ['MOVEL', '[ 0.05, 0.0-self.highBowlDiff[1],  -0.06, 0, 1.5, 0]', 3, 'self.bowl_frame'],]
 
 
         ## Feeding motoins --------------------------------------------------------

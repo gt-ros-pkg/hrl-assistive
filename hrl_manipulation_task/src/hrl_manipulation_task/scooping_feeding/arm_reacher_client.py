@@ -89,8 +89,9 @@ if __name__ == '__main__':
     ## print armReachActionLeft('getBowlPos')
     ## print armReachActionLeft('lookAtBowl')
     ## print armReachActionLeft('initScooping2')
-    ## print armReachActionLeft('runWiping')
-    ## ## print armReachActionLeft('runScooping')
+    ## print armReachActionLeft('runScooping')
+    ## print armReachActionLeft('cleanSpoon1')
+
     ## sys.exit()
 
 

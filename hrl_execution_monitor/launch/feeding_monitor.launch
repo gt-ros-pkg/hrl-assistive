@@ -9,7 +9,8 @@
       <rosparam command="load" file="$(arg ad_param)" />
 
       <!--node name="soundplay_node" pkg="sound_play" type="soundplay_node.py"/-->
-      <!--node name="anomaly_detector" pkg="hrl_execution_monitor" type="anomaly_detector.py" args="-task scooping -dim 4" output="screen" /-->
+      <node name="anomaly_detector" pkg="hrl_execution_monitor"
+            type="anomaly_detector.py" args="--task scooping --id 0" output="screen" />
     </group>
 
     <group ns="feeding" >
