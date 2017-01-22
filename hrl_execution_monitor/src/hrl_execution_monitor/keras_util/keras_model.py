@@ -45,6 +45,7 @@ from keras.utils.np_utils import to_categorical
 from keras.optimizers import SGD, Adagrad, Adadelta, RMSprop
 from keras.utils.visualize_util import plot
 from keras.layers.normalization import BatchNormalization
+from keras.regularizers import EigenvalueRegularizer, L1L2Regularizer
 
 random.seed(3334)
 np.random.seed(3334)
@@ -106,7 +107,8 @@ def cnn_net(input_shape, n_labels, weights_path=None, with_top=False, input_shap
         return model
 
 
-def sig_net(input_shape, n_labels, weights_path=None, fine_tune=False, activ_type='relu'):
+def sig_net(input_shape, n_labels, weights_path=None, fine_tune=False, activ_type='relu',
+            ):
 
     if activ_type == 'PReLU':
         activ_type = PReLU(init='zero', weights=None)
@@ -114,7 +116,8 @@ def sig_net(input_shape, n_labels, weights_path=None, fine_tune=False, activ_typ
 
     
     model = Sequential()
-    model.add(Dense(128, init='uniform', input_shape=input_shape,\
+    model.add(Dense(128, init='uniform', input_shape=input_shape,
+                    W_regularizer=L1L2Regularizer(0.0,0.1),\
                     name='fc2_1'))
     ## model.add(BatchNormalization())
     model.add(Activation(activ_type))
@@ -128,7 +131,8 @@ def sig_net(input_shape, n_labels, weights_path=None, fine_tune=False, activ_typ
         for layer in model.layers:
             layer.trainable = False
     
-    model.add(Dense(n_labels, activation='softmax', name='fc_sig_out'))
+    model.add(Dense(n_labels, activation='softmax',W_regularizer=L1L2Regularizer(0,0),
+                    name='fc_sig_out'))
 
     if weights_path is not None:
         model.load_weights(weights_path, by_name=True)
