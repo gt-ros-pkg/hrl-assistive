@@ -59,6 +59,7 @@ import gc
 random.seed(3334)
 np.random.seed(3334)
 
+vgg_model_weights_path = os.path.expanduser('~')+'/git/keras_test/vgg16_weights.h5'
 
 
 def train_isolator_modules(save_data_path, n_labels, verbose=False):
@@ -73,11 +74,15 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
 
     # training with signals
     ## train_with_signal(save_data_path, n_labels, nFold, nb_epoch=200, patience=10)
-    ## train_with_signal(save_data_path, n_labels, nFold, nb_epoch=200, patience=10, fine_tune=True)
+    ## train_with_signal(save_data_path, n_labels, nFold, nb_epoch=200, patience=50, fine_tune=True)
 
     # training_with images
     ## train_with_image(save_data_path, n_labels, nFold, patience=20)
     ## train_with_image(save_data_path, n_labels, nFold, patience=20, fine_tune=True)
+    ## train_with_image(save_data_path, n_labels, nFold, patience=20, vgg=True)
+    train_with_image(save_data_path, n_labels, nFold, patience=20, vgg=True, fine_tune=True)
+    train_with_image(save_data_path, n_labels, nFold, patience=20, vgg=True, fine_tune=True)
+    train_with_image(save_data_path, n_labels, nFold, patience=20, vgg=True, fine_tune=True)
 
     # training_with all
     ## train_with_all(save_data_path, n_labels, nFold, patience=10)
@@ -85,8 +90,8 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
     ## train_with_all(save_data_path, n_labels, nFold, fine_tune=True, patience=10)
     ## train_with_all(save_data_path, n_labels, nFold, fine_tune=True, patience=10)
     ## train_with_all(save_data_path, n_labels, nFold, fine_tune=True, patience=10)
-    train_with_all(save_data_path, n_labels, nFold, fine_tune=True, patience=10,
-                   nb_epoch=1)
+    ## train_with_all(save_data_path, n_labels, nFold, fine_tune=True, patience=10,
+    ##                nb_epoch=1)
 
     return
 
@@ -407,6 +412,7 @@ def train_with_image(save_data_path, n_labels, nFold, nb_epoch=100, fine_tune=Fa
         ##                      fine_tune=False)
 
         if fine_tune is False:
+            
             if vgg: model = km.vgg16_net(np.shape(x_train_img)[1:], n_labels, vgg_model_weights_path)
             else: model = km.cnn_net(np.shape(x_train_img)[1:], n_labels)            
             model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
@@ -432,8 +438,8 @@ def train_with_image(save_data_path, n_labels, nFold, nb_epoch=100, fine_tune=Fa
         test_datagen = ImageDataGenerator(rescale=1./255,\
                                           dim_ordering="th")
 
-        train_generator = train_datagen.flow(x_train_img, y_train, batch_size=64) #128)
-        test_generator = test_datagen.flow(x_test_img, y_test, batch_size=64) #128)
+        train_generator = train_datagen.flow(x_train_img, y_train, batch_size=32) #128)
+        test_generator = test_datagen.flow(x_test_img, y_test, batch_size=32) #128)
 
         hist = model.fit_generator(train_generator,
                                    samples_per_epoch=len(y_train),
@@ -588,10 +594,10 @@ if __name__ == '__main__':
     subject_names = ['s2', 's3','s4','s5', 's6','s7','s8', 's9']
     raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
                                                           opt.bHMMRenew, opt.bCLFRenew)
-    ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
+    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
 
     #window 0-5
-    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
+    ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
 
     task_name = 'feeding'
     method    = ['progress0', 'progress1'] 
