@@ -73,14 +73,14 @@ class myGenerator():
         if type(y) is not np.ndarray: y = np.array(y)
         
         while 1:
-
             idx_list = range(len(x_img))
             if shuffle: random.shuffle(idx_list)
             
             x_sig_new = x_sig[idx_list]
             i = -1
+
             for x_batch_img, y_batch in self.datagen.flow(x_img[idx_list], y[idx_list],
-                                                          batch_size=batch_size, shuffle=False):
+                                                          batch_size=batch_size, shuffle=False):                
                 if (i+1)*batch_size >= len(y):
                     break
                 else:
@@ -139,6 +139,10 @@ def preprocess_data(src_pkl, save_data_path, img_scale=0.25, nb_classes=12,
                     img_feature_type='cnn', verbose=False):
     ''' Preprocessing data '''
 
+    save_data_path = os.path.join(save_data_path, 'keras')
+    if os.path.isdir(save_data_path) is False:
+        os.system('mkdir -p '+save_data_path)
+       
     d = ut.load_pickle(src_pkl)
     nFold = len(d.keys())
 

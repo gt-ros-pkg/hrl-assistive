@@ -32,37 +32,68 @@ import os, sys, copy, random
 import scipy, numpy as np
 import hrl_lib.util as ut
 
-random.seed(3334)
-np.random.seed(3334)
-
 # Private utils
 ## from hrl_anomaly_detection import util as util
 ## from hrl_anomaly_detection.util_viz import *
+from hrl_anomaly_detection import util as util
 from hrl_anomaly_detection import data_manager as dm
+import hrl_anomaly_detection.isolator.isolation_util as iutil
 from hrl_execution_monitor import util as autil
-from hrl_execution_monitor.keras import keras_model as km
-from hrl_execution_monitor.keras import keras_util as ku
 
 # Private learners
 from hrl_anomaly_detection.hmm import learning_hmm as hmm
-import hrl_anomaly_detection.classifiers.classifier as cf
+## import hrl_anomaly_detection.classifiers.classifier as cf
+
+#keras
+from hrl_execution_monitor.keras_util import keras_model as km
+from hrl_execution_monitor.keras_util import keras_util as ku
+from keras.callbacks import EarlyStopping, ReduceLROnPlateau
+from keras.optimizers import SGD, Adagrad, Adadelta, RMSprop
+from keras.preprocessing.image import ImageDataGenerator
+
+from sklearn import preprocessing
 
 from joblib import Parallel, delayed
+import gc
 
-def train_isolator_modules(task_name, save_data_path, method, param_dict, verbose=False):
+random.seed(3334)
+np.random.seed(3334)
+
+vgg_model_weights_path = os.path.expanduser('~')+'/git/keras_test/vgg16_weights.h5'
+
+
+def train_isolator_modules(save_data_path, n_labels, verbose=False):
+    '''
+    Train networks
+    '''
+    d = ut.load_pickle(os.path.join(save_data_path, 'isol_data.pkl'))
+    nFold = len(d.keys())
+    del d
+
+    save_data_path = os.path.join(save_data_path, 'keras')
 
     # training with signals
-    train_with_signal(save_data_path, n_labels, nb_epoch=200, patience=10)
+    ## train_with_signal(save_data_path, n_labels, nFold, nb_epoch=200, patience=10)
+    ## train_with_signal(save_data_path, n_labels, nFold, nb_epoch=200, patience=50, fine_tune=True)
 
     # training_with images
-    train_with_image(save_data_path, n_labels, fine_tune=True, patience=10)
+    ## train_with_image(save_data_path, n_labels, nFold, patience=20)
+    ## train_with_image(save_data_path, n_labels, nFold, patience=20, fine_tune=True)
+    ## train_with_image(save_data_path, n_labels, nFold, patience=20, vgg=True)
+    train_with_image(save_data_path, n_labels, nFold, patience=20, vgg=True, fine_tune=True)
+    train_with_image(save_data_path, n_labels, nFold, patience=20, vgg=True, fine_tune=True)
+    train_with_image(save_data_path, n_labels, nFold, patience=20, vgg=True, fine_tune=True)
 
     # training_with all
-    train_with_all(save_data_path, n_labels, fine_tune=True, patience=10)
+    ## train_with_all(save_data_path, n_labels, nFold, patience=10)
+    ## train_with_all(save_data_path, n_labels, nFold, fine_tune=True, patience=10)
+    ## train_with_all(save_data_path, n_labels, nFold, fine_tune=True, patience=10)
+    ## train_with_all(save_data_path, n_labels, nFold, fine_tune=True, patience=10)
+    ## train_with_all(save_data_path, n_labels, nFold, fine_tune=True, patience=10)
+    ## train_with_all(save_data_path, n_labels, nFold, fine_tune=True, patience=10,
+    ##                nb_epoch=1)
 
     return
-
-
 
 
 
@@ -100,8 +131,10 @@ def get_isolator_modules(save_data_path, task_name, method, param_dict, fold_idx
     return m_scr, m_gen, m_clf
 
 
-def get_isolation_data(subject_names, task_name, raw_data_path, save_data_path, method,
-                       param_dict, verbose=False):
+def get_isolation_data(subject_names, task_name, raw_data_path, save_data_path,
+                       param_dict, weight, window_steps=10, single_detector=False,
+                       verbose=False):
+    
     # load params (param_dict)
     data_dict  = param_dict['data_param']
     data_renew = data_dict['renew']
@@ -113,6 +146,7 @@ def get_isolation_data(subject_names, task_name, raw_data_path, save_data_path, 
     SVM_dict   = param_dict['SVM']
     # ROC
     ROC_dict = param_dict['ROC']
+    method_list = param_dict['ROC']['methods']
 
     # parameters
     startIdx    = 4
@@ -128,7 +162,7 @@ def get_isolation_data(subject_names, task_name, raw_data_path, save_data_path, 
                       ros_bag_image=True, rndFold=True)
                       
     # split data with 80:20 ratio, 3set
-    kFold_list = d['kFold_list']
+    kFold_list = d['kFold_list'][:1]
 
     # flattening image list
     success_image_list = autil.image_list_flatten( d.get('success_image_list',[]) )
@@ -201,16 +235,64 @@ def get_isolation_data(subject_names, task_name, raw_data_path, save_data_path, 
         data_dict = ut.load_pickle(data_pkl)
     
 
+    # ---------------------------------------------------------------
+    scores = []
+    for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
+      in enumerate(kFold_list):
+        print "kFold_list: ", idx
+
+        (x_trains, y_train, x_tests, y_test) = data_dict[idx]         
+        x_train = x_trains[0] 
+        x_test  = x_tests[0] 
+        print np.shape(x_train), np.shape(x_test)
+
+        scaler = preprocessing.StandardScaler()
+        x_train = scaler.fit_transform(x_train)
+        x_test  = scaler.transform(x_test)
+
+        if type(x_train) is np.ndarray:
+            x_train = x_train.tolist()
+            x_test  = x_test.tolist()
+        if type(y_train) is np.ndarray:
+            y_train  = y_train.tolist()
+            y_test   = y_test.tolist()
+        
+        ## from sklearn.svm import SVC
+        ## clf = SVC(C=1.0, kernel='rbf') #, decision_function_shape='ovo')
+        from sklearn.ensemble import RandomForestClassifier
+        clf = RandomForestClassifier(n_estimators=400, n_jobs=-1)
+
+        clf.fit(x_train, y_train)
+        ## y_pred = clf.predict(x_test.tolist())
+        score = clf.score(x_test, y_test)
+        scores.append( score )
+        print idx, " : score = ", score
+
+
+    print scores
+    print "Score mean = ", np.mean(scores), np.std(scores)
 
 
 
+def load_data(idx, save_data_path, viz=False):
+    ''' Load selected fold's data '''
 
-def unimodal_fc(save_data_path, n_labels, nb_epoch=400, fine_tune=False, activ_type='relu',
-                test_only=False, save_pdf=False):
+    assert os.path.isfile(os.path.join(save_data_path,'x_train_img_'+str(idx)+'.npy')) == True, \
+      "No preprocessed data"
+        
+    x_train_sig = np.load(open(os.path.join(save_data_path,'x_train_sig_'+str(idx)+'.npy')))
+    x_train_img = np.load(open(os.path.join(save_data_path,'x_train_img_'+str(idx)+'.npy')))
+    y_train = np.load(open(os.path.join(save_data_path,'y_train_'+str(idx)+'.npy')))
 
-    d = ut.load_pickle(os.path.join(save_data_path, 'isol_data.pkl'))
-    nFold = len(d.keys())
-    del d
+    x_test_sig = np.load(open(os.path.join(save_data_path,'x_test_sig_'+str(idx)+'.npy')))
+    x_test_img = np.load(open(os.path.join(save_data_path,'x_test_img_'+str(idx)+'.npy')))
+    y_test = np.load(open(os.path.join(save_data_path,'y_test_'+str(idx)+'.npy')))
+
+    return (x_train_sig, x_train_img, y_train), (x_test_sig, x_test_img, y_test)
+
+
+def train_with_signal(save_data_path, n_labels, nFold, nb_epoch=400, fine_tune=False, activ_type='relu',
+                      test_only=False, save_pdf=False, patience=30):
 
     callbacks = [EarlyStopping(monitor='val_loss', min_delta=0, patience=10, verbose=0, mode='auto')]
     ## callbacks = [EarlyStopping(monitor='val_loss', min_delta=0, patience=3, verbose=0, mode='auto')]
@@ -229,6 +311,7 @@ def unimodal_fc(save_data_path, n_labels, nb_epoch=400, fine_tune=False, activ_t
         x_test_sig = test_data[0]
         y_test     = test_data[2]
 
+        # Debug
         ## x_train_sig_dyn1 = x_train_sig[:,:15]
         ## x_train_sig_dyn2 = x_train_sig[:,15:-7]#[:,[0, 3, 6]]
         ## x_train_sig_stc = x_train_sig[:,-7:]#[:,[0,1,2,4,5,6,7]]
@@ -244,12 +327,8 @@ def unimodal_fc(save_data_path, n_labels, nb_epoch=400, fine_tune=False, activ_t
         ## ## x_test_sig_dyn2 /= np.amax(x_test_sig_dyn2, axis=1)[:,np.newaxis]
         ## x_test_sig = np.hstack([x_test_sig_dyn1, x_test_sig_dyn2, x_test_sig_stc])
 
-        ## print np.shape(x_train_sig), np.shape(x_test_sig)
-        ## ## sys.exit()
-
-        ## scaler = preprocessing.MinMaxScaler()
-        ## x_train_sig = scaler.fit_transform(x_train_sig)
-        ## x_test_sig  = scaler.transform(x_test_sig)        
+        # Scaling
+        from sklearn import preprocessing
         scaler      = preprocessing.StandardScaler()
         x_train_sig = scaler.fit_transform(x_train_sig)
         x_test_sig  = scaler.transform(x_test_sig)
@@ -275,8 +354,8 @@ def unimodal_fc(save_data_path, n_labels, nb_epoch=400, fine_tune=False, activ_t
             model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
 
         if test_only is False:
-            train_datagen = kutil.sigGenerator(augmentation=True, noise_mag=0.05 )
-            test_datagen = kutil.sigGenerator(augmentation=False)
+            train_datagen = ku.sigGenerator(augmentation=True, noise_mag=0.05 )
+            test_datagen = ku.sigGenerator(augmentation=False)
             train_generator = train_datagen.flow(x_train_sig, y_train, batch_size=128)
             test_generator = test_datagen.flow(x_test_sig, y_test, batch_size=128)
 
@@ -299,32 +378,28 @@ def unimodal_fc(save_data_path, n_labels, nb_epoch=400, fine_tune=False, activ_t
             from sklearn.metrics import accuracy_score
             print "score : ", accuracy_score(y_test_list, y_pred_list)
 
-            
-
     print 
     print np.mean(scores), np.std(scores)
-    if test_only: plot_confusion_matrix(y_test_list, y_pred_list, save_pdf=save_pdf)
+    if test_only: return y_test_list, y_pred_list
     return
 
 
-def unimodal_cnn(save_data_path, n_labels, nb_epoch=100, fine_tune=False, vgg=False):
-
-    d = ut.load_pickle(os.path.join(save_data_path, 'isol_data.pkl'))
-    nFold = len(d.keys())
-    del d
+def train_with_image(save_data_path, n_labels, nFold, nb_epoch=100, fine_tune=False, vgg=False,
+                     patience=10):
 
     if vgg: prefix = 'vgg_'
     else: prefix = ''
+    callbacks = [EarlyStopping(monitor='val_loss', min_delta=0, patience=patience, verbose=0, mode='auto')]
 
     scores= []
     for idx in xrange(nFold):
 
         # Loading data
         train_data, test_data = load_data(idx, save_data_path, viz=False)      
-        x_train_sig = train_data[0]
+        ## x_train_sig = train_data[0]
         x_train_img = train_data[1]
         y_train     = train_data[2]
-        x_test_sig = test_data[0]
+        ## x_test_sig = test_data[0]
         x_test_img = test_data[1]
         y_test     = test_data[2]
         
@@ -337,6 +412,7 @@ def unimodal_cnn(save_data_path, n_labels, nb_epoch=100, fine_tune=False, vgg=Fa
         ##                      fine_tune=False)
 
         if fine_tune is False:
+            
             if vgg: model = km.vgg16_net(np.shape(x_train_img)[1:], n_labels, vgg_model_weights_path)
             else: model = km.cnn_net(np.shape(x_train_img)[1:], n_labels)            
             model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
@@ -346,13 +422,14 @@ def unimodal_cnn(save_data_path, n_labels, nb_epoch=100, fine_tune=False, vgg=Fa
             else: model = km.cnn_net(np.shape(x_train_img)[1:], n_labels, full_weights_path)
             optimizer = SGD(lr=0.0001, decay=1e-8, momentum=0.9, nesterov=True)
             ## optimizer = RMSprop(lr=0.00001, rho=0.9, epsilon=1e-08, decay=0.0)
-            model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+            ## model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+            model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
 
 
         train_datagen = ImageDataGenerator(
             rotation_range=20,
             rescale=1./255,
-            width_shift_range=0.2,
+            width_shift_range=0.3,
             height_shift_range=0.2,
             ## zoom_range=0.1,
             horizontal_flip=False,
@@ -361,23 +438,140 @@ def unimodal_cnn(save_data_path, n_labels, nb_epoch=100, fine_tune=False, vgg=Fa
         test_datagen = ImageDataGenerator(rescale=1./255,\
                                           dim_ordering="th")
 
-        train_generator = train_datagen.flow(x_train_img, y_train, batch_size=128)
-        test_generator = test_datagen.flow(x_test_img, y_test, batch_size=128)
+        train_generator = train_datagen.flow(x_train_img, y_train, batch_size=32) #128)
+        test_generator = test_datagen.flow(x_test_img, y_test, batch_size=32) #128)
 
         hist = model.fit_generator(train_generator,
                                    samples_per_epoch=len(y_train),
                                    nb_epoch=nb_epoch,
                                    validation_data=test_generator,
-                                   nb_val_samples=len(y_test))
+                                   nb_val_samples=len(y_test),
+                                   callbacks=callbacks)
 
+        print "Saved weights!!!!!!!!!!!!!!!!!!!!!!!!"
         model.save_weights(full_weights_path)
 
         scores.append( hist.history['val_acc'][-1] )
+        gc.collect()
 
     print 
     print np.mean(scores), np.std(scores)
     return
 
+
+def train_with_all(save_data_path, n_labels, nFold, nb_epoch=100, fine_tune=False,
+                   test_only=False, save_pdf=False, vgg=False, patience=30):
+
+    if vgg: prefix = 'vgg_'
+    else: prefix = ''
+
+    scores= []
+    y_test_list = []
+    y_pred_list = []
+    for idx in xrange(nFold):
+        # Loading data
+        train_data, test_data = load_data(idx, save_data_path, viz=False)      
+        x_train_sig = train_data[0]
+        x_train_img = train_data[1]
+        y_train     = train_data[2]
+        x_test_sig = test_data[0]
+        x_test_img = test_data[1]
+        y_test     = test_data[2]
+
+        scaler      = preprocessing.StandardScaler()
+        x_train_sig = scaler.fit_transform(x_train_sig)
+        x_test_sig  = scaler.transform(x_test_sig)
+
+        if fine_tune is False:
+            # training
+            if vgg:
+                model = km.vgg16_net(np.shape(x_train_img)[1:], n_labels, vgg_model_weights_path,\
+                                     with_top=True, fine_tune=False,
+                                     input_shape2=np.shape(x_train_sig)[1:] )
+            else:
+                model = km.cnn_net(np.shape(x_train_img)[1:], n_labels, \
+                                   with_top=True, fine_tune=False,
+                                   input_shape2=np.shape(x_train_sig)[1:] )
+            model.load_weights( os.path.join(save_data_path,'sig_weights_'+str(idx)+'.h5'), by_name=True )
+            model.load_weights( os.path.join(save_data_path,prefix+'cnn_weights_'+str(idx)+'.h5'), \
+                                by_name=True )
+            model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
+        else:
+            # fine tuning
+            if vgg:
+                model = km.vgg16_net(np.shape(x_train_img)[1:], n_labels, vgg_model_weights_path,\
+                                     with_top=True, fine_tune=True,
+                                     input_shape2=np.shape(x_train_sig)[1:] )
+            else:
+                model = km.cnn_net(np.shape(x_train_img)[1:], n_labels, \
+                                   with_top=True, fine_tune=True,
+                                   input_shape2=np.shape(x_train_sig)[1:] )
+            model.load_weights( os.path.join(save_data_path,prefix+'cnn_fc_weights_'+str(idx)+'.h5') )
+            optimizer = SGD(lr=0.0001, decay=1e-8, momentum=0.9, nesterov=True)
+            ## optimizer = RMSprop(lr=0.00001, rho=0.9, epsilon=1e-08, decay=0.0)
+            model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+
+                
+
+        if test_only is False:
+            train_datagen = ku.myGenerator(augmentation=True, rescale=1./255.)
+            test_datagen = ku.myGenerator(augmentation=False, rescale=1./255.)
+            train_generator = train_datagen.flow(x_train_img, x_train_sig, y_train, batch_size=32) #128)
+            test_generator = test_datagen.flow(x_test_img, x_test_sig, y_test, batch_size=32) #128)
+            callbacks = [EarlyStopping(monitor='val_loss', min_delta=0, patience=patience,
+                                       verbose=0, mode='auto')]
+        
+            hist = model.fit_generator(train_generator,
+                                       samples_per_epoch=len(y_train),
+                                       nb_epoch=nb_epoch,
+                                       validation_data=test_generator,
+                                       nb_val_samples=len(y_test),
+                                       callbacks=callbacks)
+
+            full_weights_path = os.path.join(save_data_path,prefix+'cnn_fc_weights_'+str(idx)+'.h5')
+            print "Saved weights"
+            model.save_weights(full_weights_path)
+
+            scores.append( hist.history['val_acc'][-1] )
+        else:
+            model.load_weights( os.path.join(save_data_path,prefix+'cnn_fc_weights_'+str(idx)+'.h5') )
+            y_pred = model.predict([x_test_img/255., x_test_sig])
+            y_pred_list += np.argmax(y_pred, axis=1).tolist()
+            y_test_list += np.argmax(y_test, axis=1).tolist()
+            
+            from sklearn.metrics import accuracy_score
+            print "score : ", accuracy_score(y_test_list, y_pred_list)
+            ## break
+        gc.collect()
+
+    print np.mean(scores), np.std(scores)
+    if test_only: return y_test_list, y_pred_list
+    return
+
+
+def test(save_data_path):
+
+    d = ut.load_pickle(os.path.join(save_data_path, 'isol_data.pkl'))
+    nFold = len(d.keys())
+    del d
+
+    save_data_path = os.path.join(save_data_path, 'keras')
+
+    train_data, test_data = load_data(0, save_data_path, viz=False)
+    print np.shape(train_data[0]),np.shape(train_data[1]),np.shape(train_data[2])
+    print np.shape(test_data[0]), np.shape(test_data[1]), np.shape(test_data[2])
+
+    for x in test_data[0]:
+        if np.any(np.equal(x, None)):
+            print x
+    for x in test_data[1]:
+        if np.any(np.equal(x, None)):
+            print x
+    for x in test_data[2]:
+        if np.any(np.equal(x, None)):
+            print x
+
+    
 
 
 if __name__ == '__main__':
@@ -386,8 +580,12 @@ if __name__ == '__main__':
     p = optparse.OptionParser()
     util.initialiseOptParser(p)
 
+    p.add_option('--get_data', '--gd', action='store_true', dest='get_data',
+                 default=False, help='Get data')
     p.add_option('--preprocess', '--p', action='store_true', dest='preprocessing',
                  default=False, help='Preprocess')
+    p.add_option('--train', '--tr', action='store_true', dest='train',
+                 default=False, help='Train')
     
     opt, args = p.parse_args()
 
@@ -396,25 +594,39 @@ if __name__ == '__main__':
     subject_names = ['s2', 's3','s4','s5', 's6','s7','s8', 's9']
     raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
                                                           opt.bHMMRenew, opt.bCLFRenew)
-    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo'
+    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
+
+    #window 0-5
+    ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
 
     task_name = 'feeding'
-    method    = 'hmmgp'
+    method    = ['progress0', 'progress1'] 
+    param_dict['ROC']['methods'] = ['progress0', 'progress1'] #'hmmgp'
+    weight    = [-3.0, -4.5]
+    param_dict['HMM']['scale'] = [2.0, 2.0]
+    param_dict['HMM']['cov']   = 1.0
+    single_detector=False    
+    window_steps= 5
+    nb_classes = 12
 
 
-    get_isolation_data(subject_names, task_name, raw_data_path, save_data_path, method,
-                       param_dict, verbose=False)
+    if opt.get_data:
+        get_isolation_data(subject_names, task_name, raw_data_path, save_data_path,
+                           param_dict, weight, single_detector=single_detector,
+                           window_steps=window_steps, verbose=False)
 
-    if opt.preprocessing:    
+    elif opt.preprocessing:    
         # preprocessing data
         data_pkl = os.path.join(save_data_path, 'isol_data.pkl')
-        ku.preprocess_data(data_pkl, save_data_path, img_scale=0.25, nb_classes=12,
-                        img_feature_type='cnn')
+        ku.preprocess_data(data_pkl, save_data_path, img_scale=0.25, nb_classes=nb_classes,
+                        img_feature_type='vgg')
+        
+    elif opt.train:
+        train_isolator_modules(save_data_path, nb_classes, verbose=False)
         
     else:
-        train_isolator_modules(subject_names, task_name, raw_data_path, save_data_path, method,\
-                               param_dict, verbose=False)
+        test(save_data_path)
 
 
-    get_isolator_modules(save_data_path, task_name, method, param_dict, fold_idx=0,\
-                          verbose=False)
+    ## get_isolator_modules(save_data_path, task_name, method, param_dict, fold_idx=0,\
+    ##                       verbose=False)
