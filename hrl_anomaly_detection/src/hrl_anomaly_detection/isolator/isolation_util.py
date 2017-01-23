@@ -841,8 +841,8 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, \
         if d_idx is None: continue
 
         if window:
-            for j in range(-window_step, window_step):
-            ## for j in range(0, window_step):
+            ## for j in range(-window_step, window_step):
+            for j in range(0, window_step):
                 if d_idx+j <= 4: continue
                 if d_idx+j > len(abnormalData[0][0,i]): continue
 

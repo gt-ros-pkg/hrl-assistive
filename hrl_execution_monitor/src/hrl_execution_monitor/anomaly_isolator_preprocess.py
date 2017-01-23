@@ -215,6 +215,10 @@ if __name__ == '__main__':
     save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
     window_steps= 10
 
+    #c8 window 1
+    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo4'
+    window_steps= 3
+
 
     task_name = 'feeding'
     method    = ['progress0', 'progress1'] 
