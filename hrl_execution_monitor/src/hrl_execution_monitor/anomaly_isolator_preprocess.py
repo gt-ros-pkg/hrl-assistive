@@ -207,9 +207,9 @@ if __name__ == '__main__':
     save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
     window_steps= 5
 
-    #c11 window 3-63, 1-66, 
+    #c11 window 3-0.63, 1-0.66, 10-0.5, 05-66 
     save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
-    window_steps= 5
+    window_steps= 10
 
     ## #c12 window 1
     ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
