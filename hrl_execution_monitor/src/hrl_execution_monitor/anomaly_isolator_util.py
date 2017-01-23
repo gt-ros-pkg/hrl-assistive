@@ -417,17 +417,27 @@ def test(save_data_path):
 
     datagen = ImageDataGenerator(
         rotation_range=20,
-        rescale=1./255,
-        width_shift_range=0.2,
+        rescale=1.0,#1./255,
+        width_shift_range=0.4,
         height_shift_range=0.2,
         zoom_range=0.1,
         horizontal_flip=False,
         fill_mode='nearest',
         dim_ordering="th")
 
+    ## datagen = ImageDataGenerator(dim_ordering="th")
+    save_data_path = os.path.join(save_data_path, 'temp')
+
+    import cv2
     count = 0
-    for x,y in datagen.flow(test_data[1], test_data[2], batch_size=1):
-        print np.shape(x), np.shape(y)
+    for x,y in datagen.flow(test_data[1], test_data[2], batch_size=1, shuffle=False):
+        x[0][0] += 103.939
+        x[0][1] += 116.779
+        x[0][2] += 123.68
+        img = x[0].transpose((1,2,0)).astype(int)
+        f = os.path.join(save_data_path, str(count)+'_'+str( np.argmax(y[0])+2)+'.jpg' )
+        print count, np.shape(x[0])
+        cv2.imwrite(f, img)
         count +=1
         if count > 10: break
     
