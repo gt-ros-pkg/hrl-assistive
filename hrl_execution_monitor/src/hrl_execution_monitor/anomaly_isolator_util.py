@@ -47,7 +47,7 @@ from hrl_anomaly_detection.hmm import learning_hmm as hmm
 #keras
 from hrl_execution_monitor.keras_util import keras_model as km
 from hrl_execution_monitor.keras_util import keras_util as ku
-from keras.callbacks import EarlyStopping, ReduceLROnPlateau
+from keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
 from keras.optimizers import SGD, Adagrad, Adadelta, RMSprop
 from keras.preprocessing.image import ImageDataGenerator
 
@@ -72,26 +72,21 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
     save_data_path = os.path.join(save_data_path, 'keras')
 
     # training with signals
-    ## train_with_signal(save_data_path, n_labels, nFold, nb_epoch=800, patience=10)
-    ## train_with_signal(save_data_path, n_labels, nFold, nb_epoch=800, patience=50, fine_tune=True)
+    ## train_with_signal(save_data_path, n_labels, nFold, nb_epoch=800, patience=50)
+    ## train_with_signal(save_data_path, n_labels, nFold, nb_epoch=800, patience=50, load_weights=True)
 
     # training_with images
     remove_label = [1]
     ## train_with_image(save_data_path, n_labels, nFold, patience=20)
     ## train_with_image(save_data_path, n_labels, nFold, patience=20, fine_tune=True)
+    
     train_with_image(save_data_path, n_labels, nFold, patience=20, vgg=True, remove_label=remove_label)
-    ## train_with_image(save_data_path, n_labels, nFold, patience=20, vgg=True, fine_tune=True)
-    ## train_with_image(save_data_path, n_labels, nFold, patience=20, vgg=True, fine_tune=True)
-    ## train_with_image(save_data_path, n_labels, nFold, patience=20, vgg=True, fine_tune=True)
+    ## train_with_image(save_data_path, n_labels, nFold, patience=20, vgg=True, remove_label=remove_label,
+    ##                  load_weights=True)
 
     # training_with all
     ## train_with_all(save_data_path, n_labels, nFold, patience=10)
-    ## train_with_all(save_data_path, n_labels, nFold, fine_tune=True, patience=10)
-    ## train_with_all(save_data_path, n_labels, nFold, fine_tune=True, patience=10)
-    ## train_with_all(save_data_path, n_labels, nFold, fine_tune=True, patience=10)
-    ## train_with_all(save_data_path, n_labels, nFold, fine_tune=True, patience=10)
-    ## train_with_all(save_data_path, n_labels, nFold, fine_tune=True, patience=10,
-    ##                nb_epoch=1)
+    ## train_with_all(save_data_path, n_labels, nFold, load_weights=True, patience=20)
 
     return
 
@@ -139,13 +134,9 @@ def load_data(idx, save_data_path, extra_img=False, viz=False):
     return (x_train_sig, x_train_img, y_train), (x_test_sig, x_test_img, y_test)
 
 
-def train_with_signal(save_data_path, n_labels, nFold, nb_epoch=400, fine_tune=False, activ_type='relu',
-                      test_only=False, save_pdf=False, patience=30):
-
-    callbacks = [EarlyStopping(monitor='val_loss', min_delta=0, patience=10, verbose=0, mode='auto')]
-    ## callbacks = [EarlyStopping(monitor='val_loss', min_delta=0, patience=3, verbose=0, mode='auto')]
-    ## callbacks = [ReduceLROnPlateau(monitor='val_loss', factor=0.2,
-    ##                                patience=5, min_lr=0.0001)]
+def train_with_signal(save_data_path, n_labels, nFold, nb_epoch=400, load_weights=False,
+                      activ_type='relu',
+                      test_only=False, save_pdf=False, patience=50):
 
     scores= []
     y_test_list = []
@@ -165,29 +156,30 @@ def train_with_signal(save_data_path, n_labels, nFold, nb_epoch=400, fine_tune=F
         x_train_sig = scaler.fit_transform(x_train_sig)
         x_test_sig  = scaler.transform(x_test_sig)
 
-
-        full_weights_path = os.path.join(save_data_path,'sig_weights_'+str(idx)+'.h5')
-
-        ## # Load pre-trained vgg16 model
-        if fine_tune is False:
-            model = km.sig_net(np.shape(x_train_sig)[1:], n_labels, activ_type=activ_type)
-            ## optimizer = SGD(lr=0.001, decay=1e-5, momentum=0.9, nesterov=True)
-            optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.0)
-            model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
-            ## model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
-
-            ## optimizer = SGD(lr=1e-3, decay=1e-7, momentum=0.9, nesterov=True)
-            ## model.compile(optimizer=optimizer, loss='categorical_crossentropy', \
-            ##               metrics=['mean_squared_logarithmic_error', 'accuracy'])
-        else:
-            model = km.sig_net(np.shape(x_train_sig)[1:], n_labels, fine_tune=True,\
-                               weights_path = full_weights_path, activ_type=activ_type)
+        weights_path = os.path.join(save_data_path,'sig_weights_'+str(idx)+'.h5')
+        callbacks = [EarlyStopping(monitor='val_loss', min_delta=0, patience=patience,
+                                   verbose=0, mode='auto'),
+                     ModelCheckpoint(weights_path,
+                                     save_best_only=True,
+                                     save_weights_only=True,
+                                     monitor='val_loss'),
+                     ReduceLROnPlateau(monitor='val_loss', factor=0.2,
+                                       patience=20, min_lr=0.00001)]
         
-            ## optimizer = SGD(lr=0.01, decay=1e-5, momentum=0.9, nesterov=True)
-            ## optimizer = SGD(lr=0.0001, decay=1e-6, momentum=0.9, nesterov=True)
-            optimizer = SGD(lr=0.00001, decay=1e-8, momentum=0.9, nesterov=True)
-            ## optimizer = RMSprop(lr=0.00001, rho=0.9, epsilon=1e-08, decay=0.0)
-            model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+        ## # Load pre-trained vgg16 model
+        if load_weights is False:
+            model = km.sig_net(np.shape(x_train_sig)[1:], n_labels, activ_type=activ_type)                    
+            ## optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.0)
+        else:
+            model = km.sig_net(np.shape(x_train_sig)[1:], n_labels,\
+                               weights_path = weights_path, activ_type=activ_type)
+            ## optimizer = SGD(lr=0.001, decay=1e-7, momentum=0.9, nesterov=True)
+
+        optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.005)            
+        model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+        ## model.compile(optimizer=optimizer, loss='categorical_crossentropy', \
+        ##               metrics=['mean_squared_logarithmic_error', 'accuracy'])
+
 
         if test_only is False:
             train_datagen = ku.sigGenerator(augmentation=True, noise_mag=0.05 )
@@ -199,14 +191,14 @@ def train_with_signal(save_data_path, n_labels, nFold, nb_epoch=400, fine_tune=F
                                        samples_per_epoch=len(y_train),
                                        nb_epoch=nb_epoch,
                                        validation_data=test_generator,
-                                       nb_val_samples=len(y_test),)
-                                       ## callbacks=callbacks)
+                                       nb_val_samples=len(y_test),
+                                       callbacks=callbacks)
 
             scores.append( hist.history['val_acc'][-1] )
-            model.save_weights(full_weights_path)
+            ## model.save_weights(weights_path)
             del model
         else:
-            model.load_weights(full_weights_path)
+            model.load_weights(weights_path)
             y_pred = model.predict(x_test_sig)
             y_pred_list += np.argmax(y_pred, axis=1).tolist()
             y_test_list += np.argmax(y_test, axis=1).tolist()
@@ -220,12 +212,11 @@ def train_with_signal(save_data_path, n_labels, nFold, nb_epoch=400, fine_tune=F
     return
 
 
-def train_with_image(save_data_path, n_labels, nFold, nb_epoch=100, fine_tune=False, vgg=False,
-                     patience=10, remove_label=[], use_extra_img=True):
+def train_with_image(save_data_path, n_labels, nFold, nb_epoch=1000, load_weights=False, vgg=False,
+                     patience=20, remove_label=[], use_extra_img=True):
 
     if vgg: prefix = 'vgg_'
     else: prefix = ''
-    callbacks = [EarlyStopping(monitor='val_loss', min_delta=0, patience=patience, verbose=0, mode='auto')]
 
     scores= []
     for idx in xrange(nFold):
@@ -237,7 +228,7 @@ def train_with_image(save_data_path, n_labels, nFold, nb_epoch=100, fine_tune=Fa
         x_test_img = test_data[1]
         y_test     = test_data[2]
 
-        # remove specific label
+        # remove specific label --------------------
         add_idx = []
         for i, y in enumerate(y_train):
             if np.argmax(y) not in remove_label:
@@ -251,22 +242,30 @@ def train_with_image(save_data_path, n_labels, nFold, nb_epoch=100, fine_tune=Fa
                 add_idx.append(i)
         x_test_img = np.array(x_test_img)[add_idx]
         y_test = np.array(y_test)[add_idx]
-        
-        
-        full_weights_path = os.path.join(save_data_path,prefix+'cnn_weights_'+str(idx)+'.h5')
+        #--------------------------------------------
+                
+        weights_path = os.path.join(save_data_path,prefix+'cnn_weights_'+str(idx)+'.h5')
+        callbacks = [EarlyStopping(monitor='val_loss', min_delta=0, patience=patience,
+                                   verbose=0, mode='auto'),
+                     ModelCheckpoint(weights_path,
+                                     save_best_only=True,
+                                     save_weights_only=True,
+                                     monitor='val_loss'),
+                     ReduceLROnPlateau(monitor='val_loss', factor=0.2,
+                                       patience=5, min_lr=0.00001)]
 
-        if fine_tune is False:            
+        if load_weights is False:            
             if vgg: model = km.vgg16_net(np.shape(x_train_img)[1:], n_labels)
             else: model = km.cnn_net(np.shape(x_train_img)[1:], n_labels)            
-            model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
         else:
-            if vgg: model = km.vgg16_net(np.shape(x_train_img)[1:], n_labels, full_weights_path)
-            else: model = km.cnn_net(np.shape(x_train_img)[1:], n_labels, full_weights_path)
-            optimizer = SGD(lr=0.0001, decay=1e-8, momentum=0.9, nesterov=True)
+            if vgg: model = km.vgg16_net(np.shape(x_train_img)[1:], n_labels, weights_path)
+            else: model = km.cnn_net(np.shape(x_train_img)[1:], n_labels, weights_path)
             ## optimizer = RMSprop(lr=0.00001, rho=0.9, epsilon=1e-08, decay=0.0)
             ## model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
-            model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
-
+        optimizer = SGD(lr=0.001, decay=1e-6, momentum=0.9, nesterov=True)
+        ## optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.005)                        
+        model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+        ## model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
 
         train_datagen = ImageDataGenerator(
             rotation_range=20,
@@ -287,10 +286,8 @@ def train_with_image(save_data_path, n_labels, nFold, nb_epoch=100, fine_tune=Fa
                                    samples_per_epoch=len(y_train),
                                    nb_epoch=nb_epoch,
                                    validation_data=test_generator,
-                                   nb_val_samples=len(y_test),)
-                                   ## callbacks=callbacks)
-
-        model.save_weights(full_weights_path)
+                                   nb_val_samples=len(y_test),
+                                   callbacks=callbacks)
 
         scores.append( hist.history['val_acc'][-1] )
         gc.collect()
@@ -300,7 +297,7 @@ def train_with_image(save_data_path, n_labels, nFold, nb_epoch=100, fine_tune=Fa
     return
 
 
-def train_with_all(save_data_path, n_labels, nFold, nb_epoch=100, fine_tune=False,
+def train_with_all(save_data_path, n_labels, nFold, nb_epoch=1, load_weights=False,
                    test_only=False, save_pdf=False, vgg=False, patience=30):
 
     if vgg: prefix = 'vgg_'
@@ -323,34 +320,49 @@ def train_with_all(save_data_path, n_labels, nFold, nb_epoch=100, fine_tune=Fals
         x_train_sig = scaler.fit_transform(x_train_sig)
         x_test_sig  = scaler.transform(x_test_sig)
 
-        if fine_tune is False:
+        weights_path = os.path.join(save_data_path,prefix+'cnn_fc_weights_'+str(idx)+'.h5')
+        callbacks = [EarlyStopping(monitor='val_loss', min_delta=0, patience=patience,
+                                   verbose=0, mode='auto'),
+                     ModelCheckpoint(weights_path,
+                                     save_best_only=True,
+                                     save_weights_only=True,
+                                     monitor='val_loss'),
+                     ReduceLROnPlateau(monitor='val_loss', factor=0.2,
+                                       patience=20, min_lr=0.00001)]
+
+        if load_weights is False:
+
+            sig_weights_path=os.path.join(save_data_path,'sig_weights_'+str(idx)+'.h5'),
+            img_weights_path=os.path.join(save_data_path,prefix+'cnn_weights_'+str(idx)+'.h5')
+            
             # training
             if vgg:
-                model = km.vgg16_net(np.shape(x_train_img)[1:], n_labels, vgg_model_weights_path,\
-                                     with_top=True, fine_tune=False,
-                                     input_shape2=np.shape(x_train_sig)[1:] )
+                model = km.vgg16_net(np.shape(x_train_img)[1:], n_labels, with_top=True,
+                                     input_shape2=np.shape(x_train_sig)[1:],
+                                     sig_weights_path=sig_weights_path,
+                                     img_weights_path=img_weights_path)
             else:
-                model = km.cnn_net(np.shape(x_train_img)[1:], n_labels, \
-                                   with_top=True, fine_tune=False,
+                model = km.cnn_net(np.shape(x_train_img)[1:], n_labels, with_top=True,
                                    input_shape2=np.shape(x_train_sig)[1:],
-                                   sig_weights_path=os.path.join(save_data_path,'sig_weights_'+str(idx)+'.h5'),
-                                   img_weights_path=os.path.join(save_data_path,prefix+'cnn_weights_'+str(idx)+'.h5'))
-            model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
+                                   sig_weights_path=sig_weights_path,
+                                   img_weights_path=img_weights_path)
+            ## model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
         else:
             # fine tuning
             if vgg:
-                model = km.vgg16_net(np.shape(x_train_img)[1:], n_labels, vgg_model_weights_path,\
-                                     with_top=True, fine_tune=True,
-                                     input_shape2=np.shape(x_train_sig)[1:] )
+                model = km.vgg16_net(np.shape(x_train_img)[1:], n_labels, with_top=True,
+                                     input_shape2=np.shape(x_train_sig)[1:],
+                                     weights_path=weights_path)
             else:
-                model = km.cnn_net(np.shape(x_train_img)[1:], n_labels, \
-                                   with_top=True, fine_tune=True,
+                model = km.cnn_net(np.shape(x_train_img)[1:], n_labels, with_top=True,
                                    input_shape2=np.shape(x_train_sig)[1:],
-                                   weights_path=os.path.join(save_data_path,prefix+'cnn_fc_weights_'+str(idx)+'.h5') )
-            optimizer = SGD(lr=0.0001, decay=1e-8, momentum=0.9, nesterov=True)
+                                   weights_path=weights_path)
+            ## optimizer = SGD(lr=0.0001, decay=1e-8, momentum=0.9, nesterov=True)
             ## optimizer = RMSprop(lr=0.00001, rho=0.9, epsilon=1e-08, decay=0.0)
-            model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
 
+        optimizer = SGD(lr=0.001, decay=1e-6, momentum=0.9, nesterov=True)
+        ## optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.005)                        
+        model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
                 
 
         if test_only is False:
@@ -358,19 +370,13 @@ def train_with_all(save_data_path, n_labels, nFold, nb_epoch=100, fine_tune=Fals
             test_datagen = ku.myGenerator(augmentation=False, rescale=1./255.)
             train_generator = train_datagen.flow(x_train_img, x_train_sig, y_train, batch_size=32) #128)
             test_generator = test_datagen.flow(x_test_img, x_test_sig, y_test, batch_size=32) #128)
-            callbacks = [EarlyStopping(monitor='val_loss', min_delta=0, patience=patience,
-                                       verbose=0, mode='auto')]
         
             hist = model.fit_generator(train_generator,
                                        samples_per_epoch=len(y_train),
                                        nb_epoch=nb_epoch,
                                        validation_data=test_generator,
-                                       nb_val_samples=len(y_test),)
-                                       ## callbacks=callbacks)
-
-            full_weights_path = os.path.join(save_data_path,prefix+'cnn_fc_weights_'+str(idx)+'.h5')
-            print "Saved weights"
-            model.save_weights(full_weights_path)
+                                       nb_val_samples=len(y_test),
+                                       callbacks=callbacks)
 
             scores.append( hist.history['val_acc'][-1] )
         else:
@@ -383,6 +389,14 @@ def train_with_all(save_data_path, n_labels, nFold, nb_epoch=100, fine_tune=Fals
             print "score : ", accuracy_score(y_test_list, y_pred_list)
             ## break
         gc.collect()
+
+
+
+    # temp --------------------------------------------------------------
+    weights_path = os.path.join(save_data_path,prefix+'cnn_fc_weights_0.h5')
+    weights_file = h5py.File(sig_weights_path)
+    weight = mutil.get_layer_weights(weights_file, layer_name='fc1_1')
+    # -------------------------------------------------------------------
 
     print np.mean(scores), np.std(scores)
     if test_only: return y_test_list, y_pred_list
@@ -401,16 +415,22 @@ def test(save_data_path):
     print np.shape(train_data[0]),np.shape(train_data[1]),np.shape(train_data[2])
     print np.shape(test_data[0]), np.shape(test_data[1]), np.shape(test_data[2])
 
-    for x in test_data[0]:
-        if np.any(np.equal(x, None)):
-            print x
-    for x in test_data[1]:
-        if np.any(np.equal(x, None)):
-            print x
-    for x in test_data[2]:
-        if np.any(np.equal(x, None)):
-            print x
+    datagen = ImageDataGenerator(
+        rotation_range=20,
+        rescale=1./255,
+        width_shift_range=0.2,
+        height_shift_range=0.2,
+        zoom_range=0.1,
+        horizontal_flip=False,
+        fill_mode='nearest',
+        dim_ordering="th")
 
+    count = 0
+    for x,y in datagen.flow(test_data[1], test_data[2], batch_size=1):
+        print np.shape(x), np.shape(y)
+        count +=1
+        if count > 10: break
+    
     
 
 

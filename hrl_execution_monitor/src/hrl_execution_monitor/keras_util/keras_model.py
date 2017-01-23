@@ -34,7 +34,7 @@ import scipy, numpy as np
 import hrl_lib.util as ut
 import gc
 
-import h5py
+import h5py 
 import cv2
 
 from keras.models import Sequential, Model
@@ -47,6 +47,7 @@ from keras.utils.visualize_util import plot
 from keras.layers.normalization import BatchNormalization
 from keras.regularizers import EigenvalueRegularizer, L1L2Regularizer
 
+from hrl_execution_monitor.keras_util import model_util as mutil
 random.seed(3334)
 np.random.seed(3334)
 
@@ -116,30 +117,17 @@ def cnn_net(input_shape, n_labels, weights_path=None, sig_weights_path=None,
         return model
 
 
-def sig_net(input_shape, n_labels, weights_path=None, fine_tune=False, activ_type='relu',
-            ):
+def sig_net(input_shape, n_labels, weights_path=None, activ_type='relu' ):
 
-    if activ_type == 'PReLU':
-        activ_type = PReLU(init='zero', weights=None)
+    if activ_type == 'PReLU': activ_type = PReLU(init='zero', weights=None)
 
-
-    
     model = Sequential()
     model.add(Dense(128, init='uniform', input_shape=input_shape,
                     W_regularizer=L1L2Regularizer(0.0,0.1),\
                     name='fc2_1'))
-    ## model.add(BatchNormalization())
     model.add(Activation(activ_type))
     model.add(Dropout(0.5))
-    ## model.add(Dense(128, init='uniform', name='fc2_2'))
-    ## ## model.add(BatchNormalization())
-    ## model.add(Activation(activ_type))
-    ## model.add(Dropout(0.5))
 
-    if fine_tune:
-        for layer in model.layers:
-            layer.trainable = False
-    
     model.add(Dense(n_labels, activation='softmax',W_regularizer=L1L2Regularizer(0,0),
                     name='fc_sig_out'))
 
@@ -149,8 +137,9 @@ def sig_net(input_shape, n_labels, weights_path=None, fine_tune=False, activ_typ
     return model
 
 
-def vgg16_net(input_shape, n_labels, weights_path=None, sig_weights_path=None,\
-              with_top=False, input_shape2=None, fine_tune=False, viz=False):
+def vgg16_net(input_shape, n_labels, weights_path=None,\
+              sig_weights_path=None, img_weights_path=None,\
+              with_top=False, input_shape2=None, viz=False):
     
     # build the VGG16 network
     model = Sequential()
@@ -191,15 +180,7 @@ def vgg16_net(input_shape, n_labels, weights_path=None, sig_weights_path=None,\
     model.add(Convolution2D(512, 3, 3, activation='relu', name='conv5_3'))
     model.add(MaxPooling2D((2, 2), strides=(2, 2)))
 
-    if fine_tune:
-        for layer in model.layers[:15]:
-            layer.trainable = False
-    else:
-        for layer in model.layers:
-            layer.trainable = False
-
-    if vgg_model_weights_path is not None:
-        
+    if vgg_model_weights_path is not None:       
         # load the weights of the VGG16 networks
         # (trained on ImageNet, won the ILSVRC competition in 2014)
         # note: when there is a complete match between your model definition
@@ -217,43 +198,80 @@ def vgg16_net(input_shape, n_labels, weights_path=None, sig_weights_path=None,\
         f.close()
         print('Model loaded.')
 
+    ## if fine_tune:
+    ##     for layer in model.layers[:15]:
+    ##         layer.trainable = False
+    ## else:
+    for layer in model.layers:
+        layer.trainable = False
+
 
     if with_top:
         model.add(Flatten())
-        model.add(Dense(256, init='uniform', name='fc1_1'))
-        model.add(Activation('relu'))
-        model.add(Dropout(0.5))
-    
-        sig_model = Sequential()
-        sig_model.add(Dense(128, activation='relu', init='uniform', input_shape=input_shape2,\
-                            name='fc2_1'))
-        sig_model.add(Dropout(0.5))
-        if sig_weights_path is not None:
-            sig_model.load_weights(sig_weights_path)
 
+        # -----------------------------------------------------------
+        weights_file = None
+        if img_weights_path:
+            weights_file = h5py.File(img_weights_path)
+        weight1_1 = mutil.get_layer_weights(weights_file, layer_name='fc1_1')
+                
+        model.add(Dense(512, init='uniform', weights=weight1_1, name='fc1_1'))
+        model.add(Activation('relu'))
+        model.add(Dropout(0.5))        
+        # -----------------------------------------------------------
+        weight1_2 = mutil.get_layer_weights(weights_file, layer_name='fc1_2')
+        
+        model.add(Dense(512, init='uniform', weights=weight1_2, name='fc1_2'))
+        model.add(Activation('relu'))
+        model.add(Dropout(0.5))        
+    
+        # -----------------------------------------------------------
+        weights_file = None
+        if sig_weights_path:
+            weights_file = h5py.File(sig_weights_path)
+        weight2_1 = mutil.get_layer_weights(weights_file, layer_name='fc2_1')
+        
+        sig_model = Sequential()
+        sig_model.add(Dense(128, activation='relu', init='uniform', weights=weight2_1,
+                            input_shape=input_shape2, name='fc2_1'))
+        sig_model.add(Dropout(0.5))
+        
         merge = Merge([model, sig_model], mode='concat')
+        
+        # -----------------------------------------------------------
         c_model = Sequential()
         c_model.add(merge)        
         c_model.add(Dense(64, activation='relu', init='uniform', name='fc3_1'))
         c_model.add(Dropout(0.5))      
         c_model.add(Dense(n_labels, activation='softmax', name='fc_out'))
 
-        if weights_path is not None:
-            c_model.load_weights(weights_path)
+        if weights_path is not None: c_model.load_weights(weights_path)
         return c_model
     
     else:
-        t_model = Sequential()
-        t_model.add(Flatten(input_shape=model.output_shape[1:]))
-        t_model.add(Dense(256, init='uniform', name='fc1_1'))
-        t_model.add(Activation('relu'))
-        t_model.add(Dropout(0.5))        
-        t_model.add(Dense(n_labels, activation='softmax', name='fc_img_out'))
-        if weights_path is not None:
-            t_model.load_weights(weights_path, by_name=True)
+        model.add(Flatten())
+        model.add(Dense(512, init='uniform', name='fc1_1', W_regularizer=L1L2Regularizer(0.0,0.1)))
+        model.add(Activation('relu'))
+        model.add(Dropout(0.5))        
+        model.add(Dense(512, init='uniform', name='fc1_2', W_regularizer=L1L2Regularizer(0.0,0.1)))
+        model.add(Activation('relu'))
+        model.add(Dropout(0.5))        
+        model.add(Dense(n_labels, activation='softmax', name='fc_img_out'))
 
-        model.add(t_model)
-
+        if weights_path is not None: model.load_weights(weights_path)
         return model
 
 
+
+
+
+        ## t_model = Sequential()
+        ## t_model.add(Flatten(input_shape=model.output_shape[1:]))
+
+        ## if weights_path is not None:
+        ##     weights_file = h5py.File(weights_path)
+        ## else: weights_file = None
+        ## weight = mutil.get_layer_weights(weights_file, layer_name='fc1_1')
+        ## print "aaaaaaaaaaaa"
+        ## print weight
+        ## print "aaaaaaaaaaaa"
