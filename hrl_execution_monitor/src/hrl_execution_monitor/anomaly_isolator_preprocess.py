@@ -118,13 +118,13 @@ def get_isolation_data(subject_names, task_name, raw_data_path, save_data_path,
         HMM_dict_local = copy.deepcopy(HMM_dict)
         HMM_dict_local['scale'] = param_dict['HMM']['scale'][i]
         
-        ## # Training HMM, and getting classifier training and testing data
-        ## dm.saveHMMinducedFeatures(kFold_list, success_data_ad[i], failure_data_ad[i],\
-        ##                           task_name, save_data_path,\
-        ##                           HMM_dict_local, data_renew, startIdx, nState, cov, \
-        ##                           success_files=d['successFiles'], failure_files=d['failureFiles'],\
-        ##                           noise_mag=0.03, suffix=str(i),\
-        ##                           verbose=verbose, one_class=False)
+        # Training HMM, and getting classifier training and testing data
+        dm.saveHMMinducedFeatures(kFold_list, success_data_ad[i], failure_data_ad[i],\
+                                  task_name, save_data_path,\
+                                  HMM_dict_local, data_renew, startIdx, nState, cov, \
+                                  success_files=d['successFiles'], failure_files=d['failureFiles'],\
+                                  noise_mag=0.03, suffix=str(i),\
+                                  verbose=verbose, one_class=False)
 
     del d
 
@@ -212,8 +212,8 @@ if __name__ == '__main__':
     window_steps= 1
 
     #c12 window 1
-    ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
-    ## window_steps= 3
+    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
+    window_steps= 10
 
 
     task_name = 'feeding'
