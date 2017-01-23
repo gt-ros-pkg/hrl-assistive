@@ -98,42 +98,25 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
 
 
 def get_isolator_modules(save_data_path, task_name, method, param_dict, fold_idx=0, \
-                          verbose=False):
+                         nDetector=1, verbose=False):
 
     # load param
-    scr_pkl = os.path.join(save_data_path, 'ai_scr_'+method+'_'+str(fold_idx)+'.pkl')
-    hmm_pkl = os.path.join(save_data_path, 'hmm_'+task_name+'_'+str(fold_idx)+'.pkl')
-    clf_pkl = os.path.join(save_data_path, 'ai_clf_'+method+'_'+\
-                           str(fold_idx)+'.pkl')
+    hmm_list = []
+    for i in xrange(nDetector):
+        hmm_pkl = os.path.join(save_data_path, 'hmm_'+task_name+'_'+str(fold_idx)+'_c'+str(i)+'.pkl')
 
-    # load scaler
-    import pickle
-    if os.path.isfile(scr_pkl):
-        with open(scr_pkl, 'rb') as f:
-            m_scr = pickle.load(f)
-    else: m_scr = None
+        d     = ut.load_pickle(hmm_pkl)
+        m_gen = hmm.learning_hmm(d['nState'], d['nEmissionDim'], verbose=verbose)
+        m_gen.set_hmm_object(d['A'], d['B'], d['pi'])
+        hmm_list.append(m_gen)
+    
 
-    # load hmm
-    if os.path.isfile(hmm_pkl) is False:
-        print "No HMM pickle file: ", hmm_pkl
-        sys.exit()
-        
-    d     = ut.load_pickle(hmm_pkl)
-    print d.keys()
-    m_gen = hmm.learning_hmm(d['nState'], d['nEmissionDim'], verbose=verbose)
-    m_gen.set_hmm_object(d['A'], d['B'], d['pi'])
-
-
-    # load classifier
-    ## m_clf = cf.classifier( method=method, nPosteriors=d['nState'], parallel=True )
-    ## m_clf.load_model(clf_pkl)
-
-    return m_scr, m_gen, m_clf
+    return hmm_list
 
 
 
 
-def load_data(idx, save_data_path, viz=False):
+def load_data(idx, save_data_path, extra_img=False, viz=False):
     ''' Load selected fold's data '''
 
     assert os.path.isfile(os.path.join(save_data_path,'x_train_img_'+str(idx)+'.npy')) == True, \
@@ -146,6 +129,13 @@ def load_data(idx, save_data_path, viz=False):
     x_test_sig = np.load(open(os.path.join(save_data_path,'x_test_sig_'+str(idx)+'.npy')))
     x_test_img = np.load(open(os.path.join(save_data_path,'x_test_img_'+str(idx)+'.npy')))
     y_test = np.load(open(os.path.join(save_data_path,'y_test_'+str(idx)+'.npy')))
+
+    if extra_img:
+        x_train_img_extra = np.load(open(os.path.join(save_data_path,'x_train_img_extra.npy')))
+        y_train_extra = np.load(open(os.path.join(save_data_path,'y_train_extra.npy')))
+
+        x_train_img = np.vstack([x_train_img, x_train_img_extra])
+        y_train     = np.vstack([y_train, y_train_extra])
 
     return (x_train_sig, x_train_img, y_train), (x_test_sig, x_test_img, y_test)
 
@@ -232,7 +222,7 @@ def train_with_signal(save_data_path, n_labels, nFold, nb_epoch=400, fine_tune=F
 
 
 def train_with_image(save_data_path, n_labels, nFold, nb_epoch=100, fine_tune=False, vgg=False,
-                     patience=10, remove_label=[]):
+                     patience=10, remove_label=[], use_extra_img=True):
 
     if vgg: prefix = 'vgg_'
     else: prefix = ''
@@ -242,7 +232,7 @@ def train_with_image(save_data_path, n_labels, nFold, nb_epoch=100, fine_tune=Fa
     for idx in xrange(nFold):
 
         # Loading data
-        train_data, test_data = load_data(idx, save_data_path, viz=False)      
+        train_data, test_data = load_data(idx, save_data_path, extra_img=use_extra_img, viz=False)      
         x_train_img = train_data[1]
         y_train     = train_data[2]
         x_test_img = test_data[1]
@@ -433,6 +423,8 @@ if __name__ == '__main__':
 
     p.add_option('--preprocess', '--p', action='store_true', dest='preprocessing',
                  default=False, help='Preprocess')
+    p.add_option('--preprocess_extra', '--pe', action='store_true', dest='preprocessing_extra',
+                 default=False, help='Preprocess extra images')
     p.add_option('--train', '--tr', action='store_true', dest='train',
                  default=False, help='Train')
     
@@ -463,7 +455,10 @@ if __name__ == '__main__':
         data_pkl = os.path.join(save_data_path, 'isol_data.pkl')
         ku.preprocess_data(data_pkl, save_data_path, img_scale=0.25, nb_classes=nb_classes,
                         img_feature_type='vgg')
-        
+    elif opt.preprocessing_extra:
+        raw_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/AURO2016/raw_data/manual_label'
+        ku.preprocess_images(raw_data_path, save_data_path, img_scale=0.25, nb_classes=nb_classes,
+                             img_feature_type='vgg')        
     elif opt.train:
         train_isolator_modules(save_data_path, nb_classes, verbose=False)
         

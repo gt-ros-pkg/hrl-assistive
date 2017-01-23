@@ -65,7 +65,7 @@ class anomaly_isolator:
         self.param_dict      = param_dict        
 
         # HMM, Classifier
-        ## self.ml           = None
+        self.hmm_list        = None
 
         # Comms
         self.lock = threading.Lock()        
@@ -87,6 +87,7 @@ class anomaly_isolator:
         self.scale  = self.param_dict['HMM']['scale']
         
         self.nStaticDim = len(staticFeatures)
+        self.nDetector = rospy.get_param('nDetector')
 
 
     def initComms(self):

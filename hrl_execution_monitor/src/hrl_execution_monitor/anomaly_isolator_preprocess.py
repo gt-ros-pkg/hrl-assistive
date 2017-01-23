@@ -207,13 +207,13 @@ if __name__ == '__main__':
     save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
     window_steps= 5
 
-    #c11 window 3
+    #c11 window 3-63
     save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
-    window_steps= 3
+    window_steps= 1
 
     #c12 window 1
-    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
-    window_steps= 1
+    ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
+    ## window_steps= 3
 
 
     task_name = 'feeding'
