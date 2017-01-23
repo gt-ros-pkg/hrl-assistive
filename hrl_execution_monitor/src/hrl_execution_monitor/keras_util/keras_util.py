@@ -183,59 +183,8 @@ def preprocess_data(src_pkl, save_data_path, img_scale=0.25, nb_classes=12,
                     rm_idx.append(j)
                     continue
 
-                # Extract image features
-                if img_feature_type is 'cnn':
-                    img = cv2.imread(f)
-                    height, width = np.array(img).shape[:2]
-                    img = cv2.resize(img,(int(width*img_scale), int(height*img_scale)),
-                                     interpolation = cv2.INTER_CUBIC).astype(np.float32)
-
-                    # for vgg but lets use
-                    img[:,:,0] -= 103.939
-                    img[:,:,1] -= 116.779
-                    img[:,:,2] -= 123.68
-                    img = img.transpose((2,0,1))
-
-                elif img_feature_type is 'vgg':
-                    # BGR, vgg
-                    img_size = (256,256)
-                    img = cv2.resize(cv2.imread(f), img_size).astype(np.float32)
-                    crop_size = (224,224)
-                    img = img[(img_size[0]-crop_size[0])//2:(img_size[0]+crop_size[0])//2
-                              ,(img_size[1]-crop_size[1])//2:(img_size[1]+crop_size[1])//2,:]
-
-                    # for vgg but lets use
-                    img[:,:,0] -= 103.939
-                    img[:,:,1] -= 116.779
-                    img[:,:,2] -= 123.68
-
-                    ## if viz:
-                    ##     print np.shape(img), type(img), type(img[0][0][0])
-                    ##     # visual check
-                    ##     cv2.imshow('image',img)
-                    ##     cv2.waitKey(0)
-                    ##     cv2.destroyAllWindows()
-                    ##     sys.exit()
-                    img = img.transpose((2,0,1))
-
-                elif img_feature_type == 'hog':
-                    img = cv2.imread(f,0)
-                    height, width = np.array(img).shape[:2]
-                    img = cv2.resize(img,(int(width*img_scale), int(height*img_scale)),
-                    interpolation = cv2.INTER_CUBIC)
-                    img = hog(img, bin_n=16)
-
-                elif img_feature_type == 'sift':
-                    img = cv2.imread(f)
-                    gray= cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
-                    sift = cv2.xfeatures2d.SIFT_create()
-                    kp = sift.detect(gray,None)
-                    img=cv2.drawKeypoints(gray,kp,img)
-                    print np.shape(img)
-                    sys.exit()
-                else:
-                    print "Not available"
-
+                img = extract_image(f, img_feature_type=img_feature_type,
+                                    img_scale=img_scale)
                 x.append(img)
             x_img = x
 
@@ -258,6 +207,93 @@ def preprocess_data(src_pkl, save_data_path, img_scale=0.25, nb_classes=12,
 
 
 
+def preprocess_images(raw_data_path, save_data_path, img_scale=0.25, nb_classes=12,
+                      img_feature_type='cnn'):
+
+    offset = 2
+    x = []
+    y = []
+    for i in xrange(nb_classes):
+
+        files = os.listdir( os.path.join(raw_data_path, str(i+offset)) )
+        for f in files:
+            if f.split('.')[1].find('jpg') or f.split('.')[1].find('JPG'):
+                ## x.append(os.path.join(raw_data_path, str(i+1), f))
+
+                img = extract_image(os.path.join(raw_data_path, str(i+offset), f),
+                                    img_feature_type=img_feature_type,
+                                    img_scale=img_scale)
+                x.append(img)                
+                y.append(i)
+
+    if img_feature_type == 'cnn' or img_feature_type == 'vgg':
+        from keras.utils.np_utils import to_categorical
+        y = to_categorical(y, nb_classes=nb_classes)
+
+    print np.shape(x), np.shape(y)
+    np.save(open(os.path.join(save_data_path,'keras','x_train_img_extra.npy'), 'w'), x)
+    np.save(open(os.path.join(save_data_path,'keras','y_train_extra.npy'), 'w'), y)
+    return
+
+
+def extract_image(f, img_feature_type='vgg', img_scale=None):
+
+    # Extract image features
+    if img_feature_type is 'cnn':
+        img = cv2.imread(f)
+        height, width = np.array(img).shape[:2]
+        img = cv2.resize(img,(int(width*img_scale), int(height*img_scale)),
+                         interpolation = cv2.INTER_CUBIC).astype(np.float32)
+
+        # for vgg but lets use
+        img[:,:,0] -= 103.939
+        img[:,:,1] -= 116.779
+        img[:,:,2] -= 123.68
+        img = img.transpose((2,0,1))
+
+    elif img_feature_type is 'vgg':
+        # BGR, vgg
+        img_size = (256,256)
+        img = cv2.resize(cv2.imread(f), img_size).astype(np.float32)
+        crop_size = (224,224)
+        img = img[(img_size[0]-crop_size[0])//2:(img_size[0]+crop_size[0])//2
+                  ,(img_size[1]-crop_size[1])//2:(img_size[1]+crop_size[1])//2,:]
+
+        # for vgg but lets use
+        img[:,:,0] -= 103.939
+        img[:,:,1] -= 116.779
+        img[:,:,2] -= 123.68
+
+        ## if viz:
+        ##     print np.shape(img), type(img), type(img[0][0][0])
+        ##     # visual check
+        ##     cv2.imshow('image',img)
+        ##     cv2.waitKey(0)
+        ##     cv2.destroyAllWindows()
+        ##     sys.exit()
+        img = img.transpose((2,0,1))
+
+    elif img_feature_type == 'hog':
+        img = cv2.imread(f,0)
+        height, width = np.array(img).shape[:2]
+        img = cv2.resize(img,(int(width*img_scale), int(height*img_scale)),
+        interpolation = cv2.INTER_CUBIC)
+        img = hog(img, bin_n=16)
+
+    elif img_feature_type == 'sift':
+        img = cv2.imread(f)
+        gray= cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+        sift = cv2.xfeatures2d.SIFT_create()
+        kp = sift.detect(gray,None)
+        img=cv2.drawKeypoints(gray,kp,img)
+        print np.shape(img)
+        sys.exit()
+    else:
+        print "Not available"
+        sys.exit()
+
+    return img
+    
 
 if __name__ == '__main__':
 
