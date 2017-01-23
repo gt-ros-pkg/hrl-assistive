@@ -109,7 +109,6 @@ def get_isolator_modules(save_data_path, task_name, method, param_dict, fold_idx
         m_gen = hmm.learning_hmm(d['nState'], d['nEmissionDim'], verbose=verbose)
         m_gen.set_hmm_object(d['A'], d['B'], d['pi'])
         hmm_list.append(m_gen)
-    
 
     return hmm_list
 

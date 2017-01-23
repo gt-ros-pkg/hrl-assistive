@@ -58,7 +58,7 @@ class anomaly_isolator:
 
         # Important containers
         self.enable_isolator = False
-        self.dataList        = []
+        self.data_list       = []
         self.refData         = None
         
         # Params
@@ -104,16 +104,16 @@ class anomaly_isolator:
         rospy.Subscriber('/manipulation_task/status', String, self.statusCallback)
 
 
+
     def initIsolator(self):
         ''' init detector ''' 
         rospy.loginfo( "Initializing a detector for %s", self.task_name)
 
-        self.f_param_dict, _, _ = adu.get_isolator_modules(self.save_data_path,
-                                                           self.task_name,
-                                                           self.param_dict)
-        normalTrainData = self.f_param_dict['successData'] 
-        self.refData = np.reshape( np.mean(normalTrainData[:,:,:self.startOffsetSize], axis=(1,2)), \
-                                  (self.nStaticDim,1,1) ) # 4,1,1
+        self.hmm_list = adu.get_isolator_modules(self.save_data_path,
+                                                 self.task_name,
+                                                 self.param_dict)
+
+        
 
     #-------------------------- Communication fuctions --------------------------
     def imgDataCallback(self, msg):
@@ -126,16 +126,19 @@ class anomaly_isolator:
         '''
         Subscribe raw data
         '''
+        self.data_list[0] = msg.data
 
     def dtc2DataCallback(self, msg):
         '''
         Subscribe raw data
         '''
+        self.data_list[1] = msg.data
 
-    def rawDataCallback(self, msg):
+    def staticDataCallback(self, msg):
         '''
         Subscribe raw data
         '''
+        self.data_list[2] = msg.data
 
     #-------------------------- General fuctions --------------------------
     def reset(self):
