@@ -1,2 +1,17 @@
-{hmmgp0_ths_mult: -15.809573444801934, hmmgp1_ths_mult: -15.809573444801934, nDetector: 0,
-  progress0_ths_mult: -3.0, progress1_ths_mult: -4.5, progress_ths_mult: -1.625}
+cov_mult: 10.0
+downSampleSize: 200
+feature_list: [unimodal_ftForce, crossmodal_targetEEDist]
+hmmgp0_ths_mult: -15.809573444801934
+hmmgp1_ths_mult: -15.809573444801934
+nDetector: 0
+progress0_ths_mult: -3.0
+progress1_ths_mult: -4.5
+progress_ths_mult: -1.625
+rf_center: kinEEPos
+rf_radius: 0.15
+sgd_intercept: 0.15
+sgd_intercept_max: 3.0
+sgd_intercept_min: -3.0
+sgd_w_positive: 0.0446683592150963
+states: 10
+svm_w_positive: 20.0

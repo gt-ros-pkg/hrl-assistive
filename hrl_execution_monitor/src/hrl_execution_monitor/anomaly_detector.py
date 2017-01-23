@@ -89,11 +89,11 @@ class anomaly_detector:
         self.soundHandle  = SoundClient()
 
         # sim  ---------------------------------------------
-        ## self.bSim         = sim
-        ## if self.bSim: self.cur_task = self.task_name
-        ## else:         self.cur_task = None
-        ## self.sim_subject_names = sim_subject_names
-        ## self.t1 = datetime.datetime.now()
+        self.bSim         = sim
+        if self.bSim: self.cur_task = self.task_name
+        else:         self.cur_task = None
+        self.sim_subject_names = sim_subject_names
+        self.t1 = datetime.datetime.now()
         # -------------------------------------------------
 
         # Comms
@@ -156,6 +156,9 @@ class anomaly_detector:
                                                        queue_size=QUEUE_SIZE)
         self.sensitivity_pub         = rospy.Publisher("manipulation_task/ad_sensitivity_state", \
                                                        Float64, queue_size=QUEUE_SIZE, latch=True)
+        # temp
+        self.isolation_info_pub = rospy.Publisher("/manipulation_task/anomaly_type", String,
+                                                  queue_size=QUEUE_SIZE)
 
         # Subscriber # TODO: topic should include task name prefix?
         rospy.Subscriber('/hrl_manipulation_task/raw_data', MultiModality, self.rawDataCallback)
@@ -355,8 +358,6 @@ class anomaly_detector:
             ##     x = autil.running_mean(dataList[i][0], 4)
             ##     dataList[i][0] = x.tolist() #[x[0]]*4 + x.tolist()
 
-            print self.id, " : ", np.shape(dataList)
-    
             logp, post = self.ml.loglikelihood(dataList, bPosterior=True)
                 
             #-----------------------------------------------------------------------
@@ -366,6 +367,10 @@ class anomaly_detector:
                 self.task_interruption_pub.publish(self.task_name+'_anomaly')
                 self.soundHandle.play(1)
                 self.enable_detector = False
+
+                rospy.sleep(10.0)
+                self.isolation_info_pub.publish(" XXXXXXXXXXX ")
+
                 self.reset()
                 continue
 
@@ -400,6 +405,10 @@ class anomaly_detector:
                 self.soundHandle.play(1)
                 self.anomaly_flag    = True                
                 self.enable_detector = False
+
+                rospy.sleep(10.0)
+                self.isolation_info_pub.publish(" XXXXXXXXXXX ")
+                
                 self.reset()
 
             rate.sleep()
