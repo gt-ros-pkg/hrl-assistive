@@ -258,6 +258,9 @@ def preprocess_data(src_pkl, save_data_path, img_scale=0.25, nb_classes=12,
 
 
 
+def preprocess_images(raw_data_path, save_data_path, img_scale=0.25, nb_classes=12):
+    
+
 
 if __name__ == '__main__':
 
