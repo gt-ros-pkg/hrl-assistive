@@ -331,7 +331,7 @@ class anomaly_detector:
         rospy.loginfo( '-'*15 +  'Anomaly has occured!' + '-'*15 )
         self.action_interruption_pub.publish(self.task_name+'_anomaly')
         self.task_interruption_pub.publish(self.task_name+'_anomaly')
-        self.hmm_input_pub.publish(dataList)
+        ## self.hmm_input_pub.publish(dataList)
         self.soundHandle.play(1)
         ## self.anomaly_flag    = True                
         self.enable_detector = False
@@ -381,7 +381,7 @@ class anomaly_detector:
             logp, post = self.ml.loglikelihood(dataList, bPosterior=True)
                 
             #-----------------------------------------------------------------------
-            if logp is None: self.set_anomaly_alarm(dataList)
+            if logp is None:
                 rospy.loginfo( "logp is None => anomaly" )
                 self.set_anomaly_alarm(dataList)
                 continue
