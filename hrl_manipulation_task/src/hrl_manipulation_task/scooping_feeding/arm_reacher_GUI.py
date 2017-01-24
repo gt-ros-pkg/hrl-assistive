@@ -110,10 +110,6 @@ class armReacherGUI:
         with self.status_lock:
             if not self.emergencyStatus:
                 self.inputMSG = msg.data
-
-                print self.ScoopNumber, self.FeedNumber
-                print self.emergencyStatus, self.inputStatus
-                print self.inputMsg, self.gui_status
                 # initialize current motion only when Start button is pushed
                 if self.inputMSG == 'Start':
                     self.ScoopNumber = 0
@@ -153,9 +149,6 @@ class armReacherGUI:
         emergency_wait_rate = rospy.Rate(30)
         while not rospy.is_shutdown():
             #print "Waiting aborting Sequence"
-            if self.gui_status == 'wait start' or self.gui_status == 'stopped':
-                self.emergencyStatus = False
-                return
             if self.left_mtx is False and self.right_mtx is False: break
             emergency_wait_rate.sleep()
         self.safetyMotion(self.armReachActionLeft, self.armReachActionRight)
