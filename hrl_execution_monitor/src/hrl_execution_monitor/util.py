@@ -30,6 +30,8 @@
 # system & utils
 import os, sys, copy
 import scipy, numpy as np
+from scipy import stats
+import hrl_lib.quaternion as qt
 
 from hrl_anomaly_detection import data_manager as dm
 
@@ -190,10 +192,6 @@ def extract_feature(msg, init_msg, last_msg, last_data, handFeatures, param_dict
 
     # Crossmodal feature - vision relative angle --------------------------
     if 'crossmodal_landmarkEEAng' in handFeatures:
-        d['kinEEQuatList'] = [np.array([msg.kinematics_ee_quat]).T]
-        d['visionLandmarkPosList'] = [np.array([msg.vision_landmark_pos]).T]
-        d['visionLandmarkQuatList'] = [np.array([msg.vision_landmark_quat]).T]
-
         startQuat = np.array(msg.kinematics_ee_quat)
         endQuat   = np.array(msg.vision_landmark_quat)[:4]
         diff_ang  = abs(qt.quat_angle(startQuat, endQuat))
@@ -276,7 +274,7 @@ def running_mean(x, N):
 
 
 def temporal_features(X, max_step, ml, scale):
-    ''' Return n_step x n_features'''
+    ''' Return n_step x sample x n_features'''
 
     d_idx = len(X[0])
     while True:

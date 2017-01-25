@@ -168,8 +168,8 @@ class logger:
         if self.enable_isolator:
             print "Wait anomaly isolation service"
             rospy.wait_for_service('/'+self.task+'/anomaly_isolator_enable')
-            self.ai_srv.append(rospy.ServiceProxy('/'+self.task+'/anomaly_isolator_enable',
-                                                  Bool_None))
+            self.ai_srv = rospy.ServiceProxy('/'+self.task+'/anomaly_isolator_enable',
+                                             Bool_None)
             print "Detected anomaly isolation service"
 
         
@@ -296,6 +296,9 @@ class logger:
     def enableDetector(self, enableFlag):
         for i in xrange(self.nDetector):
             ret = self.ad_srv[i](enableFlag)
+
+    def enableIsolator(self, enableFlag):
+        ret = self.ai_srv(enableFlag)
 
     ## def updateDetector(self):
     ##     '''

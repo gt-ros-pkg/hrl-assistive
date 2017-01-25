@@ -85,6 +85,12 @@ def train_rfc_with_signal(save_data_path, n_labels, nFold):
         x_train_sig = scaler.fit_transform(x_train_sig)
         x_test_sig  = scaler.transform(x_test_sig)
 
+        fileName = os.path.join(save_data_path, 'scr_'+str(idx))
+        print fileName
+        import pickle
+        with open(fileName, 'wb') as f:
+            pickle.dump(scaler, f)
+
         # get classifier
         from sklearn.ensemble import RandomForestClassifier
         clf = RandomForestClassifier(n_estimators=400, n_jobs=-1)
@@ -138,13 +144,20 @@ def get_isolator_modules(save_data_path, task_name, param_dict, fold_idx=0, \
         m_gen.set_hmm_object(d['A'], d['B'], d['pi'])
         hmm_list.append(m_gen)
 
+    # get scaler
+    fileName = os.path.join(save_data_path, 'scr_'+str(fold_idx))
+    import pickle
+    with open(fileName, 'rb') as f:
+        m_scr = pickle.load(f)
+    
+
     # get classifier
     fileName = os.path.join(save_data_path, 'clf_'+str(fold_idx))
     import pickle
     with open(fileName, 'rb') as f:
         m_clf = pickle.load(f)
 
-    return m_param_dict, hmm_list, m_clf
+    return m_param_dict, hmm_list, m_scr, m_clf
 
 
 

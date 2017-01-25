@@ -50,7 +50,7 @@ QUEUE_SIZE = 10
 
 class armReacherGUI:
 
-    def __init__(self, detection_flag=False, log=None, quick_feeding=False):
+    def __init__(self, detection_flag=False, isolation_flag=False, log=None, quick_feeding=False):
         '''Initialize GUI'''
 
         #variables
@@ -62,6 +62,7 @@ class armReacherGUI:
         self.ScoopNumber = 0
         self.FeedNumber = 0
         self.detection_flag = detection_flag
+        self.isolation_flag = isolation_flag
         self.log = log
         self.left_mtx = False
         self.right_mtx = False
@@ -218,7 +219,8 @@ class armReacherGUI:
             elif self.inputStatus and self.actionStatus == 'Feeding':
                 self.inputStatus = False
                 rospy.loginfo("Feeding Starting....")
-                self.feeding(self.armReachActionLeft, self.armReachActionRight, self.log, self.detection_flag)
+                self.feeding(self.armReachActionLeft, self.armReachActionRight, self.log, self.detection_flag,
+                             self.isolation_flag)
             elif self.inputStatus and self.actionStatus == 'Clean':
                 self.inputStatus = False
                 self.quick_feeding_ready = False
@@ -296,7 +298,7 @@ class armReacherGUI:
             break
 
     
-    def feeding(self, armReachActionLeft, armReachActionRight, log, detection_flag):
+    def feeding(self, armReachActionLeft, armReachActionRight, log, detection_flag, isolation_flag):
 
         while not self.emergencyStatus and not rospy.is_shutdown():
             if self.log != None:
@@ -338,6 +340,7 @@ class armReacherGUI:
                 if self.log is not None:
                     self.log.log_start()
                     if detection_flag: self.log.enableDetector(True)
+                    if isolation_flag: self.log.enableIsolator(True)
 
                 rospy.loginfo("Running feeding")
                 self.ServiceCallLeft("runFeeding")
@@ -352,6 +355,7 @@ class armReacherGUI:
                     print "after logging"
                     self.log.close_log_file_GUI()
                     print "after log close log file"
+                    if isolation_flag: self.log.enableIsolator(False)                    
                 else:
                     self.logRequestPub.publish("No feedback requested")
                 if emergencyStatus or self.emergencyStatus: break
@@ -455,14 +459,15 @@ if __name__ == '__main__':
     if opt.bLog or opt.bDataPub:
         # for adaptation, please add 'new' as the subject.         
         log = logger(ft=True, audio=False, audio_wrist=True, kinematics=True, vision_artag=False, \
-                     vision_landmark=True, vision_change=False, pps=False, skin=False, \
+                     vision_landmark=True, vision_change=False, pps=False, skin=True, \
                      subject="test", task='feeding', data_pub=opt.bDataPub,
                      en_ad=opt.en_ad, en_ai=opt.en_ai,\
                      record_root_path=opt.sRecordDataPath)
     else:
         log = None
 
-    gui = armReacherGUI(detection_flag=opt.en_ad, log=log, quick_feeding=opt.bQuickFeeding)
+    gui = armReacherGUI(detection_flag=opt.en_ad, isolation_flag=opt.en_ai, log=log,
+                        quick_feeding=opt.bQuickFeeding)
     rospy.spin()
 
 

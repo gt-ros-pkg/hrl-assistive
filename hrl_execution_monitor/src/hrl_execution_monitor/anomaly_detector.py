@@ -158,8 +158,8 @@ class anomaly_detector:
                                                        Float64, queue_size=QUEUE_SIZE, latch=True)
 
         # temp
-        self.isolation_info_pub = rospy.Publisher("/manipulation_task/anomaly_type", String,
-                                                  queue_size=QUEUE_SIZE)
+        ## self.isolation_info_pub = rospy.Publisher("/manipulation_task/anomaly_type", String,
+        ##                                           queue_size=QUEUE_SIZE)
         self.hmm_input_pub      = rospy.Publisher("manipulation_task/hmm_input"+str(self.id),
                                                   FloatMatrix, queue_size=QUEUE_SIZE)
 
@@ -168,6 +168,7 @@ class anomaly_detector:
         rospy.Subscriber('/hrl_manipulation_task/raw_data', MultiModality, self.rawDataCallback)
         rospy.Subscriber('/manipulation_task/status', String, self.statusCallback)
         rospy.Subscriber('manipulation_task/ad_sensitivity_request', Float64, self.sensitivityCallback)
+        rospy.Subscriber("/manipulation_task/emergency", String, self.emergencyCallback, queue_size=10)
 
         ## rospy.Subscriber('/manipulation_task/proceed', String, self.debugCallback)
 
@@ -307,6 +308,19 @@ class anomaly_detector:
         self.pubSensitivity()
 
 
+    def emergencyCallback(self, msg):
+        #Emergency status button.
+        print "in emergency callback", msg
+        if msg.data.find('anomaly')>=0:
+            msg = FloatMatrix()
+            msg.header.stamp = rospy.Time.now()        
+            msg.size = self.nEmissionDim
+            self.lock.acquire()            
+            msg.data = np.array(self.dataList).flatten().tolist()
+            self.lock.release()
+            self.hmm_input_pub.publish(msg)
+
+
     def debugCallback(self, msg):
         if msg.data.find("Set: Feeding 3, Feeding 4, retrieving")>=0:            
             rospy.loginfo("%s anomaly detector %s enabled", self.task_name, str(self.id))
@@ -329,6 +343,7 @@ class anomaly_detector:
 
     def set_anomaly_alarm(self, dataList):
         rospy.loginfo( '-'*15 +  'Anomaly has occured!' + '-'*15 )
+        self.soundHandle.play(1)
         self.action_interruption_pub.publish(self.task_name+'_anomaly')
         self.task_interruption_pub.publish(self.task_name+'_anomaly')
 
@@ -337,13 +352,11 @@ class anomaly_detector:
         msg.size = self.nEmissionDim
         msg.data = np.array(dataList).flatten().tolist()
         self.hmm_input_pub.publish(msg)
-        self.soundHandle.play(1)
         ## self.anomaly_flag    = True                
         ## self.enable_detector = False
 
-        rospy.sleep(10.0)
-        self.isolation_info_pub.publish(" XXXXXXXXXXX ")
-        
+        rospy.sleep(1.0) #need of hmm_inpu pub
+        ## self.isolation_info_pub.publish(" XXXXXXXXXXX ")
         self.reset()
         
 
@@ -524,7 +537,7 @@ if __name__ == '__main__':
                  default=False, help='Visualize data.')
     
     opt, args = p.parse_args()
-    rospy.init_node(opt.task+'_detector')
+    rospy.init_node(opt.task+'_detector'+str(opt.id))
 
     if True:
         from hrl_execution_monitor.params.IROS2017_params import *
