@@ -207,13 +207,13 @@ class armReachAction(mpcBaseAction):
         ## Init arms ---------------------------------------------------------------
         self.motions['cleanSpoon1'] = {}
         self.motions['cleanSpoon1']['left'] = \
-          [['MOVEL', '[ 0.05+0.005, 0.05-self.highBowlDiff[1],  -0.06, 0, 1.5, 0]', 3, 'self.bowl_frame'],
+          [['MOVEL', '[ 0.05+0.005, 0.05-self.highBowlDiff[1],  -0.09, 0, 1.5, 0]', 3, 'self.bowl_frame'],
            ['PAUSE', 0.0],
            ['MOVEL', '[ 0.05+0.005, 0.05-self.highBowlDiff[1],  -0.03, 0, 1.5, 0]', 3, 'self.bowl_frame'],
            ['PAUSE', 0.0],
            ['MOVEL', '[ 0.05-0.07, 0.02-self.highBowlDiff[1],  -0.03, 0, 1.5, 0]', 3, 'self.bowl_frame'],
            ['PAUSE', 0.0],
-           ['MOVEL', '[ 0.05, 0.0-self.highBowlDiff[1],  -0.06, 0, 1.5, 0]', 3, 'self.bowl_frame'],]
+           ['MOVEL', '[ 0.05-0.01, 0.0-self.highBowlDiff[1],  -0.1, 0, 1.5, 0]', 3, 'self.bowl_frame'],]
         self.motions['cleanSpoon1']['right'] = []
 
         
@@ -256,7 +256,7 @@ class armReachAction(mpcBaseAction):
            ['PAUSE', 0.0],
            ['MOVEL', '[ 0.05, 0.0-self.highBowlDiff[1],  0.03, 0, 0.8, 0]', 3, 'self.bowl_frame'],
            ['PAUSE', 0.0],
-           ['MOVES', '[ 0.05, 0.0-self.highBowlDiff[1],  -0.06, 0, 1.5, 0]', 3, 'self.bowl_frame'],]
+           ['MOVES', '[ 0.05-0.01, 0.0-self.highBowlDiff[1],  -0.1, 0, 1.5, 0]', 3, 'self.bowl_frame'],]
            ## ['MOVES', '[ 0.05, 0.0-self.highBowlDiff[1],  -0.1, 0, 1.3, 0]', 3, 'self.bowl_frame'],]
 
 
@@ -285,7 +285,7 @@ class armReachAction(mpcBaseAction):
                                                 ['PAUSE', 2.0]]
 
         self.motions['initFeeding1'] = {}
-        self.motions['initFeeding1']['left'] = [['MOVEJ', '[0.6447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 1.1291]', 5.0],]
+        self.motions['initFeeding1']['left'] = [['MOVEJ', '[0.6447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 1.1291]', 5.0],]        
                                                 ## ['MOVET', '[-0.05, -0.2, -0.15, 0.6, 0., 0.]', 5.0]]
                                                 ## ['MOVEL', '[ -0.1, -0.1, -0.3, -0.8, 0., 0.]', 7., 'self.mouth_frame'],
                                                 ## ['PAUSE', 2.0]]

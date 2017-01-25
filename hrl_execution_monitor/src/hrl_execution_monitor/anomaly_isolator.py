@@ -31,7 +31,8 @@
 import rospy, os, sys, threading, datetime
 import random, numpy as np
 
-import hrl_lib.quaternion as qt
+
+from hrl_lib import circular_buffer as cb
 from sklearn import preprocessing
 
 # Utility
@@ -58,11 +59,17 @@ class anomaly_isolator:
 
         # Important containers
         self.enable_isolator = False
-        self.data_list       = []
         self.refData         = None
+        self.dyn_data1       = []
+        self.dyn_data2       = []
+        self.stc_data        = []
         
         # Params
         self.param_dict      = param_dict        
+        self.f_param_dict    = None
+        self.startOffsetSize = 4
+        self.startCheckIdx   = 10
+        self.max_length      = 8
 
         # HMM, Classifier
         self.hmm_list        = None
@@ -82,12 +89,16 @@ class anomaly_isolator:
     def initParams(self):
 
         # Features and parameters
-        self.staticFeatures = self.param_dict['data_param']['staticFeatures']
+        self.dynFeatures = self.param_dict['data_param']['handFeatures']
+        self.stcFeatures = self.param_dict['data_param']['staticFeatures']
         self.nState = self.param_dict['HMM']['nState']
         self.scale  = self.param_dict['HMM']['scale']
-        
-        self.nStaticDim = len(staticFeatures)
         self.nDetector = rospy.get_param('nDetector')
+
+        ## self.dyn_cb1   = cb.CircularBuffer(self.max_length, len(self.dynFeatures[0]))
+        ## self.dyn_cb2   = cb.CircularBuffer(self.max_length, len(self.dynFeatures[1]))
+        ## self.stc_cb = cb.CircularBuffer(self.max_length, len(self.stcFeatures))
+        self.classes = ['Object collision', 'Noisy environment', 'Spoon miss by a user', 'Spoon collision by a user', 'Robot-body collision by a user', 'Aggressive eating', 'Anomalous sound from a user', 'Unreachable mouth pose', 'Face occlusion by a user', 'Spoon miss by system fault', 'Spoon collision by system fault', 'Freeze by system fault']
 
 
     def initComms(self):
@@ -96,55 +107,126 @@ class anomaly_isolator:
                                                   queue_size=QUEUE_SIZE)
         
         # Subscriber # TODO: topic should include task name prefix?
-        rospy.Subscriber('/hrl_manipulation_task/raw_data', MultiModality, self.rawDataCallback)
-        rospy.Subscriber('/manipulation_task/dtc1_data', FloatArray, self.dtc1DataCallback)
-        rospy.Subscriber('/manipulation_task/dtc2_data', FloatArray, self.dtc2DataCallback)
+        rospy.Subscriber('/hrl_manipulation_task/raw_data', MultiModality, self.staticDataCallback)
+        rospy.Subscriber('/manipulation_task/hmm_input0', FloatArray, self.dtc1DataCallback)
+        rospy.Subscriber('/manipulation_task/hmm_input1', FloatArray, self.dtc2DataCallback)
         rospy.Subscriber('/SR300/rgb/image_raw_rotated', Image, self.imgDataCallback)
 
         rospy.Subscriber('/manipulation_task/status', String, self.statusCallback)
 
+        # Service
+        self.isolation_srv = rospy.Service('anomaly_isolator_enable',
+                                           Bool_None, self.enablerCallback)
 
 
     def initIsolator(self):
         ''' init detector ''' 
         rospy.loginfo( "Initializing a detector for %s", self.task_name)
 
-        self.hmm_list = adu.get_isolator_modules(self.save_data_path,
-                                                 self.task_name,
-                                                 self.param_dict)
+        self.f_param_dict, self.hmm_list, self.cf = aiu.get_isolator_modules(self.save_data_path,
+                                                                             self.task_name,
+                                                                             self.param_dict,
+                                                                             nDetector=self.nDetector)
 
         
 
     #-------------------------- Communication fuctions --------------------------
+    def enablerCallback(self, msg):
+
+        if msg.data is True:
+            rospy.loginfo("%s anomaly isolator enabled", self.task_name)
+            self.enable_isolator = True
+        else:
+            rospy.loginfo("%s anomaly isolator disabled", self.task_name)
+            self.enable_detector = False
+
+        return Bool_NoneResponse()
+
+    
     def imgDataCallback(self, msg):
         '''
         capture image
         '''
-        msg.data
+        ## msg.data
+        return
         
     def dtc1DataCallback(self, msg):
         '''
-        Subscribe raw data
+        Subscribe HMM1 data
         '''
-        self.data_list[0] = msg.data
+        self.dyn_data1 = np.array(msg.data).reshape((msg.size, 1, len(msg.data)/msg.size))
 
     def dtc2DataCallback(self, msg):
         '''
-        Subscribe raw data
+        Subscribe HMM2 data
         '''
-        self.data_list[1] = msg.data
+        self.dyn_data2 = np.array(msg.data).reshape((msg.size, 1, len(msg.data)/msg.size))
 
     def staticDataCallback(self, msg):
         '''
-        Subscribe raw data
+        Subscribe static data
         '''
-        self.data_list[2] = msg.data
+        if msg is None: return
+        if self.f_param_dict is None or self.refData is None: return
+        if self.cur_task is None: return
+        if self.cur_task.find(self.task_name) < 0: return
+
+        # If detector is disbled, detector does not fill out the stc_data.
+        if self.enable_isolator is False or self.init_msg is None:
+            self.init_msg = copy.copy(msg)
+            return
+
+        self.lock.acquire()
+        ########################################################################
+        # Run your custom feature extraction function
+        dataSample, _ = autil.extract_feature(msg,
+                                              self.init_msg,
+                                              None,
+                                              None,
+                                              self.staticFeatures,
+                                              self.f_param_dict['feature_params'],
+                                              count=len(self.stc_data[0])
+                                              if len(self.stc_data)>0 else 0)
+        ########################################################################
+
+        # Subtract white noise by measuring offset using scaled data
+        if self.stc_data == [] or len(self.stc_data[0]) < self.startOffsetSize:
+            self.offsetData = np.zeros(np.shape(scaled_dataSample))            
+        elif len(self.stc_data[0]) == self.startOffsetSize:
+            curData = np.reshape( np.mean(self.stc_data, axis=1), (self.nEmissionDim,1) ) # 4,1
+            self.offsetData = self.refData - curData
+            for i in xrange(self.nEmissionDim):
+                self.stc_data[i] = (np.array(self.stc_data[i]) +
+                                            self.offsetData[i][0]).tolist()
+            self.offsetData = self.offsetData[:,0]
+            
+        scaled_dataSample += self.offsetData
+
+        
+        if len(self.stc_data) == 0:
+            self.stc_data = np.reshape(scaled_dataSample,
+                                               (self.nEmissionDim,1) ).tolist() # = newData.tolist()
+        else:                
+            # dim x length
+            for i in xrange(self.nEmissionDim):
+                self.stc_data[i] += [scaled_dataSample[i]]
+
+        self.lock.release()
+
+    def statusCallback(self, msg):
+        '''
+        Subscribe current task 
+        '''
+        self.cur_task = msg.data.lower()
+        
 
     #-------------------------- General fuctions --------------------------
     def reset(self):
         ''' Reset parameters '''
         self.lock.acquire()
-        self.dataList = []
+        self.dyn_data1 = []
+        self.dyn_data2 = []
+        self.stc_data  = []
         self.enable_isolator = False
         self.lock.release()
 
@@ -154,6 +236,37 @@ class anomaly_isolator:
         rospy.loginfo("Start to run anomaly isolation: " + self.task_name)
         rate = rospy.Rate(freq) # 20Hz, nominally.
         while not rospy.is_shutdown():
+
+
+            if len(self.dyn_data1)>0 and len(self.dyn_data2)>0 and len(stc_data)>0 and
+                self.enable_isolator:
+                # run isolator
+                x1 = temporal_features(self.dyn_data1, self.max_length, self.hmm_list[0],
+                                      self.scale[0])
+                x2 = temporal_features(self.dyn_data2, self.max_length, self.hmm_list[1],
+                                      self.scale[1])
+                vs = np.hstack([x1, x2])
+                print "x: ", np.shape(x)
+
+                # temporal feature
+                x = np.amin(vs[:1], axis=0)
+                x = np.vstack([ x, np.amin(vs[:4], axis=0) ])
+                x = np.vstack([ x, np.amin(vs[:8], axis=0) ])
+                x = x.flatten().tolist()
+
+                # dim x length?
+                max_vals = np.amax(self.stc_data, axis=1)
+                min_vals = np.amin(self.stc_data, axis=1)
+                vals = [mx if abs(mx) > abs(mi) else mi for (mx, mi) in zip(max_vals, min_vals) ]
+                x += vals
+                
+                y_pred = self.cf.predict(x)
+                anomaly_type = self.classes[y_pred]
+                self.isolation_info_pub.publish(anomaly_type)
+
+                # reset                
+                self.reset()
+            
             rate.sleep()
 
 
@@ -184,3 +297,5 @@ if __name__ == '__main__':
 
 
     
+
+

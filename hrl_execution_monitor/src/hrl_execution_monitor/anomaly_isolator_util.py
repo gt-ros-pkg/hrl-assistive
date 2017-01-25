@@ -75,6 +75,7 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
     # training with signals ----------------------------------
     ## train_with_signal(save_data_path, n_labels, nFold, nb_epoch=800, patience=50)
     ## train_with_signal(save_data_path, n_labels, nFold, nb_epoch=800, patience=50, load_weights=True)
+    train_rfc_with_signal(save_data_path, n_labels, nFold)
 
     # training_with images -----------------------------------
     remove_label = [1]
@@ -96,12 +97,33 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
     ## train_with_all(save_data_path, n_labels, nFold, patience=10, vgg=True)
     ## train_with_all(save_data_path, n_labels, nFold, load_weights=True, patience=20)
 
+
     return
 
 
 
-def get_isolator_modules(save_data_path, task_name, method, param_dict, fold_idx=0, \
+def get_isolator_modules(save_data_path, task_name, param_dict, fold_idx=0, \
                          nDetector=1, verbose=False):
+
+    # load param
+    feature_pkl = os.path.join(save_data_path, 'feature_extraction_kinEEPos_'+\
+                            str(10.0) )
+
+    d = ut.load_pickle(feature_pkl) 
+    # TODO: need to get normal train data with specific feature names
+    feature_idx_list = []
+    for feature in param_dict['data_param']['staticFeatures']:
+        feature_idx_list.append(param_dict['data_param']['isolationFeatures'].index(feature))
+
+    d['param_dict']['feature_names'] = np.array(d['param_dict']['feature_names'])[feature_idx_list]
+    d['param_dict']['feature_min'] = np.array(d['param_dict']['feature_min'])[feature_idx_list]
+    d['param_dict']['feature_max'] = np.array(d['param_dict']['feature_max'])[feature_idx_list]   
+
+    m_param_dict = {}
+    m_param_dict['feature_params'] = d['param_dict']
+    m_param_dict['successData']    = d['successData'][feature_idx_list]
+    m_param_dict['failureData']    = d['failureData'][feature_idx_list]
+                         
 
     # load param
     hmm_list = []
@@ -113,7 +135,13 @@ def get_isolator_modules(save_data_path, task_name, method, param_dict, fold_idx
         m_gen.set_hmm_object(d['A'], d['B'], d['pi'])
         hmm_list.append(m_gen)
 
-    return hmm_list
+    # get classifier
+    fileName = os.path.join(save_data_path, 'clf_'+str(fold_idx))
+    import pickle
+    with open(fileName, 'rb') as f:
+        m_clf = pickle.load(f)
+
+    return m_param_dict, hmm_list, m_clf
 
 
 
@@ -140,6 +168,47 @@ def load_data(idx, save_data_path, extra_img=False, viz=False):
         y_train     = np.vstack([y_train, y_train_extra])
 
     return (x_train_sig, x_train_img, y_train), (x_test_sig, x_test_img, y_test)
+
+
+
+def train_with_signal(save_data_path, n_labels, nFold, nb_epoch=400, load_weights=False,
+                      activ_type='relu',
+                      test_only=False, save_pdf=False, patience=50):
+
+    scores= []
+    y_test_list = []
+    y_pred_list = []
+    for idx in xrange(nFold):
+
+        # Loading data
+        train_data, test_data = load_data(idx, save_data_path, viz=False)      
+        x_train_sig = train_data[0]
+        y_train     = train_data[2]
+        x_test_sig = test_data[0]
+        y_test     = test_data[2]
+
+        # Scaling
+        from sklearn import preprocessing
+        scaler      = preprocessing.StandardScaler()
+        x_train_sig = scaler.fit_transform(x_train_sig)
+        x_test_sig  = scaler.transform(x_test_sig)
+
+        # get classifier
+        from sklearn.ensemble import RandomForestClassifier
+        clf = RandomForestClassifier(n_estimators=400, n_jobs=-1)
+        clf.fit(x_train_sig, y_train)
+        score = clf.score(x_test_sig, y_test)
+        
+        fileName = os.path.join(save_data_path, 'clf_'+str(idx))
+        import pickle
+        with open(fileName, 'wb') as f:
+            pickle.dump(clf, f)
+
+
+    print 
+    print np.mean(scores), np.std(scores)
+    return
+
 
 
 def train_with_signal(save_data_path, n_labels, nFold, nb_epoch=400, load_weights=False,

@@ -4,7 +4,6 @@ find_package(catkin REQUIRED COMPONENTS message_generation std_msgs)
 
 catkin_python_setup()
 
-
 generate_messages(
     DEPENDENCIES std_msgs
 )
@@ -12,7 +11,7 @@ generate_messages(
 
 catkin_package(
     DEPENDS roscpp rospy
-    CATKIN_DEPENDS message_runtime std_msgs hrl_lib geometry_msgs hrl_srvs sound_play 
+    CATKIN_DEPENDS message_runtime std_msgs hrl_lib geometry_msgs hrl_srvs sound_play hrl_msgs
     INCLUDE_DIRS 
     LIBRARIES 
 )

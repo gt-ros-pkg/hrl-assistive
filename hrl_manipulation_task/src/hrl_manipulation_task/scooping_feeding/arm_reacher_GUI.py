@@ -449,6 +449,8 @@ if __name__ == '__main__':
                  default=False, help='Continuously publish data.')
     p.add_option('--en_anomaly_detector', '--ad', action='store_true', dest='en_ad',
                  default=False, help='Enable anomaly detector.')
+    p.add_option('--en_anomaly_isolator', '--ai', action='store_true', dest='en_ai',
+                 default=False, help='Enable anomaly isolator.')
     p.add_option('--en_logger', '--l', action='store_true', dest='bLog',
                  default=False, help='Enable logger.')
     p.add_option('--en_quick_feeding', '--eqf', action='store_true', dest='bQuickFeeding',
@@ -464,7 +466,8 @@ if __name__ == '__main__':
         # for adaptation, please add 'new' as the subject.         
         log = logger(ft=True, audio=False, audio_wrist=True, kinematics=True, vision_artag=False, \
                      vision_landmark=True, vision_change=False, pps=False, skin=False, \
-                     subject="test", task='feeding', data_pub=opt.bDataPub, en_ad=opt.en_ad, \
+                     subject="test", task='feeding', data_pub=opt.bDataPub,
+                     en_ad=opt.en_ad, en_ai=opt.en_ai,\
                      record_root_path=opt.sRecordDataPath)
     else:
         log = None

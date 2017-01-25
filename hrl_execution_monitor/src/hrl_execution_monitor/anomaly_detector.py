@@ -45,7 +45,7 @@ from hrl_execution_monitor import util as autil
 from hrl_anomaly_detection.msg import MultiModality
 from std_msgs.msg import String, Float64, Bool
 from hrl_srvs.srv import Bool_None, Bool_NoneResponse, StringArray_None
-from hrl_msgs.msg import FloatArray, StringArray
+from hrl_msgs.msg import FloatArray, StringArray, FloatMatrix
 
 from matplotlib import pyplot as plt
 
@@ -160,8 +160,8 @@ class anomaly_detector:
         # temp
         self.isolation_info_pub = rospy.Publisher("/manipulation_task/anomaly_type", String,
                                                   queue_size=QUEUE_SIZE)
-        self.hmm_input_pub           = rospy.Publisher("manipulation_task/hmm_input"+str(self.id),
-                                                       FloatArray, queue_size=QUEUE_SIZE)
+        self.hmm_input_pub      = rospy.Publisher("manipulation_task/hmm_input"+str(self.id),
+                                                  FloatMatrix, queue_size=QUEUE_SIZE)
 
 
         # Subscriber # TODO: topic should include task name prefix?
@@ -331,10 +331,15 @@ class anomaly_detector:
         rospy.loginfo( '-'*15 +  'Anomaly has occured!' + '-'*15 )
         self.action_interruption_pub.publish(self.task_name+'_anomaly')
         self.task_interruption_pub.publish(self.task_name+'_anomaly')
-        self.hmm_input_pub.publish(dataList)
+
+        msg = FloatMatrix()
+        msg.header.stamp = rospy.Time.now()        
+        msg.size = self.nEmissionDim
+        msg.data = np.array(dataList).flatten().tolist()
+        self.hmm_input_pub.publish(msg)
         self.soundHandle.play(1)
         ## self.anomaly_flag    = True                
-        self.enable_detector = False
+        ## self.enable_detector = False
 
         rospy.sleep(10.0)
         self.isolation_info_pub.publish(" XXXXXXXXXXX ")
@@ -345,10 +350,10 @@ class anomaly_detector:
         
     def reset(self):
         ''' Reset parameters '''
+        self.enable_detector = False
         self.lock.acquire()
         self.dataList = []
         self.logpDataList = []
-        self.enable_detector = False
         self.lock.release()
 
 
@@ -381,7 +386,7 @@ class anomaly_detector:
             logp, post = self.ml.loglikelihood(dataList, bPosterior=True)
                 
             #-----------------------------------------------------------------------
-            if logp is None: self.set_anomaly_alarm(dataList)
+            if logp is None:
                 rospy.loginfo( "logp is None => anomaly" )
                 self.set_anomaly_alarm(dataList)
                 continue
