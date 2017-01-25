@@ -380,6 +380,31 @@ var ManipulationTask = function (ros) {
             disableButton('#ad_feeding_slider');
             manTask.available=true;
             manTask.start()
+        } else if (msg.data == 'stand by') {
+            disableButton('#man_task_Scooping');
+            disableButton('#man_task_Feeding');
+            disableButton('#man_task_Clean');
+            enableButton('#man_task_stop');
+            disableButton('#man_task_Continue');
+            disableButton('#man_task_success');
+            disableButton('#man_task_Fail');
+            enableButton('#man_task_start');
+            disableButton('#man_task_Skip');
+
+            document.getElementById('step_table1').innerHTML = " ";
+            document.getElementById('step_table2').innerHTML = "Waiting for robot";
+            unglow('#step_table2');
+            document.getElementById('step_table3').innerHTML = " ";
+            fullscreenStop('#fullscreenOverlay', previous_css);
+            fullscreenStop('#fullscreenOverlay2', previous_css);
+            manTask.anomaly_detected = false;
+            disableButton('#ad_scooping_sense_min');
+            disableButton('#ad_scooping_sense_max');
+            disableButton('#ad_scooping_slider');
+            disableButton('#ad_feeding_sense_min');
+            disableButton('#ad_feeding_sense_max');
+            disableButton('#ad_feeding_slider');
+
         } else if (msg.data == 'in motion') {
             disableButton('#man_task_Scooping');
             disableButton('#man_task_Feeding');

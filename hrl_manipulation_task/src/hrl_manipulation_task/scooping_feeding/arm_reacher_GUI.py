@@ -72,6 +72,7 @@ class armReacherGUI:
         self.guiStatusReady = False
         self.gui_status = None
         self.feedback_received = True
+        self.motion_complete = False
         self.quick_feeding = quick_feeding
         self.quick_feeding_ready=False
         ##manipulation_task/user_input (user_feedback)(emergency)(status)
@@ -121,6 +122,7 @@ class armReacherGUI:
                     self.emergencyStatus = False
                     print "Input received"
                     self.feedback_received = False
+                    self.motion_complete = False
                     self.guiStatusPub.publish("in motion")
 
     def emergencyCallback(self, msg):
@@ -170,7 +172,10 @@ class armReacherGUI:
             return
         self.feedbackMsg = msg.data
         self.feedback_received = True
-        self.guiStatusPub.publish("select task")
+        if self.motion_complete:
+            self.guiStatusPub.publish("select task")
+        else:
+            self.guiStatusPub.publish("stand by")
 
     def statusCallback(self, msg):
         #Change the status, depending on the button pressed.
@@ -216,11 +221,15 @@ class armReacherGUI:
                 self.quick_feeding_ready = False
                 rospy.loginfo("Scooping Starting...")
                 self.scooping(self.armReachActionLeft, self.armReachActionRight, self.log, self.detection_flag)
+                if self.feedback_received:
+                    self.guiStatusPub.publish("select task")
             elif self.inputStatus and self.actionStatus == 'Feeding':
                 self.inputStatus = False
                 rospy.loginfo("Feeding Starting....")
                 self.feeding(self.armReachActionLeft, self.armReachActionRight, self.log, self.detection_flag,
                              self.isolation_flag)
+                if self.feedback_received:
+                    self.guiStatusPub.publish("select task")
             elif self.inputStatus and self.actionStatus == 'Clean':
                 self.inputStatus = False
                 self.quick_feeding_ready = False
@@ -295,6 +304,7 @@ class armReacherGUI:
             else:
                 self.logRequestPub.publish("No feedback requested")
             self.ScoopNumber = 0
+            self.motion_complete = True
             break
 
     
@@ -364,6 +374,7 @@ class armReacherGUI:
             if self.FeedNumber < 5:
                 # Returning motion
                 self.ServiceCallLeft("initFeeding2")
+                self.motion_complete = True
                 if self.emergencyStatus: break
                 self.quick_feeding_ready = True
 

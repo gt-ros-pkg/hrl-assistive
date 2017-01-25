@@ -430,6 +430,7 @@ class armReachAction(mpcBaseAction):
         msg = Int64()
         msg.data = int(self.mouthManOffset[2]*100.0)
         self.feeding_dist_pub.publish(msg)
+        self.mouthOffset = self.mouthManOffset+self.mouthNoise
         
         
 

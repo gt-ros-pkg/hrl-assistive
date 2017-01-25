@@ -156,13 +156,8 @@ class anomaly_detector:
                                                        queue_size=QUEUE_SIZE)
         self.sensitivity_pub         = rospy.Publisher("manipulation_task/ad_sensitivity_state", \
                                                        Float64, queue_size=QUEUE_SIZE, latch=True)
-
-        # temp
-        ## self.isolation_info_pub = rospy.Publisher("/manipulation_task/anomaly_type", String,
-        ##                                           queue_size=QUEUE_SIZE)
         self.hmm_input_pub      = rospy.Publisher("manipulation_task/hmm_input"+str(self.id),
                                                   FloatMatrix, queue_size=QUEUE_SIZE)
-
 
         # Subscriber # TODO: topic should include task name prefix?
         rospy.Subscriber('/hrl_manipulation_task/raw_data', MultiModality, self.rawDataCallback)

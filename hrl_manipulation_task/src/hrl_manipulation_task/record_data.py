@@ -165,7 +165,7 @@ class logger:
                                                       Bool_None))
                 print "Detected anomaly detector service"
 
-        if self.enable_isolator:
+        if self.enable_isolator and task.find('feeding')>=0:
             print "Wait anomaly isolation service"
             rospy.wait_for_service('/'+self.task+'/anomaly_isolator_enable')
             self.ai_srv = rospy.ServiceProxy('/'+self.task+'/anomaly_isolator_enable',
