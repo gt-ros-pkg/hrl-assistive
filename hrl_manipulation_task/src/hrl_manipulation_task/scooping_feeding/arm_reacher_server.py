@@ -373,7 +373,7 @@ class armReachAction(mpcBaseAction):
         # Find difference between current highest point in bowl and center of bowl
         print 'Highest Point original position:', [data.x, data.y, data.z]
         print 'Bowl Position:', self.bowlPosition
-	# Subtract 0.01 to account for the bowl center position being slightly off center
+        # Subtract 0.01 to account for the bowl center position being slightly off center
         self.highBowlDiff = np.array([data.x, data.y, data.z]) - self.bowlPosition - 0.015
         print '-'*25
         print 'Highest bowl point difference:', self.highBowlDiff

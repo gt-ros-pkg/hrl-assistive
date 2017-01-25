@@ -139,7 +139,8 @@ def sig_net(input_shape, n_labels, weights_path=None, activ_type='relu' ):
 
 def vgg16_net(input_shape, n_labels, weights_path=None,\
               sig_weights_path=None, img_weights_path=None,\
-              with_top=False, input_shape2=None, viz=False):
+              with_multi_top=False, with_img_top=False, bottle_model=False, \
+              input_shape2=None, fine_tune=False, viz=False):
     
     # build the VGG16 network
     model = Sequential()
@@ -199,56 +200,83 @@ def vgg16_net(input_shape, n_labels, weights_path=None,\
         print('Model loaded.')
 
     ## if fine_tune:
-    ##     for layer in model.layers[:15]:
+    ##     for layer in model.layers[:25]:
     ##         layer.trainable = False
     ## else:
     for layer in model.layers:
         layer.trainable = False
 
 
-    if with_top:
+    if with_multi_top:
         model.add(Flatten())
 
         # -----------------------------------------------------------
         weights_file = None
         if img_weights_path:
             weights_file = h5py.File(img_weights_path)
+        else:
+            weights_file = h5py.File(weights_path)
+            
         weight1_1 = mutil.get_layer_weights(weights_file, layer_name='fc1_1')
                 
-        model.add(Dense(512, init='uniform', weights=weight1_1, name='fc1_1'))
+        model.add(Dense(512, init='uniform', weights=weight1_1, name='fc1_1',
+                        W_regularizer=L1L2Regularizer(0.0,0.1)))
         model.add(Activation('relu'))
         model.add(Dropout(0.5))        
         # -----------------------------------------------------------
         weight1_2 = mutil.get_layer_weights(weights_file, layer_name='fc1_2')
         
-        model.add(Dense(512, init='uniform', weights=weight1_2, name='fc1_2'))
+        model.add(Dense(512, init='uniform', weights=weight1_2, name='fc1_2',
+                        W_regularizer=L1L2Regularizer(0.0,0.1)))
         model.add(Activation('relu'))
         model.add(Dropout(0.5))        
-    
+
+        if not fine_tune:
+            for layer in model.layers:
+                layer.trainable = False
+
+            
         # -----------------------------------------------------------
         weights_file = None
         if sig_weights_path:
             weights_file = h5py.File(sig_weights_path)
+        else:
+            weights_file = h5py.File(weights_path)
         weight2_1 = mutil.get_layer_weights(weights_file, layer_name='fc2_1')
         
         sig_model = Sequential()
-        sig_model.add(Dense(128, activation='relu', init='uniform', weights=weight2_1,
-                            input_shape=input_shape2, name='fc2_1'))
+        sig_model.add(Dense(128, init='uniform', weights=weight2_1,
+                            input_shape=input_shape2, name='fc2_1',
+                            W_regularizer=L1L2Regularizer(0.0,0.1)))
+        sig_model.add(Activation('relu'))        
         sig_model.add(Dropout(0.5))
-        
-        merge = Merge([model, sig_model], mode='concat')
+
+        if not fine_tune:
+            for layer in sig_model.layers:
+                layer.trainable = False
         
         # -----------------------------------------------------------
+        merge   = Merge([model, sig_model], mode='concat')        
         c_model = Sequential()
-        c_model.add(merge)        
-        c_model.add(Dense(64, activation='relu', init='uniform', name='fc3_1'))
-        c_model.add(Dropout(0.5))      
-        c_model.add(Dense(n_labels, activation='softmax', name='fc_out'))
+        c_model.add(merge)
 
-        if weights_path is not None: c_model.load_weights(weights_path)
+        if bottle_model: return c_model            
+        if weights_path: weights_file = h5py.File(weights_path)
+        else: weights_file = None
+        weight3_1 = mutil.get_layer_weights(weights_file, layer_name='fc3_1')
+        weight_fc_out = mutil.get_layer_weights(weights_file, layer_name='fc_out')        
+                
+        c_model.add(Dense(512, activation='relu', init='uniform', weights=weight3_1, name='fc3_1',
+                          W_regularizer=L1L2Regularizer(0,0.02)))
+        c_model.add(Dropout(0.5))
+        ## c_model.add(Dense(128, activation='relu', init='uniform', weights=weight3_1, name='fc4_1',
+        ##                   W_regularizer=L1L2Regularizer(0,0.02)))
+        ## c_model.add(Dropout(0.5))
+        c_model.add(Dense(n_labels, activation='softmax', name='fc_out', weights=weight_fc_out,
+                    W_regularizer=L1L2Regularizer(0,0)))
         return c_model
     
-    else:
+    elif with_img_top:
         model.add(Flatten())
         model.add(Dense(512, init='uniform', name='fc1_1', W_regularizer=L1L2Regularizer(0.0,0.1)))
         model.add(Activation('relu'))
@@ -260,10 +288,19 @@ def vgg16_net(input_shape, n_labels, weights_path=None,\
 
         if weights_path is not None: model.load_weights(weights_path)
         return model
+    else:
+        return model
 
 
 
 
+        ## if weights_path is not None:
+        ##     weights_file = h5py.File(weights_path)
+        ## else: weights_file = None
+        ## weight = mutil.get_layer_weights(weights_file, layer_name='fc1_1')
+        ## weight2 = mutil.get_layer_weights(weights_file, layer_name='conv5_3')
+        ## print weight
+        ## print weight2
 
         ## t_model = Sequential()
         ## t_model.add(Flatten(input_shape=model.output_shape[1:]))
@@ -275,3 +312,37 @@ def vgg16_net(input_shape, n_labels, weights_path=None,\
         ## print "aaaaaaaaaaaa"
         ## print weight
         ## print "aaaaaaaaaaaa"
+
+
+
+def vgg_image_top_net(input_shape, n_labels, weights_path=None):
+
+    model = Sequential()
+    model.add(Flatten(input_shape=input_shape))
+    model.add(Dense(512, init='uniform', name='fc1_1', W_regularizer=L1L2Regularizer(0.0,0.03)))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.6))        
+    model.add(Dense(512, init='uniform', name='fc1_2', W_regularizer=L1L2Regularizer(0.0,0.03)))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.6))        
+    model.add(Dense(n_labels, activation='softmax', name='fc_img_out'))
+
+    if weights_path is not None: model.load_weights(weights_path)
+    return model
+
+
+def vgg_multi_top_net(input_shape, n_labels, weights_path=None):
+
+    model = Sequential()
+    model.add(Dense(512, activation='relu', init='uniform', name='fc3_1', input_shape=input_shape,
+                    W_regularizer=L1L2Regularizer(0,0.02)))
+    model.add(Dropout(0.5))
+
+    weights_file = None
+    if weights_path is not None:
+        weights_file = h5py.File(weights_path)
+    weight = mutil.get_layer_weights(weights_file, layer_name='fc_out')
+    model.add(Dense(n_labels, activation='softmax', name='fc_out', input_shape=input_shape,
+                    weights=weight, W_regularizer=L1L2Regularizer(0,0)))
+    
+    return model
