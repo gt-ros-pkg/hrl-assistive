@@ -75,24 +75,23 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
     # training with signals ----------------------------------
     ## train_with_signal(save_data_path, n_labels, nFold, nb_epoch=800, patience=50)
     ## train_with_signal(save_data_path, n_labels, nFold, nb_epoch=800, patience=50, load_weights=True)
-    train_rfc_with_signal(save_data_path, n_labels, nFold)
+    ## train_rfc_with_signal(save_data_path, n_labels, nFold)
 
     # training_with images -----------------------------------
     remove_label = [1]
+    ## get_bottleneck_image(save_data_path, n_labels, nFold, vgg=True, remove_label=remove_label)
+    ## train_top_model_with_image(save_data_path, n_labels, nFold, vgg=True)
+    
     ## train_with_image(save_data_path, n_labels, nFold, patience=20)
     ## train_with_image(save_data_path, n_labels, nFold, patience=20, fine_tune=True)
-
-    get_bottleneck_image(save_data_path, n_labels, nFold, vgg=True, remove_label=remove_label)
-    train_top_model_with_image(save_data_path, n_labels, nFold, vgg=True)
-    ## train_top_model_with_image(save_data_path, n_labels, nFold, vgg=True, load_weights=True)
 
     ## train_with_image(save_data_path, n_labels, nFold, patience=20, vgg=True, remove_label=remove_label)
     ## train_with_image(save_data_path, n_labels, nFold, patience=20, vgg=True, remove_label=remove_label,
     ##                  load_weights=True)
 
     # training_with all --------------------------------------
-    ## get_bottleneck_mutil(save_data_path, n_labels, nFold, vgg=True)
-    ## train_mutil_top_model(save_data_path, n_labels, nFold, vgg=True)
+    get_bottleneck_mutil(save_data_path, n_labels, nFold, vgg=True)
+    train_mutil_top_model(save_data_path, n_labels, nFold, vgg=True)
     
     ## train_with_all(save_data_path, n_labels, nFold, patience=10, vgg=True)
     ## train_with_all(save_data_path, n_labels, nFold, load_weights=True, patience=20)
@@ -171,9 +170,7 @@ def load_data(idx, save_data_path, extra_img=False, viz=False):
 
 
 
-def train_with_signal(save_data_path, n_labels, nFold, nb_epoch=400, load_weights=False,
-                      activ_type='relu',
-                      test_only=False, save_pdf=False, patience=50):
+def train_rfc_with_signal(save_data_path, n_labels, nFold):
 
     scores= []
     y_test_list = []
@@ -196,14 +193,16 @@ def train_with_signal(save_data_path, n_labels, nFold, nb_epoch=400, load_weight
         # get classifier
         from sklearn.ensemble import RandomForestClassifier
         clf = RandomForestClassifier(n_estimators=400, n_jobs=-1)
-        clf.fit(x_train_sig, y_train)
-        score = clf.score(x_test_sig, y_test)
+        clf.fit(x_train_sig, np.argmax(y_train, axis=1))
+        score = clf.score(x_test_sig, np.argmax(y_test, axis=1))
+        scores.append(score)
+        print score
         
         fileName = os.path.join(save_data_path, 'clf_'+str(idx))
+        print fileName
         import pickle
         with open(fileName, 'wb') as f:
             pickle.dump(clf, f)
-
 
     print 
     print np.mean(scores), np.std(scores)
