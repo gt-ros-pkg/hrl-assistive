@@ -273,3 +273,22 @@ def image_list_flatten(image_list):
 def running_mean(x, N):
     cumsum = np.cumsum(np.insert(x, 0, 0))
     return (cumsum[N:] - cumsum[:-N]) / N
+
+
+def temporal_features(X, max_step, ml, scale):
+    ''' Return n_step x n_features'''
+
+    d_idx = len(X[0])
+    while True:
+        v = ml.conditional_prob( X[:,:d_idx]*scale)
+        if v is None: d_idx -= 1
+        else: break
+
+    vs = None
+    for i in xrange(d_idx, d_idx-max_step,-1):
+        if i<=0: continue
+        v = ml.conditional_prob( X[:,:i]*scale)
+        v = v.reshape((1,) + v.shape)
+        if vs is None: vs = v
+        else:          vs = np.vstack([vs, v])
+    return vs
