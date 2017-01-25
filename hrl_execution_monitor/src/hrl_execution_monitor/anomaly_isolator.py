@@ -31,7 +31,6 @@
 import rospy, os, sys, threading, datetime
 import random, numpy as np
 
-import hrl_lib.quaternion as qt
 from sklearn import preprocessing
 
 # Utility

@@ -110,10 +110,6 @@ class armReacherGUI:
         with self.status_lock:
             if not self.emergencyStatus:
                 self.inputMSG = msg.data
-
-                print self.ScoopNumber, self.FeedNumber
-                print self.emergencyStatus, self.inputStatus
-                print self.inputMsg, self.gui_status
                 # initialize current motion only when Start button is pushed
                 if self.inputMSG == 'Start':
                     self.ScoopNumber = 0
@@ -153,9 +149,6 @@ class armReacherGUI:
         emergency_wait_rate = rospy.Rate(30)
         while not rospy.is_shutdown():
             #print "Waiting aborting Sequence"
-            if self.gui_status == 'wait start' or self.gui_status == 'stopped':
-                self.emergencyStatus = False
-                return
             if self.left_mtx is False and self.right_mtx is False: break
             emergency_wait_rate.sleep()
         self.safetyMotion(self.armReachActionLeft, self.armReachActionRight)
@@ -301,7 +294,6 @@ class armReacherGUI:
                 self.logRequestPub.publish("No feedback requested")
             self.ScoopNumber = 0
             break
-        self.inputStatus = False
 
     
     def feeding(self, armReachActionLeft, armReachActionRight, log, detection_flag):
@@ -373,7 +365,6 @@ class armReacherGUI:
 
             self.FeedNumber = 0            
             break
-        self.inputStatus=False
 
 
     def cleanMotion(self, armReachActionLeft, armReachActionRight):
@@ -388,7 +379,6 @@ class armReacherGUI:
         #self.proceedPub.publish("Start: Scooping 1, Scooping 2") #TODO need to fix?
         #self.proceedPub.publish("Next: Scooping 3")
         #self.proceedPub.publish("Set: Scooping 1, Scooping 2, Scooping 3")
-        self.inputStatus = False
 
             
     def ServiceCallLeft(self, cmd):
