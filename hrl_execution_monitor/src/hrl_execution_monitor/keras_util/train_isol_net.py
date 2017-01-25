@@ -33,16 +33,8 @@ import scipy, numpy as np
 import hrl_lib.util as ut
 
 # Private utils
-## from hrl_anomaly_detection import util as util
-## from hrl_anomaly_detection.util_viz import *
 from hrl_anomaly_detection import util as util
-from hrl_anomaly_detection import data_manager as dm
-import hrl_anomaly_detection.isolator.isolation_util as iutil
 from hrl_execution_monitor import util as autil
-
-# Private learners
-from hrl_anomaly_detection.hmm import learning_hmm as hmm
-## import hrl_anomaly_detection.classifiers.classifier as cf
 
 #keras
 from hrl_execution_monitor.keras_util import keras_model as km
@@ -75,12 +67,12 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
     # training with signals ----------------------------------
     ## train_with_signal(save_data_path, n_labels, nFold, nb_epoch=800, patience=50)
     ## train_with_signal(save_data_path, n_labels, nFold, nb_epoch=800, patience=50, load_weights=True)
-    ## train_rfc_with_signal(save_data_path, n_labels, nFold)
 
     # training_with images -----------------------------------
     remove_label = [1]
     ## get_bottleneck_image(save_data_path, n_labels, nFold, vgg=True, remove_label=remove_label)
     ## train_top_model_with_image(save_data_path, n_labels, nFold, vgg=True)
+    ## train_top_model_with_image(save_data_path, n_labels, nFold, vgg=True, nb_epoch=1, load_weights=True)
     
     ## train_with_image(save_data_path, n_labels, nFold, patience=20)
     ## train_with_image(save_data_path, n_labels, nFold, patience=20, fine_tune=True)
@@ -90,57 +82,15 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
     ##                  load_weights=True)
 
     # training_with all --------------------------------------
-    get_bottleneck_mutil(save_data_path, n_labels, nFold, vgg=True)
-    train_mutil_top_model(save_data_path, n_labels, nFold, vgg=True)
+    ## get_bottleneck_mutil(save_data_path, n_labels, nFold, vgg=True)
+    ## train_mutil_top_model(save_data_path, n_labels, nFold, vgg=True)
+    ## train_mutil_top_model(save_data_path, n_labels, nFold, vgg=True, load_weights=True)
     
-    ## train_with_all(save_data_path, n_labels, nFold, patience=10, vgg=True)
-    ## train_with_all(save_data_path, n_labels, nFold, load_weights=True, patience=20)
+    train_with_all(save_data_path, n_labels, nFold, patience=20, vgg=True)
+    #train_with_all(save_data_path, n_labels, nFold, load_weights=True, patience=20, vgg=True)
 
 
     return
-
-
-
-def get_isolator_modules(save_data_path, task_name, param_dict, fold_idx=0, \
-                         nDetector=1, verbose=False):
-
-    # load param
-    feature_pkl = os.path.join(save_data_path, 'feature_extraction_kinEEPos_'+\
-                            str(10.0) )
-
-    d = ut.load_pickle(feature_pkl) 
-    # TODO: need to get normal train data with specific feature names
-    feature_idx_list = []
-    for feature in param_dict['data_param']['staticFeatures']:
-        feature_idx_list.append(param_dict['data_param']['isolationFeatures'].index(feature))
-
-    d['param_dict']['feature_names'] = np.array(d['param_dict']['feature_names'])[feature_idx_list]
-    d['param_dict']['feature_min'] = np.array(d['param_dict']['feature_min'])[feature_idx_list]
-    d['param_dict']['feature_max'] = np.array(d['param_dict']['feature_max'])[feature_idx_list]   
-
-    m_param_dict = {}
-    m_param_dict['feature_params'] = d['param_dict']
-    m_param_dict['successData']    = d['successData'][feature_idx_list]
-    m_param_dict['failureData']    = d['failureData'][feature_idx_list]
-                         
-
-    # load param
-    hmm_list = []
-    for i in xrange(nDetector):
-        hmm_pkl = os.path.join(save_data_path, 'hmm_'+task_name+'_'+str(fold_idx)+'_c'+str(i)+'.pkl')
-
-        d     = ut.load_pickle(hmm_pkl)
-        m_gen = hmm.learning_hmm(d['nState'], d['nEmissionDim'], verbose=verbose)
-        m_gen.set_hmm_object(d['A'], d['B'], d['pi'])
-        hmm_list.append(m_gen)
-
-    # get classifier
-    fileName = os.path.join(save_data_path, 'clf_'+str(fold_idx))
-    import pickle
-    with open(fileName, 'rb') as f:
-        m_clf = pickle.load(f)
-
-    return m_param_dict, hmm_list, m_clf
 
 
 
@@ -352,28 +302,32 @@ def train_with_all(save_data_path, n_labels, nFold, nb_epoch=1000, load_weights=
                                      input_shape2=np.shape(x_train_sig)[1:],
                                      sig_weights_path=sig_weights_path,
                                      img_weights_path=img_weights_path,
-                                     weights_path=top_weights_path)
+                                     weights_path=top_weights_path,
+                                     fine_tune=True)
             else:
                 model = km.cnn_net(np.shape(x_train_img)[1:], n_labels, with_multi_top=True,
                                    input_shape2=np.shape(x_train_sig)[1:],
                                    sig_weights_path=sig_weights_path,
                                    img_weights_path=img_weights_path,
-                                   weights_path=top_weights_path)
+                                   weights_path=top_weights_path,
+                                   fine_tune=True)
+            optimizer = SGD(lr=0.001, decay=1e-8, momentum=0.9, nesterov=True)                
         else:
             # fine tuning
             if vgg:
                 model = km.vgg16_net(np.shape(x_train_img)[1:], n_labels, with_multi_top=True,
                                      input_shape2=np.shape(x_train_sig)[1:],
-                                     weights_path=weights_path)
+                                     weights_path=weights_path,
+                                     fine_tune=True)
             else:
                 model = km.cnn_net(np.shape(x_train_img)[1:], n_labels, with_multi_top=True,
                                    input_shape2=np.shape(x_train_sig)[1:],
-                                   weights_path=weights_path)
+                                   weights_path=weights_path,
+                                   fine_tune=True)
+            optimizer = SGD(lr=0.0005, decay=1e-8, momentum=0.9, nesterov=True)                
 
-        optimizer = SGD(lr=0.001, decay=1e-8, momentum=0.9, nesterov=True)
         ## optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.005)                        
         model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
-        ## model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
                 
 
         if test_only is False:
@@ -502,8 +456,8 @@ def get_bottleneck_image(save_data_path, n_labels, nFold, vgg=False, use_extra_i
     return
 
 
-def train_top_model_with_image(save_data_path, n_labels, nFold, nb_epoch=3000, load_weights=False, vgg=False,
-                               patience=100, remove_label=[], use_extra_img=True):
+def train_top_model_with_image(save_data_path, n_labels, nFold, nb_epoch=1000, load_weights=False, vgg=False,
+                               patience=30, remove_label=[], use_extra_img=True):
 
     if vgg: prefix = 'vgg_'
     else: prefix = ''
@@ -551,15 +505,12 @@ def train_top_model_with_image(save_data_path, n_labels, nFold, nb_epoch=3000, l
 
         scores.append( hist.history['val_acc'][-1] )
 
-
-
         ## y_pred = model.predict(x_train)
         ## y_pred_list += np.argmax(y_pred, axis=1).tolist()
         ## y_test_list += np.argmax(y_train, axis=1).tolist()
 
         ## from sklearn.metrics import accuracy_score
         ## print "score : ", accuracy_score(y_test_list, y_pred_list)
-
         
         gc.collect()
 
@@ -652,7 +603,7 @@ def get_bottleneck_mutil(save_data_path, n_labels, nFold, vgg=False):
     return
     
 
-def train_mutil_top_model(save_data_path, n_labels, nFold, nb_epoch=3000, load_weights=False, vgg=False,
+def train_mutil_top_model(save_data_path, n_labels, nFold, nb_epoch=5000, load_weights=False, vgg=False,
                           patience=200):
 
     if vgg: prefix = 'vgg_'
@@ -671,6 +622,7 @@ def train_mutil_top_model(save_data_path, n_labels, nFold, nb_epoch=3000, load_w
         print np.shape(x_train), np.shape(y_train), np.shape(x_test), np.shape(y_test)
 
         #----------------------------------------------------------------------------------                
+        ## weights_path = os.path.join(save_data_path,prefix+'top_weights_'+str(idx)+'.h5')
         weights_path = os.path.join(save_data_path,prefix+'cnn_fc_weights_'+str(idx)+'.h5')
         callbacks = [EarlyStopping(monitor='val_loss', min_delta=0, patience=patience,
                                    verbose=0, mode='auto'),
@@ -684,10 +636,11 @@ def train_mutil_top_model(save_data_path, n_labels, nFold, nb_epoch=3000, load_w
         if load_weights is False:            
             if vgg: model = km.vgg_multi_top_net(np.shape(x_train)[1:], n_labels)
             else: sys.exit()
+            optimizer = SGD(lr=0.01, decay=1e-7, momentum=0.9, nesterov=True)                
         else:
             if vgg: model = km.vgg_multi_top_net(np.shape(x_train)[1:], n_labels, weights_path)
             else: sys.exit()
-        optimizer = SGD(lr=0.001, decay=1e-7, momentum=0.95, nesterov=True)
+            optimizer = SGD(lr=0.001, decay=1e-7, momentum=0.9, nesterov=True)                
         ## optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.001)                        
         model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
         ## model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
@@ -757,10 +710,6 @@ if __name__ == '__main__':
     p = optparse.OptionParser()
     util.initialiseOptParser(p)
 
-    p.add_option('--preprocess', '--p', action='store_true', dest='preprocessing',
-                 default=False, help='Preprocess')
-    p.add_option('--preprocess_extra', '--pe', action='store_true', dest='preprocessing_extra',
-                 default=False, help='Preprocess extra images')
     p.add_option('--train', '--tr', action='store_true', dest='train',
                  default=False, help='Train')
     
@@ -786,16 +735,7 @@ if __name__ == '__main__':
     nb_classes = 12
 
 
-    if opt.preprocessing:    
-        # preprocessing data
-        data_pkl = os.path.join(save_data_path, 'isol_data.pkl')
-        ku.preprocess_data(data_pkl, save_data_path, img_scale=0.25, nb_classes=nb_classes,
-                        img_feature_type='vgg')
-    elif opt.preprocessing_extra:
-        raw_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/AURO2016/raw_data/manual_label'
-        ku.preprocess_images(raw_data_path, save_data_path, img_scale=0.25, nb_classes=nb_classes,
-                             img_feature_type='vgg')        
-    elif opt.train:
+    if opt.train:
         train_isolator_modules(save_data_path, nb_classes, verbose=False)
         
     else:

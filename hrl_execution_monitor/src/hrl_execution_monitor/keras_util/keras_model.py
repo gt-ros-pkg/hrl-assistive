@@ -215,18 +215,18 @@ def vgg16_net(input_shape, n_labels, weights_path=None,\
         if img_weights_path:
             weights_file = h5py.File(img_weights_path)
         else:
-            weights_file = h5py.File(weights_path)
+            weights_file = h5py.File(weights_path, 'r')
             
         weight1_1 = mutil.get_layer_weights(weights_file, layer_name='fc1_1')
                 
-        model.add(Dense(512, init='uniform', weights=weight1_1, name='fc1_1',
+        model.add(Dense(128, init='uniform', weights=weight1_1, name='fc1_1',
                         W_regularizer=L1L2Regularizer(0.0,0.1)))
         model.add(Activation('relu'))
         model.add(Dropout(0.5))        
         # -----------------------------------------------------------
         weight1_2 = mutil.get_layer_weights(weights_file, layer_name='fc1_2')
         
-        model.add(Dense(512, init='uniform', weights=weight1_2, name='fc1_2',
+        model.add(Dense(128, init='uniform', weights=weight1_2, name='fc1_2',
                         W_regularizer=L1L2Regularizer(0.0,0.1)))
         model.add(Activation('relu'))
         model.add(Dropout(0.5))        
@@ -234,14 +234,14 @@ def vgg16_net(input_shape, n_labels, weights_path=None,\
         if not fine_tune:
             for layer in model.layers:
                 layer.trainable = False
-
             
+        if weights_path: weights_file.close()        
         # -----------------------------------------------------------
         weights_file = None
         if sig_weights_path:
             weights_file = h5py.File(sig_weights_path)
         else:
-            weights_file = h5py.File(weights_path)
+            weights_file = h5py.File(weights_path, 'r')
         weight2_1 = mutil.get_layer_weights(weights_file, layer_name='fc2_1')
         
         sig_model = Sequential()
@@ -255,33 +255,33 @@ def vgg16_net(input_shape, n_labels, weights_path=None,\
             for layer in sig_model.layers:
                 layer.trainable = False
         
+        if weights_path: weights_file.close()        
         # -----------------------------------------------------------
-        merge   = Merge([model, sig_model], mode='concat')        
+        merge   = Merge([model, sig_model], mode='mul') #'concat')        
         c_model = Sequential()
         c_model.add(merge)
 
         if bottle_model: return c_model            
-        if weights_path: weights_file = h5py.File(weights_path)
+        if weights_path: weights_file = h5py.File(weights_path, 'r')
         else: weights_file = None
         weight3_1 = mutil.get_layer_weights(weights_file, layer_name='fc3_1')
         weight_fc_out = mutil.get_layer_weights(weights_file, layer_name='fc_out')        
                 
-        c_model.add(Dense(512, activation='relu', init='uniform', weights=weight3_1, name='fc3_1',
+        c_model.add(Dense(128, activation='relu', init='uniform', weights=weight3_1, name='fc3_1',
                           W_regularizer=L1L2Regularizer(0,0.02)))
         c_model.add(Dropout(0.5))
-        ## c_model.add(Dense(128, activation='relu', init='uniform', weights=weight3_1, name='fc4_1',
-        ##                   W_regularizer=L1L2Regularizer(0,0.02)))
-        ## c_model.add(Dropout(0.5))
         c_model.add(Dense(n_labels, activation='softmax', name='fc_out', weights=weight_fc_out,
                     W_regularizer=L1L2Regularizer(0,0)))
+        
+        if weights_path: weights_file.close()        
         return c_model
     
     elif with_img_top:
         model.add(Flatten())
-        model.add(Dense(512, init='uniform', name='fc1_1', W_regularizer=L1L2Regularizer(0.0,0.1)))
+        model.add(Dense(128, init='uniform', name='fc1_1', W_regularizer=L1L2Regularizer(0.0,0.1)))
         model.add(Activation('relu'))
         model.add(Dropout(0.5))        
-        model.add(Dense(512, init='uniform', name='fc1_2', W_regularizer=L1L2Regularizer(0.0,0.1)))
+        model.add(Dense(128, init='uniform', name='fc1_2', W_regularizer=L1L2Regularizer(0.0,0.1)))
         model.add(Activation('relu'))
         model.add(Dropout(0.5))        
         model.add(Dense(n_labels, activation='softmax', name='fc_img_out'))
@@ -319,10 +319,10 @@ def vgg_image_top_net(input_shape, n_labels, weights_path=None):
 
     model = Sequential()
     model.add(Flatten(input_shape=input_shape))
-    model.add(Dense(512, init='uniform', name='fc1_1', W_regularizer=L1L2Regularizer(0.0,0.03)))
+    model.add(Dense(128, init='uniform', name='fc1_1', W_regularizer=L1L2Regularizer(0.0,0.03)))
     model.add(Activation('relu'))
     model.add(Dropout(0.6))        
-    model.add(Dense(512, init='uniform', name='fc1_2', W_regularizer=L1L2Regularizer(0.0,0.03)))
+    model.add(Dense(128, init='uniform', name='fc1_2', W_regularizer=L1L2Regularizer(0.0,0.03)))
     model.add(Activation('relu'))
     model.add(Dropout(0.6))        
     model.add(Dense(n_labels, activation='softmax', name='fc_img_out'))
@@ -334,15 +334,18 @@ def vgg_image_top_net(input_shape, n_labels, weights_path=None):
 def vgg_multi_top_net(input_shape, n_labels, weights_path=None):
 
     model = Sequential()
-    model.add(Dense(512, activation='relu', init='uniform', name='fc3_1', input_shape=input_shape,
-                    W_regularizer=L1L2Regularizer(0,0.02)))
-    model.add(Dropout(0.5))
 
     weights_file = None
-    if weights_path is not None:
-        weights_file = h5py.File(weights_path)
+    if weights_path is not None: weights_file = h5py.File(weights_path)
+    weight3 = mutil.get_layer_weights(weights_file, layer_name='fc3_1')
+    
+    model.add(Dense(128, activation='relu', init='uniform', name='fc3_1', input_shape=input_shape,
+                    W_regularizer=L1L2Regularizer(0,0.02), weights=weight3))
+    model.add(Dropout(0.5))
+
     weight = mutil.get_layer_weights(weights_file, layer_name='fc_out')
     model.add(Dense(n_labels, activation='softmax', name='fc_out', input_shape=input_shape,
                     weights=weight, W_regularizer=L1L2Regularizer(0,0)))
-    
+
+    if weights_path is not None:  weights_file.close()
     return model

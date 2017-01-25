@@ -33,8 +33,6 @@ import scipy, numpy as np
 import hrl_lib.util as ut
 
 # Private utils
-## from hrl_anomaly_detection import util as util
-## from hrl_anomaly_detection.util_viz import *
 from hrl_anomaly_detection import util as util
 from hrl_anomaly_detection import data_manager as dm
 import hrl_anomaly_detection.isolator.isolation_util as iutil
@@ -148,6 +146,8 @@ def get_isolator_modules(save_data_path, task_name, param_dict, fold_idx=0, \
 
     return m_param_dict, hmm_list, m_clf
 
+
+
     
 
 
@@ -157,6 +157,10 @@ if __name__ == '__main__':
     p = optparse.OptionParser()
     util.initialiseOptParser(p)
 
+    p.add_option('--preprocess', '--p', action='store_true', dest='preprocessing',
+                 default=False, help='Preprocess')
+    p.add_option('--preprocess_extra', '--pe', action='store_true', dest='preprocessing_extra',
+                 default=False, help='Preprocess extra images')
     p.add_option('--train', '--tr', action='store_true', dest='train',
                  default=False, help='Train')
     
@@ -182,7 +186,17 @@ if __name__ == '__main__':
     nb_classes = 12
 
 
-    if opt.train:
+    if opt.preprocessing:    
+        # preprocessing data
+        data_pkl = os.path.join(save_data_path, 'isol_data.pkl')
+        autil.preprocess_data(data_pkl, save_data_path, img_scale=0.25, nb_classes=nb_classes,
+                              img_feature_type='vgg')
+    elif opt.preprocessing_extra:
+        raw_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/AURO2016/raw_data/manual_label'
+        autil.preprocess_images(raw_data_path, save_data_path, img_scale=0.25, nb_classes=nb_classes,
+                                img_feature_type='vgg')
+        
+    elif opt.train:
         train_isolator_modules(save_data_path, nb_classes, verbose=False)        
     else:
         get_isolator_modules(save_data_path, task_name, param_dict, fold_idx=0, \

@@ -36,8 +36,10 @@ def get_layer_weights(weights_file=None, layer_name=None):
     if not weights_file or not layer_name:
         return None
     else:
-        print type(weights_file)
-        print weights_file.keys()
+        ## print type(weights_file)
+        ## print weights_file.keys()
+        if len(weights_file.keys())==0:
+            print "Empty weights file: ", weights_file
         g = weights_file[layer_name]
         weights = [g[p] for p in g]
         print 'Weights for "{}" are loaded'.format(layer_name)
