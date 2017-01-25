@@ -51,8 +51,8 @@ class myGenerator():
             self.datagen = ImageDataGenerator(
                 rotation_range=20,
                 rescale=rescale,
-                width_shift_range=0.2,
-                height_shift_range=0.2,
+                width_shift_range=0.05,
+                height_shift_range=0.05,
                 zoom_range=0.1,
                 horizontal_flip=False,
                 fill_mode='nearest',

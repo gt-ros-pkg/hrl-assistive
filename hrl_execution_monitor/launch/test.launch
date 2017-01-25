@@ -1,0 +1,13 @@
+
+<launch>
+    <group ns="feeding" >
+
+      <node name="anomaly_isolator" pkg="hrl_execution_monitor"
+            type="anomaly_isolator.py" args="--task feeding "
+            output="screen" />
+    </group>
+
+
+</launch>
+
+

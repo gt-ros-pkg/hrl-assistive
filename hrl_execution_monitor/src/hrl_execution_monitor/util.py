@@ -273,3 +273,46 @@ def image_list_flatten(image_list):
 def running_mean(x, N):
     cumsum = np.cumsum(np.insert(x, 0, 0))
     return (cumsum[N:] - cumsum[:-N]) / N
+
+
+def temporal_features(X, max_step, ml, scale):
+    ''' Return n_step x n_features'''
+
+    d_idx = len(X[0])
+    while True:
+        v = ml.conditional_prob( X[:,:d_idx]*scale)
+        if v is None: d_idx -= 1
+        else: break
+
+    vs = None
+    for i in xrange(d_idx, d_idx-max_step,-1):
+        if i<=0: continue
+        v = ml.conditional_prob( X[:,:i]*scale)
+        v = v.reshape((1,) + v.shape)
+        if vs is None: vs = v
+        else:          vs = np.vstack([vs, v])
+    return vs
+
+
+def load_data(idx, save_data_path, extra_img=False, viz=False):
+    ''' Load selected fold's data '''
+
+    assert os.path.isfile(os.path.join(save_data_path,'x_train_img_'+str(idx)+'.npy')) == True, \
+      "No preprocessed data"
+        
+    x_train_sig = np.load(open(os.path.join(save_data_path,'x_train_sig_'+str(idx)+'.npy')))
+    x_train_img = np.load(open(os.path.join(save_data_path,'x_train_img_'+str(idx)+'.npy')))
+    y_train = np.load(open(os.path.join(save_data_path,'y_train_'+str(idx)+'.npy')))
+
+    x_test_sig = np.load(open(os.path.join(save_data_path,'x_test_sig_'+str(idx)+'.npy')))
+    x_test_img = np.load(open(os.path.join(save_data_path,'x_test_img_'+str(idx)+'.npy')))
+    y_test = np.load(open(os.path.join(save_data_path,'y_test_'+str(idx)+'.npy')))
+
+    if extra_img:
+        x_train_img_extra = np.load(open(os.path.join(save_data_path,'x_train_img_extra.npy')))
+        y_train_extra = np.load(open(os.path.join(save_data_path,'y_train_extra.npy')))
+
+        x_train_img = np.vstack([x_train_img, x_train_img_extra])
+        y_train     = np.vstack([y_train, y_train_extra])
+
+    return (x_train_sig, x_train_img, y_train), (x_test_sig, x_test_img, y_test)

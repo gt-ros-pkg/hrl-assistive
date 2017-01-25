@@ -65,7 +65,7 @@ class logger:
                  vision_change=False, vision_landmark=False, pps=False, skin=False, \
                  subject=None, task=None, \
                  record_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016',
-                 data_pub= False, en_ad=False, verbose=False):
+                 data_pub= False, en_ad=False, en_ai=False, verbose=False):
         rospy.logout('ADLs_log node subscribing..')
 
         self.subject  = subject
@@ -75,6 +75,7 @@ class logger:
         self.verbose  = verbose
         self.enable_log_thread = False
         self.enable_detector = en_ad
+        self.enable_isolator = en_ai
         
         # GUI
         self.feedbackMSG = 0
@@ -94,7 +95,7 @@ class logger:
         self.fabric_skin     = fabric_skin(True) if skin else None
 
         self.waitForReady()
-        self.initComms()
+        self.initComms(self.task)
 
         if self.data_pub:
             t = threading.Thread(target=self.runDataPub)
@@ -110,7 +111,7 @@ class logger:
         self.nDetector  = rospy.get_param(self.task+'/nDetector')
 
         
-    def initComms(self):
+    def initComms(self, task):
         '''
         Record data and publish raw data
         '''        
@@ -121,18 +122,8 @@ class logger:
         # GUI implementation       
         rospy.Subscriber("/manipulation_task/user_feedback", StringArray,
                          self.feedbackCallback)
-            
-        if self.nDetector>0 and self.enable_detector:
-            self.ad_srv = []
-            ## self.ad_u_srv = []
-            for i in xrange(self.nDetector):
-                print "Wait anomaly detector service"
-                rospy.wait_for_service('/'+self.task+'/anomaly_detector'+str(i)+'_enable')
-                self.ad_srv.append(rospy.ServiceProxy('/'+self.task+'/anomaly_detector'+str(i)+'_enable',
-                                                      Bool_None))
-                ## self.ad_u_srv.append(rospy.ServiceProxy('/'+self.task+'/anomaly_detector'+str(i)+'_update',
-                ##                                         StringArray_None))
-                print "Detected anomaly detector service"
+
+        self.setTask(task)
 
     
     def feedbackCallback(self, data):
@@ -173,7 +164,14 @@ class logger:
                 self.ad_srv.append(rospy.ServiceProxy('/'+self.task+'/anomaly_detector'+str(i)+'_enable',
                                                       Bool_None))
                 print "Detected anomaly detector service"
-            
+
+        if self.enable_isolator:
+            print "Wait anomaly isolation service"
+            rospy.wait_for_service('/'+self.task+'/anomaly_isolator_enable')
+            self.ai_srv.append(rospy.ServiceProxy('/'+self.task+'/anomaly_isolator_enable',
+                                                  Bool_None))
+            print "Detected anomaly isolation service"
+
         
     def log_start(self):
         rospy.loginfo("Start to log!")
@@ -656,13 +654,15 @@ if __name__ == '__main__':
     verbose = True
     data_pub= True
     detector= False
+    isolator= False
     record_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2017'
 
     rospy.init_node('record_data')
     log = logger(ft=False, audio=False, audio_wrist=False, kinematics=True, vision_artag=False, \
                  vision_landmark=False, vision_change=False, \
                  pps=False, skin=True, subject=subject, task=task, verbose=verbose,\
-                 data_pub=data_pub, detector=detector, record_root_path=record_root_path)
+                 data_pub=data_pub, detector=detector, isolator=isolator,
+                 record_root_path=record_root_path)
 
     rospy.sleep(1.0)
     log.run()
