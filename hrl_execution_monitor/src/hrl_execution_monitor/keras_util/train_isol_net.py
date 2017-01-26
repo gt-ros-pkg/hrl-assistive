@@ -86,8 +86,8 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
     ## train_multi_top_model(save_data_path, n_labels, nFold, vgg=True)
     ## train_multi_top_model(save_data_path, n_labels, nFold, vgg=True, load_weights=True)
     
-    train_with_all(save_data_path, n_labels, nFold, patience=5, vgg=True)
-    ## train_with_all(save_data_path, n_labels, nFold, load_weights=True, patience=20, vgg=True)
+    #train_with_all(save_data_path, n_labels, nFold, patience=5, vgg=True)
+    train_with_all(save_data_path, n_labels, nFold, load_weights=True, patience=20, vgg=True)
 
 
     return
@@ -313,6 +313,7 @@ def train_with_all(save_data_path, n_labels, nFold, nb_epoch=100, load_weights=F
                                    fine_tune=True)
             optimizer = SGD(lr=0.001, decay=1e-8, momentum=0.9, nesterov=True)                
         else:
+
             # fine tuning
             if vgg:
                 model = km.vgg16_net(np.shape(x_train_img)[1:], n_labels, with_multi_top=True,
