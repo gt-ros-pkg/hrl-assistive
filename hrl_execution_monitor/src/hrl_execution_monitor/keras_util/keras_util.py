@@ -136,7 +136,11 @@ class sigGenerator():
 
 
 def extract_hypercolumn(model, layer_indexes, instance):
-    layers = [model.layers[li].get_output(train=False) for li in layer_indexes]
+    import theano
+    import scipy as sp
+    
+    layers = [model.layers[li].output for li in layer_indexes]
+    ## layers = [model.layers[li].get_output(train=False) for li in layer_indexes]
     get_feature = theano.function([model.layers[0].input], layers,
                                   allow_input_downcast=False)
     feature_maps = get_feature(instance)

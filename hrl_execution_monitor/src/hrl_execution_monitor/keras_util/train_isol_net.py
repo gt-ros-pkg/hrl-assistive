@@ -86,8 +86,8 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
     ## train_mutil_top_model(save_data_path, n_labels, nFold, vgg=True)
     ## train_mutil_top_model(save_data_path, n_labels, nFold, vgg=True, load_weights=True)
     
-    train_with_all(save_data_path, n_labels, nFold, patience=20, vgg=True)
-    #train_with_all(save_data_path, n_labels, nFold, load_weights=True, patience=20, vgg=True)
+    ## train_with_all(save_data_path, n_labels, nFold, patience=20, vgg=True)
+    train_with_all(save_data_path, n_labels, nFold, load_weights=True, patience=20, vgg=True)
 
 
     return
@@ -618,6 +618,7 @@ def train_mutil_top_model(save_data_path, n_labels, nFold, nb_epoch=5000, load_w
         x_train = np.load(open(os.path.join(bt_data_path,'x_train_btmt_'+str(idx)+'.npy')))
         y_train = np.load(open(os.path.join(bt_data_path,'y_train_btmt_'+str(idx)+'.npy')))
         x_test  = np.load(open(os.path.join(bt_data_path,'x_test_btmt_'+str(idx)+'.npy')))
+
         y_test  = np.load(open(os.path.join(bt_data_path,'y_test_btmt_'+str(idx)+'.npy')))
         print np.shape(x_train), np.shape(y_train), np.shape(x_test), np.shape(y_test)
 

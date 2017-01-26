@@ -198,13 +198,15 @@ def vgg16_net(input_shape, n_labels, weights_path=None,\
             model.layers[k].set_weights(weights)
         f.close()
         print('Model loaded.')
+    # 31 layers---------------------------------------------------------------
 
-    ## if fine_tune:
-    ##     for layer in model.layers[:25]:
-    ##         layer.trainable = False
-    ## else:
-    for layer in model.layers:
-        layer.trainable = False
+
+    if fine_tune and False:
+        for layer in model.layers[:25]:
+            layer.trainable = False
+    else:
+        for layer in model.layers:
+            layer.trainable = False
 
 
     if with_multi_top:
@@ -232,7 +234,7 @@ def vgg16_net(input_shape, n_labels, weights_path=None,\
         model.add(Dropout(0.5))        
 
         if not fine_tune:
-            for layer in model.layers:
+            for layer in model.layers[31:]:
                 layer.trainable = False
             
         if weights_path: weights_file.close()        
