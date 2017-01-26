@@ -215,7 +215,7 @@ def vgg16_net(input_shape, n_labels, weights_path=None,\
         if img_weights_path:
             weights_file = h5py.File(img_weights_path)
         else:
-            weights_file = h5py.File(weights_path, 'r')
+            weights_file = h5py.File(weights_path)
             
         weight1_1 = mutil.get_layer_weights(weights_file, layer_name='fc1_1')
                 
