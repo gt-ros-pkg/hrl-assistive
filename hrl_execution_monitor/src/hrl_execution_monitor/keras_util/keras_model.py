@@ -259,7 +259,7 @@ def vgg16_net(input_shape, n_labels, weights_path=None,\
         
         if weights_path: weights_file.close()        
         # -----------------------------------------------------------
-        merge   = Merge([model, sig_model], mode='mul') #'concat')        
+        merge   = Merge([model, sig_model], mode='mul') #
         c_model = Sequential()
         c_model.add(merge)
 
@@ -344,6 +344,9 @@ def vgg_multi_top_net(input_shape, n_labels, weights_path=None):
     model.add(Dense(128, activation='relu', init='uniform', name='fc3_1', input_shape=input_shape,
                     W_regularizer=L1L2Regularizer(0,0.02), weights=weight3))
     model.add(Dropout(0.5))
+    ## model.add(Dense(256, activation='relu', init='uniform', name='fc3_2',
+    ##                 W_regularizer=L1L2Regularizer(0,0.05)))
+    ## model.add(Dropout(0.6))
 
     weight = mutil.get_layer_weights(weights_file, layer_name='fc_out')
     model.add(Dense(n_labels, activation='softmax', name='fc_out', input_shape=input_shape,

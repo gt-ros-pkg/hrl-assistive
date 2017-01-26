@@ -83,11 +83,11 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
 
     # training_with all --------------------------------------
     ## get_bottleneck_mutil(save_data_path, n_labels, nFold, vgg=True)
-    ## train_mutil_top_model(save_data_path, n_labels, nFold, vgg=True)
-    ## train_mutil_top_model(save_data_path, n_labels, nFold, vgg=True, load_weights=True)
+    ## train_multi_top_model(save_data_path, n_labels, nFold, vgg=True)
+    ## train_multi_top_model(save_data_path, n_labels, nFold, vgg=True, load_weights=True)
     
-    ## train_with_all(save_data_path, n_labels, nFold, patience=20, vgg=True)
-    train_with_all(save_data_path, n_labels, nFold, load_weights=True, patience=20, vgg=True)
+    train_with_all(save_data_path, n_labels, nFold, patience=5, vgg=True)
+    ## train_with_all(save_data_path, n_labels, nFold, load_weights=True, patience=20, vgg=True)
 
 
     return
@@ -257,7 +257,7 @@ def train_with_image(save_data_path, n_labels, nFold, nb_epoch=1, load_weights=F
     return
 
 
-def train_with_all(save_data_path, n_labels, nFold, nb_epoch=1000, load_weights=False,
+def train_with_all(save_data_path, n_labels, nFold, nb_epoch=100, load_weights=False,
                    test_only=False, save_pdf=False, vgg=False, patience=20):
 
     if vgg: prefix = 'vgg_'
@@ -288,7 +288,7 @@ def train_with_all(save_data_path, n_labels, nFold, nb_epoch=1000, load_weights=
                                      save_weights_only=True,
                                      monitor='val_loss'),
                      ReduceLROnPlateau(monitor='val_loss', factor=0.2,
-                                       patience=20, min_lr=0.00001)]
+                                       patience=3, min_lr=0.00001)]
 
         if load_weights is False:
 
@@ -603,7 +603,7 @@ def get_bottleneck_mutil(save_data_path, n_labels, nFold, vgg=False):
     return
     
 
-def train_mutil_top_model(save_data_path, n_labels, nFold, nb_epoch=5000, load_weights=False, vgg=False,
+def train_multi_top_model(save_data_path, n_labels, nFold, nb_epoch=5000, load_weights=False, vgg=False,
                           patience=200):
 
     if vgg: prefix = 'vgg_'
@@ -637,7 +637,7 @@ def train_mutil_top_model(save_data_path, n_labels, nFold, nb_epoch=5000, load_w
         if load_weights is False:            
             if vgg: model = km.vgg_multi_top_net(np.shape(x_train)[1:], n_labels)
             else: sys.exit()
-            optimizer = SGD(lr=0.01, decay=1e-7, momentum=0.9, nesterov=True)                
+            optimizer = SGD(lr=0.001, decay=1e-7, momentum=0.9, nesterov=True)                
         else:
             if vgg: model = km.vgg_multi_top_net(np.shape(x_train)[1:], n_labels, weights_path)
             else: sys.exit()
@@ -645,6 +645,12 @@ def train_mutil_top_model(save_data_path, n_labels, nFold, nb_epoch=5000, load_w
         ## optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.001)                        
         model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
         ## model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
+
+        ## from sklearn.ensemble import RandomForestClassifier
+        ## clf = RandomForestClassifier(n_estimators=400, n_jobs=-1)
+        ## clf.fit(x_train, np.argmax(y_train, axis=1))
+        ## score = clf.score(x_test, np.argmax(y_test,axis=1))
+        ## scores.append(score)   
 
         hist = model.fit(x_train, y_train, nb_epoch=nb_epoch, batch_size=len(x_train), shuffle=True,
                          validation_data=(x_test, y_test), callbacks=callbacks)       
