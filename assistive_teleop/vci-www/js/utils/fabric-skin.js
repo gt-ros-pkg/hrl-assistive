@@ -80,7 +80,7 @@ var RFH = (function (module) {
             ros: ros,
             name: ns+'/taxels/forces',
             messageType: 'hrl_haptic_manipulation_in_clutter_msgs/TaxelArray',
-            throttle_rate: 1000
+            throttle_rate: 100
         });       
         forcesSub.subscribe(forcesCB);
     };

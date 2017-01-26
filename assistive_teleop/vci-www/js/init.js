@@ -96,7 +96,7 @@ var RFH = (function (module) {
             console.log("Connected to " + RFH.ROBOT + ".");
             clearVideo();
             RFH.extendROSJS(RFH.ros);
-            //        RFH.connectionMonitor = new RFH.ConnectionMonitor({divId: 'network-status'}).start();
+            RFH.connectionMonitor = new RFH.ConnectionMonitor({divId: 'network-status'}).start();
 //            RFH.batteryMonitor = new RFH.BatteryMonitor({ros: RFH.ros,
 //                div: 'battery-status'});
             RFH.tfClient = new ROSLIB.TFClient({ros : RFH.ros,
@@ -115,7 +115,7 @@ var RFH = (function (module) {
                 imageId: 'mjpeg-image',
                 host: RFH.ROBOT,
                 port: 8080,
-                quality: 75,
+                quality: 60,
                 tfClient:RFH.tfClient});
             RFH.mjpeg.cameraModel.infoSubCBList.push(RFH.mjpeg.refreshSize);
             RFH.mjpeg.cameraModel.updateCameraInfo();

@@ -418,6 +418,7 @@ var RFH = (function (module) {
         self.stateSubscriber = new ROSLIB.Topic({
             ros: self.ros,
             name: self.stateTopic,
+            throttle_rate: 12,
             messageType: 'geometry_msgs/PoseStamped'
         });
         self.stateSubscriber.subscribe(self.stateCB);
@@ -448,6 +449,7 @@ var RFH = (function (module) {
         self.jointStateSubscriber = new ROSLIB.Topic({
             ros: self.ros,
             name: self.jointStateTopic,
+            throttle_rate: 12,
             messageType: 'pr2_controllers_msgs/JointTrajectoryControllerState'
         });
         self.jointStateSubscriber.subscribe(self.getJointNames);

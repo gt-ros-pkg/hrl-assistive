@@ -8,9 +8,10 @@
   <arg name="ws_port" default="9091"/>
   <arg name="mjpeg_port" default="8080"/>
   <arg name="html_port" default="8008"/>
+  <arg name="log" default="true"/>
 
   <!-- Data Logging -->
-  <include file="$(find assistive_teleop)/launch/data_bagging.launch" />
+  <include if="$(arg log)" file="$(find assistive_teleop)/launch/data_bagging.launch" />
 
   <!-- Rosbridge, Rosapi, Roswww, and web_video_server -->
   <node name="rosbridge" pkg="rosbridge_server" type="rosbridge_websocket" output="screen">

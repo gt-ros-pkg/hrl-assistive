@@ -113,9 +113,9 @@ var RFH = (function (module) {
             camera: RFH.mjpeg.cameraModel}));
         // Start looking action by default
         RFH.actionMenu.actions.lookingAction.$button.click();
-        $('#torso-mode-button, #drive-mode-button').prop('disabled',true).button('refresh'); 
+//        $('#torso-mode-button, #drive-mode-button').prop('disabled',true).button('refresh'); 
 //        $('#right-ee-cart-mode-button').prop('disabled',true).button('refresh'); 
-        $('#left-ee-cart-mode-button').prop('disabled',true).button('refresh'); 
+//        $('#left-ee-cart-mode-button').prop('disabled',true).button('refresh'); 
     };
     return module;
 })(RFH || {});
