@@ -123,10 +123,15 @@ def sig_net(input_shape, n_labels, weights_path=None, activ_type='relu' ):
 
     model = Sequential()
     model.add(Dense(128, init='uniform', input_shape=input_shape,
-                    W_regularizer=L1L2Regularizer(0.0,0.1),\
+                    W_regularizer=L1L2Regularizer(0.0,0.0),\
                     name='fc2_1'))
     model.add(Activation(activ_type))
-    model.add(Dropout(0.5))
+    model.add(Dropout(0.2))
+    ## model.add(Dense(128, init='uniform', input_shape=input_shape,
+    ##                 W_regularizer=L1L2Regularizer(0.0,0.0),\
+    ##                 name='fc2_2'))
+    ## model.add(Activation(activ_type))
+    ## model.add(Dropout(0.2))
 
     model.add(Dense(n_labels, activation='softmax',W_regularizer=L1L2Regularizer(0,0),
                     name='fc_sig_out'))
@@ -201,7 +206,7 @@ def vgg16_net(input_shape, n_labels, weights_path=None,\
     # 31 layers---------------------------------------------------------------
 
 
-    if fine_tune and False:
+    if fine_tune:
         for layer in model.layers[:25]:
             layer.trainable = False
     else:
@@ -219,25 +224,34 @@ def vgg16_net(input_shape, n_labels, weights_path=None,\
         else:
             weights_file = h5py.File(weights_path)
             
-        weight1_1 = mutil.get_layer_weights(weights_file, layer_name='fc1_1')
-                
-        model.add(Dense(128, init='uniform', weights=weight1_1, name='fc1_1',
-                        W_regularizer=L1L2Regularizer(0.0,0.1)))
+        weight1_1 = mutil.get_layer_weights(weights_file, layer_name='fc1_1')                
+        model.add(Dense(1024, init='uniform', weights=weight1_1, name='fc1_1',
+                        W_regularizer=L1L2Regularizer(0.0,0.03)))
         model.add(Activation('relu'))
         model.add(Dropout(0.5))        
         # -----------------------------------------------------------
-        weight1_2 = mutil.get_layer_weights(weights_file, layer_name='fc1_2')
-        
+        weight1_2 = mutil.get_layer_weights(weights_file, layer_name='fc1_2')        
         model.add(Dense(128, init='uniform', weights=weight1_2, name='fc1_2',
-                        W_regularizer=L1L2Regularizer(0.0,0.1)))
+                        W_regularizer=L1L2Regularizer(0.0,0.01)))
         model.add(Activation('relu'))
         model.add(Dropout(0.5))        
+        ## # -----------------------------------------------------------
+        ## weight1_3 = mutil.get_layer_weights(weights_file, layer_name='fc1_3')        
+        ## model.add(Dense(64, init='uniform', weights=weight1_3, name='fc1_3',
+        ##                 W_regularizer=L1L2Regularizer(0.0,0.01)))
+        ## model.add(Activation('relu'))
+        ## model.add(Dropout(0.5))        
+
 
         if not fine_tune:
             for layer in model.layers[31:]:
                 layer.trainable = False
+        ## else:
+        ##     for layer in model.layers:
+        ##         layer.trainable = False
             
         if weights_path: weights_file.close()        
+        # -----------------------------------------------------------
         # -----------------------------------------------------------
         weights_file = None
         if sig_weights_path:
@@ -249,9 +263,13 @@ def vgg16_net(input_shape, n_labels, weights_path=None,\
         sig_model = Sequential()
         sig_model.add(Dense(128, init='uniform', weights=weight2_1,
                             input_shape=input_shape2, name='fc2_1',
-                            W_regularizer=L1L2Regularizer(0.0,0.1)))
+                            W_regularizer=L1L2Regularizer(0.0,0.0)))
         sig_model.add(Activation('relu'))        
-        sig_model.add(Dropout(0.5))
+        sig_model.add(Dropout(0.2))
+
+        ## weight2_2 = mutil.get_layer_weights(weights_file, layer_name='fc_sig_out')
+        ## sig_model.add(Dense(n_labels, init='uniform', weights=weight2_2, name='fc_sig_out'))
+        ## sig_model.add(Activation('relu'))        
 
         if not fine_tune:
             for layer in sig_model.layers:
@@ -259,7 +277,7 @@ def vgg16_net(input_shape, n_labels, weights_path=None,\
         
         if weights_path: weights_file.close()        
         # -----------------------------------------------------------
-        merge   = Merge([model, sig_model], mode='mul') #
+        merge   = Merge([model, sig_model], mode='concat') #mode='mul') 
         c_model = Sequential()
         c_model.add(merge)
 
@@ -267,11 +285,16 @@ def vgg16_net(input_shape, n_labels, weights_path=None,\
         if weights_path: weights_file = h5py.File(weights_path, 'r')
         else: weights_file = None
         weight3_1 = mutil.get_layer_weights(weights_file, layer_name='fc3_1')
+        ## weight3_2 = mutil.get_layer_weights(weights_file, layer_name='fc3_2')
         weight_fc_out = mutil.get_layer_weights(weights_file, layer_name='fc_out')        
                 
-        c_model.add(Dense(128, activation='relu', init='uniform', weights=weight3_1, name='fc3_1',
-                          W_regularizer=L1L2Regularizer(0,0.02)))
+        c_model.add(Dense(256, activation='relu', init='uniform', weights=weight3_1, name='fc3_1',
+                          W_regularizer=L1L2Regularizer(0,0.001)))
         c_model.add(Dropout(0.5))
+        ## c_model.add(Dense(256, activation='relu', init='uniform', weights=weight3_2, name='fc3_2',
+        ##                   W_regularizer=L1L2Regularizer(0,0.05)))
+        ## c_model.add(Dropout(0.6))
+        
         c_model.add(Dense(n_labels, activation='softmax', name='fc_out', weights=weight_fc_out,
                     W_regularizer=L1L2Regularizer(0,0)))
         
@@ -280,10 +303,10 @@ def vgg16_net(input_shape, n_labels, weights_path=None,\
     
     elif with_img_top:
         model.add(Flatten())
-        model.add(Dense(128, init='uniform', name='fc1_1', W_regularizer=L1L2Regularizer(0.0,0.1)))
+        model.add(Dense(1024, init='uniform', name='fc1_1', W_regularizer=L1L2Regularizer(0.0,0.03)))
         model.add(Activation('relu'))
         model.add(Dropout(0.5))        
-        model.add(Dense(128, init='uniform', name='fc1_2', W_regularizer=L1L2Regularizer(0.0,0.1)))
+        model.add(Dense(64, init='uniform', name='fc1_2', W_regularizer=L1L2Regularizer(0.0,0.01)))
         model.add(Activation('relu'))
         model.add(Dropout(0.5))        
         model.add(Dense(n_labels, activation='softmax', name='fc_img_out'))
@@ -321,12 +344,27 @@ def vgg_image_top_net(input_shape, n_labels, weights_path=None):
 
     model = Sequential()
     model.add(Flatten(input_shape=input_shape))
-    model.add(Dense(128, init='uniform', name='fc1_1', W_regularizer=L1L2Regularizer(0.0,0.03)))
+
+
+    model.add(Dense(1024, init='uniform', name='fc1_1', W_regularizer=L1L2Regularizer(0.0,0.03)))
     model.add(Activation('relu'))
-    model.add(Dropout(0.6))        
-    model.add(Dense(128, init='uniform', name='fc1_2', W_regularizer=L1L2Regularizer(0.0,0.03)))
+    model.add(Dropout(0.5))        
+    ## model.add(Dense(1024, init='uniform', name='fc1_2', W_regularizer=L1L2Regularizer(0.0,0.03)))
+    ## model.add(Activation('relu'))
+    ## model.add(Dropout(0.5))
+    model.add(Dense(128, init='uniform', name='fc1_2', W_regularizer=L1L2Regularizer(0.0,0.01)))
     model.add(Activation('relu'))
-    model.add(Dropout(0.6))        
+    model.add(Dropout(0.5))
+
+    
+    ## model.add(Dense(256, init='uniform', name='fc1_1', W_regularizer=L1L2Regularizer(0.0,0.01)))
+    ## model.add(Activation('relu'))
+    ## ## model.add(Dropout(0.4))        
+    ## model.add(Dense(64, init='uniform', name='fc1_2', W_regularizer=L1L2Regularizer(0.0,0.01)))
+    ## model.add(Activation('relu'))
+    ## ## model.add(Dropout(0.4))
+
+    
     model.add(Dense(n_labels, activation='softmax', name='fc_img_out'))
 
     if weights_path is not None: model.load_weights(weights_path)
@@ -339,18 +377,20 @@ def vgg_multi_top_net(input_shape, n_labels, weights_path=None):
 
     weights_file = None
     if weights_path is not None: weights_file = h5py.File(weights_path)
-    weight3 = mutil.get_layer_weights(weights_file, layer_name='fc3_1')
-    
-    model.add(Dense(128, activation='relu', init='uniform', name='fc3_1', input_shape=input_shape,
-                    W_regularizer=L1L2Regularizer(0,0.02), weights=weight3))
+    weight = mutil.get_layer_weights(weights_file, layer_name='fc3_1')    
+    model.add(Dense(256, activation='relu', init='uniform', name='fc3_1', input_shape=input_shape,
+                    W_regularizer=L1L2Regularizer(0.0, 0.001), weights=weight))
     model.add(Dropout(0.5))
+
+    # -------------------------------------------------------------------
+    ## weight = mutil.get_layer_weights(weights_file, layer_name='fc3_2')    
     ## model.add(Dense(256, activation='relu', init='uniform', name='fc3_2',
-    ##                 W_regularizer=L1L2Regularizer(0,0.05)))
-    ## model.add(Dropout(0.6))
+    ##                 W_regularizer=L1L2Regularizer(0,0.0 ), weights=weight))    
+    ## model.add(Dropout(0.5))
 
     weight = mutil.get_layer_weights(weights_file, layer_name='fc_out')
     model.add(Dense(n_labels, activation='softmax', name='fc_out', input_shape=input_shape,
-                    weights=weight, W_regularizer=L1L2Regularizer(0,0)))
+                    weights=weight, W_regularizer=L1L2Regularizer(0,0.0)))
 
     if weights_path is not None:  weights_file.close()
     return model
