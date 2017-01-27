@@ -65,14 +65,14 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
     save_data_path = os.path.join(save_data_path, 'keras')
 
     # training with signals ----------------------------------
-    ## train_with_signal(save_data_path, n_labels, nFold, nb_epoch=800, patience=50)
-    ## train_with_signal(save_data_path, n_labels, nFold, nb_epoch=800, patience=50, load_weights=True)
+    #train_with_signal(save_data_path, n_labels, nFold, nb_epoch=800, patience=50)
+    #train_with_signal(save_data_path, n_labels, nFold, nb_epoch=800, patience=50, load_weights=True)
 
     # training_with images -----------------------------------
     remove_label = [1]
     ## get_bottleneck_image(save_data_path, n_labels, nFold, vgg=True, remove_label=remove_label)
     ## train_top_model_with_image(save_data_path, n_labels, nFold, vgg=True)
-    ## train_top_model_with_image(save_data_path, n_labels, nFold, vgg=True, nb_epoch=1, load_weights=True)
+    ## train_top_model_with_image(save_data_path, n_labels, nFold, vgg=True, nb_epoch=100, load_weights=True)
     
     ## train_with_image(save_data_path, n_labels, nFold, patience=20)
     ## train_with_image(save_data_path, n_labels, nFold, patience=20, fine_tune=True)
@@ -82,12 +82,12 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
     ##                  load_weights=True)
 
     # training_with all --------------------------------------
-    ## get_bottleneck_mutil(save_data_path, n_labels, nFold, vgg=True)
+    #get_bottleneck_mutil(save_data_path, n_labels, nFold, vgg=True)
     ## train_multi_top_model(save_data_path, n_labels, nFold, vgg=True)
-    ## train_multi_top_model(save_data_path, n_labels, nFold, vgg=True, load_weights=True)
+    #train_multi_top_model(save_data_path, n_labels, nFold, vgg=True, load_weights=True)
     
-    #train_with_all(save_data_path, n_labels, nFold, patience=5, vgg=True)
-    train_with_all(save_data_path, n_labels, nFold, load_weights=True, patience=20, vgg=True)
+    train_with_all(save_data_path, n_labels, nFold, patience=1, nb_epoch=1, vgg=True)
+    ## train_with_all(save_data_path, n_labels, nFold, load_weights=True, patience=5, vgg=True)
 
 
     return
@@ -130,12 +130,13 @@ def train_with_signal(save_data_path, n_labels, nFold, nb_epoch=400, load_weight
         if load_weights is False:
             model = km.sig_net(np.shape(x_train_sig)[1:], n_labels, activ_type=activ_type)                    
             ## optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.0)
+            optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.005)            
         else:
             model = km.sig_net(np.shape(x_train_sig)[1:], n_labels,\
                                weights_path = weights_path, activ_type=activ_type)
-            ## optimizer = SGD(lr=0.001, decay=1e-7, momentum=0.9, nesterov=True)
+            optimizer = SGD(lr=0.0001, decay=1e-7, momentum=0.9, nesterov=True)
+            ## optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.005)            
 
-        optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.005)            
         model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
         ## model.compile(optimizer=optimizer, loss='categorical_crossentropy', \
         ##               metrics=['mean_squared_logarithmic_error', 'accuracy'])
@@ -258,7 +259,7 @@ def train_with_image(save_data_path, n_labels, nFold, nb_epoch=1, load_weights=F
 
 
 def train_with_all(save_data_path, n_labels, nFold, nb_epoch=100, load_weights=False,
-                   test_only=False, save_pdf=False, vgg=False, patience=20):
+                   test_only=False, save_pdf=False, vgg=False, patience=3):
 
     if vgg: prefix = 'vgg_'
     else: prefix = ''
@@ -275,6 +276,20 @@ def train_with_all(save_data_path, n_labels, nFold, nb_epoch=100, load_weights=F
         x_test_sig = test_data[0]
         x_test_img = test_data[1]
         y_test     = test_data[2]
+
+
+        ## import cv2
+        ## print np.shape(x_train_img)
+        ## img = x_test_img[0].transpose((1,2,0))
+        ## img[:,:,0] += 103.939
+        ## img[:,:,1] += 116.779
+        ## img[:,:,2] += 123.68
+        ## print np.shape(img), np.amax(img), np.amin(img)
+        
+        ## cv2.imshow('image',img.astype(np.uint8))
+        ## cv2.waitKey(0)
+        ## cv2.destroyAllWindows()
+        ## sys.exit()
 
         scaler      = preprocessing.StandardScaler()
         x_train_sig = scaler.fit_transform(x_train_sig)
@@ -311,7 +326,7 @@ def train_with_all(save_data_path, n_labels, nFold, nb_epoch=100, load_weights=F
                                    img_weights_path=img_weights_path,
                                    weights_path=top_weights_path,
                                    fine_tune=True)
-            optimizer = SGD(lr=0.001, decay=1e-8, momentum=0.9, nesterov=True)                
+            optimizer = SGD(lr=0.0001, decay=1e-7, momentum=0.9, nesterov=True)                
         else:
 
             # fine tuning
@@ -325,11 +340,22 @@ def train_with_all(save_data_path, n_labels, nFold, nb_epoch=100, load_weights=F
                                    input_shape2=np.shape(x_train_sig)[1:],
                                    weights_path=weights_path,
                                    fine_tune=True)
-            optimizer = SGD(lr=0.0005, decay=1e-8, momentum=0.9, nesterov=True)                
+            optimizer = SGD(lr=0.0001, decay=1e-8, momentum=0.9, nesterov=True)                
 
         ## optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.005)                        
         model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
-                
+
+
+        class_weight={}
+        for i in xrange(n_labels):
+            class_weight[i] = 1.0
+        ## class_weight[1]  = 0.1 # noisy env
+        ## class_weight[6]  = 0.1 # anomalous snd
+        class_weight[-3] = 0.1 # spoon miss by sys
+        class_weight[-2] = 0.1 # spoon collision by sys
+        class_weight[-1] = 0.1 # freeze
+
+        
 
         if test_only is False:
             train_datagen = ku.myGenerator(augmentation=True, rescale=1./255.)
@@ -342,7 +368,8 @@ def train_with_all(save_data_path, n_labels, nFold, nb_epoch=100, load_weights=F
                                        nb_epoch=nb_epoch,
                                        validation_data=test_generator,
                                        nb_val_samples=len(y_test),
-                                       callbacks=callbacks)
+                                       callbacks=callbacks,
+                                       class_weight=class_weight)
 
             scores.append( hist.history['val_acc'][-1] )
         else:
@@ -457,8 +484,8 @@ def get_bottleneck_image(save_data_path, n_labels, nFold, vgg=False, use_extra_i
     return
 
 
-def train_top_model_with_image(save_data_path, n_labels, nFold, nb_epoch=1000, load_weights=False, vgg=False,
-                               patience=30, remove_label=[], use_extra_img=True):
+def train_top_model_with_image(save_data_path, n_labels, nFold, nb_epoch=400, load_weights=False, vgg=False,
+                               patience=5, remove_label=[], use_extra_img=True):
 
     if vgg: prefix = 'vgg_'
     else: prefix = ''
@@ -487,22 +514,34 @@ def train_top_model_with_image(save_data_path, n_labels, nFold, nb_epoch=1000, l
                                      save_weights_only=True,
                                      monitor='val_loss'),
                      ReduceLROnPlateau(monitor='val_loss', factor=0.2,
-                                       patience=10, min_lr=0.00001)]
+                                       patience=5, min_lr=0.00001)]
 
         if load_weights is False:            
             if vgg: model = km.vgg_image_top_net(np.shape(x_train)[1:], n_labels)
             else: sys.exit()
+            optimizer = SGD(lr=0.005, decay=1e-6, momentum=0.9, nesterov=True)
         else:
             if vgg: model = km.vgg_image_top_net(np.shape(x_train)[1:], n_labels, weights_path)
             else: sys.exit()
-        optimizer = SGD(lr=0.001, decay=1e-6, momentum=0.9, nesterov=True)
-        optimizer = RMSprop(lr=0.0001, rho=0.9, epsilon=1e-08, decay=0.001)                        
-        model.compile(optimizer=optimizer, loss='categorical_crossentropy',
-                      metrics=['mean_squared_logarithmic_error','accuracy'])
+            optimizer = SGD(lr=0.001, decay=1e-7, momentum=0.9, nesterov=True)
+                
+        ## optimizer = RMSprop(lr=0.0001, rho=0.9, epsilon=1e-08, decay=0.001)                        
+        model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
         ## model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
 
+        
+        class_weight={}
+        for i in xrange(n_labels):
+            class_weight[i] = 1.0
+        class_weight[1]  = 0.1 # noisy env
+        class_weight[6]  = 0.1 # anomalous snd
+        class_weight[-3] = 0.5 # spoon miss by sys
+        class_weight[-2] = 0.5 # spoon collision by sys
+        class_weight[-1] = 0.1 # freeze
+
         hist = model.fit(x_train, y_train, nb_epoch=nb_epoch, batch_size=2048, shuffle=True,
-                         validation_data=(x_test, y_test), callbacks=callbacks)
+                         validation_data=(x_test, y_test), callbacks=callbacks,
+                         class_weight=class_weight)
 
         scores.append( hist.history['val_acc'][-1] )
 
@@ -604,8 +643,8 @@ def get_bottleneck_mutil(save_data_path, n_labels, nFold, vgg=False):
     return
     
 
-def train_multi_top_model(save_data_path, n_labels, nFold, nb_epoch=5000, load_weights=False, vgg=False,
-                          patience=200):
+def train_multi_top_model(save_data_path, n_labels, nFold, nb_epoch=3000, load_weights=False, vgg=False,
+                          patience=30):
 
     if vgg: prefix = 'vgg_'
     else: prefix = ''
@@ -633,16 +672,16 @@ def train_multi_top_model(save_data_path, n_labels, nFold, nb_epoch=5000, load_w
                                      save_weights_only=True,
                                      monitor='val_loss'),
                      ReduceLROnPlateau(monitor='val_loss', factor=0.2,
-                                       patience=50, min_lr=0.00001)]
+                                       patience=10, min_lr=0.00001)]
 
         if load_weights is False:            
             if vgg: model = km.vgg_multi_top_net(np.shape(x_train)[1:], n_labels)
             else: sys.exit()
-            optimizer = SGD(lr=0.001, decay=1e-7, momentum=0.9, nesterov=True)                
+            optimizer = SGD(lr=0.001, decay=1e-8, momentum=0.9, nesterov=True)                
         else:
             if vgg: model = km.vgg_multi_top_net(np.shape(x_train)[1:], n_labels, weights_path)
             else: sys.exit()
-            optimizer = SGD(lr=0.001, decay=1e-7, momentum=0.9, nesterov=True)                
+            optimizer = SGD(lr=0.0001, decay=1e-7, momentum=0.9, nesterov=True)                
         ## optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.001)                        
         model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
         ## model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
@@ -709,6 +748,40 @@ def test(save_data_path):
         count +=1
         if count > 10: break
     
+
+def test_hog(save_data_path, n_labels, verbose=False):
+    '''
+    Train networks
+    '''
+    ## d = ut.load_pickle(os.path.join(save_data_path, 'isol_data.pkl'))
+    ## nFold = len(d.keys())
+    ## del d
+
+    save_data_path = os.path.join(save_data_path, 'keras')
+
+    idx = 0
+    train_data, test_data = autil.load_data(idx, save_data_path, viz=False)      
+    x_train_sig = train_data[0]
+    x_train_img = train_data[1]
+    y_train     = train_data[2]
+    x_test_sig = test_data[0]
+    x_test_img = test_data[1]
+    y_test     = test_data[2]
+
+    print np.shape(x_train_img), np.shape(x_train_sig), np.shape(y_train)
+    x_train = np.hstack([x_train_sig, x_train_img])
+    x_test  = np.hstack([x_test_sig, x_test_img])
+
+    scaler      = preprocessing.StandardScaler()
+    x_train = scaler.fit_transform(x_train)
+    x_test  = scaler.transform(x_test)
+    
+
+    from sklearn.ensemble import RandomForestClassifier
+    clf = RandomForestClassifier(n_estimators=400, n_jobs=-1)
+    clf.fit(x_train, y_train)
+    score = clf.score(x_test, y_test)
+    print score
     
 
 
@@ -720,6 +793,8 @@ if __name__ == '__main__':
 
     p.add_option('--train', '--tr', action='store_true', dest='train',
                  default=False, help='Train')
+    p.add_option('--hog', action='store_true', dest='hog',
+                 default=False, help='Test with hog')
     
     opt, args = p.parse_args()
 
@@ -731,7 +806,7 @@ if __name__ == '__main__':
                                                           
     save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
     #window 0-5
-    ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
+    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
 
     task_name = 'feeding'
     method    = ['progress0', 'progress1'] 
@@ -745,7 +820,8 @@ if __name__ == '__main__':
 
     if opt.train:
         train_isolator_modules(save_data_path, nb_classes, verbose=False)
-        
+    elif opt.hog:
+        test_hog(save_data_path, nb_classes, verbose=False)
     else:
         test(save_data_path)
 

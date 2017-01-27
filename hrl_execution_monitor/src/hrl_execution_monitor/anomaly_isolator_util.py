@@ -37,6 +37,7 @@ from hrl_anomaly_detection import util as util
 from hrl_anomaly_detection import data_manager as dm
 import hrl_anomaly_detection.isolator.isolation_util as iutil
 from hrl_execution_monitor import util as autil
+from hrl_execution_monitor import preprocess as pp
 
 # Private learners
 from hrl_anomaly_detection.hmm import learning_hmm as hmm
@@ -185,9 +186,9 @@ if __name__ == '__main__':
     raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
                                                           opt.bHMMRenew, opt.bCLFRenew)
                                                           
-    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
+    ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
     #window 0-5
-    ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
+    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
 
     task_name = 'feeding'
     method    = ['progress0', 'progress1'] 
@@ -202,15 +203,17 @@ if __name__ == '__main__':
     if opt.preprocessing:    
         # preprocessing data
         data_pkl = os.path.join(save_data_path, 'isol_data.pkl')
-        autil.preprocess_data(data_pkl, save_data_path, img_scale=0.25, nb_classes=nb_classes,
+        pp.preprocess_data(data_pkl, save_data_path, img_scale=0.25, nb_classes=nb_classes,
                               img_feature_type='vgg')
+        
     elif opt.preprocessing_extra:
         raw_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/AURO2016/raw_data/manual_label'
-        autil.preprocess_images(raw_data_path, save_data_path, img_scale=0.25, nb_classes=nb_classes,
+        pp.preprocess_images(raw_data_path, save_data_path, img_scale=0.25, nb_classes=nb_classes,
                                 img_feature_type='vgg')
         
     elif opt.train:
-        train_isolator_modules(save_data_path, nb_classes, verbose=False)        
+        train_isolator_modules(save_data_path, nb_classes, verbose=False)
+        
     else:
         get_isolator_modules(save_data_path, task_name, param_dict, fold_idx=0, \
                              nDetector=2)
