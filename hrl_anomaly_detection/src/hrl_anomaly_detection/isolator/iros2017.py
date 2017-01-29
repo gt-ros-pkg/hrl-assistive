@@ -1243,17 +1243,17 @@ if __name__ == '__main__':
         param_dict['ROC']['progress_param_range'] = -np.logspace(-1.0, 1.5, nPoints)
         param_dict['ROC']['methods'] = ['progress']
 
-        # c12 12-81.02
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## param_dict['data_param']['handFeatures'] = ['unimodal_kinVel',\
-        ##                                              'unimodal_ftForce_zero',\
-        ##                                              'crossmodal_landmarkEEDist', \
-        ##                                             ]        
-        ## param_dict['HMM']['scale'] = 12.0
-        ## param_dict['ROC']['methods'] = ['progress']
-        ## param_dict['ROC']['progress_param_range'] = -np.logspace(-0.4, 1.2, nPoints)
+        # c12 12-82
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        param_dict['data_param']['handFeatures'] = ['unimodal_kinVel',\
+                                                     'unimodal_ftForce_zero',\
+                                                     'crossmodal_landmarkEEDist', \
+                                                    ]        
+        param_dict['HMM']['scale'] = 14.0
+        param_dict['ROC']['methods'] = ['progress']
+        param_dict['ROC']['progress_param_range'] = -np.logspace(-0.4, 1.2, nPoints)
 
         # c8 10.0-79
         ## save_data_path = os.path.expanduser('~')+\
@@ -1286,10 +1286,10 @@ if __name__ == '__main__':
         # -------------------------------------------------------------------------------------
         ## c12 
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         param_dict['ROC']['methods'] = ['progress0', 'progress1']
-        param_dict['HMM']['scale']   = [2.0, 2.0]
+        param_dict['HMM']['scale']   = [12.0, 12.0]
         param_dict['HMM']['cov']     = 1.0
           
         
