@@ -1243,29 +1243,29 @@ if __name__ == '__main__':
         param_dict['ROC']['progress_param_range'] = -np.logspace(-0.5, 1.3, nPoints)
         param_dict['ROC']['methods'] = ['progress']
 
-        ## # c12 9-76.8
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## param_dict['data_param']['handFeatures'] = ['unimodal_kinVel',\
-        ##                                              'unimodal_ftForce_zero',\
-        ##                                              'crossmodal_landmarkEEDist', \
-        ##                                             ]        
-        ## param_dict['HMM']['scale'] = 9.0
-        ## param_dict['ROC']['methods'] = ['progress']
-        ## param_dict['ROC']['progress_param_range'] = -np.logspace(-0.2, 1.0, nPoints)
-
-        ## # c8 10.0-79
+        # c12 9-76.8
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation7/'+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         param_dict['data_param']['handFeatures'] = ['unimodal_kinVel',\
                                                      'unimodal_ftForce_zero',\
                                                      'crossmodal_landmarkEEDist', \
                                                     ]        
-        param_dict['HMM']['scale'] = 11.0
+        param_dict['HMM']['scale'] = 12.0
         param_dict['ROC']['methods'] = ['progress']
-        param_dict['ROC']['progress_param_range'] = -np.logspace(-0.2, 1.1, nPoints)
+        param_dict['ROC']['progress_param_range'] = -np.logspace(-0.2, 1.0, nPoints)
+
+        ## # c8 10.0-79
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation7/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## param_dict['data_param']['handFeatures'] = ['unimodal_kinVel',\
+        ##                                              'unimodal_ftForce_zero',\
+        ##                                              'crossmodal_landmarkEEDist', \
+        ##                                             ]        
+        ## param_dict['HMM']['scale'] = 11.0
+        ## param_dict['ROC']['methods'] = ['progress']
+        ## param_dict['ROC']['progress_param_range'] = -np.logspace(-0.2, 1.1, nPoints)
 
 
 
