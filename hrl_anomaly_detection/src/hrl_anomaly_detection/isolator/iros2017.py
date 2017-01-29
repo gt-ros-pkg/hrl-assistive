@@ -1215,6 +1215,19 @@ if __name__ == '__main__':
         ## param_dict['HMM']['scale'] = 15.0
         ## param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.0, 2.5, nPoints)*-1.0 +0.5
        
+        ## c11 87
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation4/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
+                                                    'unimodal_kinJntEff_1',\
+                                                    'unimodal_ftForce_integ',\
+                                                    'unimodal_kinEEChange',\
+                                                    'crossmodal_landmarkEEDist', \
+                                                    ]
+        param_dict['HMM']['scale'] = 3.0
+        param_dict['ROC']['progress_param_range'] = -np.logspace(-0.5, 1.3, nPoints)
+        param_dict['ROC']['methods'] = ['progress']
 
         ## c11 87
         ## save_data_path = os.path.expanduser('~')+\
@@ -1230,29 +1243,29 @@ if __name__ == '__main__':
         ## param_dict['ROC']['progress_param_range'] = -np.logspace(-0.5, 1.3, nPoints)
         ## param_dict['ROC']['methods'] = ['progress']
 
-        # c12
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        param_dict['data_param']['handFeatures'] = ['unimodal_kinVel',\
-                                                     'unimodal_ftForce_zero',\
-                                                     'crossmodal_landmarkEEDist', \
-                                                    ]        
-        param_dict['HMM']['scale'] = 2.0
-        param_dict['ROC']['methods'] = ['progress']
-        param_dict['ROC']['progress_param_range'] = -np.logspace(-0.5, 1.3, nPoints)
+        ## # c12
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## param_dict['data_param']['handFeatures'] = ['unimodal_kinVel',\
+        ##                                              'unimodal_ftForce_zero',\
+        ##                                              'crossmodal_landmarkEEDist', \
+        ##                                             ]        
+        ## param_dict['HMM']['scale'] = 2.0
+        ## param_dict['ROC']['methods'] = ['progress']
+        ## param_dict['ROC']['progress_param_range'] = -np.logspace(-0.5, 1.3, nPoints)
 
-        # c8
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation7/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        param_dict['data_param']['handFeatures'] = ['unimodal_kinVel',\
-                                                     'unimodal_ftForce_zero',\
-                                                     'crossmodal_landmarkEEDist', \
-                                                    ]        
-        param_dict['HMM']['scale'] = 3.0
-        param_dict['ROC']['methods'] = ['progress']
-        param_dict['ROC']['progress_param_range'] = -np.logspace(-0.5, 1.3, nPoints)
+        ## # c8
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation7/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## param_dict['data_param']['handFeatures'] = ['unimodal_kinVel',\
+        ##                                              'unimodal_ftForce_zero',\
+        ##                                              'crossmodal_landmarkEEDist', \
+        ##                                             ]        
+        ## param_dict['HMM']['scale'] = 3.0
+        ## param_dict['ROC']['methods'] = ['progress']
+        ## param_dict['ROC']['progress_param_range'] = -np.logspace(-0.5, 1.3, nPoints)
 
 
 
