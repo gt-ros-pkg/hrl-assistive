@@ -1245,18 +1245,6 @@ if __name__ == '__main__':
         param_dict['SVM']['nugget']  = 10.0
 
         # -------------------------------------------------------------------------------------
-        # 85 25 @ fz
-        # 86 37 @ fzero 
-        # 85.5 31 @ fzero fz
-
-        # c8 w/ eedist
-        # c8 w/o eedist
-
-        #c8 9
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation5/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-
         ## c12 
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
@@ -1265,12 +1253,6 @@ if __name__ == '__main__':
         param_dict['HMM']['scale']   = [2.0, 2.0]
         param_dict['HMM']['cov']     = 1.0
           
-        ## #br 15 w(23,24) => 90%
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation7/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## param_dict['ROC']['methods'] = ['hmmgp0', 'hmmgp1']
-        ## param_dict['HMM']['scale']   = [7.0, 15.0] # 13 #9 nest
         
         param_dict['data_param']['handFeatures'] = [['unimodal_audioWristRMS',  \
                                                     'unimodal_kinJntEff_1',\
@@ -1280,7 +1262,6 @@ if __name__ == '__main__':
                                                     ],
                                                     ['unimodal_kinVel',\
                                                      'unimodal_ftForce_zero',\
-                                                     ## 'unimodal_kinDesEEChange', \
                                                      'crossmodal_landmarkEEDist', \
                                                     ]]
         param_dict['SVM']['hmmgp_logp_offset'] = 0 
@@ -1289,14 +1270,12 @@ if __name__ == '__main__':
         param_dict['ROC']['hmmgp0_param_range'] = np.logspace(0.2, 2.5, nPoints)*-1.0+1.0
         param_dict['ROC']['hmmgp1_param_range'] = np.logspace(0.2, 2.5, nPoints)*-1.0+0.5 #2.
         # -------------------------------------------------------------------------------------
-                                                             
         
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         evaluation_double_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
                              save_pdf=opt.bSavePdf, \
                              verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                              find_param=False, data_gen=opt.bDataGen)
-
 
 
     elif opt.evaluation_isolation2:
