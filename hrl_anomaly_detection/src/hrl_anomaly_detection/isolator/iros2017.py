@@ -1215,7 +1215,7 @@ if __name__ == '__main__':
         ## param_dict['HMM']['scale'] = 15.0
         ## param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.0, 2.5, nPoints)*-1.0 +0.5
        
-        ## ep 3-76
+        ## ep 5-79 (hr)
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation4/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
@@ -1225,7 +1225,7 @@ if __name__ == '__main__':
                                                     'unimodal_kinEEChange',\
                                                     'crossmodal_landmarkEEDist', \
                                                     ]
-        param_dict['HMM']['scale'] = 5.0
+        param_dict['HMM']['scale'] = 6.0
         param_dict['ROC']['progress_param_range'] = -np.logspace(-0.1, 1.3, nPoints)
         param_dict['ROC']['methods'] = ['progress']
 
