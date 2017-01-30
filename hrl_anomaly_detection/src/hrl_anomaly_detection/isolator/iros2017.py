@@ -933,6 +933,7 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
     successData_static = np.array(successData)[feature_list]
     failureData_static = np.array(failureData)[feature_list]
 
+
     #-----------------------------------------------------------------------------------------
     # Training HMM, and getting classifier training and testing data
     data_dict = {}

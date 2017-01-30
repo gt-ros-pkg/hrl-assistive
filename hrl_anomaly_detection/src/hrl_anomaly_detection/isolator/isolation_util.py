@@ -762,9 +762,11 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failureData_static, \
     abnormalTrainLabel = copy.copy(failure_labels[abnormalTrainIdx])
     abnormalTestLabel  = copy.copy(failure_labels[abnormalTestIdx])
 
-    print np.shape(failure_image_list), type(failure_image_list)
-    abnormalTrainData_img = copy.copy(failure_image_list[abnormalTrainIdx])
-    abnormalTestData_img  = copy.copy(failure_image_list[abnormalTestIdx])
+    if len(failure_image_list)>0:
+        abnormalTrainData_img = copy.copy(failure_image_list[abnormalTrainIdx])
+        abnormalTestData_img  = copy.copy(failure_image_list[abnormalTestIdx])
+    else:
+        print "No image data!!"
 
     # nDetector x dim x sample x length
     abnormalTrainData_1 = copy.copy(failureData[0][:, abnormalTrainIdx, :])
@@ -809,6 +811,7 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, \
                        window=False, delta_flag=False):
     ''' Get conditional probability vector when anomalies are detected '''
     nDetector = len(abnormalData)
+    if len(abnormalData_img)==0: abnormalData_img = None
 
     # Load a generative model from anomaly detector
     ml_list    = []
