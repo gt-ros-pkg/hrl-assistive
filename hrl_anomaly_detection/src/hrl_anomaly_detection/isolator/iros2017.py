@@ -1215,7 +1215,7 @@ if __name__ == '__main__':
         ## param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.0, 2.5, nPoints)*-1.0 +0.5
         ## param_dict['ROC']['methods'] = ['hmmgp']
        
-        ## ep 12-89.5
+        ## ep 12-89.5 7-82
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation4/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
@@ -1229,7 +1229,7 @@ if __name__ == '__main__':
         param_dict['ROC']['progress_param_range'] = -np.logspace(-0.2, 1.4, nPoints)+1.0
         param_dict['ROC']['methods'] = ['progress']
 
-        ## c11 13-90.48
+        ## c11 13-90.48 9-85.8
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation5/'+\
         ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
@@ -1284,12 +1284,12 @@ if __name__ == '__main__':
         param_dict['SVM']['nugget']  = 10.0
 
         # -------------------------------------------------------------------------------------
-        ## c12 
+        ## c11 
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation5/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         param_dict['ROC']['methods'] = ['progress0', 'progress1']
-        param_dict['HMM']['scale']   = [10.0, 10.0]
+        param_dict['HMM']['scale']   = [9.0, 13.0]
         param_dict['HMM']['cov']     = 1.0
           
         
