@@ -1244,16 +1244,16 @@ if __name__ == '__main__':
         ## param_dict['ROC']['methods'] = ['progress']
 
         # c12 14-83.54 15-84.55
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        param_dict['data_param']['handFeatures'] = ['unimodal_kinVel',\
-                                                     'unimodal_ftForce_zero',\
-                                                     'crossmodal_landmarkEEDist', \
-                                                    ]        
-        param_dict['HMM']['scale'] = 12.0
-        param_dict['ROC']['methods'] = ['progress']
-        param_dict['ROC']['progress_param_range'] = -np.logspace(-0.4, 1.2, nPoints)
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## param_dict['data_param']['handFeatures'] = ['unimodal_kinVel',\
+        ##                                              'unimodal_ftForce_zero',\
+        ##                                              'crossmodal_landmarkEEDist', \
+        ##                                             ]        
+        ## param_dict['HMM']['scale'] = 12.0
+        ## param_dict['ROC']['methods'] = ['progress']
+        ## param_dict['ROC']['progress_param_range'] = -np.logspace(-0.4, 1.2, nPoints)
 
         # c8 10.0-79
         ## save_data_path = os.path.expanduser('~')+\
