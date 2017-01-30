@@ -766,6 +766,8 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failureData_static, \
         abnormalTrainData_img = copy.copy(failure_image_list[abnormalTrainIdx])
         abnormalTestData_img  = copy.copy(failure_image_list[abnormalTestIdx])
     else:
+        abnormalTrainData_img = []
+        abnormalTestData_img  = []
         print "No image data!!"
 
     # nDetector x dim x sample x length
