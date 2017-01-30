@@ -1333,20 +1333,20 @@ if __name__ == '__main__':
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         param_dict['ROC']['methods'] = ['progress0', 'progress1']
-        weight = [-3.0, -3.]
-        param_dict['HMM']['scale'] = [3.0, 3.0]
+        weight = [-5.6, -5.6]
+        param_dict['HMM']['scale'] = [12.0, 12.0]
         param_dict['HMM']['cov']   = 1.0
         single_detector = False 
 
         ## c8 86 (-3,-3)
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation9/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        param_dict['ROC']['methods'] = ['progress0', 'progress1']
-        weight = [-3.0, -4.5]
-        param_dict['HMM']['scale'] = [2.0, 2.0]
-        param_dict['HMM']['cov']   = 1.0
-        single_detector = False
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation9/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## param_dict['ROC']['methods'] = ['progress0', 'progress1']
+        ## weight = [-3.0, -4.5]
+        ## param_dict['HMM']['scale'] = [2.0, 2.0]
+        ## param_dict['HMM']['cov']   = 1.0
+        ## single_detector = False
 
         ## ## c12 68 = maybe.. best?
         ## save_data_path = os.path.expanduser('~')+\
