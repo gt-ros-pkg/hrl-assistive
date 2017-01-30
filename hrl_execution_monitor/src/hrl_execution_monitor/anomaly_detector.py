@@ -187,6 +187,9 @@ class anomaly_detector:
             ## print self.max_train
             ## print self.min_train
 
+        del self.f_param_dict['successData']
+        del self.f_param_dict['failureData']
+
             
 
     #-------------------------- Communication fuctions --------------------------

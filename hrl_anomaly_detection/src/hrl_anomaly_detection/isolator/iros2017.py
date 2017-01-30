@@ -1225,8 +1225,8 @@ if __name__ == '__main__':
                                                     'unimodal_kinEEChange',\
                                                     'crossmodal_landmarkEEDist', \
                                                     ]
-        param_dict['HMM']['scale'] = 11.0
-        param_dict['ROC']['progress_param_range'] = -np.logspace(-1., 1.4, nPoints)+1.0
+        param_dict['HMM']['scale'] = 7.0
+        param_dict['ROC']['progress_param_range'] = -np.logspace(-0.2, 1.4, nPoints)+1.0
         param_dict['ROC']['methods'] = ['progress']
 
         ## c11 13-90.48
@@ -1240,7 +1240,7 @@ if __name__ == '__main__':
                                                     'crossmodal_landmarkEEDist', \
                                                     ]
         param_dict['HMM']['scale'] = 9.0
-        param_dict['ROC']['progress_param_range'] = -np.logspace(-1.0, 1.5, nPoints)
+        param_dict['ROC']['progress_param_range'] = -np.logspace(-0.2, 1.5, nPoints)
         param_dict['ROC']['methods'] = ['progress']
 
         # c12 12-82 14-83.54 15-84.55
