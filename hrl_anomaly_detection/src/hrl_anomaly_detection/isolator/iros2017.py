@@ -1291,7 +1291,16 @@ if __name__ == '__main__':
         param_dict['ROC']['methods'] = ['progress0', 'progress1']
         param_dict['HMM']['scale']   = [9.0, 13.0]
         param_dict['HMM']['cov']     = 1.0
-          
+
+
+        ## ep
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation4/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        param_dict['ROC']['methods'] = ['progress0', 'progress1']
+        param_dict['HMM']['scale']   = [7.0, 10.0]
+        param_dict['HMM']['cov']     = 1.0
+        
         
         param_dict['data_param']['handFeatures'] = [['unimodal_audioWristRMS',  \
                                                     'unimodal_kinJntEff_1',\
