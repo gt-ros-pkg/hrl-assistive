@@ -54,8 +54,7 @@ QUEUE_SIZE = 10
 
 class anomaly_detector:
     def __init__(self, task_name, method, detector_id, save_data_path,\
-                 param_dict, debug=False, sim=False, sim_subject_names=None,
-                 viz=False):
+                 param_dict, debug=False, viz=False):
         rospy.loginfo('Initializing anomaly detector')
 
         self.task_name       = task_name.lower()
@@ -68,12 +67,12 @@ class anomaly_detector:
         # Important containers
         self.enable_detector = False
         self.dataList        = []
-        self.logpDataList    = []
-        ## self.anomaly_flag    = False
+        self.logpDataList    = [] # only for viz
         self.init_msg        = None
         self.last_msg        = None
         self.last_data       = None
         self.refData         = None
+        self.cur_task        = None
 
         # Params
         self.param_dict      = param_dict        
@@ -87,14 +86,7 @@ class anomaly_detector:
         self.ml           = None
         self.classifier   = None
         self.soundHandle  = SoundClient()
-
-        # sim  ---------------------------------------------
-        self.bSim         = sim
-        if self.bSim: self.cur_task = self.task_name
-        else:         self.cur_task = None
-        self.sim_subject_names = sim_subject_names
-        self.t1 = datetime.datetime.now()
-        # -------------------------------------------------
+        ## self.t1 = datetime.datetime.now()
 
         # Comms
         self.lock = threading.Lock()        
@@ -103,8 +95,6 @@ class anomaly_detector:
         self.initComms()
 
         # -------------------------------------------------
-        self.viz = viz
-        self.count = 0
         if viz:
             rospy.loginfo( "Visualization enabled!!!")
             self.fig = plt.figure()
@@ -156,15 +146,14 @@ class anomaly_detector:
                                                        queue_size=QUEUE_SIZE)
         self.sensitivity_pub         = rospy.Publisher("manipulation_task/ad_sensitivity_state", \
                                                        Float64, queue_size=QUEUE_SIZE, latch=True)
-        self.hmm_input_pub      = rospy.Publisher("manipulation_task/hmm_input"+str(self.id),
-                                                  FloatMatrix, queue_size=QUEUE_SIZE)
+        self.hmm_input_pub           = rospy.Publisher("manipulation_task/hmm_input"+str(self.id),
+                                                       FloatMatrix, queue_size=QUEUE_SIZE)
 
         # Subscriber # TODO: topic should include task name prefix?
-        rospy.Subscriber('/hrl_manipulation_task/raw_data', MultiModality, self.rawDataCallback)
+        rospy.Subscriber('/hrl_manipulation_task/raw_data', MultiModality, self.rawDataCallback, queue_size=1)
         rospy.Subscriber('/manipulation_task/status', String, self.statusCallback)
         rospy.Subscriber('manipulation_task/ad_sensitivity_request', Float64, self.sensitivityCallback)
         rospy.Subscriber("/manipulation_task/emergency", String, self.emergencyCallback, queue_size=10)
-
         ## rospy.Subscriber('/manipulation_task/proceed', String, self.debugCallback)
 
         # Service
@@ -206,7 +195,6 @@ class anomaly_detector:
         if msg.data is True:
             rospy.loginfo("%s anomaly detector %s enabled", self.task_name, str(self.id))
             self.enable_detector = True
-            ## self.anomaly_flag    = False            
             self.pubSensitivity()
             if self.viz:
                 self.fig.clf()
@@ -235,7 +223,6 @@ class anomaly_detector:
             self.last_msg = copy.copy(msg)
             return
 
-        self.lock.acquire()
         ########################################################################
         # Run your custom feature extraction function
         dataSample, scaled_dataSample = autil.extract_feature(msg,
@@ -251,6 +238,7 @@ class anomaly_detector:
         self.last_data = copy.copy(dataSample)
         ########################################################################
 
+        self.lock.acquire()
         # Subtract white noise by measuring offset using scaled data
         if self.dataList == [] or len(self.dataList[0][0]) < self.startOffsetSize:
             self.offsetData = np.zeros(np.shape(scaled_dataSample))            
@@ -270,7 +258,6 @@ class anomaly_detector:
             # dim x sample x length
             for i in xrange(self.nEmissionDim):
                 self.dataList[i][0] = self.dataList[i][0] + [scaled_dataSample[i]]
-
         
         self.lock.release()
 
@@ -304,7 +291,7 @@ class anomaly_detector:
 
 
     def emergencyCallback(self, msg):
-        #Emergency status button.
+        '''Emergency status button.'''
         print "in emergency callback", msg
         if msg.data.find('anomaly')>=0:
             msg = FloatMatrix()
@@ -312,15 +299,14 @@ class anomaly_detector:
             msg.size = self.nEmissionDim
             self.lock.acquire()            
             msg.data = np.array(self.dataList).flatten().tolist()
-            self.lock.release()
             self.hmm_input_pub.publish(msg)
+            self.lock.release()
 
 
     def debugCallback(self, msg):
         if msg.data.find("Set: Feeding 3, Feeding 4, retrieving")>=0:            
             rospy.loginfo("%s anomaly detector %s enabled", self.task_name, str(self.id))
             self.enable_detector = True
-            ## self.anomaly_flag    = False            
             self.pubSensitivity()                    
         else:
             rospy.loginfo("%s anomaly detector %s disabled", self.task_name, str(self.id))
@@ -336,7 +322,7 @@ class anomaly_detector:
         self.sensitivity_pub.publish(sensitivity)                                   
 
 
-    def set_anomaly_alarm(self, dataList):
+    def set_anomaly_alarm(self):
         rospy.loginfo( '-'*15 +  'Anomaly has occured!' + '-'*15 )
         self.soundHandle.play(1)
         self.action_interruption_pub.publish(self.task_name+'_anomaly')
@@ -345,13 +331,12 @@ class anomaly_detector:
         msg = FloatMatrix()
         msg.header.stamp = rospy.Time.now()        
         msg.size = self.nEmissionDim
-        msg.data = np.array(dataList).flatten().tolist()
+        self.lock.acquire()        
+        msg.data = np.array(self.dataList).flatten().tolist()
         self.hmm_input_pub.publish(msg)
-        ## self.anomaly_flag    = True                
-        ## self.enable_detector = False
-
-        rospy.sleep(1.0) #need of hmm_inpu pub
-        ## self.isolation_info_pub.publish(" XXXXXXXXXXX ")
+        self.lock.release()
+        
+        rospy.sleep(1.0) #need delay for hmm_input pub
         self.reset()
         
 
@@ -361,8 +346,8 @@ class anomaly_detector:
         self.enable_detector = False
         self.lock.acquire()
         self.dataList = []
-        self.logpDataList = []
         self.lock.release()
+        if self.viz: self.logpDataList = []
 
 
     def run(self, freq=20):
@@ -373,7 +358,7 @@ class anomaly_detector:
 
             if self.enable_detector is False or self.classifier is None: 
                 self.dataList = []
-                self.logpDataList = []
+                if self.viz: self.logpDataList = []
                 rate.sleep()                
                 continue
 
@@ -382,21 +367,15 @@ class anomaly_detector:
                 rate.sleep()                
                 continue
             self.lock.acquire()
-            dataList = copy.deepcopy(self.dataList)
+            ## dataList = copy.deepcopy(self.dataList)
+            logp, post = self.ml.loglikelihood(self.dataList, bPosterior=True)
+            cur_length = len(self.dataList[0][0])
             self.lock.release()
-            cur_length = len(dataList[0][0])
 
-            ## # moving avg filter
-            ## for i in xrange(self.nEmissionDim):
-            ##     x = autil.running_mean(dataList[i][0], 4)
-            ##     dataList[i][0] = x.tolist() #[x[0]]*4 + x.tolist()
-
-            logp, post = self.ml.loglikelihood(dataList, bPosterior=True)
-                
             #-----------------------------------------------------------------------
             if logp is None:
                 rospy.loginfo( "logp is None => anomaly" )
-                self.set_anomaly_alarm(dataList)
+                self.set_anomaly_alarm()
                 continue
 
             post = post[cur_length-1]
@@ -413,14 +392,15 @@ class anomaly_detector:
             # anomal classification
             err, y_pred, sigma = self.classifier.predict(X, debug=True)
             if self.viz:
-                self.logpDataList.append([len(dataList[0][0]), logp, y_pred, y_pred-sigma ])
+                self.lock.acquire()
+                self.logpDataList.append([len(self.dataList[0][0]), logp, y_pred, y_pred-sigma ])
                 ## self.viz_raw_input(self.dataList)
-                self.viz_decision_boundary(np.array(dataList)/self.scale, self.logpDataList)
+                self.viz_decision_boundary(np.array(self.dataList)/self.scale, self.logpDataList)
+                self.lock.release()
             
-            print len(dataList[0][0]), " : logp: ", logp, "  state: ", np.argmax(post), " y_pred: ", y_pred, sigma, self.id #err[-1]+logp, self.id            
-        
+            print cur_length, " : logp: ", logp, "  state: ", np.argmax(post), " y_pred: ", y_pred, sigma, self.id             
             if type(err) == list: err = err[-1]
-            if err > 0.0: self.set_anomaly_alarm(dataList)
+            if err > 0.0: self.set_anomaly_alarm()
             rate.sleep()
 
         # save model and params

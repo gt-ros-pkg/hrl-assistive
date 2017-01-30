@@ -892,6 +892,11 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
     failure_labels = np.array( failure_labels )
 
 
+
+    #temp
+    kFold_list = kFold_list[:8]
+
+
     #-----------------------------------------------------------------------------------------
     # Dynamic feature selection for detection and isolation
     print d['param_dict']['feature_names']    
@@ -927,11 +932,6 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
         feature_list.append(idx)
     successData_static = np.array(successData)[feature_list]
     failureData_static = np.array(failureData)[feature_list]
-
-    # ---------------------------------------------------------------
-    #temp
-    ## kFold_list = kFold_list[:1]
-    ## kFold_list = kFold_list[:8]
 
     #-----------------------------------------------------------------------------------------
     # Training HMM, and getting classifier training and testing data
