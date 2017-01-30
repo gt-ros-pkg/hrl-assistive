@@ -1396,14 +1396,14 @@ if __name__ == '__main__':
 
 
         ## c12 1010-70
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## param_dict['ROC']['methods'] = ['progress0', 'progress1']
-        ## weight = [-4.9, -4.9]
-        ## param_dict['HMM']['scale'] = [10.0, 10.0]
-        ## param_dict['HMM']['cov']   = 1.0
-        ## single_detector = False
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        param_dict['ROC']['methods'] = ['progress0', 'progress1']
+        weight = [-4.9, -4.9]
+        param_dict['HMM']['scale'] = [4.0, 7.0]
+        param_dict['HMM']['cov']   = 1.0
+        single_detector = False
 
         ## ep
         ## save_data_path = os.path.expanduser('~')+\
