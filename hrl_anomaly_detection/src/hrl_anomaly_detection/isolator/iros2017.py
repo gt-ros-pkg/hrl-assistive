@@ -1230,18 +1230,18 @@ if __name__ == '__main__':
         param_dict['ROC']['methods'] = ['progress']
 
         ## c11 13-90.48
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation5/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
-        ##                                             'unimodal_kinJntEff_1',\
-        ##                                             'unimodal_ftForce_integ',\
-        ##                                             'unimodal_kinEEChange',\
-        ##                                             'crossmodal_landmarkEEDist', \
-        ##                                             ]
-        ## param_dict['HMM']['scale'] = 14.0
-        ## param_dict['ROC']['progress_param_range'] = -np.logspace(-1.0, 1.5, nPoints)
-        ## param_dict['ROC']['methods'] = ['progress']
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation5/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
+                                                    'unimodal_kinJntEff_1',\
+                                                    'unimodal_ftForce_integ',\
+                                                    'unimodal_kinEEChange',\
+                                                    'crossmodal_landmarkEEDist', \
+                                                    ]
+        param_dict['HMM']['scale'] = 9.0
+        param_dict['ROC']['progress_param_range'] = -np.logspace(-1.0, 1.5, nPoints)
+        param_dict['ROC']['methods'] = ['progress']
 
         # c12 14-83.54 15-84.55
         ## save_data_path = os.path.expanduser('~')+\
