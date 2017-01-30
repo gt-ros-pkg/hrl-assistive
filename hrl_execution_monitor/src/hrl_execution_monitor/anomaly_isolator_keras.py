@@ -107,7 +107,18 @@ class anomaly_isolator:
         self.nStcFeatures = len(self.stcFeatures)
 
         self.n_labels = 12
-        self.classes = ['Object collision', 'Noisy environment', 'Spoon miss by a user', 'Spoon collision by a user', 'Robot-body collision by a user', 'Aggressive eating', 'Anomalous sound from a user', 'Unreachable mouth pose', 'Face occlusion by a user', 'Spoon miss by system fault', 'Spoon collision by system fault', 'Freeze by system fault']
+        self.classes = ['Object collision',
+                        'Noisy environment',
+                        'Spoon miss by a user',
+                        'Spoon collision by a user',
+                        'Robot-body collision by a user',
+                        'Aggressive eating',
+                        'Anomalous sound from a user',
+                        'Unreachable mouth pose',
+                        'Face occlusion by a user',
+                        'Spoon miss by system fault',
+                        'Spoon collision by system fault',
+                        'Freeze by system fault']
 
 
     def initComms(self):
@@ -165,7 +176,7 @@ class anomaly_isolator:
         '''
         with self.img_lock:
             self.img_data = self.bridge.imgmsg_to_cv2(msg)
-            self.img_data = self.img_data[:,:,[2,1,0]]
+            self.img_data = self.img_data[:,:,[2,1,0]] # rgb to bgr
 
         ## cv2.imshow('image',self.img_data)
         ## cv2.waitKey(0)
@@ -267,7 +278,8 @@ class anomaly_isolator:
         rate = rospy.Rate(freq) # 20Hz, nominally.
         while not rospy.is_shutdown():
 
-            if len(self.dyn_data1)>0 and len(self.dyn_data2)>0 and len(self.stc_data)>0 and self.enable_isolator:
+            if len(self.dyn_data1)>0 and len(self.dyn_data2)>0 and len(self.stc_data)>0 and\
+                len(self.img_data)>0 and self.enable_isolator:
                 print "Start to isolate an anomaly!!!!!!!!!!!!!!!!!!!!!!!!!!"
                 # run isolator
                 x1 = autil.temporal_features(np.array(self.dyn_data1)[:,0], self.max_length, self.hmm_list[0],
@@ -301,14 +313,16 @@ class anomaly_isolator:
                 img = img[(img_size[0]-crop_size[0])//2:(img_size[0]+crop_size[0])//2
                           ,(img_size[1]-crop_size[1])//2:(img_size[1]+crop_size[1])//2,:]
 
-                # for vgg but lets use
+                # for vgg 
                 img[:,:,0] -= 103.939
                 img[:,:,1] -= 116.779
                 img[:,:,2] -= 123.68
-                img = img.transpose((2,0,1))
+                img = np.expand_dims(img.transpose((2,0,1)), axis=0)
+                x   = np.expand_dims(x,axis=0)
 
                 # ---------------------------------------------------------------------
-                y_pred = self.keras_model.predict([img/25., x])
+                y_pred = self.keras_model.predict([img/255., x])
+                print y_pred
                 y_pred = np.argmax(y_pred, axis=1)
                 ## y_pred = self.cf.predict(x)
                 anomaly_type = self.classes[y_pred[0]]
@@ -328,6 +342,7 @@ def get_isolator_keras_model(input_shape1, input_shape2, n_labels, save_data_pat
 
     if prefix is 'vgg': prefix = 'vgg_'
 
+    ## weights_path = os.path.join(save_data_path,'keras',prefix+'all_weights_'+str(fold_idx)+'_demo.h5')
     weights_path = os.path.join(save_data_path,'keras',prefix+'all_weights_'+str(fold_idx)+'.h5')
 
     from hrl_execution_monitor.keras_util import keras_model as km    
@@ -361,6 +376,7 @@ if __name__ == '__main__':
         raw_data_path, save_data_path, param_dict = getParams(opt.task)
         ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo'
         save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
+        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
         
     else:
         rospy.loginfo( "Not supported task")
