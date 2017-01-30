@@ -879,7 +879,7 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, \
 
                 x.append( cp_vecs )
                 y.append( abnormalLabel[i] )
-                if abnormalData_img[i] is not None:
+                if abnormalData_img is not None and abnormalData_img[i] is not None:
                     x_img.append( abnormalData_img[i][d_idx+j-1] )
                 else:
                     x_img.append(None)
@@ -912,7 +912,7 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, \
             cp_vecs = cp_vecs.tolist()+ vals
             x.append( cp_vecs )
             y.append( abnormalLabel[i] )
-            if abnormalData_img[i] is not None:
+            if abnormalData_img is not None and abnormalData_img[i] is not None:
                 x_img.append( abnormalData_img[i][d_idx-1] )
             else:
                 x_img.append( None )
