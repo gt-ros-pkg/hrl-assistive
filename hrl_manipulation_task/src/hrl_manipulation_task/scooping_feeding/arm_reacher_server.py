@@ -299,7 +299,8 @@ class armReachAction(mpcBaseAction):
         self.motions['runFeeding'] = {}
         self.motions['runFeeding']['left'] = [['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], self.mouthOffset[2], 0., 0., 0.]', 3., 'self.mouth_frame'],\
                                               ['PAUSE', 0.0],
-                                              ['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], -0.2+self.mouthOffset[2], 0., 0., 0.]', 4., 'self.mouth_frame']]
+                                              ['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], -0.15+self.mouthOffset[2], 0., 0., 0.]', 4., 'self.mouth_frame']]
+                                              ## ['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], -0.2+self.mouthOffset[2], 0., 0., 0.]', 4., 'self.mouth_frame']]
         ## self.motions['runFeeding']['left'] = [['MOVES', '[-0.02, 0.0, 0.05, 0., 0., 0.]', 5., 'self.mouth_frame'],\
         ##                                       ['PAUSE', 0.5],
         ##                                       ['MOVES', '[-0.02, 0.0, -0.1, 0., 0., 0.]', 5., 'self.mouth_frame']]

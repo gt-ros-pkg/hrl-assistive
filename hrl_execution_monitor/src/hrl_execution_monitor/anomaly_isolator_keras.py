@@ -107,7 +107,18 @@ class anomaly_isolator:
         self.nStcFeatures = len(self.stcFeatures)
 
         self.n_labels = 12
-        self.classes = ['Object collision', 'Noisy environment', 'Spoon miss by a user', 'Spoon collision by a user', 'Robot-body collision by a user', 'Aggressive eating', 'Anomalous sound from a user', 'Unreachable mouth pose', 'Face occlusion by a user', 'Spoon miss by system fault', 'Spoon collision by system fault', 'Freeze by system fault']
+        self.classes = ['Object collision',
+                        'Noisy environment',
+                        'Spoon miss by a user',
+                        'Spoon collision by a user',
+                        'Robot-body collision by a user',
+                        'Aggressive eating',
+                        'Anomalous sound from a user',
+                        'Unreachable mouth pose',
+                        'Face occlusion by a user',
+                        'Spoon miss by system fault',
+                        'Spoon collision by system fault',
+                        'Freeze by system fault']
 
 
     def initComms(self):
@@ -311,6 +322,7 @@ class anomaly_isolator:
 
                 # ---------------------------------------------------------------------
                 y_pred = self.keras_model.predict([img/255., x])
+                print y_pred
                 y_pred = np.argmax(y_pred, axis=1)
                 ## y_pred = self.cf.predict(x)
                 anomaly_type = self.classes[y_pred[0]]
@@ -364,6 +376,7 @@ if __name__ == '__main__':
         raw_data_path, save_data_path, param_dict = getParams(opt.task)
         ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo'
         save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
+        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
         
     else:
         rospy.loginfo( "Not supported task")
