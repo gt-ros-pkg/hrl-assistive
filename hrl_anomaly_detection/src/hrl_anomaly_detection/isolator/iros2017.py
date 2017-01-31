@@ -1203,9 +1203,14 @@ if __name__ == '__main__':
         ## single_detector = False
         
         #-----------------------------------------------------------------------------------
-        # 1212-67.5 0707-73.5
-        # 0913-58
+        # 0505-79-70
+        # 0606-81-66
         # 0609-83-71
+        # 0707-  -73.5        
+        # 0713-89-63
+        # 0909-83-67
+        # 0913-58
+        # 1212-67.5 
         
         ## c8  
         save_data_path = os.path.expanduser('~')+\
@@ -1244,7 +1249,7 @@ if __name__ == '__main__':
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         param_dict['ROC']['methods'] = ['progress0', 'progress1']
         weight = [-3., -3.]
-        param_dict['HMM']['scale'] = [5.0, 5.0]
+        param_dict['HMM']['scale'] = [6.0, 11.0]
         param_dict['HMM']['cov']   = 1.0
         single_detector = False
 
