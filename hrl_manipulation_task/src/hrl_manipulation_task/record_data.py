@@ -126,22 +126,14 @@ class logger:
         self.setTask(task)
 
     
-    def feedbackCallback(self, data):
+    def feedbackCallback(self, msg):
         ''' GUI implementation
         '''
         #Just...log? idk where this one will go. I assume it is integrated with log....
-        self.feedbackMSG = data.data
         print "Logger feedback received"
-        self.feedbackStatus = feedback_to_label(data.data)
-        
-        ## if len(self.feedbackMSG) > 2:
-        ##     if self.feedbackMSG[0] == "TRUE" and self.feedbackMSG[1] == "FALSE" and self.feedbackMSG[2] == "FALSE":
-        ##         self.feedbackStatus = '1'
-        ##     else:#if self.feedbackMSG[0] != "SKIP":
-        ##         self.feedbackStatus = '2'
-        ## else:
-        ##     self.feedbackStatus = '3'
-            
+        self.feedbackMSG = msg.data
+        self.feedbackStatus = feedback_to_label(msg.data)
+                    
 
     def getLogStatus(self):
         return self.enable_log_thread
@@ -242,17 +234,17 @@ class logger:
         rospy.loginfo("Finish to log!")
 
 
-        ##GUI section
     def close_log_file_GUI(self, bCont=False, last_status='skip'):
+        ''' Save log file commanded from GUI '''
 
         # logging by thread
         self.log_stop()
 
-        flag = 0
         self.feedbackStatus = 0
         if bCont:
             status = last_status
         else:
+            flag = 0
             rate = rospy.Rate(2)
             while flag == 0 and not rospy.is_shutdown():
                 flag = self.feedbackStatus
@@ -260,7 +252,6 @@ class logger:
                 rate.sleep()
 
             status = flag
-            print flag
             self.feedbackStatus=0
             print status
 
@@ -397,9 +388,9 @@ class logger:
         #self.log_start()
 
         count = 0
-        rate = rospy.Rate(100) # 25Hz, nominally.
+        rate = rospy.Rate(50) # 25Hz, nominally.
         while not rospy.is_shutdown():
-            count += 1
+            ## count += 1
             ## if count > 800: break
             rate.sleep()
 

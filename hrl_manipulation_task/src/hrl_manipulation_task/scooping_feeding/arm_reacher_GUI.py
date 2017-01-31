@@ -58,7 +58,6 @@ class armReacherGUI:
         self.inputStatus = False
         self.actionStatus = 'Init'
         self.inputMsg = None
-        self.feedbackMsg = None
         self.ScoopNumber = 0
         self.FeedNumber = 0
         self.detection_flag = detection_flag
@@ -75,7 +74,6 @@ class armReacherGUI:
         self.motion_complete = False
         self.quick_feeding = quick_feeding
         self.quick_feeding_ready=False
-        ##manipulation_task/user_input (user_feedback)(emergency)(status)
 
         self.initComms()
         self.run()
@@ -170,7 +168,6 @@ class armReacherGUI:
         #record_data.py take cares of logging. This is here, just incase implementation to this program is needed.
         if not self.guiStatusReady:
             return
-        self.feedbackMsg = msg.data
         self.feedback_received = True
         if self.motion_complete:
             self.guiStatusPub.publish("select task")
