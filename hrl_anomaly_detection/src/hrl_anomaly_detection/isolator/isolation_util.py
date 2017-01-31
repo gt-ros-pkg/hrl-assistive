@@ -784,7 +784,7 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failureData_static, \
         input_train_list = [abnormalTrainData_1]
         input_test_list  = [abnormalTestData_1]
 
-    
+
     print "Feature extraction with training data"
     x_train, y_train, x_train_img = feature_extraction(idx, detection_train_idx_list, \
                                                        input_train_list,\
@@ -916,6 +916,12 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, \
                 x_img.append( abnormalData_img[i][d_idx-1] )
             else:
                 x_img.append( None )
+
+
+        if len(x_img) == 0:
+            print "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            print np.shape(abnormalData_img)
+            print x_img
 
     return x, y, x_img
 

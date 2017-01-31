@@ -410,7 +410,8 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
                            downSampleSize=data_dict['downSampleSize'],\
                            handFeatures=data_dict['isolationFeatures'], \
                            cut_data=data_dict['cut_data'], \
-                           data_renew=data_renew, max_time=data_dict['max_time'])
+                           data_renew=data_renew, max_time=data_dict['max_time'],
+                           ros_bag_image=True)
                            
         successData, failureData, success_files, failure_files, kFold_list \
           = dm.LOPO_data_index(d['successDataList'], d['failureDataList'],\
@@ -623,205 +624,6 @@ def evaluation_omp_isolation(subject_names, task_name, raw_data_path, processed_
     print np.mean(scores), np.std(scores)
 
 
-## def evaluation_isolation(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
-##                          data_renew=False, svd_renew=False, save_pdf=False, verbose=False, debug=False,\
-##                          no_plot=False, delay_plot=True, find_param=False, data_gen=False, \
-##                          save_viz_data=False, weight=-5.0, ref_idx=3, window_steps=10):
-##     ## Parameters
-##     # data
-##     data_dict  = param_dict['data_param']
-##     data_renew = data_dict['renew']
-##     # HMM
-##     HMM_dict   = param_dict['HMM']
-##     nState     = HMM_dict['nState']
-##     cov        = HMM_dict['cov']
-##     # SVM
-##     SVM_dict   = param_dict['SVM']
-##     # ROC
-##     ROC_dict = param_dict['ROC']
-
-##     # parameters
-##     startIdx    = 4
-##     method_list = ROC_dict['methods'] 
-##     nPoints     = ROC_dict['nPoints']
-    
-##     #------------------------------------------
-##     if os.path.isdir(processed_data_path) is False:
-##         os.system('mkdir -p '+processed_data_path)
-
-##     crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
-
-##     if os.path.isfile(crossVal_pkl) and data_renew is False and data_gen is False:
-##         print "CV data exists and no renew"
-##         d = ut.load_pickle(crossVal_pkl)
-##         kFold_list = d['kFoldList'] 
-##         successData = d['successIsolData']
-##         failureData = d['failureIsolData']        
-##         success_files = d['success_files']
-##         failure_files = d['failure_files']
-##     else:
-##         '''
-##         Use augmented data? if nAugment is 0, then aug_successData = successData
-##         '''        
-##         d = dm.getDataLOPO(subject_names, task_name, raw_data_path, \
-##                            processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
-##                            downSampleSize=data_dict['downSampleSize'],\
-##                            handFeatures=param_dict['data_param']['isolationFeatures'], \
-##                            cut_data=data_dict['cut_data'], \
-##                            data_renew=data_renew, max_time=data_dict['max_time'],\
-##                            ros_bag_image=True)
-                           
-##         successData, failureData, success_files, failure_files, kFold_list \
-##           = dm.LOPO_data_index(d['successDataList'], d['failureDataList'],\
-##                                d['successFileList'], d['failureFileList'])
-
-##         d['successIsolData'] = successData
-##         d['failureIsolData'] = failureData
-##         d['success_files']   = success_files
-##         d['failure_files']   = failure_files
-##         d['kFoldList']       = kFold_list
-##         ut.save_pickle(d, crossVal_pkl)
-##         if data_gen: sys.exit()
-
-##     # flattening image list
-##     success_image_list = autil.image_list_flatten( d.get('success_image_list',[]) )
-##     failure_image_list = autil.image_list_flatten( d.get('failure_image_list',[]) )
-
-##     failure_labels = []
-##     for f in failure_files:
-##         failure_labels.append( int( f.split('/')[-1].split('_')[0] ) )
-##     failure_labels = np.array( failure_labels )
-
-
-##     # ---------------------------------------------------------------
-##     # select feature for detection
-##     feature_list = []
-##     for feature in param_dict['data_param']['handFeatures']:
-##         idx = [ i for i, x in enumerate(param_dict['data_param']['isolationFeatures']) if feature == x][0]
-##         feature_list.append(idx)
-    
-##     ## feature_list 
-##     successData_ad = np.array(successData)[feature_list]
-##     failureData_ad = np.array(failureData)[feature_list]
-
-##     dm.saveHMMinducedFeatures(kFold_list, successData_ad, failureData_ad,\
-##                               task_name, processed_data_path,\
-##                               HMM_dict, data_renew, startIdx, nState, cov, \
-##                               success_files=success_files, failure_files=failure_files,\
-##                               noise_mag=0.03, verbose=verbose)
-
-##     # select features for isolation
-##     feature_list = []
-##     for feature in param_dict['data_param']['staticFeatures']:
-##         idx = [ i for i, x in enumerate(param_dict['data_param']['isolationFeatures']) if feature == x][0]
-##         feature_list.append(idx)
-##     successData_static = np.array(successData)[feature_list]
-##     failureData_static = np.array(failureData)[feature_list]
-
-##     # select features for isolation
-##     if 'dynamicFeatures' in param_dict['data_param'].keys():
-##         feature_list = []
-##         for feature in param_dict['data_param']['dynamicFeatures']:
-##             idx = [ i for i, x in enumerate(param_dict['data_param']['isolationFeatures']) if feature == x][0]
-##             feature_list.append(idx)
-##         successData_dynamic = np.array(successData)[feature_list]
-##         failureData_dynamic = np.array(failureData)[feature_list]
-
-##         df_HMM_dict = copy.copy(HMM_dict)
-##         df_HMM_dict['scale'] = param_dict['HMM']['df_scale']
-##         dm.saveHMMinducedFeatures(kFold_list, successData_dynamic, failureData_dynamic,\
-##                                   task_name, processed_data_path,\
-##                                   df_HMM_dict, data_renew, startIdx, nState, cov, \
-##                                   success_files=success_files, failure_files=failure_files,\
-##                                   suffix='dynamic',\
-##                                   noise_mag=0.03, verbose=verbose)
-##         dynamic_flag = True
-##     else:
-##         dynamic_flag = False
-##         successData_dynamic = None
-##         failureData_dynamic = None
-
-##     # ---------------------------------------------------------------
-##     #temp
-##     kFold_list = kFold_list[:8]
-
-##     # set parameters
-##     method     = 'hmmgp'
-##     nMaxData   = 20 # The maximun number of executions to train GP
-##     nSubSample = 50 # The number of sub-samples from each execution to train GP
-
-##     #-----------------------------------------------------------------------------------------
-##     # Training HMM, and getting classifier training and testing data
-##     data_dict = {}
-##     data_pkl = os.path.join(processed_data_path, 'isol_data.pkl')
-##     if os.path.isfile(data_pkl) is False or svd_renew:
-
-##         n_jobs = 1
-##         l_data = Parallel(n_jobs=n_jobs, verbose=10)\
-##           (delayed(iutil.get_hmm_isolation_data)(idx, kFold_list[idx], [failureData_ad, failureData_dynamic], \
-##                                                  failureData_static, \
-##                                                  failure_labels,\
-##                                                  failure_image_list,\
-##                                                  task_name, processed_data_path, param_dict, weight,\
-##                                                  dynamic_flag, n_jobs=-1, window_steps=window_steps,\
-##                                                  ) for idx in xrange(len(kFold_list)) )
-        
-##         data_dict = {}
-##         for i in xrange(len(l_data)):
-##             idx = l_data[i][0]
-##             data_dict[idx] = (l_data[i][1],l_data[i][2],l_data[i][3],l_data[i][4] )
-            
-##         print "save pkl: ", data_pkl
-##         ut.save_pickle(data_dict, data_pkl)            
-##     else:
-##         data_dict = ut.load_pickle(data_pkl)
-
-
-##     # ---------------------------------------------------------------
-##     scores = []
-##     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
-##       in enumerate(kFold_list):
-##         print "kFold_list: ", idx
-
-##         (x_trains, y_train, x_tests, y_test) = data_dict[idx]         
-##         x_train = x_trains[0] 
-##         x_test  = x_tests[0] 
-##         print np.shape(x_train), np.shape(x_test)
-
-##         from sklearn import preprocessing
-##         scaler = preprocessing.StandardScaler()
-##         x_train = scaler.fit_transform(x_train)
-##         x_test  = scaler.transform(x_test)
-
-##         if type(x_train) is np.ndarray:
-##             x_train = x_train.tolist()
-##             x_test  = x_test.tolist()
-##         if type(y_train) is np.ndarray:
-##             y_train  = y_train.tolist()
-##             y_test   = y_test.tolist()
-        
-##         ## from sklearn.svm import SVC
-##         ## clf = SVC(C=1.0, kernel='rbf') #, decision_function_shape='ovo')
-##         from sklearn.ensemble import RandomForestClassifier
-##         clf = RandomForestClassifier(n_estimators=400, n_jobs=-1)
-        
-##         clf.fit(x_train, y_train)
-##         ## y_pred = clf.predict(x_test.tolist())
-##         score = clf.score(x_test, y_test)
-##         scores.append( score )
-##         print idx, " : score = ", score
-
-
-##     print scores
-##     print "Score mean = ", np.mean(scores), np.std(scores)
-
-##     #temp
-##     iutil.save_data_labels(x_train, y_train)
-##     sys.exit()
-
-
-
-
 
 def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
                           data_renew=False, svd_renew=False, save_pdf=False, verbose=False, debug=False,\
@@ -940,14 +742,14 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
     data_pkl = os.path.join(processed_data_path, 'isol_data.pkl')
     if os.path.isfile(data_pkl) is False or HMM_dict['renew'] or SVM_dict['renew']:
 
-        l_data = Parallel(n_jobs=-1, verbose=10)\
+        l_data = Parallel(n_jobs=1, verbose=10)\
           (delayed(iutil.get_hmm_isolation_data)(idx, kFold_list[idx], failure_data_ad, \
                                                  failureData_static, \
                                                  failure_labels,\
                                                  failure_image_list,\
                                                  task_name, processed_data_path, param_dict, weight,\
                                                  single_detector=single_detector,\
-                                                 n_jobs=1, window_steps=window_steps, verbose=verbose\
+                                                 n_jobs=-1, window_steps=window_steps, verbose=verbose\
                                                  ) for idx in xrange(len(kFold_list)) )
         
         data_dict = {}
@@ -969,7 +771,8 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
 
         (x_trains, y_train, x_tests, y_test) = data_dict[idx]         
         x_train = x_trains[0] 
-        x_test  = x_tests[0] 
+        x_test  = x_tests[0]
+        print np.shape(x_trains[0]), np.shape(x_trains[1]), np.shape(y_train)
 
         from sklearn import preprocessing
         scaler = preprocessing.StandardScaler()
@@ -1289,25 +1092,25 @@ if __name__ == '__main__':
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation5/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         param_dict['ROC']['methods'] = ['progress0', 'progress1']
-        param_dict['HMM']['scale']   = [9.0, 13.0]
+        param_dict['HMM']['scale']   = [7.0, 13.0]
         param_dict['HMM']['cov']     = 1.0
 
 
         ## ep
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation4/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        param_dict['ROC']['methods'] = ['progress0', 'progress1']
-        param_dict['HMM']['scale']   = [7.0, 10.0]
-        param_dict['HMM']['cov']     = 1.0
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation4/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## param_dict['ROC']['methods'] = ['progress0', 'progress1']
+        ## param_dict['HMM']['scale']   = [7.0, 10.0]
+        ## param_dict['HMM']['cov']     = 1.0
 
         ## c12
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        param_dict['ROC']['methods'] = ['progress0', 'progress1']
-        param_dict['HMM']['scale']   = [4.0, 7.0]
-        param_dict['HMM']['cov']     = 1.0
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## param_dict['ROC']['methods'] = ['progress0', 'progress1']
+        ## param_dict['HMM']['scale']   = [4.0, 7.0]
+        ## param_dict['HMM']['cov']     = 1.0
 
         ## c8
         ## save_data_path = os.path.expanduser('~')+\
@@ -1384,7 +1187,7 @@ if __name__ == '__main__':
         param_dict['HMM']['cov']   = 1.0
         single_detector = False 
 
-        ## c11 
+        ## c11 0913-58
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation5/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
