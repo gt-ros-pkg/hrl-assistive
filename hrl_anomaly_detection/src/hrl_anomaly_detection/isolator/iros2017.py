@@ -1205,6 +1205,7 @@ if __name__ == '__main__':
         #-----------------------------------------------------------------------------------
         # 1212-67.5 0707-73.5
         # 0913-58
+        # 0609-83-71
         
         ## c8  
         save_data_path = os.path.expanduser('~')+\
@@ -1212,7 +1213,7 @@ if __name__ == '__main__':
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         param_dict['ROC']['methods'] = ['progress0', 'progress1']
         weight = [-4.8, -4.8]
-        param_dict['HMM']['scale'] = [6.0, 9.0]
+        param_dict['HMM']['scale'] = [6.0, 6.0]
         param_dict['HMM']['cov']   = 1.0
         single_detector = False 
 
@@ -1238,14 +1239,14 @@ if __name__ == '__main__':
         ## single_detector = False
 
         ## ep
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation4/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        param_dict['ROC']['methods'] = ['progress0', 'progress1']
-        weight = [-3., -3.]
-        param_dict['HMM']['scale'] = [6.0, 9.0]
-        param_dict['HMM']['cov']   = 1.0
-        single_detector = False
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation4/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## param_dict['ROC']['methods'] = ['progress0', 'progress1']
+        ## weight = [-3., -3.]
+        ## param_dict['HMM']['scale'] = [6.0, 9.0]
+        ## param_dict['HMM']['cov']   = 1.0
+        ## single_detector = False
 
 
 
