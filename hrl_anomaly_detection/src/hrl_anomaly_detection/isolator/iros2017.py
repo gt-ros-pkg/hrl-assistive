@@ -765,7 +765,7 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
     # Training HMM, and getting classifier training and testing data
     data_dict = {}
     data_pkl = os.path.join(processed_data_path, 'isol_data.pkl')
-    if os.path.isfile(data_pkl) is False or HMM_dict['renew'] or SVM_dict['renew']:
+    if os.path.isfile(data_pkl) is False or HMM_dict['renew'] or SVM_dict['renew'] or svd_renew:
 
         l_data = Parallel(n_jobs=1, verbose=10)\
           (delayed(iutil.get_hmm_isolation_data)(idx, kFold_list[idx], failure_data_ad, \
@@ -1228,24 +1228,24 @@ if __name__ == '__main__':
 
 
         ## ## c12 1010-70
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## param_dict['ROC']['methods'] = ['progress0', 'progress1']
-        ## weight = [-4.9, -4.9]
-        ## param_dict['HMM']['scale'] = [9.0, 9.0]
-        ## param_dict['HMM']['cov']   = 1.0
-        ## single_detector = False
-
-        ## ep
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation4/'+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         param_dict['ROC']['methods'] = ['progress0', 'progress1']
-        weight = [-3., -3.]
-        param_dict['HMM']['scale'] = [6.0, 9.0]
+        weight = [-4.9, -4.9]
+        param_dict['HMM']['scale'] = [9.0, 9.0]
         param_dict['HMM']['cov']   = 1.0
         single_detector = False
+
+        ## ep
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation4/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## param_dict['ROC']['methods'] = ['progress0', 'progress1']
+        ## weight = [-3., -3.]
+        ## param_dict['HMM']['scale'] = [6.0, 9.0]
+        ## param_dict['HMM']['cov']   = 1.0
+        ## single_detector = False
 
 
 
