@@ -1715,7 +1715,7 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
 
         # Unimodal feature - Force zeroing -------------------------------------------
         if 'unimodal_ftForce_XY' in feature_list:
-            ftForce = d['ftForceList'][idx]
+            ftForce = d['ftForceList'][idx][:2,:]
 
             if offset_flag: 
                 ftForce -= np.mean(ftForce[:2,:startOffsetSize], axis=1)[:,np.newaxis]
