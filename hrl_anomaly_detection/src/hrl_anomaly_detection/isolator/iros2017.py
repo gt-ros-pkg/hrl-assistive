@@ -1203,6 +1203,7 @@ if __name__ == '__main__':
         ## single_detector = False
         
         #-----------------------------------------------------------------------------------
+        # 0408
         # 0505-79-70
         # 0507-80-72.5
         # 0508-81-72
@@ -1211,7 +1212,7 @@ if __name__ == '__main__':
         # 0511-86-71
         # 0606-81-66
         # 0607-82-64
-        # 0608
+        # 0608-82-69
         # 0609-83-71
         # 0610-84-68
         # 0611-87-60
@@ -1264,7 +1265,7 @@ if __name__ == '__main__':
         ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         ## param_dict['ROC']['methods'] = ['progress0', 'progress1']
         ## weight = [-3., -3.]
-        ## param_dict['HMM']['scale'] = [6.0, 8.0]
+        ## param_dict['HMM']['scale'] = [4.0, 8.0]
         ## param_dict['HMM']['cov']   = 1.0
         ## single_detector = False
 
