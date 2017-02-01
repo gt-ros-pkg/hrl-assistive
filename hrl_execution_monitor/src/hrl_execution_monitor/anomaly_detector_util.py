@@ -250,7 +250,7 @@ if __name__ == '__main__':
     #c11 90 #best
     save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo'
     param_dict['ROC']['methods'] = ['progress0', 'progress1']
-    param_dict['HMM']['scale'] = [2., 2.]
+    param_dict['HMM']['scale'] = [5., 5.]
     param_dict['ROC']['progress0_param_range'] = -np.logspace(-0.2, 1.3, nPoints)
     param_dict['ROC']['progress1_param_range'] = -np.logspace(-0.2, 1.3, nPoints)
 
