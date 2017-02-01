@@ -1,6 +1,8 @@
 <launch>
 
         <!-- makes unfiltered results -->
+        <arg name="user" default="temp"/>
+        <arg name="mode" default="load"/>
 	<node name="findMouth" pkg="hrl_manipulation_task"
               type="mouth_pose_detector.py" args="-l
                                                   /SR300_rgb_optical_frame
@@ -13,7 +15,9 @@
                                                   -D
                                                   /SR300/depth_registered/sw_registered/camera_info
                                                   -s 1 --flip
-                                                  --rgb_mode rgb8" output="screen"/>
+                                                  --rgb_mode rgb8
+                                                  --$(arg mode)
+                                                  --user_name $(arg user)" output="screen"/>
 
         <!-- for filtering -->
         <node name="findMouthFilter" pkg="hrl_manipulation_task" type="mouth_pose_filter.py"/>

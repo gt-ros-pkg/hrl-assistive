@@ -180,7 +180,7 @@ class MouthPoseDetector:
         self.lm_coor           = d['lm_coor']
         self.gripper_to_sensor = d['gripper_to_sensor']
         self.wrong_coor        = d['wrong_coor']
-        self.prev_pose         = None
+        self.prev_pose         = d['initial_pose']#None
         self.initial_face      = d['initial_face']
         self.initial_pose      = d['initial_pose'] 
         self.initial_position     = d['initial_position']
@@ -385,6 +385,7 @@ class MouthPoseDetector:
                     self.previous_position = self.initial_position #(0.0, 0.0, 0.0)
                     self.previous_orientation = self.initial_orientation #(0.0, 0.0, 0.0, 0.0)
                     self.prev_pose = self.initial_pose
+                    self.previous_face = self.initial_face
                 point_set, points_ordered = self.retrieve_points(landmarks, depth)
                 #print points_ordered
 
@@ -459,7 +460,7 @@ class MouthPoseDetector:
                             #print lm_point
                             self.wrong_coor = lm_point
                     self.initial_position, self.initial_orientation = self.pose_to_tuple(pose)
-                    self.inital_face = faces
+                    self.initial_face = faces
                     self.first = False 
                     if self.save_loc is not None:
                         self.save(self.save_loc)
