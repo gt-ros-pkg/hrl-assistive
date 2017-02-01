@@ -1209,7 +1209,7 @@ if __name__ == '__main__':
         # 0507-80-72.5
         # 0508-81-72
         # 0509-82-71.7
-        # 0510
+        # 0510-83-70.6
         # 0511-86-71
         # 0606-81-66
         # 0607-82-64
@@ -1219,8 +1219,8 @@ if __name__ == '__main__':
         # 0611-87-60
         # 0613-89-64
         # 0705-77-72
-        # 0706
-        # 0707-  -73.5
+        # 0706-80-71.5
+        # 0707-82-72.4
         # 07075-
         # 0708-82-65
         # 0709-82-70
@@ -1266,7 +1266,7 @@ if __name__ == '__main__':
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         param_dict['ROC']['methods'] = ['progress0', 'progress1']
         weight = [-3., -3.]
-        param_dict['HMM']['scale'] = [4.0, 7.0]
+        param_dict['HMM']['scale'] = [5.0, 11.0]
         param_dict['HMM']['cov']   = 1.0
         single_detector = False
 
@@ -1299,8 +1299,9 @@ if __name__ == '__main__':
         
         param_dict['data_param']['staticFeatures'] = ['unimodal_audioWristFrontRMS',\
                                                       'unimodal_audioWristAzimuth',\
-                                                      'unimodal_ftForceX',\
-                                                      'unimodal_ftForceY',\
+                                                      'unimodal_ftForce_XY',\
+                                                      ## 'unimodal_ftForceX',\
+                                                      ## 'unimodal_ftForceY',\
                                                       ## 'unimodal_ftForceZ',\
                                                       'unimodal_fabricForce',  \
                                                       'unimodal_landmarkDist',\

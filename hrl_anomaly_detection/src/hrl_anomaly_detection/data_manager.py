@@ -1713,6 +1713,22 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
                 param_dict['feature_names'].append('ftForce_z')
 
 
+        # Unimodal feature - Force zeroing -------------------------------------------
+        if 'unimodal_ftForce_XY' in feature_list:
+            ftForce = d['ftForceList'][idx]
+
+            if offset_flag: 
+                ftForce -= np.mean(ftForce[:2,:startOffsetSize], axis=1)[:,np.newaxis]
+            
+            # magnitude
+            unimodal_ftForce_mag = np.linalg.norm(ftForce, axis=0)
+
+            if dataSample is None: dataSample = np.array(unimodal_ftForce_mag)
+            else: dataSample = np.vstack([dataSample, unimodal_ftForce_mag])
+
+            if 'ftForce_mag_xy' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('ftForce_mag_xy')
+
 
         # Unimodal feature - pps -------------------------------------------
         if 'unimodal_ppsForce' in feature_list:
