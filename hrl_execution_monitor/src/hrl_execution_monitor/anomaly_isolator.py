@@ -112,7 +112,7 @@ class anomaly_isolator:
         rospy.Subscriber('/hrl_manipulation_task/raw_data', MultiModality, self.staticDataCallback)
         rospy.Subscriber('manipulation_task/hmm_input0', FloatMatrix, self.dtc1DataCallback)
         rospy.Subscriber('manipulation_task/hmm_input1', FloatMatrix, self.dtc2DataCallback)
-        ## rospy.Subscriber('/SR300/rgb/image_raw_rotated', Image, self.imgDataCallback)
+        ## rospy.Subscriber('/SR300/rgb/image_raw', Image, self.imgDataCallback)
 
         rospy.Subscriber('/manipulation_task/status', String, self.statusCallback)
 
@@ -248,10 +248,10 @@ class anomaly_isolator:
             if len(self.dyn_data1)>0 and len(self.dyn_data2)>0 and len(self.stc_data)>0 and self.enable_isolator:
                 print "Start to isolate an anomaly!!!!!!!!!!!!!!!!!!!!!!!!!!"
                 # run isolator
-                x1 = autil.temporal_features(np.array(self.dyn_data1)[:,0], self.max_length, self.hmm_list[0],
-                                             self.scale[0])
-                x2 = autil.temporal_features(np.array(self.dyn_data2)[:,0], self.max_length, self.hmm_list[1],
-                                             self.scale[1])
+                x1 = autil.temporal_features(np.array(self.dyn_data1)[:,0], self.max_length, self.hmm_list[0])
+                                             ## self.scale[0])
+                x2 = autil.temporal_features(np.array(self.dyn_data2)[:,0], self.max_length, self.hmm_list[1])
+                                             ## self.scale[1])
                 vs = np.hstack([x1, x2])
 
                 # temporal feature

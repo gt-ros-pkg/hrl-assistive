@@ -273,8 +273,11 @@ def running_mean(x, N):
     return (cumsum[N:] - cumsum[:-N]) / N
 
 
-def temporal_features(X, max_step, ml, scale):
-    ''' Return n_step x sample x n_features'''
+def temporal_features(X, max_step, ml, scale=1.0):
+    '''
+    Input feature x length
+    Return n_step x sample x n_features
+    '''
 
     d_idx = len(X[0])
     while True:

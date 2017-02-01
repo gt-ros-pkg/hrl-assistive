@@ -206,6 +206,15 @@ var ManipulationTask = function (ros) {
             return false;
         }
     };
+
+    manTask.advanced = function () {
+        if (document.getElementById('advanced_setting_disp').style.display== 'none') {
+            document.getElementById('advanced_setting_disp').style.display='';
+        } else {
+            document.getElementById('advanced_setting_disp').style.display='none';
+        }
+    }
+
     // Function to report the feedback
     /*
     manTask.success = function () {
@@ -658,6 +667,10 @@ var initManTaskTab = function() {
     $('#man_task_Continue').click(function(){
         assistive_teleop.manTask.continue_();
     });
+    $('#man_task_Advanced').click(function(){
+        assistive_teleop.manTask.advanced();
+    });
+
     /*
     $('#man_task_success').click(function(){
         assistive_teleop.manTask.success();

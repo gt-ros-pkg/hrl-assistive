@@ -54,7 +54,8 @@ img_size  = (256,256)
 crop_size = (224,224)
 
 class anomaly_isolator:
-    def __init__(self, task_name, save_data_path, param_dict, debug=False, verbose=False):
+    def __init__(self, task_name, save_data_path, param_dict, debug=False, verbose=True,
+                 viz=False):
         rospy.loginfo('Initializing anomaly isolator')
 
         self.task_name      = task_name.lower()
@@ -62,6 +63,7 @@ class anomaly_isolator:
         self.cur_task       = None
         self.verbose        = verbose
         self.debug           = debug
+        self.viz             = viz
         self.bridge = CvBridge()
 
         # Important containers
@@ -90,10 +92,10 @@ class anomaly_isolator:
         self.initComms()
         self.initIsolator()
 
-        if self.verbose:
-            rospy.loginfo( "==========================================================")
-            rospy.loginfo( "Isolator initialized!! : %s", self.task_name)
-            rospy.loginfo( "==========================================================")
+        self.reset()
+        rospy.loginfo( "==========================================================")
+        rospy.loginfo( "Isolator initialized!! : %s", self.task_name)
+        rospy.loginfo( "==========================================================")
 
 
     def initParams(self):
@@ -130,7 +132,7 @@ class anomaly_isolator:
         rospy.Subscriber('/hrl_manipulation_task/raw_data', MultiModality, self.staticDataCallback)
         rospy.Subscriber('manipulation_task/hmm_input0', FloatMatrix, self.dtc1DataCallback)
         rospy.Subscriber('manipulation_task/hmm_input1', FloatMatrix, self.dtc2DataCallback)
-        rospy.Subscriber('/SR300/rgb/image_raw_rotated', Image, self.imgDataCallback)
+        rospy.Subscriber('/SR300/rgb/image_raw', Image, self.imgDataCallback)
 
         rospy.Subscriber('/manipulation_task/status', String, self.statusCallback)
 
@@ -282,10 +284,10 @@ class anomaly_isolator:
                 len(self.img_data)>0 and self.enable_isolator:
                 print "Start to isolate an anomaly!!!!!!!!!!!!!!!!!!!!!!!!!!"
                 # run isolator
-                x1 = autil.temporal_features(np.array(self.dyn_data1)[:,0], self.max_length, self.hmm_list[0],
-                                             self.scale[0])
-                x2 = autil.temporal_features(np.array(self.dyn_data2)[:,0], self.max_length, self.hmm_list[1],
-                                             self.scale[1])
+                x1 = autil.temporal_features(np.array(self.dyn_data1)[:,0], self.max_length, self.hmm_list[0])
+                                             ## self.scale[0])
+                x2 = autil.temporal_features(np.array(self.dyn_data2)[:,0], self.max_length, self.hmm_list[1])
+                                             ## self.scale[1])
                 vs = np.hstack([x1, x2])
 
                 # temporal feature

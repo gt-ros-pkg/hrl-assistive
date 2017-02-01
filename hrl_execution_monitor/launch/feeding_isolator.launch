@@ -2,13 +2,13 @@
 <launch>
     <group ns="feeding" >
 
-      <!--node name="anomaly_isolator" pkg="hrl_execution_monitor"
-            type="anomaly_isolator_keras.py" args=" "
-            output="screen" /-->
-
       <node name="anomaly_isolator" pkg="hrl_execution_monitor"
-            type="anomaly_isolator.py" args=" "
+            type="anomaly_isolator_keras.py" args=" "
             output="screen" />
+
+      <!--node name="anomaly_isolator" pkg="hrl_execution_monitor"
+            type="anomaly_isolator.py" args=" "
+            output="screen" /-->
 
 
     </group>

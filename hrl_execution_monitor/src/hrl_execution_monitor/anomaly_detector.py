@@ -263,6 +263,7 @@ class anomaly_detector:
                 self.dataList[i][0] = self.dataList[i][0] + [scaled_dataSample[i]]
         
         self.lock.release()
+        print self.dataList[0][0][-1]
 
         ## self.t2 = datetime.datetime.now()
         ## print "time: ", self.t2 - self.t1
@@ -481,10 +482,10 @@ class anomaly_detector:
             self.ax = self.fig.add_subplot(100*(self.nEmissionDim+1)+10+i+1)
 
             if i < self.nEmissionDim:
-                self.ax.plot(np.array(x)[i,0], 'r-')
                 self.ax.plot(self.mean_train[i], 'b-', lw=3.0)
                 self.ax.plot(self.mean_train[i]+self.std_train[i], 'b--', lw=1.0)
                 self.ax.plot(self.mean_train[i]-self.std_train[i], 'b--', lw=1.0)
+                self.ax.plot(np.array(x)[i,0], 'r-')
             else:
                 self.ax.plot(idx_lst, logp, 'r-')
                 self.ax.plot(idx_lst, logp_pred, 'b-', lw=3.0)
@@ -531,7 +532,7 @@ if __name__ == '__main__':
 
 
     ad = anomaly_detector(opt.task, opt.method, opt.id, save_data_path, \
-                          param_dict, debug=opt.bDebug, viz=False)
+                          param_dict, debug=opt.bDebug, viz=True)
     ad.run()
 
 
