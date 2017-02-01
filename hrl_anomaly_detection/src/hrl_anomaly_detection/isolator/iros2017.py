@@ -1209,7 +1209,7 @@ if __name__ == '__main__':
         # 0505-79-70
         # 0507-80-72.5
         # 0508-81-72
-        # 0509-82-71.7
+        # 0509-         82-71.7
         # 0510-         83-70.6
         # 0511-87-70    86-71
         # 0606-81-66
@@ -1240,15 +1240,15 @@ if __name__ == '__main__':
         param_dict['HMM']['cov']   = 1.0
         single_detector = False 
 
-        ## ## c11 
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation5/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## param_dict['ROC']['methods'] = ['progress0', 'progress1']
-        ## weight = [-4., -4.]
-        ## param_dict['HMM']['scale'] = [4.0, 10.0]
-        ## param_dict['HMM']['cov']   = 1.0
-        ## single_detector = False
+        ## c11 
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation5/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        param_dict['ROC']['methods'] = ['progress0', 'progress1']
+        weight = [-4., -4.]
+        param_dict['HMM']['scale'] = [5.0, 9.0]
+        param_dict['HMM']['cov']   = 1.0
+        single_detector = False
 
 
         ## ## c12 1010-70
