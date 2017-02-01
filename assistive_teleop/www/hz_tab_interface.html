@@ -362,48 +362,45 @@
                       <td colspan='5'>
                         <table>
                           <tr>
-                            <td style="width:250px;text-align:center">
-                              <strong> 1. Select a Task </strong>
+                            <td colspan='5' style="font-size:125%;width:600px;text-align:center">
+                              <strong> Select a Task </strong>
                             </td>
-                            <td style="width:50px"> </td>
-                            <td style="width:250px;text-align:center">
+                            <td hidden style="width:0px"> </td hidden>
+                            <td hidden style="width:0px;text-align:center">
                               <strong> 2. Select an Action </strong>
-                            </td>
+                            </td hidden>
                           </tr>
                         </table>
                       </td>
                     </tr>
                     <tr>
-                      <td colspan='2'>
-                        <table id="man_task_status" style="width:250px">
+                      <td colspan='5'>
+                        <table id="man_task_status" style="width:600px">
                           <!--tr>
                             <th style="text-align:center">1. Select a Task</th>
                           </tr-->
                           <tr>
                             <td>
-                              <button class="centered man_task_cont" id='man_task_Scooping' style="font-size:120%">Scooping</button>
+                              <button class="centered man_task_cont" id='man_task_Scooping' style="font-size:200%">Scooping</button>
                             </td>
                           </tr>
                           <tr>
                             <td>
-                              <button class="centered man_task_cont" id='man_task_Feeding' style="font-size:120%">Feeding</button>
+                              <button class="centered man_task_cont" id='man_task_Feeding' style="font-size:200%">Feeding</button>
                             </td>
                           </tr>
                           <tr>
                             <td>
-                              <button class="centered man_task_cont" id='man_task_Clean' style="font-size:120%">Clean Spoon</button>
+                              <button class="centered man_task_cont" id='man_task_Clean' style="font-size:200%">Clean Spoon</button>
                             </td>
                           </tr>
                         </table>
                       </td>
-                      <td align="center">
+                      <td hidden align="center">
                         <img id="right_arrows_man1" src="css/arrows/translate_right_on.png" width="50" height="50" >
-                      </td>
-                      <td colspan='2'>
+                      </td hidden>
+                      <td hidden>
                         <table id="man_task_buttons" style="width:250px">
-                          <!--tr>
-                            <th style="text-align:center">2. Select an Action</th>
-                          </tr-->
                           <tr hidden>
                             <td>
                               <button class="centered man_task_cont" id='man_task_start' style="font-size:120%; opacity: 0.6">Start</button>
@@ -420,7 +417,7 @@
                             </td>
                           </tr>
                         </table>
-                      </td>
+                      </td hidden>
                       <td hidden>
                         <img id="right_arrows_man1" src="css/arrows/translate_right_on.png" width="50" height="50" >
                       </td>
@@ -447,9 +444,10 @@
                         </table>
                       </td>
                     </tr>
+                    <tr style="height:10px"><td> </td> </tr>
                     <tr>
                       <td colspan='5'>
-                        <table style="width:100%;font-size:150%;text-align:center;table-layout:fixed;font-weight:bold">
+                        <table style="width:100%;font-size:200%;text-align:center;table-layout:fixed;font-weight:bold">
                           <tr id="anomaly_disp" style="display:none">
                             <td colspan="1">
                               <label style="color:red"> Detected Anomaly: </label>
@@ -466,111 +464,122 @@
                         </table>
                       </td>
                     </tr>
+                    <tr style="height:10px"> <td> </td></tr>
+                    <tr>
+                      <td colspan="5" style="text-align:center">
+                        <button id='man_task_Advanced'> Advanced </button>
+                    </tr>
                     <tr style="height:10px"><td></td></tr>
-                    <tr>
-                      <th colspan='5'
-                      style="text-align:center">Scooping Anomaly Detection Sensitivity</th>
-                    </tr>
-                    <tr>
+                    <tr id="advanced_setting_disp" style="display:none">
                       <td colspan='5'>
                         <table>
                           <tr>
-                            <td>
-                              <button class="centered man_task_cont" id='ad_scooping_sense_min' style="font-size:80%">Down</button>
-                            </td>
-                            <td>
-                              <div class="slider" style="width:450px" id="ad_scooping_slider"></div>
-                            </td>
-                            <td>
-                              <button  class="centered man_task_cont" id='ad_scooping_sense_max' style="font-size:80%">Up</button>
-                            </td>
+                            <th colspan='5'
+                                style="text-align:center">Scooping Anomaly Detection Sensitivity</th>
                           </tr>
-                        </table>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td colspan='5' style="height:1px">
-                        <table style="width:100%">
                           <tr>
-                            <td colspan='1' style="font-size:0%;width:50%;text-align:right"-->
-                              <!--delete font-size style -->
-                              <label>
-                                Accuracy with <br>
-                                most recent 10 data
-                              </label>
-                            </td>
-                            <td colspan='1'
-                              style="height:0px;width:50%;font-size:0%;text-align:left">
-                              <!-- change font size to 200% -->
-                              :
-                              <label id="ad_scooping_result_2" style="text-align:center"> 0.0% </label>
-                            </td>
-                          </tr>
-                        </table>
-                      </td>
-                    </tr>
-                    <tr style="height:20px"><td></td></tr>
-                    <tr>
-                      <th colspan='5'
-                      style="text-align:center">Feeding Anomaly Detection Sensitivity</th>
-                    </tr>
-                    <tr>
-                      <td colspan='5'>
-                        <table>
-                          <tr>
-                            <td>
-                              <button class="centered man_task_cont" id='ad_feeding_sense_min' style="font-size:80%;">Down</button>
-                            </td>
-                            <td style="width:450px">
-                              <div class="slider" id="ad_feeding_slider"></div>
-                            </td>
-                            <td>
-                              <button  class="centered man_task_cont" id='ad_feeding_sense_max' style="font-size:80%;">Up</button>
-                            </td>
-                          </tr>
-                        </table>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td colspan='5'>
-                        <table style="width:100%">
-                          <tr>
-                            <td colspan='1' style="font-size:0%;width:50%;text-align:right">
-                              <!--delete font-size style -->
-                              <label>
-                                Accuracy with <br>
-                                most recent 10 data
-                              </label>
-                            </td>
-                            <td colspan='1' style="width:50%;text-align:left;font-size:0%">
-                              <!-- change font-size style to 200% -->
-                              :
-                              <label id="ad_feeding_result_2"> 0.0% </label>
-                            </td>
-                          </tr>
-                        </table>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td colspan='5'>
-                        <table style="width:100%;text-align:center">
-                          <tr>
-                            <td colspan='1'>
-                              please select feeding distance
+                            <td colspan='5'>
+                              <table>
+                                <tr>
+                                  <td>
+                                    <button class="centered man_task_cont" id='ad_scooping_sense_min' style="font-size:80%">Down</button>
+                                  </td>
+                                  <td>
+                                    <div class="slider" style="width:450px" id="ad_scooping_slider"></div>
+                                  </td>
+                                  <td>
+                                    <button  class="centered man_task_cont" id='ad_scooping_sense_max' style="font-size:80%">Up</button>
+                                  </td>
+                                </tr>
+                              </table>
                             </td>
                           </tr>
                           <tr>
-                            <td colspan='1'>
-                              <select id="man_task_Feeding_dist">
-                                <option value="2"> 2cm </option>
-                                <option value="3"> 3cm </option>
-                                <option value="4"> 4cm </option>
-                                <option value="5" selected> 5cm </option>
-                                <option value="6"> 6cm </option>
-                                <option value="7"> 7cm </option>
-                                <option value="8"> 8cm </option>
-                                <option value="9"> 9cm </option>
-                              </select>
+                            <td colspan='5' style="height:1px">
+                              <table style="width:100%">
+                                <tr>
+                                  <td colspan='1' style="font-size:0%;width:50%;text-align:right">
+                                    <!--delete font-size style -->
+                                    <label>
+                                      Accuracy with <br>
+                                      most recent 10 data
+                                    </label>
+                                  </td>
+                                  <td colspan='1'
+                                      style="height:0px;width:50%;font-size:0%;text-align:left">
+                                    <!-- change font size to 200% -->
+                                    :
+                                    <label id="ad_scooping_result_2" style="text-align:center"> 0.0% </label>
+                                  </td>
+                                </tr>
+                              </table>
+                            </td>
+                        </tr>
+                          <tr style="height:20px"><td></td></tr>
+                          <tr>
+                            <th colspan='5'
+                                style="text-align:center">Feeding Anomaly Detection Sensitivity</th>
+                        </tr>
+                          <tr>
+                            <td colspan='5'>
+                              <table>
+                                <tr>
+                                  <td>
+                                    <button class="centered man_task_cont" id='ad_feeding_sense_min' style="font-size:80%;">Down</button>
+                                  </td>
+                                  <td style="width:450px">
+                                    <div class="slider" id="ad_feeding_slider"></div>
+                                  </td>
+                                  <td>
+                                    <button  class="centered man_task_cont" id='ad_feeding_sense_max' style="font-size:80%;">Up</button>
+                                  </td>
+                                </tr>
+                              </table>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td colspan='5'>
+                              <table style="width:100%">
+                                <tr>
+                                  <td colspan='1' style="font-size:0%;width:50%;text-align:right">
+                                    <!--delete font-size style -->
+                                    <label>
+                                    Accuracy with <br>
+                                    most recent 10 data
+                                    </label>
+                                  </td>
+                                  <td colspan='1' style="width:50%;text-align:left;font-size:0%">
+                                    <!-- change font-size style to 200% -->
+                                    :
+                                    <label id="ad_feeding_result_2"> 0.0% </label>
+                                  </td>
+                              </tr>
+                              </table>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td colspan='5'>
+                              <table style="width:100%;text-align:center">
+                                <tr>
+                                <td colspan='1'>
+                                  please select feeding distance
+                                </td>
+                                </tr>
+                                <tr>
+                                  <td colspan='1'>
+                                    <select id="man_task_Feeding_dist">
+                                      <option value="2"> 2cm </option>
+                                      <option value="3"> 3cm </option>
+                                      <option value="4"> 4cm </option>
+                                      <option value="5" selected> 5cm </option>
+                                      <option value="6"> 6cm </option>
+                                      <option value="7"> 7cm </option>
+                                      <option value="8"> 8cm </option>
+                                      <option value="9"> 9cm </option>
+                                    </select>
+                                  </td>
+                                </tr>
+                              </table>
                             </td>
                           </tr>
                         </table>
