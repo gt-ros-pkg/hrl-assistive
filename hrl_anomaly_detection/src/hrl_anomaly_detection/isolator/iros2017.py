@@ -1212,12 +1212,13 @@ if __name__ == '__main__':
         # 0607-82-64
         # 0608
         # 0609-83-71
-        # 0610
+        # 0610-84-68
         # 0611-87-60
         # 0613-89-64
         # 0705-77-72
+        # 0706
         # 0707-  -73.5
-        # 0708-
+        # 0708-82-65
         # 0709-82-70
         # 0713-89-63
         # 0909-83-67
@@ -1230,7 +1231,7 @@ if __name__ == '__main__':
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         param_dict['ROC']['methods'] = ['progress0', 'progress1']
         weight = [-4.8, -4.8]
-        param_dict['HMM']['scale'] = [6.0, 10.0]
+        param_dict['HMM']['scale'] = [7.0, 6.0]
         param_dict['HMM']['cov']   = 1.0
         single_detector = False 
 
