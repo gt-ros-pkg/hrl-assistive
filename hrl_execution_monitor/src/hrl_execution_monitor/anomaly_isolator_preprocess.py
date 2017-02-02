@@ -219,7 +219,7 @@ if __name__ == '__main__':
 
     # c11
     save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
-    weight    = [-5., -7.]
+    weight    = [-5.2, -5.2]
 
 
     window_steps= 5
