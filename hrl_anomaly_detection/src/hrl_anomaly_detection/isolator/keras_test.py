@@ -70,7 +70,7 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
 
     # training_with images -----------------------------------
     remove_label = [1]
-    get_bottleneck_image(save_data_path, n_labels, nFold, vgg=True, remove_label=remove_label)
+    kt.get_bottleneck_image(save_data_path, n_labels, nFold, vgg=True, remove_label=remove_label)
     ## train_top_model_with_image(save_data_path, n_labels, nFold, vgg=True)
     ## train_top_model_with_image(save_data_path, n_labels, nFold, vgg=True, nb_epoch=1000, load_weights=True)
     
