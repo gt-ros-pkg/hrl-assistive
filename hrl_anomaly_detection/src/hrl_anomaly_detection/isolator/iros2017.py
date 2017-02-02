@@ -698,7 +698,7 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
 
 
     #temp
-    kFold_list = kFold_list[:8]
+    ## kFold_list = kFold_list[:8]
 
 
     #-----------------------------------------------------------------------------------------
@@ -742,9 +742,6 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
     else: ROC_data = ut.load_pickle(roc_pkl)
     ROC_data = util.reset_roc_data(ROC_data, [method_list[0][:-1]], ROC_dict['update_list'], nPoints)
 
-    # temp
-    kFold_list = kFold_list[:8]
-    
     # parallelization
     if debug: n_jobs=1
     else: n_jobs=-1
