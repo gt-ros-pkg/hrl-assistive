@@ -247,7 +247,7 @@ if __name__ == '__main__':
     ## param_dict['ROC']['methods'] = ['hmmgp0', 'hmmgp1']
     ## param_dict['HMM']['scale'] = [4.0, 4.0]
 
-    #c11 92 # next best -7.2
+    #c11 92 # next best (-7.15, -7.15)
     save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo'
     param_dict['ROC']['methods'] = ['progress0', 'progress1']
     param_dict['HMM']['scale'] = [5., 11.]
