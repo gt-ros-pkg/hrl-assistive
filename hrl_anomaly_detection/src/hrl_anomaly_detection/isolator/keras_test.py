@@ -240,7 +240,7 @@ if __name__ == '__main__':
         
     elif opt.train:
 
-        train_isolator_modules(save_data_path, n_labels, verbose=False):
+        train_isolator_modules(save_data_path, n_labels, verbose=False)
         ## evaluate_svm(save_data_path, viz=True)
 
 
