@@ -263,7 +263,8 @@ class anomaly_detector:
                 self.dataList[i][0] = self.dataList[i][0] + [scaled_dataSample[i]]
         
         self.lock.release()
-        print self.dataList[0][0][-1]
+        ## if self.id == 0:
+        ##     print self.dataList[0][0][-1]
 
         ## self.t2 = datetime.datetime.now()
         ## print "time: ", self.t2 - self.t1
@@ -387,11 +388,10 @@ class anomaly_detector:
             if np.argmax(post)==0 and logp < 0.0: continue
             ## if np.argmax(post)>self.param_dict['HMM']['nState']*0.9: continue
 
-            ll_classifier_test_X = [logp] + post.tolist()                
             if 'svm' in self.method or 'sgd' in self.method:
-                X = self.scaler.transform([ll_classifier_test_X])
+                X = self.scaler.transform([ [logp] + post.tolist() ])
             else:
-                X = ll_classifier_test_X
+                X = [logp] + post.tolist()
 
             # anomal classification
             err, y_pred, sigma = self.classifier.predict(X, debug=True)
@@ -400,9 +400,11 @@ class anomaly_detector:
                 self.logpDataList.append([len(self.dataList[0][0]), logp, y_pred, y_pred-sigma ])
                 ## self.viz_raw_input(self.dataList)
                 self.viz_decision_boundary(np.array(self.dataList)/self.scale, self.logpDataList)
-                self.lock.release()
+                self.lock.release() 
+            ## print cur_length, " : logp: ", logp, "  state: ", np.argmax(post), " y_pred: ", y_pred, sigma, self.id
+            if self.id == 0:
+                print cur_length, " : err: ", err, "  state: ", np.argmax(post), self.id             
             
-            print cur_length, " : logp: ", logp, "  state: ", np.argmax(post), " y_pred: ", y_pred, sigma, self.id             
             if type(err) == list: err = err[-1]
             if err > 0.0: self.set_anomaly_alarm()
             rate.sleep()
@@ -532,7 +534,7 @@ if __name__ == '__main__':
 
 
     ad = anomaly_detector(opt.task, opt.method, opt.id, save_data_path, \
-                          param_dict, debug=opt.bDebug, viz=True)
+                          param_dict, debug=opt.bDebug, viz=False)
     ad.run()
 
 
