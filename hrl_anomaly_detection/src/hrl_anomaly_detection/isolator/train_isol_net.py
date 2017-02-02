@@ -193,6 +193,8 @@ if __name__ == '__main__':
 
     p.add_option('--preprocess', '--p', action='store_true', dest='preprocessing',
                  default=False, help='Preprocess')
+    p.add_option('--preprocess_extra', '--pe', action='store_true', dest='preprocessing_extra',
+                 default=False, help='Preprocess extra images')
     p.add_option('--train', '--tr', action='store_true', dest='train',
                  default=False, help='Train')
     p.add_option('--viz', action='store_true', dest='viz',
@@ -232,6 +234,11 @@ if __name__ == '__main__':
         src_pkl = os.path.join(save_data_path, 'isol_data.pkl')
         pp.preprocess_data(src_pkl, save_data_path, img_scale=0.25, nb_classes=12,
                             img_feature_type='vgg')
+
+    elif opt.preprocessing_extra:
+        raw_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/AURO2016/raw_data/manual_label'
+        pp.preprocess_images(raw_data_path, save_data_path, img_scale=0.25, nb_classes=nb_classes,
+                                img_feature_type='vgg')
 
     elif opt.viz:
         x_train, y_train, x_test, y_test = autil.load_data(save_data_path, True)
