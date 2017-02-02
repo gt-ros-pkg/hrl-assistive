@@ -630,7 +630,7 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
 def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
                           data_renew=False, svd_renew=False, save_pdf=False, verbose=False, debug=False,\
                           no_plot=False, delay_plot=True, find_param=False, \
-                          save_viz_data=False, weight=-5.0, window_steps=10, single_detector=False):
+                          save_viz_data=False, window_steps=10, single_detector=False):
     ## Parameters
     # data
     data_dict  = param_dict['data_param']
@@ -1208,7 +1208,7 @@ if __name__ == '__main__':
         # 0508-81-72
         # 0509-81.9 70  82-71.7
         # 0510-83-70    83-70.05
-        # 0511-87-70    86-71
+        # 0511-86-71  ################### Best?
         # 0606-81-66
         # 0607-82-64
         # 0608-82-69
@@ -1232,8 +1232,7 @@ if __name__ == '__main__':
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         param_dict['ROC']['methods'] = ['progress0', 'progress1']
-        weight = [-4.8, -4.8]
-        param_dict['HMM']['scale'] = [5.0, 10.0]
+        param_dict['HMM']['scale'] = [5.0, 12.0]
         param_dict['HMM']['cov']   = 1.0
         single_detector = False 
 
@@ -1242,21 +1241,19 @@ if __name__ == '__main__':
         ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation5/'+\
         ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         ## param_dict['ROC']['methods'] = ['progress0', 'progress1']
-        ## weight = [-4., -4.]
         ## param_dict['HMM']['scale'] = [5.0, 9.0]
         ## param_dict['HMM']['cov']   = 1.0
         ## single_detector = False
 
 
         ## c12 1010-70
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        param_dict['ROC']['methods'] = ['progress0', 'progress1']
-        weight = [-4.9, -4.9]
-        param_dict['HMM']['scale'] = [5.0, 11.0]
-        param_dict['HMM']['cov']   = 1.0
-        single_detector = False
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## param_dict['ROC']['methods'] = ['progress0', 'progress1']
+        ## param_dict['HMM']['scale'] = [5.0, 11.0]
+        ## param_dict['HMM']['cov']   = 1.0
+        ## single_detector = False
 
 
         param_dict['data_param']['handFeatures'] = [['unimodal_audioWristRMS',  \
@@ -1271,34 +1268,34 @@ if __name__ == '__main__':
                                                     ]]
 
         # ------------------------------------------------------------------------------
-        ## ep
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation4/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        param_dict['ROC']['methods'] = ['progress0', 'progress1']
-        weight = [-3., -3.]
-        param_dict['HMM']['scale'] = [6.0, 6.0]
-        param_dict['HMM']['cov']   = 1.0
-        single_detector = False
+        ## ## ep
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation4/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## param_dict['ROC']['methods'] = ['progress0', 'progress1']
+        ## param_dict['HMM']['scale'] = [6.0, 6.0]
+        ## param_dict['HMM']['cov']   = 1.0
+        ## single_detector = False
 
 
 
         
-        window_steps= 5
-        nPoints = param_dict['ROC']['nPoints']
-        param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0
-        param_dict['SVM']['nugget']  = 10.0
+        ## window_steps= 5
+        ## nPoints = param_dict['ROC']['nPoints']
+        ## param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0
+        ## param_dict['SVM']['nugget']  = 10.0
 
-        param_dict['data_param']['handFeatures'] = [['unimodal_audioWristRMS',  \
-                                                    'unimodal_kinJntEff_1',\
-                                                    'unimodal_ftForce_integ',\
-                                                    'crossmodal_landmarkEEDist'
-                                                    ],\
-                                                    ['unimodal_kinVel',\
-                                                     'unimodal_ftForce_zero',\
-                                                     'unimodal_kinEEChange',\
-                                                     'crossmodal_landmarkEEDist'
-                                                    ]]
+        ## param_dict['data_param']['handFeatures'] = [['unimodal_audioWristRMS',  \
+        ##                                             'unimodal_kinJntEff_1',\
+        ##                                             'unimodal_ftForce_integ',\
+        ##                                             'crossmodal_landmarkEEDist'
+        ##                                             ],\
+        ##                                             ['unimodal_kinVel',\
+        ##                                              'unimodal_ftForce_zero',\
+        ##                                              'unimodal_kinEEChange',\
+        ##                                              'crossmodal_landmarkEEDist'
+        ##                                             ]]
+        # ------------------------------------------------------------------------------
 
 
         param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0., 2.3, nPoints)*-1.0+1.0
