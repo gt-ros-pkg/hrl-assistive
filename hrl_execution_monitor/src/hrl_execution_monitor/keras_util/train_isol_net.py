@@ -83,11 +83,11 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
 
     # training_with all --------------------------------------
     ## get_bottleneck_mutil(save_data_path, n_labels, nFold, vgg=True)
-    train_multi_top_model(save_data_path, n_labels, nFold, vgg=True)
-    ## train_multi_top_model(save_data_path, n_labels, nFold, vgg=True, load_weights=True)
+    ## train_multi_top_model(save_data_path, n_labels, nFold, vgg=True)
+    ## train_multi_top_model(save_data_path, n_labels, nFold, vgg=True, load_weights=True) # noneed
     
     ## train_with_all(save_data_path, n_labels, nFold, patience=1, nb_epoch=1, vgg=True)
-    ## train_with_all(save_data_path, n_labels, nFold, load_weights=True, patience=5, vgg=True)
+    train_with_all(save_data_path, n_labels, nFold, load_weights=True, patience=5, vgg=True)
 
 
     return
