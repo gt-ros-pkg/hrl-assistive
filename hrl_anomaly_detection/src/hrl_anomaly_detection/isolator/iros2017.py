@@ -1320,6 +1320,6 @@ if __name__ == '__main__':
                               data_renew=opt.bDataRenew, svd_renew=opt.svd_renew,\
                               save_pdf=opt.bSavePdf, \
                               verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
-                              find_param=False, weight=weight, \
+                              find_param=False, \
                               window_steps=window_steps, single_detector=single_detector)
 
