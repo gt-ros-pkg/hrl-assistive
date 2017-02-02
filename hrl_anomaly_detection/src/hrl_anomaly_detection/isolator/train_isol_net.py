@@ -237,7 +237,7 @@ if __name__ == '__main__':
 
     elif opt.preprocessing_extra:
         raw_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/AURO2016/raw_data/manual_label'
-        pp.preprocess_images(raw_data_path, save_data_path, img_scale=0.25, nb_classes=n_classes,
+        pp.preprocess_images(raw_data_path, save_data_path, img_scale=0.25, nb_classes=n_labels,
                                 img_feature_type='vgg')
 
     elif opt.viz:
