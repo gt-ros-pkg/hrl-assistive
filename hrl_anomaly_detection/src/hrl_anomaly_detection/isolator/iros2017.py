@@ -1258,6 +1258,19 @@ if __name__ == '__main__':
         param_dict['HMM']['cov']   = 1.0
         single_detector = False
 
+
+        param_dict['data_param']['handFeatures'] = [['unimodal_audioWristRMS',  \
+                                                    'unimodal_kinJntEff_1',\
+                                                    'unimodal_ftForce_integ',\
+                                                    'unimodal_kinEEChange',\
+                                                    'crossmodal_landmarkEEDist'
+                                                    ],\
+                                                    ['unimodal_kinVel',\
+                                                     'unimodal_ftForce_zero',\
+                                                     'crossmodal_landmarkEEDist'
+                                                    ]]
+
+        # ------------------------------------------------------------------------------
         ## ep
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation4/'+\

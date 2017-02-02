@@ -807,12 +807,15 @@ if __name__ == '__main__':
     save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
     #window 0-5
     save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
+    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo'
 
     task_name = 'feeding'
     method    = ['progress0', 'progress1'] 
     param_dict['ROC']['methods'] = ['progress0', 'progress1'] #'hmmgp'
-    weight    = [-3.0, -4.5]
-    param_dict['HMM']['scale'] = [2.0, 2.0]
+    ## weight    = [-3.0, -4.5]
+    ## param_dict['HMM']['scale'] = [2.0, 2.0]
+    weight    = [-7.15, -7.15]
+    param_dict['HMM']['scale'] = [5.0, 11.0]
     param_dict['HMM']['cov']   = 1.0
     single_detector=False    
     nb_classes = 12
