@@ -664,21 +664,14 @@ if __name__ == '__main__':
 
     # 148 amin - nofz        
     save_data_path = os.path.expanduser('~')+\
-      '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation3/'+\
+      '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
       str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-
-    # 148 amin
-    ## save_data_path = os.path.expanduser('~')+\
-    ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation4/'+\
-    ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
     n_labels = 12 #len(np.unique(y_train))
     
     # ---------------------------------------------------------------------
     # 1st pre_train top layer
     if opt.preprocessing:
-        ## preprocess_data(save_data_path, viz=opt.viz, hog_feature=False, org_ratio=True)
-
         src_pkl = os.path.join(save_data_path, 'isol_data.pkl')
         kutil.preprocess_data(src_pkl, save_data_path, img_scale=0.25, nb_classes=12,
                             img_feature_type='vgg')

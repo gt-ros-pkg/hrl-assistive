@@ -808,10 +808,10 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
             y_train  = y_train.tolist()
             y_test   = y_test.tolist()
         
-        ## from sklearn.svm import SVC
-        ## clf = SVC(C=1.0, kernel='rbf') #, decision_function_shape='ovo')
-        from sklearn.ensemble import RandomForestClassifier
-        clf = RandomForestClassifier(n_estimators=400, n_jobs=-1)
+        from sklearn.svm import SVC
+        clf = SVC(C=1.0, kernel='rbf') #, decision_function_shape='ovo')
+        ## from sklearn.ensemble import RandomForestClassifier
+        ## clf = RandomForestClassifier(n_estimators=400, n_jobs=-1)
 
         clf.fit(x_train, y_train)
         ## y_pred = clf.predict(x_test.tolist())
@@ -1246,14 +1246,14 @@ if __name__ == '__main__':
         ## single_detector = False
 
 
-        ## c12 1010-70
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## param_dict['ROC']['methods'] = ['progress0', 'progress1']
-        ## param_dict['HMM']['scale'] = [5.0, 11.0]
-        ## param_dict['HMM']['cov']   = 1.0
-        ## single_detector = False
+        ## c12 BEST 0511-86-71  ################### Best? (-5.19, -5.19)
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        param_dict['ROC']['methods'] = ['progress0', 'progress1']
+        param_dict['HMM']['scale'] = [5.0, 11.0]
+        param_dict['HMM']['cov']   = 1.0
+        single_detector = False
 
 
         param_dict['data_param']['handFeatures'] = [['unimodal_audioWristRMS',  \
