@@ -1209,8 +1209,8 @@ if __name__ == '__main__':
         # 0505-79-70
         # 0507-80-72.5
         # 0508-81-72
-        # 0509-         82-71.7
-        # 0510-         83-70.6
+        # 0509-81.9 70  82-71.7
+        # 0510-83-70    83-70.6
         # 0511-87-70    86-71
         # 0606-81-66
         # 0607-82-64
@@ -1300,9 +1300,9 @@ if __name__ == '__main__':
         
         param_dict['data_param']['staticFeatures'] = ['unimodal_audioWristFrontRMS',\
                                                       'unimodal_audioWristAzimuth',\
-                                                      'unimodal_ftForce_XY',\
-                                                      ## 'unimodal_ftForceX',\
-                                                      ## 'unimodal_ftForceY',\
+                                                      ## 'unimodal_ftForce_XY',\
+                                                      'unimodal_ftForceX',\
+                                                      'unimodal_ftForceY',\
                                                       ## 'unimodal_ftForceZ',\
                                                       'unimodal_fabricForce',  \
                                                       'unimodal_landmarkDist',\
