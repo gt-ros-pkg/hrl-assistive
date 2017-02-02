@@ -205,25 +205,27 @@ if __name__ == '__main__':
     raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
                                                           opt.bHMMRenew, opt.bCLFRenew)
     save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
-    window_steps= 5
     ## weight    = [-3.0, -4.5]
     ## param_dict['HMM']['scale'] = [2.0, 2.0]
 
     #c11 window 3-0.63, 1-0.66, 10-0.5, 05-66 010-66
     save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
-    window_steps= 5
     ## weight    = [-3.0, -4.5]
     ## param_dict['HMM']['scale'] = [2.0, 2.0]
 
-    # window 5
+    # br
     save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo'
+    weight    = [-5., -5.]
+
+    # c11
+    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
+    weight    = [-5., -7.]
+
+
     window_steps= 5
-
-
     task_name = 'feeding'
     method    = ['progress0', 'progress1'] 
     param_dict['ROC']['methods'] = ['progress0', 'progress1'] #'hmmgp'
-    weight    = [-5., -5.]
     param_dict['HMM']['scale'] = [5.0, 11.0]
     param_dict['HMM']['cov']   = 1.0
     single_detector=False    
