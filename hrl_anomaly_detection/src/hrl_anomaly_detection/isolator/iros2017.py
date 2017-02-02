@@ -1257,7 +1257,7 @@ if __name__ == '__main__':
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         param_dict['ROC']['methods'] = ['progress0', 'progress1']
         weight = [-4.9, -4.9]
-        param_dict['HMM']['scale'] = [5.0, 9.0]
+        param_dict['HMM']['scale'] = [5.0, 11.0]
         param_dict['HMM']['cov']   = 1.0
         single_detector = False
 
