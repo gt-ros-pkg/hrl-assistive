@@ -64,8 +64,8 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
     save_data_path = os.path.join(save_data_path, 'keras')
 
     # training with signals ----------------------------------
-    train_with_signal(save_data_path, n_labels, nFold, nb_epoch=800, patience=50)
-    train_with_signal(save_data_path, n_labels, nFold, nb_epoch=800, patience=50, load_weights=True)
+    train_with_signal(save_data_path, n_labels, nFold, nb_epoch=800, patience=10)
+    train_with_signal(save_data_path, n_labels, nFold, nb_epoch=800, patience=5, load_weights=True)
 
     # training_with images -----------------------------------
     remove_label = [1]
