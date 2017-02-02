@@ -58,11 +58,7 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
     nFold = len(d.keys())
     del d
 
-    # training with signals ----------------------------------
-    ## train_with_signal(save_data_path, n_labels, nFold, nb_epoch=800, patience=50)
-    ## train_with_signal(save_data_path, n_labels, nFold, nb_epoch=800, patience=50, load_weights=True)
     train_rfc_with_signal(save_data_path, n_labels, nFold)
-
     return
 
 
@@ -93,6 +89,8 @@ def train_rfc_with_signal(save_data_path, n_labels, nFold):
             pickle.dump(scaler, f)
 
         # get classifier
+        ## from sklearn.svm import SVC
+        ## clf = SVC(C=1.0, kernel='rbf') #, decision_function_shape='ovo')
         from sklearn.ensemble import RandomForestClassifier
         clf = RandomForestClassifier(n_estimators=400, n_jobs=-1)
         clf.fit(x_train_sig, np.argmax(y_train, axis=1))
@@ -185,16 +183,32 @@ if __name__ == '__main__':
     subject_names = ['s2', 's3','s4','s5', 's6','s7','s8', 's9']
     raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
                                                           opt.bHMMRenew, opt.bCLFRenew)
-                                                          
-    ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
-    #window 0-5
+
+    # -----------------------------------------------------------------------
+    # signal only best
+    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
+    ## weight    = [-3.0, -4.5]
+    ## param_dict['HMM']['scale'] = [2.0, 2.0]
+
+    #c11 window 3-0.63, 1-0.66, 10-0.5, 05-66 010-66 # image best
     save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
+    ## weight    = [-3.0, -4.5]
+    ## param_dict['HMM']['scale'] = [2.0, 2.0]
+    # -----------------------------------------------------------------------
+    # br 5.2,8-76
+    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo'
+    weight    = [-5.2, -7.]
+
+    # c11 5.2,5.2-65  5.2,6.2-69 maybebest
+    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
+    weight    = [-5.2, -6.2]
+    param_dict['HMM']['scale'] = [5.0, 11.0]
+    # -----------------------------------------------------------------------
+
 
     task_name = 'feeding'
     method    = ['progress0', 'progress1'] 
     param_dict['ROC']['methods'] = ['progress0', 'progress1'] #'hmmgp'
-    weight    = [-3.0, -4.5]
-    param_dict['HMM']['scale'] = [2.0, 2.0]
     param_dict['HMM']['cov']   = 1.0
     single_detector=False    
     nb_classes = 12

@@ -65,14 +65,14 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
     save_data_path = os.path.join(save_data_path, 'keras')
 
     # training with signals ----------------------------------
-    train_with_signal(save_data_path, n_labels, nFold, nb_epoch=800, patience=50)
-    train_with_signal(save_data_path, n_labels, nFold, nb_epoch=800, patience=50, load_weights=True)
+    ## train_with_signal(save_data_path, n_labels, nFold, nb_epoch=800, patience=50)
+    ## train_with_signal(save_data_path, n_labels, nFold, nb_epoch=800, patience=50, load_weights=True)
 
     # training_with images -----------------------------------
     remove_label = [1]
     ## get_bottleneck_image(save_data_path, n_labels, nFold, vgg=True, remove_label=remove_label)
     ## train_top_model_with_image(save_data_path, n_labels, nFold, vgg=True)
-    ## train_top_model_with_image(save_data_path, n_labels, nFold, vgg=True, nb_epoch=100, load_weights=True)
+    train_top_model_with_image(save_data_path, n_labels, nFold, vgg=True, nb_epoch=1000, load_weights=True)
     
     ## train_with_image(save_data_path, n_labels, nFold, patience=20)
     ## train_with_image(save_data_path, n_labels, nFold, patience=20, fine_tune=True)
@@ -82,11 +82,11 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
     ##                  load_weights=True)
 
     # training_with all --------------------------------------
-    #get_bottleneck_mutil(save_data_path, n_labels, nFold, vgg=True)
-    ## train_multi_top_model(save_data_path, n_labels, nFold, vgg=True)
+    ## get_bottleneck_mutil(save_data_path, n_labels, nFold, vgg=True)
+    #train_multi_top_model(save_data_path, n_labels, nFold, vgg=True)
     #train_multi_top_model(save_data_path, n_labels, nFold, vgg=True, load_weights=True)
     
-    train_with_all(save_data_path, n_labels, nFold, patience=1, nb_epoch=1, vgg=True)
+    ## train_with_all(save_data_path, n_labels, nFold, patience=1, nb_epoch=1, vgg=True)
     ## train_with_all(save_data_path, n_labels, nFold, load_weights=True, patience=5, vgg=True)
 
 
@@ -351,9 +351,9 @@ def train_with_all(save_data_path, n_labels, nFold, nb_epoch=100, load_weights=F
             class_weight[i] = 1.0
         ## class_weight[1]  = 0.1 # noisy env
         ## class_weight[6]  = 0.1 # anomalous snd
-        class_weight[-3] = 0.1 # spoon miss by sys
-        class_weight[-2] = 0.1 # spoon collision by sys
-        class_weight[-1] = 0.1 # freeze
+        ## class_weight[-3] = 0.1 # spoon miss by sys
+        ## class_weight[-2] = 0.1 # spoon collision by sys
+        ## class_weight[-1] = 0.1 # freeze
 
         
 
@@ -519,11 +519,11 @@ def train_top_model_with_image(save_data_path, n_labels, nFold, nb_epoch=400, lo
         if load_weights is False:            
             if vgg: model = km.vgg_image_top_net(np.shape(x_train)[1:], n_labels)
             else: sys.exit()
-            optimizer = SGD(lr=0.005, decay=1e-6, momentum=0.9, nesterov=True)
+            optimizer = SGD(lr=0.001, decay=1e-6, momentum=0.9, nesterov=True)
         else:
             if vgg: model = km.vgg_image_top_net(np.shape(x_train)[1:], n_labels, weights_path)
             else: sys.exit()
-            optimizer = SGD(lr=0.001, decay=1e-7, momentum=0.9, nesterov=True)
+            optimizer = SGD(lr=0.0005, decay=1e-7, momentum=0.9, nesterov=True)
                 
         ## optimizer = RMSprop(lr=0.0001, rho=0.9, epsilon=1e-08, decay=0.001)                        
         model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
@@ -537,7 +537,7 @@ def train_top_model_with_image(save_data_path, n_labels, nFold, nb_epoch=400, lo
         class_weight[6]  = 0.1 # anomalous snd
         class_weight[-3] = 0.5 # spoon miss by sys
         class_weight[-2] = 0.5 # spoon collision by sys
-        class_weight[-1] = 0.1 # freeze
+        class_weight[-1] = 0.5 # freeze
 
         hist = model.fit(x_train, y_train, nb_epoch=nb_epoch, batch_size=2048, shuffle=True,
                          validation_data=(x_test, y_test), callbacks=callbacks,
@@ -805,18 +805,12 @@ if __name__ == '__main__':
                                                           opt.bHMMRenew, opt.bCLFRenew)
                                                           
     save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
-    #window 0-5
     save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
-    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo'
+    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
 
     task_name = 'feeding'
     method    = ['progress0', 'progress1'] 
     param_dict['ROC']['methods'] = ['progress0', 'progress1'] #'hmmgp'
-    ## weight    = [-3.0, -4.5]
-    ## param_dict['HMM']['scale'] = [2.0, 2.0]
-    weight    = [-7.15, -7.15]
-    param_dict['HMM']['scale'] = [5.0, 11.0]
-    param_dict['HMM']['cov']   = 1.0
     single_detector=False    
     nb_classes = 12
 
