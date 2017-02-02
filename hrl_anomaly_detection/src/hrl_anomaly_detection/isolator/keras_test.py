@@ -39,6 +39,7 @@ from hrl_anomaly_detection import util as util
 import hrl_anomaly_detection.isolator.isolation_util as iutil
 from hrl_execution_monitor.keras_util import keras_model as km
 from hrl_execution_monitor.keras_util import keras_util as kutil
+from hrl_execution_monitor.keras_util import train_isol_net as kt
 from hrl_execution_monitor import util as autil
 from hrl_execution_monitor import viz as eviz
 from hrl_execution_monitor import preprocess as pp
@@ -64,8 +65,8 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
     save_data_path = os.path.join(save_data_path, 'keras')
 
     # training with signals ----------------------------------
-    train_with_signal(save_data_path, n_labels, nFold, nb_epoch=800, patience=50)
-    train_with_signal(save_data_path, n_labels, nFold, nb_epoch=800, patience=50, load_weights=True)
+    kt.train_with_signal(save_data_path, n_labels, nFold, nb_epoch=800, patience=50)
+    kt.train_with_signal(save_data_path, n_labels, nFold, nb_epoch=800, patience=50, load_weights=True)
 
     # training_with images -----------------------------------
     remove_label = [1]
