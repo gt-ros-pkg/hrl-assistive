@@ -223,7 +223,7 @@ if __name__ == '__main__':
     task_name = 'feeding'
     method    = ['progress0', 'progress1'] 
     param_dict['ROC']['methods'] = ['progress0', 'progress1'] #'hmmgp'
-    weight    = [-8.15, -8.15]
+    weight    = [-5., -5.]
     param_dict['HMM']['scale'] = [5.0, 11.0]
     param_dict['HMM']['cov']   = 1.0
     single_detector=False    

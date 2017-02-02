@@ -1277,14 +1277,7 @@ if __name__ == '__main__':
         ## param_dict['HMM']['cov']   = 1.0
         ## single_detector = False
 
-
-
-        
-        ## window_steps= 5
-        ## nPoints = param_dict['ROC']['nPoints']
-        ## param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0
-        ## param_dict['SVM']['nugget']  = 10.0
-
+      
         ## param_dict['data_param']['handFeatures'] = [['unimodal_audioWristRMS',  \
         ##                                             'unimodal_kinJntEff_1',\
         ##                                             'unimodal_ftForce_integ',\
@@ -1297,6 +1290,10 @@ if __name__ == '__main__':
         ##                                             ]]
         # ------------------------------------------------------------------------------
 
+        window_steps= 5
+        nPoints = param_dict['ROC']['nPoints']
+        param_dict['SVM']['hmmgp_logp_offset'] = 0.0 #30.0
+        param_dict['SVM']['nugget']  = 10.0
 
         param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0., 2.3, nPoints)*-1.0+1.0
         param_dict['ROC']['progress0_param_range'] = -np.logspace(0., 0.9, nPoints)
