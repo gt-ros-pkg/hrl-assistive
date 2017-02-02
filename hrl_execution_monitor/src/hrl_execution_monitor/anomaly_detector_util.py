@@ -101,7 +101,7 @@ def train_detector_modules(subject_names, task_name, raw_data_path, save_data_pa
                                   task_name, save_data_path,\
                                   HMM_dict_local, data_renew, startIdx, nState, cov, \
                                   success_files=d['successFiles'], failure_files=d['failureFiles'],\
-                                  noise_mag=0.03, suffix=str(i),\
+                                  noise_mag=0.07, suffix=str(i),\
                                   verbose=verbose, one_class=True)
 
     # Train a classifier ----------------------------------------------
@@ -240,19 +240,19 @@ if __name__ == '__main__':
     raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
                                                           opt.bHMMRenew, opt.bCLFRenew)
     task_name = 'feeding'
-    param_dict['ROC']['nPoints'] = nPoints = 20
+    param_dict['ROC']['nPoints'] = nPoints = 40
 
     ## #c11 85 - s80 #best
     ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
     ## param_dict['ROC']['methods'] = ['hmmgp0', 'hmmgp1']
     ## param_dict['HMM']['scale'] = [4.0, 4.0]
 
-    #c11 90 #best
+    #c11 92 # next best (-7.15, -7.15)
     save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo'
     param_dict['ROC']['methods'] = ['progress0', 'progress1']
-    param_dict['HMM']['scale'] = [2., 2.]
-    param_dict['ROC']['progress0_param_range'] = -np.logspace(-0.2, 1.3, nPoints)
-    param_dict['ROC']['progress1_param_range'] = -np.logspace(-0.2, 1.3, nPoints)
+    param_dict['HMM']['scale'] = [5., 11.]
+    param_dict['ROC']['progress0_param_range'] = -np.logspace(-0.5, 1.1, nPoints)
+    param_dict['ROC']['progress1_param_range'] = -np.logspace(-0.5, 1.1, nPoints)
 
     ## ## #c12 92 (-3,-4.5) # Best!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'

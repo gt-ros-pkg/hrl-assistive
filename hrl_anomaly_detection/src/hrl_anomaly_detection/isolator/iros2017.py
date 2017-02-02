@@ -698,7 +698,7 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
 
 
     #temp
-    kFold_list = kFold_list[:8]
+    ## kFold_list = kFold_list[:8]
 
 
     #-----------------------------------------------------------------------------------------
@@ -742,9 +742,6 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
     else: ROC_data = ut.load_pickle(roc_pkl)
     ROC_data = util.reset_roc_data(ROC_data, [method_list[0][:-1]], ROC_dict['update_list'], nPoints)
 
-    # temp
-    kFold_list = kFold_list[:8]
-    
     # parallelization
     if debug: n_jobs=1
     else: n_jobs=-1
@@ -1205,24 +1202,24 @@ if __name__ == '__main__':
         #-----------------------------------------------------------------------------------
         # 0407-
         # 0408-80-74
-        # 0410
+        # 0410-82.6-70
         # 0505-79-70
         # 0507-80-72.5
         # 0508-81-72
-        # 0509-82-71.7
-        # 0510-83-70.6
-        # 0511-           86-71
+        # 0509-81.9 70  82-71.7
+        # 0510-83-70    83-70.05
+        # 0511-87-70    86-71
         # 0606-81-66
         # 0607-82-64
         # 0608-82-69
-        # 0609-83-71
+        # 0609-83-70
         # 0610-84-68
         # 0611-87-60
         # 0613-89-64
         # 0705-77-72
         # 0706-80-71.5
-        # 0707-82-72.4
-        # 07075-
+        # 0707-81.7-67.6  82-72.4
+        # 07075-82-68.4
         # 0708-82-65
         # 0709-82-70
         # 0713-89-63
@@ -1236,19 +1233,19 @@ if __name__ == '__main__':
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         param_dict['ROC']['methods'] = ['progress0', 'progress1']
         weight = [-4.8, -4.8]
-        param_dict['HMM']['scale'] = [7.0, 7.0]
+        param_dict['HMM']['scale'] = [5.0, 10.0]
         param_dict['HMM']['cov']   = 1.0
         single_detector = False 
 
         ## c11 
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation5/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        param_dict['ROC']['methods'] = ['progress0', 'progress1']
-        weight = [-4., -4.]
-        param_dict['HMM']['scale'] = [4.0, 10.0]
-        param_dict['HMM']['cov']   = 1.0
-        single_detector = False
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation5/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## param_dict['ROC']['methods'] = ['progress0', 'progress1']
+        ## weight = [-4., -4.]
+        ## param_dict['HMM']['scale'] = [5.0, 9.0]
+        ## param_dict['HMM']['cov']   = 1.0
+        ## single_detector = False
 
 
         ## c12 1010-70
@@ -1257,19 +1254,19 @@ if __name__ == '__main__':
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         param_dict['ROC']['methods'] = ['progress0', 'progress1']
         weight = [-4.9, -4.9]
-        param_dict['HMM']['scale'] = [7.0, 7.5]
+        param_dict['HMM']['scale'] = [5.0, 11.0]
         param_dict['HMM']['cov']   = 1.0
         single_detector = False
 
         ## ep
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation4/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        param_dict['ROC']['methods'] = ['progress0', 'progress1']
-        weight = [-3., -3.]
-        param_dict['HMM']['scale'] = [5.0, 11.0]
-        param_dict['HMM']['cov']   = 1.0
-        single_detector = False
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation4/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## param_dict['ROC']['methods'] = ['progress0', 'progress1']
+        ## weight = [-3., -3.]
+        ## param_dict['HMM']['scale'] = [6.0, 9.0]
+        ## param_dict['HMM']['cov']   = 1.0
+        ## single_detector = False
 
 
 
@@ -1300,9 +1297,9 @@ if __name__ == '__main__':
         
         param_dict['data_param']['staticFeatures'] = ['unimodal_audioWristFrontRMS',\
                                                       'unimodal_audioWristAzimuth',\
-                                                      'unimodal_ftForce_XY',\
-                                                      ## 'unimodal_ftForceX',\
-                                                      ## 'unimodal_ftForceY',\
+                                                      ## 'unimodal_ftForce_XY',\
+                                                      'unimodal_ftForceX',\
+                                                      'unimodal_ftForceY',\
                                                       ## 'unimodal_ftForceZ',\
                                                       'unimodal_fabricForce',  \
                                                       'unimodal_landmarkDist',\
