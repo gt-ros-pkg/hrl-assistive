@@ -166,6 +166,7 @@ def train_with_signal(save_data_path, n_labels, nFold, nb_epoch=400, load_weight
             
             from sklearn.metrics import accuracy_score
             print "score : ", accuracy_score(y_test_list, y_pred_list)
+            scores.append( accuracy_score(y_test_list, y_pred_list) )
 
     print 
     print np.mean(scores), np.std(scores)
