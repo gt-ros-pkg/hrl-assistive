@@ -66,6 +66,25 @@
                                                        /SR300/depth/camera_info
                                                        /head_mount_kinect/hd/points
                                                        /head_mount_kinect/hd/camera_info
+                                                       /hrl_manipulation_task/InterruptAction
+                                                       /feeding/manipulation_task/ad_sensitivity_request
+                                                       /feeding/manipulation_task/ad_sensitivity_state
+                                                       /feeding/manipulation_task/eval_status
+                                                       /feeding/manipulation_task/feeding_dist_request
+                                                       /feeding/manipulation_task/feeding_dist_state
+                                                       /manipulation_task/anomaly_type
+                                                       /manipulation_task/available
+                                                       /manipulation_task/emergency
+                                                       /manipulation_task/gui_status
+                                                       /manipulation_task/proceed
+                                                       /manipulation_task/status
+                                                       /manipulation_task/user_feedback
+                                                       /manipulation_task/user_input
+                                                       /scooping/manipulation_task/ad_sensitivity_request
+                                                       /scooping/manipulation_task/ad_sensitivity_state
+                                                       /scooping/manipulation_task/eval_status
+                                                       /manipulation_task/hmm_input0
+                                                       /manipulation_task/hmm_input1
                                                        " output="screen"/>
 </launch>
 
