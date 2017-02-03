@@ -547,9 +547,9 @@ def train_top_model_with_image(save_data_path, n_labels, nFold, nb_epoch=400, lo
 
             scores.append( hist.history['val_acc'][-1] )
         else:
-            y_pred = model.predict(x_train)
+            y_pred = model.predict(x_test)
             y_pred_list += np.argmax(y_pred, axis=1).tolist()
-            y_test_list += np.argmax(y_train, axis=1).tolist()
+            y_test_list += np.argmax(y_test, axis=1).tolist()
 
             from sklearn.metrics import accuracy_score
             print "score : ", accuracy_score(y_test_list, y_pred_list)
