@@ -103,18 +103,14 @@ class logger:
             t.start()
  
     def initParams(self):
-        '''
-        # load parameters
-        '''        
+        ''' load parameters '''        
         # File saving
         self.folderName = os.path.join(self.record_root_path, self.subject + '_' + self.task)
         self.nDetector  = rospy.get_param(self.task+'/nDetector')
 
         
     def initComms(self, task):
-        '''
-        Record data and publish raw data
-        '''        
+        ''' Record data and publish raw data '''        
         if self.data_pub:
             self.rawDataPub = rospy.Publisher('/hrl_manipulation_task/raw_data', MultiModality,
                                                  queue_size=QUEUE_SIZE)
@@ -122,26 +118,28 @@ class logger:
         # GUI implementation       
         rospy.Subscriber("/manipulation_task/user_feedback", StringArray,
                          self.feedbackCallback)
+        rospy.Subscriber("/manipulation_task/anomaly_type", String,
+                         self.isolationCallback)
 
         self.setTask(task)
 
     
     def feedbackCallback(self, msg):
-        ''' GUI implementation
-        '''
+        ''' GUI implementation '''
         #Just...log? idk where this one will go. I assume it is integrated with log....
         print "Logger feedback received"
         self.feedbackMSG = msg.data
         self.feedbackStatus = feedback_to_label(msg.data)
                     
+    def isolationCallback(self, msg):
+        ''' save isolated class '''
+        self.isol_class = msg.data
 
     def getLogStatus(self):
         return self.enable_log_thread
             
     def setTask(self, task):
-        '''
-        Set a current task
-        '''
+        ''' Set a current task '''
         self.task = task
         self.initParams()
 
@@ -174,6 +172,8 @@ class logger:
         ## ## Reset time
         if self.fabric_skin is not None:
             self.fabric_skin.reset(self.init_time)
+
+        if self.enable_isolator: self.isol_class = None
 
         # logging by thread
         self.enable_log_thread = True
@@ -244,16 +244,21 @@ class logger:
         if bCont:
             status = last_status
         else:
-            flag = 0
             rate = rospy.Rate(2)
-            while flag == 0 and not rospy.is_shutdown():
-                flag = self.feedbackStatus
+            while self.feedbackStatus == 0 and not rospy.is_shutdown():
                 self.data['feedback'] = self.feedbackMSG
                 rate.sleep()
 
-            status = flag
+            status = self.feedbackStatus
             self.feedbackStatus=0
             print status
+
+            if self.enable_isolator:
+                while self.isol_class is None and not rospy.is_shutdown():
+                    rate.sleep()
+                self.data['isol_class'] = self.isol_class
+                
+            
 
         if status == 'success' or status == 'failure':
             if status == 'failure':
@@ -385,16 +390,10 @@ class logger:
 
     def run(self):
 
-        #self.log_start()
-
         count = 0
         rate = rospy.Rate(50) # 25Hz, nominally.
         while not rospy.is_shutdown():
-            ## count += 1
-            ## if count > 800: break
             rate.sleep()
-
-        #self.close_log_file()
 
     def runDataPub(self):
         '''

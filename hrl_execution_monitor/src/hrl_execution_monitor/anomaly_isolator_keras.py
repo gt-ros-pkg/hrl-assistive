@@ -127,6 +127,9 @@ class anomaly_isolator:
         # Publisher
         self.isolation_info_pub = rospy.Publisher("/manipulation_task/anomaly_type", String,
                                                   queue_size=QUEUE_SIZE)
+        self.isolation_prob_pub = rospy.Publisher("/manipulation_task/anomaly_prob", FloatArray,
+                                                  queue_size=QUEUE_SIZE)
+
         
         # Subscriber # TODO: topic should include task name prefix?
         rospy.Subscriber('/hrl_manipulation_task/raw_data', MultiModality, self.staticDataCallback)
@@ -308,8 +311,6 @@ class anomaly_isolator:
                 x = self.scr.transform(x)
 
                 ## Image -------------------------------------------------------------
-                print np.shape(self.img_data)
-
                 with self.img_lock:
                     img = cv2.resize(self.img_data, img_size).astype(np.float32)
                 img = img[(img_size[0]-crop_size[0])//2:(img_size[0]+crop_size[0])//2
@@ -325,11 +326,14 @@ class anomaly_isolator:
                 # ---------------------------------------------------------------------
                 y_pred = self.keras_model.predict([img/255., x])
                 print y_pred
-                y_pred = np.argmax(y_pred, axis=1)
-                ## y_pred = self.cf.predict(x)
-                anomaly_type = self.classes[y_pred[0]]
+                
+                anomaly_type = self.classes[ np.argmax(y_pred, axis=1)[0] ]
                 print "Detected anomaly is ", anomaly_type
                 self.isolation_info_pub.publish(anomaly_type)
+
+                msg = FloatArray()
+                msg.data = list(y_pred[0])
+                self.isolation_prob_pub.publish(msg)               
 
                 # reset                
                 self.reset()

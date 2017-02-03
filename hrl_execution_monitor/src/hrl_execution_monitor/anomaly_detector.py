@@ -54,13 +54,17 @@ QUEUE_SIZE = 10
 
 class anomaly_detector:
     def __init__(self, task_name, method, detector_id, save_data_path,\
-                 param_dict, debug=False, viz=False):
+                 param_dict, debug=False, no_alarm=False, viz=False):
+        '''
+        no_alarm: detect anomalies, but does not stop the robot
+        '''
         rospy.loginfo('Initializing anomaly detector')
 
         self.task_name       = task_name.lower()
         self.method          = method
         self.id              = detector_id
         self.save_data_path  = save_data_path
+        self.no_alarm        = no_alarm
         self.debug           = debug
         self.viz             = viz
         self.fig             = None
@@ -330,9 +334,10 @@ class anomaly_detector:
 
     def set_anomaly_alarm(self):
         rospy.loginfo( '-'*15 +  'Anomaly has occured!' + '-'*15 )
-        self.soundHandle.play(1)
-        self.action_interruption_pub.publish(self.task_name+'_anomaly')
-        self.task_interruption_pub.publish(self.task_name+'_anomaly')
+        if self.no_alarm is False:
+            self.soundHandle.play(1)
+            self.action_interruption_pub.publish(self.task_name+'_anomaly')
+            self.task_interruption_pub.publish(self.task_name+'_anomaly')
 
         ## rospy.sleep(0.1) #need delay for hmm_input pub
         msg = FloatMatrix()
@@ -517,6 +522,8 @@ if __name__ == '__main__':
                  help='type the method name')
     p.add_option('--id', action='store', dest='id', type=int, default=0,
                  help='type the detector id')
+    p.add_option('--no_alarm', '--na', action='store_true', dest='no_alarm',
+                 default=False, help='Disable alarming.')
     p.add_option('--debug', '--d', action='store_true', dest='bDebug',
                  default=False, help='Enable debugging mode.')
     
@@ -537,7 +544,7 @@ if __name__ == '__main__':
 
 
     ad = anomaly_detector(opt.task, opt.method, opt.id, save_data_path, \
-                          param_dict, debug=opt.bDebug, viz=True)
+                          param_dict, debug=opt.bDebug, no_alarm=opt.no_alarm, viz=True)
     ad.run()
 
 

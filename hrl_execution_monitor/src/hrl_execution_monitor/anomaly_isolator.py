@@ -107,12 +107,13 @@ class anomaly_isolator:
         # Publisher
         self.isolation_info_pub = rospy.Publisher("/manipulation_task/anomaly_type", String,
                                                   queue_size=QUEUE_SIZE)
+        self.isolation_prob_pub = rospy.Publisher("/manipulation_task/anomaly_prob", FloatArray,
+                                                  queue_size=QUEUE_SIZE)
         
         # Subscriber # TODO: topic should include task name prefix?
         rospy.Subscriber('/hrl_manipulation_task/raw_data', MultiModality, self.staticDataCallback)
         rospy.Subscriber('manipulation_task/hmm_input0', FloatMatrix, self.dtc1DataCallback)
         rospy.Subscriber('manipulation_task/hmm_input1', FloatMatrix, self.dtc2DataCallback)
-        ## rospy.Subscriber('/SR300/rgb/image_raw', Image, self.imgDataCallback)
 
         rospy.Subscriber('/manipulation_task/status', String, self.statusCallback)
 
@@ -147,13 +148,6 @@ class anomaly_isolator:
         return Bool_NoneResponse()
 
     
-    def imgDataCallback(self, msg):
-        '''
-        capture image
-        '''
-        ## msg.data
-        return
-        
     def dtc1DataCallback(self, msg):
         '''
         Subscribe HMM0 data
@@ -274,9 +268,14 @@ class anomaly_isolator:
                 x = self.scr.transform(x)
                 
                 y_pred = self.cf.predict(x)
+                y_pred_prob = self.cf.predict_proba(x)
                 anomaly_type = self.classes[y_pred[0]]
                 print "Detected anomaly is ", anomaly_type
                 self.isolation_info_pub.publish(anomaly_type)
+
+                msg = FloatArray()
+                msg.data = list(y_pred_prob[0])
+                self.isolation_prob_pub.publish(msg)
 
                 # reset                
                 self.reset()
