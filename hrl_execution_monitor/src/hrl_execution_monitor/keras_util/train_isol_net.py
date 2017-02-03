@@ -647,7 +647,7 @@ def get_bottleneck_mutil(save_data_path, n_labels, nFold, vgg=False):
     
 
 def train_multi_top_model(save_data_path, n_labels, nFold, nb_epoch=3000, load_weights=False, vgg=False,
-                          patience=30):
+                          patience=30, test_only=True):
 
     if vgg: prefix = 'vgg_'
     else: prefix = ''
@@ -695,15 +695,17 @@ def train_multi_top_model(save_data_path, n_labels, nFold, nb_epoch=3000, load_w
         ## score = clf.score(x_test, np.argmax(y_test,axis=1))
         ## scores.append(score)   
 
-        hist = model.fit(x_train, y_train, nb_epoch=nb_epoch, batch_size=len(x_train), shuffle=True,
-                         validation_data=(x_test, y_test), callbacks=callbacks)       
-        scores.append( hist.history['val_acc'][-1] )
-
-        ## y_pred = model.predict(x_train)
-        ## y_pred_list += np.argmax(y_pred, axis=1).tolist()
-        ## y_test_list += np.argmax(y_train, axis=1).tolist()
-        ## from sklearn.metrics import accuracy_score
-        ## print "score : ", accuracy_score(y_test_list, y_pred_list)
+        if test_only is False:
+            hist = model.fit(x_train, y_train, nb_epoch=nb_epoch, batch_size=len(x_train), shuffle=True,
+                             validation_data=(x_test, y_test), callbacks=callbacks)       
+            scores.append( hist.history['val_acc'][-1] )
+        else:
+            y_pred = model.predict(x_test)
+            y_pred_list += np.argmax(y_pred, axis=1).tolist()
+            y_test_list += np.argmax(y_test, axis=1).tolist()
+            from sklearn.metrics import accuracy_score
+            print "score : ", accuracy_score(y_test_list, y_pred_list)
+            scores.append( accuracy_score(y_test_list, y_pred_list) )
         
         gc.collect()
 
