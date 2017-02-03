@@ -63,6 +63,7 @@ class anomaly_detector:
         self.save_data_path  = save_data_path
         self.debug           = debug
         self.viz             = viz
+        self.fig             = None
 
         # Important containers
         self.enable_detector = False
@@ -298,7 +299,7 @@ class anomaly_detector:
     def emergencyCallback(self, msg):
         '''Emergency status button.'''
         print "in emergency callback", msg
-        if msg.data.find('anomaly')>=0:
+        if msg.data.find('anomaly')>=0 and len(self.dataList)>0:
             msg = FloatMatrix()
             msg.header.stamp = rospy.Time.now()        
             msg.size = self.nEmissionDim
@@ -308,15 +309,15 @@ class anomaly_detector:
             self.lock.release()
 
 
-    def debugCallback(self, msg):
-        if msg.data.find("Set: Feeding 3, Feeding 4, retrieving")>=0:            
-            rospy.loginfo("%s anomaly detector %s enabled", self.task_name, str(self.id))
-            self.enable_detector = True
-            self.pubSensitivity()                    
-        else:
-            rospy.loginfo("%s anomaly detector %s disabled", self.task_name, str(self.id))
-            self.enable_detector = False
-            self.reset() #TODO: may be it should be removed
+    ## def debugCallback(self, msg):
+    ##     if msg.data.find("Set: Feeding 3, Feeding 4, retrieving")>=0:            
+    ##         rospy.loginfo("%s anomaly detector %s enabled", self.task_name, str(self.id))
+    ##         self.enable_detector = True
+    ##         self.pubSensitivity()                    
+    ##     else:
+    ##         rospy.loginfo("%s anomaly detector %s disabled", self.task_name, str(self.id))
+    ##         self.enable_detector = False
+    ##         self.reset() #TODO: may be it should be removed
 
     #-------------------------- General fuctions --------------------------
     def pubSensitivity(self):
@@ -333,7 +334,7 @@ class anomaly_detector:
         self.action_interruption_pub.publish(self.task_name+'_anomaly')
         self.task_interruption_pub.publish(self.task_name+'_anomaly')
 
-        rospy.sleep(0.1) #need delay for hmm_input pub
+        ## rospy.sleep(0.1) #need delay for hmm_input pub
         msg = FloatMatrix()
         msg.header.stamp = rospy.Time.now()        
         msg.size = self.nEmissionDim
@@ -397,14 +398,17 @@ class anomaly_detector:
             # anomal classification
             err, y_pred, sigma = self.classifier.predict(X, debug=True)
             if self.viz:
-                self.lock.acquire()
                 self.logpDataList.append([len(self.dataList[0][0]), logp, y_pred, y_pred-sigma ])
                 ## self.viz_raw_input(self.dataList)
-                self.viz_decision_boundary(np.array(self.dataList)/self.scale, self.logpDataList)
-                self.lock.release() 
-            ## print cur_length, " : logp: ", logp, "  state: ", np.argmax(post), " y_pred: ", y_pred, sigma, self.id
-            if self.id == 0 or True:
-                print cur_length, " : err: ", err, "  state: ", np.argmax(post), self.id             
+                if np.argmax(post)>21 or err[-1]>0:
+                    self.viz_decision_boundary(np.array(self.dataList)/self.scale, self.logpDataList)
+
+            if err[-1]>0:
+                print cur_length, " : logp: ", logp, "  state: ", np.argmax(post), " y_pred: ", y_pred, sigma, self.id, " <------------ Anomaly"
+            else:
+                print cur_length, " : logp: ", logp, "  state: ", np.argmax(post), " y_pred: ", y_pred, sigma, self.id
+            ## if self.id == 0 or True:
+            ##     print cur_length, " : err: ", err, "  state: ", np.argmax(post), self.id             
             
             if type(err) == list: err = err[-1]
             if err > 0.0: self.set_anomaly_alarm()
@@ -449,7 +453,8 @@ class anomaly_detector:
     def viz_raw_input(self, x):
 
         if self.figure_flag is False:
-            self.fig = plt.figure()
+            if self.fig is not None:
+                self.fig = plt.figure()
             plt.ion()
             plt.show()
             print 
@@ -526,8 +531,9 @@ if __name__ == '__main__':
         # IROS2017
         subject_names = ['s2', 's3','s4','s5', 's6','s7','s8', 's9']
         raw_data_path, save_data_path, param_dict = getParams(opt.task)
-        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
         ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
+        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
+        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo'
         
     else:
         rospy.loginfo( "Not supported task")
@@ -535,7 +541,7 @@ if __name__ == '__main__':
 
 
     ad = anomaly_detector(opt.task, opt.method, opt.id, save_data_path, \
-                          param_dict, debug=opt.bDebug, viz=False)
+                          param_dict, debug=opt.bDebug, viz=True)
     ad.run()
 
 
