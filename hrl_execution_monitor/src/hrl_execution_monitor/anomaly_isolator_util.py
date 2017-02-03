@@ -203,12 +203,12 @@ if __name__ == '__main__':
     weight    = [-9.0, -9.0]
     
     ## # c8
-    ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo4'
-    ## weight    = [-7.44, -12.0]
+    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo4'
+    weight    = [-6.5, -6.5]
     
     # c12
-    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo'
-    weight    = [-5.2, -6.2]
+    ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo'
+    ## weight    = [-5.2, -6.2]
 
     # c11 5.2,5.2-65  5.2,6.2-69 maybebest 
     ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
