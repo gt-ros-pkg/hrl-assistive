@@ -486,7 +486,7 @@ def get_bottleneck_image(save_data_path, n_labels, nFold, vgg=False, use_extra_i
 
 
 def train_top_model_with_image(save_data_path, n_labels, nFold, nb_epoch=400, load_weights=False, vgg=False,
-                               patience=5, remove_label=[], use_extra_img=True):
+                               patience=5, remove_label=[], use_extra_img=True, test_only=False):
 
     if vgg: prefix = 'vgg_'
     else: prefix = ''
@@ -540,18 +540,20 @@ def train_top_model_with_image(save_data_path, n_labels, nFold, nb_epoch=400, lo
         class_weight[-2] = 0.5 # spoon collision by sys
         class_weight[-1] = 0.5 # freeze
 
-        hist = model.fit(x_train, y_train, nb_epoch=nb_epoch, batch_size=1024, shuffle=True,
-                         validation_data=(x_test, y_test), callbacks=callbacks,
-                         class_weight=class_weight)
+        if test_only is False:
+            hist = model.fit(x_train, y_train, nb_epoch=nb_epoch, batch_size=1024, shuffle=True,
+                             validation_data=(x_test, y_test), callbacks=callbacks,
+                             class_weight=class_weight)
 
-        scores.append( hist.history['val_acc'][-1] )
+            scores.append( hist.history['val_acc'][-1] )
+        else:
+            y_pred = model.predict(x_train)
+            y_pred_list += np.argmax(y_pred, axis=1).tolist()
+            y_test_list += np.argmax(y_train, axis=1).tolist()
 
-        ## y_pred = model.predict(x_train)
-        ## y_pred_list += np.argmax(y_pred, axis=1).tolist()
-        ## y_test_list += np.argmax(y_train, axis=1).tolist()
-
-        ## from sklearn.metrics import accuracy_score
-        ## print "score : ", accuracy_score(y_test_list, y_pred_list)
+            from sklearn.metrics import accuracy_score
+            print "score : ", accuracy_score(y_test_list, y_pred_list)
+            scores.append( accuracy_score(y_test_list, y_pred_list) )
         
         gc.collect()
 
