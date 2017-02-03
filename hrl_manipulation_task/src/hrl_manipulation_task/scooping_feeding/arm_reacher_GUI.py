@@ -291,6 +291,7 @@ class armReacherGUI:
             self.ServiceCallLeft("runScooping")
             self.proceedPub.publish("Done")
             self.guiStatusPub.publish("request feedback")
+            self.motion_complete = True
             if self.emergencyStatus:
                 if detection_flag: self.log.enableDetector(False)                
                 break
@@ -301,7 +302,6 @@ class armReacherGUI:
             else:
                 self.logRequestPub.publish("No feedback requested")
             self.ScoopNumber = 0
-            self.motion_complete = True
             break
 
     
