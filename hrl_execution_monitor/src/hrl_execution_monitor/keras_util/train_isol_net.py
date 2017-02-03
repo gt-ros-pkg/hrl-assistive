@@ -72,7 +72,7 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
     remove_label = [1]
     #get_bottleneck_image(save_data_path, n_labels, nFold, vgg=True, remove_label=remove_label)
     #train_top_model_with_image(save_data_path, n_labels, nFold, vgg=True)
-    train_top_model_with_image(save_data_path, n_labels, nFold, vgg=True, nb_epoch=1000, load_weights=True)
+    ## train_top_model_with_image(save_data_path, n_labels, nFold, vgg=True, nb_epoch=1000, load_weights=True)
     
     ## train_with_image(save_data_path, n_labels, nFold, patience=20)
     ## train_with_image(save_data_path, n_labels, nFold, patience=20, fine_tune=True)
@@ -82,8 +82,8 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
     ##                  load_weights=True)
 
     # training_with all --------------------------------------
-    ## get_bottleneck_mutil(save_data_path, n_labels, nFold, vgg=True)
-    ## train_multi_top_model(save_data_path, n_labels, nFold, vgg=True)
+    #get_bottleneck_mutil(save_data_path, n_labels, nFold, vgg=True)
+    train_multi_top_model(save_data_path, n_labels, nFold, vgg=True)
     ## train_multi_top_model(save_data_path, n_labels, nFold, vgg=True, load_weights=True) # noneed
     
     ## train_with_all(save_data_path, n_labels, nFold, patience=1, nb_epoch=1, vgg=True)
