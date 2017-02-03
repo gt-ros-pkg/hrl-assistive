@@ -62,10 +62,14 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                       'crossmodal_landmarkEEAng',\
                       ]                                                  
         
+    save_data_path = None
 
+    ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/feeding_demo1'
     ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.0, 'scale': [2.0, 2.0],\
     ##                   'add_logp_d': False }
-    ## offset 5
+
+    ## offset 5, best ths(-3,-3)    
+    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/feeding_demo'    
     HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.0, 'scale': [5.0, 11.0],\
                       'add_logp_d': False }
     SVM_param_dict = {'renew': CF_renew,\
@@ -129,7 +133,6 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                       'isolationFeatures': isolationFeatures,\
                       'handFeatures_noise': True, 'max_time': 7.0}
 
-    save_data_path = None
     param_dict = {'data_param': data_param_dict, 'HMM': HMM_param_dict, \
                   'SVM': SVM_param_dict, 'ROC': ROC_param_dict, 'AD': AD_param_dict}
 
