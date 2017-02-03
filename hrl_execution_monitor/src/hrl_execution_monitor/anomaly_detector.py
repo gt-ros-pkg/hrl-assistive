@@ -333,6 +333,7 @@ class anomaly_detector:
         self.action_interruption_pub.publish(self.task_name+'_anomaly')
         self.task_interruption_pub.publish(self.task_name+'_anomaly')
 
+        rospy.sleep(0.1) #need delay for hmm_input pub
         msg = FloatMatrix()
         msg.header.stamp = rospy.Time.now()        
         msg.size = self.nEmissionDim
@@ -386,7 +387,7 @@ class anomaly_detector:
             post = post[cur_length-1]
 
             if np.argmax(post)==0 and logp < 0.0: continue
-            ## if np.argmax(post)>self.param_dict['HMM']['nState']*0.9: continue
+            if np.argmax(post)>self.param_dict['HMM']['nState']*0.9: continue
 
             if 'svm' in self.method or 'sgd' in self.method:
                 X = self.scaler.transform([ [logp] + post.tolist() ])
@@ -402,7 +403,7 @@ class anomaly_detector:
                 self.viz_decision_boundary(np.array(self.dataList)/self.scale, self.logpDataList)
                 self.lock.release() 
             ## print cur_length, " : logp: ", logp, "  state: ", np.argmax(post), " y_pred: ", y_pred, sigma, self.id
-            if self.id == 0:
+            if self.id == 0 or True:
                 print cur_length, " : err: ", err, "  state: ", np.argmax(post), self.id             
             
             if type(err) == list: err = err[-1]
@@ -525,7 +526,7 @@ if __name__ == '__main__':
         # IROS2017
         subject_names = ['s2', 's3','s4','s5', 's6','s7','s8', 's9']
         raw_data_path, save_data_path, param_dict = getParams(opt.task)
-        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo'
+        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
         ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
         
     else:
