@@ -65,8 +65,8 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
     save_data_path = os.path.join(save_data_path, 'keras')
 
     # training with signals ----------------------------------
-    ## train_with_signal(save_data_path, n_labels, nFold, nb_epoch=800, patience=50)
-    ## train_with_signal(save_data_path, n_labels, nFold, nb_epoch=800, patience=50, load_weights=True)
+    train_with_signal(save_data_path, n_labels, nFold, nb_epoch=800, patience=50)
+    train_with_signal(save_data_path, n_labels, nFold, nb_epoch=800, patience=50, load_weights=True)
 
     # training_with images -----------------------------------
     remove_label = [1]
@@ -87,7 +87,7 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
     ## train_multi_top_model(save_data_path, n_labels, nFold, vgg=True, load_weights=True) # noneed
     
     ## train_with_all(save_data_path, n_labels, nFold, patience=1, nb_epoch=1, vgg=True)
-    train_with_all(save_data_path, n_labels, nFold, load_weights=True, patience=5, vgg=True)
+    ## train_with_all(save_data_path, n_labels, nFold, load_weights=True, patience=5, vgg=True)
 
 
     return
@@ -808,7 +808,7 @@ if __name__ == '__main__':
     save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
 
     # best one for (-5,-11)
-    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
+    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo'
 
     task_name = 'feeding'
     method    = ['progress0', 'progress1'] 
