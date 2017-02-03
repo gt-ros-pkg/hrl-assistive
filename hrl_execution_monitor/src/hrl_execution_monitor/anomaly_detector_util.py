@@ -168,13 +168,6 @@ def get_detector_modules(save_data_path, task_name, param_dict, detector_id, fol
     m_param_dict['failureData']    = d['failureData'][feature_idx_list]
 
     
-    ## # load scaler
-    ## import pickle
-    ## if os.path.isfile(scr_pkl):
-    ##     with open(scr_pkl, 'rb') as f:
-    ##         m_scr = pickle.load(f)
-    ## else: m_scr = None
-
     # load hmm
     if os.path.isfile(hmm_pkl) is False:
         print "No HMM pickle file: ", hmm_pkl

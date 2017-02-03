@@ -151,7 +151,7 @@ def get_isolator_modules(save_data_path, task_name, param_dict, fold_idx=0, \
         m_scr = pickle.load(f)
     
 
-    # get classifier
+    # get classifier only for signals
     fileName = os.path.join(save_data_path, 'clf_'+str(fold_idx))
     import pickle
     with open(fileName, 'rb') as f:
@@ -208,7 +208,7 @@ if __name__ == '__main__':
     
     # c12
     save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo'
-    ## weight    = [-5.2, -6.2]
+    weight    = [-5.2, -6.2]
 
     # c11 5.2,5.2-65  5.2,6.2-69 maybebest 
     ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
@@ -216,7 +216,7 @@ if __name__ == '__main__':
     param_dict['HMM']['scale'] = [5.0, 11.0]
 
     #5.2,5.2-65
-    #5.2,6.2-69 ==========> Best
+    #5.2,6.2-69 ==========> Best demo
     #6.5,6.5-61.5
     #7.44,7.44-57
     #7.44,10-66
