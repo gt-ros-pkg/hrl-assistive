@@ -218,8 +218,8 @@ if __name__ == '__main__':
     weight    = [-5.2, -7.]
 
     # c11 5.2,5.2-65  5.2,6.2-69
-    ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
-    ## weight    = [-5.2, -6.2]
+    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
+    weight    = [-7.44, -7.44]
 
 
     window_steps= 5

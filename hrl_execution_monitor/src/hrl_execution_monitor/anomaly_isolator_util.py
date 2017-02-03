@@ -38,6 +38,7 @@ from hrl_anomaly_detection import data_manager as dm
 import hrl_anomaly_detection.isolator.isolation_util as iutil
 from hrl_execution_monitor import util as autil
 from hrl_execution_monitor import preprocess as pp
+from hrl_execution_monitor import anomaly_isolator_preprocess as aip
 
 # Private learners
 from hrl_anomaly_detection.hmm import learning_hmm as hmm
@@ -169,6 +170,8 @@ if __name__ == '__main__':
     p = optparse.OptionParser()
     util.initialiseOptParser(p)
 
+    p.add_option('--get_isol_data', '--gi', action='store_true', dest='getIsolData',
+                 default=False, help='Preprocess')
     p.add_option('--preprocess', '--p', action='store_true', dest='preprocessing',
                  default=False, help='Preprocess')
     p.add_option('--preprocess_extra', '--pe', action='store_true', dest='preprocessing_extra',
@@ -199,9 +202,9 @@ if __name__ == '__main__':
     save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo'
     weight    = [-5.2, -7.]
 
-    # c11 5.2,5.2-65  5.2,6.2-69 maybebest
+    # c11 5.2,5.2-65  5.2,6.2-69 maybebest 7.44,7.44-57
     save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
-    weight    = [-7.44, -7.44]
+    weight    = [-7.44, -10.0]
     param_dict['HMM']['scale'] = [5.0, 11.0]
     # -----------------------------------------------------------------------
 
@@ -212,9 +215,14 @@ if __name__ == '__main__':
     param_dict['HMM']['cov']   = 1.0
     single_detector=False    
     nb_classes = 12
+    window_steps= 5
 
 
-    if opt.preprocessing:    
+    if opt.getIsolData:
+        aip.get_isolation_data(subject_names, task_name, raw_data_path, save_data_path,
+                               param_dict, weight, single_detector=single_detector,
+                               window_steps=window_steps, verbose=False)        
+    elif opt.preprocessing:    
         # preprocessing data
         data_pkl = os.path.join(save_data_path, 'isol_data.pkl')
         pp.preprocess_data(data_pkl, save_data_path, img_scale=0.25, nb_classes=nb_classes,
@@ -226,6 +234,7 @@ if __name__ == '__main__':
                                 img_feature_type='vgg')
         
     elif opt.train:
+        # train signal only
         train_isolator_modules(save_data_path, nb_classes, verbose=False)
         
     else:
