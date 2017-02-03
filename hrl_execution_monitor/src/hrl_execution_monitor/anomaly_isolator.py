@@ -159,6 +159,7 @@ class anomaly_isolator:
         Subscribe HMM0 data
         '''
         print "HMM0 data came in ", np.shape(msg.data)
+        if len(msg.data) == 0: return
         self.dyn_data1 = np.array(msg.data).reshape((msg.size, 1, len(msg.data)/msg.size))
 
     def dtc2DataCallback(self, msg):
@@ -166,6 +167,7 @@ class anomaly_isolator:
         Subscribe HMM1 data
         '''
         print "HMM1 data came in ", np.shape(msg.data)
+        if len(msg.data) == 0: return
         self.dyn_data2 = np.array(msg.data).reshape((msg.size, 1, len(msg.data)/msg.size))
 
     def staticDataCallback(self, msg):
