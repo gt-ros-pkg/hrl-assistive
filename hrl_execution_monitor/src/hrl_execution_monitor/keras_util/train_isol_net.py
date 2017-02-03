@@ -65,12 +65,12 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
     save_data_path = os.path.join(save_data_path, 'keras')
 
     # training with signals ----------------------------------
-    train_with_signal(save_data_path, n_labels, nFold, nb_epoch=800, patience=50)
-    train_with_signal(save_data_path, n_labels, nFold, nb_epoch=800, patience=50, load_weights=True)
+    ## train_with_signal(save_data_path, n_labels, nFold, nb_epoch=800, patience=50)
+    ## train_with_signal(save_data_path, n_labels, nFold, nb_epoch=800, patience=50, load_weights=True)
 
     # training_with images -----------------------------------
     remove_label = [1]
-    ## get_bottleneck_image(save_data_path, n_labels, nFold, vgg=True, remove_label=remove_label)
+    get_bottleneck_image(save_data_path, n_labels, nFold, vgg=True, remove_label=remove_label)
     ## train_top_model_with_image(save_data_path, n_labels, nFold, vgg=True)
     ## train_top_model_with_image(save_data_path, n_labels, nFold, vgg=True, nb_epoch=1000, load_weights=True)
     
