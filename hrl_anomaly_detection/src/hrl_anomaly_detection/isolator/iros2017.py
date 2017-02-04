@@ -1244,7 +1244,7 @@ if __name__ == '__main__':
         ## single_detector = False
 
 
-        ## c12 BEST 0511-86-71  ################### Best? (-5.19, -5.19)
+        ## c11 BEST 0511-86-71  ################### Best? (-5.19, -5.19)
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
