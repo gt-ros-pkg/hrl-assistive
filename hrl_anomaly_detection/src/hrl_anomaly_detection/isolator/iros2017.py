@@ -695,12 +695,6 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
         failure_labels.append( int( f.split('/')[-1].split('_')[0] ) )
     failure_labels = np.array( failure_labels )
 
-
-
-    #temp
-    ## kFold_list = kFold_list[:8]
-
-
     #-----------------------------------------------------------------------------------------
     # Dynamic feature selection for detection and isolation
     print d['param_dict']['feature_names']    

@@ -42,15 +42,28 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
 
     if nPoints is None: nPoints = 40 
 
-    handFeatures  = ['unimodal_audioWristRMS', 'unimodal_ftForceZ', \
-                     'crossmodal_landmarkEEDist', 'unimodal_kinJntEff_1']
-    anomaly_dir   = [1,1,1,1]
-    noise_pos_max = [0.8374, 15.5217, 19.5169, 0.2758]
-    noise_neg_max = [-0.003, -11.9299, -3.4822, -0.1386]
+    handFeatures = [['unimodal_audioWristRMS',  \
+                     'unimodal_kinJntEff_1',\
+                     'unimodal_ftForce_integ',\
+                     'unimodal_kinEEChange',\
+                     'crossmodal_landmarkEEDist'
+                     ],\
+                     ['unimodal_kinVel',\
+                      'unimodal_ftForce_zero',\
+                      'crossmodal_landmarkEEDist'
+                     ]]
+
+    staticFeatures = ['unimodal_audioWristFrontRMS',\
+                      'unimodal_audioWristAzimuth',\
+                      'unimodal_ftForceX',\
+                      'unimodal_ftForceY',\
+                      'unimodal_fabricForce',  \
+                      'unimodal_landmarkDist',\
+                      'crossmodal_landmarkEEAng',\
+                      ]
 
     HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 2.64, 'scale': 6.111,\
                       'add_logp_d': False }
-                      ## 'step_mag_dir': [1,-1,1,0] } #
     SVM_param_dict = {'renew': CF_renew, 'w_negative': 1.0, 'gamma': 5.0, 'cost': 1.0,\
                       'hmmosvm_nu': 0.5,\
                       'osvm_nu': 0.5,\
@@ -77,19 +90,9 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                       'bpsvm_param_range': np.logspace(-2.2, 0.5, nPoints),\
                       'sgd_param_range': np.logspace(-1, 1., nPoints)}
 
-                      ## 'kmean_param_range': -np.logspace(0, 3.0, nPoints),\
-                      ## 'hmmsvm_diag_param_range': np.logspace(-4, 1.2, nPoints),\
-                      ## 'hmmsvm_dL_param_range': np.logspace(-4, 1.2, nPoints),\
-
-    # Parameters should be determinded by optimizer.
-    if nPoints == 1:
-        ROC_param_dict['fixed_param_range'] = [-1.0]
-        ROC_param_dict['progress_param_range'] = [-1.8413]
-        ROC_param_dict['hmmgp_param_range'] = [-4.9]
 
     AD_param_dict = {'svm_w_positive': 1.0, 'sgd_w_positive': 1.0, 'sgd_n_iter': 20}
 
-        
     rawFeatures = ['relativePose_target_EE', \
                    'wristAudio', \
                    'ft',\
@@ -127,23 +130,14 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
     modality_list   = ['ft' ,'kinematics', 'audioWrist', 'vision_landmark']
     raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/AURO2016/'
 
-    ## AE_param_dict  = {'renew': False, 'switch': False, 'time_window': 4, \
-    ##                   'layer_sizes':[64,dim], 'learning_rate':1e-6, 'learning_rate_decay':1e-6, \
-    ##                   'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
-    ##                   'max_iteration':30000, 'min_loss':0.1, 'cuda':True, \
-    ##                   'filter':True, 'filterDim':4,\
-    ##                   'add_option': None, 'rawFeatures': rawFeatures,\
-    ##                   'add_noise_option': [], 'preTrainModel': None}                      
-
     data_param_dict= {'renew': data_renew, 'rf_center': rf_center, 'local_range': local_range,\
                       'downSampleSize': 140, 'cut_data': None, \
                       'nNormalFold':2, 'nAbnormalFold':2,\
-                      'handFeatures': handFeatures, 'lowVarDataRemv': False,\
+                      'handFeatures': handFeatures,\
+                      'staticFeatures': staticFeatures,\
+                      'lowVarDataRemv': False,\
                       'isolationFeatures': isolationFeatures,\
-                      'handFeatures_noise': True, 'max_time': 7.0,\
-                      'anomaly_dir': anomaly_dir, \
-                      'noise_pos_max': noise_pos_max,\
-                      'noise_neg_max': noise_neg_max }
+                      'handFeatures_noise': True, 'max_time': 7.0}
 
     save_data_path = os.path.expanduser('~')+\
       '/hrl_file_server/dpark_data/anomaly/AURO2016/'+task+'_data/'+\
