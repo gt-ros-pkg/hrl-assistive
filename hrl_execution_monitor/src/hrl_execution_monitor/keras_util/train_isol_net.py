@@ -647,7 +647,7 @@ def get_bottleneck_mutil(save_data_path, n_labels, nFold, vgg=False):
     
 
 def train_multi_top_model(save_data_path, n_labels, nFold, nb_epoch=3000, load_weights=False, vgg=False,
-                          patience=30, test_only=True):
+                          patience=30, test_only=False):
 
     if vgg: prefix = 'vgg_'
     else: prefix = ''
