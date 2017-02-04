@@ -67,8 +67,8 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
     # training with signals ----------------------------------
     ## kt.train_with_signal(save_data_path, n_labels, nFold, nb_epoch=800, patience=10)
     ## kt.train_with_signal(save_data_path, n_labels, nFold, nb_epoch=800, patience=5, load_weights=True)
-    ## kt.train_with_signal(save_data_path, n_labels, nFold, nb_epoch=800, patience=5, load_weights=True,
-    ##                      test_only=True) #70
+    kt.train_with_signal(save_data_path, n_labels, nFold, nb_epoch=800, patience=5, load_weights=True,
+                         test_only=True) #70
     
     # training_with images -----------------------------------
     remove_label = [1]
@@ -89,8 +89,8 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
     ## kt.get_bottleneck_mutil(save_data_path, n_labels, nFold, vgg=True)
     ## kt.train_multi_top_model(save_data_path, n_labels, nFold, vgg=True)
     ## kt.train_multi_top_model(save_data_path, n_labels, nFold, vgg=True, load_weights=True)
-    kt.train_multi_top_model(save_data_path, n_labels, nFold, vgg=True, load_weights=True,
-                             test_only=True)
+    ## kt.train_multi_top_model(save_data_path, n_labels, nFold, vgg=True, load_weights=True,
+    ##                          test_only=True)
     
     ## kt.train_with_all(save_data_path, n_labels, nFold, patience=1, nb_epoch=1, vgg=True)
     ## kt.train_with_all(save_data_path, n_labels, nFold, load_weights=True, patience=5, vgg=True)
