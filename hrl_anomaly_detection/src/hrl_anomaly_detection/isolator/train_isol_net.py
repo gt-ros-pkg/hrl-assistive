@@ -79,12 +79,12 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
     ## kt.get_bottleneck_image(save_data_path, n_labels, fold_list, vgg=True, remove_label=remove_label)
     ## kt.train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True)
     ## kt.train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, nb_epoch=1000, load_weights=True)
-    ## kt.train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, nb_epoch=1000, load_weights=True,
-    ##                               test_only=True)
+    kt.train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, nb_epoch=1000, load_weights=True,
+                                  test_only=True)
     
     # training_with all --------------------------------------
     ## kt.get_bottleneck_mutil(save_data_path, n_labels, fold_list, vgg=True)
-    kt.train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True)
+    ## kt.train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True)
     ## kt.train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, load_weights=True)
     ## kt.train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, load_weights=True,
     ##                          test_only=True) #74
