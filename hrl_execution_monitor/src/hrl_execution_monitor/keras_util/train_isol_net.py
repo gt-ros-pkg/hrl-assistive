@@ -552,9 +552,9 @@ def train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=400
 
             scores.append( hist.history['val_acc'][-1] )
         else:
-            # train
-            x_test = x_train
-            y_test = y_train
+            ## # train
+            ## x_test = x_train
+            ## y_test = y_train
             
             y_pred = model.predict(x_test)
             y_pred_list += np.argmax(y_pred, axis=1).tolist()
