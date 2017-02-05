@@ -70,9 +70,9 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
 
     # training with signals ----------------------------------
     ## kt.train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=50)
-    kt.train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=50, load_weights=True)
-    ## kt.train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5, load_weights=True,
-    ##                      test_only=True) #70
+    ## kt.train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=50, load_weights=True)
+    kt.train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5, load_weights=True,
+                         test_only=True) #70
     
     # training_with images -----------------------------------
     remove_label = [1]
