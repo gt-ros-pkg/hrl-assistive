@@ -374,14 +374,13 @@ def train_with_all(save_data_path, n_labels, nFold, nb_epoch=100, load_weights=F
 
             scores.append( hist.history['val_acc'][-1] )
         else:
-            ## model.load_weights( os.path.join(save_data_path,prefix+'cnn_fc_weights_'+str(idx)+'.h5') )
             y_pred = model.predict([x_test_img/255., x_test_sig])
             y_pred_list += np.argmax(y_pred, axis=1).tolist()
             y_test_list += np.argmax(y_test, axis=1).tolist()
             
             from sklearn.metrics import accuracy_score
             print "score : ", accuracy_score(y_test_list, y_pred_list)
-            ## break
+            scores.append( accuracy_score(y_test_list, y_pred_list) )
         gc.collect()
 
 
