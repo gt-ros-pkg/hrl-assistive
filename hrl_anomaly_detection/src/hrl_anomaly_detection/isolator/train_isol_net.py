@@ -62,7 +62,7 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
     nFold = len(d.keys())
     del d
 
-    nFold = 1
+    ## nFold = 1
 
     save_data_path = os.path.join(save_data_path, 'keras')
 
@@ -77,16 +77,9 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
     ## kt.get_bottleneck_image(save_data_path, n_labels, nFold, vgg=True, remove_label=remove_label)
     ## kt.train_top_model_with_image(save_data_path, n_labels, nFold, vgg=True)
     ## kt.train_top_model_with_image(save_data_path, n_labels, nFold, vgg=True, nb_epoch=1000, load_weights=True)
-    kt.train_top_model_with_image(save_data_path, n_labels, nFold, vgg=True, nb_epoch=1000, load_weights=True,
-                                  test_only=True)
+    ## kt.train_top_model_with_image(save_data_path, n_labels, nFold, vgg=True, nb_epoch=1000, load_weights=True,
+    ##                               test_only=True)
     
-    ## train_with_image(save_data_path, n_labels, nFold, patience=20)
-    ## train_with_image(save_data_path, n_labels, nFold, patience=20, fine_tune=True)
-
-    ## train_with_image(save_data_path, n_labels, nFold, patience=20, vgg=True, remove_label=remove_label)
-    ## train_with_image(save_data_path, n_labels, nFold, patience=20, vgg=True, remove_label=remove_label,
-    ##                  load_weights=True)
-
     # training_with all --------------------------------------
     ## kt.get_bottleneck_mutil(save_data_path, n_labels, nFold, vgg=True)
     ## kt.train_multi_top_model(save_data_path, n_labels, nFold, vgg=True)
