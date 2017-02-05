@@ -539,8 +539,8 @@ def train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=400
         class_weight={}
         for i in xrange(n_labels):
             class_weight[i] = 1.0
-        ## class_weight[1]  = 0.1 # noisy env
-        ## class_weight[6]  = 0.1 # anomalous snd
+        class_weight[1]  = 0.1 # noisy env
+        class_weight[6]  = 0.1 # anomalous snd
         ## class_weight[-3] = 0.5 # spoon miss by sys
         ## class_weight[-2] = 0.5 # spoon collision by sys
         ## class_weight[-1] = 0.5 # freeze
