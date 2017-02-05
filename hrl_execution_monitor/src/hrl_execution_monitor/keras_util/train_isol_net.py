@@ -698,9 +698,9 @@ def train_multi_top_model(save_data_path, n_labels, fold_list, nb_epoch=3000, lo
                              validation_data=(x_test, y_test), callbacks=callbacks)       
             scores.append( hist.history['val_acc'][-1] )
         else:
-            #temp
-            x_test = x_train
-            y_test = y_train
+            ## #temp
+            ## x_test = x_train
+            ## y_test = y_train
             
             y_pred = model.predict(x_test)
             y_pred_list += np.argmax(y_pred, axis=1).tolist()
