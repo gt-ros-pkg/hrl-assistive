@@ -61,47 +61,48 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
     d = ut.load_pickle(os.path.join(save_data_path, 'isol_data.pkl'))
     nFold = len(d.keys())
     del d
+    fold_list = range(nFold)
 
     save_data_path = os.path.join(save_data_path, 'keras')
 
     # training with signals ----------------------------------
-    ## train_with_signal(save_data_path, n_labels, nFold, nb_epoch=800, patience=50)
-    ## train_with_signal(save_data_path, n_labels, nFold, nb_epoch=800, patience=50, load_weights=True)
+    ## train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=50)
+    ## train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=50, load_weights=True)
 
     # training_with images -----------------------------------
     remove_label = [1]
-    #get_bottleneck_image(save_data_path, n_labels, nFold, vgg=True, remove_label=remove_label)
-    #train_top_model_with_image(save_data_path, n_labels, nFold, vgg=True)
-    ## train_top_model_with_image(save_data_path, n_labels, nFold, vgg=True, nb_epoch=1000, load_weights=True)
+    #get_bottleneck_image(save_data_path, n_labels, fold_list, vgg=True, remove_label=remove_label)
+    #train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True)
+    ## train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, nb_epoch=1000, load_weights=True)
     
-    ## train_with_image(save_data_path, n_labels, nFold, patience=20)
-    ## train_with_image(save_data_path, n_labels, nFold, patience=20, fine_tune=True)
+    ## train_with_image(save_data_path, n_labels, fold_list, patience=20)
+    ## train_with_image(save_data_path, n_labels, fold_list, patience=20, fine_tune=True)
 
-    ## train_with_image(save_data_path, n_labels, nFold, patience=20, vgg=True, remove_label=remove_label)
-    ## train_with_image(save_data_path, n_labels, nFold, patience=20, vgg=True, remove_label=remove_label,
+    ## train_with_image(save_data_path, n_labels, fold_list, patience=20, vgg=True, remove_label=remove_label)
+    ## train_with_image(save_data_path, n_labels, fold_list, patience=20, vgg=True, remove_label=remove_label,
     ##                  load_weights=True)
 
     # training_with all --------------------------------------
-    #get_bottleneck_mutil(save_data_path, n_labels, nFold, vgg=True)
-    ## train_multi_top_model(save_data_path, n_labels, nFold, vgg=True)
-    ## train_multi_top_model(save_data_path, n_labels, nFold, vgg=True, load_weights=True) # noneed
+    #get_bottleneck_mutil(save_data_path, n_labels, fold_list, vgg=True)
+    ## train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True)
+    ## train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, load_weights=True) # noneed
     
-    ## train_with_all(save_data_path, n_labels, nFold, patience=1, nb_epoch=1, vgg=True)
-    train_with_all(save_data_path, n_labels, nFold, load_weights=True, patience=3, vgg=True) # almost no need
+    ## train_with_all(save_data_path, n_labels, fold_list, patience=1, nb_epoch=1, vgg=True)
+    train_with_all(save_data_path, n_labels, fold_list, load_weights=True, patience=3, vgg=True) # almost no need
 
 
     return
 
 
 
-def train_with_signal(save_data_path, n_labels, nFold, nb_epoch=400, load_weights=False,
+def train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=400, load_weights=False,
                       activ_type='relu',
                       test_only=False, save_pdf=False, patience=50):
 
     scores= []
     y_test_list = []
     y_pred_list = []
-    for idx in xrange(nFold):
+    for idx in fold_list:
 
         # Loading data
         train_data, test_data = autil.load_data(idx, save_data_path, viz=False)      
@@ -174,14 +175,14 @@ def train_with_signal(save_data_path, n_labels, nFold, nb_epoch=400, load_weight
     return
 
 
-def train_with_image(save_data_path, n_labels, nFold, nb_epoch=1, load_weights=False, vgg=False,
+def train_with_image(save_data_path, n_labels, fold_list, nb_epoch=1, load_weights=False, vgg=False,
                      patience=20, remove_label=[], use_extra_img=True):
 
     if vgg: prefix = 'vgg_'
     else: prefix = ''
 
     scores= []
-    for idx in xrange(nFold):
+    for idx in fold_list:
 
         # Loading data
         train_data, test_data = autil.load_data(idx, save_data_path, extra_img=use_extra_img, viz=False)      
@@ -259,7 +260,7 @@ def train_with_image(save_data_path, n_labels, nFold, nb_epoch=1, load_weights=F
     return
 
 
-def train_with_all(save_data_path, n_labels, nFold, nb_epoch=100, load_weights=False,
+def train_with_all(save_data_path, n_labels, fold_list, nb_epoch=100, load_weights=False,
                    test_only=False, save_pdf=False, vgg=False, patience=3):
 
     if vgg: prefix = 'vgg_'
@@ -268,7 +269,7 @@ def train_with_all(save_data_path, n_labels, nFold, nb_epoch=100, load_weights=F
     scores= []
     y_test_list = []
     y_pred_list = []
-    for idx in xrange(nFold):
+    for idx in fold_list:
         # Loading data
         train_data, test_data = autil.load_data(idx, save_data_path, viz=False)      
         x_train_sig = train_data[0]
@@ -390,14 +391,14 @@ def train_with_all(save_data_path, n_labels, nFold, nb_epoch=100, load_weights=F
 
 
 
-def get_bottleneck_image(save_data_path, n_labels, nFold, vgg=False, use_extra_img=True,
+def get_bottleneck_image(save_data_path, n_labels, fold_list, vgg=False, use_extra_img=True,
                          remove_label=[]):
 
     if vgg: prefix = 'vgg_'
     else: prefix = ''
 
     scores= []
-    for idx in xrange(nFold):
+    for idx in fold_list:
 
         # Loading data
         train_data, test_data = autil.load_data(idx, save_data_path, extra_img=use_extra_img, viz=False)      
@@ -484,7 +485,7 @@ def get_bottleneck_image(save_data_path, n_labels, nFold, vgg=False, use_extra_i
     return
 
 
-def train_top_model_with_image(save_data_path, n_labels, nFold, nb_epoch=400, load_weights=False, vgg=False,
+def train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=400, load_weights=False, vgg=False,
                                patience=5, remove_label=[], use_extra_img=True, test_only=False):
 
     if vgg: prefix = 'vgg_'
@@ -493,7 +494,7 @@ def train_top_model_with_image(save_data_path, n_labels, nFold, nb_epoch=400, lo
     y_pred_list = []
     y_test_list = []
     scores= []
-    for idx in xrange(nFold):
+    for idx in fold_list:
 
         bt_data_path = os.path.join(save_data_path, 'bt')
 
@@ -561,7 +562,7 @@ def train_top_model_with_image(save_data_path, n_labels, nFold, nb_epoch=400, lo
     return
 
 
-def get_bottleneck_mutil(save_data_path, n_labels, nFold, vgg=False):
+def get_bottleneck_mutil(save_data_path, n_labels, fold_list, vgg=False):
 
     if vgg: prefix = 'vgg_'
     else: prefix = ''
@@ -569,7 +570,7 @@ def get_bottleneck_mutil(save_data_path, n_labels, nFold, vgg=False):
     scores      = []
     y_test_list = []
     y_pred_list = []
-    for idx in xrange(nFold):
+    for idx in fold_list:
         # Loading data
         train_data, test_data = autil.load_data(idx, save_data_path, viz=False)      
         x_train_sig = train_data[0]
@@ -645,7 +646,7 @@ def get_bottleneck_mutil(save_data_path, n_labels, nFold, vgg=False):
     return
     
 
-def train_multi_top_model(save_data_path, n_labels, nFold, nb_epoch=3000, load_weights=False, vgg=False,
+def train_multi_top_model(save_data_path, n_labels, fold_list, nb_epoch=3000, load_weights=False, vgg=False,
                           patience=30, test_only=False):
 
     if vgg: prefix = 'vgg_'
@@ -654,7 +655,7 @@ def train_multi_top_model(save_data_path, n_labels, nFold, nb_epoch=3000, load_w
     y_pred_list = []
     y_test_list = []
     scores= []
-    for idx in xrange(nFold):
+    for idx in fold_list:
 
         bt_data_path = os.path.join(save_data_path, 'bt')
         x_train = np.load(open(os.path.join(bt_data_path,'x_train_btmt_'+str(idx)+'.npy')))
