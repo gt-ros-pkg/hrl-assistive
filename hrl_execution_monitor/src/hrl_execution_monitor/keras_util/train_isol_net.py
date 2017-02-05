@@ -660,12 +660,10 @@ def train_multi_top_model(save_data_path, n_labels, nFold, nb_epoch=3000, load_w
         x_train = np.load(open(os.path.join(bt_data_path,'x_train_btmt_'+str(idx)+'.npy')))
         y_train = np.load(open(os.path.join(bt_data_path,'y_train_btmt_'+str(idx)+'.npy')))
         x_test  = np.load(open(os.path.join(bt_data_path,'x_test_btmt_'+str(idx)+'.npy')))
-
         y_test  = np.load(open(os.path.join(bt_data_path,'y_test_btmt_'+str(idx)+'.npy')))
         print np.shape(x_train), np.shape(y_train), np.shape(x_test), np.shape(y_test)
 
         #----------------------------------------------------------------------------------                
-        ## weights_path = os.path.join(save_data_path,prefix+'top_weights_'+str(idx)+'.h5')
         weights_path = os.path.join(save_data_path,prefix+'cnn_fc_weights_'+str(idx)+'.h5')
         callbacks = [EarlyStopping(monitor='val_loss', min_delta=0, patience=patience,
                                    verbose=0, mode='auto'),
