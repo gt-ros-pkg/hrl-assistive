@@ -354,7 +354,7 @@ def vgg_image_top_net(input_shape, n_labels, weights_path=None):
     ## model.add(Dropout(0.5))
     model.add(Dense(128, init='uniform', name='fc1_2', W_regularizer=L1L2Regularizer(0.0,0.01)))
     model.add(Activation('relu'))
-    model.add(Dropout(0.5))
+    model.add(Dropout(0.0))
 
     
     ## model.add(Dense(256, init='uniform', name='fc1_1', W_regularizer=L1L2Regularizer(0.0,0.01)))
