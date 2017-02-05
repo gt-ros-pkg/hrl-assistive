@@ -546,7 +546,7 @@ def train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=400
         ## class_weight[-1] = 0.5 # freeze
 
         if test_only is False:
-            hist = model.fit(x_train, y_train, nb_epoch=nb_epoch, batch_size=1024, shuffle=True,
+            hist = model.fit(x_train, y_train, nb_epoch=nb_epoch, batch_size=4096, shuffle=True,
                              validation_data=(x_test, y_test), callbacks=callbacks,
                              class_weight=class_weight)
 
