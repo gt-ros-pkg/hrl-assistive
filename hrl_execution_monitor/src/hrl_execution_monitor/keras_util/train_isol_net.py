@@ -375,10 +375,10 @@ def train_with_all(save_data_path, n_labels, fold_list, nb_epoch=100, load_weigh
 
             scores.append( hist.history['val_acc'][-1] )
         else:
-            #temp
-            x_test_img = x_train_img
-            x_test_sig = x_train_sig
-            y_test = y_train
+            ## #temp
+            ## x_test_img = x_train_img
+            ## x_test_sig = x_train_sig
+            ## y_test = y_train
             
             y_pred = model.predict([x_test_img/255., x_test_sig])
             y_pred_list += np.argmax(y_pred, axis=1).tolist()
