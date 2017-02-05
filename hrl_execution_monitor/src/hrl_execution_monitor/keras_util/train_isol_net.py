@@ -134,7 +134,7 @@ def train_with_signal(save_data_path, n_labels, nFold, nb_epoch=400, load_weight
         else:
             model = km.sig_net(np.shape(x_train_sig)[1:], n_labels,\
                                weights_path = weights_path, activ_type=activ_type)
-            optimizer = SGD(lr=0.0005, decay=1e-7, momentum=0.9, nesterov=True)
+            optimizer = SGD(lr=0.001, decay=1e-7, momentum=0.9, nesterov=True)
             ## optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.005)            
 
         model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
