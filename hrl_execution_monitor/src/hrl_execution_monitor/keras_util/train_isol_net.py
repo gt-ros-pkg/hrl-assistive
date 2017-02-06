@@ -234,8 +234,8 @@ def train_with_image(save_data_path, n_labels, fold_list, nb_epoch=1, load_weigh
         train_datagen = ImageDataGenerator(
             rotation_range=20,
             rescale=1./255,
-            width_shift_range=0.4,
-            height_shift_range=0.2,
+            width_shift_range=0.1,
+            height_shift_range=0.1,
             zoom_range=0.1,
             horizontal_flip=False,
             fill_mode='nearest',
@@ -243,8 +243,8 @@ def train_with_image(save_data_path, n_labels, fold_list, nb_epoch=1, load_weigh
         test_datagen = ImageDataGenerator(rescale=1./255,\
                                           dim_ordering="th")
 
-        train_generator = train_datagen.flow(x_train_img, y_train, batch_size=32) #128)
-        test_generator = test_datagen.flow(x_test_img, y_test, batch_size=32) #128)
+        train_generator = train_datagen.flow(x_train_img, y_train, batch_size=128)
+        test_generator = test_datagen.flow(x_test_img, y_test, batch_size=128)
 
         hist = model.fit_generator(train_generator,
                                    samples_per_epoch=len(y_train),
