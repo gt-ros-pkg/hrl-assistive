@@ -380,7 +380,7 @@ def vgg_multi_top_net(input_shape, n_labels, weights_path=None):
     weight = mutil.get_layer_weights(weights_file, layer_name='fc3_1')    
     model.add(Dense(256, activation='relu', init='uniform', name='fc3_1', input_shape=input_shape,
                     W_regularizer=L1L2Regularizer(0.0, 0.05), weights=weight))
-    model.add(Dropout(0.5))
+    model.add(Dropout(0.0))
 
     # -------------------------------------------------------------------
     ## weight = mutil.get_layer_weights(weights_file, layer_name='fc3_2')    
