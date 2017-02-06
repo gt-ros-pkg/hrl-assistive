@@ -87,8 +87,8 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
     
     # training_with all --------------------------------------
     ## kt.get_bottleneck_mutil(save_data_path, n_labels, fold_list, vgg=True)
-    kt.train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True)
-    ## kt.train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, load_weights=True)
+    ## kt.train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True)
+    kt.train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, load_weights=True)
     ## kt.train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, load_weights=True,
     ##                          test_only=True) #74
 
