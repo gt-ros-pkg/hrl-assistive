@@ -327,7 +327,7 @@ def train_with_all(save_data_path, n_labels, fold_list, nb_epoch=100, load_weigh
                                    weights_path=top_weights_path,
                                    fine_tune=True)
             ## optimizer = SGD(lr=0.0001, decay=1e-7, momentum=0.9, nesterov=True)                
-            optimizer = RMSprop(lr=0.01, rho=0.9, epsilon=1e-08, decay=0.005)                        
+            optimizer = RMSprop(lr=0.01, rho=0.9, epsilon=1e-08, decay=0.001)                        
         else:
 
             # fine tuning
