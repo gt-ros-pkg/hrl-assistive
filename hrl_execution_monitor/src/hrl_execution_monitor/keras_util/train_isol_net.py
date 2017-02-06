@@ -342,7 +342,7 @@ def train_with_all(save_data_path, n_labels, fold_list, nb_epoch=100, load_weigh
                                    input_shape2=np.shape(x_train_sig)[1:],
                                    weights_path=weights_path,
                                    fine_tune=True)
-            optimizer = SGD(lr=0.00001, decay=1e-8, momentum=0.9, nesterov=True)                
+            optimizer = SGD(lr=0.0001, decay=1e-8, momentum=0.9, nesterov=True)                
 
         ## optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.005)                        
         model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
