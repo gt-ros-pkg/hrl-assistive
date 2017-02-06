@@ -278,7 +278,6 @@ def train_with_all(save_data_path, n_labels, fold_list, nb_epoch=100, load_weigh
         x_test_img = test_data[1]
         y_test     = test_data[2]
 
-
         ## import cv2
         ## print np.shape(x_train_img)
         ## img = x_test_img[0].transpose((1,2,0))
@@ -342,6 +341,7 @@ def train_with_all(save_data_path, n_labels, fold_list, nb_epoch=100, load_weigh
                                    weights_path=weights_path,
                                    fine_tune=True)
             optimizer = SGD(lr=0.0001, decay=1e-8, momentum=0.9, nesterov=True)                
+            optimizer = RMSprop(lr=0.0001, rho=0.9, epsilon=1e-08, decay=0.005)                        
 
         ## optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.005)                        
         model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
@@ -357,7 +357,6 @@ def train_with_all(save_data_path, n_labels, fold_list, nb_epoch=100, load_weigh
         ## class_weight[-1] = 0.1 # freeze
 
         
-
         if test_only is False:
             train_datagen = ku.myGenerator(augmentation=True, rescale=1./255.)
             test_datagen = ku.myGenerator(augmentation=False, rescale=1./255.)
