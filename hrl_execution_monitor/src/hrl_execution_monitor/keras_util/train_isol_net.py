@@ -661,8 +661,6 @@ def train_multi_top_model(save_data_path, n_labels, fold_list, nb_epoch=3000, lo
     if vgg: prefix = 'vgg_'
     else: prefix = ''
 
-    y_pred_list = []
-    y_test_list = []
     scores= []
     for idx in fold_list:
 
@@ -710,6 +708,8 @@ def train_multi_top_model(save_data_path, n_labels, fold_list, nb_epoch=3000, lo
             ## #temp
             ## x_test = x_train
             ## y_test = y_train
+            y_pred_list = []
+            y_test_list = []
             
             y_pred = model.predict(x_test)
             y_pred_list += np.argmax(y_pred, axis=1).tolist()
