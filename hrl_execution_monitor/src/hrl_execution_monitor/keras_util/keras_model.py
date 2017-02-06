@@ -206,7 +206,7 @@ def vgg16_net(input_shape, n_labels, weights_path=None,\
     # 31 layers---------------------------------------------------------------
 
 
-    if fine_tune:
+    if fine_tune and False:
         for layer in model.layers[:25]:
             layer.trainable = False
     else:
