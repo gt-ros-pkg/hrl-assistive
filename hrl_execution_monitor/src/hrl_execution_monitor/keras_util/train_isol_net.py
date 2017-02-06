@@ -686,13 +686,13 @@ def train_multi_top_model(save_data_path, n_labels, fold_list, nb_epoch=3000, lo
             if vgg: model = km.vgg_multi_top_net(np.shape(x_train)[1:], n_labels)
             else: sys.exit()
             ## optimizer = SGD(lr=0.001, decay=1e-8, momentum=0.9, nesterov=True)                
-            optimizer = RMSprop(lr=0.01, rho=0.9, epsilon=1e-08, decay=0.001)                        
+            ## optimizer = RMSprop(lr=0.01, rho=0.9, epsilon=1e-08, decay=0.001)                        
+            model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
         else:
             if vgg: model = km.vgg_multi_top_net(np.shape(x_train)[1:], n_labels, weights_path)
             else: sys.exit()
-            optimizer = SGD(lr=0.01, decay=1e-7, momentum=0.9, nesterov=True)                
-        ## model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
-        model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
+            optimizer = SGD(lr=0.005, decay=1e-7, momentum=0.9, nesterov=True)                
+            model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
 
         ## from sklearn.ensemble import RandomForestClassifier
         ## clf = RandomForestClassifier(n_estimators=400, n_jobs=-1)
