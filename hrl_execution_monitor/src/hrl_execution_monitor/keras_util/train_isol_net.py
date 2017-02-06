@@ -534,7 +534,7 @@ def train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=400
             optimizer = SGD(lr=0.0001, decay=1e-7, momentum=0.9, nesterov=True)
                 
         model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
-        ## model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
+        model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
 
         
         class_weight={}
