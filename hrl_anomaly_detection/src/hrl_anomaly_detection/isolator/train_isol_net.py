@@ -73,8 +73,8 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
     # training with signals ----------------------------------
     ## kt.train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=50)
     ## kt.train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=50, load_weights=True)
-    ## kt.train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5, load_weights=True,
-    ##                      test_only=True) #70
+    kt.train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5, load_weights=True,
+                         test_only=True) #70
     #                        0.88 0.79  0.80  0.779  0.761
 
 
@@ -93,8 +93,8 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
     ## kt.get_bottleneck_mutil(save_data_path, n_labels, fold_list, vgg=True)
     ## kt.train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, patience=10)
     ## kt.train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, patience=200, load_weights=True)
-    kt.train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, load_weights=True,
-                             test_only=True) #74
+    ## kt.train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, load_weights=True,
+    ##                          test_only=True) #74
 
     # 0.55 0.92 0.93 0.82    0.76 0.76 0.82 0.75
     ## kt.train_with_all(save_data_path, n_labels, fold_list, patience=1, nb_epoch=1, vgg=True)
