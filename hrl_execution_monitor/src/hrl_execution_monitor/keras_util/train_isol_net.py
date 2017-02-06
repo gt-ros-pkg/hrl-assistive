@@ -533,8 +533,8 @@ def train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=400
             if vgg: model = km.vgg_image_top_net(np.shape(x_train)[1:], n_labels, weights_path)
             else: sys.exit()
             optimizer = SGD(lr=0.00001, decay=1e-7, momentum=0.9, nesterov=True)                
-            #model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
-            model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
+            model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+            #model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
 
         
         class_weight={}
