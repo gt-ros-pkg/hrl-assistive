@@ -64,7 +64,7 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
 
     ## nFold = 1
     fold_list = range(nFold)
-    fold_list = [3,4,7]
+    fold_list = [7] #[3,4,7]
     ## fold_list = [3,4,5,6,7]
     
 
@@ -90,7 +90,7 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
     ##                               test_only=True)
 
     # training_with all --------------------------------------
-    kt.get_bottleneck_mutil(save_data_path, n_labels, fold_list, vgg=True)
+    ## kt.get_bottleneck_mutil(save_data_path, n_labels, fold_list, vgg=True)
     ## kt.train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, patience=10)
     kt.train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, patience=200, load_weights=True)
     ## kt.train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, load_weights=True,
