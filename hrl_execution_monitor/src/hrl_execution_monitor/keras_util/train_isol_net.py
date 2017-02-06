@@ -267,8 +267,6 @@ def train_with_all(save_data_path, n_labels, fold_list, nb_epoch=100, load_weigh
     else: prefix = ''
 
     scores= []
-    y_test_list = []
-    y_pred_list = []
     for idx in fold_list:
         # Loading data
         train_data, test_data = autil.load_data(idx, save_data_path, viz=False)      
@@ -379,6 +377,8 @@ def train_with_all(save_data_path, n_labels, fold_list, nb_epoch=100, load_weigh
             ## x_test_img = x_train_img
             ## x_test_sig = x_train_sig
             ## y_test = y_train
+            y_test_list = []
+            y_pred_list = []
             
             y_pred = model.predict([x_test_img/255., x_test_sig])
             y_pred_list += np.argmax(y_pred, axis=1).tolist()
