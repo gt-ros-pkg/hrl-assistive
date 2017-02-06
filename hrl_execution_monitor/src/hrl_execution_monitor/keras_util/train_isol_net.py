@@ -360,8 +360,8 @@ def train_with_all(save_data_path, n_labels, fold_list, nb_epoch=100, load_weigh
         if test_only is False:
             train_datagen = ku.myGenerator(augmentation=True, rescale=1./255.)
             test_datagen = ku.myGenerator(augmentation=False, rescale=1./255.)
-            train_generator = train_datagen.flow(x_train_img, x_train_sig, y_train, batch_size=128)
-            test_generator = test_datagen.flow(x_test_img, x_test_sig, y_test, batch_size=128)
+            train_generator = train_datagen.flow(x_train_img, x_train_sig, y_train, batch_size=32)#128)
+            test_generator = test_datagen.flow(x_test_img, x_test_sig, y_test, batch_size=32)#128)
         
             hist = model.fit_generator(train_generator,
                                        samples_per_epoch=len(y_train),
