@@ -526,7 +526,7 @@ def train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=400
             if vgg: model = km.vgg_image_top_net(np.shape(x_train)[1:], n_labels)
             else: sys.exit()
             ## optimizer = SGD(lr=0.001, decay=1e-6, momentum=0.9, nesterov=True)
-            optimizer = RMSprop(lr=0.0005, rho=0.9, epsilon=1e-08, decay=0.001)                        
+            optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.001)                        
         else:
             if vgg: model = km.vgg_image_top_net(np.shape(x_train)[1:], n_labels, weights_path)
             else: sys.exit()
