@@ -94,7 +94,7 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
 
     # 0.55 0.70 0.77 0.79    0.78 0.78 0.78 0.77 
     ## kt.train_with_all(save_data_path, n_labels, fold_list, patience=1, nb_epoch=1, vgg=True)
-    kt.train_with_all(save_data_path, n_labels, fold_list, load_weights=True, patience=10, vgg=True)
+    kt.train_with_all(save_data_path, n_labels, fold_list, load_weights=True, patience=1, vgg=True)
     ## kt.train_with_all(save_data_path, n_labels, fold_list, load_weights=True, patience=5, vgg=True,
     ##                   test_only=True)
     return
