@@ -220,12 +220,12 @@ def train_with_image(save_data_path, n_labels, fold_list, nb_epoch=1, load_weigh
         if load_weights is False:            
             if vgg: model = km.vgg16_net(np.shape(x_train_img)[1:], n_labels, with_img_top=True)
             else: model = km.cnn_net(np.shape(x_train_img)[1:], n_labels)            
+            optimizer = SGD(lr=0.001, decay=1e-6, momentum=0.9, nesterov=True)
         else:
             if vgg: model = km.vgg16_net(np.shape(x_train_img)[1:], n_labels, weights_path, with_img_top=True)
             else: model = km.cnn_net(np.shape(x_train_img)[1:], n_labels, weights_path)
-            ## optimizer = RMSprop(lr=0.00001, rho=0.9, epsilon=1e-08, decay=0.0)
+            optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.0)
             ## model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
-        optimizer = SGD(lr=0.001, decay=1e-6, momentum=0.9, nesterov=True)
         ## optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.005)                        
         model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
         ## model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
