@@ -695,7 +695,7 @@ def train_multi_top_model(save_data_path, n_labels, fold_list, nb_epoch=3000, lo
             else: sys.exit()
             optimizer = SGD(lr=0.001, decay=1e-7, momentum=0.9, nesterov=True)                
             optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.001)
-            optimizer = Adagrad(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.001)
+            optimizer = Adagrad(lr=0.001, epsilon=1e-08, decay=0.001)
             
             model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
             ## model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
