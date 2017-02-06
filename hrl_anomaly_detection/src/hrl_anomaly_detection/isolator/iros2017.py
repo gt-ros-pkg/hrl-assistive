@@ -765,13 +765,15 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
                                                  failure_image_list,\
                                                  task_name, processed_data_path, param_dict, weight,\
                                                  single_detector=single_detector,\
-                                                 n_jobs=-1, window_steps=window_steps, verbose=verbose\
+                                                 n_jobs=-1, window_steps=window_steps, get_idx=True,\
+                                                 verbose=verbose\
                                                  ) for idx in xrange(len(kFold_list)) )
         
         data_dict = {}
         for i in xrange(len(l_data)):
             idx = l_data[i][0]
             data_dict[idx] = (l_data[i][1],l_data[i][2],l_data[i][3],l_data[i][4] )
+            data_dict['ad_idx_'+str(idx)] = (l_data[i][5],l_data[i][6])
             
         print "save pkl: ", data_pkl
         ut.save_pickle(data_dict, data_pkl)            
