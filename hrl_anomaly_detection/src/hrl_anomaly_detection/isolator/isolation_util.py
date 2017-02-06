@@ -756,10 +756,10 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failureData_static, \
     # Feature Extraction
     #-----------------------------------------------------------------------------------------
 
-    abnormalTrainData_s  = copy.copy(failureData_static[:, abnormalTrainIdx, :])
-    abnormalTestData_s   = copy.copy(failureData_static[:, abnormalTestIdx, :])
-    abnormalTrainLabel = copy.copy(failure_labels[abnormalTrainIdx])
-    abnormalTestLabel  = copy.copy(failure_labels[abnormalTestIdx])
+    abnormalTrainData_s = copy.copy(failureData_static[:, abnormalTrainIdx, :])
+    abnormalTestData_s  = copy.copy(failureData_static[:, abnormalTestIdx, :])
+    abnormalTrainLabel  = copy.copy(failure_labels[abnormalTrainIdx])
+    abnormalTestLabel   = copy.copy(failure_labels[abnormalTestIdx])
 
     if len(failure_image_list)>0:
         abnormalTrainData_img = copy.copy(failure_image_list[abnormalTrainIdx])

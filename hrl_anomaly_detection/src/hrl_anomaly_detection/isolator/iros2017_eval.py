@@ -76,9 +76,6 @@ def evaluation_isolation(task_name, processed_data_path, method_list, n_labels=1
     data_pkl  = os.path.join(processed_data_path, 'isol_data.pkl')
     data_dict = ut.load_pickle(data_pkl)
 
-    # need to get anomaly idx?
-
-
     # ---------------------------------------------------------------
     scores_list = []
     ## for i in xrange(len(method_list)):
@@ -111,6 +108,7 @@ def evaluation_isolation(task_name, processed_data_path, method_list, n_labels=1
             scores.append( score )
 
         if 'svm_raw' in method_list:
+            train_idx, test_idx = data_dict['ad_idx_'+str(idx)]
             
             
         if 'svm_signal' in method_list:        

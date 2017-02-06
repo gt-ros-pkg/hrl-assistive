@@ -679,11 +679,11 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
           = dm.LOPO_data_index(d['successDataList'], d['failureDataList'],\
                                d['successFileList'], d['failureFileList'])
 
-        d['successData'] = successData
-        d['failureData'] = failureData
-        d['success_files']   = success_files
-        d['failure_files']   = failure_files
-        d['kFoldList']       = kFold_list
+        d['successData']   = successData
+        d['failureData']   = failureData
+        d['success_files'] = success_files
+        d['failure_files'] = failure_files
+        d['kFoldList']     = kFold_list
         ut.save_pickle(d, crossVal_pkl)
 
     # flattening image list
@@ -792,6 +792,9 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
         x_test  = x_tests[0]
         print np.shape(x_trains[0]), np.shape(x_trains[1]), np.shape(y_train)
 
+        (train_idx, test_idx) = data_dict['ad_idx_'+str(idx)]
+        
+        # --------------------------------------------------------------------
         from sklearn import preprocessing
         scaler = preprocessing.StandardScaler()
         x_train = scaler.fit_transform(x_train)
@@ -803,6 +806,15 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
         if type(y_train) is np.ndarray:
             y_train  = y_train.tolist()
             y_test   = y_test.tolist()
+
+        # --------------------------------------------------------------------
+        abnormalTrainData_s  = copy.copy(failureData_static[:, abnormalTrainIdx, :])
+        abnormalTestData_s   = copy.copy(failureData_static[:, abnormalTestIdx, :])
+        abnormalTrainLabel = copy.copy(failure_labels[abnormalTrainIdx])
+        abnormalTestLabel  = copy.copy(failure_labels[abnormalTestIdx])
+        # --------------------------------------------------------------------
+
+            
         
         from sklearn.svm import SVC
         clf = SVC(C=1.0, kernel='rbf') #, decision_function_shape='ovo')
