@@ -12,6 +12,8 @@
              wheelchair - model 
              wiping_mouth - task
              scratching - task
+             blanket - task
+             forehead - task
  )
 
  (:predicates
