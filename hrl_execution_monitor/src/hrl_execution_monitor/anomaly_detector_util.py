@@ -261,7 +261,7 @@ if __name__ == '__main__':
     param_dict['HMM']['scale'] = [5., 11.]
     param_dict['ROC']['progress0_param_range'] = -np.logspace(0., 1.0, nPoints)
     param_dict['ROC']['progress1_param_range'] = -np.logspace(0., 1.0, nPoints)
-    param_dict['data']['noise_mag'] = [[0.03,0.03,0.03,0.08,0.08],[0.1,0.03,0.08]]
+    param_dict['data_param']['noise_mag'] = [[0.03,0.03,0.03,0.08,0.08],[0.1,0.03,0.08]]
 
     
 
