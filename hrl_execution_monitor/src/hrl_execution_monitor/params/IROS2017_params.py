@@ -133,7 +133,7 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                       'isolationFeatures': isolationFeatures,\
                       'handFeatures_noise': True, 'max_time': 7.0,\
                       'noise_mag': [[0.03,0.03,0.03,0.08,0.08],[0.1,0.03,0.08]] }
-}
+
 
     param_dict = {'data_param': data_param_dict, 'HMM': HMM_param_dict, \
                   'SVM': SVM_param_dict, 'ROC': ROC_param_dict, 'AD': AD_param_dict}
