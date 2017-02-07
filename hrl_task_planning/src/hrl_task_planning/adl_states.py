@@ -69,22 +69,22 @@ def get_action_state(domain, problem, action, args, init_state, goal_state):
         return PDDLSmachState(domain=domain, problem=problem, action=action, action_args=args, init_state=init_state, goal_state=goal_state, outcomes=SPA)
 
 
-
 class FindTagState(PDDLSmachState):
     def __init__(self, model, domain, *args, **kwargs):
         super(FindTagState, self).__init__(domain=domain, *args, **kwargs)
         self.start_finding_AR_publisher = rospy.Publisher('find_AR_now', Bool, queue_size=1)
-        self.domain = domain
         self.state_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=10)
-        self.model = model
+        self.domain = domain
         self.ar_tag_found = False
+        rospy.Subscriber('AR_acquired', Bool, self.found_ar_tag_cb)
+        self.model = model
 
     def on_execute(self, ud):
         rospy.sleep(1.)
         rospy.loginfo("[%s] Start Looking For Tag" % rospy.get_name())
         self.start_finding_AR_publisher.publish(True)
+        rospy.sleep(1.)
         rospy.loginfo("[%s] Waiting to see if tag found" % rospy.get_name())
-        rospy.Subscriber('AR_acquired', Bool, self.found_ar_tag_cb)
         while not rospy.is_shutdown() and not self.ar_tag_found:
             if self.preempt_requested():
                 rospy.loginfo("[%s] Cancelling action." % rospy.get_name())
@@ -92,22 +92,23 @@ class FindTagState(PDDLSmachState):
             rospy.sleep(1)
 
         if self.ar_tag_found:
-	    print "Tag FOUND"
-	    rospy.loginfo("AR Tag Found")
-	    state_update = PDDLState()
-	    state_update.domain = self.domain
-	    state_update.predicates = ['(FOUND-TAG %s)' % self.model]
-	    print "Publishing (FOUND-TAG) update"
-	    self.state_pub.publish(state_update)
-	else:
-	    rospy.logwarn('[%s] Something went wrong in finding AR Tag. Tag not found' % rospy.get_name())
-	    return 'aborted'
-	return
+            print "Tag FOUND"
+            rospy.loginfo("AR Tag Found")
+            state_update = PDDLState()
+            state_update.domain = self.domain
+            state_update.predicates = ['(FOUND-TAG %s)' % self.model]
+            print "Publishing (FOUND-TAG) update"
+            self.state_pub.publish(state_update)
+        else:
+            rospy.logwarn('[%s] Something went wrong in finding AR Tag. Tag not found' % rospy.get_name())
+            return 'aborted'
+        return
 
     def found_ar_tag_cb(self, msg):
-        found_ar_tag = msg.data
-        if found_ar_tag:
+        if msg.data:
             self.ar_tag_found = True
+        else:
+            self.ar_tag_found = False
 
 
 class TrackTagState(PDDLSmachState):
@@ -164,8 +165,8 @@ class RegisterHeadState(PDDLSmachState):
     def get_head_pose(self, head_frame="/user_head_link"):
         try:
             #now = rospy.Time.now()
-            print "[%s] Register Head State Waiting for Head Transform" % rospy.get_name()
-            self.listener.waitForTransform("/base_link", head_frame, rospy.Time(0), rospy.Duration(5))
+            print "[%s] Register Head State trying to get Head Transform" % rospy.get_name()
+            # self.listener.waitForTransform("/base_link", head_frame, rospy.Time(0), rospy.Duration(5))
             pos, quat = self.listener.lookupTransform("/autobed/base_link", head_frame, rospy.Time(0))
             return True
         except Exception as e:
@@ -181,24 +182,30 @@ class CheckOccupancyState(PDDLSmachState):
 #        print "Check Occupancy of Model: %s" % model
         if model.upper() == 'AUTOBED':
             self.autobed_occupied_status = False
-	else:
-	    self.autobed_occupied_status = True
-            
+            print "[%s] Check Occupancy Waiting for Service to exist" % rospy.get_name()
+            try:
+                rospy.wait_for_service('autobed_occ_status', timeout=5)
+                self.AutobedOcc = rospy.ServiceProxy('autobed_occ_status', None_Bool)
+            except:
+                rospy.logwarn('[%s] Pressure Mat Not Running On the Autobed' % rospy.get_name())
+                return 'aborted'
+        else:
+            self.autobed_occupied_status = True
 
     def on_execute(self, ud):
         rospy.sleep(1.)
         if self.model.upper() == 'AUTOBED':
-            print "[%s] Check Occupancy State Waiting for Service" % rospy.get_name()
-	    try:
-            	rospy.wait_for_service('autobed_occ_status', timeout=5)
-	    except:
-                rospy.logwarn('[%s] Pressure Mat Not Running On the Autobed' % rospy.get_name())
-                return 'aborted'
+            # print "[%s] Check Occupancy State Waiting for Service" % rospy.get_name()
+            # try:
+            #     rospy.wait_for_service('autobed_occ_status', timeout=5)
+            # except:
+            #     rospy.logwarn('[%s] Pressure Mat Not Running On the Autobed' % rospy.get_name())
+            #     return 'aborted'
             try:
-                self.AutobedOcc = rospy.ServiceProxy('autobed_occ_status', None_Bool)
+                # self.AutobedOcc = rospy.ServiceProxy('autobed_occ_status', None_Bool)
                 self.autobed_occupied_status = self.AutobedOcc().data
             except rospy.ServiceException, e:
-                print "Service call failed: %s" % e
+                print "Check Occupancy Service call failed: %s" % e
                 return 'aborted'
 
             if self.autobed_occupied_status:
@@ -206,16 +213,16 @@ class CheckOccupancyState(PDDLSmachState):
                 state_update.domain = self.domain
                 state_update.predicates = ['(OCCUPIED %s)' % self.model]
                 self.state_pub.publish(state_update)
-                self.goal_reached = False
+                # self.goal_reached = False
             else:
-                self.goal_reached = False
+                # self.goal_reached = False
                 return 'aborted'
         else:
             state_update = PDDLState()
             state_update.domain = self.domain
             state_update.predicates = ['(OCCUPIED %s)' % self.model]
             self.state_pub.publish(state_update)
-            self.goal_reached = False
+            # self.goal_reached = False
 
 
 class MoveArmState(PDDLSmachState):
@@ -234,6 +241,7 @@ class MoveArmState(PDDLSmachState):
         self.task = task
         self.model = model
         self.goal_reached = False
+        self.skip_arm_movement = False
         self.state_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=10)
         rospy.Subscriber("/left_arm/haptic_mpc/in_deadzone", Bool, self.arm_reach_goal_cb)
         self.stop_tracking_AR_publisher = rospy.Publisher('track_AR_now', Bool, queue_size=1)
@@ -250,10 +258,10 @@ class MoveArmState(PDDLSmachState):
     def publish_goal(self):
         goal = PoseStamped()
         if self.model.upper() == 'AUTOBED':
-            if self.task.upper() == 'SCRATCHING':
-                self.goal_position = [-0.18310556, 0.07347758+0.05+0.08, 0.00485197]
-                self.goal_orientation = [0.48790861, -0.50380292, 0.51703901, -0.4907122]
-                self.reference_frame = '/'+str(self.model.lower())+'/calf_left_link'
+            if self.task.upper() == 'SCRATCHING' or self.task.upper() == 'BLANKET':
+                self.goal_position = [0.18, 0, -0.1]
+                self.goal_orientation = [0.,   0.,   1., 0.]
+                self.reference_frame = '/'+str(self.model.lower())+'/knee_left_link'
                 goal.pose.position.x = self.goal_position[0]
                 goal.pose.position.y = self.goal_position[1]
                 goal.pose.position.z = self.goal_position[2]
@@ -263,20 +271,22 @@ class MoveArmState(PDDLSmachState):
                 goal.pose.orientation.w = self.goal_orientation[3]
                 goal.header.frame_id = self.reference_frame
                 rospy.loginfo('[%s] Reaching to left knee.' % rospy.get_name())
-
-            elif self.task.upper() == 'WIPING_MOUTH':
-                self.goal_position = [0.25, 0., -0.1]
-                self.goal_orientation = [0., 0., 1., 0.]
-                self.reference_frame = '/'+str(self.model.lower())+'/head_link'
-                goal.pose.position.x = self.goal_position[0]
-                goal.pose.position.y = self.goal_position[1]
-                goal.pose.position.z = self.goal_position[2]
-                goal.pose.orientation.x = self.goal_orientation[0]
-                goal.pose.orientation.y = self.goal_orientation[1]
-                goal.pose.orientation.z = self.goal_orientation[2]
-                goal.pose.orientation.w = self.goal_orientation[3]
-                goal.header.frame_id = self.reference_frame
-                rospy.loginfo('[%s] Reaching to mouth.' % rospy.get_name())
+                self.ignore_next_goal_pose = True
+                self.l_arm_pose_pub.publish(goal)
+            elif self.task.upper() == 'WIPING_MOUTH' or self.task.upper() == 'FOREHEAD':
+                # self.goal_position = [0.25, 0., -0.1]
+                # self.goal_orientation = [0., 0., 1., 0.]
+                # self.reference_frame = '/'+str(self.model.lower())+'/head_link'
+                # goal.pose.position.x = self.goal_position[0]
+                # goal.pose.position.y = self.goal_position[1]
+                # goal.pose.position.z = self.goal_position[2]
+                # goal.pose.orientation.x = self.goal_orientation[0]
+                # goal.pose.orientation.y = self.goal_orientation[1]
+                # goal.pose.orientation.z = self.goal_orientation[2]
+                # goal.pose.orientation.w = self.goal_orientation[3]
+                # goal.header.frame_id = self.reference_frame
+                self.skip_arm_movement = True
+                rospy.loginfo('[%s] Because of the complexity around the head, leaving all arm movement to the user.' % rospy.get_name())
             else:
                 rospy.logwarn('[%s] Cannot Find ARM GOAL to reach. Have you specified the right task? [%s]' % (rospy.get_name(), self.task))
                 return False
@@ -295,7 +305,8 @@ class MoveArmState(PDDLSmachState):
                 goal.pose.orientation.w = -0.4907122
                 goal.header.frame_id = '/'+str(self.model.lower())+'/calf_left_link'
                 rospy.loginfo('[%s] Reaching to left knee.' % rospy.get_name())
-
+                self.ignore_next_goal_pose = True
+                self.l_arm_pose_pub.publish(goal)
             elif self.task.upper() == 'WIPING_MOUTH':
                 # THESE ARE NOT UPDATED
                 self.goal_position = [0.45, 0., -0.07-0.05]
@@ -310,14 +321,16 @@ class MoveArmState(PDDLSmachState):
                 goal.pose.orientation.w = 0.
                 goal.header.frame_id = '/'+str(self.model.lower())+'/head_link'
                 rospy.loginfo('[%s] Reaching to mouth.' % rospy.get_name())
+                self.ignore_next_goal_pose = True
+                self.l_arm_pose_pub.publish(goal)
             else:
                 rospy.logwarn('[%s] Cannot Find ARM GOAL to reach. Have you specified the right task? [%s]' % (rospy.get_name(), self.task))
-                return False 
-        self.ignore_next_goal_pose = True
-        self.l_arm_pose_pub.publish(goal)
+                return False
         return True
 
     def on_execute(self, ud):
+        self.goal_reached = False
+        self.skip_arm_movement = False
         rospy.sleep(1.)
         print 'Starting to execute arm movement'
         resp = self.mpc_enabled_service('enabled')
@@ -329,7 +342,7 @@ class MoveArmState(PDDLSmachState):
         #Now that goal is published, we wait until goal is reached
         movement_timer = rospy.Time.now()
         repeat_movement_timer = rospy.Time.now()
-        while not rospy.is_shutdown() and not self.goal_reached:
+        while not rospy.is_shutdown() and not self.goal_reached and not self.skip_arm_movement:
             if self.preempt_requested():
                 self.stop_tracking_AR_publisher.publish(False)
                 rospy.loginfo("[%s] Cancelling action.", rospy.get_name())
@@ -347,8 +360,15 @@ class MoveArmState(PDDLSmachState):
             if total_movement_elapsed_time.to_sec() > 15.0:
                 self.goal_reached = True
             rospy.sleep(1)
-
-        if self.goal_reached:
+        if self.skip_arm_movement:
+            rospy.loginfo("[%s] Arm Movement is being Skipped" % rospy.get_name())
+            state_update = PDDLState()
+            state_update.domain = self.domain
+            state_update.predicates = ['(ARM-REACHED %s %s)' % (self.task, self.model)]
+            print "Publishing (ARM-REACHED) update"
+            self.state_pub.publish(state_update)
+            return
+        elif self.goal_reached:
             rospy.loginfo("[%s] Arm Goal Reached" % rospy.get_name())
             state_update = PDDLState()
             state_update.domain = self.domain
@@ -400,6 +420,7 @@ class MoveRobotState(PDDLSmachState):
         self.start_servoing = rospy.Publisher("/pr2_ar_servo/tag_confirm", Bool, queue_size=1)
         rospy.loginfo('[%s] Remember: The AR tag must be tracked before moving!' % rospy.get_name())
         self.stop_tracking_AR_publisher = rospy.Publisher('track_AR_now', Bool, queue_size=1)
+        rospy.Subscriber('/pr2_ar_servo/state_feedback', Int8, self.base_servoing_cb)
 
     def base_servoing_cb(self, msg):
         if msg.data == 5:
@@ -409,6 +430,7 @@ class MoveRobotState(PDDLSmachState):
 
     def on_execute(self, ud):
         rospy.sleep(1.)
+        self.goal_reached = False
         rospy.loginfo('[%s] Moving PR2 Base' % rospy.get_name())
         try:
             base_goals = rospy.get_param('/pddl_tasks/%s/base_goals' % self.domain)
@@ -438,9 +460,11 @@ class MoveRobotState(PDDLSmachState):
         goal.tag_goal_pose = pr2_goal_pose
         self.servo_goal_pub.publish(goal)
         rospy.loginfo("[%s] Successfully Published Base Location to AR Servo" % rospy.get_name())
-        rospy.sleep(5)
+        # rospy.sleep(5)
         self.start_servoing.publish(True)
-        rospy.Subscriber('/pr2_ar_servo/state_feedback', Int8, self.base_servoing_cb)
+        rospy.sleep(1)
+        self.goal_reached = False
+        # rospy.Subscriber('/pr2_ar_servo/state_feedback', Int8, self.base_servoing_cb)
         rospy.loginfo("[%s] Waiting For Base to reach goal pose" % rospy.get_name())
         while not rospy.is_shutdown() and not self.goal_reached:
             self.start_servoing.publish(True)
@@ -450,7 +474,8 @@ class MoveRobotState(PDDLSmachState):
                 return 
             rospy.sleep(1)
 
-        if self.goal_reached:
+        self.stop_tracking_AR_publisher.publish(False)
+        if not rospy.is_shutdown():
             rospy.loginfo("[%s] Base Goal Reached" % rospy.get_name())
             state_update = PDDLState()
             state_update.domain = self.domain
@@ -463,23 +488,35 @@ class CallBaseSelectionState(PDDLSmachState):
         super(CallBaseSelectionState, self).__init__(domain=domain, *args, **kwargs)
         self.state_pub = rospy.Publisher('/pddl_tasks/state_updates', PDDLState, queue_size=10)
         print "Base Selection Called for task: %s and Model: %s" %(task, model)
+        rospy.loginfo("[%s] Checking for base selection service. May wait up to 5 seconds." %rospy.get_name())
+        try:
+            rospy.wait_for_service("select_base_position", timeout=5)
+            self.base_selection_client = rospy.ServiceProxy("select_base_position", BaseMove)
+        except:
+            rospy.logwarn("[%s] Base Selection Service is not running!" % rospy.get_name())
+            return 'aborted'
+
         self.domain = domain
         self.task = task
         self.model = model
 
     def call_base_selection(self):
         rospy.loginfo("[%s] Calling base selection. Please wait." %rospy.get_name())
-        try:
-            rospy.wait_for_service("select_base_position", timeout=5)
-        except:
-            rospy.logwarn("[%s] Is Base Selection Service Running?" % rospy.get_name())
-	    return 'aborted' 
-        self.base_selection_client = rospy.ServiceProxy("select_base_position", BaseMove)
+        # try:
+        #     rospy.wait_for_service("select_base_position", timeout=5)
+        # except:
+        #     rospy.logwarn("[%s] Is Base Selection Service Running?" % rospy.get_name())
+        #     return 'aborted'
+        # self.base_selection_client = rospy.ServiceProxy("select_base_position", BaseMove)
 
         if self.task.upper() == 'WIPING_MOUTH':
             local_task_name = 'wiping_mouth'
         elif self.task.upper() == 'SCRATCHING':
             local_task_name = 'scratching_knee_left'
+        elif self.task.upper() == 'BLANKET':
+            local_task_name = 'blanket_feet_knees'
+        elif self.task.upper() == 'FOREHEAD':
+            local_task_name = 'wiping_forehead'
 
         if self.model.upper() == 'AUTOBED':
             try:
@@ -532,8 +569,12 @@ class CallBaseSelectionState(PDDLSmachState):
 class ConfigureModelRobotState(PDDLSmachState):
     def __init__(self, task, model, domain, *args, **kwargs):
         super(ConfigureModelRobotState, self).__init__(domain=domain, *args, **kwargs)
-        rospy.wait_for_service('/left_arm/haptic_mpc/enable_mpc')
-        self.mpc_enabled_service = rospy.ServiceProxy("/left_arm/haptic_mpc/enable_mpc", EnableHapticMPC)
+        try:
+            rospy.wait_for_service('/left_arm/haptic_mpc/enable_mpc', timeout=5)
+            self.mpc_enabled_service = rospy.ServiceProxy("/left_arm/haptic_mpc/enable_mpc", EnableHapticMPC)
+        except:
+            rospy.logwarn("[%s] Enable Haptic MPC Service is not running!" % rospy.get_name())
+            return 'aborted'
         self.domain = domain
         self.task = task
         self.model = model
@@ -574,11 +615,12 @@ class ConfigureModelRobotState(PDDLSmachState):
 
     def define_reset(self):
         r_reset_traj_point = JointTrajectoryPoint()
-        r_reset_traj_point.positions = [-3.14/2, -0.6, 0.00, m.radians(-100), 0., m.radians(-90), 0.0]
+        # r_reset_traj_point.positions = [-3.14/2, -0.6, 0.00, m.radians(-100), 0., m.radians(-90), 0.0]
+        r_reset_traj_point.positions = [-1.8, 2.45, -1.9, -2.0, 3.5, -1.5, 0.0]
 
         r_reset_traj_point.velocities = [0.0]*7
         r_reset_traj_point.accelerations = [0.0]*7
-        r_reset_traj_point.time_from_start = rospy.Duration(5)
+        r_reset_traj_point.time_from_start = rospy.Duration(2)
         self.r_reset_traj = JointTrajectory()
         self.r_reset_traj.joint_names = ['r_shoulder_pan_joint',
                                          'r_shoulder_lift_joint',
@@ -591,13 +633,14 @@ class ConfigureModelRobotState(PDDLSmachState):
         l_reset_traj_point = JointTrajectoryPoint()
 
 
-        l_reset_traj_point.positions = [(3.14/2 + 3.14/4), -0.6, m.radians(0), m.radians(-150.), m.radians(150.), m.radians(-110.), 0.0]
+        # l_reset_traj_point.positions = [(3.14/2 + 3.14/4), -0.6, m.radians(0), m.radians(-150.), m.radians(150.), m.radians(-110.), 0.0]
+        l_reset_traj_point.positions = [0.8, 0.0, 1.57, -2.9, 3.0, -1.0, 1.57]
         # l_reset_traj_point.positions = [0.0, 1.35, 0.00, -1.60, -3.14, -0.3, 0.0]
         #l_reset_traj_point.positions = [0.7629304700932569, -0.3365186041095207, 0.5240000202473829,
         #                                        -2.003310310963515, 0.9459734129025158, -1.7128778450423763, 0.6123854412633384]
         l_reset_traj_point.velocities = [0.0]*7
         l_reset_traj_point.accelerations = [0.0]*7
-        l_reset_traj_point.time_from_start = rospy.Duration(5)
+        l_reset_traj_point.time_from_start = rospy.Duration(2)
         self.l_reset_traj = JointTrajectory()
         self.l_reset_traj.joint_names = ['l_shoulder_pan_joint',
                                          'l_shoulder_lift_joint',
@@ -616,10 +659,10 @@ class ConfigureModelRobotState(PDDLSmachState):
         resp = self.mpc_enabled_service('enabled')
 
         try:
-	    self.configuration_goal = rospy.get_param('/pddl_tasks/%s/configuration_goals' % self.domain)
+            self.configuration_goal = rospy.get_param('/pddl_tasks/%s/configuration_goals' % self.domain)
         except:
-	    rospy.logwarn("[%s] ConfigurationGoalState - Cannot find spine height and autobed config on parameter server" % rospy.get_name())
-	    return 'aborted'
+            rospy.logwarn("[%s] ConfigurationGoalState - Cannot find spine height and autobed config on parameter server" % rospy.get_name())
+            return 'aborted'
 
         if self.model.upper() == 'AUTOBED':
             rospy.loginfo("[%s] Moving Autobed to configuration" % rospy.get_name())
@@ -629,10 +672,10 @@ class ConfigureModelRobotState(PDDLSmachState):
                                   self.configuration_goal[1],
                                   float('nan')])
             self.autobed_pub.publish(autobed_goal)
-            rospy.sleep(0.5)
-            self.autobed_pub.publish(autobed_goal)
-            rospy.sleep(0.5)
-            self.autobed_pub.publish(autobed_goal)
+            # rospy.sleep(0.5)
+            # self.autobed_pub.publish(autobed_goal)
+            # rospy.sleep(0.5)
+            # self.autobed_pub.publish(autobed_goal)
 
         rospy.loginfo("[%s] Moving Arms to Home Position" % rospy.get_name())
         self.r_arm_pub.publish(self.r_reset_traj)
@@ -652,6 +695,22 @@ class ConfigureModelRobotState(PDDLSmachState):
         else:
             rospy.logwarn("[%s] Some problem in getting TORSO HEIGHT from base selection" % rospy.get_name())
             return 'aborted'
+
+        if self.model.upper() == 'AUTOBED':
+            rospy.sleep(2.)
+            self.model_reached = False
+            # rospy.sleep(5.)
+
+            rospy.loginfo("[%s] Waiting For Model to be moved" % rospy.get_name())
+            while not rospy.is_shutdown() and not self.model_reached:
+                if self.preempt_requested():
+                    rospy.loginfo("[%s] Cancelling action.", rospy.get_name())
+                    self.stop_tracking_AR_publisher.publish(False)
+                    return
+                rospy.sleep(1)
+        else:
+            self.model_reached = True
+
         rospy.loginfo("[%s] Waiting For Torso to be moved" % rospy.get_name())
         self.torso_client.wait_for_result()
         torso_status = self.torso_client.get_state()
@@ -666,21 +725,6 @@ class ConfigureModelRobotState(PDDLSmachState):
             rospy.logwarn("[%s] Torso Actionlib Client has NOT succeeded" % rospy.get_name())
             return 'aborted'
 
-        if self.model.upper() == 'AUTOBED':
-            self.model_reached = False
-            rospy.sleep(5.)
-            
-            rospy.loginfo("[%s] Waiting For Model to be moved" % rospy.get_name())
-            while not rospy.is_shutdown() and not self.model_reached:
-                if self.preempt_requested():
-                    rospy.loginfo("[%s] Cancelling action.", rospy.get_name())
-                    self.stop_tracking_AR_publisher.publish(False)
-                    return 
-                rospy.sleep(1)
-
-        else:
-            self.model_reached = True
-
         if self.model_reached:
             rospy.loginfo("[%s] Bed Goal Reached" % rospy.get_name())
             state_update = PDDLState()
@@ -694,7 +738,7 @@ class ConfigureModelRobotState(PDDLSmachState):
             self.stop_tracking_AR_publisher.publish(False)
             return 
 
-        rospy.sleep(8)
+        rospy.sleep(2)
         rospy.loginfo("[%s] Arm Goal Reached" % rospy.get_name())
         state_update = PDDLState()
         state_update.domain = self.domain

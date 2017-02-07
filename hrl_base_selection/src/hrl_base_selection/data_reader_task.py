@@ -14,7 +14,7 @@ from visualization_msgs.msg import Marker, MarkerArray
 from helper_functions import createBMatrix, Bmat_to_pos_quat
 from data_reader_cma import DataReader as DataReader_cma
 from data_reader import DataReader as DataReader_brute
-
+import tf.transformations as tft
 
 
 class DataReader_Task(object):
@@ -53,6 +53,12 @@ class DataReader_Task(object):
             self.reference_options = ['head']
             self.reference = np.zeros([len(self.goals), 1])
         elif self.task == 'wiping_mouth':
+            thz = m.radians(180)
+            z = np.matrix([[m.cos(thz), -m.sin(thz), 0 ,0],[m.sin(thz),m.cos(thz),0,0],[0, 0,1,0],[0,0,0,1]])
+            thy = m.radians(-45.)
+            y = np.matrix([[m.cos(thy), 0, m.sin(thy) ,0],[0,1,0,0],[-m.sin(thy), 0,m.cos(thy),0],[0,0,0,1]])
+            rot = z*y
+            quat = tft.quaternion_from_matrix(rot)
             # liftlink_B_reference = createBMatrix([1.249848, -0.013344, 0.1121597], [0.044735, -0.010481, 0.998626, -0.025188])
             # liftlink_B_goal = [[1.107086, -0.019988, 0.014680, 0.011758, 0.014403, 0.031744, 0.999323],
             #                    [1.089931, -0.023529, 0.115044, 0.008146, 0.125716, 0.032856, 0.991489],
@@ -63,14 +69,17 @@ class DataReader_Task(object):
             #                    #[1.180539, 0.155222, 0.061160, -0.048171, -0.076155, -0.513218, 0.853515]]
             #                    #[1.181696, 0.153536, 0.118200, 0.022272, 0.045203, -0.551630, 0.832565]]
             liftlink_B_reference = createBMatrix([0., 0., 0.], [0., 0., 0., 1.])
-            liftlink_B_goal = [[.15, 0.0, -0.05, 0., 1., 1., 0.],
-                               [.15, 0.0, -0.08, 0., 1., 1., 0.],
-                               [.15, 0.03, -0.065, -0.1, 1., 1., -0.1],
-                               #[1.192543, -0.178014, 0.093005, -0.032482, 0.012642, 0.569130, 0.821509]]
-                               #[1.194537, -0.180350, 0.024144, 0.055151, -0.113447, 0.567382, 0.813736],
-                               [.15, -0.03, -0.065, 0.1, 1., 1., 0.1]]
-                               #[1.180539, 0.155222, 0.061160, -0.048171, -0.076155, -0.513218, 0.853515]]
-                               #[1.181696, 0.153536, 0.118200, 0.022272, 0.045203, -0.551630, 0.832565]]
+            # liftlink_B_goal = [[.15, 0.0, -0.05, 0., 1., 1., 0.],
+            #                    [.15, 0.0, -0.08, 0., 1., 1., 0.],
+            #                    [.15, 0.03, -0.065, -0.1, 1., 1., -0.1],
+            #                    [.15, -0.03, -0.065, 0.1, 1., 1., 0.1]]
+            # liftlink_B_goal = [[.15, 0.0, -0.05, 0., 0., 1., 0.],
+            #                    [.15, 0.0, -0.08, 0., 0., 1., 0.],
+            #                    [.15, 0.03, -0.065, 0.        ,  0.        ,  0.9961947 ,  -0.08715574],
+            #                    [.15, -0.03, -0.065,0.        ,  0.        ,  0.9961947 , 0.08715574]]
+            liftlink_B_goal = [[.15, 0.0, -0.065, quat[0],  quat[1],  quat[2],  quat[3]],
+                               [.15, 0.03, -0.065, quat[0],  quat[1],  quat[2],  quat[3]],
+                               [.15, -0.03, -0.065, quat[0],  quat[1],  quat[2],  quat[3]]]
             for i in xrange(len(liftlink_B_goal)):
                 self.goals.append(liftlink_B_reference.I*createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][3:]))  # all in reference to head
             # left_side = self.goals[2]
@@ -83,16 +92,39 @@ class DataReader_Task(object):
             self.num = np.ones([len(self.goals), 1])
             self.reference_options = ['head']
             self.reference = np.zeros([len(self.goals), 1])
-        elif self.task == 'scratching_forehead':
+        elif self.task == 'wiping_forehead':
+            thz = m.radians(180)
+            z = np.matrix([[m.cos(thz), -m.sin(thz), 0 ,0],[m.sin(thz),m.cos(thz),0,0],[0, 0,1,0],[0,0,0,1]])
+            thy = m.radians(25.)
+            y = np.matrix([[m.cos(thy), 0, m.sin(thy) ,0],[0,1,0,0],[-m.sin(thy), 0,m.cos(thy),0],[0,0,0,1]])
+            rot = z*y
+            quat = tft.quaternion_from_matrix(rot)
             liftlink_B_reference = createBMatrix([0., 0., 0.], [0., 0., 0., 1.])
-            liftlink_B_goal = [[.15, 0.0, 0.04, 0., 1., 1., 0.],
-                               [.15, 0.03, 0.03, 0., 1., 1., 0.],
-                               [.15, -0.03, 0.03, 0., 1., 1., 0.]]
+            liftlink_B_goal = [[.15, 0.0, 0.08, quat[0],  quat[1],  quat[2],  quat[3]]]
             for i in xrange(len(liftlink_B_goal)):
                 self.goals.append(liftlink_B_reference.I*createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][3:]))  # all in reference to head
             self.num = np.ones([len(self.goals), 1])
             self.reference_options = ['head']
             self.reference = np.zeros([len(self.goals), 1])
+        elif self.task == 'blanket_feet_knees':
+            thz = m.radians(180)
+            z = np.matrix([[m.cos(thz), -m.sin(thz), 0 ,0],[m.sin(thz),m.cos(thz),0,0],[0, 0,1,0],[0,0,0,1]])
+            thy = m.radians(0.)
+            y = np.matrix([[m.cos(thy), 0, m.sin(thy) ,0],[0,1,0,0],[-m.sin(thy), 0,m.cos(thy),0],[0,0,0,1]])
+            thx = m.radians(00.)
+            x = np.matrix([[1,0,0,0],[0, m.cos(thx), -m.sin(thx),0],[0,m.sin(thx),m.cos(thx),0],[0,0,0,1]])
+            rot = z*y*x
+            quat = tft.quaternion_from_matrix(rot)
+            liftlink_B_reference = createBMatrix([0., 0., 0.], [0., 0., 0., 1.])
+            liftlink_B_goal = [[.12, 0.0, -0.05, quat[0],  quat[1],  quat[2],  quat[3]],
+                               [.12, 0.0, -0.05, quat[0],  quat[1],  quat[2],  quat[3]],
+                               [.12, 0.0, -0.05, quat[0],  quat[1],  quat[2],  quat[3]],
+                               [.12, 0.0, -0.05, quat[0],  quat[1],  quat[2],  quat[3]]]
+            for i in xrange(len(liftlink_B_goal)):
+                self.goals.append(liftlink_B_reference.I*createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][3:]))  # all in reference to head
+            self.num = np.ones([len(self.goals), 1])
+            self.reference_options = ['knee_left', 'knee_right', 'foot_left', 'foot_right']
+            self.reference = np.array([0, 1, 2, 3])
         elif self.task == 'brushing_teeth':
             liftlink_B_reference = createBMatrix([0., 0., 0.], [0., 0., 0., 1.])
             liftlink_B_goal = [[.125, 0.0, -0.065, 0.5,  0.5,  0.5,  0.5],
@@ -409,7 +441,7 @@ if __name__ == "__main__":
     visualize_only = False
     model = 'autobed'  # options are: 'chair', 'bed', 'autobed', 'wall'
     optimization = 'cma'  # 'cma' or 'brute'
-    task = 'wiping_mouth' # scratching_knee_left # options are: wiping_mouth, bathing, brushing, feeding, shaving, scratching_upperarm/forearm/thigh/chest/knee_left/right
+    task = 'blanket_feet_knees' # options are: wiping_mouth, 'wiping_forehead', 'blanket_feet_knees', bathing, brushing, feeding, shaving, scratching_upperarm/forearm/thigh/chest/knee_left/right
     rospy.init_node(optimization+'_'+model+'_'+task)
     full_start_time = time.time()
     if visualize_only:
@@ -418,12 +450,12 @@ if __name__ == "__main__":
         print 'Visualizing the goals for the task', task, ' only.'
         rospy.spin()
     else:
-        # for task in ['wiping_mouth', 'scratching_knee_left', 'scratching_knee_left', 'scratching_upper_arm_left', 'scratching_upper_arm_right', 'scratching_forearm_left', 'scratching_forearm_right']: #'wiping_face', 'scratching_knee_left', 'scratching_forearm_left','scratching_upper_arm_left']:#'scratching_knee_left', 'scratching_knee_right', 'scratching_thigh_left', 'scratching_thigh_right']:
-        for task in ['wiping_mouth']:
+        # for task in ['wiping_mouth', 'wiping_forehead', 'blanket_feet_knees', 'scratching_knee_left', 'scratching_knee_left', 'scratching_upper_arm_left', 'scratching_upper_arm_right', 'scratching_forearm_left', 'scratching_forearm_right']: #'wiping_face', 'scratching_knee_left', 'scratching_forearm_left','scratching_upper_arm_left']:#'scratching_knee_left', 'scratching_knee_right', 'scratching_thigh_left', 'scratching_thigh_right']:
+        for task in ['wiping_mouth']: #'wiping_forehead', 'blanket_feet_knees',wiping_mouth
             subject = 'any_subject'
             #rospy.init_node(''.join(['data_reader_', subject, '_', model, '_', task]))
             this_start_time = time.time()
-            shaving_data_reader = DataReader_Task(task, model, optimization, visualize=False)
+            shaving_data_reader = DataReader_Task(task, model, optimization, visualize=True)
             shaving_data_reader.generate_score()
             print 'Done! Time to generate all scores for this task: %fs' % (time.time() - this_start_time)
         print 'Done! Time to generate all scores for all tasks: %fs' % (time.time() - full_start_time)
