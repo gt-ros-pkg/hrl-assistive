@@ -253,17 +253,30 @@ class logger:
             self.feedbackStatus=0
             print status
 
-            if self.enable_isolator:
-                while self.isol_class is None and not rospy.is_shutdown():
-                    rate.sleep()
-                self.data['isol_class'] = self.isol_class
-                
-            
-
+                           
         if status == 'success' or status == 'failure':
             if status == 'failure':
-                #failure_class = raw_input('Enter failure reason if there is: ')
-                failure_class = "GUI_feedback"
+                # Need to run only when anomaly ... 
+                ## if self.enable_isolator and self.task.find('feeding')>=0:
+                    
+                ##     while self.isol_class is None and not rospy.is_shutdown():
+                ##         rate.sleep()
+                        
+                ##     if self.isol_class is not None:
+                ##         print "Anomaly is detected and isolated class is ", self.isol_class
+                ##         failure_class = "class_"+str(self.isol_class)
+                ##     else:
+                ##         print "Anomaly is not detected"
+                ##         failure_class = "class_"
+                        
+                ##     self.data['isol_class'] = self.isol_class
+                ## else:
+                failure_class = ""
+                    
+
+
+
+                
             if not os.path.exists(self.folderName): os.makedirs(self.folderName)
 
             # get next file id
@@ -278,9 +291,9 @@ class logger:
                         test_id = int((os.path.split(f)[1]).split('_')[1])
 
             if status == 'failure':        
-                fileName = os.path.join(self.folderName, 'iteration_%d_%s_%s.pkl' % (test_id+1, status, failure_class))
+                fileName = os.path.join(self.folderName, 'iter_%d_%s_%s.pkl' % (test_id+1, status, failure_class))
             else:
-                fileName = os.path.join(self.folderName, 'iteration_%d_%s.pkl' % (test_id+1, status))
+                fileName = os.path.join(self.folderName, 'iter_%d_%s.pkl' % (test_id+1, status))
 
             print 'Saving to', fileName
             ut.save_pickle(self.data, fileName)

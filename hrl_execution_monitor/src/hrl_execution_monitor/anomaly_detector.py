@@ -544,7 +544,7 @@ if __name__ == '__main__':
 
 
     ad = anomaly_detector(opt.task, opt.method, opt.id, save_data_path, \
-                          param_dict, debug=opt.bDebug, no_alarm=opt.no_alarm, viz=True)
+                          param_dict, debug=opt.bDebug, no_alarm=opt.no_alarm, viz=False)
     ad.run()
 
 

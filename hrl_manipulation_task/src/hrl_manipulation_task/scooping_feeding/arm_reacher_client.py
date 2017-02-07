@@ -98,14 +98,14 @@ if __name__ == '__main__':
     ## armReachActionLeft("initArms")
     ## armReachActionRight("initArms")
     ## armReachActionLeft("initScooping1") #fix
-    armReachActionRight("initScooping1") #fix
+    ## armReachActionRight("initScooping1") #fix
     ## print armReachActionLeft('getBowlPos')
     ## print armReachActionLeft('lookAtBowl')
     ## print armReachActionLeft('initScooping2')
     ## print armReachActionLeft('runScooping')
     ## self.armReachActionRight("getHeadPos")
     ## self.armReachActionRight("initFeeding")
-    sys.exit()
+    ## sys.exit()
 
 
     #---------------------------- Face registration ----------------------

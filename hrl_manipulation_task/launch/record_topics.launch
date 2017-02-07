@@ -73,6 +73,7 @@
                                                        /feeding/manipulation_task/feeding_dist_request
                                                        /feeding/manipulation_task/feeding_dist_state
                                                        /manipulation_task/anomaly_type
+                                                       /manipulation_task/anomaly_prob
                                                        /manipulation_task/available
                                                        /manipulation_task/emergency
                                                        /manipulation_task/gui_status
