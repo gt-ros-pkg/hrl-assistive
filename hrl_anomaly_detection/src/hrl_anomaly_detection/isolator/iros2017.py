@@ -679,11 +679,11 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
           = dm.LOPO_data_index(d['successDataList'], d['failureDataList'],\
                                d['successFileList'], d['failureFileList'])
 
-        d['successData'] = successData
-        d['failureData'] = failureData
-        d['success_files']   = success_files
-        d['failure_files']   = failure_files
-        d['kFoldList']       = kFold_list
+        d['successData']   = successData
+        d['failureData']   = failureData
+        d['success_files'] = success_files
+        d['failure_files'] = failure_files
+        d['kFoldList']     = kFold_list
         ut.save_pickle(d, crossVal_pkl)
 
     # flattening image list
@@ -694,12 +694,6 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
     for f in failure_files:
         failure_labels.append( int( f.split('/')[-1].split('_')[0] ) )
     failure_labels = np.array( failure_labels )
-
-
-
-    #temp
-    ## kFold_list = kFold_list[:8]
-
 
     #-----------------------------------------------------------------------------------------
     # Dynamic feature selection for detection and isolation
@@ -771,13 +765,15 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
                                                  failure_image_list,\
                                                  task_name, processed_data_path, param_dict, weight,\
                                                  single_detector=single_detector,\
-                                                 n_jobs=-1, window_steps=window_steps, verbose=verbose\
+                                                 n_jobs=-1, window_steps=window_steps, get_idx=True,\
+                                                 verbose=verbose\
                                                  ) for idx in xrange(len(kFold_list)) )
         
         data_dict = {}
         for i in xrange(len(l_data)):
             idx = l_data[i][0]
             data_dict[idx] = (l_data[i][1],l_data[i][2],l_data[i][3],l_data[i][4] )
+            data_dict['ad_idx_'+str(idx)] = (l_data[i][5],l_data[i][6])
             
         print "save pkl: ", data_pkl
         ut.save_pickle(data_dict, data_pkl)            
@@ -796,6 +792,9 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
         x_test  = x_tests[0]
         print np.shape(x_trains[0]), np.shape(x_trains[1]), np.shape(y_train)
 
+        (train_idx, test_idx) = data_dict['ad_idx_'+str(idx)]
+        
+        # --------------------------------------------------------------------
         from sklearn import preprocessing
         scaler = preprocessing.StandardScaler()
         x_train = scaler.fit_transform(x_train)
@@ -807,6 +806,15 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
         if type(y_train) is np.ndarray:
             y_train  = y_train.tolist()
             y_test   = y_test.tolist()
+
+        # --------------------------------------------------------------------
+        abnormalTrainData_s  = copy.copy(failureData_static[:, abnormalTrainIdx, :])
+        abnormalTestData_s   = copy.copy(failureData_static[:, abnormalTestIdx, :])
+        abnormalTrainLabel = copy.copy(failure_labels[abnormalTrainIdx])
+        abnormalTestLabel  = copy.copy(failure_labels[abnormalTestIdx])
+        # --------------------------------------------------------------------
+
+            
         
         from sklearn.svm import SVC
         clf = SVC(C=1.0, kernel='rbf') #, decision_function_shape='ovo')
@@ -1244,7 +1252,7 @@ if __name__ == '__main__':
         ## single_detector = False
 
 
-        ## c12 BEST 0511-86-71  ################### Best? (-5.19, -5.19)
+        ## c11 BEST 0511-86-71  ################### Best? (-5.19, -5.19)
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)

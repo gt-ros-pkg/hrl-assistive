@@ -62,40 +62,45 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
     nFold = len(d.keys())
     del d
 
+    ## nFold = 1
+    fold_list = range(nFold)
+    ## fold_list = [0] #[3,4,7]
+    ## fold_list = [3,4,5,6,7]
+    
+
     save_data_path = os.path.join(save_data_path, 'keras')
 
     # training with signals ----------------------------------
-    ## kt.train_with_signal(save_data_path, n_labels, nFold, nb_epoch=800, patience=10)
-    ## kt.train_with_signal(save_data_path, n_labels, nFold, nb_epoch=800, patience=5, load_weights=True)
-    ## kt.train_with_signal(save_data_path, n_labels, nFold, nb_epoch=800, patience=5, load_weights=True,
+    ## kt.train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5)
+    ## kt.train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5, load_weights=True)
+    ## kt.train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5, load_weights=True,
     ##                      test_only=True) #70
+    #                        0.88 0.79  0.80  0.779  0.761
+
+
     
     # training_with images -----------------------------------
     remove_label = [1]
-    ## kt.get_bottleneck_image(save_data_path, n_labels, nFold, vgg=True, remove_label=remove_label)
-    ## kt.train_top_model_with_image(save_data_path, n_labels, nFold, vgg=True)
-    kt.train_top_model_with_image(save_data_path, n_labels, nFold, vgg=True, nb_epoch=1000, load_weights=True)
-    ## kt.train_top_model_with_image(save_data_path, n_labels, nFold, vgg=True, nb_epoch=1000, load_weights=True,
+    ## kt.get_bottleneck_image(save_data_path, n_labels, fold_list, vgg=True, remove_label=remove_label)
+    ## kt.train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, patience=30)
+    ## kt.train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, nb_epoch=1000, patience=30,
+    ##                               load_weights=True)
+    ## kt.train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, nb_epoch=1000,
+    ##                               load_weights=True,
     ##                               test_only=True)
-    
-    ## train_with_image(save_data_path, n_labels, nFold, patience=20)
-    ## train_with_image(save_data_path, n_labels, nFold, patience=20, fine_tune=True)
-
-    ## train_with_image(save_data_path, n_labels, nFold, patience=20, vgg=True, remove_label=remove_label)
-    ## train_with_image(save_data_path, n_labels, nFold, patience=20, vgg=True, remove_label=remove_label,
-    ##                  load_weights=True)
 
     # training_with all --------------------------------------
-    ## kt.get_bottleneck_mutil(save_data_path, n_labels, nFold, vgg=True)
-    ## kt.train_multi_top_model(save_data_path, n_labels, nFold, vgg=True)
-    ## train_multi_top_model(save_data_path, n_labels, nFold, vgg=True, load_weights=True)
-    ## kt.train_multi_top_model(save_data_path, n_labels, nFold, vgg=True, load_weights=True,
-    ##                          test_only=True)
-    
-    ## kt.train_with_all(save_data_path, n_labels, nFold, patience=1, nb_epoch=1, vgg=True)
-    ## kt.train_with_all(save_data_path, n_labels, nFold, load_weights=True, patience=5, vgg=True)
-    ## kt.train_with_all(save_data_path, n_labels, nFold, load_weights=True, patience=5, vgg=True,
-    ##                   test_only=True)
+    ## kt.get_bottleneck_mutil(save_data_path, n_labels, fold_list, vgg=True)
+    ## kt.train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, patience=10)
+    ## kt.train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, patience=100, load_weights=True)
+    ## kt.train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, load_weights=True,
+    ##                          test_only=True) #74
+
+    # 0.55 0.92 0.93 0.82    0.76 0.76 0.88 0.75
+    ## kt.train_with_all(save_data_path, n_labels, fold_list, patience=1, nb_epoch=1, vgg=True)
+    ## kt.train_with_all(save_data_path, n_labels, fold_list, load_weights=True, patience=5, vgg=True)
+    kt.train_with_all(save_data_path, n_labels, fold_list, load_weights=True, patience=5, vgg=True,
+                      test_only=True)
     return
 
 

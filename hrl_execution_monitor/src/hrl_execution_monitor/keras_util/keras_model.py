@@ -206,7 +206,7 @@ def vgg16_net(input_shape, n_labels, weights_path=None,\
     # 31 layers---------------------------------------------------------------
 
 
-    if fine_tune:
+    if fine_tune and False:
         for layer in model.layers[:25]:
             layer.trainable = False
     else:
@@ -347,14 +347,14 @@ def vgg_image_top_net(input_shape, n_labels, weights_path=None):
 
 
     model.add(Dense(1024, init='uniform', name='fc1_1', W_regularizer=L1L2Regularizer(0.0,0.03)))
-    model.add(Activation('relu'))
+    model.add(Activation('relu')) #0.03
     model.add(Dropout(0.5))        
-    ## model.add(Dense(1024, init='uniform', name='fc1_2', W_regularizer=L1L2Regularizer(0.0,0.03)))
+    ## model.add(Dense(1024, init='uniform', name='fc1_2', W_regularizer=L1L2Regularizer(0.0,0.01)))
     ## model.add(Activation('relu'))
     ## model.add(Dropout(0.5))
     model.add(Dense(128, init='uniform', name='fc1_2', W_regularizer=L1L2Regularizer(0.0,0.01)))
     model.add(Activation('relu'))
-    model.add(Dropout(0.5))
+    model.add(Dropout(0.5)) #0.5
 
     
     ## model.add(Dense(256, init='uniform', name='fc1_1', W_regularizer=L1L2Regularizer(0.0,0.01)))

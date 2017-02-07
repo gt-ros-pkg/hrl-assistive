@@ -729,14 +729,13 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failureData_static, \
                            failure_labels, failure_image_list,\
                            task_name, processed_data_path, param_dict, weight,\
                            single_detector=False,\
-                           n_jobs=1, window_steps=10, verbose=False ):
+                           n_jobs=1, window_steps=10, get_idx=False, verbose=False ):
 
     normalTrainIdx   = kFold_list[0]
     abnormalTrainIdx = kFold_list[1]
     normalTestIdx    = kFold_list[2]
     abnormalTestIdx  = kFold_list[3]
-
-    nDetector = len(failureData)
+    nDetector        = len(failureData)
 
     #-----------------------------------------------------------------------------------------
     # Anomaly Detection
@@ -757,10 +756,10 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failureData_static, \
     # Feature Extraction
     #-----------------------------------------------------------------------------------------
 
-    abnormalTrainData_s  = copy.copy(failureData_static[:, abnormalTrainIdx, :])
-    abnormalTestData_s   = copy.copy(failureData_static[:, abnormalTestIdx, :])
-    abnormalTrainLabel = copy.copy(failure_labels[abnormalTrainIdx])
-    abnormalTestLabel  = copy.copy(failure_labels[abnormalTestIdx])
+    abnormalTrainData_s = copy.copy(failureData_static[:, abnormalTrainIdx, :])
+    abnormalTestData_s  = copy.copy(failureData_static[:, abnormalTestIdx, :])
+    abnormalTrainLabel  = copy.copy(failure_labels[abnormalTrainIdx])
+    abnormalTestLabel   = copy.copy(failure_labels[abnormalTestIdx])
 
     if len(failure_image_list)>0:
         abnormalTrainData_img = copy.copy(failure_image_list[abnormalTrainIdx])
@@ -802,7 +801,11 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failureData_static, \
                                                     task_name, processed_data_path, param_dict, \
                                                     delta_flag=True)
 
-    return idx, [x_train, x_train_img], y_train, [x_test, x_test_img], y_test
+    if get_idx:
+        return idx, [x_train, x_train_img], y_train, [x_test, x_test_img], y_test,\
+          [detection_train_idx_list,detection_test_idx_list]
+    else:
+        return idx, [x_train, x_train_img], y_train, [x_test, x_test_img], y_test
 
                                          
 
