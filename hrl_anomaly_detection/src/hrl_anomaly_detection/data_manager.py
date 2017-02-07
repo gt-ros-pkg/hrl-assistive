@@ -2913,7 +2913,8 @@ def saveHMMinducedFeatures(kFold_list, successData, failureData,\
                     noise_arr = np.random.normal(0.0, noise_mag[i], np.shape(normalTrainData[i:i+1]))
                 else:
                     noise_arr = np.vstack([noise_arr,
-                                           random.normal(0.0, noise_mag[i], np.shape(normalTrainData[i:i+1])) ])
+                                           np.random.normal(0.0, noise_mag[i],
+                                                            np.shape(normalTrainData[i:i+1])) ])
                 
         else:
             noise_arr = np.random.normal(0.0, noise_mag, np.shape(normalTrainData))
