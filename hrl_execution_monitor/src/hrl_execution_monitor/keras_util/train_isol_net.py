@@ -827,6 +827,7 @@ if __name__ == '__main__':
 
     # best one for (-5,-11) - 76
     ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo'
+    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
 
     task_name = 'feeding'
     method    = ['progress0', 'progress1'] 
