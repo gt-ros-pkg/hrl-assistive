@@ -73,21 +73,21 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
     remove_label = [1]
     ## get_bottleneck_image(save_data_path, n_labels, fold_list, vgg=True, remove_label=remove_label)
     ## kt.train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, patience=30)
-    train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, nb_epoch=1000, patience=30,
-                               load_weights=True)
-    kt.train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, nb_epoch=1000,
-                                  load_weights=True,
-                                  test_only=True)
+    ## train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, nb_epoch=1000, patience=30,
+    ##                            load_weights=True)
+    train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, nb_epoch=1000,
+                               load_weights=True,
+                               test_only=True)
     
     # training_with all --------------------------------------
-    get_bottleneck_mutil(save_data_path, n_labels, fold_list, vgg=True)
-    train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True)
+    ## get_bottleneck_mutil(save_data_path, n_labels, fold_list, vgg=True)
+    ## train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True)
     ## train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, load_weights=True) # noneed
     
-    train_with_all(save_data_path, n_labels, fold_list, patience=1, nb_epoch=1, vgg=True)
+    ## train_with_all(save_data_path, n_labels, fold_list, patience=1, nb_epoch=1, vgg=True)
     #train_with_all(save_data_path, n_labels, fold_list, load_weights=True, patience=3, vgg=True) # almost no need
-    train_with_all(save_data_path, n_labels, fold_list, load_weights=True, patience=5, vgg=True,
-                   test_only=True)
+    ## train_with_all(save_data_path, n_labels, fold_list, load_weights=True, patience=5, vgg=True,
+    ##                test_only=True)
 
     return
 
