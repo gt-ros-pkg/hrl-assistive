@@ -64,7 +64,7 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
 
     ## nFold = 1
     fold_list = range(nFold)
-    fold_list = [0,3] #[3,4,7]
+    ## fold_list = [0,3] #[3,4,7]
     ## fold_list = [3,4,5,6,7]
     
 
