@@ -58,6 +58,7 @@ def get_isolation_data(subject_names, task_name, raw_data_path, save_data_path,
     # load params (param_dict)
     data_dict  = param_dict['data_param']
     data_renew = data_dict['renew']
+    noise_mag  = data_dict.get('noise_mag', 0.03)
     # HMM
     HMM_dict   = param_dict['HMM']
     nState     = HMM_dict['nState']
@@ -123,7 +124,7 @@ def get_isolation_data(subject_names, task_name, raw_data_path, save_data_path,
                                   task_name, save_data_path,\
                                   HMM_dict_local, data_renew, startIdx, nState, cov, \
                                   success_files=d['successFiles'], failure_files=d['failureFiles'],\
-                                  noise_mag=0.03, suffix=str(i),\
+                                  noise_mag=noise_mag[i], suffix=str(i),\
                                   verbose=verbose, one_class=False)
 
     del d
