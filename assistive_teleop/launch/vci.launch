@@ -2,7 +2,7 @@
   <include file="$(find pr2_machine)/$(env ROBOT).machine" />
   <arg name="launch_kinect" default="false" />
   <arg name="kinect_ns" default="head_mount_kinect" />
-  <arg name="kinect_points" default="/$(arg kinect_ns)/hd/points" />
+  <arg name="kinect_points" default="/$(arg kinect_ns)/sd/points" />
   <arg name="run_ft_sensor" default="false" />
   <arg name="use_cart_ctrl" default="true" />
   <arg name="test" default="true"/>
