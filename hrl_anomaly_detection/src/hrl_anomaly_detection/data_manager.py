@@ -2916,7 +2916,7 @@ def saveHMMinducedFeatures(kFold_list, successData, failureData,\
                                            random.normal(0.0, noise_mag[i], np.shape(normalTrainData[i:i+1])) ])
                 
         else:
-            noise_arr = np.random.normal(0.0, noise_mag, np.shape(normalTrainData)
+            noise_arr = np.random.normal(0.0, noise_mag, np.shape(normalTrainData))
 
         ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose)
         ret = ml.fit(normalTrainData+noise_arr*HMM_dict['scale'], \
