@@ -80,14 +80,14 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
                                   test_only=True)
     
     # training_with all --------------------------------------
-    #get_bottleneck_mutil(save_data_path, n_labels, fold_list, vgg=True)
-    ## train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True)
+    get_bottleneck_mutil(save_data_path, n_labels, fold_list, vgg=True)
+    train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True)
     ## train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, load_weights=True) # noneed
     
-    ## train_with_all(save_data_path, n_labels, fold_list, patience=1, nb_epoch=1, vgg=True)
-    ## train_with_all(save_data_path, n_labels, fold_list, load_weights=True, patience=3, vgg=True) # almost no need
-    ## train_with_all(save_data_path, n_labels, fold_list, load_weights=True, patience=5, vgg=True,
-    ##                test_only=True)
+    train_with_all(save_data_path, n_labels, fold_list, patience=1, nb_epoch=1, vgg=True)
+    #train_with_all(save_data_path, n_labels, fold_list, load_weights=True, patience=3, vgg=True) # almost no need
+    train_with_all(save_data_path, n_labels, fold_list, load_weights=True, patience=5, vgg=True,
+                   test_only=True)
 
     return
 
@@ -241,8 +241,8 @@ def train_with_image(save_data_path, n_labels, fold_list, nb_epoch=1, load_weigh
         test_datagen = ImageDataGenerator(rescale=1./255,\
                                           dim_ordering="th")
 
-        train_generator = train_datagen.flow(x_train_img, y_train, batch_size=128)
-        test_generator = test_datagen.flow(x_test_img, y_test, batch_size=128)
+        train_generator = train_datagen.flow(x_train_img, y_train, batch_size=32) #128)
+        test_generator = test_datagen.flow(x_test_img, y_test, batch_size=32) #128)
 
         hist = model.fit_generator(train_generator,
                                    samples_per_epoch=len(y_train),
@@ -360,8 +360,8 @@ def train_with_all(save_data_path, n_labels, fold_list, nb_epoch=100, load_weigh
         if test_only is False:
             train_datagen = ku.myGenerator(augmentation=True, rescale=1./255.)
             test_datagen = ku.myGenerator(augmentation=False, rescale=1./255.)
-            train_generator = train_datagen.flow(x_train_img, x_train_sig, y_train, batch_size=128)
-            test_generator = test_datagen.flow(x_test_img, x_test_sig, y_test, batch_size=128)
+            train_generator = train_datagen.flow(x_train_img, x_train_sig, y_train, batch_size=32) #128)
+            test_generator = test_datagen.flow(x_test_img, x_test_sig, y_test, batch_size=32) #128)
         
             hist = model.fit_generator(train_generator,
                                        samples_per_epoch=len(y_train),
