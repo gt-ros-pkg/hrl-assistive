@@ -2906,9 +2906,20 @@ def saveHMMinducedFeatures(kFold_list, successData, failureData,\
         nLength      = len(normalTrainData[0][0]) - startIdx
         cov_mult     = [cov]*(nEmissionDim**2)
 
+        if type(noise_mag) is list:
+            noise_arr = None
+            for i in xrange(nEmissionDim):
+                if noise_arr is None:
+                    noise_arr = np.random.normal(0.0, noise_mag[i], np.shape(normalTrainData[i:i+1]))
+                else:
+                    noise_arr = np.vstack([noise_arr,
+                                           random.normal(0.0, noise_mag[i], np.shape(normalTrainData[i:i+1])) ])
+                
+        else:
+            noise_arr = np.random.normal(0.0, noise_mag, np.shape(normalTrainData)
+
         ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose)
-        ret = ml.fit(normalTrainData+\
-                     np.random.normal(0.0, noise_mag, np.shape(normalTrainData) )*HMM_dict['scale'], \
+        ret = ml.fit(normalTrainData+noise_arr*HMM_dict['scale'], \
                      cov_mult=cov_mult, use_pkl=False, cov_type=cov_type)
                      ## np.random.normal(0.0, noise_mag, np.shape(normalTrainData) )*1.0, \
         if ret == 'Failure' or np.isnan(ret):
