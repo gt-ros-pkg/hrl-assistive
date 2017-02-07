@@ -68,7 +68,7 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
     ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.0, 'scale': [2.0, 2.0],\
     ##                   'add_logp_d': False }
 
-    ## offset 5, best ths(-3,-3)    
+    ## offset 5, best ths(-5.54,-5.54)    
     save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/feeding_demo'    
     HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.0, 'scale': [5.0, 11.0],\
                       'add_logp_d': False }

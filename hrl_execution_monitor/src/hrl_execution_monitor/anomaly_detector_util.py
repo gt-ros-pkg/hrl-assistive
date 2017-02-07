@@ -255,7 +255,7 @@ if __name__ == '__main__':
     ## param_dict['ROC']['progress0_param_range'] = -np.logspace(-0.3, 1.2, nPoints)
     ## param_dict['ROC']['progress1_param_range'] = -np.logspace(-0.3, 1.2, nPoints)
 
-    #c11 92 # next best (-7.44, -7.44), 87-2.89,2.89
+    #c11 92 # next best (-7.44, -7.44), 87-2.89,2.89, 94-5.54,5.54
     save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo'
     param_dict['ROC']['methods'] = ['progress0', 'progress1']
     param_dict['HMM']['scale'] = [5., 11.]
@@ -265,10 +265,10 @@ if __name__ == '__main__':
 
     
 
-    train_detector_modules(subject_names, task_name, raw_data_path, save_data_path,\
-                            param_dict, verbose=False)
+    ## train_detector_modules(subject_names, task_name, raw_data_path, save_data_path,\
+    ##                         param_dict, verbose=False)
 
-    ## get_detector_modules(save_data_path, task_name, param_dict, detector_id=0,
-    ##                      fold_idx=0, verbose=False)
-    ## get_detector_modules(save_data_path, task_name, param_dict, detector_id=1,
-    ##                      fold_idx=0, verbose=False)
+    get_detector_modules(save_data_path, task_name, param_dict, detector_id=0,
+                         fold_idx=0, verbose=False)
+    get_detector_modules(save_data_path, task_name, param_dict, detector_id=1,
+                         fold_idx=0, verbose=False)
