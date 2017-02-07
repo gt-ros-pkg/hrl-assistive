@@ -245,7 +245,7 @@ if __name__ == '__main__':
         # preprocessing data
         data_pkl = os.path.join(save_data_path, 'isol_data.pkl')
         pp.preprocess_data(data_pkl, save_data_path, img_scale=0.25, nb_classes=nb_classes,
-                              img_feature_type='vgg')
+                           img_feature_type='vgg')
         
     elif opt.preprocessing_extra:
         raw_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/AURO2016/raw_data/manual_label'

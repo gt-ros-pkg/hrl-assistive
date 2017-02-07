@@ -808,6 +808,7 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
             y_test   = y_test.tolist()
 
         # --------------------------------------------------------------------
+        # get raw data for svm+sliding window
         abnormalTrainData_s  = copy.copy(failureData_static[:, abnormalTrainIdx, :])
         abnormalTestData_s   = copy.copy(failureData_static[:, abnormalTestIdx, :])
         abnormalTrainLabel = copy.copy(failure_labels[abnormalTrainIdx])
