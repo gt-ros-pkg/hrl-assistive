@@ -263,12 +263,11 @@ if __name__ == '__main__':
     param_dict['ROC']['progress1_param_range'] = -np.logspace(0., 1.0, nPoints)
     param_dict['data_param']['noise_mag'] = [[0.03,0.03,0.03,0.08,0.08],[0.1,0.03,0.08]]
 
-    
 
     ## train_detector_modules(subject_names, task_name, raw_data_path, save_data_path,\
     ##                         param_dict, verbose=False)
 
-    get_detector_modules(save_data_path, task_name, param_dict, detector_id=0,
-                         fold_idx=0, verbose=False)
-    get_detector_modules(save_data_path, task_name, param_dict, detector_id=1,
-                         fold_idx=0, verbose=False)
+    ## get_detector_modules(save_data_path, task_name, param_dict, detector_id=0,
+    ##                      fold_idx=0, verbose=False)
+    ## get_detector_modules(save_data_path, task_name, param_dict, detector_id=1,
+    ##                      fold_idx=0, verbose=False)
