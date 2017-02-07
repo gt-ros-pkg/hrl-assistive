@@ -66,30 +66,24 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
     save_data_path = os.path.join(save_data_path, 'keras')
 
     # training with signals ----------------------------------
-    ## train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=50)
-    ## train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=50, load_weights=True)
+    train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=50)
+    train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=50, load_weights=True)
 
     # training_with images -----------------------------------
     remove_label = [1]
     #get_bottleneck_image(save_data_path, n_labels, fold_list, vgg=True, remove_label=remove_label)
-    #train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True)
+    ## train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True)
     ## train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, nb_epoch=1000, load_weights=True)
     
-    ## train_with_image(save_data_path, n_labels, fold_list, patience=20)
-    ## train_with_image(save_data_path, n_labels, fold_list, patience=20, fine_tune=True)
-
-    ## train_with_image(save_data_path, n_labels, fold_list, patience=20, vgg=True, remove_label=remove_label)
-    ## train_with_image(save_data_path, n_labels, fold_list, patience=20, vgg=True, remove_label=remove_label,
-    ##                  load_weights=True)
-
     # training_with all --------------------------------------
     #get_bottleneck_mutil(save_data_path, n_labels, fold_list, vgg=True)
     ## train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True)
     ## train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, load_weights=True) # noneed
     
     ## train_with_all(save_data_path, n_labels, fold_list, patience=1, nb_epoch=1, vgg=True)
-    train_with_all(save_data_path, n_labels, fold_list, load_weights=True, patience=3, vgg=True) # almost no need
-
+    ## train_with_all(save_data_path, n_labels, fold_list, load_weights=True, patience=3, vgg=True) # almost no need
+    ## train_with_all(save_data_path, n_labels, fold_list, load_weights=True, patience=5, vgg=True,
+    ##                test_only=True)
 
     return
 
@@ -827,11 +821,12 @@ if __name__ == '__main__':
     raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
                                                           opt.bHMMRenew, opt.bCLFRenew)
                                                           
+    # best one for (-2,-2) - 79
     save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
-    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
+    ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
 
-    # best one for (-5,-11)
-    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo'
+    # best one for (-5,-11) - 76
+    ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo'
 
     task_name = 'feeding'
     method    = ['progress0', 'progress1'] 
