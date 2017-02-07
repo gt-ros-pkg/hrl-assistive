@@ -59,6 +59,8 @@ def get_isolation_data(subject_names, task_name, raw_data_path, save_data_path,
     data_dict  = param_dict['data_param']
     data_renew = data_dict['renew']
     noise_mag  = data_dict.get('noise_mag', 0.03)
+    print noise_mag
+    sys.exit()
     # HMM
     HMM_dict   = param_dict['HMM']
     nState     = HMM_dict['nState']
