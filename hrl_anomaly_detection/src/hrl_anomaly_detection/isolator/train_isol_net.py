@@ -181,7 +181,7 @@ def evaluate_svm(save_data_path, viz=False):
     if viz: plot_confusion_matrix(y_test_list, y_pred_list)
 
 
-def test_isolator(save_data_path, n_labels, fold_list, vgg=True, save_pdf=False):
+def test_isolator(save_data_path, n_labels, vgg=True, save_pdf=False):
 
     if vgg: prefix = 'vgg_'
     else: prefix = ''
