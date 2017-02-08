@@ -2144,10 +2144,14 @@ def get_best_weight(ROC_data, nPoints, ROC_dict):
             continue
 
 
+        print "ACC_l"
+        print acc_l
+
         from sklearn import metrics
         best_weights = []
         for j in xrange(len(ROC_dict['methods'])):
             weight_list = ROC_dict[ROC_dict['methods'][j]+'_param_range']
+            print weight_list
             best_weights.append(weight_list[np.argmax(acc_l)])
             print ROC_dict['methods'][j], "Weight= ", weight_list[np.argmax(acc_l)],
             " , acc = ", np.amax(acc_l)
