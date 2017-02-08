@@ -211,13 +211,14 @@ if __name__ == '__main__':
     ## weight    = [-5.2, -6.2]
 
     # c11 5.2,5.2-65  5.2,6.2-69 maybebest 
-    ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
-    ## weight    = [-3.3, -6.3]
+    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
+    weight    = [-4., -7.]
     
     param_dict['HMM']['scale'] = [5.0, 11.0]
 
     #3.3,3.3-54
     #3.3,6.3
+    #3,9-55
     #4,6-66
     #5.0,5.0
     #5.2,5.2-65
