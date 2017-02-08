@@ -751,7 +751,10 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
     ROC_data = util.update_roc_data(ROC_data, l_data, nPoints, [method_list[0][:-1]])
     ut.save_pickle(ROC_data, roc_pkl)
 
-    weight = util.get_best_weight(ROC_data, nPoints, ROC_dict)
+    weight = ROC_dict.get('weight', None)
+    if weight is None:
+        weight = util.get_best_weight(ROC_data, nPoints, ROC_dict)
+   
     #-----------------------------------------------------------------------------------------
     # Training HMM, and getting classifier training and testing data
     data_dict = {}
@@ -1266,6 +1269,7 @@ if __name__ == '__main__':
         param_dict['ROC']['methods'] = ['progress0', 'progress1']
         param_dict['HMM']['scale'] = [5.0, 11.0]
         param_dict['HMM']['cov']   = 1.0
+        param_dict['ROC']['weight'] = [-3.3,-3.3]
         single_detector = False
 
 
