@@ -363,4 +363,4 @@ if __name__ == '__main__':
         ## evaluate_svm(save_data_path, viz=True)
 
     elif opt.test:
-        test_isolator(save_data_path, n_labels, save_pdf=True)
+        test_isolator(save_data_path, n_labels, save_pdf=False)
