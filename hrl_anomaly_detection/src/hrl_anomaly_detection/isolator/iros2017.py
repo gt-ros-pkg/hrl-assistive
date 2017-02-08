@@ -798,17 +798,17 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
 
         
         # --------------------------------------------------------------------
-        ## from sklearn import preprocessing
-        ## scaler = preprocessing.StandardScaler()
-        ## x_train = scaler.fit_transform(x_train)
-        ## x_test  = scaler.transform(x_test)
+        from sklearn import preprocessing
+        scaler = preprocessing.StandardScaler()
+        x_train = scaler.fit_transform(x_train)
+        x_test  = scaler.transform(x_test)
 
-        ## if type(x_train) is np.ndarray:
-        ##     x_train = x_train.tolist()
-        ##     x_test  = x_test.tolist()
-        ## if type(y_train) is np.ndarray:
-        ##     y_train  = y_train.tolist()
-        ##     y_test   = y_test.tolist()
+        if type(x_train) is np.ndarray:
+            x_train = x_train.tolist()
+            x_test  = x_test.tolist()
+        if type(y_train) is np.ndarray:
+            y_train  = y_train.tolist()
+            y_test   = y_test.tolist()
 
         # --------------------------------------------------------------------
         ## # get raw data for svm+sliding window
