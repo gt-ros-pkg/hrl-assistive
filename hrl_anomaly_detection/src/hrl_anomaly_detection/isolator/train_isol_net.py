@@ -245,12 +245,12 @@ def test_isolator(save_data_path, n_labels, vgg=True, save_pdf=False):
 
     new_y_pred = copy.copy(y_pred_list)
     new_y_test = copy.copy(y_test_list)
-    for i, y in enumerate(y_pred_list):
-        if y == 9: new_y_pred[i] = 2
-        elif y == 10: new_y_pred[i] = 3
-    for i, y in enumerate(y_test_list):
-        if y == 9: new_y_test[i] = 2
-        elif y == 10: new_y_test[i] = 3
+    ## for i, y in enumerate(y_pred_list):
+    ##     if y == 9: new_y_pred[i] = 2
+    ##     elif y == 10: new_y_pred[i] = 3
+    ## for i, y in enumerate(y_test_list):
+    ##     if y == 9: new_y_test[i] = 2
+    ##     elif y == 10: new_y_test[i] = 3
 
     print np.unique(new_y_pred), np.unique(new_y_test)
 
