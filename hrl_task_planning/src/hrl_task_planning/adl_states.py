@@ -20,6 +20,7 @@ from hrl_base_selection.srv import BaseMove
 from hrl_srvs.srv import None_Bool, None_BoolResponse
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from pr2_controllers_msgs.msg import SingleJointPositionActionGoal, SingleJointPositionAction, SingleJointPositionGoal
+from hrl_haptic_manipulation_in_clutter_srvs.srv import EnableHapticMPC
 roslib.load_manifest('hrl_lib')
 import hrl_lib.util as utils
 # pylint: disable=W0102
@@ -571,7 +572,8 @@ class ConfigureModelRobotState(PDDLSmachState):
         super(ConfigureModelRobotState, self).__init__(domain=domain, *args, **kwargs)
         try:
             rospy.wait_for_service('/left_arm/haptic_mpc/enable_mpc', timeout=5)
-            self.mpc_enabled_service = rospy.ServiceProxy("/left_arm/haptic_mpc/enable_mpc", EnableHapticMPC)
+            self.mpc_left_enabled_service = rospy.ServiceProxy("/left_arm/haptic_mpc/enable_mpc", EnableHapticMPC)
+            self.mpc_right_enabled_service = rospy.ServiceProxy("/right_arm/haptic_mpc/enable_mpc", EnableHapticMPC)
         except:
             rospy.logwarn("[%s] Enable Haptic MPC Service is not running!" % rospy.get_name())
             return 'aborted'
@@ -656,7 +658,8 @@ class ConfigureModelRobotState(PDDLSmachState):
 
     def on_execute(self, ud):
         rospy.sleep(1.)
-        resp = self.mpc_enabled_service('enabled')
+        resp = self.mpc_left_enabled_service('enabled')
+        resp = self.mpc_right_enabled_service('enabled')
 
         try:
             self.configuration_goal = rospy.get_param('/pddl_tasks/%s/configuration_goals' % self.domain)
