@@ -791,30 +791,40 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
         x_train = x_trains[0] 
         x_test  = x_tests[0]
         print np.shape(x_trains[0]), np.shape(x_trains[1]), np.shape(y_train)
-
-        (train_idx, test_idx) = data_dict['ad_idx_'+str(idx)]
         
         # --------------------------------------------------------------------
+        ## from sklearn import preprocessing
+        ## scaler = preprocessing.StandardScaler()
+        ## x_train = scaler.fit_transform(x_train)
+        ## x_test  = scaler.transform(x_test)
+
+        ## if type(x_train) is np.ndarray:
+        ##     x_train = x_train.tolist()
+        ##     x_test  = x_test.tolist()
+        ## if type(y_train) is np.ndarray:
+        ##     y_train  = y_train.tolist()
+        ##     y_test   = y_test.tolist()
+
+        # --------------------------------------------------------------------
+        # get raw data for svm+sliding window
+        (train_idx, test_idx) = data_dict['ad_idx_'+str(idx)]
+         
+        print np.shape(success_data_ad[0]), np.shape(success_data_ad[1]), np.shape(successData_static)
+        x_train = np.vstack([ failure_data_ad[0][:,abnormalTrainIdx,:],
+                              failure_data_ad[1][:,abnormalTrainIdx,:],
+                              failureData_static[:,abnormalTrainIdx,:] ])
+        print np.shape(x_train), np.shape(y_train)
+
+        x_test = np.vstack([ failure_data_ad[0][:,abnormalTestIdx,:],
+                             failure_data_ad[1][:,abnormalTestIdx,:],
+                             failureData_static[:,abnormalTestIdx,:] ])
+        print np.shape(x_test), np.shape(y_test)
+        # --------------------------------------------------------------------
+
         from sklearn import preprocessing
         scaler = preprocessing.StandardScaler()
         x_train = scaler.fit_transform(x_train)
         x_test  = scaler.transform(x_test)
-
-        if type(x_train) is np.ndarray:
-            x_train = x_train.tolist()
-            x_test  = x_test.tolist()
-        if type(y_train) is np.ndarray:
-            y_train  = y_train.tolist()
-            y_test   = y_test.tolist()
-
-        # --------------------------------------------------------------------
-        # get raw data for svm+sliding window
-        abnormalTrainData_s  = copy.copy(failureData_static[:, abnormalTrainIdx, :])
-        abnormalTestData_s   = copy.copy(failureData_static[:, abnormalTestIdx, :])
-        abnormalTrainLabel = copy.copy(failure_labels[abnormalTrainIdx])
-        abnormalTestLabel  = copy.copy(failure_labels[abnormalTestIdx])
-        # --------------------------------------------------------------------
-
             
         
         from sklearn.svm import SVC
