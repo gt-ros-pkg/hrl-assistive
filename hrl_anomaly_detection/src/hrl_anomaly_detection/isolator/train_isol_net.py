@@ -186,14 +186,15 @@ def test_isolator(save_data_path, n_labels, vgg=True, save_pdf=False):
     if vgg: prefix = 'vgg_'
     else: prefix = ''
 
-    isol_pkl = os.path.join(save_data_path, 'isol_data.pkl')
-    if os.path.isfile(isol_pkl):
-        d = ut.load_pickle(isol_pkl)
-    else:
-        print "No file"
-        sys.exit()
-    nFold = len(d.keys())
-    del d
+    ## isol_pkl = os.path.join(save_data_path, 'isol_data.pkl')
+    ## if os.path.isfile(isol_pkl):
+    ##     d = ut.load_pickle(isol_pkl)
+    ## else:
+    ##     print "No file"
+    ##     sys.exit()
+    ## nFold = len(d.keys())
+    ## del d
+    nFold = 8
 
     fold_list = range(nFold)
     save_data_path = os.path.join(save_data_path, 'keras')
