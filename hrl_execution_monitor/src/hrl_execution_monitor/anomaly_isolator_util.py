@@ -198,21 +198,21 @@ if __name__ == '__main__':
     ## weight    = [-3.0, -4.5]
     ## param_dict['HMM']['scale'] = [2.0, 2.0]
     # -----------------------------------------------------------------------
-    # ep
+    # c12
     save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo5'
-    weight    = [-3.0, -9.0]
+    weight    = [-4.0, -5.0]
     
     ## # c8
-    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo4'
-    weight    = [-4., -8.]
+    ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo4'
+    ## weight    = [-4., -8.]
     
-    # c12
+    # c11
     ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo'
     ## weight    = [-5.2, -6.2]
 
-    # c11 5.2,5.2-65  5.2,6.2-69 maybebest 
-    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
-    weight    = [-4., -7.]
+    # ep 5.2,5.2-65  5.2,6.2-69 maybebest 
+    ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
+    ## weight    = [-4., -7.]
     
     param_dict['HMM']['scale'] = [5.0, 11.0]
 
