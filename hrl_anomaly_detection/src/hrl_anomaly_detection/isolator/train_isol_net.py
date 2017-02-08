@@ -204,7 +204,7 @@ def test_isolator(save_data_path, n_labels, vgg=True, save_pdf=False):
     y_pred_list = []
 
     scores= []
-    for idx in fold_list:
+    for idx in fold_list[1:-1]:
         # Loading data
         train_data, test_data = autil.load_data(idx, save_data_path, viz=False)      
         x_train_sig = train_data[0]
@@ -214,56 +214,74 @@ def test_isolator(save_data_path, n_labels, vgg=True, save_pdf=False):
         x_test_img = test_data[1]
         y_test     = test_data[2]
 
+
         scaler      = preprocessing.StandardScaler()
         x_train_sig = scaler.fit_transform(x_train_sig)
         x_test_sig  = scaler.transform(x_test_sig)
 
-        weights_path = os.path.join(save_data_path,'sig_weights_'+str(idx)+'.h5')
-        model = km.sig_net(np.shape(x_train_sig)[1:], n_labels, activ_type='relu')                    
-        model.load_weights(weights_path)
-        y_pred = model.predict(x_test_sig)
-        y_pred_list += np.argmax(y_pred, axis=1).tolist()
-        y_test_list += np.argmax(y_test, axis=1).tolist()
-
-
-        ## weights_path = os.path.join(save_data_path,prefix+'all_weights_'+str(idx)+'.h5')
-
-        ## if vgg:
-        ##     model = km.vgg16_net(np.shape(x_train_img)[1:], n_labels, with_multi_top=True,
-        ##                          input_shape2=np.shape(x_train_sig)[1:],
-        ##                          weights_path=weights_path,
-        ##                          fine_tune=True)
-        ## else:
-        ##     model = km.cnn_net(np.shape(x_train_img)[1:], n_labels, with_multi_top=True,
-        ##                        input_shape2=np.shape(x_train_sig)[1:],
-        ##                        weights_path=weights_path,
-        ##                        fine_tune=True)
-
-
-        ## y_pred = model.predict([x_test_img/255., x_test_sig])
+        ## weights_path = os.path.join(save_data_path,'sig_weights_'+str(idx)+'.h5')
+        ## model = km.sig_net(np.shape(x_train_sig)[1:], n_labels, activ_type='relu')                    
+        ## model.load_weights(weights_path)
+        ## y_pred = model.predict(x_test_sig)
         ## y_pred_list += np.argmax(y_pred, axis=1).tolist()
         ## y_test_list += np.argmax(y_test, axis=1).tolist()
 
-        ## from sklearn.metrics import accuracy_score
-        ## print "score : ", accuracy_score(y_test_list, y_pred_list)
+
+        weights_path = os.path.join(save_data_path,prefix+'all_weights_'+str(idx)+'.h5')
+        model = km.vgg16_net(np.shape(x_train_img)[1:], n_labels, with_multi_top=True,
+                             input_shape2=np.shape(x_train_sig)[1:],
+                             weights_path=weights_path,
+                             fine_tune=True)
+
+        y_pred = model.predict([x_test_img/255., x_test_sig])
+        y_pred_list += np.argmax(y_pred, axis=1).tolist()
+        y_test_list += np.argmax(y_test, axis=1).tolist()
+
+    from sklearn.metrics import accuracy_score
+    print "score : ", accuracy_score(y_test_list, y_pred_list)
         ## scores.append( accuracy_score(y_test_list, y_pred_list) )
+
+    print np.unique(y_pred_list), np.unique(y_test_list)
+
+    new_y_pred = copy.copy(y_pred_list)
+    new_y_test = copy.copy(y_test_list)
+    for i, y in enumerate(y_pred_list):
+        if y == 8: new_y_pred[i] = 2
+        elif y == 9: new_y_pred[i] = 3
+    for i, y in enumerate(y_test_list):
+        if y == 8: new_y_test[i] = 2
+        elif y == 9: new_y_test[i] = 3
+
+    print np.unique(new_y_pred), np.unique(new_y_test)
+
             
     ## print np.mean(scores), np.std(scores)
-    plot_confusion_matrix( y_test_list, y_pred_list, save_pdf=save_pdf )
+    plot_confusion_matrix( new_y_test, new_y_pred, save_pdf=save_pdf )
 
 
 
 def plot_confusion_matrix(y_test_list, y_pred_list, save_pdf=False):
-    classes = ['Object collision', 'Noisy environment', 'Spoon miss by a user', 'Spoon collision by a user', 'Robot-body collision by a user', 'Aggressive eating', 'Anomalous sound from a user', 'Unreachable mouth pose', 'Face occlusion by a user', 'Spoon miss by system fault', 'Spoon collision by system fault', 'Freeze by system fault']
+    classes = ['Object collision',
+               'Noisy environment',
+               'Spoon miss by a user',
+               'Spoon collision by a user',
+               'Robot-body collision by a user',
+               'Aggressive eating',
+               'Anomalous sound from a user',
+               'Unreachable mouth pose',
+               'Face occlusion by a user',
+               'Spoon miss by system fault',
+               'Spoon collision by system fault',
+               'Freeze by system fault']
 
 
     from sklearn.metrics import confusion_matrix
     cm = confusion_matrix(y_test_list, y_pred_list)
 
-    print np.sum(cm,axis=1)
+    print np.sum(cm,axis=0)
 
-    eviz.plot_confusion_matrix(cm, classes=classes, normalize=True,
-                               title='Anomaly Isolation', save_pdf=save_pdf)
+    eviz.plot_confusion_matrix(cm, classes=classes, normalize=False,
+                               title='Anomaly Classification', save_pdf=save_pdf)
     
 
 

@@ -773,7 +773,7 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
         for i in xrange(len(l_data)):
             idx = l_data[i][0]
             data_dict[idx] = (l_data[i][1],l_data[i][2],l_data[i][3],l_data[i][4] )
-            data_dict['ad_idx_'+str(idx)] = (l_data[i][5],l_data[i][6])
+            data_dict['ad_idx_'+str(idx)] = l_data[i][5]
             
         print "save pkl: ", data_pkl
         ut.save_pickle(data_dict, data_pkl)            
@@ -1270,13 +1270,13 @@ if __name__ == '__main__':
 
 
         ## c11 BEST 0511-86-71  ################### Best? (-5.19, -5.19)
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## param_dict['ROC']['methods'] = ['progress0', 'progress1']
-        ## param_dict['HMM']['scale'] = [5.0, 11.0]
-        ## param_dict['HMM']['cov']   = 1.0
-        ## single_detector = False
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        param_dict['ROC']['methods'] = ['progress0', 'progress1']
+        param_dict['HMM']['scale'] = [5.0, 11.0]
+        param_dict['HMM']['cov']   = 1.0
+        single_detector = False
 
 
         param_dict['data_param']['handFeatures'] = [['unimodal_audioWristRMS',  \
