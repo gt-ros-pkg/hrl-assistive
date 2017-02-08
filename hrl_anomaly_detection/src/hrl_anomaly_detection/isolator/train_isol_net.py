@@ -65,14 +65,14 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
     nFold = 8
     fold_list = range(nFold)
     ## fold_list = [0] #[3,4,7]
-    ## fold_list = [3,4,5,6,7]
+    fold_list = [3,4]
     
 
     save_data_path = os.path.join(save_data_path, 'keras')
 
     # training with signals ----------------------------------
-    kt.train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5)
-    ## kt.train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5, load_weights=True)
+    ## kt.train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5)
+    kt.train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5, load_weights=True)
     kt.train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5, load_weights=True,
                          test_only=True) #70
     #                        0.88 0.79  0.80  0.779  0.761
@@ -362,4 +362,4 @@ if __name__ == '__main__':
         ## evaluate_svm(save_data_path, viz=True)
 
     elif opt.test:
-        test_isolator(save_data_path, n_labels)
+        test_isolator(save_data_path, n_labels, save_pdf=True)
