@@ -1262,15 +1262,15 @@ if __name__ == '__main__':
         param_dict['HMM']['cov']   = 1.0
         single_detector = False 
 
-        ## c11 
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation5/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        param_dict['ROC']['methods'] = ['progress0', 'progress1']
-        param_dict['HMM']['scale'] = [5.0, 11.0]
-        param_dict['HMM']['cov']   = 1.0
-        param_dict['ROC']['weight'] = [-4.,-7.]
-        single_detector = False
+        ## c11 - 0511-86-77
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation5/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## param_dict['ROC']['methods'] = ['progress0', 'progress1']
+        ## param_dict['HMM']['scale'] = [5.0, 11.0]
+        ## param_dict['HMM']['cov']   = 1.0
+        ## param_dict['ROC']['weight'] = [-4.,-7.]
+        ## single_detector = False
 
 
         ## c11 BEST 0511-86-71  ################### Best? (-5.19, -5.19)
