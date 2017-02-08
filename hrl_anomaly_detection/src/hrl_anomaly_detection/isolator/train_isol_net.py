@@ -328,11 +328,16 @@ if __name__ == '__main__':
     n_labels = 12 #len(np.unique(y_train))
 
     # 148 amin - nofz        
+    ## save_data_path = os.path.expanduser('~')+\
+    ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
+    ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+
+    # 5 11  4 7
     save_data_path = os.path.expanduser('~')+\
-      '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
+      '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation5/'+\
       str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
-    
+      
     # ---------------------------------------------------------------------
     if opt.preprocessing:
         src_pkl = os.path.join(save_data_path, 'isol_data.pkl')
