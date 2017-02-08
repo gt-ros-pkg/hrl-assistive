@@ -204,7 +204,7 @@ def test_isolator(save_data_path, n_labels, vgg=True, save_pdf=False):
     y_pred_list = []
 
     scores= []
-    for idx in fold_list[1:-1]:
+    for idx in fold_list:
         # Loading data
         train_data, test_data = autil.load_data(idx, save_data_path, viz=False)      
         x_train_sig = train_data[0]
