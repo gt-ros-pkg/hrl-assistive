@@ -46,7 +46,8 @@ def preprocess_data(src_pkl, save_data_path, img_scale=0.25, nb_classes=12,
        
     d = ut.load_pickle(src_pkl)
     nFold = len(d.keys())
-    print d.keys()
+    nFold = 8
+    ## print d.keys()
 
     for idx in xrange(nFold):
 
