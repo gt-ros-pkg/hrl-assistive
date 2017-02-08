@@ -246,11 +246,11 @@ def test_isolator(save_data_path, n_labels, vgg=True, save_pdf=False):
     new_y_pred = copy.copy(y_pred_list)
     new_y_test = copy.copy(y_test_list)
     for i, y in enumerate(y_pred_list):
-        if y == 8: new_y_pred[i] = 2
-        elif y == 9: new_y_pred[i] = 3
+        if y == 9: new_y_pred[i] = 2
+        elif y == 10: new_y_pred[i] = 3
     for i, y in enumerate(y_test_list):
-        if y == 8: new_y_test[i] = 2
-        elif y == 9: new_y_test[i] = 3
+        if y == 9: new_y_test[i] = 2
+        elif y == 10: new_y_test[i] = 3
 
     print np.unique(new_y_pred), np.unique(new_y_test)
 
@@ -278,7 +278,7 @@ def plot_confusion_matrix(y_test_list, y_pred_list, save_pdf=False):
     from sklearn.metrics import confusion_matrix
     cm = confusion_matrix(y_test_list, y_pred_list)
 
-    print np.sum(cm,axis=0)
+    print np.sum(cm,axis=1)
 
     eviz.plot_confusion_matrix(cm, classes=classes, normalize=False,
                                title='Anomaly Classification', save_pdf=save_pdf)
