@@ -785,6 +785,8 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
 
 
     # ---------------------------------------------------------------
+    y_test_list = []
+    y_pred_list = []
     scores = []
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(kFold_list):
@@ -847,6 +849,10 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
         scores.append( score )
         print idx, " : score = ", score
 
+        y_pred = clf.predict(x_test)
+        y_pred_list += y_pred.tolist()
+        y_test_list += np.argmax(y_test, axis=1).tolist()
+
 
     # ---------------- ROC Visualization ----------------------
     roc_info(ROC_data, nPoints, no_plot=True, multi_ad=True, ROC_dict=ROC_dict)
@@ -857,7 +863,8 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
     #temp
     ## iutil.save_data_labels(x_train, y_train)
 
-
+    from hrl_execution_monitor import viz
+    viz.plot_confusion_matrix2(y_test_list, y_pred_list, True)
 
 
 
@@ -1292,6 +1299,17 @@ if __name__ == '__main__':
         ## param_dict['HMM']['cov']   = 1.0
         ## single_detector = False 
         ## param_dict['ROC']['weight'] = [-5.2,-5.2]
+
+
+        ## aws
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        param_dict['ROC']['methods'] = ['progress0', 'progress1']
+        param_dict['HMM']['scale'] = [7.0, 13.0]
+        param_dict['HMM']['cov']   = 1.0
+        single_detector = False 
+        ## param_dict['ROC']['weight'] = [-4.2,-4.2]
 
 
 
