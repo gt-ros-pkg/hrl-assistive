@@ -264,7 +264,7 @@ if __name__ == '__main__':
     ## param_dict['data_param']['noise_mag'] = [[0.03,0.03,0.03,0.08,0.08],[0.1,0.03,0.08]]
 
 
-    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
+    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo4'
     param_dict['ROC']['methods'] = ['progress0', 'progress1']
     param_dict['HMM']['scale'] = [4., 8.]
     param_dict['ROC']['progress0_param_range'] = -np.logspace(0., 1.0, nPoints)
