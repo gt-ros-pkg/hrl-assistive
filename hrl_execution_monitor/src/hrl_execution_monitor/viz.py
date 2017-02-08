@@ -39,6 +39,29 @@ from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import gridspec
 
 
+def plot_confusion_matrix2(y_test_list, y_pred_list, save_pdf=False):
+    classes = ['Object collision',
+               'Noisy environment',
+               'Spoon miss by a user',
+               'Spoon collision by a user',
+               'Robot-body collision by a user',
+               'Aggressive eating',
+               'Anomalous sound from a user',
+               'Unreachable mouth pose',
+               'Face occlusion by a user',
+               'Spoon miss by system fault',
+               'Spoon collision by system fault',
+               'Freeze by system fault']
+
+
+    from sklearn.metrics import confusion_matrix
+    cm = confusion_matrix(y_test_list, y_pred_list)
+
+    print np.sum(cm,axis=1)
+
+    eviz.plot_confusion_matrix(cm, classes=classes, normalize=True,
+                               title='Anomaly Classification', save_pdf=save_pdf)
+    
 
 def plot_confusion_matrix(cm, classes, normalize=False,
                           title='Confusion matrix', cmap=plt.cm.Greys,

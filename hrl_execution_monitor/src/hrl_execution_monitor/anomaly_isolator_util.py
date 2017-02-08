@@ -39,6 +39,7 @@ import hrl_anomaly_detection.isolator.isolation_util as iutil
 from hrl_execution_monitor import util as autil
 from hrl_execution_monitor import preprocess as pp
 from hrl_execution_monitor import anomaly_isolator_preprocess as aip
+from hrl_execution_monitor import viz
 
 # Private learners
 from hrl_anomaly_detection.hmm import learning_hmm as hmm
@@ -98,6 +99,11 @@ def train_rfc_with_signal(save_data_path, n_labels, nFold):
         score = clf.score(x_test_sig, np.argmax(y_test, axis=1))
         scores.append(score)
         print score
+
+        y_pred = clf.predict(x_test_sig)
+        y_pred_list += y_pred.tolist()
+        y_test_list += np.argmax(y_test, axis=1).tolist()
+
         
         fileName = os.path.join(save_data_path, 'clf_'+str(idx))
         print fileName
@@ -107,6 +113,8 @@ def train_rfc_with_signal(save_data_path, n_labels, nFold):
 
     print 
     print np.mean(scores), np.std(scores)
+
+    viz.plot_confusion_matrix2(y_test_list, y_pred_list)
     return
 
 
@@ -203,16 +211,16 @@ if __name__ == '__main__':
     ## weight    = [-4.0, -5.0]
     
     ## # c8
-    ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo4'
-    ## weight    = [-4., -8.]
+    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo4'
+    weight    = [-3., -7.]
     
     # c11
     ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo'
     ## weight    = [-5.2, -6.2]
 
     # ep 5.2,5.2-65  5.2,6.2-69 maybebest 
-    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
-    weight    = [-4., -7.]
+    ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
+    ## weight    = [-4., -7.]
     
     param_dict['HMM']['scale'] = [5.0, 11.0]
 
@@ -221,7 +229,7 @@ if __name__ == '__main__':
     #3,9-55
     #4,6-66
     #4,7-72
-    #4,8-65
+    #4,8-70
     #5.0,5.0
     #5.2,5.2-65
     #5.2,6.2-69 ==========> Best demo
