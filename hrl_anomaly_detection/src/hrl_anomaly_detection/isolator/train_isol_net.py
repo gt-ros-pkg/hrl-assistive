@@ -181,6 +181,64 @@ def evaluate_svm(save_data_path, viz=False):
     if viz: plot_confusion_matrix(y_test_list, y_pred_list)
 
 
+def test_isolator(save_data_path, n_labels, fold_list, vgg=True, save_pdf=False):
+
+    if vgg: prefix = 'vgg_'
+    else: prefix = ''
+
+    d = ut.load_pickle(os.path.join(save_data_path, 'isol_data.pkl'))
+    nFold = len(d.keys())
+    del d
+
+    fold_list = range(nFold)
+    save_data_path = os.path.join(save_data_path, 'keras')
+
+
+
+    scores= []
+    for idx in fold_list:
+        # Loading data
+        train_data, test_data = autil.load_data(idx, save_data_path, viz=False)      
+        x_train_sig = train_data[0]
+        x_train_img = train_data[1]
+        y_train     = train_data[2]
+        x_test_sig = test_data[0]
+        x_test_img = test_data[1]
+        y_test     = test_data[2]
+
+        scaler      = preprocessing.StandardScaler()
+        x_train_sig = scaler.fit_transform(x_train_sig)
+        x_test_sig  = scaler.transform(x_test_sig)
+
+        weights_path = os.path.join(save_data_path,prefix+'all_weights_'+str(idx)+'.h5')
+
+        if vgg:
+            model = km.vgg16_net(np.shape(x_train_img)[1:], n_labels, with_multi_top=True,
+                                 input_shape2=np.shape(x_train_sig)[1:],
+                                 weights_path=weights_path,
+                                 fine_tune=True)
+        else:
+            model = km.cnn_net(np.shape(x_train_img)[1:], n_labels, with_multi_top=True,
+                               input_shape2=np.shape(x_train_sig)[1:],
+                               weights_path=weights_path,
+                               fine_tune=True)
+
+        y_test_list = []
+        y_pred_list = []
+
+        y_pred = model.predict([x_test_img/255., x_test_sig])
+        y_pred_list += np.argmax(y_pred, axis=1).tolist()
+        y_test_list += np.argmax(y_test, axis=1).tolist()
+
+        from sklearn.metrics import accuracy_score
+        print "score : ", accuracy_score(y_test_list, y_pred_list)
+        scores.append( accuracy_score(y_test_list, y_pred_list) )
+            
+    print np.mean(scores), np.std(scores)
+    plot_confusion_matrix( y_test_list, y_pred_list, save_pdf=save_pdf )
+
+
+
 def plot_confusion_matrix(y_test_list, y_pred_list, save_pdf=False):
     classes = ['Object collision', 'Noisy environment', 'Spoon miss by a user', 'Spoon collision by a user', 'Robot-body collision by a user', 'Aggressive eating', 'Anomalous sound from a user', 'Unreachable mouth pose', 'Face occlusion by a user', 'Spoon miss by system fault', 'Spoon collision by system fault', 'Freeze by system fault']
 
@@ -210,6 +268,8 @@ if __name__ == '__main__':
                  default=False, help='Preprocess extra images')
     p.add_option('--train', '--tr', action='store_true', dest='train',
                  default=False, help='Train')
+    p.add_option('--test', '--te', action='store_true', dest='test',
+                 default=False, help='Test')
     p.add_option('--viz', action='store_true', dest='viz',
                  default=False, help='Visualize')
     p.add_option('--viz_model', '--vm', action='store_true', dest='viz_model',
@@ -255,6 +315,7 @@ if __name__ == '__main__':
 
     elif opt.viz:
         x_train, y_train, x_test, y_test = autil.load_data(save_data_path, True)
+        
     elif opt.viz_model:
         model = km.vgg16_net((3,120,160), 12, with_top=True, input_shape2=(14,), viz=True)
         plot(model, to_file='model.png')
@@ -264,4 +325,5 @@ if __name__ == '__main__':
         train_isolator_modules(save_data_path, n_labels, verbose=False)
         ## evaluate_svm(save_data_path, viz=True)
 
-
+    elif opt.test:
+        test_isolator(save_data_path, n_labels)
