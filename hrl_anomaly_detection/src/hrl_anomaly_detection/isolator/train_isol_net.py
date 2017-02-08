@@ -65,7 +65,7 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
     nFold = 8
     fold_list = range(nFold)
     ## fold_list = [0] #[3,4,7]
-    fold_list = [3,4]
+    ## fold_list = [3,4]
     
 
     save_data_path = os.path.join(save_data_path, 'keras')
@@ -81,8 +81,8 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
     
     # training_with images -----------------------------------
     remove_label = [1]
-    ## kt.get_bottleneck_image(save_data_path, n_labels, fold_list, vgg=True, remove_label=remove_label)
-    ## kt.train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, patience=30)
+    kt.get_bottleneck_image(save_data_path, n_labels, fold_list, vgg=True, remove_label=remove_label)
+    kt.train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, patience=30)
     ## kt.train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, nb_epoch=1000, patience=30,
     ##                               load_weights=True)
     kt.train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, nb_epoch=1000,
