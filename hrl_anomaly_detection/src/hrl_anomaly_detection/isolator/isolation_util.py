@@ -871,8 +871,10 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, \
                 else:
                     cp_vecs = np.amin(vs[:1], axis=0)
 
-                max_vals = np.amax(abnormalData_s[:,i,:d_idx+j], axis=1)
-                min_vals = np.amin(abnormalData_s[:,i,:d_idx+j], axis=1)
+                s_idx = d_idx+j-20
+                if s_idx <0: s_idx = 0
+                max_vals = np.amax(abnormalData_s[:,i,s_idx:d_idx+j], axis=1)
+                min_vals = np.amin(abnormalData_s[:,i,s_idx:d_idx+j], axis=1)
                 vals = [mx if abs(mx) > abs(mi) else mi for (mx, mi) in zip(max_vals, min_vals) ]
 
                 cp_vecs = cp_vecs.tolist()+ vals
@@ -908,8 +910,10 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, \
                 cp_vecs = np.amin(vs[:1], axis=0)
 
 
-            max_vals = np.amax(abnormalData_s[:,i,:d_idx], axis=1)
-            min_vals = np.amin(abnormalData_s[:,i,:d_idx], axis=1)
+            s_idx = d_idx-20
+            if s_idx <0: s_idx = 0
+            max_vals = np.amax(abnormalData_s[:,i,s_idx:d_idx], axis=1)
+            min_vals = np.amin(abnormalData_s[:,i,s_idx:d_idx], axis=1)
             vals = [mx if abs(mx) > abs(mi) else mi for (mx, mi) in zip(max_vals, min_vals) ]
 
             cp_vecs = cp_vecs.tolist()+ vals
