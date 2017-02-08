@@ -925,6 +925,7 @@ def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, \
             print "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
             print np.shape(abnormalData_img)
             print x_img
+            print "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 
     return x, y, x_img
 

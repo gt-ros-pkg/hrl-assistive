@@ -186,7 +186,13 @@ def test_isolator(save_data_path, n_labels, vgg=True, save_pdf=False):
     if vgg: prefix = 'vgg_'
     else: prefix = ''
 
-    d = ut.load_pickle(os.path.join(save_data_path, 'isol_data.pkl'))
+    isol_pkl = os.path.join(save_data_path, 'isol_data.pkl')
+    if os.path.isfile(isol_pkl):
+        d = ut.load_pickle(isol_pkl)
+    else:
+        print "No file"
+        sys.exit()
+    print d.keys()
     nFold = len(d.keys())
     del d
 
@@ -194,6 +200,8 @@ def test_isolator(save_data_path, n_labels, vgg=True, save_pdf=False):
     save_data_path = os.path.join(save_data_path, 'keras')
 
 
+    y_test_list = []
+    y_pred_list = []
 
     scores= []
     for idx in fold_list:
@@ -210,31 +218,37 @@ def test_isolator(save_data_path, n_labels, vgg=True, save_pdf=False):
         x_train_sig = scaler.fit_transform(x_train_sig)
         x_test_sig  = scaler.transform(x_test_sig)
 
-        weights_path = os.path.join(save_data_path,prefix+'all_weights_'+str(idx)+'.h5')
-
-        if vgg:
-            model = km.vgg16_net(np.shape(x_train_img)[1:], n_labels, with_multi_top=True,
-                                 input_shape2=np.shape(x_train_sig)[1:],
-                                 weights_path=weights_path,
-                                 fine_tune=True)
-        else:
-            model = km.cnn_net(np.shape(x_train_img)[1:], n_labels, with_multi_top=True,
-                               input_shape2=np.shape(x_train_sig)[1:],
-                               weights_path=weights_path,
-                               fine_tune=True)
-
-        y_test_list = []
-        y_pred_list = []
-
-        y_pred = model.predict([x_test_img/255., x_test_sig])
+        weights_path = os.path.join(save_data_path,'sig_weights_'+str(idx)+'.h5')
+        model = km.sig_net(np.shape(x_train_sig)[1:], n_labels, activ_type='relu')                    
+        model.load_weights(weights_path)
+        y_pred = model.predict(x_test_sig)
         y_pred_list += np.argmax(y_pred, axis=1).tolist()
         y_test_list += np.argmax(y_test, axis=1).tolist()
 
-        from sklearn.metrics import accuracy_score
-        print "score : ", accuracy_score(y_test_list, y_pred_list)
-        scores.append( accuracy_score(y_test_list, y_pred_list) )
+
+        ## weights_path = os.path.join(save_data_path,prefix+'all_weights_'+str(idx)+'.h5')
+
+        ## if vgg:
+        ##     model = km.vgg16_net(np.shape(x_train_img)[1:], n_labels, with_multi_top=True,
+        ##                          input_shape2=np.shape(x_train_sig)[1:],
+        ##                          weights_path=weights_path,
+        ##                          fine_tune=True)
+        ## else:
+        ##     model = km.cnn_net(np.shape(x_train_img)[1:], n_labels, with_multi_top=True,
+        ##                        input_shape2=np.shape(x_train_sig)[1:],
+        ##                        weights_path=weights_path,
+        ##                        fine_tune=True)
+
+
+        ## y_pred = model.predict([x_test_img/255., x_test_sig])
+        ## y_pred_list += np.argmax(y_pred, axis=1).tolist()
+        ## y_test_list += np.argmax(y_test, axis=1).tolist()
+
+        ## from sklearn.metrics import accuracy_score
+        ## print "score : ", accuracy_score(y_test_list, y_pred_list)
+        ## scores.append( accuracy_score(y_test_list, y_pred_list) )
             
-    print np.mean(scores), np.std(scores)
+    ## print np.mean(scores), np.std(scores)
     plot_confusion_matrix( y_test_list, y_pred_list, save_pdf=save_pdf )
 
 

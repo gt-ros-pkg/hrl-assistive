@@ -791,6 +791,11 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
         x_train = x_trains[0] 
         x_test  = x_tests[0]
         print np.shape(x_trains[0]), np.shape(x_trains[1]), np.shape(y_train)
+
+        # remove system fault
+        ## for y in y_train:
+        ##     i
+
         
         # --------------------------------------------------------------------
         ## from sklearn import preprocessing
@@ -806,25 +811,26 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
         ##     y_test   = y_test.tolist()
 
         # --------------------------------------------------------------------
-        # get raw data for svm+sliding window
-        (train_idx, test_idx) = data_dict['ad_idx_'+str(idx)]
+        ## # get raw data for svm+sliding window
+        ## (train_idx, test_idx) = data_dict['ad_idx_'+str(idx)]
          
-        print np.shape(success_data_ad[0]), np.shape(success_data_ad[1]), np.shape(successData_static)
-        x_train = np.vstack([ failure_data_ad[0][:,abnormalTrainIdx,:],
-                              failure_data_ad[1][:,abnormalTrainIdx,:],
-                              failureData_static[:,abnormalTrainIdx,:] ])
-        print np.shape(x_train), np.shape(y_train)
+        ## print np.shape(success_data_ad[0]), np.shape(success_data_ad[1]), np.shape(successData_static)
+        ## x_train = np.vstack([ failure_data_ad[0][:,abnormalTrainIdx,:],
+        ##                       failure_data_ad[1][:,abnormalTrainIdx,:],
+        ##                       failureData_static[:,abnormalTrainIdx,:] ])
+        ## print np.shape(x_train), np.shape(y_train)
 
-        x_test = np.vstack([ failure_data_ad[0][:,abnormalTestIdx,:],
-                             failure_data_ad[1][:,abnormalTestIdx,:],
-                             failureData_static[:,abnormalTestIdx,:] ])
-        print np.shape(x_test), np.shape(y_test)
+        ## x_test = np.vstack([ failure_data_ad[0][:,abnormalTestIdx,:],
+        ##                      failure_data_ad[1][:,abnormalTestIdx,:],
+        ##                      failureData_static[:,abnormalTestIdx,:] ])
+        ## print np.shape(x_test), np.shape(y_test)
+        
+        ## from sklearn import preprocessing
+        ## scaler = preprocessing.StandardScaler()
+        ## x_train = scaler.fit_transform(x_train)
+        ## x_test  = scaler.transform(x_test)
         # --------------------------------------------------------------------
 
-        from sklearn import preprocessing
-        scaler = preprocessing.StandardScaler()
-        x_train = scaler.fit_transform(x_train)
-        x_test  = scaler.transform(x_test)
             
         
         from sklearn.svm import SVC
@@ -1254,23 +1260,23 @@ if __name__ == '__main__':
         single_detector = False 
 
         ## c11 
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation5/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## param_dict['ROC']['methods'] = ['progress0', 'progress1']
-        ## param_dict['HMM']['scale'] = [5.0, 9.0]
-        ## param_dict['HMM']['cov']   = 1.0
-        ## single_detector = False
-
-
-        ## c11 BEST 0511-86-71  ################### Best? (-5.19, -5.19)
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation5/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         param_dict['ROC']['methods'] = ['progress0', 'progress1']
         param_dict['HMM']['scale'] = [5.0, 11.0]
         param_dict['HMM']['cov']   = 1.0
         single_detector = False
+
+
+        ## c11 BEST 0511-86-71  ################### Best? (-5.19, -5.19)
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## param_dict['ROC']['methods'] = ['progress0', 'progress1']
+        ## param_dict['HMM']['scale'] = [5.0, 11.0]
+        ## param_dict['HMM']['cov']   = 1.0
+        ## single_detector = False
 
 
         param_dict['data_param']['handFeatures'] = [['unimodal_audioWristRMS',  \
