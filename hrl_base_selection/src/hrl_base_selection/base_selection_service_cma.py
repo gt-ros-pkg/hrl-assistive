@@ -159,6 +159,8 @@ class BaseSelector(object):
             model = 'autobed'
             self.scores_dict[model, 'wiping_mouth'] = self.load_task('wiping_mouth', model)
             self.scores_dict[model, 'scratching_knee_left'] = self.load_task('scratching_knee_left', model)
+            self.scores_dict[model, 'wiping_forehead'] = self.load_task('wiping_forehead', model)
+            self.scores_dict[model, 'blanket_feet_knees'] = self.load_task('blanket_feet_knees', model)
             # self.scores_dict[model, 'scratching_forehead'] = self.load_task('scratching_knee_left', model)
             # self.scores_dict[model, 'brushing_teeth'] = self.load_task('scratching_knee_left', model)
             # self.scores_dict[model, 'shaving'] = self.load_task('shaving', model)
