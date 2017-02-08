@@ -210,10 +210,6 @@ if __name__ == '__main__':
     ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo5'
     ## weight    = [-4.0, -5.0]
     
-    ## # c8
-    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo4'
-    weight    = [-3., -7.]
-    
     # c11
     ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo'
     ## weight    = [-5.2, -6.2]
@@ -240,6 +236,13 @@ if __name__ == '__main__':
     #8,8-60
     #9,9-66
     # -----------------------------------------------------------------------
+
+    ## # c8
+    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo4'
+    weight    = [-3.88, -3.88]
+    param_dict['HMM']['scale'] = [4.0, 8.0]
+    
+
 
 
     task_name = 'feeding'
