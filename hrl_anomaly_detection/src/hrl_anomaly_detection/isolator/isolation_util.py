@@ -591,7 +591,7 @@ def anomaly_detection(nDetector, task_name, processed_data_path, scales, logp_vi
 
             ret = dtc.fit(X_train, Y_train, idx_train)
             dtc.save_model(clf_pkl)
-
+            del X_train, Y_train, idx_train 
 
         if type(weight) is list:
             dtc.set_params( class_weight=weight[ii] )
@@ -606,7 +606,6 @@ def anomaly_detection(nDetector, task_name, processed_data_path, scales, logp_vi
     del d
     del ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx
     del ll_classifier_test_X, ll_classifier_test_Y, ll_classifier_test_idx
-    del X_train, Y_train, idx_train 
 
     # anomaly detection for train data
     detection_train_idx = [None for i in xrange(len(l_train_X[0]))]
