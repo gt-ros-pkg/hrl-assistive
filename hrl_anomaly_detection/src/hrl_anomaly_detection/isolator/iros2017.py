@@ -1296,21 +1296,21 @@ if __name__ == '__main__':
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation2/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         param_dict['ROC']['methods'] = ['progress0', 'progress1']
-        param_dict['HMM']['scale'] = [4.0, 9.0]
+        param_dict['HMM']['scale'] = [7.0, 7.0]
         param_dict['HMM']['cov']   = 1.0
         single_detector = False 
         ## ## param_dict['ROC']['weight'] = [-5.2,-7.]
 
 
         param_dict['data_param']['handFeatures'] = [['unimodal_audioWristRMS',  \
-                                                    'unimodal_kinJntEff_1',\
-                                                    'unimodal_ftForce_integ',\
-                                                    'unimodal_kinEEChange',\
-                                                    ## 'crossmodal_landmarkEEDist'
+                                                     'unimodal_kinJntEff_1',\
+                                                     'unimodal_ftForce_integ',\
+                                                     'unimodal_kinEEChange',\
+                                                     'crossmodal_landmarkEEDist'
                                                     ],\
                                                     [
-                                                     'unimodal_kinVel',\
-                                                     ## 'unimodal_ftForce_zero',\
+                                                     ## 'unimodal_kinVel',\
+                                                     'unimodal_ftForce_zero',\
                                                      'unimodal_ftForceZ',\
                                                      'unimodal_kinDesEEChange',\
                                                      ## 'crossmodal_landmarkEEDist'
