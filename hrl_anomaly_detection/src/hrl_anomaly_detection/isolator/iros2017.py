@@ -1292,13 +1292,13 @@ if __name__ == '__main__':
         ## single_detector = False 
         ## ## param_dict['ROC']['weight'] = [-4.2,-6.2]
 
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation2/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## param_dict['ROC']['methods'] = ['progress0', 'progress1']
-        ## param_dict['HMM']['scale'] = [7.0, 7.0]
-        ## param_dict['HMM']['cov']   = 1.0
-        ## single_detector = False 
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation2/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        param_dict['ROC']['methods'] = ['progress0', 'progress1']
+        param_dict['HMM']['scale'] = [7.0, 7.0]
+        param_dict['HMM']['cov']   = 1.0
+        single_detector = False 
         ## ## param_dict['ROC']['weight'] = [-5.2,-7.]
 
 
@@ -1308,13 +1308,14 @@ if __name__ == '__main__':
                                                      'unimodal_kinEEChange',\
                                                      'crossmodal_landmarkEEDist'
                                                     ],\
-                                                    ## [
-                                                    ##  ## 'unimodal_kinVel',\
-                                                    ##  ## 'unimodal_ftForce_zero',\
-                                                    ##  'unimodal_ftForceZ',\
-                                                    ##  'unimodal_kinDesEEChange',\
-                                                    ##  'crossmodal_landmarkEEDist'
-                                                    ## ]
+                                                    [
+                                                     ## 'unimodal_kinVel',\
+                                                     ## 'unimodal_ftForce_zero',\
+                                                     'unimodal_ftForceZ',\
+                                                     'unimodal_kinDesEEChange',\
+                                                     'crossmodal_landmarkEEDist',\
+                                                     'crossmodal_landmarkEEAng',\
+                                                    ]
                                                     ]
 
         # ------------------------------------------------------------------------------
@@ -1338,7 +1339,7 @@ if __name__ == '__main__':
                                                       ## 'unimodal_ftForceZ',\
                                                       'unimodal_fabricForce',  \
                                                       'unimodal_landmarkDist',\
-                                                      'crossmodal_landmarkEEAng',\
+                                                      ## 'crossmodal_landmarkEEAng',\
                                                       ]                                                  
 
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
