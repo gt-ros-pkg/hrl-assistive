@@ -1259,7 +1259,7 @@ if __name__ == '__main__':
         param_dict['HMM']['scale'] = [3.0, 3.0]
         param_dict['HMM']['cov']   = 1.0
         single_detector = False 
-        param_dict['ROC']['weight'] = [-5.2,-5.2]
+        ## param_dict['ROC']['weight'] = [-5.2,-5.2]
 
         # c12 5.2,5.2=80  s4,10=77
         ## save_data_path = os.path.expanduser('~')+\
