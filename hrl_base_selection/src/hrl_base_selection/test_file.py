@@ -22,7 +22,8 @@ env.SetViewer('qtcoin')  # attach viewer (optional)
 
 rospack = rospkg.RosPack()
 pkg_path = rospack.get_path('hrl_base_selection')
-env.Load(''.join([pkg_path, '/collada/bed_and_environment_cali_parameterized_tray_openrave_rounded.dae']))
+# env.Load(''.join([pkg_path, '/collada/bed_and_environment_cali_parameterized_tray_openrave_rounded.dae']))
+env.Load(''.join([pkg_path, '/collada/bed_and_environment_cali_1_9m_tray_openrave_rounded.dae']))
 # env.Load(''.join([pkg_path, '/collada/wheelchair_henry_rounded.dae']))
 # env.Load(''.join([pkg_path, '/collada/human.dae']))
 autobed = env.GetRobots()[0]
@@ -51,7 +52,7 @@ def set_autobed(z, headrest_th, head_x, head_y, neck_rot, head_rot):
     v[autobed.GetJoint('autobed/bed_neck_base_updown_bedframe_joint').GetDOFIndex()] = head_x
     v[autobed.GetJoint('autobed/bed_neck_base_leftright_joint').GetDOFIndex()] = head_y
     v[autobed.GetJoint('autobed/leg_rest_lower_overbed_tray_y_joint').GetDOFIndex()] = head_y
-    v[autobed.GetJoint('autobed/leg_rest_lower_overbed_tray_x_joint').GetDOFIndex()] = -0.7239
+    v[autobed.GetJoint('autobed/leg_rest_lower_overbed_tray_x_joint').GetDOFIndex()] = -0.6858
 
     v[autobed.GetJoint('autobed/torso_pelvis_joint').GetDOFIndex()] = m.radians(bth)
 
@@ -78,22 +79,22 @@ def set_autobed(z, headrest_th, head_x, head_y, neck_rot, head_rot):
         v[autobed.GetJoint('autobed/fore_arm_hand_right_joint').GetDOFIndex()] = -((bth/40)*(-0.5 - 0)+0)
         v[autobed.GetJoint('autobed/fore_arm_hand_left_joint').GetDOFIndex()] = -((bth/40)*(-0.5 - 0)+0)
     elif (bth >= 40.) and (bth <= 80.):  # between 0 and 40 degrees
-        v[autobed.GetJoint('autobed/bed_neck_worldframe_updown_joint').GetDOFIndex()] = ((bth-40)/40)*(0.02- (0.04))+(0.04)
-        v[autobed.GetJoint('autobed/bed_neck_base_updown_bedframe_joint').GetDOFIndex()] = ((bth-40)/40)*(-0.115- (-0.015))+(-0.015)
+        v[autobed.GetJoint('autobed/bed_neck_worldframe_updown_joint').GetDOFIndex()] = ((bth-40)/40)*(0.0- (0.04))+(0.04)
+        v[autobed.GetJoint('autobed/bed_neck_base_updown_bedframe_joint').GetDOFIndex()] = ((bth-40)/40)*(-0.26- (-0.07))+(-0.07)
         v[autobed.GetJoint('autobed/head_rest_hinge').GetDOFIndex()] = m.radians(bth)
         v[autobed.GetJoint('autobed/headrest_bed_to_worldframe_joint').GetDOFIndex()] = -m.radians(bth)
         v[autobed.GetJoint('autobed/bed_neck_to_bedframe_joint').GetDOFIndex()] = m.radians(bth)
         v[autobed.GetJoint('autobed/neck_twist_joint').GetDOFIndex()] = -(((bth-40)/40)*(0 - 0)+0)
-        v[autobed.GetJoint('autobed/neck_tilt_joint').GetDOFIndex()] = (((bth-40)/40)*(0.7 - 0.7)+0.7)
-        v[autobed.GetJoint('autobed/neck_head_rotz_joint').GetDOFIndex()] = -((bth/40)*(0 - 0)+0)
-        v[autobed.GetJoint('autobed/neck_head_roty_joint').GetDOFIndex()] = -((bth/40)*(-0.05 - (-0.2))+(-0.2))
-        v[autobed.GetJoint('autobed/neck_head_rotx_joint').GetDOFIndex()] = -((bth/40)*(0 - 0)+0)
-        v[autobed.GetJoint('autobed/torso_upper_arm_right_joint').GetDOFIndex()] = -(((bth-40)/40)*(0.2 - 0)+0)
-        v[autobed.GetJoint('autobed/torso_upper_arm_left_joint').GetDOFIndex()] = -(((bth-40)/40)*(0.2 - 0)+0)
-        v[autobed.GetJoint('autobed/upper_arm_fore_arm_right_joint').GetDOFIndex()] = -(((bth-40)/40)*(2.2 - 1.3)+1.3)
-        v[autobed.GetJoint('autobed/upper_arm_fore_arm_left_joint').GetDOFIndex()] = -(((bth-40)/40)*(2.2 - 1.3)+1.3)
-        v[autobed.GetJoint('autobed/fore_arm_hand_right_joint').GetDOFIndex()] = -(((bth-40)/40)*(-1.0 - (-0.5))+(-0.5))
-        v[autobed.GetJoint('autobed/fore_arm_hand_left_joint').GetDOFIndex()] = -(((bth-40)/40)*(-1.0 - (-0.5))+(-0.5))
+        v[autobed.GetJoint('autobed/neck_tilt_joint').GetDOFIndex()] = (((bth-40)/40)*(0.8 - 0.8)+0.8)
+        v[autobed.GetJoint('autobed/neck_head_rotz_joint').GetDOFIndex()] = -(((bth-40)/40)*(0 - 0)+0)
+        v[autobed.GetJoint('autobed/neck_head_roty_joint').GetDOFIndex()] = -(((bth-40)/40)*(-0.05 - (-0.15))+(-0.15))
+        v[autobed.GetJoint('autobed/neck_head_rotx_joint').GetDOFIndex()] = -(((bth-40)/40)*(0 - 0)+0)
+        v[autobed.GetJoint('autobed/torso_upper_arm_right_joint').GetDOFIndex()] = -(((bth-40)/40)*(-0.2 - 0)+0)
+        v[autobed.GetJoint('autobed/torso_upper_arm_left_joint').GetDOFIndex()] = -(((bth-40)/40)*(-0.2 - 0)+0)
+        v[autobed.GetJoint('autobed/upper_arm_fore_arm_right_joint').GetDOFIndex()] = -(((bth-40)/40)*(2.3 - 1.3)+1.3)
+        v[autobed.GetJoint('autobed/upper_arm_fore_arm_left_joint').GetDOFIndex()] = -(((bth-40)/40)*(2.3 - 1.3)+1.3)
+        v[autobed.GetJoint('autobed/fore_arm_hand_right_joint').GetDOFIndex()] = -(((bth-40)/40)*(-0.8 - (-0.6))+(-0.6))
+        v[autobed.GetJoint('autobed/fore_arm_hand_left_joint').GetDOFIndex()] = -(((bth-40)/40)*(-0.8 - (-0.6))+(-0.6))
 
     else:
         print 'Error: Bed angle out of range (should be 0 - 80 degrees)'
@@ -138,10 +139,10 @@ def set_wheelchair(neck_rot, head_rot):
 # for h in np.arange(0., 0.3, 0.01):
 #     for th in np.arange(0.,80.,1.):
 h = 0.2
-th = 40.
+th = 55.
 head_x = 0.
-head_y = 0.09
-set_autobed(h, th, head_x, head_y, 0, 60)
+head_y = 0.0
+set_autobed(h, th, head_x, head_y, 0, 0)
 # set_wheelchair()
 # rospy.spin()
 time.sleep(30)

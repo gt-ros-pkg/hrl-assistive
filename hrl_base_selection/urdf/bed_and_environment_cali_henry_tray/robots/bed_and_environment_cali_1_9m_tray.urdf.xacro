@@ -487,7 +487,7 @@
     </inertial>
     <visual>
       <origin
-        xyz="0 0 0"
+        xyz="0 ${0.21-0.04} 0"
         rpy="0 0 0" />
       <geometry>
         <mesh
@@ -496,7 +496,7 @@
     </visual>
     <collision>
       <origin
-        xyz="0 0 0"
+        xyz="0 ${0.21-0.04} 0"
         rpy="0 0 0" />
       <geometry>
         <mesh
@@ -508,7 +508,7 @@
    name="autobed/head_rest_hinge"
     type="revolute">
     <origin
-      xyz="0.835 0 0.21"
+      xyz="0.835 0 ${0.04}"
       rpy="1.5708 0 -3.1416" />
     <parent
       link="autobed/bed_frame_link" />
@@ -529,7 +529,7 @@
     name="autobed/headrest_bed_to_worldframe_joint"
     type="revolute">
     <origin
-      xyz="${rotated_torso+clavicle_len} 0.15 0"
+      xyz="${rotated_torso+clavicle_len} ${0.15+0.21-0.04} 0"
       rpy="0. 0. 0." />
     <!--<origin-->
       <!--xyz="0.40949 0.05 0"-->

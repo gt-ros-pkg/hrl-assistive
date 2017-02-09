@@ -48,6 +48,7 @@ class BaseSelector(object):
             self.listener = tf.TransformListener()
         else:
             self.listener = transform_listener
+        self.user_height = None
         self.mode = mode
         self.model = model
         self.load = load
@@ -156,6 +157,7 @@ class BaseSelector(object):
             #self.scores_dict[model, 'scratching_forearm_right'] = self.load_task('scratching_forearm_right', model)
             # self.scores_dict[model, 'feeding'] = self.load_task('feeding', model)
             # self.scores_dict[model, 'brushing'] = self.load_task('brushing', model)
+            self.user_height = '1.9'
             model = 'autobed'
             self.scores_dict[model, 'wiping_mouth'] = self.load_task('wiping_mouth', model)
             self.scores_dict[model, 'scratching_knee_left'] = self.load_task('scratching_knee_left', model)
@@ -620,9 +622,9 @@ class BaseSelector(object):
                 head_rest_neigh.fit(np.reshape(head_rest_possibilities, [len(head_rest_possibilities),1]), head_rest_possibilities)
                 head_rest_angle = head_rest_neigh.predict(np.degrees(self.bed_state_head_theta))[0]
 
-            self.score = all_scores[model, max_num_configs, head_rest_angle, headx, heady, 1]
+            self.score = all_scores[model, max_num_configs, head_rest_angle, headx, heady, 1, self.user_height]
         else:
-            self.score = all_scores[model, max_num_configs, 0,0,0,0]
+            self.score = all_scores[model, max_num_configs, 0,0,0,0, self.user_height]
         if np.shape(self.score)==(2,) and self.model=='autobed':
             self.score = [[[self.score[0][0]], [self.score[0][1]], [self.score[0][2]], [self.score[0][3]], [self.score[0][4]], [self.score[0][5]]], self.score[1]]
         elif np.shape(self.score)==(2,) and self.model=='chair':
