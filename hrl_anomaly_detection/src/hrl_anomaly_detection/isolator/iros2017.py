@@ -1235,7 +1235,7 @@ if __name__ == '__main__':
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation7/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         param_dict['ROC']['methods'] = ['progress0', 'progress1']
-        param_dict['HMM']['scale'] = [7.0, 7.0]
+        param_dict['HMM']['scale'] = [7.0] #, 7.0]
         param_dict['HMM']['cov']   = 1.0
         single_detector = False 
         ## param_dict['ROC']['weight'] = [-4.2,-6.2]
