@@ -338,9 +338,9 @@ if __name__ == '__main__':
       '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation5/'+\
       str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
-    # 4,8
+    # 
     save_data_path = os.path.expanduser('~')+\
-      '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
+      '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
       str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
 

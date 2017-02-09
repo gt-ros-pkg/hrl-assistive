@@ -754,14 +754,18 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
     weight = ROC_dict.get('weight', None)
     if weight is None:
         weight = util.get_best_weight(ROC_data, nPoints, ROC_dict)
-   
+
+
+    #temp
+    kFold_list = kFold_list[:1]
+    
     #-----------------------------------------------------------------------------------------
     # Training HMM, and getting classifier training and testing data
     data_dict = {}
     data_pkl = os.path.join(processed_data_path, 'isol_data.pkl')
     if os.path.isfile(data_pkl) is False or HMM_dict['renew'] or SVM_dict['renew'] or svd_renew:
 
-        l_data = Parallel(n_jobs=-1, verbose=10)\
+        l_data = Parallel(n_jobs=1, verbose=10)\
           (delayed(iutil.get_hmm_isolation_data)(idx, kFold_list[idx], failure_data_ad, \
                                                  failureData_static, \
                                                  failure_labels,\
