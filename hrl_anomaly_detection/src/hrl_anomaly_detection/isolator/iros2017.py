@@ -705,7 +705,7 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
     for i in xrange(nDetector):
         
         feature_idx_list.append([])
-        print param_dict['data_param']['handFeatures']
+        print data_dict['isolationFeatures']
         
         for feature in param_dict['data_param']['handFeatures'][i]:
             feature_idx_list[i].append(data_dict['isolationFeatures'].index(feature))
