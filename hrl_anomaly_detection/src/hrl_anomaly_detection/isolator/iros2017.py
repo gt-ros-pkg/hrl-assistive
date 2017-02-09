@@ -851,7 +851,7 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
 
         y_pred = clf.predict(x_test)
         y_pred_list += y_pred.tolist()
-        y_test_list += y_test.tolist()
+        y_test_list += y_test
 
 
     # ---------------- ROC Visualization ----------------------
