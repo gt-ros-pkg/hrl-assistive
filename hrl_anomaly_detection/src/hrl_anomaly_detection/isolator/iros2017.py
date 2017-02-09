@@ -1269,7 +1269,7 @@ if __name__ == '__main__':
         param_dict['HMM']['scale'] = [7.0, 13.0]
         param_dict['HMM']['cov']   = 1.0
         single_detector = False 
-        param_dict['ROC']['weight'] = [-4.2,-4.2]
+        ## param_dict['ROC']['weight'] = [-4.2,-4.2]
 
 
 
