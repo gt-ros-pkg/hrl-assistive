@@ -761,14 +761,14 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
     data_pkl = os.path.join(processed_data_path, 'isol_data.pkl')
     if os.path.isfile(data_pkl) is False or HMM_dict['renew'] or SVM_dict['renew'] or svd_renew:
 
-        l_data = Parallel(n_jobs=1, verbose=10)\
+        l_data = Parallel(n_jobs=-1, verbose=10)\
           (delayed(iutil.get_hmm_isolation_data)(idx, kFold_list[idx], failure_data_ad, \
                                                  failureData_static, \
                                                  failure_labels,\
                                                  failure_image_list,\
                                                  task_name, processed_data_path, param_dict, weight,\
                                                  single_detector=single_detector,\
-                                                 n_jobs=-1, window_steps=window_steps, get_idx=True,\
+                                                 window_steps=window_steps, get_idx=True,\
                                                  verbose=verbose\
                                                  ) for idx in xrange(len(kFold_list)) )
         
@@ -1270,6 +1270,16 @@ if __name__ == '__main__':
         param_dict['HMM']['cov']   = 1.0
         single_detector = False 
         param_dict['ROC']['weight'] = [-5.2,-5.2]
+
+
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation1/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        param_dict['ROC']['methods'] = ['progress0', 'progress1']
+        param_dict['HMM']['scale'] = [7.0, 13.0]
+        param_dict['HMM']['cov']   = 1.0
+        single_detector = False 
+        param_dict['ROC']['weight'] = [-3.,-4.5]
 
 
 
