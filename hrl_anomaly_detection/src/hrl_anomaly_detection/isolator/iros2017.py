@@ -1332,8 +1332,8 @@ if __name__ == '__main__':
         param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0., 2.3, nPoints)*-1.0+1.0
         param_dict['ROC']['progress0_param_range'] = -np.logspace(0., 0.9, nPoints)
         param_dict['ROC']['progress1_param_range'] = -np.logspace(0., 0.9, nPoints)
-        param_dict['ROC']['hmmgp1_param_range'] = np.logspace(-0., 2.3, nPoints)*-1.0+1.0
-        param_dict['ROC']['hmmgp2_param_range'] = np.logspace(-0., 2.5, nPoints)*-1.0+0.5
+        param_dict['ROC']['hmmgp0_param_range'] = np.logspace(-0., 2.3, nPoints)*-1.0+1.0
+        param_dict['ROC']['hmmgp1_param_range'] = np.logspace(-0., 2.5, nPoints)*-1.0+0.5
         
         param_dict['data_param']['staticFeatures'] = ['unimodal_audioWristFrontRMS',\
                                                       'unimodal_audioWristAzimuth',\
