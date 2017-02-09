@@ -1288,7 +1288,7 @@ if __name__ == '__main__':
         param_dict['HMM']['scale'] = [7.0, 13.0]
         param_dict['HMM']['cov']   = 1.0
         single_detector = False 
-        param_dict['ROC']['weight'] = [-6.,-6.]
+        param_dict['ROC']['weight'] = [-5.2,-7.]
 
 
         param_dict['data_param']['handFeatures'] = [['unimodal_audioWristRMS',  \
