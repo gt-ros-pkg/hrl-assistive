@@ -864,7 +864,7 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
     ## iutil.save_data_labels(x_train, y_train)
 
     from hrl_execution_monitor import viz
-    viz.plot_confusion_matrix2(y_test_list, y_pred_list, True)
+    viz.plot_confusion_matrix2(y_test_list, y_pred_list, False)
 
 
 
