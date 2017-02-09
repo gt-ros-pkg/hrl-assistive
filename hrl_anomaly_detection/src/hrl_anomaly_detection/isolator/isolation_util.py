@@ -600,7 +600,7 @@ def anomaly_detection(nDetector, task_name, processed_data_path, scales, logp_vi
     del ll_classifier_test_X, ll_classifier_test_Y, ll_classifier_test_idx
     del X_train, Y_train, idx_train 
 
-    # anomaly detection for test data
+    # anomaly detection for train data
     detection_train_idx = [None for i in xrange(len(l_train_X[0]))]
     for i in xrange(len(l_train_X[0])):
         if len(l_train_Y[0][i])<1: continue
