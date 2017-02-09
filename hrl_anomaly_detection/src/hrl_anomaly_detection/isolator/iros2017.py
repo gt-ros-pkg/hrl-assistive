@@ -1283,13 +1283,13 @@ if __name__ == '__main__':
         ## ## param_dict['ROC']['weight'] = [-4.2,-8.2]
 
 
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation1/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## param_dict['ROC']['methods'] = ['progress0', 'progress1']
-        ## param_dict['HMM']['scale'] = [4.0, 13.0]
-        ## param_dict['HMM']['cov']   = 1.0
-        ## single_detector = False 
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation1/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        param_dict['ROC']['methods'] = ['progress0', 'progress1']
+        param_dict['HMM']['scale'] = [4.0, 13.0]
+        param_dict['HMM']['cov']   = 1.0
+        single_detector = False 
         ## ## param_dict['ROC']['weight'] = [-4.2,-6.2]
 
         ## save_data_path = os.path.expanduser('~')+\
