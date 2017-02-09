@@ -1279,16 +1279,16 @@ if __name__ == '__main__':
         param_dict['HMM']['scale'] = [7.0, 13.0]
         param_dict['HMM']['cov']   = 1.0
         single_detector = False 
-        param_dict['ROC']['weight'] = [-3.,-4.5]
+        param_dict['ROC']['weight'] = [-5.,-9.5]
 
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation2/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        param_dict['ROC']['methods'] = ['progress0', 'progress1']
-        param_dict['HMM']['scale'] = [7.0, 13.0]
-        param_dict['HMM']['cov']   = 1.0
-        single_detector = False 
-        param_dict['ROC']['weight'] = [-5.2,-7.]
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation2/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## param_dict['ROC']['methods'] = ['progress0', 'progress1']
+        ## param_dict['HMM']['scale'] = [7.0, 13.0]
+        ## param_dict['HMM']['cov']   = 1.0
+        ## single_detector = False 
+        ## param_dict['ROC']['weight'] = [-5.2,-7.]
 
 
         param_dict['data_param']['handFeatures'] = [['unimodal_audioWristRMS',  \
