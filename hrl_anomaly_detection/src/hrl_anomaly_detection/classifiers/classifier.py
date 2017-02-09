@@ -803,10 +803,6 @@ def learn_time_clustering(i, ll_idx, ll_logp, ll_post, g_mu, g_sig, nState):
     l_likelihood_std = np.sqrt(g_lhood2/(weight_sum - weight2_sum/weight_sum))
 
     return i, l_statePosterior, l_likelihood_mean, l_likelihood_std
-    ## return i, l_statePosterior, l_likelihood_mean, np.sqrt(l_likelihood_mean2 - l_likelihood_mean**2)
-
-## def learn_state_clustering(i, ll_logp, ll_post, g_mu, g_sig, nState):
-##     return i, 
 
 
 def update_time_cluster(i, ll_idx, ll_logp, ll_post, rbf_mu, rbf_sig, mu, sig, nState, N, \

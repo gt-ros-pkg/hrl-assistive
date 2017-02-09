@@ -537,9 +537,11 @@ def anomaly_detection(nDetector, task_name, processed_data_path, scales, logp_vi
         # Create anomaly classifier
         dtc = cf.classifier( method=method, nPosteriors=nState, nLength=nLength, parallel=True )
         clf_pkl = os.path.join(processed_data_path, 'clf_'+method+str(ii)+'_'+str(idx)+'.pkl')
+        print clf_pkl
 
         if load_model and os.path.isfile(clf_pkl):
             dtc.load_model(clf_pkl)
+            print "load complete"
         else:
             # 1) Convert training data
             # take only normal data
@@ -591,6 +593,7 @@ def anomaly_detection(nDetector, task_name, processed_data_path, scales, logp_vi
 
             ret = dtc.fit(X_train, Y_train, idx_train)
             dtc.save_model(clf_pkl)
+            print "model is saved"
             del X_train, Y_train, idx_train 
 
         if type(weight) is list:
