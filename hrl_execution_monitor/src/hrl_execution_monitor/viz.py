@@ -59,8 +59,8 @@ def plot_confusion_matrix2(y_test_list, y_pred_list, save_pdf=False):
 
     print np.sum(cm,axis=1)
 
-    eviz.plot_confusion_matrix(cm, classes=classes, normalize=True,
-                               title='Anomaly Classification', save_pdf=save_pdf)
+    plot_confusion_matrix(cm, classes=classes, normalize=True,
+                          title='Anomaly Classification', save_pdf=save_pdf)
     
 
 def plot_confusion_matrix(cm, classes, normalize=False,
