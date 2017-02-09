@@ -744,7 +744,8 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
                                           task_name, \
                                           method_list, ROC_data, \
                                           param_dict,\
-                                          startIdx=startIdx, nState=nState) \
+                                          startIdx=startIdx, nState=nState,
+                                          save_model=True) \
       for idx in xrange(len(kFold_list)) )
 
     print "finished to run run_classifiers"
@@ -757,7 +758,7 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
 
 
     #temp
-    kFold_list = kFold_list[:1]
+    ## kFold_list = kFold_list[:1]
     
     #-----------------------------------------------------------------------------------------
     # Training HMM, and getting classifier training and testing data
@@ -773,7 +774,7 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
                                                  task_name, processed_data_path, param_dict, weight,\
                                                  single_detector=single_detector,\
                                                  window_steps=window_steps, get_idx=True,\
-                                                 verbose=verbose\
+                                                 verbose=verbose, load_model=True\
                                                  ) for idx in xrange(len(kFold_list)) )
         
         data_dict = {}
@@ -800,11 +801,6 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
         x_train = x_trains[0] 
         x_test  = x_tests[0]
         print np.shape(x_trains[0]), np.shape(x_trains[1]), np.shape(y_train)
-
-        # remove system fault
-        ## for y in y_train:
-        ##     i
-
         
         # --------------------------------------------------------------------
         from sklearn import preprocessing
@@ -1245,14 +1241,14 @@ if __name__ == '__main__':
 
         
         ## c8 0408-80-75 46-78-74
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## param_dict['ROC']['methods'] = ['progress0', 'progress1']
-        ## param_dict['HMM']['scale'] = [5.0, 11.0]
-        ## param_dict['HMM']['cov']   = 1.0
-        ## single_detector = False 
-        ## param_dict['ROC']['weight'] = [-4.,-8.]
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        param_dict['ROC']['methods'] = ['progress0', 'progress1']
+        param_dict['HMM']['scale'] = [5.0, 11.0]
+        param_dict['HMM']['cov']   = 1.0
+        single_detector = False 
+        param_dict['ROC']['weight'] = [-4.,-8.]
 
         ## c11 - 0511-86-77 713-88
         ## save_data_path = os.path.expanduser('~')+\

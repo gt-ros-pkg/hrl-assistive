@@ -494,7 +494,7 @@ def plot_decoder(x1,x2):
 ##     return detection_idx
 
 def anomaly_detection(nDetector, task_name, processed_data_path, scales, logp_viz=False, verbose=False,
-                      weight=0.0, idx=0, single_detector=False, method='hmmgp'):
+                      weight=0.0, idx=0, single_detector=False, method='hmmgp', load_model=False):
     ''' Anomaly detector that return anomalous point on each data using two HMMs.
     '''
     
@@ -530,68 +530,76 @@ def anomaly_detection(nDetector, task_name, processed_data_path, scales, logp_vi
         l_train_Y.append(ll_classifier_train_Y)
         l_train_idx.append(ll_classifier_train_idx)
 
-        # 1) Convert training data
-        # take only normal data
-        idx_list = []
-        for i in xrange(len(ll_classifier_train_Y)):
-            if ll_classifier_train_Y[i][0]>0: continue
-            idx_list.append(i)
-        ll_classifier_train_X   = np.array(ll_classifier_train_X)[idx_list].tolist()
-        ll_classifier_train_Y   = np.array(ll_classifier_train_Y)[idx_list].tolist()
-        ll_classifier_train_idx = np.array(ll_classifier_train_idx)[idx_list].tolist()
-
-        if method.find('hmmgp')>=0:
-            # set parameters
-            nMaxData   = 20 # The maximun number of executions to train GP
-            nSubSample = 50 # The number of sub-samples from each execution to train GP
-    
-            idx_list = range(len(ll_classifier_train_X))
-            random.shuffle(idx_list)
-            ll_classifier_train_X   = np.array(ll_classifier_train_X)[idx_list[:nMaxData]].tolist()
-            ll_classifier_train_Y   = np.array(ll_classifier_train_Y)[idx_list[:nMaxData]].tolist()
-            ll_classifier_train_idx = np.array(ll_classifier_train_idx)[idx_list[:nMaxData]].tolist()
-
-            new_X = []
-            new_Y = []
-            new_idx = []
-            for i in xrange(len(ll_classifier_train_X)):
-                idx_list = range(len(ll_classifier_train_X[i]))
-                random.shuffle(idx_list)
-                new_X.append( np.array(ll_classifier_train_X)[i,idx_list[:nSubSample]].tolist() )
-                new_Y.append( np.array(ll_classifier_train_Y)[i,idx_list[:nSubSample]].tolist() )
-                new_idx.append( np.array(ll_classifier_train_idx)[i,idx_list[:nSubSample]].tolist() )
-
-            ll_classifier_train_X = new_X
-            ll_classifier_train_Y = new_Y
-            ll_classifier_train_idx = new_idx
-
-            if len(ll_classifier_train_X)*len(ll_classifier_train_X[0]) > 1000:
-                print "Too many input data for GP"
-                sys.exit()
-                ## else:
-                ##     sys.exit()
-
-        #
-        X_train, Y_train, idx_train = dm.flattenSample(ll_classifier_train_X, \
-                                                       ll_classifier_train_Y, \
-                                                       ll_classifier_train_idx,\
-                                                       remove_fp=False)
-        if verbose: print method, " : Before classification : ", np.shape(X_train), np.shape(Y_train)
+        l_test_X.append(ll_classifier_test_X)
+        l_test_Y.append(ll_classifier_test_Y)
+        l_test_idx.append(ll_classifier_test_idx)
 
         # Create anomaly classifier
         dtc = cf.classifier( method=method, nPosteriors=nState, nLength=nLength, parallel=True )
+        clf_pkl = os.path.join(processed_data_path, 'clf_'+method+str(ii)+'_'+str(idx)+'.pkl')
+
+        if load_model and os.path.isfile(clf_pkl):
+            dtc.load_model(clf_pkl)
+        else:
+            # 1) Convert training data
+            # take only normal data
+            idx_list = []
+            for i in xrange(len(ll_classifier_train_Y)):
+                if ll_classifier_train_Y[i][0]>0: continue
+                idx_list.append(i)
+            ll_classifier_train_X   = np.array(ll_classifier_train_X)[idx_list].tolist()
+            ll_classifier_train_Y   = np.array(ll_classifier_train_Y)[idx_list].tolist()
+            ll_classifier_train_idx = np.array(ll_classifier_train_idx)[idx_list].tolist()
+
+            if method.find('hmmgp')>=0:
+                # set parameters
+                nMaxData   = 20 # The maximun number of executions to train GP
+                nSubSample = 50 # The number of sub-samples from each execution to train GP
+
+                idx_list = range(len(ll_classifier_train_X))
+                random.shuffle(idx_list)
+                ll_classifier_train_X   = np.array(ll_classifier_train_X)[idx_list[:nMaxData]].tolist()
+                ll_classifier_train_Y   = np.array(ll_classifier_train_Y)[idx_list[:nMaxData]].tolist()
+                ll_classifier_train_idx = np.array(ll_classifier_train_idx)[idx_list[:nMaxData]].tolist()
+
+                new_X = []
+                new_Y = []
+                new_idx = []
+                for i in xrange(len(ll_classifier_train_X)):
+                    idx_list = range(len(ll_classifier_train_X[i]))
+                    random.shuffle(idx_list)
+                    new_X.append( np.array(ll_classifier_train_X)[i,idx_list[:nSubSample]].tolist() )
+                    new_Y.append( np.array(ll_classifier_train_Y)[i,idx_list[:nSubSample]].tolist() )
+                    new_idx.append( np.array(ll_classifier_train_idx)[i,idx_list[:nSubSample]].tolist() )
+
+                ll_classifier_train_X = new_X
+                ll_classifier_train_Y = new_Y
+                ll_classifier_train_idx = new_idx
+
+                if len(ll_classifier_train_X)*len(ll_classifier_train_X[0]) > 1000:
+                    print "Too many input data for GP"
+                    sys.exit()
+                    ## else:
+                    ##     sys.exit()
+
+            #
+            X_train, Y_train, idx_train = dm.flattenSample(ll_classifier_train_X, \
+                                                           ll_classifier_train_Y, \
+                                                           ll_classifier_train_idx,\
+                                                           remove_fp=False)
+            if verbose: print method, " : Before classification : ", np.shape(X_train), np.shape(Y_train)
+
+            ret = dtc.fit(X_train, Y_train, idx_train)
+            dtc.save_model(clf_pkl)
+
+
         if type(weight) is list:
             dtc.set_params( class_weight=weight[ii] )
             dtc.set_params( ths_mult = weight[ii] )
         else:
             dtc.set_params( class_weight=weight )
-            dtc.set_params( ths_mult = weight )
-        ret = dtc.fit(X_train, Y_train, idx_train)
+            dtc.set_params( ths_mult = weight )            
         dtc_list.append(dtc)
-
-        l_test_X.append(ll_classifier_test_X)
-        l_test_Y.append(ll_classifier_test_Y)
-        l_test_idx.append(ll_classifier_test_idx)
 
         if single_detector: break
 
@@ -728,7 +736,7 @@ def get_isolation_data(idx, kFold_list, modeling_pkl, nState, \
 def get_hmm_isolation_data(idx, kFold_list, failureData, failureData_static, \
                            failure_labels, failure_image_list,\
                            task_name, processed_data_path, param_dict, weight,\
-                           single_detector=False,\
+                           single_detector=False, load_model=False,\
                            n_jobs=1, window_steps=10, get_idx=False, verbose=False ):
 
     normalTrainIdx   = kFold_list[0]
@@ -746,7 +754,7 @@ def get_hmm_isolation_data(idx, kFold_list, failureData, failureData_static, \
                                                                           logp_viz=False, verbose=False, \
                                                                           weight=weight, \
                                                                           single_detector=single_detector,\
-                                                                          idx=idx,\
+                                                                          idx=idx, load_model=load_model,\
                                                                           method=param_dict['ROC']['methods'][0][:-1])
 
     detection_train_idx_list = np.array(detection_train_idx_list)[len(normalTrainIdx):]
