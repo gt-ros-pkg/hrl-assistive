@@ -1243,23 +1243,24 @@ if __name__ == '__main__':
         single_detector = False 
 
         
-        ## c8 0408-80-75
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## param_dict['ROC']['methods'] = ['progress0', 'progress1']
-        ## param_dict['HMM']['scale'] = [4.0, 6.0]
-        ## param_dict['HMM']['cov']   = 1.0
-        ## single_detector = False 
-
-        ## c11 - 0511-86-77 713-88
+        ## c8 0408-80-75 46-78-74
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         param_dict['ROC']['methods'] = ['progress0', 'progress1']
-        param_dict['HMM']['scale'] = [3.0, 5.0]
+        param_dict['HMM']['scale'] = [5.0, 11.0]
         param_dict['HMM']['cov']   = 1.0
         single_detector = False 
+        param_dict['ROC']['weight'] = [-4.,-8.]
+
+        ## c11 - 0511-86-77 713-88
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## param_dict['ROC']['methods'] = ['progress0', 'progress1']
+        ## param_dict['HMM']['scale'] = [3.0, 5.0]
+        ## param_dict['HMM']['cov']   = 1.0
+        ## single_detector = False 
         ## param_dict['ROC']['weight'] = [-5.2,-5.2]
 
         # c12 5.2,5.2=80  s4,10=77
