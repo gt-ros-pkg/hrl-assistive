@@ -264,12 +264,28 @@ if __name__ == '__main__':
     ## param_dict['data_param']['noise_mag'] = [[0.03,0.03,0.03,0.08,0.08],[0.1,0.03,0.08]]
 
 
+
+
+    param_dict['data_param']['handFeatures'] = [['unimodal_audioWristRMS',  \
+                                                 'unimodal_kinJntEff_1',\
+                                                 'unimodal_ftForce_integ',\
+                                                 'crossmodal_landmarkDist',\
+                                                 'crossmodal_landmarkEEDist'
+                                                ],\
+                                                [## 'unimodal_kinVel',\
+                                                 'unimodal_ftForce_zero',\
+                                                 'unimodal_ftForceZ',\
+                                                 'unimodal_kinDesEEChange',\
+                                                 'crossmodal_landmarkEEDist',\
+                                                ]
+                                                ]
+
     save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo4'
     param_dict['ROC']['methods'] = ['progress0', 'progress1']
-    param_dict['HMM']['scale'] = [4., 8.]
+    param_dict['HMM']['scale'] = [7., 7.]
     param_dict['ROC']['progress0_param_range'] = -np.logspace(0., 1.0, nPoints)
     param_dict['ROC']['progress1_param_range'] = -np.logspace(0., 1.0, nPoints)
-    param_dict['data_param']['noise_mag'] = [[0.03,0.03,0.03,0.08,0.08],[0.1,0.03,0.08]]
+    ## param_dict['data_param']['noise_mag'] = [[0.03,0.03,0.03,0.08,0.08],[0.1,0.03,0.08]]
 
 
     train_detector_modules(subject_names, task_name, raw_data_path, save_data_path,\
