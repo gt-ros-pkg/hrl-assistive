@@ -636,7 +636,11 @@ class ConfigureModelRobotState(PDDLSmachState):
 
 
         # l_reset_traj_point.positions = [(3.14/2 + 3.14/4), -0.6, m.radians(0), m.radians(-150.), m.radians(150.), m.radians(-110.), 0.0]
-        l_reset_traj_point.positions = [0.8, 0.0, 1.57, -2.9, 3.0, -1.0, 1.57]
+        if self.task.upper() == 'SCRATCHING' or self.task.upper() == 'BLANKET':
+            l_reset_traj_point.positions = [(3.14/2 + 3.14/4), -0.6, m.radians(20), m.radians(-150.), m.radians(150.), m.radians(-110.), 0.0]
+        else:
+            l_reset_traj_point.positions = [1.8, 0.4, 1.9, -3.0, -3.5, -0.5, 0.0]
+            # l_reset_traj_point.positions = [0.8, 0.0, 1.57, -2.9, 3.0, -1.0, 1.57]
         # l_reset_traj_point.positions = [0.0, 1.35, 0.00, -1.60, -3.14, -0.3, 0.0]
         #l_reset_traj_point.positions = [0.7629304700932569, -0.3365186041095207, 0.5240000202473829,
         #                                        -2.003310310963515, 0.9459734129025158, -1.7128778450423763, 0.6123854412633384]

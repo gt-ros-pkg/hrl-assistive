@@ -534,7 +534,7 @@ class ScoreGenerator(object):
                 maxiter = 10
                 # popsize = 1000
 #                popsize = m.pow(6, 2)*100
-                popsize = 1500
+                popsize = 3000
                 parameters_min = np.array([0.5, 0.5, m.radians(-225.)-0.0001, 0., 0., 45.*m.pi/180.])
                 parameters_max = np.array([2.5, 2.0, m.radians(-20.)+.0001, 0.3, 0.2, 55.*m.pi/180.])
                 parameters_scaling = (parameters_max-parameters_min)/4.
@@ -731,10 +731,10 @@ class ScoreGenerator(object):
         return output
 
     def objective_function_one_config(self, current_parameters):
-        current_parameters = [1.73500286,  0.69365097, -2.17188387,  0.2316305 ,  0.17488576,
-        0.87341131]
+        # current_parameters = [1.73500286,  0.69365097, -2.17188387,  0.2316305 ,  0.17488576,
+        # 0.87341131]
         # current_parameters[0]=2.5
-        self.heady = 0.0
+        # self.heady = 0.0
         if not self.a_model_is_loaded:
             print 'Somehow a model has not been loaded. This is bad!'
             return None
@@ -927,18 +927,37 @@ class ScoreGenerator(object):
                 arm_sign = 1
             else:
                 arm_sign = -1
-            v[self.robot.GetJoint(self.arm[0]+'_shoulder_pan_joint').GetDOFIndex()] = arm_sign*0.8
-            v[self.robot.GetJoint(self.arm[0]+'_shoulder_lift_joint').GetDOFIndex()] = 0.0
-            v[self.robot.GetJoint(self.arm[0]+'_upper_arm_roll_joint').GetDOFIndex()] = arm_sign*1.57
-            v[self.robot.GetJoint(self.arm[0]+'_elbow_flex_joint').GetDOFIndex()] = -2.9
-            v[self.robot.GetJoint(self.arm[0]+'_forearm_roll_joint').GetDOFIndex()] = 3.0
-            v[self.robot.GetJoint(self.arm[0]+'_wrist_flex_joint').GetDOFIndex()] = -1.0
-            v[self.robot.GetJoint(self.arm[0]+'_wrist_roll_joint').GetDOFIndex()] = arm_sign*1.57
+            if self.task == 'blanket_feet_knees' or self.task == 'scratching_knee_left':
+                v[self.robot.GetJoint(self.arm[0]+'_shoulder_pan_joint').GetDOFIndex()] = arm_sign*3.*3.14159/4.
+                v[self.robot.GetJoint(self.arm[0]+'_shoulder_lift_joint').GetDOFIndex()] = -0.6
+                v[self.robot.GetJoint(self.arm[0]+'_upper_arm_roll_joint').GetDOFIndex()] = arm_sign*m.radians(20)
+                v[self.robot.GetJoint(self.arm[0]+'_elbow_flex_joint').GetDOFIndex()] = m.radians(-150.)
+                v[self.robot.GetJoint(self.arm[0]+'_forearm_roll_joint').GetDOFIndex()] = m.radians(150.)
+                v[self.robot.GetJoint(self.arm[0]+'_wrist_flex_joint').GetDOFIndex()] = m.radians(-110)
+                v[self.robot.GetJoint(self.arm[0]+'_wrist_roll_joint').GetDOFIndex()] = arm_sign*0.0
+            elif self.task == 'wiping_mouth' or self.task == 'wiping_forehead':
+                # v[self.robot.GetJoint(self.arm[0]+'_shoulder_pan_joint').GetDOFIndex()] = arm_sign*0.8
+                # v[self.robot.GetJoint(self.arm[0]+'_shoulder_lift_joint').GetDOFIndex()] = 0.0
+                # v[self.robot.GetJoint(self.arm[0]+'_upper_arm_roll_joint').GetDOFIndex()] = arm_sign*1.57
+                # v[self.robot.GetJoint(self.arm[0]+'_elbow_flex_joint').GetDOFIndex()] = -2.9
+                # v[self.robot.GetJoint(self.arm[0]+'_forearm_roll_joint').GetDOFIndex()] = 3.0
+                # v[self.robot.GetJoint(self.arm[0]+'_wrist_flex_joint').GetDOFIndex()] = -1.0
+                # v[self.robot.GetJoint(self.arm[0]+'_wrist_roll_joint').GetDOFIndex()] = arm_sign*1.57
+                v[self.robot.GetJoint(self.arm[0]+'_shoulder_pan_joint').GetDOFIndex()] = arm_sign*(1.8)
+                v[self.robot.GetJoint(self.arm[0]+'_shoulder_lift_joint').GetDOFIndex()] = 0.4
+                v[self.robot.GetJoint(self.arm[0]+'_upper_arm_roll_joint').GetDOFIndex()] = arm_sign*(1.9)
+                v[self.robot.GetJoint(self.arm[0]+'_elbow_flex_joint').GetDOFIndex()] = -3.0
+                v[self.robot.GetJoint(self.arm[0]+'_forearm_roll_joint').GetDOFIndex()] = arm_sign*(-3.5)
+                v[self.robot.GetJoint(self.arm[0]+'_wrist_flex_joint').GetDOFIndex()] = -0.5
+                v[self.robot.GetJoint(self.arm[0]+'_wrist_roll_joint').GetDOFIndex()] = 0.0
+            else:
+                print 'The arm initial pose is not defined properly.'
+                v[self.robot.GetJoint('I HAVE NO IDEA WHAT TASK Im DOING').GetDOFIndex()] = 0.
             v[self.robot.GetJoint(self.opposite_arm[0]+'_shoulder_pan_joint').GetDOFIndex()] = arm_sign*(-1.8)
             v[self.robot.GetJoint(self.opposite_arm[0]+'_shoulder_lift_joint').GetDOFIndex()] = 2.45
             v[self.robot.GetJoint(self.opposite_arm[0]+'_upper_arm_roll_joint').GetDOFIndex()] = arm_sign*(-1.9)
             v[self.robot.GetJoint(self.opposite_arm[0]+'_elbow_flex_joint').GetDOFIndex()] = -2.0
-            v[self.robot.GetJoint(self.opposite_arm[0]+'_forearm_roll_joint').GetDOFIndex()] = 3.5
+            v[self.robot.GetJoint(self.opposite_arm[0]+'_forearm_roll_joint').GetDOFIndex()] = arm_sign*3.5
             v[self.robot.GetJoint(self.opposite_arm[0]+'_wrist_flex_joint').GetDOFIndex()] = -1.5
             v[self.robot.GetJoint(self.opposite_arm[0]+'_wrist_roll_joint').GetDOFIndex()] = 0.0
             # v[self.robot.GetJoint(self.opposite_arm[0]+'_shoulder_pan_joint').GetDOFIndex()] = -3.14/2
@@ -2493,19 +2512,37 @@ class ScoreGenerator(object):
             arm_sign = 1
         else:
             arm_sign = -1
-
-        v[self.robot.GetJoint(self.arm[0]+'_shoulder_pan_joint').GetDOFIndex()] = arm_sign*0.8
-        v[self.robot.GetJoint(self.arm[0]+'_shoulder_lift_joint').GetDOFIndex()] = 0.0
-        v[self.robot.GetJoint(self.arm[0]+'_upper_arm_roll_joint').GetDOFIndex()] = arm_sign*1.57
-        v[self.robot.GetJoint(self.arm[0]+'_elbow_flex_joint').GetDOFIndex()] = -2.9
-        v[self.robot.GetJoint(self.arm[0]+'_forearm_roll_joint').GetDOFIndex()] = 3.0
-        v[self.robot.GetJoint(self.arm[0]+'_wrist_flex_joint').GetDOFIndex()] = -1.0
-        v[self.robot.GetJoint(self.arm[0]+'_wrist_roll_joint').GetDOFIndex()] = arm_sign*1.57
+        if self.task == 'blanket_feet_knees' or self.task == 'scratching_knee_left':
+            v[self.robot.GetJoint(self.arm[0]+'_shoulder_pan_joint').GetDOFIndex()] = arm_sign*3.*3.14159/4.
+            v[self.robot.GetJoint(self.arm[0]+'_shoulder_lift_joint').GetDOFIndex()] = -0.6
+            v[self.robot.GetJoint(self.arm[0]+'_upper_arm_roll_joint').GetDOFIndex()] = arm_sign*m.radians(20)
+            v[self.robot.GetJoint(self.arm[0]+'_elbow_flex_joint').GetDOFIndex()] = m.radians(-150.)
+            v[self.robot.GetJoint(self.arm[0]+'_forearm_roll_joint').GetDOFIndex()] = m.radians(150.)
+            v[self.robot.GetJoint(self.arm[0]+'_wrist_flex_joint').GetDOFIndex()] = m.radians(-110)
+            v[self.robot.GetJoint(self.arm[0]+'_wrist_roll_joint').GetDOFIndex()] = arm_sign*0.0
+        elif self.task == 'wiping_mouth' or self.task == 'wiping_forehead':
+            v[self.robot.GetJoint(self.arm[0]+'_shoulder_pan_joint').GetDOFIndex()] = arm_sign*(1.8)
+            v[self.robot.GetJoint(self.arm[0]+'_shoulder_lift_joint').GetDOFIndex()] = 0.4
+            v[self.robot.GetJoint(self.arm[0]+'_upper_arm_roll_joint').GetDOFIndex()] = arm_sign*(1.9)
+            v[self.robot.GetJoint(self.arm[0]+'_elbow_flex_joint').GetDOFIndex()] = -3.0
+            v[self.robot.GetJoint(self.arm[0]+'_forearm_roll_joint').GetDOFIndex()] = arm_sign*(-3.5)
+            v[self.robot.GetJoint(self.arm[0]+'_wrist_flex_joint').GetDOFIndex()] = -0.5
+            v[self.robot.GetJoint(self.arm[0]+'_wrist_roll_joint').GetDOFIndex()] = 0.0
+            # v[self.robot.GetJoint(self.arm[0]+'_shoulder_pan_joint').GetDOFIndex()] = arm_sign*0.8
+            # v[self.robot.GetJoint(self.arm[0]+'_shoulder_lift_joint').GetDOFIndex()] = 0.0
+            # v[self.robot.GetJoint(self.arm[0]+'_upper_arm_roll_joint').GetDOFIndex()] = arm_sign*1.57
+            # v[self.robot.GetJoint(self.arm[0]+'_elbow_flex_joint').GetDOFIndex()] = -2.9
+            # v[self.robot.GetJoint(self.arm[0]+'_forearm_roll_joint').GetDOFIndex()] = 3.0
+            # v[self.robot.GetJoint(self.arm[0]+'_wrist_flex_joint').GetDOFIndex()] = -1.0
+            # v[self.robot.GetJoint(self.arm[0]+'_wrist_roll_joint').GetDOFIndex()] = arm_sign*1.57
+        else:
+            print 'The arm initial pose is not defined properly.'
+            v[self.robot.GetJoint('I HAVE NO IDEA WHAT TASK Im DOING').GetDOFIndex()] = 0.
         v[self.robot.GetJoint(self.opposite_arm[0]+'_shoulder_pan_joint').GetDOFIndex()] = arm_sign*(-1.8)
         v[self.robot.GetJoint(self.opposite_arm[0]+'_shoulder_lift_joint').GetDOFIndex()] = 2.45
         v[self.robot.GetJoint(self.opposite_arm[0]+'_upper_arm_roll_joint').GetDOFIndex()] = arm_sign*(-1.9)
         v[self.robot.GetJoint(self.opposite_arm[0]+'_elbow_flex_joint').GetDOFIndex()] = -2.0
-        v[self.robot.GetJoint(self.opposite_arm[0]+'_forearm_roll_joint').GetDOFIndex()] = 3.5
+        v[self.robot.GetJoint(self.opposite_arm[0]+'_forearm_roll_joint').GetDOFIndex()] = arm_sign*3.5
         v[self.robot.GetJoint(self.opposite_arm[0]+'_wrist_flex_joint').GetDOFIndex()] = -1.5
         v[self.robot.GetJoint(self.opposite_arm[0]+'_wrist_roll_joint').GetDOFIndex()] = 0.0
 
