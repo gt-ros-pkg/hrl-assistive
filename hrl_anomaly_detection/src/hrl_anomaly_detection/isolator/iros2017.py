@@ -379,7 +379,7 @@ def evaluation_omp_isolation(subject_names, task_name, raw_data_path, processed_
         print np.shape( gs_train ), np.shape( y_train ), np.shape( gs_test ), np.shape( y_test )
         
         from sklearn.svm import SVC
-        clf = SVC(C=1.0, kernel='linear') #, decision_function_shape='ovo')
+        clf = SVC(C=1.0, kernel='linear', class_weight='balanced') #, decision_function_shape='ovo')
         clf.fit(gs_train, y_train)
         ## y_pred = clf.predict(gs_test.tolist())
         score = clf.score(gs_test, y_test)
@@ -758,7 +758,7 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
 
 
     #temp
-    kFold_list = kFold_list[:4]
+    #kFold_list = kFold_list[:4]
     
     #-----------------------------------------------------------------------------------------
     # Training HMM, and getting classifier training and testing data
@@ -839,7 +839,7 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
             
         
         from sklearn.svm import SVC
-        clf = SVC(C=1.0, kernel='rbf') #, decision_function_shape='ovo')
+        clf = SVC(C=1.0, kernel='rbf', class_weight='balanced') #, decision_function_shape='ovo')
         ## from sklearn.ensemble import RandomForestClassifier
         ## clf = RandomForestClassifier(n_estimators=400, n_jobs=-1)
 
@@ -1230,15 +1230,15 @@ if __name__ == '__main__':
         ## single_detector = False
 
         #------------------------------------------------------------------------
-        # ep
+        # ep 
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation7/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         param_dict['ROC']['methods'] = ['progress0', 'progress1']
-        param_dict['HMM']['scale'] = [7.0, 7.0]
+        param_dict['HMM']['scale'] = [7.0, 9.0]
         param_dict['HMM']['cov']   = 1.0
         single_detector = False 
-        ## param_dict['ROC']['weight'] = [-4.2,-6.2]
+        #param_dict['ROC']['weight'] = [-2.6,-5.0]
 
         
         ## c8 0408-80-75 46-78-74
@@ -1272,48 +1272,40 @@ if __name__ == '__main__':
         ## param_dict['ROC']['weight'] = [-5.2,-7.2]
 
 
-        ## ## aws
+        ## ## aws 1515-49 zero+ldist+desee+leedist
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        param_dict['ROC']['methods'] = ['hmmgp0', 'hmmgp1']
-        param_dict['HMM']['scale'] = [7.0, 7.0]
+        param_dict['ROC']['methods'] = ['progress0', 'progress1']
+        param_dict['HMM']['scale'] = [5.0, 5.0]
         param_dict['HMM']['cov']   = 1.0
         single_detector = False 
-        ## param_dict['ROC']['weight'] = [-4.2,-8.2]
+        #param_dict['ROC']['weight'] = [-2.,-2.5]
 
-
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation1/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## param_dict['ROC']['methods'] = ['progress0', 'progress1']
-        ## param_dict['HMM']['scale'] = [7.0, 7.0]
-        ## param_dict['HMM']['cov']   = 1.0
-        ## single_detector = False 
+        ## ## aws 1515-49 zero+ldist+desee+leedist
+        #save_data_path = os.path.expanduser('~')+\
+        #                 '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation1/'+\
+        #                 str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        #param_dict['ROC']['methods'] = ['progress0', 'progress1']
+        #param_dict['HMM']['scale'] = [5.0, 7.0]
+        #param_dict['HMM']['cov']   = 1.0
+        #single_detector = False 
+        ## param_dict['ROC']['weight'] = [-27.,-27.]
         ## ## param_dict['ROC']['weight'] = [-4.2,-6.2]
-
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation2/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## param_dict['ROC']['methods'] = ['progress0', 'progress1']
-        ## param_dict['HMM']['scale'] = [7.0, 7.0]
-        ## param_dict['HMM']['cov']   = 1.0
-        ## single_detector = False 
-        ## ## param_dict['ROC']['weight'] = [-5.2,-7.]
 
 
         param_dict['data_param']['handFeatures'] = [['unimodal_audioWristRMS',  \
                                                      'unimodal_kinJntEff_1',\
                                                      'unimodal_ftForce_integ',\
-                                                     'unimodal_kinEEChange',\
+                                                     'unimodal_kinDesEEChange',\
                                                      'crossmodal_landmarkEEDist'
                                                     ],\
-                                                    [## 'unimodal_kinVel',\
-                                                     ## 'unimodal_ftForce_zero',\
-                                                     'unimodal_ftForceZ',\
+                                                    [#'unimodal_kinVel',\
+                                                     'unimodal_ftForce_zero',\
+                                                     #'unimodal_ftForceZ',\
+                                                     'unimodal_landmarkDist',\
                                                      'unimodal_kinDesEEChange',\
                                                      'crossmodal_landmarkEEDist',\
-                                                     ## 'crossmodal_landmarkEEAng',\
                                                     ]
                                                     ]
 
