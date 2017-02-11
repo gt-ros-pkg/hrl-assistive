@@ -566,7 +566,7 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
                 else:
                     ax = fig.add_subplot(n*100+10+i+1)
                 if solid_color: ax.plot(successData[i].T, c='b')
-                else: ax.plot(successData[i].T)
+                else: ax.plot(successData[i].T, c=color)
 
                 if AddFeature_names[i] == 'ftForce_mag': ax.set_ylabel('Force Magnitude (N)')
                 elif AddFeature_names[i] == 'artagEEDist': ax.set_ylabel('Relative Distance (m)')
