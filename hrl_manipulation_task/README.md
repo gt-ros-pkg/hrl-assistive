@@ -8,7 +8,7 @@ Manipulation
 
     Daehyung Park - Research Mentor
     Youkeun Kim - Undergraduate
-    Zackory Erickson - Undergraduate
+    Zackory Erickson - Graduate Student
 
 ...
 
