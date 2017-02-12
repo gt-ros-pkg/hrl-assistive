@@ -1262,24 +1262,24 @@ if __name__ == '__main__':
         ## param_dict['ROC']['weight'] = [-5.2,-5.2]
 
         # c12 5.2,5.2=80  s4,10=77
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation5/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## param_dict['ROC']['methods'] = ['progress0', 'progress1']
-        ## param_dict['HMM']['scale'] = [5.0, 3.0]
-        ## param_dict['HMM']['cov']   = 1.0
-        ## single_detector = False 
-        ## param_dict['ROC']['weight'] = [-5.2,-7.2]
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation5/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        param_dict['ROC']['methods'] = ['progress0', 'progress1']
+        param_dict['HMM']['scale'] = [5.0, 9.0]
+        param_dict['HMM']['cov']   = 1.0
+        single_detector = False 
+        ##param_dict['ROC']['weight'] = [-5.2,-7.2]
 
 
         ## ## aws 1515-49 zero+ldist+desee+leedist
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        param_dict['ROC']['methods'] = ['progress0', 'progress1']
-        param_dict['HMM']['scale'] = [5.0, 5.0]
-        param_dict['HMM']['cov']   = 1.0
-        single_detector = False 
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation/'+\
+        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## param_dict['ROC']['methods'] = ['progress0', 'progress1']
+        ## param_dict['HMM']['scale'] = [5.0, 5.0]
+        ## param_dict['HMM']['cov']   = 1.0
+        ## single_detector = False 
         #param_dict['ROC']['weight'] = [-2.,-2.5]
 
         ## ## aws 1515-49 zero+ldist+desee+leedist
@@ -1297,13 +1297,13 @@ if __name__ == '__main__':
         param_dict['data_param']['handFeatures'] = [['unimodal_audioWristRMS',  \
                                                      'unimodal_kinJntEff_1',\
                                                      'unimodal_ftForce_integ',\
-                                                     'unimodal_kinDesEEChange',\
+                                                     #'unimodal_kinDesEEChange',\
                                                      'crossmodal_landmarkEEDist'
                                                     ],\
-                                                    [#'unimodal_kinVel',\
+                                                    ['unimodal_kinVel',\
                                                      'unimodal_ftForce_zero',\
                                                      #'unimodal_ftForceZ',\
-                                                     'unimodal_landmarkDist',\
+                                                     #'unimodal_landmarkDist',\
                                                      'unimodal_kinDesEEChange',\
                                                      'crossmodal_landmarkEEDist',\
                                                     ]
@@ -1329,7 +1329,7 @@ if __name__ == '__main__':
                                                       'unimodal_ftForceY',\
                                                       ## 'unimodal_ftForceZ',\
                                                       'unimodal_fabricForce',  \
-                                                      ## 'unimodal_landmarkDist',\
+                                                      'unimodal_landmarkDist',\
                                                       'crossmodal_landmarkEEAng',\
                                                       ]                                                  
 
