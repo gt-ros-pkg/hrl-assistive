@@ -249,7 +249,7 @@ if __name__ == '__main__':
     param_dict['HMM']['scale'] = [5.0, 5.0]
     # -----------------------------------------------------------------------
     
-    ## 55 64 62
+    ## 55 64 62 62.5
     save_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
     weight    = [-3.07,-3.07]
     param_dict['HMM']['scale'] = [6.0, 9.0]
@@ -274,10 +274,10 @@ if __name__ == '__main__':
                                                  #'unimodal_kinDesEEChange',\
                                                  'crossmodal_landmarkEEDist'
                                              ],\
-                                                [#'unimodal_kinVel',\
+                                                ['unimodal_kinVel',\
                                                  'unimodal_ftForce_zero',\
                                                  #'unimodal_ftForceZ',\
-                                                 'unimodal_landmarkDist',\
+                                                 #'unimodal_landmarkDist',\
                                                  'unimodal_kinDesEEChange',\
                                                  'crossmodal_landmarkEEDist',\
                                                 ]
