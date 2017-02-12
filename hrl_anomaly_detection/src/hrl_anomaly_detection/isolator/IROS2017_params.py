@@ -113,7 +113,7 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                          'unimodal_ftForce',\
                          'unimodal_ftForce_zero',\
                          'unimodal_ftForce_integ',\
-                         'unimodal_ftForce_delta',\
+                         ## 'unimodal_ftForce_delta',\
                          'unimodal_ftForceX',\
                          'unimodal_ftForceY',\
                          'unimodal_ftForceZ',\
