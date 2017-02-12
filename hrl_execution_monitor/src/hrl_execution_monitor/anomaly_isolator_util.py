@@ -243,10 +243,10 @@ if __name__ == '__main__':
     param_dict['data_param']['noise_mag'] = [[0.03,0.1,0.03,0.08],[0.1,0.05,0.05,0.08]]
     # -----------------------------------------------------------------------
     ## ep
-    ## save_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
-    ## weight    = [-5.22,-5.22]
-    ## param_dict['HMM']['scale'] = [5.0, 9.0]
-    ## param_dict['data_param']['noise_mag'] = [[0.03,0.1,0.03,0.05],[0.1,0.05,0.05,0.05]]
+    save_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
+    weight    = [-4.5,-5.5]
+    param_dict['HMM']['scale'] = [5.0, 9.0]
+    param_dict['data_param']['noise_mag'] = [[0.03,0.1,0.03,0.05],[0.1,0.05,0.05,0.05]]
     # -----------------------------------------------------------------------
 
     param_dict['data_param']['handFeatures'] = [['unimodal_audioWristRMS',  \
