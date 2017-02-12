@@ -1241,7 +1241,7 @@ if __name__ == '__main__':
         #param_dict['ROC']['weight'] = [-2.6,-5.0]
 
         
-        ## c11
+        ## c11 83-75(5.47,5.47)
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
         ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)

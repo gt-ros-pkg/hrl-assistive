@@ -67,12 +67,13 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
 
     # training with signals ----------------------------------
     ## train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5)
-    train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5, load_weights=True)
-
+    ## train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5, load_weights=True)
+    # 61
+    
     # training_with images -----------------------------------
-    ## remove_label = [1]
-    ## get_bottleneck_image(save_data_path, n_labels, fold_list, vgg=True, remove_label=remove_label)
-    ## kt.train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, patience=30)
+    remove_label = [1]
+    get_bottleneck_image(save_data_path, n_labels, fold_list, vgg=True, remove_label=remove_label)
+    train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, patience=30)
     ## train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, nb_epoch=1000, patience=30,
     ##                            load_weights=True)
     ## train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, nb_epoch=1000,
@@ -133,13 +134,20 @@ def train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=400, load_we
         else:
             model = km.sig_net(np.shape(x_train_sig)[1:], n_labels,\
                                weights_path = weights_path, activ_type=activ_type)
-            ## optimizer = SGD(lr=0.001, decay=1e-7, momentum=0.9, nesterov=True)
-            optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.005)            
+            optimizer = SGD(lr=0.0001, decay=1e-7, momentum=0.9, nesterov=True)
+            #optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.005)            
 
         model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
         ## model.compile(optimizer=optimizer, loss='categorical_crossentropy', \
         ##               metrics=['mean_squared_logarithmic_error', 'accuracy'])
 
+        import collections
+        bincnt = collections.Counter(np.argmax(y_train,axis=1))
+
+        class_weight = {}
+        for i in xrange(n_labels):
+            class_weight[i] = float(len(y_train))/(float(n_labels)*float(bincnt[i]) )
+        
 
         if test_only is False:
             train_datagen = ku.sigGenerator(augmentation=True, noise_mag=0.05 )
@@ -152,7 +160,7 @@ def train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=400, load_we
                                        nb_epoch=nb_epoch,
                                        validation_data=test_generator,
                                        nb_val_samples=len(y_test),
-                                       callbacks=callbacks)
+                                       callbacks=callbacks, class_weight=class_weight)
 
             scores.append( hist.history['val_acc'][-1] )
             ## model.save_weights(weights_path)
@@ -833,7 +841,7 @@ if __name__ == '__main__':
     # best one for (-5,-11) - 76
     ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo'
     save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
-    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
+    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
 
     task_name = 'feeding'
     method    = ['progress0', 'progress1'] 

@@ -91,10 +91,10 @@ def train_rfc_with_signal(save_data_path, n_labels, nFold):
             pickle.dump(scaler, f)
 
         # get classifier
-        from sklearn.svm import SVC
-        clf = SVC(C=1.0, kernel='rbf', class_weight='balanced') #, decision_function_shape='ovo')
-        ## from sklearn.ensemble import RandomForestClassifier
-        ## clf = RandomForestClassifier(n_estimators=400, n_jobs=-1, class_weight='balanced')
+        ## from sklearn.svm import SVC
+        ## clf = SVC(C=1.0, kernel='rbf', class_weight='balanced') #, decision_function_shape='ovo')
+        from sklearn.ensemble import RandomForestClassifier
+        clf = RandomForestClassifier(n_estimators=400, n_jobs=-1, class_weight='balanced')
         clf.fit(x_train_sig, np.argmax(y_train, axis=1))
         score = clf.score(x_test_sig, np.argmax(y_test, axis=1))
         scores.append(score)
@@ -230,7 +230,7 @@ if __name__ == '__main__':
     #9,9-66
     # -----------------------------------------------------------------------
 
-    ## br 5.22,7.22-66, 5.22,6.22-64, 5.22,5.22-66, 6.22,6.22-65, 4.22,5.22-70, 4.22,6.22-67 
+    ## br 5.22,7.22-66, 5.22,6.22-64, 5.22,5.22-66, 6.22,6.22-65, 4.22,5.22-70, 4.22,6.22-67, 5,6-71, 4.5,5.5-70 
     save_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
     weight    = [-5.,-6.]
     param_dict['HMM']['scale'] = [5.0, 9.0]
@@ -243,10 +243,10 @@ if __name__ == '__main__':
     param_dict['data_param']['noise_mag'] = [[0.03,0.1,0.03,0.08],[0.1,0.05,0.05,0.08]]
     # -----------------------------------------------------------------------
     ## ep
-    save_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
-    weight    = [-4.5,-5.5]
-    param_dict['HMM']['scale'] = [5.0, 9.0]
-    param_dict['data_param']['noise_mag'] = [[0.03,0.1,0.03,0.05],[0.1,0.05,0.05,0.05]]
+    ## save_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
+    ## weight    = [-4.5,-5.5]
+    ## param_dict['HMM']['scale'] = [5.0, 9.0]
+    ## param_dict['data_param']['noise_mag'] = [[0.03,0.1,0.03,0.05],[0.1,0.05,0.05,0.05]]
     # -----------------------------------------------------------------------
 
     param_dict['data_param']['handFeatures'] = [['unimodal_audioWristRMS',  \
