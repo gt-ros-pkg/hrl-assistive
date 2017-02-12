@@ -206,13 +206,6 @@ if __name__ == '__main__':
     weight    = [-3.0, -4.5]
     param_dict['HMM']['scale'] = [2.0, 2.0]
     # -----------------------------------------------------------------------
-    # c12
-    ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo5'
-    ## weight    = [-4.0, -5.0]
-    
-    # c11
-    ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo'
-    ## weight    = [-5.2, -6.2]
 
     # ep 5.2,5.2-65  5.2,6.2-69 maybebest 
     save_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
@@ -237,29 +230,17 @@ if __name__ == '__main__':
     #9,9-66
     # -----------------------------------------------------------------------
 
-    ## # c8 -3.88,-3.88-0.6   3.88,6.0-56  3.88,7.5-0.69, 3.88,9-66
-    save_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo4'
-    weight    = [-3.88, -11.0]
-    param_dict['HMM']['scale'] = [4.0, 8.0]
-    # -----------------------------------------------------------------------
-
-    ## 
-    save_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
-    weight    = [-3.45, -3.45]
-    param_dict['HMM']['scale'] = [5.0, 5.0]
-    # -----------------------------------------------------------------------
-    
     ## br
     save_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
-    weight    = [-5.22,-5.22]
+    weight    = [-5.22,-6.22]
     param_dict['HMM']['scale'] = [5.0, 9.0]
     param_dict['data_param']['noise_mag'] = [[0.03,0.1,0.03,0.08],[0.1,0.05,0.15,0.08]]
     # -----------------------------------------------------------------------
-    ## 55 64 62
-    ## save_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
-    ## weight    = [-2.89,-2.89]
-    ## param_dict['HMM']['scale'] = [7.0, 9.0]
-    ## param_dict['data_param']['noise_mag'] = [[0.03,0.1,0.03,0.08],[0.03,0.03,0.03,0.08]]
+    ## c8
+    save_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
+    weight    = [-5.22,-5.22]
+    param_dict['HMM']['scale'] = [5.0, 9.0]
+    param_dict['data_param']['noise_mag'] = [[0.03,0.1,0.03,0.08],[0.1,0.05,0.05,0.08]]
     # -----------------------------------------------------------------------
     ## 55 64 62
     ## save_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'

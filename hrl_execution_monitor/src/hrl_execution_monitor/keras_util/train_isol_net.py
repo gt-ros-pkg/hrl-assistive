@@ -67,7 +67,7 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
 
     # training with signals ----------------------------------
     ## train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5)
-    ## train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5, load_weights=True)
+    train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5, load_weights=True)
 
     # training_with images -----------------------------------
     ## remove_label = [1]
@@ -75,9 +75,9 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
     ## kt.train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, patience=30)
     ## train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, nb_epoch=1000, patience=30,
     ##                            load_weights=True)
-    train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, nb_epoch=1000,
-                               load_weights=True,
-                               test_only=True)
+    ## train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, nb_epoch=1000,
+    ##                            load_weights=True,
+    ##                            test_only=True)
     
     # training_with all --------------------------------------
     ## get_bottleneck_mutil(save_data_path, n_labels, fold_list, vgg=True)
@@ -833,6 +833,7 @@ if __name__ == '__main__':
     # best one for (-5,-11) - 76
     ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo'
     save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
+    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
 
     task_name = 'feeding'
     method    = ['progress0', 'progress1'] 
