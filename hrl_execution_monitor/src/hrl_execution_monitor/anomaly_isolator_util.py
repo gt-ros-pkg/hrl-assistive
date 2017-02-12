@@ -91,10 +91,10 @@ def train_rfc_with_signal(save_data_path, n_labels, nFold):
             pickle.dump(scaler, f)
 
         # get classifier
-        ## from sklearn.svm import SVC
-        ## clf = SVC(C=1.0, kernel='rbf') #, decision_function_shape='ovo')
-        from sklearn.ensemble import RandomForestClassifier
-        clf = RandomForestClassifier(n_estimators=400, n_jobs=-1, class_weight='balanced')
+        from sklearn.svm import SVC
+        clf = SVC(C=1.0, kernel='rbf', class_weight='balanced') #, decision_function_shape='ovo')
+        ## from sklearn.ensemble import RandomForestClassifier
+        ## clf = RandomForestClassifier(n_estimators=400, n_jobs=-1, class_weight='balanced')
         clf.fit(x_train_sig, np.argmax(y_train, axis=1))
         score = clf.score(x_test_sig, np.argmax(y_test, axis=1))
         scores.append(score)
@@ -248,10 +248,23 @@ if __name__ == '__main__':
     weight    = [-3.45, -3.45]
     param_dict['HMM']['scale'] = [5.0, 5.0]
     # -----------------------------------------------------------------------
-    ## 
+    
+    ## 55 64 62
     save_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
-    weight    = [-3.66,-3.66]
+    weight    = [-3.3,-4.5]
     param_dict['HMM']['scale'] = [6.0, 9.0]
+    param_dict['data_param']['noise_mag'] = [[0.03,0.1,0.03,0.08],[0.03,0.03,0.03,0.08]]
+    # -----------------------------------------------------------------------
+    ## 55 64 62
+    save_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
+    weight    = [-2.89,-2.89]
+    param_dict['HMM']['scale'] = [7.0, 9.0]
+    param_dict['data_param']['noise_mag'] = [[0.03,0.1,0.03,0.08],[0.03,0.03,0.03,0.08]]
+    # -----------------------------------------------------------------------
+    ## 55 64 62
+    save_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
+    weight    = [-3.07,-3.07]
+    param_dict['HMM']['scale'] = [7.0, 7.0]
     param_dict['data_param']['noise_mag'] = [[0.03,0.1,0.03,0.08],[0.03,0.03,0.03,0.08]]
     # -----------------------------------------------------------------------
 
