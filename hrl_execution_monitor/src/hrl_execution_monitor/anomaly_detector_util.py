@@ -219,6 +219,36 @@ def anomaly_detection_batch(X, save_data_path, task_name, method_list, param_dic
     ## if len(y_preds_list)>1:
         
         
+def viz_data(subject_names, task_name, raw_data_path, save_data_path,
+             param_dict, verbose=False):
+
+    # load params (param_dict)
+    data_dict  = param_dict['data_param']
+    data_renew = data_dict['renew']
+    noise_mag  = data_dict.get('noise_mag', 0.03)
+    # HMM
+    HMM_dict   = param_dict['HMM']
+    nState     = HMM_dict['nState']
+    cov        = HMM_dict['cov']
+    # SVM
+    SVM_dict   = param_dict['SVM']
+    # ROC
+    ROC_dict = param_dict['ROC']
+    method_list = ROC_dict['methods']
+
+    # parameters
+    startIdx    = 4
+    nPoints     = ROC_dict['nPoints']
+
+    handFeatures=data_dict['isolationFeatures'] = ['unimodal_kinDesEEChange']
+
+    # load data (mix) -------------------------------------------------
+    d = dm.getDataSet(subject_names, task_name, raw_data_path, \
+                      save_data_path,\
+                      downSampleSize=data_dict['downSampleSize'],\
+                      handFeatures=data_dict['isolationFeatures'], \
+                      data_renew=data_renew, max_time=data_dict['max_time'],\
+                      ros_bag_image=True, rndFold=True)
 
 
 if __name__ == '__main__':
@@ -236,17 +266,6 @@ if __name__ == '__main__':
     task_name = 'feeding'
     param_dict['ROC']['nPoints'] = nPoints = 40
 
-    ## #c11 85 - 
-    ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
-    ## param_dict['ROC']['methods'] = ['hmmgp0', 'hmmgp1']
-    ## param_dict['HMM']['scale'] = [4.0, 4.0]
-
-    ## #c8 87.5 - 80
-    ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
-    ## param_dict['ROC']['methods'] = ['progress0', 'progress1']
-    ## param_dict['HMM']['scale'] = [1.0, 1.0] #15.0]
-    ## param_dict['ROC']['progress0_param_range'] = -np.logspace(0.4, 1.2, nPoints)
-    ## param_dict['ROC']['progress1_param_range'] = -np.logspace(0.4, 1.2, nPoints)
 
     ## ## #c12 92 (-3,-4.5) # Best!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
@@ -279,26 +298,10 @@ if __name__ == '__main__':
     param_dict['ROC']['progress1_param_range'] = -np.logspace(0., 1.0, nPoints)
     param_dict['data_param']['noise_mag'] = [[0.03,0.1,0.03,0.08],[0.1,0.05,0.15,0.08]]
 
-    ## ## # c12 79-92 77-90
-    ## save_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
-    ## param_dict['ROC']['methods'] = ['progress0', 'progress1']
-    ## param_dict['HMM']['scale'] = [5, 9.]
-    ## param_dict['ROC']['progress0_param_range'] = -np.logspace(0., 1.0, nPoints)
-    ## param_dict['ROC']['progress1_param_range'] = -np.logspace(0., 1.0, nPoints)
-    ## param_dict['data_param']['noise_mag'] = [[0.03,0.1,0.03,0.08],[0.1,0.05,0.15,0.08]]
- 
-    ## ## #c11
-    ## save_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
-    ## param_dict['ROC']['methods'] = ['progress0', 'progress1']
-    ## param_dict['HMM']['scale'] = [5.5, 9.]
-    ## param_dict['ROC']['progress0_param_range'] = -np.logspace(0., 1.0, nPoints)
-    ## param_dict['ROC']['progress1_param_range'] = -np.logspace(0., 1.0, nPoints)
-    ## param_dict['data_param']['noise_mag'] = [[0.03,0.1,0.03,0.08],[0.03,0.03,0.03,0.08]]
 
     param_dict['data_param']['handFeatures'] = [['unimodal_audioWristRMS',  \
                                                  'unimodal_kinJntEff_1',\
                                                  'unimodal_ftForce_integ',\
-                                                 ## 'unimodal_kinDesEEChange',\
                                                  'crossmodal_landmarkEEDist'
                                              ],\
                                                 ['unimodal_kinVel',\
@@ -309,10 +312,14 @@ if __name__ == '__main__':
                                             ]
     
 
-    train_detector_modules(subject_names, task_name, raw_data_path, save_data_path,\
-                            param_dict, verbose=False)
+    ## train_detector_modules(subject_names, task_name, raw_data_path, save_data_path,\
+    ##                         param_dict, verbose=False)
 
     ## get_detector_modules(save_data_path, task_name, param_dict, detector_id=0,
     ##                      fold_idx=0, verbose=False)
     ## get_detector_modules(save_data_path, task_name, param_dict, detector_id=1,
     ##                      fold_idx=0, verbose=False)
+
+    save_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
+    viz_data(subject_names, task_name, raw_data_path, save_data_path,\
+             param_dict, verbose=False)
