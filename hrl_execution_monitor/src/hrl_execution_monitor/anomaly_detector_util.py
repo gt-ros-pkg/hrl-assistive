@@ -277,15 +277,15 @@ if __name__ == '__main__':
     param_dict['HMM']['scale'] = [5., 9.]
     param_dict['ROC']['progress0_param_range'] = -np.logspace(0., 1.0, nPoints)
     param_dict['ROC']['progress1_param_range'] = -np.logspace(0., 1.0, nPoints)
-    param_dict['data_param']['noise_mag'] = [[0.03,0.1,0.03,0.08],[0.1,0.03,0.15,0.08]]
+    param_dict['data_param']['noise_mag'] = [[0.03,0.1,0.03,0.08],[0.1,0.05,0.15,0.08]]
 
     ## ## # c12 79-92 77-90
-    save_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
-    param_dict['ROC']['methods'] = ['progress0', 'progress1']
-    param_dict['HMM']['scale'] = [5, 9.]
-    param_dict['ROC']['progress0_param_range'] = -np.logspace(0., 1.0, nPoints)
-    param_dict['ROC']['progress1_param_range'] = -np.logspace(0., 1.0, nPoints)
-    param_dict['data_param']['noise_mag'] = [[0.03,0.1,0.03,0.08],[0.1,0.03,0.15,0.08]]
+    ## save_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
+    ## param_dict['ROC']['methods'] = ['progress0', 'progress1']
+    ## param_dict['HMM']['scale'] = [5, 9.]
+    ## param_dict['ROC']['progress0_param_range'] = -np.logspace(0., 1.0, nPoints)
+    ## param_dict['ROC']['progress1_param_range'] = -np.logspace(0., 1.0, nPoints)
+    ## param_dict['data_param']['noise_mag'] = [[0.03,0.1,0.03,0.08],[0.1,0.05,0.15,0.08]]
  
     ## ## #c11
     ## save_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'

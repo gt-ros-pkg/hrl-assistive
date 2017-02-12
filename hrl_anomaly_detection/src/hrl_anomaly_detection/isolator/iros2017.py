@@ -940,14 +940,14 @@ if __name__ == '__main__':
         success_viz = True
         failure_viz = True
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation1/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         param_dict['data_param']['handFeatures'] = [## 'unimodal_audioWristRMS', \
                                                     ## 'unimodal_audioWristFrontRMS', \
                                                     ## 'unimodal_audioWristAzimuth',\
-                                                    'unimodal_kinVel',\
+                                                    #'unimodal_kinVel',\
                                                     ## 'unimodal_kinJntEff', \
-                                                    'unimodal_ftForce_integ', \
+                                                    #'unimodal_ftForce_integ', \
                                                     ## 'unimodal_ftForce_delta', \
                                                     ## 'unimodal_ftForce_zero', \
                                                     ## 'unimodal_ftForce', \
