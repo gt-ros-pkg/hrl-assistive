@@ -240,15 +240,19 @@ def viz_data(subject_names, task_name, raw_data_path, save_data_path,
     startIdx    = 4
     nPoints     = ROC_dict['nPoints']
 
-    handFeatures=data_dict['isolationFeatures'] = ['unimodal_kinDesEEChange']
+    data_dict['isolationFeatures'] = [
+        'unimodal_landmarkDist',\
+        'unimodal_kinEEChange',\
+        'unimodal_kinDesEEChange']
 
+        
     # load data (mix) -------------------------------------------------
     d = dm.getDataSet(subject_names, task_name, raw_data_path, \
                       save_data_path,\
                       downSampleSize=data_dict['downSampleSize'],\
                       handFeatures=data_dict['isolationFeatures'], \
                       data_renew=data_renew, max_time=data_dict['max_time'],\
-                      ros_bag_image=True, rndFold=True)
+                      ros_bag_image=True, rndFold=True, success_viz=True)
 
 
 if __name__ == '__main__':
@@ -312,14 +316,14 @@ if __name__ == '__main__':
                                             ]
     
 
-    ## train_detector_modules(subject_names, task_name, raw_data_path, save_data_path,\
-    ##                         param_dict, verbose=False)
+    train_detector_modules(subject_names, task_name, raw_data_path, save_data_path,\
+                            param_dict, verbose=False)
 
     ## get_detector_modules(save_data_path, task_name, param_dict, detector_id=0,
     ##                      fold_idx=0, verbose=False)
     ## get_detector_modules(save_data_path, task_name, param_dict, detector_id=1,
     ##                      fold_idx=0, verbose=False)
 
-    save_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
-    viz_data(subject_names, task_name, raw_data_path, save_data_path,\
-             param_dict, verbose=False)
+    ## save_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
+    ## viz_data(subject_names, task_name, raw_data_path, save_data_path,\
+    ##          param_dict, verbose=False)
