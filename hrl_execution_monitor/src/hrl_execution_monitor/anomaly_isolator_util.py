@@ -251,6 +251,7 @@ if __name__ == '__main__':
     
     ## br
     save_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
+    save_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
     weight    = [-3.07,-3.07]
     param_dict['HMM']['scale'] = [6.0, 9.0]
     param_dict['data_param']['noise_mag'] = [[0.03,0.1,0.03,0.08],[0.03,0.03,0.03,0.08]]
