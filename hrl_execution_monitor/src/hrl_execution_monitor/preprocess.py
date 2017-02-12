@@ -44,8 +44,8 @@ def preprocess_data(src_pkl, save_data_path, img_scale=0.25, nb_classes=12,
     if os.path.isdir(save_data_path) is False:
         os.system('mkdir -p '+save_data_path)
 
+    d = ut.load_pickle(src_pkl)
     if nFold is None:
-        d = ut.load_pickle(src_pkl)
         nFold = len(d.keys())
     ## print d.keys(), len(d.keys())
     ## nFold = 8
