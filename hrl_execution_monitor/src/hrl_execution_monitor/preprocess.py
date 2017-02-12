@@ -37,15 +37,16 @@ import cv2
 
 
 def preprocess_data(src_pkl, save_data_path, img_scale=0.25, nb_classes=12,
-                    img_feature_type='cnn', verbose=False):
+                    img_feature_type='cnn', verbose=False, nFold=None):
     ''' Preprocessing data '''
 
     save_data_path = os.path.join(save_data_path, 'keras')
     if os.path.isdir(save_data_path) is False:
         os.system('mkdir -p '+save_data_path)
-       
-    d = ut.load_pickle(src_pkl)
-    nFold = len(d.keys())
+
+    if nFold is None:
+        d = ut.load_pickle(src_pkl)
+        nFold = len(d.keys())
     ## print d.keys(), len(d.keys())
     ## nFold = 8
     ## print d.keys()

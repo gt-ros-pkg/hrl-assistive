@@ -327,6 +327,7 @@ if __name__ == '__main__':
     # s1 - kaci - before camera calibration
     subjects = ['s2', 's3','s4','s5', 's6','s7','s8', 's9']
     n_labels = 12 #len(np.unique(y_train))
+    nFold    = 8
 
     # 148 amin - nofz        
     ## save_data_path = os.path.expanduser('~')+\
@@ -348,7 +349,7 @@ if __name__ == '__main__':
     if opt.preprocessing:
         src_pkl = os.path.join(save_data_path, 'isol_data.pkl')
         pp.preprocess_data(src_pkl, save_data_path, img_scale=0.25, nb_classes=12,
-                            img_feature_type='vgg')
+                            img_feature_type='vgg', nFold=nFold)
 
     elif opt.preprocessing_extra:
         raw_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/AURO2016/raw_data/manual_label'
