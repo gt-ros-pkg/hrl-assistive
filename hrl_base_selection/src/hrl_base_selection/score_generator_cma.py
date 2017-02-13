@@ -2858,23 +2858,23 @@ class ScoreGenerator(object):
                     print 'Error: Bed angle out of range (should be 0 - 80 degrees)'
             else:
                 if (bth >= 0.) and (bth < 40.):  # between 0 and 40 degrees
-                    v[self.autobed.GetJoint('autobed/bed_neck_worldframe_updown_joint').GetDOFIndex()] = (bth/40)*(0.00 - 0.04)+0.04
-                    v[self.autobed.GetJoint('autobed/bed_neck_base_updown_bedframe_joint').GetDOFIndex()] = (bth/40)*(-0.0 - (-0.07))+(-0.07)
+                    v[self.autobed.GetJoint('autobed/bed_neck_worldframe_updown_joint').GetDOFIndex()] = (bth/40)*(0.04 - 0.00)+0.00
+                    v[self.autobed.GetJoint('autobed/bed_neck_base_updown_bedframe_joint').GetDOFIndex()] = (bth/40)*(-0.07 - (-0.0))+(-0.0)
                     v[self.autobed.GetJoint('autobed/head_rest_hinge').GetDOFIndex()] = m.radians(bth)
                     v[self.autobed.GetJoint('autobed/headrest_bed_to_worldframe_joint').GetDOFIndex()] = -m.radians(bth)
                     v[self.autobed.GetJoint('autobed/bed_neck_to_bedframe_joint').GetDOFIndex()] = m.radians(bth)
                     v[self.autobed.GetJoint('autobed/torso_pelvis_joint').GetDOFIndex()] = m.radians(bth)
                     v[self.autobed.GetJoint('autobed/neck_twist_joint').GetDOFIndex()] = -((bth/40)*(0 - 0)+0)
-                    v[self.autobed.GetJoint('autobed/neck_tilt_joint').GetDOFIndex()] = ((bth/40)*(0.9 - 0.9)+0.9)
+                    v[self.autobed.GetJoint('autobed/neck_tilt_joint').GetDOFIndex()] = ((bth/40)*(0.8 - 0.8)+0.8)
                     v[self.autobed.GetJoint('autobed/neck_head_rotz_joint').GetDOFIndex()] = -((bth/40)*(0 - 0)+0)
-                    v[self.autobed.GetJoint('autobed/neck_head_roty_joint').GetDOFIndex()] = -((bth/40)*(-0.15 - 0)+0)
+                    v[self.autobed.GetJoint('autobed/neck_head_roty_joint').GetDOFIndex()] = -((bth/40)*(-0.2 - 0)+0)
                     v[self.autobed.GetJoint('autobed/neck_head_rotx_joint').GetDOFIndex()] = -((bth/40)*(0 - 0)+0)
                     v[self.autobed.GetJoint('autobed/torso_upper_arm_right_joint').GetDOFIndex()] = -((bth/40)*(0.0 - 0)+0)
                     v[self.autobed.GetJoint('autobed/torso_upper_arm_left_joint').GetDOFIndex()] = -((bth/40)*(0.0 - 0)+0)
                     v[self.autobed.GetJoint('autobed/upper_arm_fore_arm_right_joint').GetDOFIndex()] = -((bth/40)*(1.3 - 0)+0)
                     v[self.autobed.GetJoint('autobed/upper_arm_fore_arm_left_joint').GetDOFIndex()] = -((bth/40)*(1.3 - 0)+0)
-                    v[self.autobed.GetJoint('autobed/fore_arm_hand_right_joint').GetDOFIndex()] = -((bth/40)*(-0.6 - 0)+0)
-                    v[self.autobed.GetJoint('autobed/fore_arm_hand_left_joint').GetDOFIndex()] = -((bth/40)*(-0.6 - 0)+0)
+                    v[self.autobed.GetJoint('autobed/fore_arm_hand_right_joint').GetDOFIndex()] = -((bth/40)*(-0.5 - 0)+0)
+                    v[self.autobed.GetJoint('autobed/fore_arm_hand_left_joint').GetDOFIndex()] = -((bth/40)*(-0.5 - 0)+0)
                 elif (bth >= 40.) and (bth <= 80.):  # between 0 and 40 degrees
                     v[self.autobed.GetJoint('autobed/bed_neck_worldframe_updown_joint').GetDOFIndex()] = ((bth-40)/40)*(0.0- (0.04))+(0.04)
                     v[self.autobed.GetJoint('autobed/bed_neck_base_updown_bedframe_joint').GetDOFIndex()] = ((bth-40)/40)*(-0.26- (-0.07))+(-0.07)
@@ -2884,9 +2884,9 @@ class ScoreGenerator(object):
                     v[self.autobed.GetJoint('autobed/torso_pelvis_joint').GetDOFIndex()] = m.radians(bth)
                     v[self.autobed.GetJoint('autobed/neck_twist_joint').GetDOFIndex()] = -(((bth-40)/40)*(0 - 0)+0)
                     v[self.autobed.GetJoint('autobed/neck_tilt_joint').GetDOFIndex()] = (((bth-40)/40)*(0.8 - 0.8)+0.8)
-                    v[self.autobed.GetJoint('autobed/neck_head_rotz_joint').GetDOFIndex()] = -((bth/40)*(0 - 0)+0)
-                    v[self.autobed.GetJoint('autobed/neck_head_roty_joint').GetDOFIndex()] = -((bth/40)*(-0.05 - (-0.15))+(-0.15))
-                    v[self.autobed.GetJoint('autobed/neck_head_rotx_joint').GetDOFIndex()] = -((bth/40)*(0 - 0)+0)
+                    v[self.autobed.GetJoint('autobed/neck_head_rotz_joint').GetDOFIndex()] = -(((bth-40)/40)*(0 - 0)+0)
+                    v[self.autobed.GetJoint('autobed/neck_head_roty_joint').GetDOFIndex()] = -(((bth-40)/40)*(-0.05 - (-0.15))+(-0.15))
+                    v[self.autobed.GetJoint('autobed/neck_head_rotx_joint').GetDOFIndex()] = (((bth-40)/40)*(0 - 0)+0)
                     v[self.autobed.GetJoint('autobed/torso_upper_arm_right_joint').GetDOFIndex()] = -(((bth-40)/40)*(0.2 - 0)+0)
                     v[self.autobed.GetJoint('autobed/torso_upper_arm_left_joint').GetDOFIndex()] = -(((bth-40)/40)*(0.2 - 0)+0)
                     v[self.autobed.GetJoint('autobed/upper_arm_fore_arm_right_joint').GetDOFIndex()] = -(((bth-40)/40)*(2.3 - 1.3)+1.3)

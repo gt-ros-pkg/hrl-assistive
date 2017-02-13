@@ -238,29 +238,29 @@ class AutobedStatePublisherNode(object):
             elif bth > 80.:
                 bth = 80.
             if (bth >= 0.) and (bth <= 40.):  # between 0 and 40 degrees
-                human_joint_state.position[0] = (bth/40)*(0.00 - 0.04)+0.04
-                human_joint_state.position[1] = (bth/40)*(-0.0 - (-0.015))+(-0.015)
-                human_joint_state.position[2] = ((bth/40)*(.7 - 0)+0)
-                human_joint_state.position[3] = -((bth/40)*(-0.2 - 0)+0)
+                human_joint_state.position[0] = (bth/40)*(0.04 - 0.0)+0.04
+                human_joint_state.position[1] = (bth/40)*(-0.07 - (0.0))+(-0.07)
+                human_joint_state.position[2] = ((bth/40)*(.8 - 0.9)+0.9)
+                human_joint_state.position[3] = -((bth/40)*(-0.15 - 0)+0)
                 human_joint_state.position[4] = -((bth/40)*(0 - 0)+0)
                 human_joint_state.position[5] = -((bth/40)*(0.0 - 0)+0)
                 human_joint_state.position[6] = -((bth/40)*(0.0 - 0)+0)
                 human_joint_state.position[7] = -((bth/40)*(1.3 - 0)+0)
                 human_joint_state.position[8] = -((bth/40)*(1.3 - 0)+0)
-                human_joint_state.position[9] = -((bth/40)*(-0.5 - 0)+0)
-                human_joint_state.position[10] = -((bth/40)*(-0.5 - 0)+0)
+                human_joint_state.position[9] = -((bth/40)*(-0.6 - 0)+0)
+                human_joint_state.position[10] = -((bth/40)*(-0.6 - 0)+0)
             elif (bth > 40.) and (bth <= 80.):  # between 0 and 40 degrees
-                human_joint_state.position[0] = ((bth-40)/40)*(0.02- (0.04))+(0.04)
-                human_joint_state.position[1] = ((bth-40)/40)*(-0.115- (-0.015))+(-0.015)
-                human_joint_state.position[2] = (((bth-40)/40)*(0.7 - 0.7)+0.7)
-                human_joint_state.position[3] = -((bth/40)*(-0.05 - (-0.2))+(-0.2))
+                human_joint_state.position[0] = ((bth-40)/40)*(0.0- (0.04))+(0.04)
+                human_joint_state.position[1] = ((bth-40)/40)*(-0.26- (-0.07))+(-0.07))+(-0.07)
+                human_joint_state.position[2] = (((bth-40)/40)*(0.8 - 0.8)+0.8)
+                human_joint_state.position[3] = -(((bth-40)/40)*(-0.05 - (-0.15))+(-0.15)))+(-0.15))
                 human_joint_state.position[4] = -((bth/40)*(0 - 0)+0)
-                human_joint_state.position[5] = -(((bth-40)/40)*(0.2 - 0)+0)
-                human_joint_state.position[6] = -(((bth-40)/40)*(0.2 - 0)+0)
-                human_joint_state.position[7] = -(((bth-40)/40)*(2.2 - 1.3)+1.3)
-                human_joint_state.position[8] = -(((bth-40)/40)*(2.2 - 1.3)+1.3)
-                human_joint_state.position[9] = -(((bth-40)/40)*(-1.0 - (-0.5))+(-0.5))
-                human_joint_state.position[10] = -(((bth-40)/40)*(-1.0 - (-0.5))+(-0.5))
+                human_joint_state.position[5] = -(((bth-40)/40)*(-0.2 - 0)+0)
+                human_joint_state.position[6] = -(((bth-40)/40)*(-0.2 - 0)+0)
+                human_joint_state.position[7] = -(((bth-40)/40)*(2.3 - 1.3)+1.3)
+                human_joint_state.position[8] = -(((bth-40)/40)*(2.3 - 1.3)+1.3)
+                human_joint_state.position[9] = -(((bth-40)/40)*(-0.8 - (-0.6))+(-0.6))
+                human_joint_state.position[10] = -(((bth-40)/40)*(-0.8 - (-0.6))+(-0.6))
             else:
                 print 'Error: Bed angle out of range (should be 0 - 80 degrees)'
                 print 'Instead it is: ', bth

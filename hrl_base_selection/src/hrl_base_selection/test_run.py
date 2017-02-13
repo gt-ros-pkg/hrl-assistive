@@ -1,7 +1,7 @@
 import sys, optparse
 
 import rospy
-import openravepy as op
+#import openravepy as op
 import numpy as np
 import math as m
 from hrl_base_selection.srv import *
@@ -30,6 +30,6 @@ rospy.init_node('test_publishing_node')
 autobed_pub = rospy.Publisher('/abdin0', FloatArrayBare, queue_size=1)
 rospy.sleep(1)
 msg = FloatArrayBare()
-msg.data = [40., 0., 0.]
+msg.data = [45., 0., 0.]
 autobed_pub.publish(msg)
 
