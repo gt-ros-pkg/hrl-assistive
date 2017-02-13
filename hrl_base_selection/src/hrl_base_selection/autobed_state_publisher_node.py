@@ -307,7 +307,7 @@ class AutobedStatePublisherNode(object):
             #     self.listener.waitForTransform('/autobed/base_link', '/user_head_link', rospy.Time(0), rospy.Duration(3))
                 (trans_b, rot_b) = self.listener.lookupTransform('/autobed/base_link', '/base_link', rospy.Time(0))
                 head_rotation.position[0] = 0
-                head_rotation.position[1] = -m.copysign(m.radians(60.), trans_b[1])
+                head_rotation.position[1] = m.copysign(m.radians(60.), trans_b[1])
             else:
                 head_rotation.position[0] = 0.
                 head_rotation.position[1] = 0.
