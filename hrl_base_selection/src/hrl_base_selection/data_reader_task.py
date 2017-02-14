@@ -451,12 +451,12 @@ if __name__ == "__main__":
         rospy.spin()
     else:
         # for task in ['wiping_mouth', 'wiping_forehead', 'blanket_feet_knees', 'scratching_knee_left', 'scratching_knee_left', 'scratching_upper_arm_left', 'scratching_upper_arm_right', 'scratching_forearm_left', 'scratching_forearm_right']: #'wiping_face', 'scratching_knee_left', 'scratching_forearm_left','scratching_upper_arm_left']:#'scratching_knee_left', 'scratching_knee_right', 'scratching_thigh_left', 'scratching_thigh_right']:
-        for task in ['blanket_feet_knees','wiping_mouth','wiping_forehead']: #'wiping_forehead', 'blanket_feet_knees',wiping_mouth
+        for task in ['wiping_mouth','wiping_forehead']: #'wiping_forehead', 'blanket_feet_knees',wiping_mouth
             subject = 'any_subject'
             print 'STARTING TASK ', task
             #rospy.init_node(''.join(['data_reader_', subject, '_', model, '_', task]))
             this_start_time = time.time()
-            shaving_data_reader = DataReader_Task(task, model, optimization, visualize=False)
+            shaving_data_reader = DataReader_Task(task, model, optimization, visualize=True)
             shaving_data_reader.generate_score()
             print 'Done! Time to generate all scores for this task: %fs' % (time.time() - this_start_time)
             print 'TASK COMPLETED WAS ', task

@@ -38,7 +38,7 @@ from random import gauss
 # from hrl_haptic_mpc.robot_haptic_state_node import RobotHapticStateServer
 import hrl_lib.util as ut
 
-from joblib import Parallel, delayed
+#from joblib import Parallel, delayed
 
 
 class ScoreGenerator(object):

@@ -44,7 +44,7 @@ import sensor_msgs.point_cloud2 as pc2
 
 import cma
 
-from joblib import Parallel, delayed
+#from joblib import Parallel, delayed
 
 
 class ScoreGenerator(object):
@@ -2786,7 +2786,7 @@ class ScoreGenerator(object):
             shift = 0.
     #        if self.task == 'scratching_knee_left':
     #        shift = 0.02
-            v[self.autobed.GetJoint('autobed/bed_neck_base_leftright_joint').GetDOFIndex()] = head_y
+            v[self.autobed.GetJoint('autobed/bed_neck_base_leftright_joint').GetDOFIndex()] = 0.06#head_y
             v[self.autobed.GetJoint('autobed/leg_rest_lower_overbed_tray_y_joint').GetDOFIndex()] = head_y
             v[self.autobed.GetJoint('autobed/leg_rest_lower_overbed_tray_x_joint').GetDOFIndex()] = -0.6858
 
@@ -2867,7 +2867,7 @@ class ScoreGenerator(object):
                     v[self.autobed.GetJoint('autobed/neck_twist_joint').GetDOFIndex()] = -((bth/40)*(0 - 0)+0)
                     v[self.autobed.GetJoint('autobed/neck_tilt_joint').GetDOFIndex()] = ((bth/40)*(0.8 - 0.8)+0.8)
                     v[self.autobed.GetJoint('autobed/neck_head_rotz_joint').GetDOFIndex()] = -((bth/40)*(0 - 0)+0)
-                    v[self.autobed.GetJoint('autobed/neck_head_roty_joint').GetDOFIndex()] = -((bth/40)*(-0.2 - 0)+0)
+                    v[self.autobed.GetJoint('autobed/neck_head_roty_joint').GetDOFIndex()] = -((bth/40)*(0.0 - 0)+0)
                     v[self.autobed.GetJoint('autobed/neck_head_rotx_joint').GetDOFIndex()] = -((bth/40)*(0 - 0)+0)
                     v[self.autobed.GetJoint('autobed/torso_upper_arm_right_joint').GetDOFIndex()] = -((bth/40)*(0.0 - 0)+0)
                     v[self.autobed.GetJoint('autobed/torso_upper_arm_left_joint').GetDOFIndex()] = -((bth/40)*(0.0 - 0)+0)
@@ -2885,7 +2885,7 @@ class ScoreGenerator(object):
                     v[self.autobed.GetJoint('autobed/neck_twist_joint').GetDOFIndex()] = -(((bth-40)/40)*(0 - 0)+0)
                     v[self.autobed.GetJoint('autobed/neck_tilt_joint').GetDOFIndex()] = (((bth-40)/40)*(0.8 - 0.8)+0.8)
                     v[self.autobed.GetJoint('autobed/neck_head_rotz_joint').GetDOFIndex()] = -(((bth-40)/40)*(0 - 0)+0)
-                    v[self.autobed.GetJoint('autobed/neck_head_roty_joint').GetDOFIndex()] = -(((bth-40)/40)*(-0.05 - (-0.15))+(-0.15))
+                    v[self.autobed.GetJoint('autobed/neck_head_roty_joint').GetDOFIndex()] = -(((bth-40)/40)*(0.0 - (0.0))+(0.0))
                     v[self.autobed.GetJoint('autobed/neck_head_rotx_joint').GetDOFIndex()] = (((bth-40)/40)*(0 - 0)+0)
                     v[self.autobed.GetJoint('autobed/torso_upper_arm_right_joint').GetDOFIndex()] = -(((bth-40)/40)*(0.2 - 0)+0)
                     v[self.autobed.GetJoint('autobed/torso_upper_arm_left_joint').GetDOFIndex()] = -(((bth-40)/40)*(0.2 - 0)+0)
@@ -2898,7 +2898,7 @@ class ScoreGenerator(object):
             self.autobed.SetActiveDOFValues(v, 2)
             self.env.UpdatePublishedBodies()
         self.create_vision_cone()
-        rospy.sleep(0.02)
+        rospy.sleep(0.04)
         self.env.UpdatePublishedBodies()
 
     def create_vision_cone(self):

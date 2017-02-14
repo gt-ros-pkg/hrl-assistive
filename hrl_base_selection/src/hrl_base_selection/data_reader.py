@@ -37,8 +37,8 @@ from hrl_lib.util import save_pickle, load_pickle
 import tf.transformations as tft
 from score_generator import ScoreGenerator
 #import data_clustering as clust
-import joblib
-from joblib import Memory
+#import joblib
+#from joblib import Memory
 from tempfile import mkdtemp
 
 import hrl_lib.util as ut
