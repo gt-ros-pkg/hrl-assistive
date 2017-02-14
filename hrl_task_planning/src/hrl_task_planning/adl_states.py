@@ -260,7 +260,7 @@ class MoveArmState(PDDLSmachState):
         goal = PoseStamped()
         if self.model.upper() == 'AUTOBED':
             if self.task.upper() == 'SCRATCHING' or self.task.upper() == 'BLANKET':
-                self.goal_position = [0.18, 0, -0.1]
+                self.goal_position = [0.28, 0, -0.1]
                 self.goal_orientation = [0.,   0.,   1., 0.]
                 self.reference_frame = '/'+str(self.model.lower())+'/knee_left_link'
                 goal.pose.position.x = self.goal_position[0]
