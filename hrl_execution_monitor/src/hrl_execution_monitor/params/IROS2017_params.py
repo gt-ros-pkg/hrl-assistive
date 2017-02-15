@@ -42,16 +42,31 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
 
     if nPoints is None: nPoints = 40 
 
+    # 5,11    
+    ## handFeatures  = [['unimodal_audioWristRMS',  \
+    ##                  'unimodal_kinJntEff_1',\
+    ##                  'unimodal_ftForce_integ',\
+    ##                  'unimodal_kinEEChange',\
+    ##                  'crossmodal_landmarkEEDist'
+    ##                  ],
+    ##                  ['unimodal_kinVel',\
+    ##                   'unimodal_ftForce_zero',\
+    ##                   'crossmodal_landmarkEEDist']]
+    ## ## offset 5, best ths(-5.54,-5.54)    
+    ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/feeding_demo'    
+
+                      
+    # mew
     handFeatures  = [['unimodal_audioWristRMS',  \
                      'unimodal_kinJntEff_1',\
                      'unimodal_ftForce_integ',\
-                     'unimodal_kinEEChange',\
                      'crossmodal_landmarkEEDist'
                      ],
                      ['unimodal_kinVel',\
                       'unimodal_ftForce_zero',\
+                      'unimodal_kinDesEEChange',\
                       'crossmodal_landmarkEEDist']]
-
+    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/feeding_demo1'    
 
     staticFeatures = ['unimodal_audioWristFrontRMS',\
                       'unimodal_audioWristAzimuth',\
@@ -62,15 +77,13 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                       'crossmodal_landmarkEEAng',\
                       ]                                                  
         
-    save_data_path = None
 
     ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/feeding_demo1'
     ## HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.0, 'scale': [2.0, 2.0],\
     ##                   'add_logp_d': False }
 
-    ## offset 5, best ths(-5.54,-5.54)    
-    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/feeding_demo'    
-    HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.0, 'scale': [5.0, 11.0],\
+
+    HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.0, 'scale': [5.0, 9.0],\
                       'add_logp_d': False }
     SVM_param_dict = {'renew': CF_renew,\
                       'logp_offset': 0.,\
@@ -101,16 +114,16 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                          'unimodal_audioWristAzimuth',\
                          'unimodal_kinVel',\
                          'unimodal_kinJntEff_1', \
-                         'unimodal_kinJntEff_2', \
-                         'unimodal_kinJntEff_3', \
-                         'unimodal_kinJntEff_4', \
-                         'unimodal_kinJntEff_5', \
-                         'unimodal_kinJntEff_6', \
-                         'unimodal_kinJntEff_7', \
-                         'unimodal_ftForce',\
+                         ## 'unimodal_kinJntEff_2', \
+                         ## 'unimodal_kinJntEff_3', \
+                         ## 'unimodal_kinJntEff_4', \
+                         ## 'unimodal_kinJntEff_5', \
+                         ## 'unimodal_kinJntEff_6', \
+                         ## 'unimodal_kinJntEff_7', \
+                         ## 'unimodal_ftForce',\
                          'unimodal_ftForce_zero',\
                          'unimodal_ftForce_integ',\
-                         'unimodal_ftForce_delta',\
+                         ## 'unimodal_ftForce_delta',\
                          'unimodal_ftForceX',\
                          'unimodal_ftForceY',\
                          'unimodal_ftForceZ',\

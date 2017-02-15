@@ -256,15 +256,12 @@ if __name__ == '__main__':
     ## param_dict['ROC']['progress1_param_range'] = -np.logspace(-0.3, 1.2, nPoints)
 
     #c11 92 # next best (-7.44, -7.44), 87-2.89,2.89, 94-5.54,5.54
-    ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo'
-    ## param_dict['ROC']['methods'] = ['progress0', 'progress1']
-    ## param_dict['HMM']['scale'] = [5., 11.]
-    ## param_dict['ROC']['progress0_param_range'] = -np.logspace(0., 1.0, nPoints)
-    ## param_dict['ROC']['progress1_param_range'] = -np.logspace(0., 1.0, nPoints)
-    ## param_dict['data_param']['noise_mag'] = [[0.03,0.03,0.03,0.08,0.08],[0.1,0.03,0.08]]
-
-
-
+    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo'
+    param_dict['ROC']['methods'] = ['progress0', 'progress1']
+    param_dict['HMM']['scale'] = [5., 11.]
+    param_dict['ROC']['progress0_param_range'] = -np.logspace(0., 1.0, nPoints)
+    param_dict['ROC']['progress1_param_range'] = -np.logspace(0., 1.0, nPoints)
+    param_dict['data_param']['noise_mag'] = [[0.03,0.03,0.03,0.08,0.08],[0.1,0.03,0.08]]
 
     param_dict['data_param']['handFeatures'] = [['unimodal_audioWristRMS',  \
                                                  'unimodal_kinJntEff_1',\
@@ -272,19 +269,19 @@ if __name__ == '__main__':
                                                  'crossmodal_landmarkDist',\
                                                  'crossmodal_landmarkEEDist'
                                                 ],\
-                                                [## 'unimodal_kinVel',\
+                                                ['unimodal_kinVel',\
                                                  'unimodal_ftForce_zero',\
-                                                 'unimodal_ftForceZ',\
-                                                 'unimodal_kinDesEEChange',\
+                                                 #'unimodal_ftForceZ',\
+                                                 #'unimodal_kinDesEEChange',\
                                                  'crossmodal_landmarkEEDist',\
                                                 ]
                                                 ]
 
-    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo4'
-    param_dict['ROC']['methods'] = ['progress0', 'progress1']
-    param_dict['HMM']['scale'] = [7., 7.]
-    param_dict['ROC']['progress0_param_range'] = -np.logspace(0., 1.0, nPoints)
-    param_dict['ROC']['progress1_param_range'] = -np.logspace(0., 1.0, nPoints)
+    ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo4'
+    ## param_dict['ROC']['methods'] = ['progress0', 'progress1']
+    ## param_dict['HMM']['scale'] = [7., 7.]
+    ## param_dict['ROC']['progress0_param_range'] = -np.logspace(0., 1.0, nPoints)
+    ## param_dict['ROC']['progress1_param_range'] = -np.logspace(0., 1.0, nPoints)
     ## param_dict['data_param']['noise_mag'] = [[0.03,0.03,0.03,0.08,0.08],[0.1,0.03,0.08]]
 
 

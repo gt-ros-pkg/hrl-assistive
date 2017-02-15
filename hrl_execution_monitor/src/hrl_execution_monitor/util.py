@@ -76,7 +76,7 @@ def extract_feature(msg, init_msg, last_msg, last_data, handFeatures, param_dict
     # Unimodal feature - Kinematics --------------------------------------
     if 'unimodal_kinJntEff_1' in handFeatures:
         jnt_idx = 0
-        dataSample.append( msg.kinematics_jnt_eff[jnt_idx] - init_msg.kinematics_jnt_eff[jnt_idx] )
+        dataSample.append( (msg.kinematics_jnt_eff[jnt_idx] - init_msg.kinematics_jnt_eff[jnt_idx])*0.6 )
         if 'kinJntEff_1' not in param_dict['feature_names']:           
             param_dict['feature_names'].append( 'kinJntEff_1')
 
