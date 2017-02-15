@@ -108,22 +108,14 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
     AD_param_dict = {'svm_w_positive': 1.0, 'sgd_w_positive': 1.0, 'sgd_n_iter': 20}
 
 
-    # 012 3 45678910 11121314 151617 18 19 2021 2223
+    # 012 3 4 56 789 10 11 1213 1415
     isolationFeatures = ['unimodal_audioWristRMS', \
                          'unimodal_audioWristFrontRMS',\
                          'unimodal_audioWristAzimuth',\
                          'unimodal_kinVel',\
                          'unimodal_kinJntEff_1', \
-                         ## 'unimodal_kinJntEff_2', \
-                         ## 'unimodal_kinJntEff_3', \
-                         ## 'unimodal_kinJntEff_4', \
-                         ## 'unimodal_kinJntEff_5', \
-                         ## 'unimodal_kinJntEff_6', \
-                         ## 'unimodal_kinJntEff_7', \
-                         ## 'unimodal_ftForce',\
                          'unimodal_ftForce_zero',\
                          'unimodal_ftForce_integ',\
-                         ## 'unimodal_ftForce_delta',\
                          'unimodal_ftForceX',\
                          'unimodal_ftForceY',\
                          'unimodal_ftForceZ',\

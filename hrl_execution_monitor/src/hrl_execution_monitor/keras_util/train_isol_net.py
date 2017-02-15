@@ -66,23 +66,26 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
     save_data_path = os.path.join(save_data_path, 'keras')
 
     # training with signals ----------------------------------
-    ## train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5)
-    ## train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5, load_weights=True)
-
+    #train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5)
+    ## train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=50, load_weights=True)
+    ## train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5,
+    ##                   load_weights=True, test_only=True)
+    # 64.71
+    
     # training_with images -----------------------------------
-    ## remove_label = [1]
-    ## get_bottleneck_image(save_data_path, n_labels, fold_list, vgg=True, remove_label=remove_label)
-    ## kt.train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, patience=30)
-    ## train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, nb_epoch=1000, patience=30,
+    remove_label = [1]
+    #get_bottleneck_image(save_data_path, n_labels, fold_list, vgg=True, remove_label=remove_label)
+    train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, patience=30)
+    ## train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, nb_epoch=1000, patience=100,
     ##                            load_weights=True)
-    train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, nb_epoch=1000,
-                               load_weights=True,
-                               test_only=True)
+    ## train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, nb_epoch=1000,
+    ##                            load_weights=True,
+    ##                            test_only=True)
     
     # training_with all --------------------------------------
     ## get_bottleneck_mutil(save_data_path, n_labels, fold_list, vgg=True)
     ## train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True)
-    ## train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, load_weights=True) # noneed
+    #train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, load_weights=True) # noneed
     
     ## train_with_all(save_data_path, n_labels, fold_list, patience=1, nb_epoch=1, vgg=True)
     #train_with_all(save_data_path, n_labels, fold_list, load_weights=True, patience=3, vgg=True) # almost no need
@@ -133,13 +136,21 @@ def train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=400, load_we
         else:
             model = km.sig_net(np.shape(x_train_sig)[1:], n_labels,\
                                weights_path = weights_path, activ_type=activ_type)
-            ## optimizer = SGD(lr=0.001, decay=1e-7, momentum=0.9, nesterov=True)
-            optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.005)            
+            optimizer = SGD(lr=0.0001, decay=1e-7, momentum=0.9, nesterov=True)
+            #optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.005)            
 
         model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
         ## model.compile(optimizer=optimizer, loss='categorical_crossentropy', \
         ##               metrics=['mean_squared_logarithmic_error', 'accuracy'])
 
+        import collections
+        bincnt = collections.Counter(np.argmax(y_train,axis=1))
+
+        class_weight = {}
+        for i in xrange(n_labels):
+            ## class_weight[i] = float(len(y_train))/(float(n_labels)*float(bincnt[i]) )
+            class_weight[i] = 1.0
+        
 
         if test_only is False:
             train_datagen = ku.sigGenerator(augmentation=True, noise_mag=0.05 )
@@ -152,7 +163,7 @@ def train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=400, load_we
                                        nb_epoch=nb_epoch,
                                        validation_data=test_generator,
                                        nb_val_samples=len(y_test),
-                                       callbacks=callbacks)
+                                       callbacks=callbacks, class_weight=class_weight)
 
             scores.append( hist.history['val_acc'][-1] )
             ## model.save_weights(weights_path)
@@ -346,10 +357,16 @@ def train_with_all(save_data_path, n_labels, fold_list, nb_epoch=100, load_weigh
             model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
             ## model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
 
+        import collections
+        bincnt = collections.Counter(np.argmax(y_train,axis=1))
 
-        class_weight={}
+        class_weight = {}
         for i in xrange(n_labels):
-            class_weight[i] = 1.0
+            class_weight[i] = float(len(y_train))/(float(n_labels)*float(bincnt[i]) )
+
+        ## class_weight={}
+        ## for i in xrange(n_labels):
+        ##     class_weight[i] = 1.0
         ## class_weight[1]  = 0.1 # noisy env
         ## class_weight[6]  = 0.1 # anomalous snd
         ## class_weight[-3] = 0.1 # spoon miss by sys
@@ -540,11 +557,11 @@ def train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=400
         class_weight={}
         for i in xrange(n_labels):
             class_weight[i] = 1.0
-        class_weight[1]  = 0.1 # noisy env
-        class_weight[6]  = 0.1 # anomalous snd
-        class_weight[-3] = 0.5 # spoon miss by sys
-        class_weight[-2] = 0.5 # spoon collision by sys
-        class_weight[-1] = 0.5 # freeze
+        ## class_weight[1]  = 0.1 # noisy env
+        ## class_weight[6]  = 0.1 # anomalous snd
+        ## class_weight[-3] = 0.5 # spoon miss by sys
+        ## class_weight[-2] = 0.5 # spoon collision by sys
+        ## class_weight[-1] = 0.5 # freeze
 
         if test_only is False:
             hist = model.fit(x_train, y_train, nb_epoch=nb_epoch, batch_size=4096, shuffle=True,
@@ -804,7 +821,95 @@ def test_hog(save_data_path, n_labels, verbose=False):
     clf.fit(x_train, y_train)
     score = clf.score(x_test, y_test)
     print score
+
+
+def test_isolator(save_data_path, n_labels, vgg=True, save_pdf=False):
+
+    if vgg: prefix = 'vgg_'
+    else: prefix = ''
+
+    nFold = 1
+
+    fold_list = range(nFold)
+    save_data_path = os.path.join(save_data_path, 'keras')
+
+
+    y_test_list = []
+    y_pred_list = []
+
+    scores= []
+    for idx in fold_list:
+        # Loading data
+        train_data, test_data = autil.load_data(idx, save_data_path, viz=False)      
+        x_train_sig = train_data[0]
+        x_train_img = train_data[1]
+        y_train     = train_data[2]
+        x_test_sig = test_data[0]
+        x_test_img = test_data[1]
+        y_test     = test_data[2]
+
+
+        scaler      = preprocessing.StandardScaler()
+        x_train_sig = scaler.fit_transform(x_train_sig)
+        x_test_sig  = scaler.transform(x_test_sig)
+
+        ## weights_path = os.path.join(save_data_path,'sig_weights_'+str(idx)+'.h5')
+        ## model = km.sig_net(np.shape(x_train_sig)[1:], n_labels, activ_type='relu')                    
+        ## model.load_weights(weights_path)
+        ## y_pred = model.predict(x_test_sig)
+        ## y_pred_list += np.argmax(y_pred, axis=1).tolist()
+        ## y_test_list += np.argmax(y_test, axis=1).tolist()
+
+
+        weights_path = os.path.join(save_data_path,prefix+'all_weights_'+str(idx)+'.h5')
+        model = km.vgg16_net(np.shape(x_train_img)[1:], n_labels, with_multi_top=True,
+                             input_shape2=np.shape(x_train_sig)[1:],
+                             weights_path=weights_path,
+                             fine_tune=True)
+
+        y_pred = model.predict([x_test_img/255., x_test_sig])
+        y_pred_list += np.argmax(y_pred, axis=1).tolist()
+        y_test_list += np.argmax(y_test, axis=1).tolist()
+
+    from sklearn.metrics import accuracy_score
+    print "score : ", accuracy_score(y_test_list, y_pred_list)
+        ## scores.append( accuracy_score(y_test_list, y_pred_list) )
+
+    print np.unique(y_pred_list), np.unique(y_test_list)
+
+    new_y_pred = copy.copy(y_pred_list)
+    new_y_test = copy.copy(y_test_list)
+    print np.unique(new_y_pred), np.unique(new_y_test)
+
+            
+    ## print np.mean(scores), np.std(scores)
+    plot_confusion_matrix( new_y_test, new_y_pred, save_pdf=save_pdf )
     
+def plot_confusion_matrix(y_test_list, y_pred_list, save_pdf=False):
+    classes = ['Object collision',
+               'Noisy environment',
+               'Spoon miss by a user',
+               'Spoon collision by a user',
+               'Robot-body collision by a user',
+               'Aggressive eating',
+               'Anomalous sound from a user',
+               'Unreachable mouth pose',
+               'Face occlusion by a user',
+               ## 'Spoon miss by system fault',
+               ## 'Spoon collision by system fault',
+               'Freeze by system fault']
+
+
+    from sklearn.metrics import confusion_matrix
+    cm = confusion_matrix(y_test_list, y_pred_list)
+
+    print np.sum(cm,axis=1)
+
+    from hrl_execution_monitor import viz as eviz
+    eviz.plot_confusion_matrix(cm, classes=classes, normalize=True,
+                               title='Anomaly Classification', save_pdf=save_pdf)
+    
+
 
 
 if __name__ == '__main__':
@@ -817,7 +922,8 @@ if __name__ == '__main__':
                  default=False, help='Train')
     p.add_option('--hog', action='store_true', dest='hog',
                  default=False, help='Test with hog')
-    
+    p.add_option('--test', '--te', action='store_true', dest='test',
+                 default=False, help='Test')    
     opt, args = p.parse_args()
 
     from hrl_execution_monitor.params.IROS2017_params import *
@@ -827,12 +933,12 @@ if __name__ == '__main__':
                                                           opt.bHMMRenew, opt.bCLFRenew)
                                                           
     # best one for (-2,-2) - 79
-    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
-    ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
 
-    # best one for (-5,-11) - 76
-    ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo'
-    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
+    # 84
+    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
+
+    # 84
+    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
 
     task_name = 'feeding'
     method    = ['progress0', 'progress1'] 
@@ -843,6 +949,8 @@ if __name__ == '__main__':
 
     if opt.train:
         train_isolator_modules(save_data_path, nb_classes, verbose=False)
+    elif opt.test:
+        test_isolator(save_data_path, nb_classes, save_pdf=False)
     elif opt.hog:
         test_hog(save_data_path, nb_classes, verbose=False)
     else:

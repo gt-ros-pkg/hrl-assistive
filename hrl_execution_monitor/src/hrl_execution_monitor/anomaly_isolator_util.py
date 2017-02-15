@@ -92,9 +92,9 @@ def train_rfc_with_signal(save_data_path, n_labels, nFold):
 
         # get classifier
         ## from sklearn.svm import SVC
-        ## clf = SVC(C=1.0, kernel='rbf') #, decision_function_shape='ovo')
+        ## clf = SVC(C=1.0, kernel='rbf', class_weight='balanced') #, decision_function_shape='ovo')
         from sklearn.ensemble import RandomForestClassifier
-        clf = RandomForestClassifier(n_estimators=400, n_jobs=-1)
+        clf = RandomForestClassifier(n_estimators=400, n_jobs=-1, class_weight='balanced')
         clf.fit(x_train_sig, np.argmax(y_train, axis=1))
         score = clf.score(x_test_sig, np.argmax(y_test, axis=1))
         scores.append(score)
@@ -197,26 +197,19 @@ if __name__ == '__main__':
 
     # -----------------------------------------------------------------------
     # signal only best
-    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
+    save_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
     ## weight    = [-3.0, -4.5]
     ## param_dict['HMM']['scale'] = [2.0, 2.0]
 
     #c11 
-    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
+    save_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
     weight    = [-3.0, -4.5]
     param_dict['HMM']['scale'] = [2.0, 2.0]
     # -----------------------------------------------------------------------
-    # c12
-    ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo5'
-    ## weight    = [-4.0, -5.0]
-    
-    # c11
-    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo'
-    weight    = [-5.2, -6.2]
 
     # ep 5.2,5.2-65  5.2,6.2-69 maybebest 
-    ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
-    ## weight    = [-4., -7.]
+    save_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
+    weight    = [-4., -7.]
 
     param_dict['HMM']['scale'] = [5.0, 11.0]
 
@@ -237,18 +230,53 @@ if __name__ == '__main__':
     #9,9-66
     # -----------------------------------------------------------------------
 
-    ## # c8 -3.88,-3.88-0.6   3.88,6.0-56  3.88,7.5-0.69, 3.88,9-66
-    ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo4'
-    ## weight    = [-3.88, -11.0]
-    ## param_dict['HMM']['scale'] = [4.0, 8.0]
+    ## br 5.22,7.22-66, 5.22,6.22-64, 5.22,5.22-66, 6.22,6.22-65, 4.22,5.22-70, 4.22,6.22-67, 5,6-71, 4.5,5.5-70 
+    save_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
+    weight    = [-5.22,-6.]
+    param_dict['HMM']['scale'] = [5.0, 9.0]
+    param_dict['data_param']['noise_mag'] = [[0.03,0.1,0.03,0.08],[0.1,0.05,0.15,0.08]]
     # -----------------------------------------------------------------------
-    
+    ## c8 
+    ## save_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
+    ## weight    = [-5.,-6.]
+    ## param_dict['HMM']['scale'] = [5.0, 9.0]
+    ## param_dict['data_param']['noise_mag'] = [[0.03,0.1,0.03,0.08],[0.1,0.05,0.05,0.08]]
+    # -----------------------------------------------------------------------
+    ## ep
+    ## save_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
+    ## weight    = [-4.5,-5.5]
+    ## param_dict['HMM']['scale'] = [5.0, 9.0]
+    ## param_dict['data_param']['noise_mag'] = [[0.03,0.1,0.03,0.05],[0.1,0.05,0.05,0.05]]
+    # -----------------------------------------------------------------------
+    # aws
+    ## save_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo1'
+    ## weight    = [-3.45,-3.45]
+    ## param_dict['HMM']['scale'] = [5.0, 8.0]
+    ## param_dict['data_param']['noise_mag'] = [[0.03,0.1,0.03,0.05],[0.1,0.05,0.05,0.05]]
 
+    # aws 68
+    ## save_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
+    ## weight    = [-2.57,-2.57]
+    ## param_dict['HMM']['scale'] = [5.0, 7.0]
+    ## param_dict['data_param']['noise_mag'] = [[0.03,0.1,0.03,0.05],[0.1,0.05,0.05,0.05]]
+
+
+    param_dict['data_param']['handFeatures'] = [['unimodal_audioWristRMS',  \
+                                                 'unimodal_kinJntEff_1',\
+                                                 'unimodal_ftForce_integ',\
+                                                 'crossmodal_landmarkEEDist'
+                                             ],\
+                                                ['unimodal_kinVel',\
+                                                 'unimodal_ftForce_zero',\
+                                                 'unimodal_kinDesEEChange',\
+                                                 'crossmodal_landmarkEEDist',\
+                                                ]
+                                            ]
 
 
     task_name = 'feeding'
     method    = ['progress0', 'progress1'] 
-    param_dict['ROC']['methods'] = ['progress0', 'progress1'] #'hmmgp'
+    param_dict['ROC']['methods'] = ['progress0', 'progress1'] 
     param_dict['HMM']['cov']   = 1.0
     single_detector=False    
     nb_classes = 12
@@ -266,7 +294,7 @@ if __name__ == '__main__':
                            img_feature_type='vgg')
         
     elif opt.preprocessing_extra:
-        raw_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/AURO2016/raw_data/manual_label'
+        raw_data_path = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/AURO2016/raw_data/manual_label'
         pp.preprocess_images(raw_data_path, save_data_path, img_scale=0.25, nb_classes=nb_classes,
                                 img_feature_type='vgg')
         
