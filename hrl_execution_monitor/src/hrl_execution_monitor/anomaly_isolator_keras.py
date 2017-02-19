@@ -303,9 +303,11 @@ class anomaly_isolator:
                 self.lock.acquire()
                 stc_data = copy.deepcopy(self.stc_data)
                 self.lock.release()
-                
-                max_vals = np.amax(stc_data, axis=1)
-                min_vals = np.amin(stc_data, axis=1)
+
+                s_idx = len(stc_data[0])-20
+                if len(stc_data[0]) < 20: s_idx = 0                
+                max_vals = np.amax(stc_data[:,s_idx:], axis=1)
+                min_vals = np.amin(stc_data[:,s_idx:], axis=1)
                 vals = [mx if abs(mx) > abs(mi) else mi for (mx, mi) in zip(max_vals, min_vals) ]
                 x += vals
                 x = self.scr.transform(x)

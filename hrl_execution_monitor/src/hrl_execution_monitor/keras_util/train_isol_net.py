@@ -73,19 +73,19 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
     # 64.71
     
     # training_with images -----------------------------------
-    remove_label = [1]
+    remove_label = [1] #not used
     #get_bottleneck_image(save_data_path, n_labels, fold_list, vgg=True, remove_label=remove_label)
-    train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, patience=30)
-    ## train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, nb_epoch=1000, patience=100,
-    ##                            load_weights=True)
+    #train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, patience=30)
+    #train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, nb_epoch=1000, patience=100,
+    #                           load_weights=True)
     ## train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, nb_epoch=1000,
     ##                            load_weights=True,
     ##                            test_only=True)
     
     # training_with all --------------------------------------
-    ## get_bottleneck_mutil(save_data_path, n_labels, fold_list, vgg=True)
-    ## train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True)
-    #train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, load_weights=True) # noneed
+    #get_bottleneck_mutil(save_data_path, n_labels, fold_list, vgg=True)
+    #train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True)
+    train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, load_weights=True) # noneed
     
     ## train_with_all(save_data_path, n_labels, fold_list, patience=1, nb_epoch=1, vgg=True)
     #train_with_all(save_data_path, n_labels, fold_list, load_weights=True, patience=3, vgg=True) # almost no need
@@ -557,8 +557,8 @@ def train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=400
         class_weight={}
         for i in xrange(n_labels):
             class_weight[i] = 1.0
-        ## class_weight[1]  = 0.1 # noisy env
-        ## class_weight[6]  = 0.1 # anomalous snd
+        class_weight[1]  = 0.1 # noisy env
+        class_weight[6]  = 0.1 # anomalous snd
         ## class_weight[-3] = 0.5 # spoon miss by sys
         ## class_weight[-2] = 0.5 # spoon collision by sys
         ## class_weight[-1] = 0.5 # freeze

@@ -71,7 +71,7 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
     save_data_path = os.path.join(save_data_path, 'keras')
 
     # training with signals ----------------------------------
-    kt.train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5)
+    ## kt.train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5)
     ## kt.train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5, load_weights=True)
     kt.train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5, load_weights=True,
                          test_only=True) #70
@@ -219,23 +219,23 @@ def test_isolator(save_data_path, n_labels, vgg=True, save_pdf=False):
         x_train_sig = scaler.fit_transform(x_train_sig)
         x_test_sig  = scaler.transform(x_test_sig)
 
-        weights_path = os.path.join(save_data_path,'sig_weights_'+str(idx)+'.h5')
-        model = km.sig_net(np.shape(x_train_sig)[1:], n_labels, activ_type='relu')                    
-        model.load_weights(weights_path)
-        y_pred = model.predict(x_test_sig)
-        y_pred_list += np.argmax(y_pred, axis=1).tolist()
-        y_test_list += np.argmax(y_test, axis=1).tolist()
-
-
-        ## weights_path = os.path.join(save_data_path,prefix+'all_weights_'+str(idx)+'.h5')
-        ## model = km.vgg16_net(np.shape(x_train_img)[1:], n_labels, with_multi_top=True,
-        ##                      input_shape2=np.shape(x_train_sig)[1:],
-        ##                      weights_path=weights_path,
-        ##                      fine_tune=True)
-
-        ## y_pred = model.predict([x_test_img/255., x_test_sig])
+        ## weights_path = os.path.join(save_data_path,'sig_weights_'+str(idx)+'.h5')
+        ## model = km.sig_net(np.shape(x_train_sig)[1:], n_labels, activ_type='relu')                    
+        ## model.load_weights(weights_path)
+        ## y_pred = model.predict(x_test_sig)
         ## y_pred_list += np.argmax(y_pred, axis=1).tolist()
         ## y_test_list += np.argmax(y_test, axis=1).tolist()
+
+
+        weights_path = os.path.join(save_data_path,prefix+'all_weights_'+str(idx)+'.h5')
+        model = km.vgg16_net(np.shape(x_train_img)[1:], n_labels, with_multi_top=True,
+                             input_shape2=np.shape(x_train_sig)[1:],
+                             weights_path=weights_path,
+                             fine_tune=True)
+
+        y_pred = model.predict([x_test_img/255., x_test_sig])
+        y_pred_list += np.argmax(y_pred, axis=1).tolist()
+        y_test_list += np.argmax(y_test, axis=1).tolist()
 
     from sklearn.metrics import accuracy_score
     print "score : ", accuracy_score(y_test_list, y_pred_list)
@@ -270,8 +270,8 @@ def plot_confusion_matrix(y_test_list, y_pred_list, save_pdf=False):
                'Anomalous sound from a user',
                'Unreachable mouth pose',
                'Face occlusion by a user',
-               ## 'Spoon miss by system fault',
-               ## 'Spoon collision by system fault',
+               'Spoon miss by system fault',
+               'Spoon collision by system fault',
                'Freeze by system fault']
 
 
@@ -339,7 +339,7 @@ if __name__ == '__main__':
       '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
       str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
-    # 
+    # IROS2017
     save_data_path = os.path.expanduser('~')+\
       '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
       str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
@@ -369,4 +369,4 @@ if __name__ == '__main__':
         ## evaluate_svm(save_data_path, viz=True)
 
     elif opt.test:
-        test_isolator(save_data_path, n_labels, save_pdf=False)
+        test_isolator(save_data_path, n_labels, save_pdf=opt.bSavePdf)

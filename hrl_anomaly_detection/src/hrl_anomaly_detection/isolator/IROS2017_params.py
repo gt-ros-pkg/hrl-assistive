@@ -10,7 +10,7 @@ def getParams(task, bDataRenew, bHMMRenew, bCFRenew, dim=0, rf_center='kinEEPos'
         raw_data_path, save_data_path, param_dict = getScooping(task, bDataRenew, \
                                                                 bHMMRenew, bCFRenew, \
                                                                 rf_center, local_range,\
-                                                                ae_swtch=bAESwitch, dim=dim,\
+                                                                dim=dim,\
                                                                 nPoints=nPoints)
         
     #---------------------------------------------------------------------------
@@ -18,7 +18,7 @@ def getParams(task, bDataRenew, bHMMRenew, bCFRenew, dim=0, rf_center='kinEEPos'
         raw_data_path, save_data_path, param_dict = getFeeding(task, bDataRenew, \
                                                                bHMMRenew, bCFRenew, \
                                                                rf_center, local_range,\
-                                                               ae_swtch=bAESwitch, dim=dim,\
+                                                               dim=dim,\
                                                                nPoints=nPoints)
 
     else:
@@ -38,18 +38,18 @@ def getParams(task, bDataRenew, bHMMRenew, bCFRenew, dim=0, rf_center='kinEEPos'
 
 
 def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local_range=10.0, \
-               ae_swtch=False, dim=4, nPoints=None):
+               dim=4, nPoints=None):
 
     if nPoints is None: nPoints = 40 
 
     handFeatures = [['unimodal_audioWristRMS',  \
                      'unimodal_kinJntEff_1',\
                      'unimodal_ftForce_integ',\
-                     'unimodal_kinEEChange',\
                      'crossmodal_landmarkEEDist'
                      ],\
                      ['unimodal_kinVel',\
                       'unimodal_ftForce_zero',\
+                      'unimodal_kinDesEEChange',\
                       'crossmodal_landmarkEEDist'
                      ]]
 
@@ -62,7 +62,7 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                       'crossmodal_landmarkEEAng',\
                       ]
 
-    HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 2.64, 'scale': 6.111,\
+    HMM_param_dict = {'renew': HMM_renew, 'nState': 25, 'cov': 1.0, 'scale': [5.,9.],\
                       'add_logp_d': False }
     SVM_param_dict = {'renew': CF_renew, 'w_negative': 1.0, 'gamma': 5.0, 'cost': 1.0,\
                       'hmmosvm_nu': 0.5,\
@@ -145,15 +145,12 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
 
     param_dict = {'data_param': data_param_dict, 'HMM': HMM_param_dict, \
                   'SVM': SVM_param_dict, 'ROC': ROC_param_dict, 'AD': AD_param_dict}
-    ## param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
-    ##               'SVM': SVM_param_dict, 'ROC': ROC_param_dict, 'AD': AD_param_dict}
 
     return raw_data_path, save_data_path, param_dict
 
 
 def getScooping(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos', local_range=10.0, \
-                pre_train=False,\
-                ae_swtch=False, dim=4, nPoints=None):
+                pre_train=False, dim=4, nPoints=None):
 
     if nPoints is None: nPoints = 20  
 
@@ -195,17 +192,6 @@ def getScooping(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos', loc
                      'pps']
     raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/AURO2016/'
 
-    AE_param_dict  = {'renew': False, 'switch': ae_swtch, 'method': 'ae', 'time_window': 4,  \
-                      'layer_sizes':[], 'learning_rate':1e-4, \
-                      'learning_rate_decay':1e-6, \
-                      'momentum':1e-6, 'dampening':1e-6, 'lambda_reg':1e-6, \
-                      'max_iteration':100000, 'min_loss':0.01, 'cuda':True, \
-                      'pca_gamma': 1.0,\
-                      'filter':False, 'filterDim':4, \
-                      'nAugment': 1, \
-                      'add_option': None, 'rawFeatures': rawFeatures,\
-                      'add_noise_option': [], 'preTrainModel': None}
-
     data_param_dict= {'renew': data_renew, 'rf_center': rf_center, 'local_range': local_range,\
                       'downSampleSize': 140, 'cut_data': None, \
                       'nNormalFold':3, 'nAbnormalFold':3,\
@@ -216,7 +202,7 @@ def getScooping(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos', loc
       '/hrl_file_server/dpark_data/anomaly/AURO2016/'+task+'_data/'+\
       str(data_param_dict['downSampleSize'])+'_'+str(dim)
       
-    param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
+    param_dict = {'data_param': data_param_dict, 'HMM': HMM_param_dict, \
                   'SVM': SVM_param_dict, 'ROC': ROC_param_dict, 'AD': AD_param_dict}
       
     return raw_data_path, save_data_path, param_dict

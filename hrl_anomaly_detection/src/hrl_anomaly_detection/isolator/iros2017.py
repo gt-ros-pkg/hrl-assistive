@@ -337,7 +337,7 @@ def evaluation_omp_isolation(subject_names, task_name, raw_data_path, processed_
     failureData_ai = failureData[feature_list]
 
     #temp
-    kFold_list = kFold_list[:8]
+    ## kFold_list = kFold_list[:8]
 
     # k-fold cross validation
     data_pkl = os.path.join(processed_data_path, 'isol_data.pkl')
@@ -1231,27 +1231,14 @@ if __name__ == '__main__':
 
         #------------------------------------------------------------------------
         # c12 
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        param_dict['ROC']['methods'] = ['progress0', 'progress1']
-        param_dict['HMM']['scale'] = [5.0, 8.0]
-        param_dict['HMM']['cov']   = 1.0
-        single_detector = False 
-        #param_dict['ROC']['weight'] = [-2.6,-5.0]
-
-        
-        ## c11 83-75(5.47,5.47)
         ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
+        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation/'+\
         ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         ## param_dict['ROC']['methods'] = ['progress0', 'progress1']
-        ## param_dict['HMM']['scale'] = [5.0, 9.0]
+        ## param_dict['HMM']['scale'] = [5.0, 8.0]
         ## param_dict['HMM']['cov']   = 1.0
         ## single_detector = False 
-        ## ## param_dict['ROC']['weight'] = [-4.,-8.]
-
-
+        #param_dict['ROC']['weight'] = [-2.6,-5.0]       
 
         ## ## aws 1515-49 zero+ldist+desee+leedist
         ## save_data_path = os.path.expanduser('~')+\
@@ -1275,16 +1262,25 @@ if __name__ == '__main__':
         ## ## param_dict['ROC']['weight'] = [-4.2,-6.2]
 
 
+        #------------------------------------------------------------------------
+        ## c11 83-75(5.47,5.47) = BEEEEEEEEEEEEEEEEEEEST
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        param_dict['ROC']['methods'] = ['progress0', 'progress1']
+        param_dict['HMM']['scale'] = [5.0, 9.0]
+        param_dict['HMM']['cov']   = 1.0
+        single_detector = False 
+        ## ## param_dict['ROC']['weight'] = [-4.,-8.]
+
+
         param_dict['data_param']['handFeatures'] = [['unimodal_audioWristRMS',  \
                                                      'unimodal_kinJntEff_1',\
                                                      'unimodal_ftForce_integ',\
-                                                     #'unimodal_kinDesEEChange',\
                                                      'crossmodal_landmarkEEDist'
                                                     ],\
                                                     ['unimodal_kinVel',\
                                                      'unimodal_ftForce_zero',\
-                                                     #'unimodal_ftForceZ',\
-                                                     #'unimodal_landmarkDist',\
                                                      'unimodal_kinDesEEChange',\
                                                      'crossmodal_landmarkEEDist',\
                                                     ]
@@ -1305,10 +1301,8 @@ if __name__ == '__main__':
         
         param_dict['data_param']['staticFeatures'] = ['unimodal_audioWristFrontRMS',\
                                                       'unimodal_audioWristAzimuth',\
-                                                      ## 'unimodal_ftForce_XY',\
                                                       'unimodal_ftForceX',\
                                                       'unimodal_ftForceY',\
-                                                      ## 'unimodal_ftForceZ',\
                                                       'unimodal_fabricForce',  \
                                                       'unimodal_landmarkDist',\
                                                       'crossmodal_landmarkEEAng',\
