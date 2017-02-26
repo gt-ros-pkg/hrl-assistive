@@ -1,7 +1,8 @@
 <launch>
     <include file="$(find hrl_base_selection)/launch/find_ar_tag.launch"/>
     <!--<param name="autobed/robot_description" textfile="$(find hrl_base_selection)/urdf/bed_and_environment_henry_tray/robots/bed_and_environment_henry_tray.URDF" />-->
-    <param name="autobed/robot_description" textfile="$(find hrl_base_selection)/urdf/bed_and_environment_cali_henry_tray/robots/bed_and_environment_cali_parameterized_tray.URDF" />
+    <!--<param name="autobed/robot_description" textfile="$(find hrl_base_selection)/urdf/bed_and_environment_cali_henry_tray/robots/bed_and_environment_cali_parameterized_tray.URDF" />-->
+    <param name="autobed/robot_description" textfile="$(find hrl_base_selection)/urdf/bed_and_environment_mannequin/robots/bed_and_environment_mannequin.URDF" />
     <!--<param name="autobed/robot_description" command="$(find xacro)/xacro '$(find hrl_base_selection)/urdf/bed_and_environment_cali_henry_tray/robots/bed_and_environment_cali_parameterized_tray.urdf.xacro'" />-->
     <node name="autobed_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" ns="autobed" output="screen"/>
     <node name="autobed_state_publisher_node" pkg="hrl_base_selection" type="autobed_state_publisher_node.py" output="screen"/>
