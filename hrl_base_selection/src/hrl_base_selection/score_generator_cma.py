@@ -2786,7 +2786,7 @@ class ScoreGenerator(object):
             shift = 0.
     #        if self.task == 'scratching_knee_left':
     #        shift = 0.02
-            v[self.autobed.GetJoint('autobed/bed_neck_base_leftright_joint').GetDOFIndex()] = 0.06#head_y
+            v[self.autobed.GetJoint('autobed/bed_neck_base_leftright_joint').GetDOFIndex()] = head_y
             v[self.autobed.GetJoint('autobed/leg_rest_lower_overbed_tray_y_joint').GetDOFIndex()] = head_y
             v[self.autobed.GetJoint('autobed/leg_rest_lower_overbed_tray_x_joint').GetDOFIndex()] = -0.6858
 
@@ -2898,7 +2898,7 @@ class ScoreGenerator(object):
             self.autobed.SetActiveDOFValues(v, 2)
             self.env.UpdatePublishedBodies()
         self.create_vision_cone()
-        rospy.sleep(0.04)
+        rospy.sleep(0.03)
         self.env.UpdatePublishedBodies()
 
     def create_vision_cone(self):

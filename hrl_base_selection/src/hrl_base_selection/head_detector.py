@@ -30,9 +30,12 @@ class HeadDetector:
                 self.current_physical_pressure_map_callback)
         rospy.Subscriber("/head_o/pose", TransformStamped,
                 self.head_origin_callback)
+        # self.database_path = '/home/yashc/Desktop/dataset/subject_4'
         self.database_path = '/home/yashc/Desktop/dataset/subject_4'
-        [self.p_world_mat, self.R_world_mat] = pkl.load(
-                open(os.path.join(self.database_path,'mat_axes.p'), "r"))         
+        # [self.p_world_mat, self.R_world_mat] = pkl.load(
+        #         open(os.path.join(self.database_path,'mat_axes.p'), "r"))
+        self.p_world_mat = np.array([0,0,0])
+        self.R_world_mat = np.eye(3)
         print self.p_world_mat
         print self.R_world_mat
         self.mat_sampled = False
@@ -40,7 +43,6 @@ class HeadDetector:
         self.head_pose = []
         self.zoom_factor = 2
         print "Ready to start listening..."
-
 
     def relu(self, x):
         if x < 0:

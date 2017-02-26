@@ -55,7 +55,7 @@ class DataReader_Task(object):
         elif self.task == 'wiping_mouth':
             thz = m.radians(180)
             z = np.matrix([[m.cos(thz), -m.sin(thz), 0 ,0],[m.sin(thz),m.cos(thz),0,0],[0, 0,1,0],[0,0,0,1]])
-            thy = m.radians(-45.)
+            thy = m.radians(-0.)
             y = np.matrix([[m.cos(thy), 0, m.sin(thy) ,0],[0,1,0,0],[-m.sin(thy), 0,m.cos(thy),0],[0,0,0,1]])
             rot = z*y
             quat = tft.quaternion_from_matrix(rot)
@@ -80,6 +80,29 @@ class DataReader_Task(object):
             liftlink_B_goal = [[.15, 0.0, -0.065, quat[0],  quat[1],  quat[2],  quat[3]],
                                [.15, 0.03, -0.065, quat[0],  quat[1],  quat[2],  quat[3]],
                                [.15, -0.03, -0.065, quat[0],  quat[1],  quat[2],  quat[3]]]
+            for i in xrange(len(liftlink_B_goal)):
+                self.goals.append(liftlink_B_reference.I*createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][3:]))  # all in reference to head
+            # left_side = self.goals[2]
+            # right_side = self.goals[3]
+            # #left_side[0:3,0:3] = -1*right_side[0:3,0:3]
+            # left_side[0,3] = right_side[0,3]
+            # left_side[1,3] = -right_side[1,3]
+            # left_side[2,3] = right_side[2,3]
+            # self.goals[2] = left_side
+            self.num = np.ones([len(self.goals), 1])
+            self.reference_options = ['head']
+            self.reference = np.zeros([len(self.goals), 1])
+        elif self.task == 'feeding_trajectory':
+            thz = m.radians(180)
+            z = np.matrix([[m.cos(thz), -m.sin(thz), 0 ,0],[m.sin(thz),m.cos(thz),0,0],[0, 0,1,0],[0,0,0,1]])
+            thy = m.radians(-0.)
+            y = np.matrix([[m.cos(thy), 0, m.sin(thy) ,0],[0,1,0,0],[-m.sin(thy), 0,m.cos(thy),0],[0,0,0,1]])
+            rot = z*y
+            quat = tft.quaternion_from_matrix(rot)
+            liftlink_B_reference = createBMatrix([0., 0., 0.], [0., 0., 0., 1.])
+            liftlink_B_goal = [[.15, 0.0, -0.065, quat[0],  quat[1],  quat[2],  quat[3]],
+                               [.25, 0.0, -0.065, quat[0],  quat[1],  quat[2],  quat[3]],
+                               [.35, 0.0, -0.065, quat[0],  quat[1],  quat[2],  quat[3]]]
             for i in xrange(len(liftlink_B_goal)):
                 self.goals.append(liftlink_B_reference.I*createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][3:]))  # all in reference to head
             # left_side = self.goals[2]
@@ -125,6 +148,50 @@ class DataReader_Task(object):
             self.num = np.ones([len(self.goals), 1])
             self.reference_options = ['knee_left', 'knee_right', 'foot_left', 'foot_right']
             self.reference = np.array([0, 1, 2, 3])
+        elif self.task == 'bathe_legs':
+            thz = m.radians(180)
+            z = np.matrix([[m.cos(thz), -m.sin(thz), 0 ,0],[m.sin(thz),m.cos(thz),0,0],[0, 0,1,0],[0,0,0,1]])
+            thy = m.radians(0.)
+            y = np.matrix([[m.cos(thy), 0, m.sin(thy) ,0],[0,1,0,0],[-m.sin(thy), 0,m.cos(thy),0],[0,0,0,1]])
+            thx = m.radians(00.)
+            x = np.matrix([[1,0,0,0],[0, m.cos(thx), -m.sin(thx),0],[0,m.sin(thx),m.cos(thx),0],[0,0,0,1]])
+            rot = z*y*x
+            quat = tft.quaternion_from_matrix(rot)
+            liftlink_B_reference = createBMatrix([0., 0., 0.], [0., 0., 0., 1.])
+            liftlink_B_goal = [[.12, 0.0, 0.1, quat[0],  quat[1],  quat[2],  quat[3]],
+                               [.12, 0.0, -0.05, quat[0],  quat[1],  quat[2],  quat[3]],
+                               [.12, 0.0, -0.21, quat[0],  quat[1],  quat[2],  quat[3]],
+                               [.12, 0.0, 0.1, quat[0],  quat[1],  quat[2],  quat[3]],
+                               [.12, 0.0, -0.05, quat[0],  quat[1],  quat[2],  quat[3]],
+                               [.12, 0.0, -0.21, quat[0],  quat[1],  quat[2],  quat[3]],
+                               [.12, 0.0, 0.0, quat[0],  quat[1],  quat[2],  quat[3]],
+                               [.12, 0.0, 0.0, quat[0],  quat[1],  quat[2],  quat[3]]]
+            for i in xrange(len(liftlink_B_goal)):
+                self.goals.append(liftlink_B_reference.I*createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][3:]))  # all in reference to head
+            self.num = np.ones([len(self.goals), 1])
+            self.reference_options = ['knee_left', 'knee_right', 'foot_left', 'foot_right']
+            self.reference = np.array([0, 0, 0, 1, 1, 1, 2, 3])
+        elif self.task == 'arm_cuffs':
+            thz = m.radians(180)
+            z = np.matrix([[m.cos(thz), -m.sin(thz), 0 ,0],[m.sin(thz),m.cos(thz),0,0],[0, 0,1,0],[0,0,0,1]])
+            thy = m.radians(0.)
+            y = np.matrix([[m.cos(thy), 0, m.sin(thy) ,0],[0,1,0,0],[-m.sin(thy), 0,m.cos(thy),0],[0,0,0,1]])
+            thx = m.radians(00.)
+            x = np.matrix([[1,0,0,0],[0, m.cos(thx), -m.sin(thx),0],[0,m.sin(thx),m.cos(thx),0],[0,0,0,1]])
+            rot = z*y*x
+            quat = tft.quaternion_from_matrix(rot)
+            liftlink_B_reference = createBMatrix([0., 0., 0.], [0., 0., 0., 1.])
+            liftlink_B_goal = [[.08, 0.0, -0.05, quat[0], quat[1], quat[2], quat[3]],
+                               [.08, 0.0, -0.19, quat[0], quat[1], quat[2], quat[3]],
+                               [.08, 0.0, -0.05, quat[0], quat[1], quat[2], quat[3]],
+                               [.08, 0.0, -0.19, quat[0], quat[1], quat[2], quat[3]],
+                               [.11, 0.0, -0.23, quat[0], quat[1], quat[2], quat[3]],
+                               [.11, 0.0, -0.23, quat[0], quat[1], quat[2], quat[3]]]
+            for i in xrange(len(liftlink_B_goal)):
+                self.goals.append(liftlink_B_reference.I*createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][3:]))  # all in reference to head
+            self.num = np.ones([len(self.goals), 1])
+            self.reference_options = ['upper_arm_left', 'upper_arm_right', 'forearm_left', 'forearm_right']
+            self.reference = np.array([0, 0, 1, 1, 2, 3])
         elif self.task == 'brushing_teeth':
             liftlink_B_reference = createBMatrix([0., 0., 0.], [0., 0., 0., 1.])
             liftlink_B_goal = [[.125, 0.0, -0.065, 0.5,  0.5,  0.5,  0.5],
@@ -451,12 +518,12 @@ if __name__ == "__main__":
         rospy.spin()
     else:
         # for task in ['wiping_mouth', 'wiping_forehead', 'blanket_feet_knees', 'scratching_knee_left', 'scratching_knee_left', 'scratching_upper_arm_left', 'scratching_upper_arm_right', 'scratching_forearm_left', 'scratching_forearm_right']: #'wiping_face', 'scratching_knee_left', 'scratching_forearm_left','scratching_upper_arm_left']:#'scratching_knee_left', 'scratching_knee_right', 'scratching_thigh_left', 'scratching_thigh_right']:
-        for task in ['wiping_mouth','wiping_forehead']: #'wiping_forehead', 'blanket_feet_knees',wiping_mouth
+        for task in ['bathe_legs','feeding_trajectory']: #'wiping_forehead', 'blanket_feet_knees','wiping_mouth', 'arm_cuffs', 'feeding_trajectory', 'bathe_legs'
             subject = 'any_subject'
             print 'STARTING TASK ', task
             #rospy.init_node(''.join(['data_reader_', subject, '_', model, '_', task]))
             this_start_time = time.time()
-            shaving_data_reader = DataReader_Task(task, model, optimization, visualize=True)
+            shaving_data_reader = DataReader_Task(task, model, optimization, visualize=False)
             shaving_data_reader.generate_score()
             print 'Done! Time to generate all scores for this task: %fs' % (time.time() - this_start_time)
             print 'TASK COMPLETED WAS ', task

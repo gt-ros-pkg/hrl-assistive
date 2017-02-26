@@ -1,0 +1,6 @@
+<package>
+  <description brief="bed_and_environment_henry_tray">bed_and_environment_henry_tray</description>
+  <depend package="gazebo" />
+  <author>me</author>
+  <license>BSD</license>
+</package>

@@ -142,6 +142,16 @@ class BaseSelector(object):
             else:
                 print 'Paper work is only with Autobed. Error!'
                 return
+        elif load == 'mannequin:'
+            self.user_height = '1.75'
+            model = 'autobed'
+            self.scores_dict[model, 'scratching_knee_left'] = self.load_task('scratching_knee_left', model)
+            self.scores_dict[model, 'wiping_forehead'] = self.load_task('wiping_forehead', model)
+            self.scores_dict[model, 'blanket_feet_knees'] = self.load_task('blanket_feet_knees', model)
+            self.scores_dict[model, 'wiping_mouth'] = self.load_task('wiping_mouth', model)
+            self.scores_dict[model, 'bathe_legs'] = self.load_task('scratching_knee_left', model)
+            self.scores_dict[model, 'arm_cuffs'] = self.load_task('wiping_forehead', model)
+            self.scores_dict[model, 'feeding_trajectory'] = self.load_task('blanket_feet_knees', model)
         elif load == 'henry':
             model = 'chair'
             #self.scores_dict[model, 'shaving'] = self.load_task('shaving', model)
@@ -364,7 +374,6 @@ class BaseSelector(object):
         else:
             return self.handle_returning_base_goals()
 
-
     # The service call function that determines a good base location to be able to reach the goal location.
     # Takes as input the service's inputs. Outputs lists with initial configurations.
     def handle_select_base(self, req):
@@ -560,8 +569,6 @@ class BaseSelector(object):
             heady_neigh = KNeighborsClassifier(n_neighbors=1)
             heady_neigh.fit(np.reshape(heady_possibilities,[len(heady_possibilities),1]), heady_possibilities)
             heady = heady_neigh.predict(int(model_B_head[1, 3]*1000))[0]*.001
-
-
 
             headx = 0.
             #heady = 0.
