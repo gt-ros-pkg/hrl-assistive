@@ -142,16 +142,17 @@ class BaseSelector(object):
             else:
                 print 'Paper work is only with Autobed. Error!'
                 return
-        elif load == 'mannequin:'
+        elif load == 'mannequin':
+            print 'Using Mannequin mode. This is loading the tasks for the mannequin'
             self.user_height = '1.75'
             model = 'autobed'
             self.scores_dict[model, 'scratching_knee_left'] = self.load_task('scratching_knee_left', model)
             self.scores_dict[model, 'wiping_forehead'] = self.load_task('wiping_forehead', model)
             self.scores_dict[model, 'blanket_feet_knees'] = self.load_task('blanket_feet_knees', model)
             self.scores_dict[model, 'wiping_mouth'] = self.load_task('wiping_mouth', model)
-            self.scores_dict[model, 'bathe_legs'] = self.load_task('scratching_knee_left', model)
-            self.scores_dict[model, 'arm_cuffs'] = self.load_task('wiping_forehead', model)
-            self.scores_dict[model, 'feeding_trajectory'] = self.load_task('blanket_feet_knees', model)
+            self.scores_dict[model, 'bathe_legs'] = self.load_task('bathe_legs', model)
+            self.scores_dict[model, 'arm_cuffs'] = self.load_task('arm_cuffs', model)
+            self.scores_dict[model, 'feeding_trajectory'] = self.load_task('feeding_trajectory', model)
         elif load == 'henry':
             model = 'chair'
             #self.scores_dict[model, 'shaving'] = self.load_task('shaving', model)
@@ -385,14 +386,14 @@ class BaseSelector(object):
         self.task = task
 
         # Check if we have previously loaded this task/model (assuming the data file exists).
-        if self.load == 'henry':
+        if self.load == 'henry' or self.load == 'mannequin':
             self.model = model
         else:
             if self.model != model:
                 print 'The model in the service request differs from what was given to the service on initialization. As' \
                       'a result, data for a user in that location (autobed/chair) has not been loaded!'
         if self.load != 'all':
-            if self.load != task and self.load != 'paper' and self.load != 'henry':
+            if self.load != task and self.load != 'paper' and self.load != 'henry' and self.load != 'mannequin':
                 print 'The task asked of the service request differs from what was given to the service on ' \
                       'initialization. As a result, data for that task has not been loaded!'
                 # print 'As a result, only the runtime version of base selection is active.'
@@ -618,7 +619,7 @@ class BaseSelector(object):
         else:
             all_scores = self.scores_dict[model, task]
         #scores = all_scores[headx, heady]
-        max_num_configs = 1
+        max_num_configs = 2
 
         head_rest_angle = -10
         allow_bed_movement = 1
@@ -755,6 +756,7 @@ class BaseSelector(object):
         print list(flatten(pr2_base_output))
         print list(flatten(configuration_output))
         print distance_output
+        print 'The number of configurations coming from Base Selection is ', len(distance_output)
         return list(flatten(pr2_base_output)), list(flatten(configuration_output)), distance_output
 
     # This function is deprecated. Do not use it for now. It is to plot in 2D the score sheet after it gets updated
