@@ -153,7 +153,7 @@ class BaseSelector(object):
             self.scores_dict[model, 'bathe_legs'] = self.load_task('bathe_legs', model)
             self.scores_dict[model, 'arm_cuffs'] = self.load_task('arm_cuffs', model)
             self.scores_dict[model, 'feeding_trajectory'] = self.load_task('feeding_trajectory', model)
-            self.scores_dict[model, 'shaving'] = self.load_task('shaving', model)
+#            self.scores_dict[model, 'shaving'] = self.load_task('shaving', model)
         elif load == 'henry':
             model = 'chair'
             #self.scores_dict[model, 'shaving'] = self.load_task('shaving', model)
