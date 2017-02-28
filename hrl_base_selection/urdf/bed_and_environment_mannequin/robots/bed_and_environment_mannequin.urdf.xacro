@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="bed_and_environment_mannequin">
-<xacro:property name="body_len" value="1.9" />
+<xacro:property name="body_len" value="1.7" />
 <xacro:property name="comp_len" value="1.755" />
 <xacro:property name="torso_thickness" value="${body_len/comp_len*0.18}" />
 <xacro:property name="leg_thickness" value="${body_len/comp_len*0.16}" />
@@ -332,7 +332,7 @@
     name="autobed/headrest_bed_to_worldframe_joint"
     type="revolute">
     <origin
-      xyz="${rotated_torso+clavicle_len} ${0.15+0.21-0.04} 0"
+      xyz="${rotated_torso+clavicle_len} ${0.15+0.21-0.12} 0"
       rpy="0. 0. 0." />
     <!--<origin-->
       <!--xyz="0.40949 0.05 0"-->
