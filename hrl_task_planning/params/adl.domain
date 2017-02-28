@@ -17,6 +17,7 @@
              feeding - task
              bathing - task
              dressing - task
+             shaving - task
  )
 
  (:predicates

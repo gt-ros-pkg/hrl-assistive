@@ -524,6 +524,8 @@ class CallBaseSelectionState(PDDLSmachState):
             local_task_name = 'bathe_legs'
         elif self.task.upper() == 'DRESSING':
             local_task_name = 'arm_cuffs'
+        elif self.task.upper() == 'SHAVING':
+            local_task_name = 'shaving'
 
         if self.model.upper() == 'AUTOBED':
             try:
