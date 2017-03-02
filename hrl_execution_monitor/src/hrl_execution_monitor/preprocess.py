@@ -90,6 +90,7 @@ def preprocess_data(src_pkl, save_data_path, img_scale=0.25, nb_classes=12,
 
                 img = extract_image(f, img_feature_type=img_feature_type,
                                     img_scale=img_scale)
+                print np.shape(img)
                 x.append(img)
             x_img = x
 
@@ -123,8 +124,6 @@ def preprocess_images(raw_data_path, save_data_path, img_scale=0.25, nb_classes=
         files = os.listdir( os.path.join(raw_data_path, str(i+offset)) )
         for f in files:
             if f.split('.')[1].find('jpg') or f.split('.')[1].find('JPG'):
-                ## x.append(os.path.join(raw_data_path, str(i+1), f))
-
                 img = extract_image(os.path.join(raw_data_path, str(i+offset), f),
                                     img_feature_type=img_feature_type,
                                     img_scale=img_scale)
@@ -141,7 +140,10 @@ def preprocess_images(raw_data_path, save_data_path, img_scale=0.25, nb_classes=
     return
 
 
-def extract_image(f, img_feature_type='vgg', img_scale=None):
+def extract_image(f, img_feature_type='vgg', img_scale=None, img_ordering='th'):
+    '''
+    cv2 imread follows th ordering.
+    '''
 
     # Extract image features
     if img_feature_type is 'cnn':
@@ -169,13 +171,66 @@ def extract_image(f, img_feature_type='vgg', img_scale=None):
         img[:,:,1] -= 116.779
         img[:,:,2] -= 123.68
 
-        ## if viz:
-        ##     print np.shape(img), type(img), type(img[0][0][0])
-        ##     # visual check
-        ##     cv2.imshow('image',img)
-        ##     cv2.waitKey(0)
-        ##     cv2.destroyAllWindows()
-        ##     sys.exit()
+        img = img.transpose((2,0,1))
+
+    elif img_feature_type is 'cascade':
+        img_size = (256,256)
+        crop_size = (224,224)
+
+        img = cv2.resize(cv2.imread(f), img_size)
+        rows,cols = np.shape(img)[:2]
+        M   = cv2.getRotationMatrix2D((cols/2,rows/2),180,1)
+        img = cv2.warpAffine(img,M,(cols,rows))
+
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        faceDetectClassifier = cv2.CascadeClassifier("/home/dpark/util/opencv-2.4.11/data/haarcascades/haarcascade_frontalface_default.xml")
+        facePoints = faceDetectClassifier.detectMultiScale(gray, 1.3, 5)
+
+        if len(facePoints)==0:
+            # Find a head using another way!!
+            # visual check
+            ## cv2.imshow('image',img.astype(np.uint8))
+            ## cv2.waitKey(0)
+            ## cv2.destroyAllWindows()
+            x = img_size[0]/2
+            y = img_size[1]/2
+        else:        
+            x,y,w,h = facePoints[0]
+            x += w/2
+            y += h/2
+
+        add_border=False
+        if y - crop_size[1]/2 < 0 or y + crop_size[1]/2 >= len(img) or\
+            x - crop_size[0]/2 < 0 or x + crop_size[0]/2 >= len(img[0]):
+            ## print y - crop_size[1]/2, y + crop_size[1]/2, x - crop_size[0]/2, x + crop_size[0]/2
+            # Add replicated border
+            ## margin = max( abs(y-crop_size[1]/2) if 
+            img = cv2.copyMakeBorder(img,150,150,150,150,cv2.BORDER_REPLICATE)
+            x += 150
+            y += 150
+            add_border=True
+            
+            ## for (x,y,w,h) in facePoints:
+            ##     cv2.rectangle(img,(x,y),(x+w,y+h),(255,0,0),2)
+            
+            ## print np.shape(img), type(img), type(img[0][0][0])
+            ## # visual check
+            ## cv2.imshow('image',img.astype(np.uint8))
+            ## cv2.waitKey(0)
+            ## cv2.destroyAllWindows()
+            ## #sys.exit()
+
+            
+        img = img.astype(np.float32)      
+        img = img[y - crop_size[1]/2: y + crop_size[1]/2, x - crop_size[0]/2: x + crop_size[0]/2]
+        rows,cols = np.shape(img)[:2]
+        M   = cv2.getRotationMatrix2D((cols/2,rows/2),180,1)
+        img = cv2.warpAffine(img,M,(cols,rows))
+
+        # for vgg but lets use
+        img[:,:,0] -= 103.939
+        img[:,:,1] -= 116.779
+        img[:,:,2] -= 123.68
         img = img.transpose((2,0,1))
 
     elif img_feature_type == 'hog':

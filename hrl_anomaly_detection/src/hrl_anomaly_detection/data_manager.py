@@ -33,12 +33,6 @@ import os, sys, copy
 import random
 import warnings
 
-import matplotlib
-## matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-from matplotlib import gridspec
-
 # util
 import numpy as np
 import scipy
@@ -53,7 +47,14 @@ from mvpa2.generators import splitters
 from sklearn import cross_validation
 from sklearn.externals import joblib
 
+# matplot
+import matplotlib
+## matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import gridspec
+matplotlib.rcParams['pdf.fonttype'] = 42
+matplotlib.rcParams['ps.fonttype'] = 42 
 
 def create_mvpa_dataset(aXData, chunks, labels):
     data = Dataset(samples=aXData)
@@ -368,8 +369,6 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path,
         fig = plt.figure()
         n,m,k = np.shape(successData)
         nPlot = n
-        ## print nPlot, np.shape(successData)
-        
         ## nPlot = 4
         ## n = 4
         
@@ -390,7 +389,6 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path,
     if failure_viz and False:
         if fig is None: fig = plt.figure()
         n,m,k = np.shape(failureData)
-        nPlot = n
 
         for i in xrange(n):
             ax = fig.add_subplot(n*100+10+i)
@@ -540,73 +538,157 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
         
         ut.save_pickle(data_dict, save_pkl)
 
+    if not(success_viz or failure_viz): return data_dict
+
     #-----------------------------------------------------------------------------
     ## All data
-    nPlot = None
-
-    # almost deprecated??
     AddFeature_names = np.array(param_dict.get('feature_names', handFeatures))
+    scale = np.array(param_dict['feature_max'])-np.array(param_dict['feature_min'])
 
-    # -------------------- Display ---------------------
-    
-    fig = None
+    import itertools
+    colors = itertools.cycle(['g', 'm', 'c', 'k', 'y','r', 'b', ])
+    shapes = itertools.cycle(['x','v', 'o', '+'])
+
+    # -------------------- Display -----------------------------------------------
+    fig = plt.figure()
     if success_viz:
-
-        import itertools
-        colors = itertools.cycle(['g', 'm', 'c', 'k', 'y','r', 'b', ])
-        shapes = itertools.cycle(['x','v', 'o', '+'])
-
-        fig = plt.figure()        
-
-        for successData in successDataList:
-            n,m,k = np.shape(successData)
-            nPlot = n
-            color = colors.next()
-
-            print "successData shape: ", n,m,k
-
+        if True:
+            p,n,m,k = np.shape(successDataList)
+            successDataList = np.swapaxes(successDataList, 0,1)
+            
             for i in xrange(n):
-                if n>9:
-                    ax = fig.add_subplot(nPlot/2,2,i+1)
-                else:
-                    ax = fig.add_subplot(n*100+10+i+1)
-                if solid_color: ax.plot(successData[i].T, c='b')
-                else: ax.plot(successData[i].T, c=color)
+                if n>9: ax = fig.add_subplot(n/2,2,i+1)
+                else:   ax = fig.add_subplot(n*100+10+i+1)
 
-                if AddFeature_names[i] == 'ftForce_mag': ax.set_ylabel('Force Magnitude (N)')
-                elif AddFeature_names[i] == 'artagEEDist': ax.set_ylabel('Relative Distance (m)')
-                elif AddFeature_names[i] == 'audioWristRMS': ax.set_ylabel('Sound Energy')
-                else: ax.set_ylabel(AddFeature_names[i])
+                x    = range(k)
+                mean = np.mean( successDataList[i].reshape((p*m,k))*scale[i] +
+                                param_dict['feature_min'][i], axis=0 )
+                std  = np.std( successDataList[i].reshape((p*m,k))*scale[i] +
+                                param_dict['feature_min'][i], axis=0 )
+                ax.plot(x, mean, 'k-')
+                ax.fill_between(x, mean-std, mean+std, facecolor='blue', alpha=0.5, linewidth=0.0)
+                ax.locator_params(axis='y', nbins=3)
+                ## ax.set_ylim([param_dict['feature_min'][i],
+                ##              param_dict['feature_max'][i]*0.7])
+                ax.set_ylim([np.amin(mean)-np.amax(std),np.amax(mean)+2*np.amax(std)])
+                ## ax.set_ylim([np.amin(successDataList[i]*scale[i]+param_dict['feature_min'][i]),
+                ##             np.amax(successDataList[i]*scale[i]+param_dict['feature_max'][i])  ])
+                
+                if i < n-1: ax.tick_params(axis='x', bottom='off', labelbottom='off')
 
+            x_tick = [param_dict['timeList'][0],
+                      (param_dict['timeList'][-1]-param_dict['timeList'][0])/2.0,
+                      param_dict['timeList'][-1]]
+            ax.set_xticks(np.linspace(0, k, len(x_tick)))        
+            ax.set_xticklabels(x_tick)
+            
+        else:
+            for successData in successDataList:
+                n,m,k = np.shape(successData)
+                color = colors.next()
+
+                print "successData shape: ", n,m,k
+                for i in xrange(n):
+                    if n>9: ax = fig.add_subplot(n/2,2,i+1)
+                    else:   ax = fig.add_subplot(n*100+10+i+1)
+                    if solid_color: ax.plot(successData[i].T, c='b')
+                    else: ax.plot(successData[i].T, c=color)
 
     if failure_viz:
-        if fig is None: fig = plt.figure()
+        if True:#iros 2017 paper
+            p,n,m,k = np.shape(failureDataList)
+            failureDataList = np.swapaxes(failureDataList, 0,1)
+            
+            fidx = 7
+            target_class = 12
+            for lidx, l in enumerate(failureFileList[fidx]):
+                if int(l.split('/')[-1].split('_')[0]) == target_class:
+                    print l
+                    for i in xrange(n): # per feature                
+                        if n>9: ax = fig.add_subplot(n/2,2,i+1)
+                        else:   ax = fig.add_subplot(n*100+10+i+1)
+                        ax.plot(np.array(failureDataList[i])[fidx,lidx].T*scale[i] +
+                                param_dict['feature_min'][i], c='r', lw=3)
+                    break
 
-        for fidx, failureData in enumerate(failureDataList):
-            if len(failureData)==0: break
-            n,m,k = np.shape(failureData)            
-            nPlot = n
+        else:
+            for fidx, failureData in enumerate(failureDataList):
+                if len(failureData)==0: break
+                n,m,k = np.shape(failureData)            
+                print np.shape(failureData)
 
-            failure_data = None
-            if target_class is not None:
-                for lidx, l in enumerate(failureFileList[fidx]):
-                    if int(l.split('/')[-1].split('_')[0]) in target_class:
-                        if failure_data is None:
-                            failure_data = copy.copy(np.array(failureData)[:,lidx:lidx+1,:])
-                        else:
-                            failure_data = np.vstack([failure_data, np.array(failureData)[:,lidx:lidx+1,:] ])
-            else:
-                failure_data = failureData
-
-            for i in xrange(n): # per feature                
-                if n>9:
-                    ax = fig.add_subplot(nPlot/2,2,i+1)
+                failure_data = None
+                if target_class is not None:
+                    for lidx, l in enumerate(failureFileList[fidx]):
+                        if int(l.split('/')[-1].split('_')[0]) in target_class:
+                            if failure_data is None:
+                                failure_data = copy.copy(np.array(failureData)[:,lidx:lidx+1,:])
+                            else:
+                                failure_data = np.vstack([failure_data, np.array(failureData)[:,lidx:lidx+1,:] ])
                 else:
-                    ax = fig.add_subplot(n*100+10+i+1)
-                if solid_color: ax.plot(failure_data[i].T, c='r')
-                else: ax.plot(failure_data[i].T)
-                ax.set_title( AddFeature_names[i] )
+                    failure_data = failureData
+                  
+                for lidx in xrange(len(failure_data[0])):
+                    
+                    for i in xrange(n): # per feature                    
+                        if n>9: ax = fig.add_subplot(n/2,2,i+1)
+                        else:   ax = fig.add_subplot(n*100+10+i+1)
+                        if solid_color: ax.plot(failure_data[i][lidx].T*scale[i] +
+                                                param_dict['feature_min'][i], c='r')
+                        else: ax.plot(failure_data[i][lidx].T*scale[i] +
+                                      param_dict['feature_min'][i])
 
+    #------------------------------------------------------------------------------
+    ## plt.tight_layout()
+    for i in xrange(n):
+        if n>9: ax = fig.add_subplot(n/2,2,i+1)
+        else:   ax = fig.add_subplot(n*100+10+i+1)
+
+        if AddFeature_names[i] == 'kinVel':
+            ax.set_ylabel('Spoon speed'+'\n'+'(m/s)', rotation='horizontal', verticalalignment='center',
+                          horizontalalignment='center' )
+            ax.yaxis.set_label_coords(-0.17,0.5)
+        elif AddFeature_names[i] == 'kinJntEff_1':
+            ax.set_ylabel('1st Joint'+'\n'+'Torque(Nm)', rotation='horizontal',
+                          verticalalignment='center',
+                          horizontalalignment='center')
+            ax.yaxis.set_label_coords(-0.17,0.5)
+        elif AddFeature_names[i] == 'ftForce_mag_integ':
+            ax.set_ylabel('Accumulated'+'\n'+'Force'+'\n'+'on Spoon(N)', rotation='horizontal', verticalalignment='center',
+                          horizontalalignment='center')
+            ax.yaxis.set_label_coords(-0.17,0.5)
+        elif AddFeature_names[i] == 'landmarkEEDist':
+            ax.set_ylabel('Spoon-Mouth'+'\n'+'Distance(m)', rotation='horizontal',
+                          verticalalignment='center',
+                          horizontalalignment='center')
+            ax.yaxis.set_label_coords(-0.17,0.5)
+        elif AddFeature_names[i] == 'DesEEChange':
+            ax.set_ylabel('Desired Spoon'+'\n'+'Displacement'+'\n'+'(m)', rotation='horizontal',
+                          verticalalignment='center',
+                          horizontalalignment='center')
+            ax.yaxis.set_label_coords(-0.17,0.5)
+        elif AddFeature_names[i].find('force')>=0 or AddFeature_names[i].find('Force')>=0:
+            ax.set_ylabel('Force on'+'\n'+'Spoon(N)', rotation='horizontal',
+                          verticalalignment='center',
+                          horizontalalignment='center')
+            ax.yaxis.set_label_coords(-0.17,0.5)
+        elif AddFeature_names[i].find('dist')>=0 or AddFeature_names[i].find('change')>=0\
+           or AddFeature_names[i].find('Change')>=0 or AddFeature_names[i].find('Dist')>=0:
+            ax.set_ylabel('Distance'+'\n'+'(m)')
+            ax.yaxis.set_label_coords(-0.17,0.5)
+        elif AddFeature_names[i] == 'audioWristRMS':
+            ax.set_ylabel('Sound'+'\n'+'Energy', rotation='horizontal',
+                          verticalalignment='center',
+                          horizontalalignment='center')
+            ax.yaxis.set_label_coords(-0.17,0.5)
+            val = ax.set_ylim()
+            ax.set_ylim([0.0, val[1]])
+
+        else: ax.set_ylabel(AddFeature_names[i], fontsize=18)
+        ## ax.set_title( AddFeature_names[i], fontsize=18 )
+    ax.set_xlabel('Time [s]', fontsize=18)
+    #plt.tight_layout(pad=0.0, w_pad=1.5, h_pad=0.0)
+    fig.subplots_adjust(left=0.2) 
 
     if success_viz or failure_viz:
         if save_pdf:
@@ -1465,7 +1547,6 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
             
 
     # -------------------------------------------------------------        
-
     # extract local features
     startOffsetSize = 4
     dataList   = []
@@ -1478,7 +1559,6 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
 
         # Unimoda feature - Audio --------------------------------------------
         if 'unimodal_audioPower' in feature_list:
-            ## audioAzimuth = d['audioAzimuthList'][idx]
             unimodal_audioPower = d['audioPowerList'][idx]
             
             if dataSample is None: dataSample = copy.copy(np.array(unimodal_audioPower))
@@ -1560,28 +1640,11 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
                 if 'kinJntEff_'+str(jnt_idx+1) not in param_dict['feature_names']:           
                     param_dict['feature_names'].append( 'kinJntEff_'+str(jnt_idx+1) )
 
-        ## # Unimodal feature - Kinematics --------------------------------------
-        ## if 'unimodal_kinJntEff' in feature_list:
-        ##     unimodal_kinJntEff = d['kinJntEffList'][idx]
-
-        ##     if offset_flag:
-        ##         offset = np.mean(unimodal_kinJntEff[:,:startOffsetSize], axis=1)
-        ##         for i in xrange(len(offset)):
-        ##             unimodal_kinJntEff[i] -= offset[i]
-
-
-        ##     if dataSample is None: dataSample = np.array(unimodal_kinJntEff)
-        ##     else: dataSample = np.vstack([dataSample, unimodal_kinJntEff])
-        ##     if 'kinJntEff_1' not in param_dict['feature_names']:           
-        ##         for i in xrange(len(unimodal_kinJntEff)):
-        ##             param_dict['feature_names'].append('kinJntEff_'+str(i+1))
 
         # Unimodal feature - Force -------------------------------------------
         if 'unimodal_ftForce' in feature_list:
             ftForce = d['ftForceList'][idx]
             
-            # magnitude
-            ## if len(np.shape(ftForce)) > 1:
             unimodal_ftForce_mag = np.linalg.norm(ftForce, axis=0)
             if offset_flag: #correct???????
                 unimodal_ftForce_mag -= np.mean(unimodal_ftForce_mag[:startOffsetSize])
@@ -1591,14 +1654,7 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
 
             if 'ftForce_mag' not in param_dict['feature_names']:
                 param_dict['feature_names'].append('ftForce_mag')
-            ## else:                
-            ##     unimodal_ftForce_mag = ftForce
-            
-            ##     if dataSample is None: dataSample = np.array(unimodal_ftForce_mag)
-            ##     else: dataSample = np.vstack([dataSample, unimodal_ftForce_mag])
 
-            ##     if 'ftForce_mag' not in param_dict['feature_names']:
-            ##         param_dict['feature_names'].append('ftForce_mag')
 
         # Unimodal feature - Force zeroing -------------------------------------------
         if 'unimodal_ftForce_zero' in feature_list:

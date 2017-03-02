@@ -84,8 +84,8 @@
                                                        /scooping/manipulation_task/ad_sensitivity_request
                                                        /scooping/manipulation_task/ad_sensitivity_state
                                                        /scooping/manipulation_task/eval_status
-                                                       /manipulation_task/hmm_input0
-                                                       /manipulation_task/hmm_input1
+                                                       /feeding/manipulation_task/hmm_input0
+                                                       /feeding/manipulation_task/hmm_input1
                                                        " output="screen"/>
 </launch>
 

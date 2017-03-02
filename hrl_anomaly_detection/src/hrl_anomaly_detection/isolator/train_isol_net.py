@@ -54,7 +54,7 @@ import cv2
 import gc
 
 
-def train_isolator_modules(save_data_path, n_labels, verbose=False):
+def train_isolator_modules(save_data_path, n_labels, verbose=False, cause_class=True):
     '''
     Train networks
     '''
@@ -65,7 +65,7 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
     nFold = 8
     fold_list = range(nFold)
     ## fold_list = [0] #[3,4,7]
-    ## fold_list = [3,4]
+    ## fold_list = [1]
     
 
     save_data_path = os.path.join(save_data_path, 'keras')
@@ -73,8 +73,8 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
     # training with signals ----------------------------------
     ## kt.train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5)
     ## kt.train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5, load_weights=True)
-    kt.train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5, load_weights=True,
-                         test_only=True) #70
+    ## kt.train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5, load_weights=True,
+    ##                      test_only=True, cause_class=cause_class) #70
     #                        0.88 0.79  0.80  0.779  0.761
 
 
@@ -85,22 +85,24 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
     ## kt.train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, patience=30)
     ## kt.train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, nb_epoch=1000, patience=30,
     ##                               load_weights=True)
-    ## kt.train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, nb_epoch=1000,
-    ##                               load_weights=True,
-    ##                               test_only=True)
+    kt.train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, nb_epoch=1000,
+                                  load_weights=True,
+                                  test_only=True, cause_class=cause_class)
 
     # training_with all --------------------------------------
     ## kt.get_bottleneck_mutil(save_data_path, n_labels, fold_list, vgg=True)
     ## kt.train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, patience=10)
-    ## kt.train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, patience=100, load_weights=True)
+    ## kt.train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, patience=10, load_weights=True)
     ## kt.train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, load_weights=True,
     ##                          test_only=True) #74
 
-    # 0.55 0.92 0.93 0.82    0.76 0.76 0.88 0.75
+    # 0.58 0.81 0.8 0.93    0.76 0.82 0.92 0.80
     ## kt.train_with_all(save_data_path, n_labels, fold_list, patience=1, nb_epoch=1, vgg=True)
     ## kt.train_with_all(save_data_path, n_labels, fold_list, load_weights=True, patience=5, vgg=True)
     ## kt.train_with_all(save_data_path, n_labels, fold_list, load_weights=True, patience=5, vgg=True,
     ##                   test_only=True)
+    # 64 81 80 93     76 82 92 80
+    
     return
 
 
@@ -181,7 +183,7 @@ def evaluate_svm(save_data_path, viz=False):
     if viz: plot_confusion_matrix(y_test_list, y_pred_list)
 
 
-def test_isolator(save_data_path, n_labels, vgg=True, save_pdf=False):
+def test_isolator(save_data_path, n_labels, vgg=True, save_pdf=False, cause_class=True):
 
     if vgg: prefix = 'vgg_'
     else: prefix = ''
@@ -199,10 +201,9 @@ def test_isolator(save_data_path, n_labels, vgg=True, save_pdf=False):
     fold_list = range(nFold)
     save_data_path = os.path.join(save_data_path, 'keras')
 
-
-    y_test_list = []
-    y_pred_list = []
-
+    new_y_pred = []
+    new_y_test = []
+    
     scores= []
     for idx in fold_list:
         # Loading data
@@ -226,7 +227,6 @@ def test_isolator(save_data_path, n_labels, vgg=True, save_pdf=False):
         ## y_pred_list += np.argmax(y_pred, axis=1).tolist()
         ## y_test_list += np.argmax(y_test, axis=1).tolist()
 
-
         weights_path = os.path.join(save_data_path,prefix+'all_weights_'+str(idx)+'.h5')
         model = km.vgg16_net(np.shape(x_train_img)[1:], n_labels, with_multi_top=True,
                              input_shape2=np.shape(x_train_sig)[1:],
@@ -234,28 +234,49 @@ def test_isolator(save_data_path, n_labels, vgg=True, save_pdf=False):
                              fine_tune=True)
 
         y_pred = model.predict([x_test_img/255., x_test_sig])
-        y_pred_list += np.argmax(y_pred, axis=1).tolist()
-        y_test_list += np.argmax(y_test, axis=1).tolist()
 
-    from sklearn.metrics import accuracy_score
-    print "score : ", accuracy_score(y_test_list, y_pred_list)
-        ## scores.append( accuracy_score(y_test_list, y_pred_list) )
+        y_test_list = []
+        y_pred_list = []
+        if cause_class:
+            y_pred_list = np.argmax(y_pred, axis=1).tolist()
+            y_test_list = np.argmax(y_test, axis=1).tolist()
+        else:
+            y_group = [[3,5,10],[2,7,8,9,11],[1,6],[0,4]]
+            
+            for y in np.argmax(y_pred, axis=1):
+                if y in y_group[0]: y_pred_list.append(0)
+                elif y in y_group[1]: y_pred_list.append(1)
+                elif y in y_group[2]: y_pred_list.append(2)
+                elif y in y_group[3]: y_pred_list.append(3)
 
-    print np.unique(y_pred_list), np.unique(y_test_list)
+            for y in np.argmax(y_test, axis=1):
+                if y in y_group[0]: y_test_list.append(0)
+                elif y in y_group[1]: y_test_list.append(1)
+                elif y in y_group[2]: y_test_list.append(2)
+                elif y in y_group[3]: y_test_list.append(3)
 
-    new_y_pred = copy.copy(y_pred_list)
-    new_y_test = copy.copy(y_test_list)
-    ## for i, y in enumerate(y_pred_list):
-    ##     if y == 9: new_y_pred[i] = 2
-    ##     elif y == 10: new_y_pred[i] = 3
-    ## for i, y in enumerate(y_test_list):
-    ##     if y == 9: new_y_test[i] = 2
-    ##     elif y == 10: new_y_test[i] = 3
+        from sklearn.metrics import accuracy_score
+        print "score : ", accuracy_score(y_test_list, y_pred_list)
+        scores.append( accuracy_score(y_test_list, y_pred_list) )
 
-    print np.unique(new_y_pred), np.unique(new_y_test)
+        print np.unique(y_pred_list), np.unique(y_test_list)
+        new_y_pred += y_pred_list
+        new_y_test += y_test_list
+
+    ## new_y_pred = copy.copy(y_pred_list)
+    ## new_y_test = copy.copy(y_test_list)
+
+    ## if cause_class == False:
+    ##     for i, y in enumerate(y_pred_list):
+    ##         if y == 9: new_y_pred[i] = 2
+    ##         elif y == 10: new_y_pred[i] = 3
+    ##     for i, y in enumerate(y_test_list):
+    ##         if y == 9: new_y_test[i] = 2
+    ##         elif y == 10: new_y_test[i] = 3
+    ## print np.unique(new_y_pred), np.unique(new_y_test)
 
             
-    ## print np.mean(scores), np.std(scores)
+    print np.mean(scores), np.std(scores)
     plot_confusion_matrix( new_y_test, new_y_pred, save_pdf=save_pdf )
 
 
@@ -274,6 +295,19 @@ def plot_confusion_matrix(y_test_list, y_pred_list, save_pdf=False):
                'Spoon collision by system fault',
                'Freeze by system fault']
 
+    classes = ['Environmental collision',
+               'Environmental noise',
+               'Tool miss by user\'s head move ',
+               'Tool collision by user\'s head move',
+               'Touch by user',
+               'Aggressive eating',
+               'Sound from user',
+               'Unreachable location',
+               'Face occlusion',
+               'Tool miss by system fault',
+               'Tool collision by system fault',
+               'System freezing']
+
 
     from sklearn.metrics import confusion_matrix
     cm = confusion_matrix(y_test_list, y_pred_list)
@@ -283,6 +317,23 @@ def plot_confusion_matrix(y_test_list, y_pred_list, save_pdf=False):
     eviz.plot_confusion_matrix(cm, classes=classes, normalize=True,
                                title='Anomaly Classification', save_pdf=save_pdf)
     
+
+
+def save_bottleneck_features(save_data_path, n_labels):
+
+    save_data_path = os.path.join(save_data_path, 'keras')
+
+    idx = 0
+    bt_data_path = os.path.join(save_data_path, 'bt')
+    x_train = np.load(open(os.path.join(bt_data_path,'x_train_btmt_'+str(idx)+'.npy')))
+    y_train = np.load(open(os.path.join(bt_data_path,'y_train_btmt_'+str(idx)+'.npy')))
+    x_test  = np.load(open(os.path.join(bt_data_path,'x_test_btmt_'+str(idx)+'.npy')))
+    y_test  = np.load(open(os.path.join(bt_data_path,'y_test_btmt_'+str(idx)+'.npy')))
+    print np.shape(x_train), np.shape(y_train), np.shape(x_test), np.shape(y_test)
+    
+
+    import hrl_anomaly_detection.isolator.isolation_util as iutil
+    iutil.save_data_labels(x_train, np.argmax(y_train, axis=1))
 
 
 
@@ -306,22 +357,20 @@ if __name__ == '__main__':
                  default=False, help='Visualize')
     p.add_option('--viz_model', '--vm', action='store_true', dest='viz_model',
                  default=False, help='Visualize the current model')
-
+    p.add_option('--save_viz_feature', '--svf', action='store_true', dest='save_viz_feature',
+                 default=False, help='Save features for visualization')
     
     opt, args = p.parse_args()
 
     #---------------------------------------------------------------------------           
     # Run evaluation
     #---------------------------------------------------------------------------           
-    rf_center     = 'kinEEPos'        
-    scale         = 1.0
-    local_range   = 10.0
     nPoints = 40 #None
 
     from hrl_anomaly_detection.isolator.IROS2017_params import *
     raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
                                                           opt.bHMMRenew, opt.bCLFRenew, opt.dim,\
-                                                          rf_center, local_range, nPoints=nPoints)
+                                                          nPoints=nPoints)
     if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
     # Mikako - bad camera
     # s1 - kaci - before camera calibration
@@ -344,7 +393,13 @@ if __name__ == '__main__':
       '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
       str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
-      
+    # IROS2017 - backup
+    ## save_data_path = os.path.expanduser('~')+\
+    ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation9/'+\
+    ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+
+    cause_class = False
+    
     # ---------------------------------------------------------------------
     if opt.preprocessing:
         src_pkl = os.path.join(save_data_path, 'isol_data.pkl')
@@ -364,9 +419,11 @@ if __name__ == '__main__':
         plot(model, to_file='model.png')
         
     elif opt.train:
-
-        train_isolator_modules(save_data_path, n_labels, verbose=False)
+        train_isolator_modules(save_data_path, n_labels, verbose=False, cause_class=cause_class)
         ## evaluate_svm(save_data_path, viz=True)
 
     elif opt.test:
-        test_isolator(save_data_path, n_labels, save_pdf=opt.bSavePdf)
+        test_isolator(save_data_path, n_labels, save_pdf=opt.bSavePdf, cause_class=cause_class)
+
+    elif opt.save_viz_feature:
+        save_bottleneck_features(save_data_path, n_labels)

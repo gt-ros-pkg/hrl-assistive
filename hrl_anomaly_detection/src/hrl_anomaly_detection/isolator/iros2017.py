@@ -757,9 +757,6 @@ def evaluation_isolation2(subject_names, task_name, raw_data_path, processed_dat
         weight = util.get_best_weight(ROC_data, nPoints, ROC_dict)
 
 
-    #temp
-    #kFold_list = kFold_list[:4]
-    
     #-----------------------------------------------------------------------------------------
     # Training HMM, and getting classifier training and testing data
     data_dict = {}
@@ -940,16 +937,17 @@ if __name__ == '__main__':
         success_viz = True
         failure_viz = True
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation6/'+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation5/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        param_dict['data_param']['handFeatures'] = [## 'unimodal_audioWristRMS', \
+        param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', \
                                                     ## 'unimodal_audioWristFrontRMS', \
                                                     ## 'unimodal_audioWristAzimuth',\
-                                                    #'unimodal_kinVel',\
+                                                    'unimodal_kinVel',\
+                                                    'unimodal_kinJntEff_1', \
                                                     ## 'unimodal_kinJntEff', \
-                                                    #'unimodal_ftForce_integ', \
+                                                    'unimodal_ftForce_integ', \
                                                     ## 'unimodal_ftForce_delta', \
-                                                    ## 'unimodal_ftForce_zero', \
+                                                    'unimodal_ftForce_zero', \
                                                     ## 'unimodal_ftForce', \
                                                     ## 'unimodal_ftForceX', \
                                                     ## 'unimodal_ftForceY', \
@@ -962,6 +960,7 @@ if __name__ == '__main__':
                                                     ## 'unimodal_landmarkDist'
                                                     ]
         ## target_class = [13]
+        ## param_dict['data_param']['handFeatures'] = ['unimodal_kinJntEff_1']
 
                                                     
         dm.getDataLOPO(subjects, opt.task, raw_data_path, save_data_path,
@@ -1172,26 +1171,6 @@ if __name__ == '__main__':
         ## weight = [-23.0, -35.0]  #23
         ## param_dict['HMM']['scale'] = [7.0, 13.0]
         ## single_detector = False #True
-
-        ## ## c12 68 = maybe.. best?
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation10/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## param_dict['ROC']['methods'] = ['hmmgp0', 'hmmgp1']
-        ## weight = [-23.0, -50.0] #23
-        ## param_dict['HMM']['scale'] = [7.0, 15.0]
-        ## single_detector = False
-
-        ## c11 86 (-3,-3) 65 (-3,-4.5) for demo version
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation9/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## param_dict['ROC']['methods'] = ['progress0', 'progress1']
-        ## weight = [-3.0, -4.5]
-        ## param_dict['HMM']['scale'] = [2.0, 2.0]
-        ## param_dict['HMM']['cov']   = 1.0
-        ## single_detector = False
-        
         #-----------------------------------------------------------------------------------
         # 0407-
         # 0408-80-74
@@ -1238,30 +1217,8 @@ if __name__ == '__main__':
         ## param_dict['HMM']['scale'] = [5.0, 8.0]
         ## param_dict['HMM']['cov']   = 1.0
         ## single_detector = False 
-        #param_dict['ROC']['weight'] = [-2.6,-5.0]       
-
-        ## ## aws 1515-49 zero+ldist+desee+leedist
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## param_dict['ROC']['methods'] = ['progress0', 'progress1']
-        ## param_dict['HMM']['scale'] = [5.0, 5.0]
-        ## param_dict['HMM']['cov']   = 1.0
-        ## single_detector = False 
-        #param_dict['ROC']['weight'] = [-2.,-2.5]
-
-        ## ## aws 1515-49 zero+ldist+desee+leedist
-        #save_data_path = os.path.expanduser('~')+\
-        #                 '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation1/'+\
-        #                 str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        #param_dict['ROC']['methods'] = ['progress0', 'progress1']
-        #param_dict['HMM']['scale'] = [5.0, 7.0]
-        #param_dict['HMM']['cov']   = 1.0
-        #single_detector = False 
-        ## param_dict['ROC']['weight'] = [-27.,-27.]
-        ## ## param_dict['ROC']['weight'] = [-4.2,-6.2]
-
-
+        #param_dict['ROC']['weight'] = [-2.6,-5.0]
+        
         #------------------------------------------------------------------------
         ## c11 83-75(5.47,5.47) = BEEEEEEEEEEEEEEEEEEEST
         save_data_path = os.path.expanduser('~')+\

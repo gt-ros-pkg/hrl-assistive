@@ -66,9 +66,11 @@ matplotlib.rcParams['ps.fonttype'] = 42
 random.seed(3334)
 np.random.seed(3334)
 
+y_group = [[3,5,10],[2,7,8,9,11],[1,6],[0,4]]
+
 
 def evaluation_isolation(task_name, processed_data_path, method_list, param_dict, n_labels=12,
-                         save_pdf=False, verbose=False):
+                         save_pdf=False, cause_class=True, verbose=False):
     ## Parameters
     crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
     d = ut.load_pickle(crossVal_pkl)
@@ -114,7 +116,8 @@ def evaluation_isolation(task_name, processed_data_path, method_list, param_dict
         scores = []
         if 'rnd' in method_list:
             y_pred = np.random.choice(range(n_labels), len(y_test))
-            score = accuracy_score(np.array(y_test)-2, y_pred)
+            if cause_class: score = accuracy_score(np.array(y_test)-2, y_pred)
+            else:           score = get_type_score(y_pred, np.array(y_test)-2)
             scores.append( score )
 
         if 'svm_raw' in method_list:
@@ -132,11 +135,8 @@ def evaluation_isolation(task_name, processed_data_path, method_list, param_dict
                     feature_idx_list[i].append(param_dict['data_param']['isolationFeatures'].index(feature))
 
                 if success_data_raw is None:
-                    ## success_data_raw = copy.copy(d['successData'][feature_idx_list[i]])
                     failure_data_raw = copy.copy(d['failureData'][feature_idx_list[i]])
                 else:
-                    ## success_data_raw = np.vstack([ success_data_raw,
-                    ##                               copy.copy(d['successData'][feature_idx_list[i]]) ])
                     failure_data_raw = np.vstack([ failure_data_raw,
                                                   copy.copy(d['failureData'][feature_idx_list[i]]) ])
 
@@ -146,8 +146,6 @@ def evaluation_isolation(task_name, processed_data_path, method_list, param_dict
                 idx = [ i for i, x in enumerate(param_dict['data_param']['isolationFeatures'])
                         if feature == x][0]
                 feature_list.append(idx)
-            ## success_data_raw = np.vstack([ success_data_raw,
-            ##                               copy.copy(d['successData'][feature_list]) ])
             failure_data_raw = np.vstack([ failure_data_raw,
                                           copy.copy(d['failureData'][feature_list]) ])
 
@@ -198,7 +196,12 @@ def evaluation_isolation(task_name, processed_data_path, method_list, param_dict
             from sklearn.svm import SVC
             clf = SVC(C=1.0, kernel='rbf') #, decision_function_shape='ovo')
             clf.fit(x_train_raw, y_train_raw)
-            score = clf.score(x_test_raw, y_test_raw)
+
+            if cause_class: score = clf.score(x_test_raw, y_test_raw)
+            else:
+                y_pred = clf.predict(x_test_raw)
+                score = get_type_score(np.array(y_pred)-2,
+                                       np.array(y_test_raw)-2 )
             scores.append( score )
             
             
@@ -206,7 +209,11 @@ def evaluation_isolation(task_name, processed_data_path, method_list, param_dict
             from sklearn.svm import SVC
             clf = SVC(C=1.0, kernel='rbf') #, decision_function_shape='ovo')
             clf.fit(x_train, y_train)
-            score = clf.score(x_test, y_test)
+            if cause_class: score = clf.score(x_test, y_test)
+            else:
+                y_pred = clf.predict(x_test)
+                score = get_type_score(np.array(y_pred)-2,
+                                       np.array(y_test)-2 )
             scores.append( score )
             
         if 'rfc_signal' in method_list:            
@@ -257,7 +264,13 @@ def evaluation_isolation(task_name, processed_data_path, method_list, param_dict
             from sklearn.svm import SVC
             clf = SVC(C=1.0, kernel='linear') #'rbf') #, decision_function_shape='ovo')
             clf.fit(x_train_img, y_train_img)
-            score = clf.score(x_test_img, y_test_img)
+
+            if cause_class: score = clf.score(x_test_img, y_test_img)
+            else:
+                y_pred = clf.predict(x_test_img)
+                score = get_type_score(np.array(y_pred)-2,
+                                       np.array(y_test_img)-2 )
+
             scores.append( score )
             
         ## print idx, " : score = ", score
@@ -266,6 +279,24 @@ def evaluation_isolation(task_name, processed_data_path, method_list, param_dict
     print np.mean(scores_list, axis=0)
     print np.std(scores_list, axis=0)
 
+
+def get_type_score(y_pred, y_test):
+
+    y_test_list = []
+    y_pred_list = []
+    for y in y_pred:
+        if y in y_group[0]: y_pred_list.append(0)
+        elif y in y_group[1]: y_pred_list.append(1)
+        elif y in y_group[2]: y_pred_list.append(2)
+        elif y in y_group[3]: y_pred_list.append(3)
+
+    for y in y_test:
+        if y in y_group[0]: y_test_list.append(0)
+        elif y in y_group[1]: y_test_list.append(1)
+        elif y in y_group[2]: y_test_list.append(2)
+        elif y in y_group[3]: y_test_list.append(3)
+    return accuracy_score(y_test_list, y_pred_list)
+    
 
 def plot_acc(save_pdf):
 
@@ -278,29 +309,55 @@ def plot_acc(save_pdf):
     matplotlib.rcParams['pdf.fonttype'] = 42
     matplotlib.rcParams['ps.fonttype'] = 42 
 
-    method_list = ['Random', 'SVM(H)', 'SVM(R)', 'MLP(I)', 'MLP(S)', 'SVM(S)', 'MLP(S+I)']
-    avg_list = [7.39, 25.70, 39.39, 41.1, 64.31, 70.20, 81.37]
-    std_list = [6.94, 11.5, 5.86, 2.52, 7.47, 8.22, 8.52]
+    method_list = ['Random', 'SVM(H)', 'SVM(R)', 'MLP(C)', 'MLP(T)', 'SVM(T)', 'MLP(T+C)']
 
     N = len(method_list)
     ind = np.arange(N)  # the x locations for the groups
     width = 0.7       # the width of the bars
 
-    fig = plt.figure()
-    ax  = fig.add_subplot(111)    
+    fig = plt.figure(figsize=(8, 6))
 
+
+
+    # type
+    avg_list = [28.89, 46.36, 55.07, 62.24, 88.43, 85.83, 90.0]
+    std_list = [15.62, 15.43, 13.2, 11.17, 12.36, 7.12, 9.23]
+
+    ax  = fig.add_subplot(211)    
     rects1 = ax.bar(ind + width/2, avg_list, width, color='b', yerr=std_list,
                     error_kw=dict(elinewidth=6, ecolor='pink'))
-
-    ax.set_ylabel('Accuracy [%]', fontsize=18)
-    ax.set_xticks(ind + width )
-    ax.set_xticklabels(method_list, fontsize=18)
+    ax.set_ylabel('Type Accuracy [%]', fontsize=18)
     ax.set_yticklabels([0,20,40,60,80,100], fontsize=18)
     ax.set_ylim([0,100])
+    ax.yaxis.grid()
+    ax.set_xticks(ind + width )
+    ax.tick_params(
+        axis='x',          # changes apply to the x-axis
+        which='both',      # both major and minor ticks are affected
+        bottom='off',      # ticks along the bottom edge are off
+        top='off',         # ticks along the top edge are off
+        labelbottom='off') # labels along the bottom edge are off
     ax.set_xlim([0,ind[-1]+width*2])
+
+    # cause
+    avg_list = [7.39, 25.70, 39.39, 41.1, 64.31, 70.20, 81.37]
+    std_list = [6.94, 11.5, 5.86, 2.52, 7.47, 8.22, 8.52]
+
+    ax  = fig.add_subplot(212)    
+    rects1 = ax.bar(ind + width/2, avg_list, width, color='b', yerr=std_list,
+                    error_kw=dict(elinewidth=6, ecolor='pink'))
+    ax.set_ylabel('Cause Accuracy [%]', fontsize=18)
+    ax.set_yticklabels([0,20,40,60,80,100], fontsize=18)
+    ax.set_ylim([0,100])
     ax.yaxis.grid()
 
+
+    ax.set_xticks(ind + width )
+    ax.set_xticklabels(method_list, fontsize=18)
+    ax.set_xlim([0,ind[-1]+width*2])
     plt.xticks(rotation=20)
+
+    
     plt.tight_layout()
     if save_pdf:
         fig.savefig('test.pdf')
@@ -339,7 +396,7 @@ if __name__ == '__main__':
     if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
     # Mikako - bad camera
     # s1 - kaci - before camera calibration
-    subjects = ['s2', 's3','s4','s5', 's6','s7','s8', 's9']
+    ## subjects = ['s2', 's3','s4','s5', 's6','s7','s8', 's9']
 
     save_data_path = os.path.expanduser('~')+\
       '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_isolation8/'+\
@@ -353,15 +410,16 @@ if __name__ == '__main__':
     param_dict['ROC']['progress0_param_range'] = -np.logspace(0., 0.9, nPoints)
     param_dict['ROC']['progress1_param_range'] = -np.logspace(0., 0.9, nPoints)
 
+    cause_class=False
 
     if opt.evaluation_isolation:
 
         method_list = ['rfc_signal']
         method_list = ['svm_signal']
-        method_list = ['rnd']
+        ## method_list = ['rnd']
         ## method_list = ['svm_raw']
         method_list = ['svm_hog']
-        evaluation_isolation(opt.task, save_data_path, method_list, param_dict)
+        evaluation_isolation(opt.task, save_data_path, method_list, param_dict, cause_class=cause_class)
 
     else:
         plot_acc(opt.bSavePdf)

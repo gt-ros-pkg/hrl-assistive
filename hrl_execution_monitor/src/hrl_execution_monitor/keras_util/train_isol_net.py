@@ -45,6 +45,7 @@ from keras.preprocessing.image import ImageDataGenerator
 import h5py 
 
 from sklearn import preprocessing
+from sklearn.metrics import accuracy_score
 
 from joblib import Parallel, delayed
 import gc
@@ -52,6 +53,7 @@ import gc
 random.seed(3334)
 np.random.seed(3334)
 
+y_group = [[3,5,10],[2,7,8,9,11],[1,6],[0,4]]
 
 
 def train_isolator_modules(save_data_path, n_labels, verbose=False):
@@ -97,8 +99,8 @@ def train_isolator_modules(save_data_path, n_labels, verbose=False):
 
 
 def train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=400, load_weights=False,
-                      activ_type='relu',
-                      test_only=False, save_pdf=False, patience=50):
+                      activ_type='relu', test_only=False, save_pdf=False, patience=50,
+                      cause_class=True):
 
     scores= []
     y_test_list = []
@@ -113,7 +115,6 @@ def train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=400, load_we
         y_test     = test_data[2]
 
         # Scaling
-        from sklearn import preprocessing
         scaler      = preprocessing.StandardScaler()
         x_train_sig = scaler.fit_transform(x_train_sig)
         x_test_sig  = scaler.transform(x_test_sig)
@@ -171,12 +172,29 @@ def train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=400, load_we
         else:
             model.load_weights(weights_path)
             y_pred = model.predict(x_test_sig)
-            y_pred_list += np.argmax(y_pred, axis=1).tolist()
-            y_test_list += np.argmax(y_test, axis=1).tolist()
-            
-            from sklearn.metrics import accuracy_score
-            print "score : ", accuracy_score(y_test_list, y_pred_list)
-            scores.append( accuracy_score(y_test_list, y_pred_list) )
+
+            if cause_class:
+                y_pred_list += np.argmax(y_pred, axis=1).tolist()
+                y_test_list += np.argmax(y_test, axis=1).tolist()
+                scores.append( accuracy_score(np.argmax(y_test, axis=1).tolist(),
+                                              np.argmax(y_pred, axis=1).tolist() ) )
+            else:
+                y_test_list = []
+                y_pred_list = []
+                for y in np.argmax(y_pred, axis=1):
+                    if y in y_group[0]: y_pred_list.append(0)
+                    elif y in y_group[1]: y_pred_list.append(1)
+                    elif y in y_group[2]: y_pred_list.append(2)
+                    elif y in y_group[3]: y_pred_list.append(3)
+
+                for y in np.argmax(y_test, axis=1):
+                    if y in y_group[0]: y_test_list.append(0)
+                    elif y in y_group[1]: y_test_list.append(1)
+                    elif y in y_group[2]: y_test_list.append(2)
+                    elif y in y_group[3]: y_test_list.append(3)
+                scores.append( accuracy_score(y_test_list, y_pred_list) )
+                            
+            print "score : ", scores
 
     print 
     print np.mean(scores), np.std(scores)
@@ -360,13 +378,13 @@ def train_with_all(save_data_path, n_labels, fold_list, nb_epoch=100, load_weigh
         import collections
         bincnt = collections.Counter(np.argmax(y_train,axis=1))
 
-        class_weight = {}
-        for i in xrange(n_labels):
-            class_weight[i] = float(len(y_train))/(float(n_labels)*float(bincnt[i]) )
-
-        ## class_weight={}
+        ## class_weight = {}
         ## for i in xrange(n_labels):
-        ##     class_weight[i] = 1.0
+        ##     class_weight[i] = float(len(y_train))/(float(n_labels)*float(bincnt[i]) )
+
+        class_weight={}
+        for i in xrange(n_labels):
+            class_weight[i] = 1.0
         ## class_weight[1]  = 0.1 # noisy env
         ## class_weight[6]  = 0.1 # anomalous snd
         ## class_weight[-3] = 0.1 # spoon miss by sys
@@ -390,10 +408,6 @@ def train_with_all(save_data_path, n_labels, fold_list, nb_epoch=100, load_weigh
 
             scores.append( hist.history['val_acc'][-1] )
         else:
-            ## #temp
-            ## x_test_img = x_train_img
-            ## x_test_sig = x_train_sig
-            ## y_test = y_train
             y_test_list = []
             y_pred_list = []
             
@@ -508,14 +522,15 @@ def get_bottleneck_image(save_data_path, n_labels, fold_list, vgg=False, use_ext
 
 
 def train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=400, load_weights=False, vgg=False,
-                               patience=5, remove_label=[], use_extra_img=True, test_only=False):
+                               patience=5, remove_label=[], use_extra_img=True, test_only=False,\
+                               cause_class=True):
 
     if vgg: prefix = 'vgg_'
     else: prefix = ''
 
+    scores= []
     y_pred_list = []
     y_test_list = []
-    scores= []
     for idx in fold_list:
 
         bt_data_path = os.path.join(save_data_path, 'bt')
@@ -557,11 +572,14 @@ def train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=400
         class_weight={}
         for i in xrange(n_labels):
             class_weight[i] = 1.0
-        class_weight[1]  = 0.1 # noisy env
-        class_weight[6]  = 0.1 # anomalous snd
+        ## class_weight[1]  = 0.1 # noisy env
+        ## class_weight[6]  = 0.1 # anomalous snd
         ## class_weight[-3] = 0.5 # spoon miss by sys
         ## class_weight[-2] = 0.5 # spoon collision by sys
         ## class_weight[-1] = 0.5 # freeze
+
+        print np.shape(x_train)
+        sys.exit()
 
         if test_only is False:
             hist = model.fit(x_train, y_train, nb_epoch=nb_epoch, batch_size=4096, shuffle=True,
@@ -570,17 +588,30 @@ def train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=400
 
             scores.append( hist.history['val_acc'][-1] )
         else:
-            ## # train
-            ## x_test = x_train
-            ## y_test = y_train
-            
             y_pred = model.predict(x_test)
-            y_pred_list += np.argmax(y_pred, axis=1).tolist()
-            y_test_list += np.argmax(y_test, axis=1).tolist()
+            if cause_class:
+                y_pred_list += np.argmax(y_pred, axis=1).tolist()
+                y_test_list += np.argmax(y_test, axis=1).tolist()
+                scores.append( accuracy_score(np.argmax(y_test, axis=1).tolist(),
+                                              np.argmax(y_pred, axis=1).tolist() ) )
 
-            from sklearn.metrics import accuracy_score
-            print "score : ", accuracy_score(y_test_list, y_pred_list)
-            scores.append( accuracy_score(y_test_list, y_pred_list) )
+            else:
+                y_test_list = []
+                y_pred_list = []
+                for y in np.argmax(y_pred, axis=1):
+                    if y in y_group[0]: y_pred_list.append(0)
+                    elif y in y_group[1]: y_pred_list.append(1)
+                    elif y in y_group[2]: y_pred_list.append(2)
+                    elif y in y_group[3]: y_pred_list.append(3)
+
+                for y in np.argmax(y_test, axis=1):
+                    if y in y_group[0]: y_test_list.append(0)
+                    elif y in y_group[1]: y_test_list.append(1)
+                    elif y in y_group[2]: y_test_list.append(2)
+                    elif y in y_group[3]: y_test_list.append(3)
+                scores.append( accuracy_score(y_test_list, y_pred_list) )
+
+            print "score : ", scores
         
         gc.collect()
 
@@ -705,14 +736,14 @@ def train_multi_top_model(save_data_path, n_labels, fold_list, nb_epoch=3000, lo
             else: sys.exit()
             ## optimizer = SGD(lr=0.001, decay=1e-8, momentum=0.9, nesterov=True)                
             optimizer = RMSprop(lr=0.01, rho=0.9, epsilon=1e-08, decay=0.001)                        
-            #model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
-            model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+            model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
+            ## model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
         else:
             if vgg: model = km.vgg_multi_top_net(np.shape(x_train)[1:], n_labels, weights_path)
             else: sys.exit()
-            optimizer = SGD(lr=0.001, decay=1e-7, momentum=0.9, nesterov=True)                
-            optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.001)
-            optimizer = Adagrad(lr=0.0001, epsilon=1e-08, decay=0.001)
+            optimizer = SGD(lr=0.005, decay=1e-7, momentum=0.9, nesterov=True)                
+            #optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.001)
+            ## optimizer = Adagrad(lr=0.0001, epsilon=1e-08, decay=0.001)
             
             model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
             ## model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
@@ -728,9 +759,6 @@ def train_multi_top_model(save_data_path, n_labels, fold_list, nb_epoch=3000, lo
                              validation_data=(x_test, y_test), callbacks=callbacks)       
             scores.append( hist.history['val_acc'][-1] )
         else:
-            ## #temp
-            ## x_test = x_train
-            ## y_test = y_train
             y_pred_list = []
             y_test_list = []
             
