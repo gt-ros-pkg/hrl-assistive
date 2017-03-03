@@ -1,0 +1,53 @@
+####################################
+## StarCluster Configuration File ##
+####################################
+[global]
+DEFAULT_TEMPLATE=defaultcluster
+
+#############################################
+## AWS Credentials and Connection Settings ##
+#############################################
+[aws info]
+# This is the AWS credentials section (required).
+# These settings apply to all clusters
+# replace these with your AWS keys
+
+# sub-account in user account
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+# user account
+AWS_USER_ID=
+
+###########################
+## Defining EC2 Keypairs ##
+###########################
+[key HRL_ANOMALY]
+KEY_LOCATION=/root/.ssh/HRL_ANOMALY.pem
+
+################################
+## Defining Cluster Templates ##
+################################
+[cluster defaultcluster]
+KEYNAME = HRL_ANOMALY
+CLUSTER_SIZE = 2
+CLUSTER_USER = ubuntu
+CLUSTER_SHELL = bash
+NODE_IMAGE_ID = ami-6b211202
+#NODE_INSTANCE_TYPE=m1.small
+NODE_INSTANCE_TYPE = t2.micro
+#MASTER_INSTANCE_TYPE = m1.small
+# Uncomment to specify a separate AMI to use for the master node. (OPTIONAL)
+# (defaults to NODE_IMAGE_ID if not specified)
+#MASTER_IMAGE_ID = ami-3393a45a (OPTIONAL)
+PLUGINS = ipcluster
+
+[plugin ipcluster]
+SETUP_CLASS = starcluster.plugins.ipcluster.IPCluster
+
+[plugin ipclusterrestart]
+SETUP_CLASS = starcluster.plugins.ipcluster.IPClusterRestartEngines
+
+[plugin machine-learn-installer]
+SETUP_CLASS = starcluster.plugins.pypkginstaller.PyPkgInstaller
+PACKAGES = scikit-learn #add more pkgs that you want to install
+
