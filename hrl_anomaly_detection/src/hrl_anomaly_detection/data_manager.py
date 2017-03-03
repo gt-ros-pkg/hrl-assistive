@@ -33,12 +33,6 @@ import os, sys, copy
 import random
 import warnings
 
-import matplotlib
-## matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-from matplotlib import gridspec
-
 # util
 import numpy as np
 import scipy
@@ -53,7 +47,14 @@ from mvpa2.generators import splitters
 from sklearn import cross_validation
 from sklearn.externals import joblib
 
+# matplot
+import matplotlib
+## matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import gridspec
+matplotlib.rcParams['pdf.fonttype'] = 42
+matplotlib.rcParams['ps.fonttype'] = 42 
 
 def create_mvpa_dataset(aXData, chunks, labels):
     data = Dataset(samples=aXData)
@@ -63,37 +64,7 @@ def create_mvpa_dataset(aXData, chunks, labels):
 
     return data
 
-def kFold_data_index(nAbnormal, nNormal, nAbnormalFold, nNormalFold):
-
-    normal_folds   = cross_validation.KFold(nNormal, n_folds=nNormalFold, shuffle=True)
-    abnormal_folds = cross_validation.KFold(nAbnormal, n_folds=nAbnormalFold, shuffle=True)
-
-    kFold_list = []
-
-    for normal_temp_fold, normal_test_fold in normal_folds:
-
-        normal_dc_fold = cross_validation.KFold(len(normal_temp_fold), \
-                                                n_folds=nNormalFold-1, shuffle=True)
-        for normal_train_fold, normal_classifier_fold in normal_dc_fold:
-
-            normal_d_fold = normal_temp_fold[normal_train_fold]
-            normal_c_fold = normal_temp_fold[normal_classifier_fold]
-
-            for abnormal_c_fold, abnormal_test_fold in abnormal_folds:
-                '''
-                Normal training data for model
-                Normal training data 
-                Abnormal training data 
-                Normal test data 
-                Abnormal test data 
-                '''
-                index_list = [normal_d_fold, normal_c_fold, abnormal_c_fold, \
-                              normal_test_fold, abnormal_test_fold]
-                kFold_list.append(index_list)
-
-    return kFold_list
-
-def kFold_data_index2(nNormal, nAbnormal, nNormalFold, nAbnormalFold ):
+def kFold_data_index(nNormal, nAbnormal, nNormalFold, nAbnormalFold ):
     """
     Output:
     Normal training data 
@@ -208,6 +179,26 @@ def LOPO_data_index(success_data_list, failure_data_list, \
     return success_data, failure_data, success_files, failure_files, kFold_list
 
 
+def rnd_fold_index(nNormal, nAbnormal, train_ratio=0.8, nSet=1):
+    """
+    Return completed set of success and failure data with random fold list
+    """
+
+    kFold_list = []
+    for i in xrange(nSet):
+        # divide into training and param estimation set
+        nor_train_idx = random.sample(range(nNormal), int( train_ratio*nNormal ) )
+        nor_test_idx  = [x for x in range(nNormal) if not x in nor_train_idx] 
+        
+        abr_train_idx = random.sample(range(nAbnormal), int( train_ratio*nAbnormal ) )
+        abr_test_idx  = [x for x in range(nAbnormal) if not x in abr_train_idx] 
+        
+        index_list = [nor_train_idx, abr_train_idx, nor_test_idx, abr_test_idx]
+        kFold_list.append(index_list)
+
+    return kFold_list
+
+
 #-------------------------------------------------------------------------------------------------
 def getDataList(fileNames, rf_center, local_range, param_dict, downSampleSize=200, \
                 cut_data=None, \
@@ -238,16 +229,15 @@ def getDataList(fileNames, rf_center, local_range, param_dict, downSampleSize=20
 
 
 
-def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_center, \
-               local_range, \
-               downSampleSize=200, scale=1.0, ae_data=False, \
+def getDataSet(subject_names, task_name, raw_data_path, processed_data_path,
+               rf_center='kinEEPos', local_range=10.0, downSampleSize=200, \
                cut_data=None, init_param_dict=None, \
                success_viz=False, failure_viz=False, \
                save_pdf=False, solid_color=True, \
-               handFeatures=['crossmodal_targetEEDist'], rawFeatures=None, data_renew=False,\
-               time_sort=False, max_time=None):
+               handFeatures=[], data_renew=False,\
+               time_sort=False, max_time=None, ros_bag_image=False, rndFold=False,
+               verbose=False):
     '''
-    If ae_data is True, it returns additional task-oriented raw feature data for auto-encoders.
     '''
 
     if os.path.isdir(processed_data_path) is False:
@@ -261,109 +251,107 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
         print "Load saved data"
         print "--------------------------------------"
         data_dict = ut.load_pickle(save_pkl)
+        
+        # Task-oriented hand-crafted features
+        if 'successData' not in data_dict.keys():
+            successDataList = data_dict['successDataList'] 
+            failureDataList = data_dict['failureDataList']
 
-        if ae_data:
-            # Task-oriented raw features
-            successData     = data_dict['aeSuccessData'] 
-            failureData     = data_dict['aeFailureData']
-            failureNameList = None
-            param_dict      = data_dict.get('aeParamDict', [])
-        else:        
-            # Task-oriented hand-crafted features
-            ## allData         = data_dict['allData']
-            if 'successData' not in data_dict.keys():
-                successDataList = data_dict['successDataList'] 
-                failureDataList = data_dict['failureDataList']
+            for i in xrange(len(successDataList)):
+                if i == 0:
+                    successData = successDataList[i]
+                    failureData = failureDataList[i]
+                else:
+                    successData = np.vstack([ np.swapaxes(successData,0,1), \
+                                              np.swapaxes(successDataList[i], 0,1)])
+                    failureData = np.vstack([ np.swapaxes(failureData,0,1), \
+                                              np.swapaxes(failureDataList[i], 0,1)])
+                    successData = np.swapaxes(successData, 0, 1)
+                    failureData = np.swapaxes(failureData, 0, 1)
+            data_dict['successData'] = successData
+            data_dict['failureData'] = failureData
+        else:
+            successData = data_dict['successData'] 
+            failureData = data_dict['failureData']
 
-                for i in xrange(len(successDataList)):
-                    if i == 0:
-                        successData = successDataList[i]
-                        failureData = failureDataList[i]
-                    else:
-                        successData = np.vstack([ np.swapaxes(successData,0,1), \
-                                                  np.swapaxes(successDataList[i], 0,1)])
-                        failureData = np.vstack([ np.swapaxes(failureData,0,1), \
-                                                  np.swapaxes(failureDataList[i], 0,1)])
-                        successData = np.swapaxes(successData, 0, 1)
-                        failureData = np.swapaxes(failureData, 0, 1)
-                data_dict['successData'] = successData
-                data_dict['failureData'] = failureData
-                
-            else:
-                successData = data_dict['successData'] 
-                failureData = data_dict['failureData']
-                
-            failureNameList = None #data_dict['abnormalTestNameList']
-            param_dict      = data_dict['param_dict']
+        param_dict      = data_dict['param_dict']
 
     else:
-        ## data_renew = False #temp        
         success_list, failure_list = util.getSubjectFileList(raw_data_path, subject_names, task_name,\
                                                              time_sort=time_sort)
 
         print "start to load data"
-        # loading and time-sync    
         all_data_pkl     = os.path.join(processed_data_path, task_name+'_all_'+rf_center+\
                                         '_'+str(local_range))
         _, all_data_dict = util.loadData(success_list+failure_list, isTrainingData=False,
                                          downSampleSize=downSampleSize,\
-                                         local_range=local_range, rf_center=rf_center,\
                                          renew=data_renew, save_pkl=all_data_pkl,\
                                          max_time=max_time)
         max_time = all_data_dict['timesList'][0][-1]
-        print "max time is ", max_time
+        if verbose: print "max time is ", max_time
 
         # data set
-        success_data_pkl     = os.path.join(processed_data_path, task_name+'_success_'+rf_center+\
-                                            '_'+str(local_range))
         _, success_data_dict = util.loadData(success_list, isTrainingData=True,
                                              downSampleSize=downSampleSize,\
-                                             local_range=local_range, rf_center=rf_center,\
-                                             renew=data_renew, save_pkl=success_data_pkl,\
+                                             renew=data_renew,\
                                              max_time=max_time)
 
-        failure_data_pkl     = os.path.join(processed_data_path, task_name+'_failure_'+rf_center+\
-                                            '_'+str(local_range))
         _, failure_data_dict = util.loadData(failure_list, isTrainingData=False,
                                              downSampleSize=downSampleSize,\
-                                             local_range=local_range, rf_center=rf_center,\
-                                             renew=data_renew, save_pkl=failure_data_pkl,\
+                                             renew=data_renew,\
                                              max_time=max_time)
 
         # Task-oriented hand-crafted features
         if init_param_dict is not None:
-            allData, _ = extractHandFeature(all_data_dict, handFeatures, scale=scale,\
+            allData, _ = extractHandFeature(all_data_dict, handFeatures,\
                                             init_param_dict=init_param_dict, cut_data=cut_data)
             param_dict=init_param_dict                                            
         else:
-            allData, param_dict = extractHandFeature(all_data_dict, handFeatures, scale=scale,\
+            allData, param_dict = extractHandFeature(all_data_dict, handFeatures,\
                                                      cut_data=cut_data)
         print " --------------------- Success -----------------------------"  
-        successData, _      = extractHandFeature(success_data_dict, handFeatures, scale=scale, \
+        successData, _      = extractHandFeature(success_data_dict, handFeatures, \
                                                  init_param_dict=param_dict, cut_data=cut_data)
         print " --------------------- Failure -----------------------------"  
-        failureData, _      = extractHandFeature(failure_data_dict, handFeatures, scale=scale, \
+        failureData, _      = extractHandFeature(failure_data_dict, handFeatures, \
                                                  init_param_dict=param_dict, cut_data=cut_data)
+
+        success_image_list = []
+        failure_image_list = []
+        if ros_bag_image:
+            new_success_list = []
+            for f in success_list:
+                root_dir = os.path.split(f)[0]+'_rosbag'
+                sub_dir  = os.path.split(f)[1].split('.pkl')[0]
+                new_success_list.append( os.path.join(root_dir, sub_dir) )
+            new_failure_list = []
+            for f in failure_list:
+                root_dir = os.path.split(f)[0]+'_rosbag'
+                sub_dir  = os.path.split(f)[1].split('.pkl')[0]
+                new_failure_list.append( os.path.join(root_dir, sub_dir) )
+
+            success_image_list.append(export_images(new_success_list, success_data_dict, \
+                                                    downSampleSize) )
+            failure_image_list.append(export_images(new_failure_list, failure_data_dict, \
+                                                    downSampleSize) )
+
 
         data_dict = {}
         data_dict['allData']      = allData = np.array(allData)
         data_dict['successData']  = successData = np.array(successData)
         data_dict['failureData']  = failureData = np.array(failureData)
-        data_dict['dataNameList'] = failureNameList = None #failure_data_dict['fileNameList']
         data_dict['successFiles'] = success_list
         data_dict['failureFiles'] = failure_list
+        data_dict['success_image_list'] = success_image_list
+        data_dict['failure_image_list'] = failure_image_list
         data_dict['param_dict'] = param_dict
+
+        if rndFold:
+            # split data with 80:20 ratio
+            kFold_list = rnd_fold_index(len(successData[0]), len(failureData[0]), \
+                                        train_ratio=0.8, nSet=3 )
+            data_dict['kFold_list'] = kFold_list
         
-        if rawFeatures is not None: #ae_data and 
-            # Task-oriented raw features
-            ae_successData, ae_failureData, ae_param_dict = \
-              extractRawFeature(all_data_dict, rawFeatures, nSuccess=len(success_list), \
-                             nFailure=len(failure_list), cut_data=cut_data)
-
-            data_dict['aeSuccessData'] = np.array(ae_successData)
-            data_dict['aeFailureData'] = np.array(ae_failureData)
-            data_dict['aeParamDict']   = ae_param_dict
-
         ut.save_pickle(data_dict, save_pkl)
 
     #-----------------------------------------------------------------------------
@@ -380,14 +368,14 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
 
         fig = plt.figure()
         n,m,k = np.shape(successData)
-        ## if nPlot is None:
-        ##     if n%2==0: nPlot = n
-        ##     else: nPlot = n+1
         nPlot = n
-
+        ## nPlot = 4
+        ## n = 4
+        
         for i in xrange(n):
+        ## for i in xrange(12,15):
             ## ax = fig.add_subplot((nPlot/2)*100+20+i)
-            ax = fig.add_subplot(n*100+10+i)
+            ax = fig.add_subplot(n*100+10+i+1)
             if solid_color: ax.plot(successData[i].T, c='b')
             else: ax.plot(successData[i].T)
 
@@ -398,16 +386,11 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
             else: ax.set_ylabel(AddFeature_names[i])
                 ## ax.set_title( AddFeature_names[i] )
 
-    if failure_viz:
+    if failure_viz and False:
         if fig is None: fig = plt.figure()
         n,m,k = np.shape(failureData)
-        ## if nPlot is None:
-        ##     if n%2==0: nPlot = n
-        ##     else: nPlot = n+1
-        nPlot = n
 
         for i in xrange(n):
-            ## ax = fig.add_subplot((nPlot/2)*100+20+i)
             ax = fig.add_subplot(n*100+10+i)
             if solid_color: ax.plot(failureData[i].T, c='r')
             else: ax.plot(failureData[i].T)
@@ -416,9 +399,7 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
     if success_viz or failure_viz:
         plt.tight_layout(pad=3.0, w_pad=0.5, h_pad=0.5)
         for i in xrange(n):
-            ax = fig.add_subplot(n*100+10+i)
-            ## print np.amin(allData[i]), np.amax(allData[i]), np.shape(allData)
-            ## ax.set_xlim([np.amin(allData[i]), np.amax(allData[i])])
+            ax = fig.add_subplot(n*100+10+i+1)
 
         if save_pdf:
             fig.savefig('test.pdf')
@@ -433,16 +414,14 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
     return data_dict
 
 
-def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf_center, \
-                local_range, \
-                downSampleSize=200, ae_data=False, \
+def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
+                rf_center='kinEEPos', local_range=10.0, downSampleSize=200, \
                 cut_data=None, init_param_dict=None, \
                 success_viz=False, failure_viz=False, \
                 save_pdf=False, solid_color=True, \
                 handFeatures=[], data_renew=False,\
-                isolationFeatures=[], isolation_viz=False,\
                 time_sort=False, max_time=None, \
-                target_class=None):
+                target_class=None, ros_bag_image=False):
     """
     Get data per subject. It also returns leave-one-out cross-validataion indices.
     """
@@ -461,26 +440,22 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
         # Task-oriented hand-crafted features
         successDataList = data_dict['successDataList']
         failureDataList = data_dict['failureDataList']
-        failureNameList = None #failure_data_dict['fileNameList']
         param_dict      = data_dict['param_dict']
-        successIsolDataList = data_dict.get('successIsolDataList',[])
-        failureIsolDataList = data_dict.get('failureIsolDataList',[])
-        param_dict_isol     = data_dict.get('param_dict_isol',[])
         successFileList     = data_dict.get('successFileList',[])
         failureFileList     = data_dict.get('failureFileList',[])
+        success_image_list  = data_dict.get('success_image_list',[])
+        failure_image_list  = data_dict.get('failure_image_list',[])
 
     else:
         file_list = util.getSubjectFileList(raw_data_path, subject_names, task_name,\
-                                                             time_sort=time_sort, no_split=True)
+                                            time_sort=time_sort, no_split=True)
 
-        ## data_renew = False
         print "start to load data"
         # loading and time-sync    
         all_data_pkl     = os.path.join(processed_data_path, task_name+'_all_'+rf_center+\
                                         '_'+str(local_range))
         _, all_data_dict = util.loadData(file_list, isTrainingData=False,
                                          downSampleSize=downSampleSize,\
-                                         local_range=local_range, rf_center=rf_center,\
                                          renew=data_renew, save_pkl=all_data_pkl,\
                                          max_time=max_time)
         max_time = all_data_dict['timesList'][0][-1]
@@ -495,39 +470,26 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
             _, param_dict = extractHandFeature(all_data_dict, handFeatures,\
                                                      cut_data=cut_data)
 
-        if len(isolationFeatures) > 0:
-            _, param_dict_isol = extractHandFeature(all_data_dict, isolationFeatures,\
-                                                               cut_data=cut_data)
-
-        ## print param_dict.keys()
-        ## print param_dict['feature_names']
-        ## print param_dict['feature_max']
-        ## print param_dict['feature_min']
-        ## sys.exit()
-                    
         # leave-one-person-out
         successDataList = []
         failureDataList = []
-        successIsolDataList = []
-        failureIsolDataList = []
         successFileList = []
         failureFileList = []
+        success_image_list = []
+        failure_image_list = []
         for i in xrange(len(subject_names)):
 
             success_list, failure_list = util.getSubjectFileList(raw_data_path, [subject_names[i]], \
                                                                  task_name,\
                                                                  time_sort=time_sort)
 
-            # data set
             _, success_data_dict = util.loadData(success_list, isTrainingData=True,
                                                  downSampleSize=downSampleSize,\
-                                                 local_range=local_range, rf_center=rf_center,\
                                                  renew=data_renew,\
                                                  max_time=max_time)
 
             _, failure_data_dict = util.loadData(failure_list, isTrainingData=False,
                                                  downSampleSize=downSampleSize,\
-                                                 local_range=local_range, rf_center=rf_center,\
                                                  renew=data_renew,\
                                                  max_time=max_time)
 
@@ -543,104 +505,190 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path, rf
                 successDataList.append(successData)
                 failureDataList.append(failureData)
 
-            # Get isolation data
-            if len(isolationFeatures) > 0:
-                print " --------------------- Success -----------------------------"  
-                successData, _ = extractHandFeature(success_data_dict, isolationFeatures, \
-                                                    init_param_dict=param_dict_isol, cut_data=cut_data)
-                print " --------------------- Failure -----------------------------"  
-                failureData, _ = extractHandFeature(failure_data_dict, isolationFeatures, \
-                                                    init_param_dict=param_dict_isol, cut_data=cut_data)
-                successIsolDataList.append(successData)
-                failureIsolDataList.append(failureData)
             
             successFileList.append(success_list)
             failureFileList.append(failure_list)
 
-        data_dict = {}
+            if ros_bag_image:
+                new_success_list = []
+                for f in success_list:
+                    root_dir = os.path.split(f)[0]+'_rosbag'
+                    sub_dir  = os.path.split(f)[1].split('.pkl')[0]
+                    new_success_list.append( os.path.join(root_dir, sub_dir) )
+                new_failure_list = []
+                for f in failure_list:
+                    root_dir = os.path.split(f)[0]+'_rosbag'
+                    sub_dir  = os.path.split(f)[1].split('.pkl')[0]
+                    new_failure_list.append( os.path.join(root_dir, sub_dir) )
+                    
+                success_image_list.append(export_images(new_success_list, success_data_dict, \
+                                                        downSampleSize) )
+                failure_image_list.append(export_images(new_failure_list, failure_data_dict, \
+                                                        downSampleSize) )
+            
+
+        data_dict = {}        
         data_dict['successDataList'] = successDataList
         data_dict['failureDataList'] = failureDataList
         data_dict['param_dict']      = param_dict
         data_dict['successFileList'] = successFileList
         data_dict['failureFileList'] = failureFileList        
-        data_dict['dataNameList']    = failureNameList = None #failure_data_dict['fileNameList']
-        data_dict['successIsolDataList'] = successIsolDataList
-        data_dict['failureIsolDataList'] = failureIsolDataList
-        if len(isolationFeatures) > 0:
-            data_dict['param_dict_isol']     = param_dict_isol
+        data_dict['success_image_list'] = success_image_list
+        data_dict['failure_image_list'] = failure_image_list
         
         ut.save_pickle(data_dict, save_pkl)
 
+    if not(success_viz or failure_viz): return data_dict
+
     #-----------------------------------------------------------------------------
     ## All data
-    nPlot = None
+    AddFeature_names = np.array(param_dict.get('feature_names', handFeatures))
+    scale = np.array(param_dict['feature_max'])-np.array(param_dict['feature_min'])
 
-    # almost deprecated??
-    if isolation_viz is False:
-        AddFeature_names = np.array(param_dict.get('feature_names', handFeatures))
-    else:
-        AddFeature_names = np.array(param_dict_isol.get('feature_names', isolationFeatures))
-        successDataList = successIsolDataList
-        failureDataList = failureIsolDataList
+    import itertools
+    colors = itertools.cycle(['g', 'm', 'c', 'k', 'y','r', 'b', ])
+    shapes = itertools.cycle(['x','v', 'o', '+'])
 
-    # -------------------- Display ---------------------
-    
-    fig = None
+    # -------------------- Display -----------------------------------------------
+    fig = plt.figure()
     if success_viz:
-
-        import itertools
-        colors = itertools.cycle(['g', 'm', 'c', 'k', 'y','r', 'b', ])
-        shapes = itertools.cycle(['x','v', 'o', '+'])
-
-        fig = plt.figure()
-
-        for successData in successDataList:
-            n,m,k = np.shape(successData)
-            nPlot = n
-            color = colors.next()
-
+        if True:
+            p,n,m,k = np.shape(successDataList)
+            successDataList = np.swapaxes(successDataList, 0,1)
+            
             for i in xrange(n):
-                if n>9:
-                    ax = fig.add_subplot(nPlot/2,2,i)
-                else:
-                    ax = fig.add_subplot(n*100+10+i)
-                if solid_color: ax.plot(successData[i].T, c='b')
-                else: ax.plot(successData[i].T)
+                if n>9: ax = fig.add_subplot(n/2,2,i+1)
+                else:   ax = fig.add_subplot(n*100+10+i+1)
 
-                if AddFeature_names[i] == 'ftForce_mag': ax.set_ylabel('Force Magnitude (N)')
-                elif AddFeature_names[i] == 'artagEEDist': ax.set_ylabel('Relative Distance (m)')
-                elif AddFeature_names[i] == 'audioWristRMS': ax.set_ylabel('Sound Energy')
-                else: ax.set_ylabel(AddFeature_names[i])
+                x    = range(k)
+                mean = np.mean( successDataList[i].reshape((p*m,k))*scale[i] +
+                                param_dict['feature_min'][i], axis=0 )
+                std  = np.std( successDataList[i].reshape((p*m,k))*scale[i] +
+                                param_dict['feature_min'][i], axis=0 )
+                ax.plot(x, mean, 'k-')
+                ax.fill_between(x, mean-std, mean+std, facecolor='blue', alpha=0.5, linewidth=0.0)
+                ax.locator_params(axis='y', nbins=3)
+                ## ax.set_ylim([param_dict['feature_min'][i],
+                ##              param_dict['feature_max'][i]*0.7])
+                ax.set_ylim([np.amin(mean)-np.amax(std),np.amax(mean)+2*np.amax(std)])
+                ## ax.set_ylim([np.amin(successDataList[i]*scale[i]+param_dict['feature_min'][i]),
+                ##             np.amax(successDataList[i]*scale[i]+param_dict['feature_max'][i])  ])
+                
+                if i < n-1: ax.tick_params(axis='x', bottom='off', labelbottom='off')
 
+            x_tick = [param_dict['timeList'][0],
+                      (param_dict['timeList'][-1]-param_dict['timeList'][0])/2.0,
+                      param_dict['timeList'][-1]]
+            ax.set_xticks(np.linspace(0, k, len(x_tick)))        
+            ax.set_xticklabels(x_tick)
+            
+        else:
+            for successData in successDataList:
+                n,m,k = np.shape(successData)
+                color = colors.next()
+
+                print "successData shape: ", n,m,k
+                for i in xrange(n):
+                    if n>9: ax = fig.add_subplot(n/2,2,i+1)
+                    else:   ax = fig.add_subplot(n*100+10+i+1)
+                    if solid_color: ax.plot(successData[i].T, c='b')
+                    else: ax.plot(successData[i].T, c=color)
 
     if failure_viz:
-        if fig is None: fig = plt.figure()
+        if True:#iros 2017 paper
+            p,n,m,k = np.shape(failureDataList)
+            failureDataList = np.swapaxes(failureDataList, 0,1)
+            
+            fidx = 7
+            target_class = 12
+            for lidx, l in enumerate(failureFileList[fidx]):
+                if int(l.split('/')[-1].split('_')[0]) == target_class:
+                    print l
+                    for i in xrange(n): # per feature                
+                        if n>9: ax = fig.add_subplot(n/2,2,i+1)
+                        else:   ax = fig.add_subplot(n*100+10+i+1)
+                        ax.plot(np.array(failureDataList[i])[fidx,lidx].T*scale[i] +
+                                param_dict['feature_min'][i], c='r', lw=3)
+                    break
 
-        for fidx, failureData in enumerate(failureDataList):
-            if len(failureData)==0: break
-            n,m,k = np.shape(failureData)            
-            nPlot = n
+        else:
+            for fidx, failureData in enumerate(failureDataList):
+                if len(failureData)==0: break
+                n,m,k = np.shape(failureData)            
+                print np.shape(failureData)
 
-            failure_data = None
-            if target_class is not None:
-                for lidx, l in enumerate(failureFileList[fidx]):
-                    if int(l.split('/')[-1].split('_')[0]) in target_class:
-                        if failure_data is None:
-                            failure_data = copy.copy(np.array(failureData)[:,lidx:lidx+1,:])
-                        else:
-                            failure_data = np.vstack([failure_data, np.array(failureData)[:,lidx:lidx+1,:] ])
-            else:
-                failure_data = failureData
-
-            for i in xrange(n): # per feature                
-                if n>9:
-                    ax = fig.add_subplot(nPlot/2,2,i)
+                failure_data = None
+                if target_class is not None:
+                    for lidx, l in enumerate(failureFileList[fidx]):
+                        if int(l.split('/')[-1].split('_')[0]) in target_class:
+                            if failure_data is None:
+                                failure_data = copy.copy(np.array(failureData)[:,lidx:lidx+1,:])
+                            else:
+                                failure_data = np.vstack([failure_data, np.array(failureData)[:,lidx:lidx+1,:] ])
                 else:
-                    ax = fig.add_subplot(n*100+10+i)
-                if solid_color: ax.plot(failure_data[i].T, c='r')
-                else: ax.plot(failure_data[i].T)
-                ax.set_title( AddFeature_names[i] )
+                    failure_data = failureData
+                  
+                for lidx in xrange(len(failure_data[0])):
+                    
+                    for i in xrange(n): # per feature                    
+                        if n>9: ax = fig.add_subplot(n/2,2,i+1)
+                        else:   ax = fig.add_subplot(n*100+10+i+1)
+                        if solid_color: ax.plot(failure_data[i][lidx].T*scale[i] +
+                                                param_dict['feature_min'][i], c='r')
+                        else: ax.plot(failure_data[i][lidx].T*scale[i] +
+                                      param_dict['feature_min'][i])
 
+    #------------------------------------------------------------------------------
+    ## plt.tight_layout()
+    for i in xrange(n):
+        if n>9: ax = fig.add_subplot(n/2,2,i+1)
+        else:   ax = fig.add_subplot(n*100+10+i+1)
+
+        if AddFeature_names[i] == 'kinVel':
+            ax.set_ylabel('Spoon speed'+'\n'+'(m/s)', rotation='horizontal', verticalalignment='center',
+                          horizontalalignment='center' )
+            ax.yaxis.set_label_coords(-0.17,0.5)
+        elif AddFeature_names[i] == 'kinJntEff_1':
+            ax.set_ylabel('1st Joint'+'\n'+'Torque(Nm)', rotation='horizontal',
+                          verticalalignment='center',
+                          horizontalalignment='center')
+            ax.yaxis.set_label_coords(-0.17,0.5)
+        elif AddFeature_names[i] == 'ftForce_mag_integ':
+            ax.set_ylabel('Accumulated'+'\n'+'Force'+'\n'+'on Spoon(N)', rotation='horizontal', verticalalignment='center',
+                          horizontalalignment='center')
+            ax.yaxis.set_label_coords(-0.17,0.5)
+        elif AddFeature_names[i] == 'landmarkEEDist':
+            ax.set_ylabel('Spoon-Mouth'+'\n'+'Distance(m)', rotation='horizontal',
+                          verticalalignment='center',
+                          horizontalalignment='center')
+            ax.yaxis.set_label_coords(-0.17,0.5)
+        elif AddFeature_names[i] == 'DesEEChange':
+            ax.set_ylabel('Desired Spoon'+'\n'+'Displacement'+'\n'+'(m)', rotation='horizontal',
+                          verticalalignment='center',
+                          horizontalalignment='center')
+            ax.yaxis.set_label_coords(-0.17,0.5)
+        elif AddFeature_names[i].find('force')>=0 or AddFeature_names[i].find('Force')>=0:
+            ax.set_ylabel('Force on'+'\n'+'Spoon(N)', rotation='horizontal',
+                          verticalalignment='center',
+                          horizontalalignment='center')
+            ax.yaxis.set_label_coords(-0.17,0.5)
+        elif AddFeature_names[i].find('dist')>=0 or AddFeature_names[i].find('change')>=0\
+           or AddFeature_names[i].find('Change')>=0 or AddFeature_names[i].find('Dist')>=0:
+            ax.set_ylabel('Distance'+'\n'+'(m)')
+            ax.yaxis.set_label_coords(-0.17,0.5)
+        elif AddFeature_names[i] == 'audioWristRMS':
+            ax.set_ylabel('Sound'+'\n'+'Energy', rotation='horizontal',
+                          verticalalignment='center',
+                          horizontalalignment='center')
+            ax.yaxis.set_label_coords(-0.17,0.5)
+            val = ax.set_ylim()
+            ax.set_ylim([0.0, val[1]])
+
+        else: ax.set_ylabel(AddFeature_names[i], fontsize=18)
+        ## ax.set_title( AddFeature_names[i], fontsize=18 )
+    ax.set_xlabel('Time [s]', fontsize=18)
+    #plt.tight_layout(pad=0.0, w_pad=1.5, h_pad=0.0)
+    fig.subplots_adjust(left=0.2) 
 
     if success_viz or failure_viz:
         if save_pdf:
@@ -1499,7 +1547,6 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
             
 
     # -------------------------------------------------------------        
-
     # extract local features
     startOffsetSize = 4
     dataList   = []
@@ -1509,11 +1556,9 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
         dataSample = None
         if len(timeList) < 2: offset_flag=False
         else: offset_flag=True
-            
 
         # Unimoda feature - Audio --------------------------------------------
         if 'unimodal_audioPower' in feature_list:
-            ## audioAzimuth = d['audioAzimuthList'][idx]
             unimodal_audioPower = d['audioPowerList'][idx]
             
             if dataSample is None: dataSample = copy.copy(np.array(unimodal_audioPower))
@@ -1548,9 +1593,10 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
         # Unimoda feature - AudioWristAzimuth------------------------------------
         if 'unimodal_audioWristAzimuth' in feature_list:
             unimodal_audioWristAzimuth = d['audioWristAzimuthList'][idx]
-            if offset_flag:
-                unimodal_audioWristAzimuth -= np.mean(unimodal_audioWristAzimuth[:startOffsetSize])
-
+            ## if offset_flag:
+            ##     unimodal_audioWristAzimuth -= np.mean(unimodal_audioWristAzimuth[:startOffsetSize])
+            unimodal_audioWristAzimuth = np.abs(unimodal_audioWristAzimuth)
+            
             if dataSample is None: dataSample = copy.copy(np.array(unimodal_audioWristAzimuth))
             else: dataSample = np.vstack([dataSample, copy.copy(unimodal_audioWristAzimuth)])
             if 'audioWristAzimuth' not in param_dict['feature_names']:
@@ -1558,87 +1604,68 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
 
         # Unimodal feature - Kinematics --------------------------------------
         if 'unimodal_kinVel' in feature_list:
-            unimodal_kinVel = d['kinVelList'][idx]
 
-            if dataSample is None: dataSample = np.array(unimodal_kinVel)
-            else: dataSample = np.vstack([dataSample, unimodal_kinVel])
-            if 'kinVel_x' not in param_dict['feature_names']:
-                param_dict['feature_names'].append('kinVel_x')
-                param_dict['feature_names'].append('kinVel_y')
-                param_dict['feature_names'].append('kinVel_z')
+            kinEEPos        = d['kinEEPosList'][idx]            
+            ## unimodal_kinVel = d['kinVelList'][idx]
+
+            if len(kinEEPos[0])>2:
+                vel = np.linalg.norm( kinEEPos[:,1:]-kinEEPos[:,:-1], axis=0 )
+                vel /= timeList[1:]-timeList[:-1]
+                vel = np.array( [0] + vel.tolist() )
+            else:
+                print "not available in kinvel"
+                sys.exit()
+                vel = np.linalg.norm( kinEEPos[:,-1:] -
+                                      d['kinEEPosList_last'][idx][:,-1:], axis=0 )
+                
+            ## vel = np.linalg.norm(unimodal_kinVel, axis=0)
+
+            if dataSample is None: dataSample = vel
+            else: dataSample = np.vstack([dataSample, vel])
+            if 'kinVel' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('kinVel')
 
         # Unimodal feature - Kinematics --------------------------------------
         for jnt_idx in xrange(7):
             if 'unimodal_kinJntEff_'+str(jnt_idx+1) in feature_list:
                 unimodal_kinJntEff = d['kinJntEffList'][idx]
 
+                # TODO: need to simplify!
                 if offset_flag:
-                    offset = np.mean(unimodal_kinJntEff[:,:startOffsetSize], axis=1)
-                    for i in xrange(len(offset)):
-                        unimodal_kinJntEff[i] -= offset[i]
-
+                    offset = np.mean(unimodal_kinJntEff[jnt_idx,:startOffsetSize])
+                    unimodal_kinJntEff[jnt_idx] -= offset
 
                 if dataSample is None: dataSample = np.array( unimodal_kinJntEff[jnt_idx:jnt_idx+1] )
                 else: dataSample = np.vstack([ dataSample, unimodal_kinJntEff[jnt_idx:jnt_idx+1] ])
                 if 'kinJntEff_'+str(jnt_idx+1) not in param_dict['feature_names']:           
                     param_dict['feature_names'].append( 'kinJntEff_'+str(jnt_idx+1) )
 
-        ## # Unimodal feature - Kinematics --------------------------------------
-        ## if 'unimodal_kinJntEff' in feature_list:
-        ##     unimodal_kinJntEff = d['kinJntEffList'][idx]
-
-        ##     if offset_flag:
-        ##         offset = np.mean(unimodal_kinJntEff[:,:startOffsetSize], axis=1)
-        ##         for i in xrange(len(offset)):
-        ##             unimodal_kinJntEff[i] -= offset[i]
-
-
-        ##     if dataSample is None: dataSample = np.array(unimodal_kinJntEff)
-        ##     else: dataSample = np.vstack([dataSample, unimodal_kinJntEff])
-        ##     if 'kinJntEff_1' not in param_dict['feature_names']:           
-        ##         for i in xrange(len(unimodal_kinJntEff)):
-        ##             param_dict['feature_names'].append('kinJntEff_'+str(i+1))
 
         # Unimodal feature - Force -------------------------------------------
         if 'unimodal_ftForce' in feature_list:
             ftForce = d['ftForceList'][idx]
             
-            # magnitude
-            if len(np.shape(ftForce)) > 1:
-                unimodal_ftForce_mag = np.linalg.norm(ftForce, axis=0)
-                if offset_flag: #correct???????
-                    unimodal_ftForce_mag -= np.mean(unimodal_ftForce_mag[:startOffsetSize])
-                
-                if dataSample is None: dataSample = np.array(unimodal_ftForce_mag)
-                else: dataSample = np.vstack([dataSample, unimodal_ftForce_mag])
+            unimodal_ftForce_mag = np.linalg.norm(ftForce, axis=0)
+            if offset_flag: #correct???????
+                unimodal_ftForce_mag -= np.mean(unimodal_ftForce_mag[:startOffsetSize])
 
-                if 'ftForce_mag' not in param_dict['feature_names']:
-                    param_dict['feature_names'].append('ftForce_mag')
-            else:                
-                unimodal_ftForce_mag = ftForce
-            
-                if dataSample is None: dataSample = np.array(unimodal_ftForce_mag)
-                else: dataSample = np.vstack([dataSample, unimodal_ftForce_mag])
+            if dataSample is None: dataSample = np.array(unimodal_ftForce_mag)
+            else: dataSample = np.vstack([dataSample, unimodal_ftForce_mag])
 
-                if 'ftForce_mag' not in param_dict['feature_names']:
-                    param_dict['feature_names'].append('ftForce_mag')
+            if 'ftForce_mag' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('ftForce_mag')
+
 
         # Unimodal feature - Force zeroing -------------------------------------------
         if 'unimodal_ftForce_zero' in feature_list:
             ftForce = d['ftForceList'][idx]
 
-            unimodal_ftForce_mean = np.mean(ftForce[:,:startOffsetSize], axis=1)
-            for i in xrange(len(ftForce)):
-                ftForce[i] -= unimodal_ftForce_mean[i]
-                
-            ## ftForce = ftForce[[0,1,2]]
-            ## ftForce = ftForce[[0,1,]]
-            
-            # magnitude
-            unimodal_ftForce_mag = np.linalg.norm(ftForce, axis=0)
-            ## unimodal_ftForce_mag = np.sum(ftForce**2, axis=0)
-            if offset_flag: #correct???????
-                unimodal_ftForce_mag -= np.mean(unimodal_ftForce_mag[:startOffsetSize])
+            if offset_flag: 
+                unimodal_ftForce_mag = np.linalg.norm(ftForce-np.mean(ftForce[:,:startOffsetSize],
+                                                                      axis=1)[:,np.newaxis], axis=0)
+            else:
+                # magnitude
+                unimodal_ftForce_mag = np.linalg.norm(ftForce, axis=0)
 
             if dataSample is None: dataSample = np.array(unimodal_ftForce_mag)
             else: dataSample = np.vstack([dataSample, unimodal_ftForce_mag])
@@ -1651,24 +1678,20 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
         if 'unimodal_ftForce_integ' in feature_list:
             ftForce = d['ftForceList'][idx]
 
-            unimodal_ftForce_mean = np.mean(ftForce[:,:startOffsetSize], axis=1)
-            for i in xrange(len(ftForce)):
-                ftForce[i] -= unimodal_ftForce_mean[i]
-                
-            # magnitude
-            unimodal_ftForce_mag = np.linalg.norm(ftForce, axis=0)
-            ## unimodal_ftForce_mag = np.sum(ftForce**2, axis=0)
-            if offset_flag: #correct???????
-                unimodal_ftForce_mag -= np.mean(unimodal_ftForce_mag[:startOffsetSize])
+            if offset_flag: 
+                mag = np.linalg.norm(ftForce-np.mean(ftForce[:,:startOffsetSize], axis=1)[:,np.newaxis], axis=0)
+            else:
+                mag = np.linalg.norm(ftForce, axis=0)
 
             # cumulation
-            for i in xrange(1,len(unimodal_ftForce_mag)):
-                unimodal_ftForce_mag[i] += unimodal_ftForce_mag[i-1]
-
-            ## unimodal_ftForce_mag -= np.array([unimodal_ftForce_mag[0]]+unimodal_ftForce_mag.tolist()[:-1])
-
-            if dataSample is None: dataSample = np.array(unimodal_ftForce_mag)
-            else: dataSample = np.vstack([dataSample, unimodal_ftForce_mag])
+            if len(mag)>1:
+                unimodal_ftForce_integ = [0.0]                
+                for i in xrange(1,len(mag)):
+                    unimodal_ftForce_integ.append( unimodal_ftForce_integ[-1] +
+                                                   (mag[i]+mag[i-1])*(timeList[i]-timeList[i-1])/2.0 )
+                
+            if dataSample is None: dataSample = np.array(unimodal_ftForce_integ)
+            else: dataSample = np.vstack([dataSample, unimodal_ftForce_integ])
 
             if 'ftForce_mag_integ' not in param_dict['feature_names']:
                 param_dict['feature_names'].append('ftForce_mag_integ')
@@ -1676,24 +1699,25 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
 
         # Unimodal feature - Force zeroing -------------------------------------------
         if 'unimodal_ftForce_delta' in feature_list:
-            ftForce = d['ftForceList'][idx]
+            ## ftForce = d['ftForceList'][idx]
 
-            unimodal_ftForce_mean = np.mean(ftForce[:,:startOffsetSize], axis=1)
-            for i in xrange(len(ftForce)):
-                ftForce[i] -= unimodal_ftForce_mean[i]
+            ## unimodal_ftForce_mean = np.mean(ftForce[:,:startOffsetSize], axis=1)
+            ## for i in xrange(len(ftForce)):
+            ##     ftForce[i] -= unimodal_ftForce_mean[i]
                 
-            # magnitude
-            unimodal_ftForce_mag = np.linalg.norm(ftForce, axis=0)
-            ## unimodal_ftForce_mag = np.sum(ftForce**2, axis=0)
-            if offset_flag: #correct???????
-                unimodal_ftForce_mag -= np.mean(unimodal_ftForce_mag[:startOffsetSize])
-            unimodal_ftForce_mag -= np.array([unimodal_ftForce_mag[0]]+unimodal_ftForce_mag.tolist()[:-1])
+            ## # magnitude
+            ## unimodal_ftForce_mag = np.linalg.norm(ftForce, axis=0)
+            ## ## unimodal_ftForce_mag = np.sum(ftForce**2, axis=0)
+            ## if offset_flag: #correct???????
+            ##     unimodal_ftForce_mag -= np.mean(unimodal_ftForce_mag[:startOffsetSize])
+            ## unimodal_ftForce_mag -= np.array([unimodal_ftForce_mag[0]]+unimodal_ftForce_mag.tolist()[:-1])
 
-            if dataSample is None: dataSample = np.array(unimodal_ftForce_mag)
-            else: dataSample = np.vstack([dataSample, unimodal_ftForce_mag])
+            ## if dataSample is None: dataSample = np.array(unimodal_ftForce_mag)
+            ## else: dataSample = np.vstack([dataSample, unimodal_ftForce_mag])
 
-            if 'ftForce_mag_delta' not in param_dict['feature_names']:
-                param_dict['feature_names'].append('ftForce_mag_delta')
+            ## if 'ftForce_mag_delta' not in param_dict['feature_names']:
+            ##     param_dict['feature_names'].append('ftForce_mag_delta')
+            print "skip"
 
 
         # Unimodal feature - Force -------------------------------------------
@@ -1702,7 +1726,7 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
             
             # magnitude
             if len(np.shape(ftForce)) > 1:
-                unimodal_ftForce_x = ftForce[0:1,:]
+                unimodal_ftForce_x = copy.deepcopy(ftForce[0:1,:])
                 if offset_flag:
                     unimodal_ftForce_x -= np.mean(unimodal_ftForce_x[:,:startOffsetSize])
             else:                
@@ -1721,7 +1745,7 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
             
             # magnitude
             if len(np.shape(ftForce)) > 1:
-                unimodal_ftForce_y = ftForce[1:2,:]
+                unimodal_ftForce_y = copy.deepcopy(ftForce[1:2,:])
                 if offset_flag:
                     unimodal_ftForce_y -= np.mean(unimodal_ftForce_y[:,:startOffsetSize])
             else:                
@@ -1740,7 +1764,7 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
             
             # magnitude
             if len(np.shape(ftForce)) > 1:
-                unimodal_ftForce_z = ftForce[2:3,:]
+                unimodal_ftForce_z = copy.deepcopy(ftForce[2:3,:])
                 if offset_flag:
                     unimodal_ftForce_z -= np.mean(unimodal_ftForce_z[:,:startOffsetSize])
             else:                
@@ -1752,6 +1776,22 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
             if 'ftForce_z' not in param_dict['feature_names']:
                 param_dict['feature_names'].append('ftForce_z')
 
+
+        # Unimodal feature - Force zeroing -------------------------------------------
+        if 'unimodal_ftForce_XY' in feature_list:
+            ftForce = d['ftForceList'][idx][:2,:]
+
+            if offset_flag: 
+                unimodal_ftForce_mag = np.linalg.norm(ftForce-np.mean(ftForce[:2,:startOffsetSize], axis=1)[:,np.newaxis], axis=0)
+            else:
+                # magnitude
+                unimodal_ftForce_mag = np.linalg.norm(ftForce, axis=0)
+
+            if dataSample is None: dataSample = np.array(unimodal_ftForce_mag)
+            else: dataSample = np.vstack([dataSample, unimodal_ftForce_mag])
+
+            if 'ftForce_mag_xy' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('ftForce_mag_xy')
 
 
         # Unimodal feature - pps -------------------------------------------
@@ -1809,7 +1849,8 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
             unimodal_fabricForce = d['fabricMagList'][idx]
 
             if offset_flag:
-                unimodal_fabricForce -= np.amin(unimodal_fabricForce)
+                # NOTE: overwritten org data
+                unimodal_fabricForce -= np.amin(unimodal_fabricForce) 
 
             if dataSample is None: dataSample = unimodal_fabricForce
             else: dataSample = np.vstack([dataSample, unimodal_fabricForce])
@@ -1823,14 +1864,14 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
             if len(np.shape(visionLandmarkPos)) == 1:
                 visionLandmarkPos = np.reshape(visionLandmarkPos, (3,1))
 
-            visionLandmarkPos_mean = np.mean(visionLandmarkPos[:,:startOffsetSize], axis=1)
-            for i in xrange(len(visionLandmarkPos)):
-                visionLandmarkPos[i] -= visionLandmarkPos_mean[i]
-                            
+            ## if offset_flag:
+            ##     visionLandmarkPos_mean = np.mean(visionLandmarkPos[:,:startOffsetSize], axis=1)
+            ##     for i in xrange(len(visionLandmarkPos)):
+            ##         visionLandmarkPos[i] -= visionLandmarkPos_mean[i]
             dist = np.linalg.norm(visionLandmarkPos, axis=0)
             if offset_flag:
                 dist -= np.mean(dist[:startOffsetSize])
-            
+
             crossmodal_landmarkDist = []
             for time_idx in xrange(len(timeList)):
                 crossmodal_landmarkDist.append(dist[time_idx])
@@ -1846,11 +1887,14 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
         if 'unimodal_kinEEChange' in feature_list:
             kinEEPos     = d['kinEEPosList'][idx]
 
+            ## if offset_flag:
+            ##     offset = np.mean(kinEEPos[:,:startOffsetSize], axis=1)
+            ##     for i in xrange(len(offset)):
+            ##         kinEEPos[i] -= offset[i]
             if offset_flag:
-                offset = np.mean(kinEEPos[:,:startOffsetSize], axis=1)
-                for i in xrange(len(offset)):
-                    kinEEPos[i] -= offset[i]
-            dist = np.linalg.norm(kinEEPos, axis=0)
+                dist = np.linalg.norm(kinEEPos-np.mean(kinEEPos[:,:startOffsetSize], axis=1)[:,np.newaxis], axis=0)
+            else:
+                dist = np.linalg.norm(kinEEPos, axis=0)
 
             if dataSample is None: dataSample = np.array(dist)
             else: dataSample = np.vstack([dataSample, dist])
@@ -1863,21 +1907,19 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
             kinEEPos     = d['kinEEPosList'][idx]
             kinDesEEPos  = d['kinDesEEPosList'][idx]
 
-            ## if offset_flag:
-            ##     offset = np.mean(kinDesEEPos[:,:startOffsetSize], axis=1)
-            ##     for i in xrange(len(offset)):
-            ##         kinDesEEPos[i] -= offset[i]
+            ## kinDesEEPos -= np.mean(kinDesEEPos[:,:startOffsetSize], axis=1)[:,np.newaxis]
+            ## dist = np.linalg.norm(kinDesEEPos, axis=0)
+            
             dist = np.linalg.norm(kinEEPos-kinDesEEPos, axis=0)
             if offset_flag:
-                offset = np.mean(dist[:startOffsetSize])
-                dist -= offset
+                dist -= np.mean(dist[:startOffsetSize])
 
             if dataSample is None: dataSample = np.array(dist)
             else: dataSample = np.vstack([dataSample, dist])
             if 'DesEEChange' not in param_dict['feature_names']:
                 param_dict['feature_names'].append('DesEEChange')
 
-            
+
         # Crossmodal feature - relative dist --------------------------
         if 'crossmodal_targetEEDist' in feature_list:
             kinEEPos     = d['kinEEPosList'][idx]
@@ -1906,7 +1948,6 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
             if offset_flag:
                 dist -= np.mean(dist[:startOffsetSize])
 
-            print np.shape(dist)
             vel = dist[1:]-dist[:-1]
             ## vel =
             sys.exit()
@@ -2050,7 +2091,7 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
         # Crossmodal feature - vision relative dist with main(first) vision target----
         if 'crossmodal_landmarkEEDist' in feature_list:
             kinEEPos  = d['kinEEPosList'][idx]
-            visionLandmarkPos = d['visionLandmarkPosList'][idx] # originally length x 3*tags
+            visionLandmarkPos = d['visionLandmarkPosList'][idx] # originally length 
 
             if len(np.shape(visionLandmarkPos)) == 1:
                 visionLandmarkPos = np.reshape(visionLandmarkPos, (3,1))
@@ -2090,6 +2131,7 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
             crossmodal_landmarkEEAng = np.array(crossmodal_landmarkEEAng)
             if offset_flag:
                 crossmodal_landmarkEEAng -= np.mean(crossmodal_landmarkEEAng[:startOffsetSize])
+            crossmodal_landmarkEEAng = abs(crossmodal_landmarkEEAng)
 
             if dataSample is None: dataSample = np.array(crossmodal_landmarkEEAng)
             else: dataSample = np.vstack([dataSample, crossmodal_landmarkEEAng])
@@ -2128,9 +2170,6 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
                 param_dict['feature_max'][idx] = np.max(np.array(features[idx][success_idx]).flatten())
                 param_dict['feature_min'][idx] = np.min(np.array(features[idx][success_idx]).flatten())
 
-
-
-        
     scaled_features = []
     for i, feature in enumerate(features):
         if abs( param_dict['feature_max'][i] - param_dict['feature_min'][i]) < 1e-3:
@@ -2406,6 +2445,45 @@ def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, param_dict=None, 
     param_dict['dataDim']       = dataDim
    
     return success_features, failure_features, param_dict
+
+
+def export_images(folder_list, data_dict, downSampleSize):
+    ''' Get list of images between start and end time '''
+
+    assert len(data_dict['timesList']) == len(folder_list)
+
+    images = []
+    for idx, f in enumerate(folder_list):
+
+        des_time_list = data_dict['timesList'][idx]
+
+        # get image folder
+        files = os.listdir(f)
+        if len(files) == 0:
+            print "No images so skip: ", f
+            images.append(None)
+            continue            
+
+        # get time list
+        time_list = []
+        for i, img in enumerate(files):
+            if not(img.find('.jpg')>=0): continue
+            t = float(img.split('_')[-1].split('.jpg')[0])
+            time_list.append(t-data_dict['initTimeList'][idx])
+        time_list = np.array(time_list)
+
+        # Note: do we need to sort? probably not
+
+        t_idx_list = []
+        for t in des_time_list:
+            t_idx = np.argmin(abs(time_list - t))
+            t_idx_list.append(t_idx)
+
+        # get list of iamges between start_time and end_time
+        imgs = [os.path.join(f,files[i]) for i in t_idx_list ]
+        images.append(imgs)
+
+    return images
 
 #-------------------------------------------------------------------------------------------------
 
@@ -2854,8 +2932,8 @@ def saveHMMinducedFeatures(kFold_list, successData, failureData,\
                            task_name, processed_data_path,\
                            HMM_dict, data_renew, startIdx, nState, cov, \
                            success_files=None, failure_files=None,\
-                           noise_mag = 0.03, one_class=True, suffix=None,\
-                           add_logp_d=False, diag=False, verbose=False):
+                           noise_mag = 0.03, one_class=True, suffix=None, n_jobs=-1,\
+                           add_logp_d=False, diag=False, cov_type='full', verbose=False):
     """
     Training HMM, and getting classifier training and testing data.
     """
@@ -2869,6 +2947,7 @@ def saveHMMinducedFeatures(kFold_list, successData, failureData,\
     # HMM-induced vector with LOPO
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(kFold_list):
+        if verbose: print "dm.saveHMM ", idx
 
         # Training HMM, and getting classifier training and testing data
         if suffix is not None:
@@ -2893,23 +2972,36 @@ def saveHMMinducedFeatures(kFold_list, successData, failureData,\
         nLength      = len(normalTrainData[0][0]) - startIdx
         cov_mult     = [cov]*(nEmissionDim**2)
 
+        if type(noise_mag) is list:
+            noise_arr = None
+            for i in xrange(nEmissionDim):
+                if noise_arr is None:
+                    noise_arr = np.random.normal(0.0, noise_mag[i], np.shape(normalTrainData[i:i+1]))
+                else:
+                    noise_arr = np.vstack([noise_arr,
+                                           np.random.normal(0.0, noise_mag[i],
+                                                            np.shape(normalTrainData[i:i+1])) ])
+                
+        else:
+            noise_arr = np.random.normal(0.0, noise_mag, np.shape(normalTrainData))
+
         ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose)
-        ret = ml.fit(normalTrainData+\
-                     np.random.normal(0.0, noise_mag, np.shape(normalTrainData) )*HMM_dict['scale'], \
-                     cov_mult=cov_mult, use_pkl=False)
+        ret = ml.fit(normalTrainData+noise_arr*HMM_dict['scale'], \
+                     cov_mult=cov_mult, use_pkl=False, cov_type=cov_type)
                      ## np.random.normal(0.0, noise_mag, np.shape(normalTrainData) )*1.0, \
         if ret == 'Failure' or np.isnan(ret):
             print "hmm training failed"
             sys.exit()
 
+        if verbose: print "Start to extract features "
         # Classifier training data
         ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
           hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData, \
-                                                   startIdx, add_logp_d)
+                                                   startIdx, add_logp_d, n_jobs=n_jobs)
         # Classifier test data
         ll_classifier_test_X, ll_classifier_test_Y, ll_classifier_test_idx =\
           hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData, abnormalTestData, \
-                                                   startIdx, add_logp_d)
+                                                   startIdx, add_logp_d, n_jobs=n_jobs)
 
         if success_files is not None:
             ll_classifier_test_labels = [success_files[i] for i in normalTestIdx]
@@ -2931,14 +3023,15 @@ def saveHMMinducedFeatures(kFold_list, successData, failureData,\
             # Classifier training data
             ll_classifier_diag_train_X, ll_classifier_diag_train_Y, ll_classifier_diag_train_idx =\
               hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData, startIdx, \
-                                                       add_logp_d,\
+                                                       add_logp_d, n_jobs=n_jobs, \
                                                        cov_type='diag')
 
             # Classifier test data
             ll_classifier_diag_test_X, ll_classifier_diag_test_Y, ll_classifier_diag_test_idx =\
               hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData, abnormalTestData, startIdx, \
-                                                       add_logp_d,\
+                                                       add_logp_d, n_jobs=n_jobs,\
                                                        cov_type='diag')
+
 
         #-----------------------------------------------------------------------------------------
         d = {}

@@ -327,7 +327,7 @@ class anomaly_detector:
             # do we need folding?
             if self.nNormalFold > 1:
                 # Task-oriented hand-crafted features        
-                kFold_list = dm.kFold_data_index2(len(dd['successData'][0]), len(dd['failureData'][0]), \
+                kFold_list = dm.kFold_data_index(len(dd['successData'][0]), len(dd['failureData'][0]), \
                                                       self.nNormalFold, self.nAbnormalFold )
                 # Select the first fold as the training data (need to fix?)
                 (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) = kFold_list[0]

@@ -135,7 +135,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     # Training HMM, and getting classifier training and testing data
     dm.saveHMMinducedFeatures(kFold_list, successData, failureData,\
                               task_name, processed_data_path,\
-                              HMM_dict, data_renew, startIdx, nState, cov, scale, \
+                              HMM_dict, data_renew, startIdx, nState, cov, \
                               noise_mag=0.03, diag=diag, \
                               verbose=verbose)
 
@@ -250,7 +250,7 @@ def evaluation_unexp(subject_names, task_name, raw_data_path, processed_data_pat
     # HMM-induced vector with LOPO
     dm.saveHMMinducedFeatures(kFold_list, successData, failureData,\
                               task_name, processed_data_path,\
-                              HMM_dict, data_renew, startIdx, nState, cov, scale, \
+                              HMM_dict, data_renew, startIdx, nState, cov, \
                               success_files=success_files, failure_files=failure_files,\
                               verbose=verbose)
                               
@@ -383,7 +383,7 @@ def evaluation_modality(subject_names, task_name, raw_data_path, processed_data_
         # Training HMM, and getting classifier training and testing data
         dm.saveHMMinducedFeatures(kFold_list, successData, failureData,\
                                   task_name, processed_data_path,\
-                                  HMM_dict, data_renew, startIdx, nState, cov, scale, \
+                                  HMM_dict, data_renew, startIdx, nState, cov, \
                                   success_files=success_files, failure_files=failure_files,\
                                   noise_mag=0.03, verbose=verbose)
 
@@ -420,7 +420,6 @@ def evaluation_modality(subject_names, task_name, raw_data_path, processed_data_
 
         if detection_rate: detection_info(method_list, ROC_data, nPoints, kFold_list,zero_fp_flag=True)
         
-
     # ---------------- ROC Visualization ----------------------
     if detection_rate: sys.exit()
     for modality in modality_list:
@@ -703,7 +702,7 @@ if __name__ == '__main__':
     nPoints = 40 #None
 
     raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
-                                                          opt.bHMMRenew, opt.bClassifierRenew, opt.dim,\
+                                                          opt.bHMMRenew, opt.bCLFRenew, opt.dim,\
                                                           rf_center, local_range, nPoints=nPoints)
     if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
     # Mikako - bad camera
@@ -943,7 +942,7 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_modality/'+\
           str(param_dict['data_param']['downSampleSize'])
-        nPoints = param_dict['ROC']['nPoints'] = 200
+        nPoints = param_dict['ROC']['nPoints'] = 40 #200
 
         param_dict['ROC']['hmmgp_param_range'] = np.logspace(-0.5, 2.6, nPoints)*-1.0
         

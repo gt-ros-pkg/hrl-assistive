@@ -59,8 +59,6 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
     ## Parameters
     # data
     data_dict  = param_dict['data_param']
-    # AE
-    AE_dict     = param_dict['AE']
     # HMM
     HMM_dict = param_dict['HMM']
     nState   = HMM_dict['nState']

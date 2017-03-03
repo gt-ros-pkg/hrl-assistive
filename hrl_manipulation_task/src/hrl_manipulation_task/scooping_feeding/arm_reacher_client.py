@@ -80,6 +80,34 @@ if __name__ == '__main__':
     ##     print armReachActionLeft("runFeeding")
     ##     sys.exit()
 
+    #---------------------------- Scooping test ----------------------
+    ## print armReachActionLeft("initArms")
+    ## print armReachActionRight("initArms")
+
+    ## leftProc = multiprocessing.Process(target=armReachLeft, args=('initScooping1',))
+    ## rightProc = multiprocessing.Process(target=armReachRight, args=('initScooping1',))
+    ## print armReachActionLeft('getBowlPos')
+    ## print armReachActionLeft('lookAtBowl')
+    ## print armReachActionLeft('initScooping2')
+    ## print armReachActionLeft('runScooping')
+    ## print armReachActionLeft('cleanSpoon1')
+
+    ## sys.exit()
+
+
+    ## armReachActionLeft("initArms")
+    ## armReachActionRight("initArms")
+    ## armReachActionLeft("initScooping1") #fix
+    ## armReachActionRight("initScooping1") #fix
+    ## print armReachActionLeft('getBowlPos')
+    ## print armReachActionLeft('lookAtBowl')
+    ## print armReachActionLeft('initScooping2')
+    ## print armReachActionLeft('runScooping')
+    ## self.armReachActionRight("getHeadPos")
+    ## self.armReachActionRight("initFeeding")
+    ## sys.exit()
+
+
     #---------------------------- Face registration ----------------------
     if True:
         ## print armReachActionLeft('lookToRight')

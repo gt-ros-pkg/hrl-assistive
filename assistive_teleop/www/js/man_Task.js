@@ -66,7 +66,7 @@ var ManipulationTask = function (ros) {
     manTask.handshaked = false;
     manTask.current_task = 'Init';
     manTask.anomaly_detected = false;
-    manTask.anomaly_stop = false;
+    manTask.self_stop = false;
     //status_topic and publishing
     manTask.statusPub = new manTask.ros.Topic({
         name: manTask.STATUS_TOPIC,
@@ -167,6 +167,9 @@ var ManipulationTask = function (ros) {
             assistive_teleop.log('Starting the manipulation task');
             assistive_teleop.log('Please, follow the step 3 when "Requesting Feedback" message shows up.');
             console.log('Publishing Start msg to manTask system.');
+            manTask.self_stop=false;
+            document.getElementById('non_anomaly_disp').style.display='';
+            document.getElementById('anomaly_disp').style.display='none';
             //$('#tabs').css.("width","100%");
             return true;
         } else {
@@ -178,7 +181,7 @@ var ManipulationTask = function (ros) {
         var msg = new manTask.ros.Message({
           data: 'STOP'
         });
-        manTask.anomaly_stop = false;
+        manTask.self_stop = true;
         manTask.emergencyPub.publish(msg);
         assistive_teleop.log('Stopping the manipulation task');
         assistive_teleop.log('Please, press "Continue" to re-start the action. Or re-start from step 1.');
@@ -195,11 +198,23 @@ var ManipulationTask = function (ros) {
             assistive_teleop.log('Continuing the manipulation task');
             assistive_teleop.log('Please, follow the step 3 when "Requesting Feedback" message shows up.');
             console.log('Publishing Continue msg to manTask system.');
+            manTask.self_stop = false;
+            document.getElementById('non_anomaly_disp').style.display='';
+            document.getElementById('anomaly_disp').style.display='none';
             return true;
         } else {
             return false;
         }
     };
+
+    manTask.advanced = function () {
+        if (document.getElementById('advanced_setting_disp').style.display== 'none') {
+            document.getElementById('advanced_setting_disp').style.display='';
+        } else {
+            document.getElementById('advanced_setting_disp').style.display='none';
+        }
+    }
+
     // Function to report the feedback
     /*
     manTask.success = function () {
@@ -374,6 +389,31 @@ var ManipulationTask = function (ros) {
             disableButton('#ad_feeding_slider');
             manTask.available=true;
             manTask.start()
+        } else if (msg.data == 'stand by') {
+            disableButton('#man_task_Scooping');
+            disableButton('#man_task_Feeding');
+            disableButton('#man_task_Clean');
+            enableButton('#man_task_stop');
+            disableButton('#man_task_Continue');
+            disableButton('#man_task_success');
+            disableButton('#man_task_Fail');
+            enableButton('#man_task_start');
+            disableButton('#man_task_Skip');
+
+            document.getElementById('step_table1').innerHTML = " ";
+            document.getElementById('step_table2').innerHTML = "Waiting for robot";
+            unglow('#step_table2');
+            document.getElementById('step_table3').innerHTML = " ";
+            fullscreenStop('#fullscreenOverlay', previous_css);
+            fullscreenStop('#fullscreenOverlay2', previous_css);
+            manTask.anomaly_detected = false;
+            disableButton('#ad_scooping_sense_min');
+            disableButton('#ad_scooping_sense_max');
+            disableButton('#ad_scooping_slider');
+            disableButton('#ad_feeding_sense_min');
+            disableButton('#ad_feeding_sense_max');
+            disableButton('#ad_feeding_slider');
+
         } else if (msg.data == 'in motion') {
             disableButton('#man_task_Scooping');
             disableButton('#man_task_Feeding');
@@ -434,9 +474,9 @@ var ManipulationTask = function (ros) {
             enableButton('#ad_feeding_sense_max');
             enableButton('#ad_feeding_slider');
             manTask.available=true;
-            if (manTask.anomaly_detected) {
-                document.getElementById('anomaly_disp').style.display = 'none';
-                document.getElementById('non_anomaly_disp').style.display = '';
+            if (manTask.anomaly_detected && !manTask.self_stop) {
+                document.getElementById('anomaly_disp').style.display = '';
+                document.getElementById('non_anomaly_disp').style.display = 'none';
             }
             manTask.anomaly_detected = false;
         } else if (msg.data == 'request feedback') {
@@ -576,10 +616,13 @@ var ManipulationTask = function (ros) {
     manTask.emergencySub.subscribe(function (msg) {
         if(msg.data!="STOP") {
             manTask.anomaly_detected = true;
-            if (manTask.anomaly_stop == false) {
+            if (manTask.self_stop == false) {
                 document.getElementById('anomaly_type').innerHTML = 'Classifying';
                 document.getElementById('non_anomaly_disp').style.display='none';
                 document.getElementById('anomaly_disp').style.display='';
+            } else {
+                document.getElementById('non_anomaly_disp').style.display='';
+                document.getElementById('anomaly_disp').style.display='none';
             }
         }
 
@@ -624,6 +667,10 @@ var initManTaskTab = function() {
     $('#man_task_Continue').click(function(){
         assistive_teleop.manTask.continue_();
     });
+    $('#man_task_Advanced').click(function(){
+        assistive_teleop.manTask.advanced();
+    });
+
     /*
     $('#man_task_success').click(function(){
         assistive_teleop.manTask.success();

@@ -29,7 +29,7 @@
 #  \author Daehyung Park (Healthcare Robotics Lab, Georgia Tech.)
 
 # system
-import rospy, roslib
+import rospy
 import os, threading, copy
 
 from pykdl_utils.kdl_kinematics import create_kdl_kin
@@ -142,6 +142,7 @@ class robot_kinematics(threading.Thread):
         '''
         Initialize pusblishers and subscribers
         '''
+        ## rospy.Subscriber('joint_states_throttle', JointState, self.joint_states_callback)
         rospy.Subscriber('joint_states', JointState, self.joint_states_callback)
         # Task & motion command
         rospy.Subscriber("haptic_mpc/traj_pose", PoseStamped, self.goalPoseCallback)
@@ -386,3 +387,16 @@ class robot_kinematics(threading.Thread):
         else:
           return False
         
+
+
+if __name__ == '__main__':
+
+    rospy.init_node('testt')
+    k = robot_kinematics()
+
+    rate = rospy.Rate(10) # 25Hz, nominally.
+    while not rospy.is_shutdown():
+        rate.sleep()
+   
+
+    

@@ -73,6 +73,7 @@
                                                        /feeding/manipulation_task/feeding_dist_request
                                                        /feeding/manipulation_task/feeding_dist_state
                                                        /manipulation_task/anomaly_type
+                                                       /manipulation_task/anomaly_prob
                                                        /manipulation_task/available
                                                        /manipulation_task/emergency
                                                        /manipulation_task/gui_status
@@ -83,8 +84,8 @@
                                                        /scooping/manipulation_task/ad_sensitivity_request
                                                        /scooping/manipulation_task/ad_sensitivity_state
                                                        /scooping/manipulation_task/eval_status
-                                                       /manipulation_task/hmm_input0
-                                                       /manipulation_task/hmm_input1
+                                                       /feeding/manipulation_task/hmm_input0
+                                                       /feeding/manipulation_task/hmm_input1
                                                        " output="screen"/>
 </launch>
 

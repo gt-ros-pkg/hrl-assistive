@@ -42,7 +42,8 @@ import numpy as np
 import random
 
 import ghmm
-from hrl_anomaly_detection.hmm import learning_hmm_multi_n as hmm
+from hrl_anomaly_detection.hmm import learning_hmm as hmm
+from hrl_anomaly_detection.hmm import learning_util as util
 
 def genData():
 
@@ -165,7 +166,7 @@ if __name__ == '__main__':
     detection_param_pkl = 'hmm_test.pkl'
     ths = -1.0
     
-    ml  = hmm.learning_hmm_multi_n(nState, nEmissionDim, scale=10.0, verbose=False)
+    ml  = hmm.learning_hmm(nState, nEmissionDim, verbose=False)
     ret = ml.fit(trainingData, cov_mult=cov_mult, ml_pkl=detection_param_pkl, use_pkl=False) # not(renew))
 
 
@@ -194,7 +195,7 @@ if __name__ == '__main__':
         for j in range(2, len(trainingData[0][i])):
 
             X = [x[i,:j] for x in trainingData]                
-            X_test = ml.convert_sequence(X)
+            X_test = util.convert_sequence(X)
             try:
                 logp = ml.loglikelihood(X_test)
             except:
@@ -227,7 +228,7 @@ if __name__ == '__main__':
 
         for j in range(2, len(abnormalTestData[0][i])):
             X = [x[i,:j] for x in abnormalTestData]                
-            X_test = ml.convert_sequence(X)
+            X_test = util.convert_sequence(X)
             try:
                 logp = ml.loglikelihood(X_test)
             except:

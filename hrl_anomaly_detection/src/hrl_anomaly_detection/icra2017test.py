@@ -117,7 +117,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
         # TODO: need leave-one-person-out
         # Task-oriented hand-crafted features        
-        kFold_list = dm.kFold_data_index2(len(d['successData'][0]), len(d['failureData'][0]), \
+        kFold_list = dm.kFold_data_index(len(d['successData'][0]), len(d['failureData'][0]), \
                                           data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
         d['kFoldList']   = kFold_list
         ut.save_pickle(d, crossVal_pkl)
@@ -316,7 +316,7 @@ def evaluation_unexp(subject_names, unexpected_subjects, task_name, raw_data_pat
 
         # TODO: need leave-one-person-out
         # Task-oriented hand-crafted features        
-        kFold_list = dm.kFold_data_index2(len(d['successData'][0]), len(d['failureData'][0]), \
+        kFold_list = dm.kFold_data_index(len(d['successData'][0]), len(d['failureData'][0]), \
                                           data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
         d['kFoldList']   = kFold_list
         ut.save_pickle(d, crossVal_pkl)
@@ -1459,7 +1459,7 @@ if __name__ == '__main__':
                  default=False, help='Renew AE data.')
     p.add_option('--hmmRenew', '--hr', action='store_true', dest='bHMMRenew',
                  default=False, help='Renew HMM parameters.')
-    p.add_option('--cfRenew', '--cr', action='store_true', dest='bClassifierRenew',
+    p.add_option('--cfRenew', '--cr', action='store_true', dest='bCLFRenew',
                  default=False, help='Renew Classifiers.')
 
     p.add_option('--task', action='store', dest='task', type='string', default='feeding',
@@ -1563,7 +1563,7 @@ if __name__ == '__main__':
             sys.exit()
 
                                                           
-    if opt.bClassifierRenew: param_dict['SVM']['renew'] = True
+    if opt.bCLFRenew: param_dict['SVM']['renew'] = True
     
     #---------------------------------------------------------------------------           
     if opt.bRawDataPlot or opt.bInterpDataPlot:

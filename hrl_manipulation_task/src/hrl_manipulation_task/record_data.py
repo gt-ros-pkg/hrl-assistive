@@ -65,17 +65,18 @@ class logger:
                  vision_change=False, vision_landmark=False, pps=False, skin=False, \
                  subject=None, task=None, \
                  record_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RSS2016',
-                 data_pub= False, detector=False, verbose=False):
+                 data_pub= False, en_ad=False, en_ai=False, verbose=False):
         rospy.logout('ADLs_log node subscribing..')
 
         self.subject  = subject
         self.task     = task
         self.data_pub = data_pub
-        self.ad_flag  = detector
         self.record_root_path = record_root_path
         self.verbose  = verbose
         self.enable_log_thread = False
-
+        self.enable_detector = en_ad
+        self.enable_isolator = en_ai
+        
         # GUI
         self.feedbackMSG = 0
         self.feedbackStatus = 0        
@@ -94,7 +95,7 @@ class logger:
         self.fabric_skin     = fabric_skin(True) if skin else None
 
         self.waitForReady()
-        self.initComms()
+        self.initComms(self.task)
 
         if self.data_pub:
             t = threading.Thread(target=self.runDataPub)
@@ -102,16 +103,14 @@ class logger:
             t.start()
  
     def initParams(self):
-        '''
-        # load parameters
-        '''        
+        ''' load parameters '''        
         # File saving
         self.folderName = os.path.join(self.record_root_path, self.subject + '_' + self.task)
+        self.nDetector  = rospy.get_param(self.task+'/nDetector')
+
         
-    def initComms(self):
-        '''
-        Record data and publish raw data
-        '''        
+    def initComms(self, task):
+        ''' Record data and publish raw data '''        
         if self.data_pub:
             self.rawDataPub = rospy.Publisher('/hrl_manipulation_task/raw_data', MultiModality,
                                                  queue_size=QUEUE_SIZE)
@@ -119,51 +118,50 @@ class logger:
         # GUI implementation       
         rospy.Subscriber("/manipulation_task/user_feedback", StringArray,
                          self.feedbackCallback)
-            
-        if self.ad_flag:
-            print "Wait anomaly detector service"
-            rospy.wait_for_service('/'+self.task+'/anomaly_detector_enable')
-            self.ad_srv = rospy.ServiceProxy('/'+self.task+'/anomaly_detector_enable', Bool_None)
-            self.ad_update_srv = rospy.ServiceProxy('/'+self.task+'/anomaly_detector_update', StringArray_None)
-            print "Detected anomaly detector service"
+        rospy.Subscriber("/manipulation_task/anomaly_type", String,
+                         self.isolationCallback)
+
+        self.setTask(task)
 
     
-    def feedbackCallback(self, data):
-        ''' GUI implementation
-        '''
+    def feedbackCallback(self, msg):
+        ''' GUI implementation '''
         #Just...log? idk where this one will go. I assume it is integrated with log....
-        self.feedbackMSG = data.data
         print "Logger feedback received"
-        self.feedbackStatus = feedback_to_label(data.data)
-        
-        ## if len(self.feedbackMSG) > 2:
-        ##     if self.feedbackMSG[0] == "TRUE" and self.feedbackMSG[1] == "FALSE" and self.feedbackMSG[2] == "FALSE":
-        ##         self.feedbackStatus = '1'
-        ##     else:#if self.feedbackMSG[0] != "SKIP":
-        ##         self.feedbackStatus = '2'
-        ## else:
-        ##     self.feedbackStatus = '3'
-            
+        self.feedbackMSG = msg.data
+        self.feedbackStatus = feedback_to_label(msg.data)
+                    
+    def isolationCallback(self, msg):
+        ''' save isolated class '''
+        self.isol_class = msg.data
 
     def getLogStatus(self):
         return self.enable_log_thread
             
     def setTask(self, task):
-        '''
-        Set a current task
-        '''
+        ''' Set a current task '''
         self.task = task
         self.initParams()
 
         if self.vision_artag is not None:
             self.vision_artag  = artag_vision(self.task, False, viz=False) 
 
-        if self.ad_flag:
-            print "Wait anomaly detector service"
-            rospy.wait_for_service('/'+self.task+'/anomaly_detector_enable')
-            self.ad_srv = rospy.ServiceProxy('/'+self.task+'/anomaly_detector_enable', Bool_None)
-            print "Detected anomaly detector service"
-            
+        if self.nDetector>0 and self.enable_detector:
+            self.ad_srv = []
+            for i in xrange(self.nDetector):            
+                print "Wait anomaly detector service"
+                rospy.wait_for_service('/'+self.task+'/anomaly_detector'+str(i)+'_enable')
+                self.ad_srv.append(rospy.ServiceProxy('/'+self.task+'/anomaly_detector'+str(i)+'_enable',
+                                                      Bool_None))
+                print "Detected anomaly detector service"
+
+        if self.enable_isolator and task.find('feeding')>=0:
+            print "Wait anomaly isolation service"
+            rospy.wait_for_service('/'+self.task+'/anomaly_isolator_enable')
+            self.ai_srv = rospy.ServiceProxy('/'+self.task+'/anomaly_isolator_enable',
+                                             Bool_None)
+            print "Detected anomaly isolation service"
+
         
     def log_start(self):
         rospy.loginfo("Start to log!")
@@ -175,14 +173,13 @@ class logger:
         if self.fabric_skin is not None:
             self.fabric_skin.reset(self.init_time)
 
+        if self.enable_isolator: self.isol_class = None
+
         # logging by thread
         self.enable_log_thread = True
         self.logger = threading.Thread(target=self.runDataLogger)
         self.logger.setDaemon(True)
         self.logger.start()
-
-        # special treament for audio
-        ## self.audio_wrist.log_start()
 
 
     def log_stop(self):
@@ -237,32 +234,49 @@ class logger:
         rospy.loginfo("Finish to log!")
 
 
-        ##GUI section
     def close_log_file_GUI(self, bCont=False, last_status='skip'):
+        ''' Save log file commanded from GUI '''
 
         # logging by thread
         self.log_stop()
 
-        flag = 0
         self.feedbackStatus = 0
         if bCont:
             status = last_status
         else:
             rate = rospy.Rate(2)
-            while flag == 0 and not rospy.is_shutdown():
-                flag = self.feedbackStatus
+            while self.feedbackStatus == 0 and not rospy.is_shutdown():
                 self.data['feedback'] = self.feedbackMSG
                 rate.sleep()
 
-            status = flag
-            print flag
+            status = self.feedbackStatus
             self.feedbackStatus=0
             print status
 
+                           
         if status == 'success' or status == 'failure':
             if status == 'failure':
-                #failure_class = raw_input('Enter failure reason if there is: ')
-                failure_class = "GUI_feedback"
+                # Need to run only when anomaly ... 
+                ## if self.enable_isolator and self.task.find('feeding')>=0:
+                    
+                ##     while self.isol_class is None and not rospy.is_shutdown():
+                ##         rate.sleep()
+                        
+                ##     if self.isol_class is not None:
+                ##         print "Anomaly is detected and isolated class is ", self.isol_class
+                ##         failure_class = "class_"+str(self.isol_class)
+                ##     else:
+                ##         print "Anomaly is not detected"
+                ##         failure_class = "class_"
+                        
+                ##     self.data['isol_class'] = self.isol_class
+                ## else:
+                failure_class = ""
+                    
+
+
+
+                
             if not os.path.exists(self.folderName): os.makedirs(self.folderName)
 
             # get next file id
@@ -277,9 +291,9 @@ class logger:
                         test_id = int((os.path.split(f)[1]).split('_')[1])
 
             if status == 'failure':        
-                fileName = os.path.join(self.folderName, 'iteration_%d_%s_%s.pkl' % (test_id+1, status, failure_class))
+                fileName = os.path.join(self.folderName, 'iter_%d_%s_%s.pkl' % (test_id+1, status, failure_class))
             else:
-                fileName = os.path.join(self.folderName, 'iteration_%d_%s.pkl' % (test_id+1, status))
+                fileName = os.path.join(self.folderName, 'iter_%d_%s.pkl' % (test_id+1, status))
 
             print 'Saving to', fileName
             ut.save_pickle(self.data, fileName)
@@ -289,20 +303,24 @@ class logger:
 
 
     def enableDetector(self, enableFlag):
-        ret = self.ad_srv(enableFlag)
+        for i in xrange(self.nDetector):
+            ret = self.ad_srv[i](enableFlag)
 
-    def updateDetector(self):
-        '''
-        It is called by arm_reacher_logging...
-        '''
+    def enableIsolator(self, enableFlag):
+        ret = self.ai_srv(enableFlag)
 
-        fileList = util.getSubjectFileList(self.record_root_path, [self.subject], self.task)
-        unused_fileList = [filename for filename in fileList if filename.find('used')<0]
+    ## def updateDetector(self):
+    ##     '''
+    ##     It is called by arm_reacher_logging...
+    ##     '''
+
+    ##     fileList = util.getSubjectFileList(self.record_root_path, [self.subject], self.task)
+    ##     unused_fileList = [filename for filename in fileList if filename.find('used')<0]
         
-        ret = self.ad_update_srv(unused_fileList)
-        for f in unused_fileList:
-            name = f.split('.pkl')[0]
-            os.system('mv '+f + ' '+ name+'_used.pkl')
+    ##     ret = self.ad_u_srv(unused_fileList)
+    ##     for f in unused_fileList:
+    ##         name = f.split('.pkl')[0]
+    ##         os.system('mv '+f + ' '+ name+'_used.pkl')
         
         
     def waitForReady(self):
@@ -385,16 +403,10 @@ class logger:
 
     def run(self):
 
-        #self.log_start()
-
         count = 0
-        rate = rospy.Rate(100) # 25Hz, nominally.
+        rate = rospy.Rate(50) # 25Hz, nominally.
         while not rospy.is_shutdown():
-            count += 1
-            ## if count > 800: break
             rate.sleep()
-
-        #self.close_log_file()
 
     def runDataPub(self):
         '''
@@ -420,7 +432,7 @@ class logger:
                 ##     audio_wrist_rms, audio_wrist_mfcc = self.audio_wrist.get_feature(self.audio_wrist.audio_data[-1])
                 msg.audio_wrist_rms       = self.audio_wrist.audio_rms
                 msg.audio_wrist_azimuth   = self.audio_wrist.audio_azimuth
-                ## msg.audio_wrist_mfcc      = self.audio_wrist.audio_mfcc
+                msg.audio_wrist_mfcc      = self.audio_wrist.audio_mfcc
                 
             if self.kinematics is not None:
                 msg.kinematics_ee_pos  = np.squeeze(self.kinematics.ee_pos.T).tolist()
@@ -648,13 +660,15 @@ if __name__ == '__main__':
     verbose = True
     data_pub= True
     detector= False
+    isolator= False
     record_root_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2017'
 
     rospy.init_node('record_data')
     log = logger(ft=False, audio=False, audio_wrist=False, kinematics=True, vision_artag=False, \
                  vision_landmark=False, vision_change=False, \
                  pps=False, skin=True, subject=subject, task=task, verbose=verbose,\
-                 data_pub=data_pub, detector=detector, record_root_path=record_root_path)
+                 data_pub=data_pub, detector=detector, isolator=isolator,
+                 record_root_path=record_root_path)
 
     rospy.sleep(1.0)
     log.run()

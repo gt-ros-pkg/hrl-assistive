@@ -366,7 +366,96 @@ class learning_hmm(learning_base):
                 x_pred.append(t_o)
 
         return x_pred
+
+
+    def conditional_prob(self, x):
+        '''
+        Input
+        @ x: dim x length
+        Output
+        @ A list of conditional probabilities P(x_t|x_s,lambda)
+
+        Only single sample works
+        '''
+        from scipy.stats import norm, entropy
+
+        # logp from all features
+        X_test = util.convert_sequence2(x, emission=False)
+        X_test = np.squeeze(X_test)
+        final_ts_obj = ghmm.EmissionSequence(self.F, X_test.tolist())
+        logp_all = self.ml.loglikelihood(final_ts_obj)
+
+        # feature-wise conditional probability
+        cond_prob = []
+        for i in xrange(self.nEmissionDim): # per feature
+
+            B = copy.copy(self.B)
+            for j in xrange(self.nState):
+                B[j][0] = [b for idx, b in enumerate(B[j][0]) if idx != i ]
+                B_arr = copy.copy(B[j][1])
+                B_arr = np.array(B_arr).reshape( (self.nEmissionDim, self.nEmissionDim) )
+                B_arr = np.delete(B_arr, (i), axis=0)
+                B_arr = np.delete(B_arr, (i), axis=1)
+                B[j][1] = B_arr.flatten().tolist()
+            ml_src = ghmm.HMMFromMatrices(self.F, ghmm.MultivariateGaussianDistribution(self.F), \
+                                          self.A, B, self.pi)
+
+            # logp from remains
+            X_test = util.convert_sequence2([ x[j] for j in xrange(len(x)) if j != i ], \
+                                            emission=False)
+            X_test = np.squeeze(X_test)
+            final_ts_obj = ghmm.EmissionSequence(self.F, X_test.tolist())
+            logp_src = ml_src.loglikelihood(final_ts_obj)
+
+            cond_prob.append(logp_all - logp_src)
+
+            if np.isnan(cond_prob[-1]) or np.isinf(cond_prob[-1]):
+                print "NaN in conditional probabilities: ", np.shape(x)
+                return None
         
+        return np.array(cond_prob)
+
+
+    def conditional_prob2(self, x):
+        '''
+        Input
+        @ x: dim x length
+        Output
+        @ A list of conditional probabilities P(x_t|lambda)
+
+        Only single sample works
+        '''
+        from scipy.stats import norm, entropy
+
+        # feature-wise conditional probability
+        cond_prob = []
+        for i in xrange(self.nEmissionDim): # per feature
+
+            B = [0] * self.nState
+            for j in xrange(self.nState):
+                B[j] = [ self.B[j][0][i], self.B[j][1][i*self.nEmissionDim+i] ]
+                
+            ml_src = ghmm.HMMFromMatrices(self.F, ghmm.GaussianDistribution(self.F), \
+                                          self.A, B, self.pi)
+
+            X_test = util.convert_sequence2(x[[i]], emission=False)
+            X_test = np.squeeze(X_test)
+            final_ts_obj = ghmm.EmissionSequence(self.F, X_test.tolist())
+            logp = ml_src.loglikelihood(final_ts_obj)
+
+            cond_prob.append(logp)
+
+        ## # all
+        ## X_test = util.convert_sequence2(x, emission=False)
+        ## X_test = np.squeeze(X_test)
+        ## final_ts_obj = ghmm.EmissionSequence(self.F, X_test.tolist())
+        ## cond_prob.append( self.ml.loglikelihood(final_ts_obj) )
+        
+        # min-max normalization
+        cond_prob = np.array(cond_prob)
+            
+        return cond_prob
+    
 
     def loglikelihood(self, X, bPosterior=False):
         '''        
@@ -519,7 +608,7 @@ class learning_hmm(learning_base):
                 
             
 
-def getHMMinducedFeatures(ll_logp, ll_post, l_labels=None, c=1.0, add_delta_logp=True):
+def getHMMinducedFeatures(ll_logp, ll_post, l_labels=None, c=1.0, add_delta_logp=False):
     '''
     Convert a list of logps and posterior distributions to HMM-induced feature vectors.
     It returns [logp, last_post, post].
@@ -562,7 +651,7 @@ def getHMMinducedFeatures(ll_logp, ll_post, l_labels=None, c=1.0, add_delta_logp
     return X, Y
 
 
-def getHMMinducedFlattenFeatures(ll_logp, ll_post, ll_idx, l_labels=None, c=1.0, add_delta_logp=True,\
+def getHMMinducedFlattenFeatures(ll_logp, ll_post, ll_idx, l_labels=None, c=1.0, add_delta_logp=False,\
                                  remove_fp=False, remove_outlier=False):
     from hrl_anomaly_detection import data_manager as dm
 
@@ -578,8 +667,7 @@ def getHMMinducedFlattenFeatures(ll_logp, ll_post, ll_idx, l_labels=None, c=1.0,
 
 
 def getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData=None, startIdx=4, \
-                                         add_logp_d=False,\
-                                         cov_type='full'):
+                                         add_logp_d=False, cov_type='full', n_jobs=-1):
 
     if abnormalTrainData is not None:
         testDataX = np.vstack([ np.swapaxes(normalTrainData,0,1), np.swapaxes(abnormalTrainData,0,1) ])
@@ -591,13 +679,15 @@ def getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData=
         testDataY = -np.ones(len(testDataX[0]))
         
     return getHMMinducedFeaturesFromRawCombinedFeatures(ml, testDataX, testDataY, startIdx, \
-                                                        add_logp_d=add_logp_d, cov_type=cov_type)
+                                                        add_logp_d=add_logp_d, cov_type=cov_type,
+                                                        n_jobs=n_jobs)
 
 
 def getHMMinducedFeaturesFromRawCombinedFeatures(ml, dataX, dataY, startIdx, add_logp_d=False, cov_type='full',\
-                                                 nSubSample=None, nMaxData=100000, rnd_sample=True):
+                                                 nSubSample=None, nMaxData=100000, rnd_sample=True, n_jobs=-1):
 
-    r = Parallel(n_jobs=-1)(delayed(computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
+
+    r = Parallel(n_jobs=n_jobs)(delayed(computeLikelihoods)(i, ml.A, ml.B, ml.pi, ml.F, \
                                                         [ dataX[j][i] for j in \
                                                           xrange(ml.nEmissionDim) ], \
                                                           ml.nEmissionDim, ml.nState,\

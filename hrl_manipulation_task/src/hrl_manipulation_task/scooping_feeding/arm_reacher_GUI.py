@@ -50,7 +50,7 @@ QUEUE_SIZE = 10
 
 class armReacherGUI:
 
-    def __init__(self, detection_flag=False, log=None, quick_feeding=False):
+    def __init__(self, detection_flag=False, isolation_flag=False, log=None, quick_feeding=False):
         '''Initialize GUI'''
 
         #variables
@@ -58,10 +58,10 @@ class armReacherGUI:
         self.inputStatus = False
         self.actionStatus = 'Init'
         self.inputMsg = None
-        self.feedbackMsg = None
         self.ScoopNumber = 0
         self.FeedNumber = 0
         self.detection_flag = detection_flag
+        self.isolation_flag = isolation_flag
         self.log = log
         self.left_mtx = False
         self.right_mtx = False
@@ -71,9 +71,9 @@ class armReacherGUI:
         self.guiStatusReady = False
         self.gui_status = None
         self.feedback_received = True
+        self.motion_complete = False
         self.quick_feeding = quick_feeding
         self.quick_feeding_ready=False
-        ##manipulation_task/user_input (user_feedback)(emergency)(status)
 
         self.initComms()
         self.run()
@@ -81,8 +81,8 @@ class armReacherGUI:
 
     def initComms(self):
         #Publisher:
-        self.emergencyPub = rospy.Publisher("/hrl_manipulation_task/InterruptAction", String, queue_size=QUEUE_SIZE)        
-        self.logRequestPub  = rospy.Publisher("/manipulation_task/feedbackRequest", String, queue_size=QUEUE_SIZE)
+        self.emergencyPub = rospy.Publisher("/manipulation_task/InterruptAction", String, queue_size=QUEUE_SIZE)
+        self.logRequestPub= rospy.Publisher("/manipulation_task/feedbackRequest", String, queue_size=QUEUE_SIZE)
         self.availablePub = rospy.Publisher("/manipulation_task/available", String, queue_size=QUEUE_SIZE)
         self.proceedPub   = rospy.Publisher("/manipulation_task/proceed", String, queue_size=10, latch=True) 
         self.guiStatusPub = rospy.Publisher("/manipulation_task/gui_status", String, queue_size=1, latch=True)
@@ -90,11 +90,11 @@ class armReacherGUI:
         self.debugPub2    = rospy.Publisher("/manipulation_task/debug/emergency_bool", Bool, queue_size=QUEUE_SIZE)
 
         #subscriber:
-        self.inputSubscriber = rospy.Subscriber("/manipulation_task/user_input", String, self.inputCallback)
-        self.emergencySubscriber = rospy.Subscriber("/manipulation_task/emergency", String, self.emergencyCallback, queue_size=10)
-        self.feedbackSubscriber = rospy.Subscriber("/manipulation_task/user_feedback", StringArray, self.feedbackCallback)
-        self.statusSubscriber = rospy.Subscriber("/manipulation_task/status", String, self.statusCallback)
-        self.guiStatusSub = rospy.Subscriber("/manipulation_task/gui_status", String, self.guiCallback, queue_size=1)
+        rospy.Subscriber("/manipulation_task/user_input", String, self.inputCallback)
+        rospy.Subscriber("/manipulation_task/emergency", String, self.emergencyCallback, queue_size=10)
+        rospy.Subscriber("/manipulation_task/user_feedback", StringArray, self.feedbackCallback)
+        rospy.Subscriber("/manipulation_task/status", String, self.statusCallback)
+        rospy.Subscriber("/manipulation_task/gui_status", String, self.guiCallback, queue_size=1)
         
         rospy.wait_for_service("/arm_reach_enable")
         rospy.wait_for_service("/right/arm_reach_enable")
@@ -120,56 +120,54 @@ class armReacherGUI:
                     self.emergencyStatus = False
                     print "Input received"
                     self.feedback_received = False
+                    self.motion_complete = False
                     self.guiStatusPub.publish("in motion")
 
     def emergencyCallback(self, msg):
-        #Emergency status button.
+        ''' Emergency status button.'''
+        
         print "in emergency callback", msg
         self.emergencyMsg = msg.data
-        if self.emergencyMsg == 'STOP':
-            #if self.guiStatusReady:
-            self.emergencyPub.publish("STOP")
-            #else:
-            #    return
-        self.emergencyStatus = True
-        self.inputStatus = False
+        if self.emergencyMsg == 'STOP': self.emergencyPub.publish("STOP")
+            
+        self.emergencyStatus     = True
+        self.inputStatus         = False
         self.quick_feeding_ready = False
 
         temp_gui_status = self.gui_status
-        if self.gui_status == "in motion":
-            self.guiStatusPub.publish("stopping")
+        if self.gui_status == "in motion": self.guiStatusPub.publish("stopping")
+            
         print "Emergency received"
-        if self.log != None:
+        if self.log is not None:
             if self.log.getLogStatus(): self.log.log_stop()
         
-        print "Wait arm reach service"
+        print "Wait arm reach service" # need?
         rospy.wait_for_service("/arm_reach_enable")
         rospy.wait_for_service("/right/arm_reach_enable")
 
+        # Waiting aborting Sequence
         emergency_wait_rate = rospy.Rate(30)
         while not rospy.is_shutdown():
             #print "Waiting aborting Sequence"
             if self.left_mtx is False and self.right_mtx is False: break
             emergency_wait_rate.sleep()
         self.safetyMotion(self.armReachActionLeft, self.armReachActionRight)
-        if temp_gui_status != "request feedback":
-            temp_gui_status = self.gui_status
+        
+        if temp_gui_status != "request feedback": temp_gui_status = self.gui_status
         self.availablePub.publish("true")
-        if self.gui_status == "stopping":
-            self.guiStatusPub.publish("stopped")
-        else:
-            print self.gui_status
+        if self.gui_status == "stopping": self.guiStatusPub.publish("stopped")
+        else:                             print self.gui_status
+            
         self.emergencyStatus = False            
-        #if self.log != None: self.log.close_log_file_GUI()
         rospy.sleep(2.0)
 
     def feedbackCallback(self, msg):
         #record_data.py take cares of logging. This is here, just incase implementation to this program is needed.
         if not self.guiStatusReady:
             return
-        self.feedbackMsg = msg.data
         self.feedback_received = True
-        self.guiStatusPub.publish("select task")
+        if self.motion_complete: self.guiStatusPub.publish("select task")
+        else:                    self.guiStatusPub.publish("stand by")
 
     def statusCallback(self, msg):
         #Change the status, depending on the button pressed.
@@ -185,11 +183,8 @@ class armReacherGUI:
                 self.FeedNumber = 0
                 self.ScoopNumber = 0
                 if self.log != None:
-                    if self.actionStatus == "Scooping":
-                        self.log.setTask('scooping')
-                    elif self.actionStatus == "Feeding":
-                        self.log.setTask('feeding')
-
+                    if self.actionStatus == "Scooping":  self.log.setTask('scooping')
+                    elif self.actionStatus == "Feeding": self.log.setTask('feeding')
                     print "" + self.log.task
 
     def guiCallback(self, msg):
@@ -215,10 +210,15 @@ class armReacherGUI:
                 self.quick_feeding_ready = False
                 rospy.loginfo("Scooping Starting...")
                 self.scooping(self.armReachActionLeft, self.armReachActionRight, self.log, self.detection_flag)
+                if self.feedback_received:
+                    self.guiStatusPub.publish("select task")
             elif self.inputStatus and self.actionStatus == 'Feeding':
                 self.inputStatus = False
                 rospy.loginfo("Feeding Starting....")
-                self.feeding(self.armReachActionLeft, self.armReachActionRight, self.log, self.detection_flag)
+                self.feeding(self.armReachActionLeft, self.armReachActionRight, self.log, self.detection_flag,
+                             self.isolation_flag)
+                if self.feedback_received:
+                    self.guiStatusPub.publish("select task")
             elif self.inputStatus and self.actionStatus == 'Clean':
                 self.inputStatus = False
                 self.quick_feeding_ready = False
@@ -282,6 +282,7 @@ class armReacherGUI:
             rospy.loginfo("Running scooping!")
             self.ServiceCallLeft("runScooping")
             self.proceedPub.publish("Done")
+            self.motion_complete = True
             self.guiStatusPub.publish("request feedback")
             if self.emergencyStatus:
                 if detection_flag: self.log.enableDetector(False)                
@@ -294,10 +295,9 @@ class armReacherGUI:
                 self.logRequestPub.publish("No feedback requested")
             self.ScoopNumber = 0
             break
-        self.inputStatus = False
 
     
-    def feeding(self, armReachActionLeft, armReachActionRight, log, detection_flag):
+    def feeding(self, armReachActionLeft, armReachActionRight, log, detection_flag, isolation_flag):
 
         while not self.emergencyStatus and not rospy.is_shutdown():
             if self.log != None:
@@ -339,6 +339,7 @@ class armReacherGUI:
                 if self.log is not None:
                     self.log.log_start()
                     if detection_flag: self.log.enableDetector(True)
+                    if isolation_flag: self.log.enableIsolator(True)
 
                 rospy.loginfo("Running feeding")
                 self.ServiceCallLeft("runFeeding")
@@ -353,6 +354,7 @@ class armReacherGUI:
                     print "after logging"
                     self.log.close_log_file_GUI()
                     print "after log close log file"
+                    if isolation_flag: self.log.enableIsolator(False)                    
                 else:
                     self.logRequestPub.publish("No feedback requested")
                 if emergencyStatus or self.emergencyStatus: break
@@ -361,12 +363,12 @@ class armReacherGUI:
             if self.FeedNumber < 5:
                 # Returning motion
                 self.ServiceCallLeft("initFeeding2")
+                self.motion_complete = True
                 if self.emergencyStatus: break
                 self.quick_feeding_ready = True
 
             self.FeedNumber = 0            
             break
-        self.inputStatus=False
 
 
     def cleanMotion(self, armReachActionLeft, armReachActionRight):
@@ -381,7 +383,6 @@ class armReacherGUI:
         #self.proceedPub.publish("Start: Scooping 1, Scooping 2") #TODO need to fix?
         #self.proceedPub.publish("Next: Scooping 3")
         #self.proceedPub.publish("Set: Scooping 1, Scooping 2, Scooping 3")
-        self.inputStatus = False
 
             
     def ServiceCallLeft(self, cmd):
@@ -440,38 +441,33 @@ if __name__ == '__main__':
     p = optparse.OptionParser()
     p.add_option('--data_pub', '--dp', action='store_true', dest='bDataPub',
                  default=False, help='Continuously publish data.')
-    p.add_option('--en_anomaly_detector', '--ad', action='store_true', dest='bAD',
+    p.add_option('--en_anomaly_detector', '--ad', action='store_true', dest='en_ad',
                  default=False, help='Enable anomaly detector.')
+    p.add_option('--en_anomaly_isolator', '--ai', action='store_true', dest='en_ai',
+                 default=False, help='Enable anomaly isolator.')
     p.add_option('--en_logger', '--l', action='store_true', dest='bLog',
                  default=False, help='Enable logger.')
     p.add_option('--en_quick_feeding', '--eqf', action='store_true', dest='bQuickFeeding',
                  default=False, help='Enable a quick feeding mode.')
     p.add_option('--data_path', action='store', dest='sRecordDataPath',
-                 default='/home/dpark/hrl_file_server/dpark_data/anomaly/AURO2016', \
+                 default='/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017', \
                  help='Enter a record data path')
-                 ## default='/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2017', \
  
     opt, args = p.parse_args()
     rospy.init_node('arm_reach_client')
 
-    ## rospy.sleep(2.0)    
-    ## #print armReachActionLeft('lookAtMouth')
-    ## print armReachActionLeft('lookAtBowl')
-    
     if opt.bLog or opt.bDataPub:
         # for adaptation, please add 'new' as the subject.         
         log = logger(ft=True, audio=False, audio_wrist=True, kinematics=True, vision_artag=False, \
                      vision_landmark=True, vision_change=False, pps=False, skin=True, \
-                     subject="Heryung", task='feeding', data_pub=opt.bDataPub, detector=opt.bAD, \
-                     record_root_path=opt.sRecordDataPath, verbose=False)
-        ## log = logger(ft=False, audio=False, audio_wrist=False, kinematics=True, vision_artag=False, \
-        ##              vision_landmark=True, vision_change=False, pps=False, skin=True, \
-        ##              subject="test", task='feeding', data_pub=opt.bDataPub, detector=opt.bAD, \
-        ##              record_root_path=opt.sRecordDataPath, verbose=False)
+                     subject="henry_s6", task='feeding', data_pub=opt.bDataPub,
+                     en_ad=opt.en_ad, en_ai=opt.en_ai,\
+                     record_root_path=opt.sRecordDataPath)
     else:
         log = None
 
-    gui = armReacherGUI(detection_flag=opt.bAD, log=log, quick_feeding=opt.bQuickFeeding)
+    gui = armReacherGUI(detection_flag=opt.en_ad, isolation_flag=opt.en_ai, log=log,
+                        quick_feeding=opt.bQuickFeeding)
     rospy.spin()
 
 

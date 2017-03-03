@@ -57,7 +57,7 @@ def extrapolateData(data, maxsize):
         return [x if len(x) >= maxsize else x + [x[-1]]*(maxsize-len(x)) for x in data]
         
 
-def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.3, rf_center='kinEEPos', \
+def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=10.0, rf_center='kinEEPos', \
              global_data=False, verbose=False, renew=True, save_pkl=None, plot_data=False, max_time=None):
 
     if save_pkl is not None:
@@ -68,7 +68,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             data_dict = ut.load_pickle(save_pkl+'_interp.pkl')
             return raw_data_dict, data_dict
 
-    key_list = ['timesList', 'fileNameList',\
+    key_list = ['timesList', 'fileNameList', 'initTimeList',\
                 'audioTimesList', 'audioAzimuthList', 'audioPowerList',\
                 'audioWristTimesList', 'audioWristRMSList', 'audioWristFrontRMSList', 'audioWristMFCCList', \
                 'audioWristAzimuthList',\
@@ -115,11 +115,6 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
     for idx, fileName in enumerate(fileNames):        
         if os.path.isdir(fileName):
             continue
-        ## cause = os.path.split(fileName)[1].split('_')[3:]
-        ## description = ''
-        ## if cause is list:
-        ##     for c in cause:
-        ##         description += c
         raw_data_dict['fileNameList'].append(fileName)
         data_dict['fileNameList'].append(fileName)
 
@@ -132,15 +127,9 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
 
         # Load raw data
         if verbose: print fileName
-        d = ut.load_pickle(fileName)        
+        d = ut.load_pickle(fileName)
         init_time = d['init_time']
-
-        ## max_time = 0
-        ## for key in d.keys():
-        ##     if 'time' in key and 'init' not in key:
-        ##         feature_time = d[key]
-        ##         if max_time < feature_time[-1]-init_time: max_time = feature_time[-1]-init_time
-        ## new_times = np.linspace(0.01, max_time, downSampleSize)
+        data_dict['initTimeList'].append(init_time) 
         data_dict['timesList'].append(new_times)
 
         # Define receptive field center trajectory ---------------------------
@@ -160,7 +149,6 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
                                          base_link='torso_lift_link')
                 if rf_traj is None: rf_traj = (np.array(mPose1[:3,3])+np.array(mPose2[:3,3]))/2.0
                 else: rf_traj = np.hstack([ rf_traj, (np.array(mPose1[:3,3])+np.array(mPose2[:3,3]))/2.0 ])
-        ## elif rf_center == 'l_upper_arm_link':            
         else:
             print "No specified rf center"
             sys.exit()
@@ -231,7 +219,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             audio_time    = (np.array(d['audio_wrist_time']) - init_time).tolist()
             audio_rms     = np.array([d['audio_wrist_rms']])
             audio_azimuth = d.get('audio_wrist_azimuth',None)
-            ## audio_mfcc    = np.array(d['audio_wrist_mfcc']).T
+            audio_mfcc    = np.array(d['audio_wrist_mfcc']).T
 
             if audio_azimuth is not None:
                 from scipy import stats
@@ -282,18 +270,17 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             # local kinematics feature
             if rf_center == 'kinEEPos':
                 local_kin_pos = kin_ee_pos
-                last_kin_pos = np.zeros((3,1))
+                last_kin_pos = kin_ee_pos[:,0:1] #np.zeros((3,1))
                 last_time    = 0.0
-                local_kin_vel= None
+                local_kin_vel= np.zeros((3,1))
                 for i in xrange(len(kin_ee_pos[0])):
-                    if len(kin_time)-1 < i: break
-                    if abs(kin_time[i]-last_time) < 0.00000001:
-                        if local_kin_vel is None: local_kin_vel = np.zeros((3,1))
-                    else:                    
-                        local_kin_vel = (kin_ee_pos[:,i:i+1] - last_kin_pos)/(kin_time[i] - last_time)
+                    if i > len(kin_time)-1: break
+                    if abs(kin_time[i]-last_time) > 0.00000001:
+                        vel = (kin_ee_pos[:,i:i+1] - last_kin_pos)/(kin_time[i] - last_time)
+                        local_kin_vel = np.hstack([local_kin_vel, vel])
+                        
                     last_kin_pos = kin_ee_pos[:,i:i+1]
                     last_time    = kin_time[i]
-
             else:
                 if rf_center == 'kinForearmPos':
                     frame_list = ['l_forearm_link', 'l_wrist_flex_link']
@@ -337,20 +324,27 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
 
             # Change the sign of quaternion            
 
+            local_kin_ee_pos = kin_ee_pos
+            local_kin_ee_quat = kin_ee_quat
+            local_kin_target_pos = kin_target_pos
+            local_kin_target_quat = kin_target_quat
+            local_kin_des_ee_pos = kin_des_ee_pos
+            local_kin_des_ee_quat = kin_des_ee_quat
+
             # extract local feature
-            data_set = [kin_time, kin_ee_pos, kin_ee_quat]
-            [local_kin_ee_pos, local_kin_ee_quat] = extractLocalData(rf_time, rf_traj, local_range, data_set,\
-                                                                     global_data=global_data)
-            data_set = [kin_time, kin_target_pos, kin_target_quat]
-            [local_kin_target_pos, local_kin_target_quat] = extractLocalData(rf_time, rf_traj, local_range, \
-                                                                             data_set, global_data=global_data)
-            ## data_set = [kin_time, kin_forearm_pos, kin_forearm_vel]
-            ## [local_kin_forearm_pos, local_kin_forearm_vel] = extractLocalData(rf_time, rf_traj, local_range, \
-            ##                                                                   data_set, global_data=global_data)
-            data_set = [kin_time, kin_des_ee_pos, kin_des_ee_quat]
-            [local_kin_des_ee_pos, local_kin_des_ee_quat] = extractLocalData(rf_time, rf_traj, local_range, \
-                                                                             data_set,\
-                                                                             global_data=True)
+            ## data_set = [kin_time, kin_ee_pos, kin_ee_quat]
+            ## [local_kin_ee_pos, local_kin_ee_quat] = extractLocalData(rf_time, rf_traj, local_range, data_set,\
+            ##                                                          global_data=global_data)
+            ## data_set = [kin_time, kin_target_pos, kin_target_quat]
+            ## [local_kin_target_pos, local_kin_target_quat] = extractLocalData(rf_time, rf_traj, local_range, \
+            ##                                                                  data_set, global_data=global_data)
+            ## ## data_set = [kin_time, kin_forearm_pos, kin_forearm_vel]
+            ## ## [local_kin_forearm_pos, local_kin_forearm_vel] = extractLocalData(rf_time, rf_traj, local_range, \
+            ## ##                                                                   data_set, global_data=global_data)
+            ## data_set = [kin_time, kin_des_ee_pos, kin_des_ee_quat]
+            ## [local_kin_des_ee_pos, local_kin_des_ee_quat] = extractLocalData(rf_time, rf_traj, local_range, \
+            ##                                                                  data_set,\
+            ##                                                                  global_data=True)
 
             raw_data_dict['kinTimesList'].append(kin_time)
             raw_data_dict['kinEEPosList'].append(local_kin_ee_pos)
@@ -388,12 +382,15 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             kin_time   = (np.array(d['kinematics_time']) - init_time).tolist()
             kin_ee_pos = d['kinematics_ee_pos'] # 3xN
             ft_pos     = interpolationData(kin_time, kin_ee_pos, ft_time)
+
+            local_ft_force = ft_force
+            local_ft_torque = ft_torque
            
             # extract local feature
-            data_set = [ft_time, ft_pos, ft_force]
-            [ _, local_ft_force] = extractLocalData(rf_time, rf_traj, local_range, data_set)
-            data_set = [ft_time, ft_pos, ft_torque]
-            [ _, local_ft_torque] = extractLocalData(rf_time, rf_traj, local_range, data_set)
+            ## data_set = [ft_time, ft_pos, ft_force]
+            ## [ _, local_ft_force] = extractLocalData(rf_time, rf_traj, local_range, data_set)
+            ## data_set = [ft_time, ft_pos, ft_torque]
+            ## [ _, local_ft_torque] = extractLocalData(rf_time, rf_traj, local_range, data_set)
 
             raw_data_dict['ftTimesList'].append(ft_time)
             raw_data_dict['ftForceList'].append(local_ft_force)
@@ -415,7 +412,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
                 vision_time = np.linspace(new_times[0], new_times[-1], len(vision_time))
 
             # extract local feature
-            data_set = [vision_time, vision_pos, vision_quat]
+            ## data_set = [vision_time, vision_pos, vision_quat]
             ## [ local_vision_pos, local_vision_quat] = extractLocalData(rf_time, rf_traj, local_range, data_set)
             local_vision_pos = vision_pos
             local_vision_quat = vision_quat
@@ -439,53 +436,19 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
             if vision_time[-1] < new_times[0] or vision_time[0] > new_times[-1]:
                 vision_time = np.linspace(new_times[0], new_times[-1], len(vision_time))
 
-            # extract local feature
-            data_set = [vision_time, vision_pos, vision_quat]
-            local_vision_pos  = vision_pos
-            local_vision_quat = vision_quat
-
             raw_data_dict['visionLandmarkTimesList'].append(vision_time)
-            raw_data_dict['visionLandmarkPosList'].append(local_vision_pos)
-            raw_data_dict['visionLandmarkQuatList'].append(local_vision_quat)
+            raw_data_dict['visionLandmarkPosList'].append(vision_pos)
+            raw_data_dict['visionLandmarkQuatList'].append(vision_quat)
 
-            if len(np.shape(local_vision_quat)) == 1:
+            if len(np.shape(vision_quat)) == 1:
                 print "Wrong quat file"
-                print fileName, np.shape(local_vision_quat)
+                print fileName, np.shape(vision_quat)
                 sys.exit()
 
-            vision_pos_array  = interpolationData(vision_time, local_vision_pos, new_times, spline=True)
+            vision_pos_array  = interpolationData(vision_time, vision_pos, new_times, spline=True)
             data_dict['visionLandmarkPosList'].append(vision_pos_array)                                         
-            vision_quat_array = interpolationData(vision_time, local_vision_quat, new_times, True)
+            vision_quat_array = interpolationData(vision_time, vision_quat, new_times, True)
             data_dict['visionLandmarkQuatList'].append(vision_quat_array)
-
-
-            ## if 'iteration_8' in fileName:
-            ##     print "aaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-            ##     vision_pos_array  = interpolationData(vision_time, local_vision_pos, new_times, spline=True,\
-            ##                                           temp=True)
-            ##     plt.figure(1)
-            ##     ## data_list = []
-            ##     ## data_list2 = []
-            ##     print fileName
-            ##     ## for time_idx in xrange(len(vision_time)):
-
-            ##         ##     ## startQuat = kinEEQuat[:,time_idx]
-            ##         ##     startQuat = local_vision_quat[:,0]
-            ##         ##     endQuat   = local_vision_quat[:,time_idx]
-            ##         ##     diff_ang  = qt.quat_angle(startQuat, endQuat)
-            ##         ##     data_list.append(diff_ang)
-            ##         ## data_list.append(local_vision_pos[0,time_idx])
-            ##         ## data_list2.append(vision_pos_array[0,time_idx])
-            ##     plt.subplot(2,1,1)
-            ##     plt.plot(vision_time, local_vision_pos[0], '-*')
-            ##     plt.plot(new_times, vision_pos_array[0], '-o')
-            ##     plt.subplot(2,1,2)
-            ##     plt.plot(vision_time)
-            ##     plt.show()
-
-                
-
-
 
             
         # vision change -----------------------------------------------------------
@@ -626,6 +589,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
         max_size = max([ len(x) for x in data_dict['timesList'] ])
         # Extrapolate each time step
         for key in data_dict.keys():
+            if 'initTimeList' == key: continue
             if 'file' in key: continue
             if 'success_idx_list' in key: continue
             if 'failure_idx_list' in key: continue
@@ -642,7 +606,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=0.
     return raw_data_dict, data_dict
     
     
-def getSubjectFileList(root_path, subject_names, task_name, exact_name=False, time_sort=False, \
+def getSubjectFileList(root_path, subject_names, task_name, exact_name=True, time_sort=False, \
                        no_split=False):
     # List up recorded files
     folder_list  = [d for d in os.listdir(root_path) if os.path.isdir(os.path.join(root_path,d))]   
@@ -659,21 +623,21 @@ def getSubjectFileList(root_path, subject_names, task_name, exact_name=False, ti
                     if d.split(name+'_')[1] == task_name: name_flag = True
                 else:
                     name_flag = True                    
-                                    
-        if name_flag and ((d.find(task_name) >= 0 and exact_name is False) or \
-                          (d==subject_names[0]+'_'+task_name and exact_name) ):
-            files = os.listdir(os.path.join(root_path,d))
 
+        if name_flag and d.find(task_name) >= 0:
+            files = os.listdir(os.path.join(root_path,d))
+            
             for f in files:
                 # pickle file name with full path
-                pkl_file = os.path.join(root_path,d,f)
-                
+                target = os.path.join(root_path,d,f)
+                if os.path.isdir(target): continue
+                    
                 if f.find('success') >= 0:
-                    success_list.append(pkl_file)
-                    success_time_list.append( os.stat(pkl_file).st_mtime )
+                    success_list.append(target)
+                    success_time_list.append( os.stat(target).st_mtime )
                 elif f.find('failure') >= 0:
-                    failure_list.append(pkl_file)
-                    failure_time_list.append( os.stat(pkl_file).st_mtime )
+                    failure_list.append(target)
+                    failure_time_list.append( os.stat(target).st_mtime )
                 else:
                     print "It's not success/failure file: ", f
 
@@ -1405,8 +1369,9 @@ def combineData(X1,X2, target_features, all_features, first_axis='dim', add_nois
         
         ## return X
 
-def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, save_pdf=False,\
-             timeList=None, only_tpr=False, legend=False, verbose=True):
+def roc_info(ROC_data, nPoints, delay_plot=False, no_plot=False, save_pdf=False,\
+             timeList=None, legend=False, verbose=True, ROC_dict=None,\
+             multi_ad=False, padding=False):
     # ---------------- ROC Visualization ----------------------
     
     if verbose: print "Start to visualize ROC curves!!!"
@@ -1446,7 +1411,6 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
 
         if timeList is not None:
             time_step = (timeList[-1]-timeList[0])/float(len(timeList)-1)
-            ## print np.shape(timeList), timeList[0], timeList[-1], (timeList[-1]-timeList[0])/float(len(timeList))
             if verbose: print "time_step[s] = ", time_step, " length: ", timeList[-1]-timeList[0]
         else:
             time_step = 1.0
@@ -1454,11 +1418,7 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
         for i in xrange(nPoints):
             tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
             fnr_l.append( 100.0 - tpr_l[-1] )
-            if only_tpr is False:
-                try:
-                    fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
-                except:
-                    continue
+            fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
 
             delay_mean_l.append( np.mean(np.array(delay_ll[i])*time_step) )
             delay_std_l.append( np.std(np.array(delay_ll[i])*time_step) )
@@ -1468,9 +1428,6 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
             if verbose: print method + ' has NaN? and fitting error?'
             continue
 
-        # add edge
-        ## fpr_l = [0] + fpr_l + [100]
-        ## tpr_l = [0] + tpr_l + [100]
 
         from sklearn import metrics 
         if verbose:       
@@ -1480,12 +1437,24 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
             print method
             print tpr_l
             print fpr_l
-        if only_tpr is False:
+            if ROC_dict is not None:
+                if multi_ad is False:
+                    weight_list = ROC_dict[method+'_param_range']
+                    print "Weight= ", weight_list[np.argmax(acc_l)], " , acc = ", np.amax(acc_l)
+                else:
+                    for j in xrange(len(ROC_dict['methods'])):
+                        weight_list = ROC_dict[ROC_dict['methods'][j]+'_param_range']
+                        print ROC_dict['methods'][j], "Weight= ", weight_list[np.argmax(acc_l)],
+                        " , acc = ", np.amax(acc_l)
+                        print
+
+        if padding:
+            auc = metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
+        else:
             auc = metrics.auc(fpr_l, tpr_l, True)
-            ## auc = metrics.auc(fpr_l + [100], tpr_l + [100], True)
-            ## auc = metrics.auc([0] + fpr_l + [100], [0] + tpr_l + [100], True)
-            auc_rates[method] = auc
-            if verbose: print auc
+        ## auc = metrics.auc(fpr_l + [100], tpr_l + [100], True)
+        auc_rates[method] = auc
+        if verbose: print auc
 
         if method == 'svm': label='HMM-BPSVM'
         elif method == 'progress': label='HMM-D'
@@ -1576,11 +1545,63 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
     elif no_plot is False:
         plt.show()
 
-    ## for key in auc_rates.keys():
-    ##     print key, " : ", auc_rates[key]
-
     return auc_rates
-    
+
+
+def class_info(method_list, ROC_data, nPoints, kFold_list, save_pdf=False):
+        
+    for method in method_list:
+        print "---------- ", method, " -----------"
+        tp_l = []
+        tn_l = []
+        fn_l = []
+        fp_l = []
+        for i in xrange(nPoints):
+            tp_l.append( float(np.sum(ROC_data[method]['tp_l'][i])) )
+            tn_l.append( float(np.sum(ROC_data[method]['tn_l'][i])) )
+            fn_l.append( float(np.sum(ROC_data[method]['fn_l'][i])) )
+            fp_l.append( float(np.sum(ROC_data[method]['fp_l'][i])) )
+        tp_l = np.array(tp_l)
+        fp_l = np.array(fp_l)
+        tn_l = np.array(tn_l)
+        fn_l = np.array(fn_l)
+            
+        acc_l = (tp_l+tn_l)/( tp_l+tn_l+fp_l+fn_l )
+        ## fpr_l = fp_l/(fp_l+tn_l)
+        ## tpr_l = tp_l/(tp_l+fn_l)
+
+        best_idx = argmax(acc_l)
+        print "best idx: ", best_idx
+
+        # false negatives
+        labels    = ROC_data[method]['fn_labels'][best_idx]            
+        anomalies = [label.split('/')[-1].split('_')[0] for label in labels] # extract class
+        d         = {x: anomalies.count(x) for x in anomalies}
+        l_idx     = np.array(d.values()).argsort() #[-10:]
+
+        d_list = []
+        t_sum  = []
+        print "Max count is ", len(kFold_list)*2
+        for idx in l_idx:
+            print "Class: ", np.array(d.keys())[idx], \
+              "Count: ", np.array(d.values())[idx], \
+              " Detection rate: ", \
+              float( len(kFold_list)*2 - np.array(d.values())[idx])/float( len(kFold_list)*2)
+            t_sum.append( float( len(kFold_list)*2 - np.array(d.values())[idx])/float( len(kFold_list)*2) )
+            d_list.append([float(np.array(d.keys())[idx]), \
+                           float( len(kFold_list)*2 - np.array(d.values())[idx])/float( len(kFold_list)*2)])
+
+        if len(t_sum)<12: t_sum.append(1.0)
+        print "Avg.: ", np.mean(t_sum)
+
+    ## d_list = np.array(d_list)
+    ## d_list = d_list[np.argsort(d_list[:,0])]
+    ## print d_list[:,0]
+    ## print d_list[:,1]
+
+    ## return d_list
+
+
 
 def acc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, save_pdf=False,\
              timeList=None, only_tpr=False, legend=False):
@@ -2096,6 +2117,49 @@ def getBestParamIdx(method_list, ROC_data, nPoints, verbose=False, nLength=200):
     return max_score_idx
 
 
+def get_best_weight(ROC_data, nPoints, ROC_dict):
+
+    auc_rates = {}
+    for method in sorted(ROC_data.keys()):
+
+        tp_ll = ROC_data[method]['tp_l']
+        fp_ll = ROC_data[method]['fp_l']
+        tn_ll = ROC_data[method]['tn_l']
+        fn_ll = ROC_data[method]['fn_l']
+
+        tpr_l = []
+        fpr_l = []
+        fnr_l = []
+        acc_l = []
+
+        for i in xrange(nPoints):
+            tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
+            fnr_l.append( 100.0 - tpr_l[-1] )
+            fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
+
+            acc_l.append( float(np.sum(tp_ll[i]+tn_ll[i])) / float(np.sum(tp_ll[i]+fn_ll[i]+fp_ll[i]+tn_ll[i])) * 100.0 )
+
+        if len(fpr_l) < nPoints:
+            if verbose: print method + ' has NaN? and fitting error?'
+            continue
+
+
+        print "ACC_l"
+        print acc_l
+
+        from sklearn import metrics
+        best_weights = []
+        for j in xrange(len(ROC_dict['methods'])):
+            weight_list = ROC_dict[ROC_dict['methods'][j]+'_param_range']
+            print weight_list
+            best_weights.append(weight_list[np.argmax(acc_l)])
+            print ROC_dict['methods'][j], "Weight= ", weight_list[np.argmax(acc_l)],
+            " , acc = ", np.amax(acc_l)
+            print
+        return best_weights
+
+    
+
 def cost_info(param_idx, method_list, ROC_data, nPoints, \
               timeList=None, verbose=True):
 
@@ -2447,7 +2511,7 @@ def initialiseOptParser(p):
                  default=False, help='Renew pickle files.')
     p.add_option('--hmmRenew', '--hr', action='store_true', dest='bHMMRenew',
                  default=False, help='Renew HMM parameters.')
-    p.add_option('--cfRenew', '--cr', action='store_true', dest='bClassifierRenew',
+    p.add_option('--cfRenew', '--cr', action='store_true', dest='bCLFRenew',
                  default=False, help='Renew Classifiers.')
 
     p.add_option('--task', action='store', dest='task', type='string', default='feeding',
