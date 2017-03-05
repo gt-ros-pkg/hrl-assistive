@@ -37,7 +37,7 @@ import cv2
 
 
 def preprocess_data(src_pkl, save_data_path, img_scale=0.25, nb_classes=12,
-                    img_feature_type='cnn', verbose=False, nFold=None):
+                    img_feature_type='vgg', verbose=False, nFold=None):
     ''' Preprocessing data '''
 
     save_data_path = os.path.join(save_data_path, 'keras')
@@ -98,7 +98,7 @@ def preprocess_data(src_pkl, save_data_path, img_scale=0.25, nb_classes=12,
             x_sig = [x_sig[i] for i in xrange(len(x_sig)) if i not in rm_idx ]
             y = [y[i] for i in xrange(len(y)) if i not in rm_idx ]
             y = np.array(y)-start_label # make label start from zero
-            if img_feature_type == 'cnn' or img_feature_type == 'vgg':
+            if img_feature_type in ['cnn', 'vgg', 'cascade']:
                 from keras.utils.np_utils import to_categorical
                 y = to_categorical(y, nb_classes=nb_classes)
 
@@ -130,7 +130,7 @@ def preprocess_images(raw_data_path, save_data_path, img_scale=0.25, nb_classes=
                 x.append(img)                
                 y.append(i)
 
-    if img_feature_type == 'cnn' or img_feature_type == 'vgg':
+    if img_feature_type in ['cnn', 'vgg', 'cascade']:
         from keras.utils.np_utils import to_categorical
         y = to_categorical(y, nb_classes=nb_classes)
 

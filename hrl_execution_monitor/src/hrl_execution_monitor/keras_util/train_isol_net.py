@@ -427,7 +427,7 @@ def train_with_all(save_data_path, n_labels, fold_list, nb_epoch=100, load_weigh
 
 
 
-def get_bottleneck_image(save_data_path, n_labels, fold_list, vgg=False, use_extra_img=True,
+def get_bottleneck_image(save_data_path, n_labels, fold_list, vgg=True, use_extra_img=True,
                          remove_label=[]):
 
     if vgg: prefix = 'vgg_'
@@ -521,7 +521,8 @@ def get_bottleneck_image(save_data_path, n_labels, fold_list, vgg=False, use_ext
     return
 
 
-def train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=400, load_weights=False, vgg=False,
+def train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=400, load_weights=False,
+                               vgg=True,\
                                patience=5, remove_label=[], use_extra_img=True, test_only=False,\
                                cause_class=True):
 
@@ -577,9 +578,6 @@ def train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=400
         ## class_weight[-3] = 0.5 # spoon miss by sys
         ## class_weight[-2] = 0.5 # spoon collision by sys
         ## class_weight[-1] = 0.5 # freeze
-
-        print np.shape(x_train)
-        sys.exit()
 
         if test_only is False:
             hist = model.fit(x_train, y_train, nb_epoch=nb_epoch, batch_size=4096, shuffle=True,

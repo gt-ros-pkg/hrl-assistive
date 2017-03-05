@@ -299,7 +299,7 @@ def load_data(idx, save_data_path, extra_img=False, viz=False):
     ''' Load selected fold's data '''
 
     assert os.path.isfile(os.path.join(save_data_path,'x_train_img_'+str(idx)+'.npy')) == True, \
-      "No preprocessed data"
+      "No preprocessed data:"+os.path.join(save_data_path,'x_train_img_'+str(idx)+'.npy')
         
     x_train_sig = np.load(open(os.path.join(save_data_path,'x_train_sig_'+str(idx)+'.npy')))
     x_train_img = np.load(open(os.path.join(save_data_path,'x_train_img_'+str(idx)+'.npy')))

@@ -52,22 +52,25 @@ import h5py
 import cv2
 import gc
 
-def test(save_data_path, n_labels=12, verbose=False):
+def test(save_data_path, n_labels=12, n_folds=8, verbose=False):
 
-    d = ut.load_pickle(os.path.join(save_data_path, 'isol_data.pkl'))
-    nFold = len(d.keys())
-    del d
+    ## d = ut.load_pickle(os.path.join(save_data_path, 'isol_data.pkl'))
+    ## print d.keys()
+    ## nFold = len(d.keys())
+    ## del d
     fold_list = range(nFold)
+
+    #temp
+    fold_list = [0]
 
     save_data_path = os.path.join(save_data_path, 'keras')
 
-    #get_bottleneck_image(save_data_path, n_labels, fold_list, vgg=True, remove_label=remove_label)
-    #train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, patience=30)
-    #train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, nb_epoch=1000, patience=100,
-    #                           load_weights=True)
-    ## train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, nb_epoch=1000,
-    ##                            load_weights=True,
-    ##                            test_only=True)
+    ## kt.get_bottleneck_image(save_data_path, n_labels, fold_list, vgg=True)
+    ## kt.train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, patience=30)
+    kt.train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, nb_epoch=1000,
+                                  patience=100, load_weights=True)
+    kt.train_top_model_with_image(save_data_path, n_labels, fold_list, 
+                                  load_weights=True, test_only=True)
 
     
 
@@ -142,7 +145,10 @@ if __name__ == '__main__':
     elif opt.preprocessing_extra:
         raw_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/AURO2016/raw_data/manual_label'
         pp.preprocess_images(raw_data_path, save_data_path, img_scale=0.25, nb_classes=n_labels,
-                                img_feature_type='vgg')
+                                img_feature_type='cascade')
+
+    ## elif opt.train:
+    ##     train_isolator_modules(save_data_path, n_labels, verbose=False, cause_class=cause_class)
 
     elif opt.viz:
         x_train, y_train, x_test, y_test = autil.load_data(save_data_path, True)
