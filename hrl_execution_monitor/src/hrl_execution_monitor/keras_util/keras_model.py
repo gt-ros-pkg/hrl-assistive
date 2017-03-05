@@ -51,7 +51,8 @@ from hrl_execution_monitor.keras_util import model_util as mutil
 random.seed(3334)
 np.random.seed(3334)
 
-vgg_model_weights_path = os.path.expanduser('~')+'/git/keras_test/vgg16_weights.h5'
+vgg_weights_path = os.path.expanduser('~')+'/git/keras_test/vgg16_weights.h5'
+#TF_VGG_WEIGHTS_PATH = 'https://github.com/dpark_setup/keras_weights/vgg16_weights.h5'
 
 
 def cnn_net(input_shape, n_labels, weights_path=None, sig_weights_path=None,
@@ -186,14 +187,14 @@ def vgg16_net(input_shape, n_labels, weights_path=None,\
     model.add(Convolution2D(512, 3, 3, activation='relu', name='conv5_3'))
     model.add(MaxPooling2D((2, 2), strides=(2, 2)))
 
-    if vgg_model_weights_path is not None:       
+    if vgg_weights_path is not None:       
         # load the weights of the VGG16 networks
         # (trained on ImageNet, won the ILSVRC competition in 2014)
         # note: when there is a complete match between your model definition
-        # and your weight savefile, you can simply call model.load_weights(filename)
-        assert os.path.exists(vgg_model_weights_path), \
+        # and your weight savefile, you can simply call model.load_weights(filename)        
+        assert os.path.exists(vgg_weights_path), \
           'Model weights not found (see "weights_path" variable in script).'
-        f = h5py.File(vgg_model_weights_path)
+        f = h5py.File(vgg_weights_path)
         for k in range(f.attrs['nb_layers']):
             if k >= len(model.layers):
                 # we don't look at the last (fully-connected) layers in the savefile
