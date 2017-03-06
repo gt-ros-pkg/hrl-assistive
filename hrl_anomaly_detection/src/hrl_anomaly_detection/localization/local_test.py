@@ -44,13 +44,14 @@ from hrl_execution_monitor import viz as eviz
 from hrl_execution_monitor import preprocess as pp
 from joblib import Parallel, delayed
 
+from keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
+
+
 random.seed(3334)
 np.random.seed(3334)
 
 from sklearn import preprocessing
-import h5py
-import cv2
-import gc
+import h5py, cv2, gc
 
 def test(save_data_path, n_labels=12, n_folds=8, verbose=False):
 
