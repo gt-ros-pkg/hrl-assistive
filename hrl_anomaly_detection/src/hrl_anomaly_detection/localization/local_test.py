@@ -70,8 +70,8 @@ def test(save_data_path, n_labels=12, n_folds=8, verbose=False):
 
     ## kt.get_bottleneck_image(save_data_path, n_labels, fold_list, vgg=True)
     ## train_top_model_with_image(save_data_path, n_labels, fold_list, patience=30)
-    train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=1000,
-                               patience=100, load_weights=True)
+    ## train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=1000,
+    ##                            patience=100, load_weights=True)
     train_top_model_with_image(save_data_path, n_labels, fold_list, 
                                load_weights=True, test_only=True)
     
