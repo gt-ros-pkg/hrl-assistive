@@ -68,7 +68,7 @@ def test(save_data_path, n_labels=12, n_folds=8, verbose=False):
     save_data_path = os.path.join(save_data_path, 'keras')
 
     ## kt.get_bottleneck_image(save_data_path, n_labels, fold_list, vgg=True)
-    train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, patience=30)
+    ## train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, patience=30)
     train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, nb_epoch=1000,
                                patience=100, load_weights=True)
     train_top_model_with_image(save_data_path, n_labels, fold_list, 
