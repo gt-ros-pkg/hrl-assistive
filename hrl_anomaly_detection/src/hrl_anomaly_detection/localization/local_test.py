@@ -107,6 +107,10 @@ def train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=400
         y_test = np.load(open(os.path.join(bt_data_path,'y_test_bt_'+str(idx)+'.npy')))
                 
         weights_path = os.path.join(save_data_path,prefix+'cnn_weights_'+str(idx)+'.h5')
+        if os.path.isfile(weights_path) is False:
+            print weights_path
+            sys.exit()
+        
         callbacks = [EarlyStopping(monitor='val_loss', min_delta=0, patience=patience,
                                    verbose=0, mode='auto'),
                      ModelCheckpoint(weights_path,
