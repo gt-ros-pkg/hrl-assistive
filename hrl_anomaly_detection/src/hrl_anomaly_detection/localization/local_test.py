@@ -124,6 +124,7 @@ def train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=400
         if load_weights is False:            
             model = km.vgg_image_top_net(np.shape(x_train)[1:], n_labels)
         else:
+            print "Load weight!!!!!!!!!!!!!!!"
             model = km.vgg_image_top_net(np.shape(x_train)[1:], n_labels, weights_path)
         ## optimizer = RMSprop(lr=0.01, rho=0.9, epsilon=1e-08, decay=0.001)
         ## model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
