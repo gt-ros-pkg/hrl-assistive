@@ -36,7 +36,8 @@ import hrl_lib.util as ut
 from hrl_anomaly_detection import data_manager as dm
 from hrl_anomaly_detection import util as util
 import hrl_anomaly_detection.isolator.isolation_util as iutil
-from hrl_execution_monitor.keras_util import keras_model as km
+from hrl_anomaly_detection.localization import keras_model as km
+## from hrl_execution_monitor.keras_util import keras_model as km
 from hrl_execution_monitor.keras_util import keras_util as kutil
 from hrl_execution_monitor.keras_util import train_isol_net as kt
 from hrl_execution_monitor import util as autil
@@ -68,25 +69,47 @@ def test(save_data_path, n_labels=12, n_folds=8, verbose=False):
 
     save_data_path = os.path.join(save_data_path, 'keras')
 
+    # training with signals ----------------------------------
+    ## kt.train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5)
+    ## kt.train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5, load_weights=True)
+    ## kt.train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5, load_weights=True,
+    ##                      test_only=True, cause_class=cause_class) #70
+
+
+    # training_with images -----------------------------------
     ## kt.get_bottleneck_image(save_data_path, n_labels, fold_list, vgg=True)
     train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=1000, patience=50)
     train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=1000,
                                patience=100, load_weights=True)
     train_top_model_with_image(save_data_path, n_labels, fold_list, 
                                load_weights=True, test_only=True)
+
+    # training_with all --------------------------------------
+    ## kt.get_bottleneck_mutil(save_data_path, n_labels, fold_list, vgg=True)
+    ## train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, patience=10)
+    ## train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, patience=10, load_weights=True)
+    ## train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, load_weights=True,
+    ##                          test_only=True) #74
+
+    ## kt.train_with_all(save_data_path, n_labels, fold_list, patience=1, nb_epoch=1, vgg=True)
+    ## kt.train_with_all(save_data_path, n_labels, fold_list, load_weights=True, patience=5, vgg=True)
+    ## kt.train_with_all(save_data_path, n_labels, fold_list, load_weights=True, patience=5, vgg=True,
+    ##                   test_only=True)
+    return
+
     
 
-def get_model():
-    model = km.vgg16_net()
-    model = load_model_weights(model, "vgg16_weights.h5")
+## def get_model():
+##     model = km.vgg16_net()
+##     model = load_model_weights(model, "vgg16_weights.h5")
 
-    model.add(Lambda(global_average_pooling,
-                     output_shape=global_average_pooling_shape))
-    model.add(Dense(2, activation = 'softmax', init='uniform'))
-    sgd = SGD(lr=0.01, decay=1e-6, momentum=0.5, nesterov=True)
-    model.compile(loss = 'categorical_crossentropy', \
-                  optimizer = sgd, metrics=['accuracy'])
-    return model
+##     model.add(Lambda(global_average_pooling,
+##                      output_shape=global_average_pooling_shape))
+##     model.add(Dense(2, activation = 'softmax', init='uniform'))
+##     sgd = SGD(lr=0.01, decay=1e-6, momentum=0.5, nesterov=True)
+##     model.compile(loss = 'categorical_crossentropy', \
+##                   optimizer = sgd, metrics=['accuracy'])
+##     return model
 
 
 
@@ -173,6 +196,152 @@ def train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=400
     print np.mean(scores), np.std(scores)
     return
 
+
+def get_bottleneck_mutil(save_data_path, n_labels, fold_list, vgg=True):
+
+    if vgg: prefix = 'vgg_'
+    else: prefix = ''
+
+    scores      = []
+    y_test_list = []
+    y_pred_list = []
+    for idx in fold_list:
+        # Loading data
+        train_data, test_data = autil.load_data(idx, save_data_path, viz=False)      
+        x_train_sig = train_data[0]
+        x_train_img = train_data[1]
+        y_train     = train_data[2]
+        x_test_sig = test_data[0]
+        x_test_img = test_data[1]
+        y_test     = test_data[2]
+
+        scaler      = preprocessing.StandardScaler()
+        x_train_sig = scaler.fit_transform(x_train_sig)
+        x_test_sig  = scaler.transform(x_test_sig)
+
+        sig_weights_path=os.path.join(save_data_path,'sig_weights_'+str(idx)+'.h5')
+        img_weights_path=os.path.join(save_data_path,prefix+'cnn_weights_'+str(idx)+'.h5')
+            
+        # training
+        model = km.vgg16_net(np.shape(x_train_img)[1:], n_labels, with_multi_top=True,
+                             bottle_model=True,
+                             input_shape2=np.shape(x_train_sig)[1:],
+                             sig_weights_path=sig_weights_path,
+                             img_weights_path=img_weights_path)
+
+        train_datagen = ku.myGenerator(augmentation=True, rescale=1./255.)
+        test_datagen = ku.myGenerator(augmentation=False, rescale=1./255.)
+
+        bt_data_path = os.path.join(save_data_path, 'bt')
+        if os.path.isdir(bt_data_path) is False:
+            os.system('mkdir -p '+bt_data_path)
+
+        # ------------------------------------------------------------
+        x_ = None
+        y_ = None
+        count = 0
+        for x_batch, y_batch in train_datagen.flow(x_train_img, x_train_sig, y_train,
+                                                   batch_size=len(x_train_img)):
+            if x_ is None: x_ = model.predict(x_batch)
+            else: x_ = np.vstack([x_, model.predict(x_batch)])
+            if y_ is None: y_ = y_batch
+            else: y_ = np.vstack([y_, y_batch])
+            count += 1
+            print count
+            if count > 4: break
+        np.save(open(os.path.join(bt_data_path,'x_train_btmt_'+str(idx)+'.npy'), 'w'), x_)
+        np.save(open(os.path.join(bt_data_path,'y_train_btmt_'+str(idx)+'.npy'), 'w'), y_)
+        del x_, y_, train_datagen
+
+        x_ = None
+        y_ = None
+        count = 0
+        for x_batch, y_batch in test_datagen.flow(x_test_img, x_test_sig, y_test,
+                                                  batch_size=len(x_test_img)):
+            if x_ is None: x_ = model.predict(x_batch)
+            else: x_ = np.vstack([x_, model.predict(x_batch)])
+            if y_ is None: y_ = y_batch
+            else: y_ = np.vstack([y_, y_batch])
+            count += 1
+            print count
+            if count > 0: break
+        np.save(open(os.path.join(bt_data_path,'x_test_btmt_'+str(idx)+'.npy'), 'w'), x_)
+        np.save(open(os.path.join(bt_data_path,'y_test_btmt_'+str(idx)+'.npy'), 'w'), y_)
+        del x_, y_, test_datagen
+        
+        gc.collect()
+
+    return
+    
+
+
+def train_multi_top_model(save_data_path, n_labels, fold_list, nb_epoch=3000, load_weights=False, vgg=False,
+                          patience=30, test_only=False):
+
+    if vgg: prefix = 'vgg_'
+    else: prefix = ''
+
+    scores= []
+    for idx in fold_list:
+
+        bt_data_path = os.path.join(save_data_path, 'bt')
+        x_train = np.load(open(os.path.join(bt_data_path,'x_train_btmt_'+str(idx)+'.npy')))
+        y_train = np.load(open(os.path.join(bt_data_path,'y_train_btmt_'+str(idx)+'.npy')))
+        x_test  = np.load(open(os.path.join(bt_data_path,'x_test_btmt_'+str(idx)+'.npy')))
+        y_test  = np.load(open(os.path.join(bt_data_path,'y_test_btmt_'+str(idx)+'.npy')))
+        print np.shape(x_train), np.shape(y_train), np.shape(x_test), np.shape(y_test)
+
+        #----------------------------------------------------------------------------------                
+        weights_path = os.path.join(save_data_path,prefix+'cnn_fc_weights_'+str(idx)+'.h5')
+        callbacks = [EarlyStopping(monitor='val_loss', min_delta=0, patience=patience,
+                                   verbose=0, mode='auto'),
+                     ModelCheckpoint(weights_path,
+                                     save_best_only=True,
+                                     save_weights_only=True,
+                                     monitor='val_loss'),
+                     ReduceLROnPlateau(monitor='val_loss', factor=0.2,
+                                       patience=10, min_lr=0.00001)]
+
+        if load_weights is False:            
+            if vgg: model = km.vgg_multi_top_net(np.shape(x_train)[1:], n_labels)
+            else: sys.exit()
+            model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
+        else:
+            if vgg: model = km.vgg_multi_top_net(np.shape(x_train)[1:], n_labels, weights_path)
+            else: sys.exit()
+            optimizer = SGD(lr=0.005, decay=1e-7, momentum=0.9, nesterov=True)                
+            #optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.001)
+            ## optimizer = Adagrad(lr=0.0001, epsilon=1e-08, decay=0.001)
+            
+            model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+            ## model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
+
+        ## from sklearn.ensemble import RandomForestClassifier
+        ## clf = RandomForestClassifier(n_estimators=400, n_jobs=-1)
+        ## clf.fit(x_train, np.argmax(y_train, axis=1))
+        ## score = clf.score(x_test, np.argmax(y_test,axis=1))
+        ## scores.append(score)   
+
+        if test_only is False:
+            hist = model.fit(x_train, y_train, nb_epoch=nb_epoch, batch_size=len(x_train), shuffle=True,
+                             validation_data=(x_test, y_test), callbacks=callbacks)       
+            scores.append( hist.history['val_acc'][-1] )
+        else:
+            y_pred_list = []
+            y_test_list = []
+            
+            y_pred = model.predict(x_test)
+            y_pred_list += np.argmax(y_pred, axis=1).tolist()
+            y_test_list += np.argmax(y_test, axis=1).tolist()
+            from sklearn.metrics import accuracy_score
+            print "score : ", accuracy_score(y_test_list, y_pred_list)
+            scores.append( accuracy_score(y_test_list, y_pred_list) )
+        
+        gc.collect()
+
+    print 
+    print np.mean(scores), np.std(scores)
+    return
 
 
     

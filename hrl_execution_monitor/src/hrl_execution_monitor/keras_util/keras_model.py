@@ -302,42 +302,9 @@ def vgg16_net(input_shape, n_labels, weights_path=None,\
         if weights_path: weights_file.close()        
         return c_model
     
-    elif with_img_top:
-        model.add(Flatten())
-        model.add(Dense(1024, init='uniform', name='fc1_1', W_regularizer=L1L2Regularizer(0.0,0.03)))
-        model.add(Activation('relu'))
-        model.add(Dropout(0.5))        
-        model.add(Dense(64, init='uniform', name='fc1_2', W_regularizer=L1L2Regularizer(0.0,0.01)))
-        model.add(Activation('relu'))
-        model.add(Dropout(0.5))        
-        model.add(Dense(n_labels, activation='softmax', name='fc_img_out'))
-
-        if weights_path is not None: model.load_weights(weights_path)
-        return model
     else:
         return model
 
-
-
-
-        ## if weights_path is not None:
-        ##     weights_file = h5py.File(weights_path)
-        ## else: weights_file = None
-        ## weight = mutil.get_layer_weights(weights_file, layer_name='fc1_1')
-        ## weight2 = mutil.get_layer_weights(weights_file, layer_name='conv5_3')
-        ## print weight
-        ## print weight2
-
-        ## t_model = Sequential()
-        ## t_model.add(Flatten(input_shape=model.output_shape[1:]))
-
-        ## if weights_path is not None:
-        ##     weights_file = h5py.File(weights_path)
-        ## else: weights_file = None
-        ## weight = mutil.get_layer_weights(weights_file, layer_name='fc1_1')
-        ## print "aaaaaaaaaaaa"
-        ## print weight
-        ## print "aaaaaaaaaaaa"
 
 
 
