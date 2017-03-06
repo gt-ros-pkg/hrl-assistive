@@ -44,6 +44,7 @@ from hrl_execution_monitor import viz as eviz
 from hrl_execution_monitor import preprocess as pp
 from joblib import Parallel, delayed
 
+from keras.optimizers import SGD, Adagrad, Adadelta, RMSprop
 from keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
 from sklearn import preprocessing
 from sklearn.metrics import accuracy_score
