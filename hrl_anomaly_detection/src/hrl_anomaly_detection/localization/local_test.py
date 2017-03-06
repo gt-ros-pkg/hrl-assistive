@@ -65,31 +65,31 @@ def test(save_data_path, n_labels=12, n_folds=8, verbose=False):
     fold_list = range(nFold)
 
     #temp
-    fold_list = [2,3,4,5,6,7]
+    ## fold_list = [4,7]
 
     save_data_path = os.path.join(save_data_path, 'keras')
 
     # training with signals ----------------------------------
-    ## kt.train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5)
-    ## kt.train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5, load_weights=True)
-    ## kt.train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5, load_weights=True,
-    ##                      test_only=True, cause_class=cause_class) #70
+    kt.train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5)
+    kt.train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5, load_weights=True)
+    kt.train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5, load_weights=True,
+                         test_only=True, cause_class=cause_class) #70
 
 
     # training_with images -----------------------------------
-    ## kt.get_bottleneck_image(save_data_path, n_labels, fold_list, vgg=True)
-    train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=1000, patience=50)
-    train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=1000,
-                               patience=100, load_weights=True)
-    train_top_model_with_image(save_data_path, n_labels, fold_list, 
-                               load_weights=True, test_only=True)
+    ## kt.get_bottleneck_image(save_data_path, n_labels, fold_list)
+    ## train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=1000, patience=100)
+    ## train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=1000,
+    ##                            patience=100, load_weights=True)
+    ## train_top_model_with_image(save_data_path, n_labels, fold_list, 
+    ##                            load_weights=True, test_only=True)
 
     # training_with all --------------------------------------
-    ## kt.get_bottleneck_mutil(save_data_path, n_labels, fold_list, vgg=True)
-    ## train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, patience=10)
-    ## train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, patience=10, load_weights=True)
-    ## train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, load_weights=True,
-    ##                          test_only=True) #74
+    get_bottleneck_mutil(save_data_path, n_labels, fold_list, vgg=True)
+    train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, patience=10)
+    train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, patience=10, load_weights=True)
+    train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, load_weights=True,
+                             test_only=True) #74
 
     ## kt.train_with_all(save_data_path, n_labels, fold_list, patience=1, nb_epoch=1, vgg=True)
     ## kt.train_with_all(save_data_path, n_labels, fold_list, load_weights=True, patience=5, vgg=True)
@@ -150,8 +150,8 @@ def train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=400
         else:
             print "Load weight!!!!!!!!!!!!!!!"
             model = km.vgg_image_top_net(np.shape(x_train)[1:], n_labels, weights_path)
-            optimizer = RMSprop(lr=0.000001, rho=0.9, epsilon=1e-08, decay=0.001)
-            #optimizer = SGD(lr=0.001, decay=1e-7, momentum=0.9, nesterov=True)                
+            optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.001)
+            optimizer = SGD(lr=0.001, decay=1e-7, momentum=0.9, nesterov=True)                
             model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
 
         
@@ -389,7 +389,7 @@ if __name__ == '__main__':
     save_data_path = os.path.expanduser('~')+\
       '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_localization/'
 
-    cause_class = False
+    ## cause_class = False
     
     # ---------------------------------------------------------------------
     if opt.preprocessing:

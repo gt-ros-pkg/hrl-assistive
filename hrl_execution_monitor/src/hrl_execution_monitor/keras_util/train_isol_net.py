@@ -374,7 +374,7 @@ def get_bottleneck_image(save_data_path, n_labels, fold_list, vgg=True, use_extr
         x_test_img = np.array(x_test_img)[add_idx]
         y_test = np.array(y_test)[add_idx]
         #--------------------------------------------
-                
+        
         if vgg: model = km.vgg16_net(np.shape(x_train_img)[1:], n_labels)
         else: model = km.cnn_net(np.shape(x_train_img)[1:], n_labels)            
 
