@@ -68,8 +68,8 @@ def test(save_data_path, n_labels=12, n_folds=8, verbose=False):
     save_data_path = os.path.join(save_data_path, 'keras')
 
     ## kt.get_bottleneck_image(save_data_path, n_labels, fold_list, vgg=True)
-    ## train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, patience=30)
-    train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, nb_epoch=1000,
+    ## train_top_model_with_image(save_data_path, n_labels, fold_list, patience=30)
+    train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=1000,
                                patience=100, load_weights=True)
     train_top_model_with_image(save_data_path, n_labels, fold_list, 
                                load_weights=True, test_only=True)
@@ -125,9 +125,9 @@ def train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=400
         else:
             model = km.vgg_image_top_net(np.shape(x_train)[1:], n_labels, weights_path)
         ## optimizer = RMSprop(lr=0.01, rho=0.9, epsilon=1e-08, decay=0.001)
-        model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
-        ## optimizer = SGD(lr=0.0001, decay=1e-7, momentum=0.9, nesterov=True)                
-        ## model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+        ## model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
+        optimizer = SGD(lr=0.0001, decay=1e-7, momentum=0.9, nesterov=True)                
+        model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
 
         
         class_weight={}
