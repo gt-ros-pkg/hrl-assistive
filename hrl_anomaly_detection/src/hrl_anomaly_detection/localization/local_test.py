@@ -66,12 +66,11 @@ def test(save_data_path, n_labels=12, n_folds=8, verbose=False):
     save_data_path = os.path.join(save_data_path, 'keras')
 
     ## kt.get_bottleneck_image(save_data_path, n_labels, fold_list, vgg=True)
-    kt.train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, patience=30)
-    kt.train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, nb_epoch=1000,
-                                  patience=100, load_weights=True)
-    kt.train_top_model_with_image(save_data_path, n_labels, fold_list, 
-                                  load_weights=True, test_only=True)
-
+    train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, patience=30)
+    train_top_model_with_image(save_data_path, n_labels, fold_list, vgg=True, nb_epoch=1000,
+                               patience=100, load_weights=True)
+    train_top_model_with_image(save_data_path, n_labels, fold_list, 
+                               load_weights=True, test_only=True)
     
 
 def get_model():
@@ -86,6 +85,85 @@ def get_model():
                   optimizer = sgd, metrics=['accuracy'])
     return model
 
+
+
+def train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=400, load_weights=False,
+                               vgg=True,\
+                               patience=5, remove_label=[], use_extra_img=True, test_only=False,\
+                               cause_class=True):
+    prefix = 'vgg_'
+
+    scores= []
+    y_pred_list = []
+    y_test_list = []
+    for idx in fold_list:
+
+        bt_data_path = os.path.join(save_data_path, 'bt')
+        x_train = np.load(open(os.path.join(bt_data_path,'x_train_bt_'+str(idx)+'.npy')))
+        y_train = np.load(open(os.path.join(bt_data_path,'y_train_bt_'+str(idx)+'.npy')))
+        x_test = np.load(open(os.path.join(bt_data_path,'x_test_bt_'+str(idx)+'.npy')))
+        y_test = np.load(open(os.path.join(bt_data_path,'y_test_bt_'+str(idx)+'.npy')))
+                
+        weights_path = os.path.join(save_data_path,prefix+'cnn_weights_'+str(idx)+'.h5')
+        callbacks = [EarlyStopping(monitor='val_loss', min_delta=0, patience=patience,
+                                   verbose=0, mode='auto'),
+                     ModelCheckpoint(weights_path,
+                                     save_best_only=True,
+                                     save_weights_only=True,
+                                     monitor='val_loss'),
+                     ReduceLROnPlateau(monitor='val_loss', factor=0.2,
+                                       patience=5, min_lr=0.00001)]
+
+        if load_weights is False:            
+            model = km.vgg_image_top_net(np.shape(x_train)[1:], n_labels)
+        else:
+            model = km.vgg_image_top_net(np.shape(x_train)[1:], n_labels, weights_path)
+        ## optimizer = RMSprop(lr=0.01, rho=0.9, epsilon=1e-08, decay=0.001)
+        model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
+        ## optimizer = SGD(lr=0.0001, decay=1e-7, momentum=0.9, nesterov=True)                
+        ## model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+
+        
+        class_weight={}
+        for i in xrange(n_labels): class_weight[i] = 1.0
+            
+        if test_only is False:
+            hist = model.fit(x_train, y_train, nb_epoch=nb_epoch, batch_size=4096, shuffle=True,
+                             validation_data=(x_test, y_test), callbacks=callbacks,
+                             class_weight=class_weight)
+
+            scores.append( hist.history['val_acc'][-1] )
+        else:
+            y_pred = model.predict(x_test)
+            if cause_class:
+                # cause classification
+                y_pred_list += np.argmax(y_pred, axis=1).tolist()
+                y_test_list += np.argmax(y_test, axis=1).tolist()
+                scores.append( accuracy_score(np.argmax(y_test, axis=1).tolist(),
+                                              np.argmax(y_pred, axis=1).tolist() ) )
+            else:
+                # type classification
+                y_test_list = []
+                y_pred_list = []
+                for y in np.argmax(y_pred, axis=1):
+                    if y in y_group[0]: y_pred_list.append(0)
+                    elif y in y_group[1]: y_pred_list.append(1)
+                    elif y in y_group[2]: y_pred_list.append(2)
+                    elif y in y_group[3]: y_pred_list.append(3)
+
+                for y in np.argmax(y_test, axis=1):
+                    if y in y_group[0]: y_test_list.append(0)
+                    elif y in y_group[1]: y_test_list.append(1)
+                    elif y in y_group[2]: y_test_list.append(2)
+                    elif y in y_group[3]: y_test_list.append(3)
+                scores.append( accuracy_score(y_test_list, y_pred_list) )
+
+            print "score : ", scores        
+        gc.collect()
+
+    print 
+    print np.mean(scores), np.std(scores)
+    return
 
 
 

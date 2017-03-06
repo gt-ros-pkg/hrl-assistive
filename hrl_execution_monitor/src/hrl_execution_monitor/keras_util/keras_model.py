@@ -372,6 +372,8 @@ def vgg_image_top_net(input_shape, n_labels, weights_path=None):
     return model
 
 
+
+
 def vgg_multi_top_net(input_shape, n_labels, weights_path=None):
 
     model = Sequential()
