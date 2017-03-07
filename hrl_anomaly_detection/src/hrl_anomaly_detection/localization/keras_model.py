@@ -39,6 +39,7 @@ import cv2
 
 from keras.models import Sequential, Model
 from keras.layers import Convolution2D, MaxPooling2D, ZeroPadding2D, Merge, Input
+from keras.layers.pooling import GlobalAveragePooling2D
 from keras.layers import Activation, Dropout, Flatten, Dense, merge
 from keras.layers.advanced_activations import PReLU
 from keras.utils.np_utils import to_categorical
@@ -238,7 +239,7 @@ def vgg16_net(input_shape, n_labels, weights_path=None,\
         model.add(Dropout(0.5))        
         # -----------------------------------------------------------
         weight1_3 = mutil.get_layer_weights(weights_file, layer_name='fc_img_out')        
-        model.add(Dense(n_labels, init='uniform', weights=weight1_2, name='fc_img_out'))
+        model.add(Dense(n_labels, init='uniform', weights=weight1_3, name='fc_img_out'))
         model.add(Activation('softmax'))
 
 
@@ -266,8 +267,8 @@ def vgg16_net(input_shape, n_labels, weights_path=None,\
         sig_model.add(Activation('relu'))        
         sig_model.add(Dropout(0.2))
         # -----------------------------------------------------------
-        weight1_3 = mutil.get_layer_weights(weights_file, layer_name='fc_sig_out')        
-        sig_model.add(Dense(n_labels, init='uniform', weights=weight1_2, name='fc_sig_out'))
+        weight2_2 = mutil.get_layer_weights(weights_file, layer_name='fc_sig_out')        
+        sig_model.add(Dense(n_labels, init='uniform', weights=weight2_2, name='fc_sig_out'))
         sig_model.add(Activation('softmax'))
 
         if not fine_tune:
@@ -305,29 +306,22 @@ def vgg16_net(input_shape, n_labels, weights_path=None,\
 def vgg_image_top_net(input_shape, n_labels, weights_path=None):
 
     model = Sequential()
-    model.add(Flatten(input_shape=input_shape))
 
-
-    model.add(Dense(1024, init='uniform', name='fc1_1', W_regularizer=L1L2Regularizer(0.0,0.03)))
-    model.add(Activation('relu')) #0.03
-    model.add(Dropout(0.5))        
-    ## model.add(Dense(1024, init='uniform', name='fc1_2', W_regularizer=L1L2Regularizer(0.0,0.01)))
+    
+    ## model.add(Flatten(input_shape=input_shape))
+    ## model.add(Dense(1024, init='uniform', name='fc1_1', W_regularizer=L1L2Regularizer(0.0,0.03)))
+    ## model.add(Activation('relu')) 
+    ## model.add(Dropout(0.5))        
+    ## model.add(Dense(128, init='uniform', name='fc1_2', W_regularizer=L1L2Regularizer(0.0,0.01)))
     ## model.add(Activation('relu'))
     ## model.add(Dropout(0.5))
-    model.add(Dense(128, init='uniform', name='fc1_2', W_regularizer=L1L2Regularizer(0.0,0.01)))
-    model.add(Activation('relu'))
-    model.add(Dropout(0.5)) #0.5
+    ## model.add(Dense(n_labels, activation='softmax', name='fc_img_out'))
 
-    
-    ## model.add(Dense(256, init='uniform', name='fc1_1', W_regularizer=L1L2Regularizer(0.0,0.01)))
-    ## model.add(Activation('relu'))
-    ## ## model.add(Dropout(0.4))        
-    ## model.add(Dense(64, init='uniform', name='fc1_2', W_regularizer=L1L2Regularizer(0.0,0.01)))
-    ## model.add(Activation('relu'))
-    ## ## model.add(Dropout(0.4))
 
-    
+    model.add(GlobalAveragePooling2D(input_shape=input_shape, dim_ordering='th'))
     model.add(Dense(n_labels, activation='softmax', name='fc_img_out'))
+    ## model.add(Activation('softmax'))
+    
 
     if weights_path is not None: model.load_weights(weights_path)
     return model
