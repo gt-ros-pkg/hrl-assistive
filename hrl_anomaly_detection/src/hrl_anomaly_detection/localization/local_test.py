@@ -45,6 +45,7 @@ from hrl_execution_monitor import viz as eviz
 from hrl_execution_monitor import preprocess as pp
 from joblib import Parallel, delayed
 
+from hrl_execution_monitor.keras_util import keras_util as ku
 from keras.optimizers import SGD, Adagrad, Adadelta, RMSprop
 from keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
 from sklearn import preprocessing
@@ -68,28 +69,28 @@ def test(save_data_path, n_labels=12, n_folds=8, verbose=False):
     ## fold_list = [4,7]
 
     save_data_path = os.path.join(save_data_path, 'keras')
+    cause_class=True
 
     # training with signals ----------------------------------
-    kt.train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5)
-    kt.train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5, load_weights=True)
-    kt.train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5, load_weights=True,
-                         test_only=True, cause_class=cause_class) #70
-
+    ## kt.train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5)
+    ## kt.train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5, load_weights=True)
+    ## kt.train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5, load_weights=True,
+    ##                      test_only=True, cause_class=cause_class) #70
 
     # training_with images -----------------------------------
     ## kt.get_bottleneck_image(save_data_path, n_labels, fold_list)
-    ## train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=1000, patience=100)
+    train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=1000, patience=100)
     ## train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=1000,
     ##                            patience=100, load_weights=True)
-    ## train_top_model_with_image(save_data_path, n_labels, fold_list, 
-    ##                            load_weights=True, test_only=True)
+    train_top_model_with_image(save_data_path, n_labels, fold_list, 
+                               load_weights=True, test_only=True)
 
     # training_with all --------------------------------------
-    get_bottleneck_mutil(save_data_path, n_labels, fold_list, vgg=True)
-    train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, patience=10)
-    train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, patience=10, load_weights=True)
-    train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, load_weights=True,
-                             test_only=True) #74
+    ## get_bottleneck_mutil(save_data_path, n_labels, fold_list, vgg=True)
+    ## train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, patience=10)
+    ## train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, patience=10, load_weights=True)
+    ## train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, load_weights=True,
+    ##                          test_only=True) #74
 
     ## kt.train_with_all(save_data_path, n_labels, fold_list, patience=1, nb_epoch=1, vgg=True)
     ## kt.train_with_all(save_data_path, n_labels, fold_list, load_weights=True, patience=5, vgg=True)
@@ -316,6 +317,8 @@ def train_multi_top_model(save_data_path, n_labels, fold_list, nb_epoch=3000, lo
             model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
             ## model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
 
+        ## from sklearn.svm import SVC
+        ## clf = SVC(C=1.0, kernel='rbf', gamma=1e-5) #, decision_function_shape='ovo')
         ## from sklearn.ensemble import RandomForestClassifier
         ## clf = RandomForestClassifier(n_estimators=400, n_jobs=-1)
         ## clf.fit(x_train, np.argmax(y_train, axis=1))
