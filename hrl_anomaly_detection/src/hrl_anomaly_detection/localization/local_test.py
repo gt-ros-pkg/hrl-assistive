@@ -47,6 +47,7 @@ from joblib import Parallel, delayed
 
 from keras.optimizers import SGD, Adagrad, Adadelta, RMSprop
 from keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
+from keras.preprocessing.image import ImageDataGenerator
 from sklearn import preprocessing
 from sklearn.metrics import accuracy_score
 
@@ -70,11 +71,10 @@ def test(save_data_path, n_labels=12, n_folds=8, verbose=False):
     save_data_path = os.path.join(save_data_path, 'keras')
 
     # training with signals ----------------------------------
-    kt.train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5)
-    kt.train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5, load_weights=True)
-    kt.train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5, load_weights=True,
-                         test_only=True, cause_class=cause_class) #70
-
+    ## kt.train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5)
+    ## kt.train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5, load_weights=True)
+    ## kt.train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5, load_weights=True,
+    ##                      test_only=True, cause_class=cause_class) #70
 
     # training_with images -----------------------------------
     ## kt.get_bottleneck_image(save_data_path, n_labels, fold_list)
@@ -85,11 +85,11 @@ def test(save_data_path, n_labels=12, n_folds=8, verbose=False):
     ##                            load_weights=True, test_only=True)
 
     # training_with all --------------------------------------
-    get_bottleneck_mutil(save_data_path, n_labels, fold_list, vgg=True)
-    train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, patience=10)
-    train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, patience=10, load_weights=True)
-    train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, load_weights=True,
-                             test_only=True) #74
+    ## get_bottleneck_mutil(save_data_path, n_labels, fold_list, vgg=True)
+    ## train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, patience=10)
+    ## train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, patience=10, load_weights=True)
+    ## train_multi_top_model(save_data_path, n_labels, fold_list, vgg=True, load_weights=True,
+    ##                          test_only=True) #74
 
     ## kt.train_with_all(save_data_path, n_labels, fold_list, patience=1, nb_epoch=1, vgg=True)
     ## kt.train_with_all(save_data_path, n_labels, fold_list, load_weights=True, patience=5, vgg=True)
@@ -98,6 +98,16 @@ def test(save_data_path, n_labels=12, n_folds=8, verbose=False):
     return
 
     
+def multi_level_test(save_data_path, n_labels=12, n_folds=8, verbose=False):
+
+    fold_list = range(nFold)
+    fold_list = [0]
+
+    save_data_path = os.path.join(save_data_path, 'keras')
+    get_multi_bottleneck_images(save_data_path, n_labels, fold_list)
+
+
+
 
 ## def get_model():
 ##     model = km.vgg16_net()
@@ -195,6 +205,126 @@ def train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=400
     print 
     print np.mean(scores), np.std(scores)
     return
+
+
+def get_multi_bottleneck_images(save_data_path, n_labels, fold_list, vgg=True, use_extra_img=True,
+                                remove_label=[]):
+    ''' Get 3-level bottleneck features from an image. '''
+
+    if vgg: prefix = 'vgg_'
+    else: prefix = ''
+
+    scores= []
+    for idx in fold_list:
+
+        # Loading data
+        train_data, test_data = autil.load_data(idx, save_data_path, extra_img=use_extra_img, viz=False)      
+        x_train_img = train_data[1]
+        y_train     = train_data[2]
+        x_test_img = test_data[1]
+        y_test     = test_data[2]
+
+        # remove specific label --------------------
+        add_idx = []
+        for i, y in enumerate(y_train):
+            if np.argmax(y) not in remove_label:
+                add_idx.append(i)
+        x_train_img = np.array(x_train_img)[add_idx]
+        y_train = np.array(y_train)[add_idx]
+
+        add_idx = []
+        for i, y in enumerate(y_test):
+            if np.argmax(y) not in remove_label:
+                add_idx.append(i)
+        x_test_img = np.array(x_test_img)[add_idx]
+        y_test = np.array(y_test)[add_idx]
+        #--------------------------------------------
+        
+        if vgg: model = km.vgg16_net(np.shape(x_train_img)[1:], n_labels)
+        else: model = km.cnn_net(np.shape(x_train_img)[1:], n_labels)            
+
+        bt_data_path = os.path.join(save_data_path, 'bt')
+        if os.path.isdir(bt_data_path) is False:
+            os.system('mkdir -p '+bt_data_path)
+            
+        # ------------------------------------------------------------
+        train_datagen = ImageDataGenerator(
+            rotation_range=20,
+            rescale=1./255,
+            width_shift_range=0.1,
+            height_shift_range=0.1,
+            zoom_range=0.1,
+            horizontal_flip=False,
+            fill_mode='nearest',
+            dim_ordering="th")
+
+        x_ = None
+        y_ = None
+        count = 0
+        for x_batch, y_batch in train_datagen.flow(x_train_img, y_train, batch_size=len(x_train_img),
+                                                   shuffle=False):
+
+            ## print np.shape(x_batch)
+            ## sys.exit()            
+            for img in x_batch:
+                img = img.transpose((1,2,0))
+                img[:,:,0] += 103.939
+                img[:,:,1] += 116.779
+                img[:,:,2] += 123.68
+                
+                cv2.imshow('image',img.astype(np.uint8))
+                cv2.waitKey(0)
+                cv2.destroyAllWindows()
+            sys.exit()
+            
+            ## crop data using three levels
+            # 1. face only
+
+            # 2. face and hand
+
+            # 3. face, hand, and background
+
+            
+            if x_ is None: x_ = model.predict(x_batch)
+            else: x_ = np.vstack([x_, model.predict(x_batch)])
+
+                
+            if y_ is None: y_ = y_train
+            else: y_ = np.vstack([y_, y_train])
+            count += 1
+            print count
+            if count > 4: break
+
+        np.save(open(os.path.join(bt_data_path,'x_train_bt_'+str(idx)+'.npy'), 'w'), x_)
+        np.save(open(os.path.join(bt_data_path,'y_train_bt_'+str(idx)+'.npy'), 'w'), y_)
+        del x_, y_, train_datagen
+
+        # ------------------------------------------------------------
+        test_datagen = ImageDataGenerator(
+            rescale=1./255,
+            horizontal_flip=False,
+            dim_ordering="th")
+
+        x_ = None
+        y_ = None
+        count = 0
+        for x_batch, y_batch in test_datagen.flow(x_test_img, y_test, batch_size=len(x_test_img), shuffle=False):
+            if x_ is None: x_ = model.predict(x_batch)
+            else: x_ = np.vstack([x_, model.predict(x_batch)])
+            if y_ is None: y_ = y_test
+            else: y_ = np.vstack([y_, y_test])
+            count += 1
+            print count
+            if count > 0: break
+
+        np.save(open(os.path.join(bt_data_path,'x_test_bt_'+str(idx)+'.npy'), 'w'), x_)
+        np.save(open(os.path.join(bt_data_path,'y_test_bt_'+str(idx)+'.npy'), 'w'), y_)
+        del x_, y_, test_datagen
+        
+        gc.collect()
+
+    return
+
 
 
 def get_bottleneck_mutil(save_data_path, n_labels, fold_list, vgg=True):
@@ -413,4 +543,5 @@ if __name__ == '__main__':
         plot(model, to_file='model.png')
         
     else:
-        test(save_data_path)
+        multi_level_test(save_data_path)
+        ## test(save_data_path)
