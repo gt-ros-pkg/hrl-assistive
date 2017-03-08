@@ -67,7 +67,7 @@ def test(save_data_path, n_labels=12, n_folds=8, verbose=False):
     fold_list = range(nFold)
 
     #temp
-    ## fold_list = [4,7]
+    fold_list = [0]
 
     save_data_path = os.path.join(save_data_path, 'keras')
     cause_class=True
@@ -79,10 +79,10 @@ def test(save_data_path, n_labels=12, n_folds=8, verbose=False):
     ##                      test_only=True, cause_class=cause_class) #70
 
     # training_with images -----------------------------------
-    ## kt.get_bottleneck_image(save_data_path, n_labels, fold_list)
+    kt.get_bottleneck_image(save_data_path, n_labels, fold_list)
     train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=1000, patience=100)
-    ## train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=1000,
-    ##                            patience=100, load_weights=True)
+    train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=1000,
+                               patience=100, load_weights=True)
     train_top_model_with_image(save_data_path, n_labels, fold_list, 
                                load_weights=True, test_only=True)
 
@@ -106,6 +106,8 @@ def multi_level_test(save_data_path, n_labels=12, n_folds=8, verbose=False):
     fold_list = [0]
 
     save_data_path = os.path.join(save_data_path, 'keras')
+    
+    kt.get_bottleneck_image(save_data_path, n_labels, fold_list)
     get_multi_bottleneck_images(save_data_path, n_labels, fold_list)
 
 
@@ -226,6 +228,33 @@ def get_multi_bottleneck_images(save_data_path, n_labels, fold_list, vgg=True, u
         x_test_img = test_data[1]
         y_test     = test_data[2]
 
+
+        ## print np.shape(x_batch)
+        ## sys.exit()            
+        ## for img in x_train_img:
+        ##     img = img.transpose((1,2,0))
+        ##     img[:,:,0] += 103.939
+        ##     img[:,:,1] += 116.779
+        ##     img[:,:,2] += 123.68
+
+        ##     rows,cols = np.shape(img)[:2]
+        ##     M   = cv2.getRotationMatrix2D((cols/2,rows/2),180,1)
+        ##     img = cv2.warpAffine(img,M,(cols,rows))
+
+        ##     gray = cv2.cvtColor(img.astype(np.uint8), cv2.COLOR_BGR2GRAY)
+        ##     faceDetectClassifier = cv2.CascadeClassifier("/home/dpark/util/opencv-2.4.11/data/haarcascades/haarcascade_frontalface_default.xml")
+
+        ##     faces = faceDetectClassifier.detectMultiScale(gray, 1.3, 5)
+        ##     for (x,y,w,h) in faces:
+        ##         cv2.rectangle(img,(x,y),(x+w,y+h),(255,0,0),2)
+                
+        ##     cv2.imshow('image',img.astype(np.uint8))
+        ##     cv2.waitKey(0)
+        ##     cv2.destroyAllWindows()
+        ## sys.exit()
+            
+
+
         # remove specific label --------------------
         add_idx = []
         for i, y in enumerate(y_train):
@@ -266,19 +295,6 @@ def get_multi_bottleneck_images(save_data_path, n_labels, fold_list, vgg=True, u
         for x_batch, y_batch in train_datagen.flow(x_train_img, y_train, batch_size=len(x_train_img),
                                                    shuffle=False):
 
-            ## print np.shape(x_batch)
-            ## sys.exit()            
-            for img in x_batch:
-                img = img.transpose((1,2,0))
-                img[:,:,0] += 103.939
-                img[:,:,1] += 116.779
-                img[:,:,2] += 123.68
-                
-                cv2.imshow('image',img.astype(np.uint8))
-                cv2.waitKey(0)
-                cv2.destroyAllWindows()
-            sys.exit()
-            
             ## crop data using three levels
             # 1. face only
 
@@ -547,5 +563,5 @@ if __name__ == '__main__':
         plot(model, to_file='model.png')
         
     else:
-        multi_level_test(save_data_path)
-        ## test(save_data_path)
+        ## multi_level_test(save_data_path)
+        test(save_data_path)
