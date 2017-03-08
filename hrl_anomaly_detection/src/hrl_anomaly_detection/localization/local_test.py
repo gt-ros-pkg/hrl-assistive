@@ -107,7 +107,7 @@ def multi_level_test(save_data_path, n_labels=12, n_folds=8, verbose=False):
 
     save_data_path = os.path.join(save_data_path, 'keras')
     
-    kt.get_bottleneck_image(save_data_path, n_labels, fold_list)
+    ## kt.get_bottleneck_image(save_data_path, n_labels, fold_list)
     get_multi_bottleneck_images(save_data_path, n_labels, fold_list)
 
 
@@ -223,14 +223,11 @@ def get_multi_bottleneck_images(save_data_path, n_labels, fold_list, vgg=True, u
 
         # Loading data
         train_data, test_data = autil.load_data(idx, save_data_path, extra_img=use_extra_img, viz=False)      
-        x_train_img = train_data[1]
+        x_train_img = train_data[1] # sample x 3 x 224 x 224
         y_train     = train_data[2]
         x_test_img = test_data[1]
         y_test     = test_data[2]
 
-
-        ## print np.shape(x_batch)
-        ## sys.exit()            
         ## for img in x_train_img:
         ##     img = img.transpose((1,2,0))
         ##     img[:,:,0] += 103.939
@@ -291,12 +288,15 @@ def get_multi_bottleneck_images(save_data_path, n_labels, fold_list, vgg=True, u
 
         x_ = None
         y_ = None
-        count = 0
+        width  = 70
+        height = 70
+        count = 0        
         for x_batch, y_batch in train_datagen.flow(x_train_img, y_train, batch_size=len(x_train_img),
                                                    shuffle=False):
 
             ## crop data using three levels
             # 1. face only
+            ## x_batch[]
 
             # 2. face and hand
 
@@ -563,5 +563,5 @@ if __name__ == '__main__':
         plot(model, to_file='model.png')
         
     else:
-        ## multi_level_test(save_data_path)
-        test(save_data_path)
+        multi_level_test(save_data_path)
+        #test(save_data_path)

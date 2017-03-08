@@ -237,10 +237,9 @@ def extract_image(f, img_feature_type='vgg', img_scale=None, img_ordering='th'):
             r = min_idx[1]
         else:        
             r,c,w,h = facePoints[0]
-            for (r,c,w,h) in facePoints:
-                cv2.rectangle(img,(r,c),(r+w,c+h),(255,0,0),2)
-            skin = img.copy()
-
+            ## for (r,c,w,h) in facePoints:
+            ##     cv2.rectangle(img,(r,c),(r+w,c+h),(255,0,0),2)
+            ## skin = img.copy()
             r += w/2
             c += h/2
 
