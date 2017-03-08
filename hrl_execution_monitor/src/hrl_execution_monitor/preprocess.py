@@ -90,7 +90,6 @@ def preprocess_data(src_pkl, save_data_path, img_scale=0.25, nb_classes=12,
 
                 img = extract_image(f, img_feature_type=img_feature_type,
                                     img_scale=img_scale)
-                print np.shape(img)
                 x.append(img)
             x_img = x
 
@@ -174,7 +173,7 @@ def extract_image(f, img_feature_type='vgg', img_scale=None, img_ordering='th'):
         img = img.transpose((2,0,1))
 
     elif img_feature_type is 'cascade':
-        img_size = (256,256)
+        img_size = (224,224) #(256,256)
         crop_size = (224,224)
 
         img = cv2.resize(cv2.imread(f), img_size)
@@ -188,41 +187,82 @@ def extract_image(f, img_feature_type='vgg', img_scale=None, img_ordering='th'):
 
         if len(facePoints)==0:
             # Find a head using another way!!
-            # visual check
-            ## cv2.imshow('image',img.astype(np.uint8))
-            ## cv2.waitKey(0)
-            ## cv2.destroyAllWindows()
-            x = img_size[0]/2
-            y = img_size[1]/2
+            lower = np.array([0, 18, 40], dtype = "uint8")
+            upper = np.array([20, 255, 255], dtype = "uint8")
+            converted = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+            skinMask = cv2.inRange(converted, lower, upper)
+
+            # apply a series of erosions and dilations to the mask
+            # using an elliptical kernel
+            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (11, 11))
+            skinMask = cv2.erode(skinMask, kernel, iterations = 2)
+            skinMask = cv2.dilate(skinMask, kernel, iterations = 2)
+
+            # blur the mask to help remove noise, then apply the
+            # mask to the frame
+            skinMask = cv2.GaussianBlur(skinMask, (3, 3), 0)
+            skin = cv2.bitwise_and(img, img, mask = skinMask)
+
+            # column: vertical, row: horizontal
+            X = []
+            for c in xrange(len(skin)):
+                for r in xrange(len(skin[c])):
+                    if sum(skin[c][r]) == 0: continue
+                    X.append([c,r])
+
+            n_clusters = 3
+            from sklearn.cluster import KMeans
+            clt = KMeans(n_clusters = n_clusters)
+            clt.fit(X)
+
+            min_dist = 100000000000000
+            min_idx  = []
+            for nc in xrange(n_clusters):
+                inds = [i for i in xrange(len(clt.labels_)) if clt.labels_[i]==nc ]
+                r =0
+                c =0
+                for i in inds:
+                    c += X[i][0]
+                    r += X[i][1]
+                c /= len(inds)
+                r /= len(inds)
+                ## c = int(np.mean(X[inds][0]))
+                ## r = int(np.mean(X[inds][1]))
+
+                dist = ((len(skin)/2-c)**2 + (len(skin[1])/2-r)**2)
+                if min_dist > dist:
+                    min_idx = [c,r]
+                    min_dist = dist
+            c = min_idx[0]
+            r = min_idx[1]
         else:        
-            x,y,w,h = facePoints[0]
-            x += w/2
-            y += h/2
+            r,c,w,h = facePoints[0]
+            for (r,c,w,h) in facePoints:
+                cv2.rectangle(img,(r,c),(r+w,c+h),(255,0,0),2)
+            skin = img.copy()
 
-        add_border=False
-        if y - crop_size[1]/2 < 0 or y + crop_size[1]/2 >= len(img) or\
-            x - crop_size[0]/2 < 0 or x + crop_size[0]/2 >= len(img[0]):
-            ## print y - crop_size[1]/2, y + crop_size[1]/2, x - crop_size[0]/2, x + crop_size[0]/2
+            r += w/2
+            c += h/2
+
+
+        ## keypoints = []
+        ## keypoints.append( cv2.KeyPoint(r, c, 10 ) )
+        ## ## keypoints.append( cv2.KeyPoint(r+w/2, c+h/2, 10 ) )
+        ## im_with_keypoints = cv2.drawKeypoints(skin, keypoints, None)            
+        if c - crop_size[1]/2 < 0 or c + crop_size[1]/2 > len(img) or\
+            r - crop_size[0]/2 < 0 or r + crop_size[0]/2 > len(img[0]):
             # Add replicated border
-            ## margin = max( abs(y-crop_size[1]/2) if 
-            img = cv2.copyMakeBorder(img,150,150,150,150,cv2.BORDER_REPLICATE)
-            x += 150
-            y += 150
-            add_border=True
-            
-            ## for (x,y,w,h) in facePoints:
-            ##     cv2.rectangle(img,(x,y),(x+w,y+h),(255,0,0),2)
-            
-            ## print np.shape(img), type(img), type(img[0][0][0])
-            ## # visual check
-            ## cv2.imshow('image',img.astype(np.uint8))
-            ## cv2.waitKey(0)
-            ## cv2.destroyAllWindows()
-            ## #sys.exit()
-
-            
+            img = cv2.copyMakeBorder(img[1:,1:],150,150,150,150,cv2.BORDER_REPLICATE)
+            r += 150-1
+            c += 150-1
+                        
         img = img.astype(np.float32)      
-        img = img[y - crop_size[1]/2: y + crop_size[1]/2, x - crop_size[0]/2: x + crop_size[0]/2]
+        img = img[c - crop_size[0]/2: c + crop_size[0]/2, r - crop_size[1]/2: r + crop_size[1]/2]
+
+        ## cv2.imshow('image', np.hstack([img.astype(np.uint8), im_with_keypoints]) )
+        ## cv2.waitKey(0)
+        ## cv2.destroyAllWindows()
+        
         rows,cols = np.shape(img)[:2]
         M   = cv2.getRotationMatrix2D((cols/2,rows/2),180,1)
         img = cv2.warpAffine(img,M,(cols,rows))
