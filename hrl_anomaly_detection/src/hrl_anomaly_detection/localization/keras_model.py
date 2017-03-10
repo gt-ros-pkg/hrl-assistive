@@ -352,3 +352,28 @@ def vgg_multi_top_net(input_shape, n_labels, weights_path=None):
 
     if weights_path is not None:  weights_file.close()
     return model
+
+
+def vgg_multi_image_top_net(input_shape, n_labels, weights_path=None):
+
+    model1 = Sequential()
+    model1.add(Flatten(input_shape=input_shape))
+    model2 = Sequential()
+    model2.add(Flatten(input_shape=input_shape))
+    model3 = Sequential()
+    model3.add(Flatten(input_shape=input_shape))
+
+    merge = Merge([model1, model2, model3], mode='sum')
+    model = Sequential()
+    model.add(merge)
+
+    model.add(Dense(1024, init='uniform', name='fc1_1', W_regularizer=L1L2Regularizer(0.0,0.03)))
+    model.add(Activation('relu')) 
+    model.add(Dropout(0.5))        
+    model.add(Dense(128, init='uniform', name='fc1_2', W_regularizer=L1L2Regularizer(0.0,0.01)))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.5))    
+    model.add(Dense(n_labels, activation='softmax', name='fc_img_out'))
+   
+    if weights_path is not None: model.load_weights(weights_path)
+    return model
