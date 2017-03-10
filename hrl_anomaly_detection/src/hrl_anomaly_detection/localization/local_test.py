@@ -630,5 +630,5 @@ if __name__ == '__main__':
         plot(model, to_file='model.png')
         
     else:
-        #multi_level_test(save_data_path)
-        test(save_data_path)
+        multi_level_test(save_data_path)
+        #test(save_data_path)
