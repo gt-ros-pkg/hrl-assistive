@@ -108,7 +108,7 @@ def multi_level_test(save_data_path, n_labels=12, n_folds=8, verbose=False):
 
     save_data_path = os.path.join(save_data_path, 'keras')
     
-    get_multi_bottleneck_images(save_data_path, n_labels, fold_list)
+    ## get_multi_bottleneck_images(save_data_path, n_labels, fold_list)
     train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=1000, patience=100,
                               multi=True)
 
