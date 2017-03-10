@@ -79,8 +79,9 @@ def test(save_data_path, n_labels=12, n_folds=8, verbose=False):
     ##                      test_only=True, cause_class=cause_class) #70
 
     # training_with images -----------------------------------
-    ## kt.get_bottleneck_image(save_data_path, n_labels, fold_list)
-    ## train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=1000, patience=100)
+    # 48%
+    kt.get_bottleneck_image(save_data_path, n_labels, fold_list)
+    train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=1000, patience=100)
     train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=1000,
                                patience=100, load_weights=True)
     train_top_model_with_image(save_data_path, n_labels, fold_list, 
@@ -107,8 +108,9 @@ def multi_level_test(save_data_path, n_labels=12, n_folds=8, verbose=False):
 
     save_data_path = os.path.join(save_data_path, 'keras')
     
-    ## kt.get_bottleneck_image(save_data_path, n_labels, fold_list)
     get_multi_bottleneck_images(save_data_path, n_labels, fold_list)
+    train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=1000, patience=100,
+                              multi=True)
 
 
 
@@ -130,7 +132,7 @@ def multi_level_test(save_data_path, n_labels=12, n_folds=8, verbose=False):
 def train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=400, load_weights=False,
                                vgg=True,\
                                patience=5, remove_label=[], use_extra_img=True, test_only=False,\
-                               cause_class=True):
+                               cause_class=True, multi=False):
     prefix = 'vgg_'
 
     scores= []
@@ -143,7 +145,7 @@ def train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=400
         y_train = np.load(open(os.path.join(bt_data_path,'y_train_bt_'+str(idx)+'.npy')))
         x_test = np.load(open(os.path.join(bt_data_path,'x_test_bt_'+str(idx)+'.npy')))
         y_test = np.load(open(os.path.join(bt_data_path,'y_test_bt_'+str(idx)+'.npy')))
-                
+
         weights_path = os.path.join(save_data_path,prefix+'cnn_weights_'+str(idx)+'.h5')
         if os.path.isfile(weights_path) is False:
             print weights_path
@@ -158,14 +160,16 @@ def train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=400
                      ReduceLROnPlateau(monitor='val_loss', factor=0.2,
                                        patience=5, min_lr=0.00001)]
 
-        if load_weights is False:            
-            model = km.vgg_image_top_net(np.shape(x_train)[1:], n_labels)
+        if load_weights is False:
+            if multi: model = km.vgg_multi_image_top_net(np.shape(x_train[0])[1:], n_labels)
+            else:     model = km.vgg_image_top_net(np.shape(x_train)[1:], n_labels)
             model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
         else:
             print "Load weight!!!!!!!!!!!!!!!"
-            model = km.vgg_image_top_net(np.shape(x_train)[1:], n_labels, weights_path)
-            optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.0001)
-            ## optimizer = SGD(lr=0.01, decay=1e-7, momentum=0.9, nesterov=True)                
+            if multi: model = km.vgg_multi_image_top_net(np.shape(x_train[0])[1:], n_labels, weights_path)
+            else:     model = km.vgg_image_top_net(np.shape(x_train)[1:], n_labels, weights_path)
+            optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.001)
+            optimizer = SGD(lr=0.001, decay=1e-7, momentum=0.9, nesterov=True)                
             model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
 
         
@@ -250,8 +254,6 @@ def get_multi_bottleneck_images(save_data_path, n_labels, fold_list, vgg=True, u
         ##     cv2.destroyAllWindows()
         ## sys.exit()
             
-
-
         # remove specific label --------------------
         add_idx = []
         for i, y in enumerate(y_train):
@@ -286,36 +288,65 @@ def get_multi_bottleneck_images(save_data_path, n_labels, fold_list, vgg=True, u
             fill_mode='nearest',
             dim_ordering="th")
 
-        x_ = None
+        x_ = [None, None, None]
         y_ = None
         width  = 70
         height = 70
+        img_size = np.shape(x_train_img)[-2:]
+
         count = 0        
         for x_batch, y_batch in train_datagen.flow(x_train_img, y_train, batch_size=len(x_train_img),
                                                    shuffle=False):
 
             ## crop data using three levels
             # 1. face only
-            ## x_batch[]
+            x_batch_1 = None
+            for img in x_batch:
+                img   = img.transpose((1,2,0))
+                img_1 = cv2.resize(img[(img_size[0]-width)/2:(img_size[0]+width)/2,
+                                       (img_size[1]-height)/2:(img_size[1]+height)/2],
+                                       np.shape(img)[:2])
+                img_1 = img_1.transpose((2,0,1))
+                if x_batch_1 is None:
+                    x_batch_1 = np.expand_dims(img_1, axis=0)
+                else:
+                    x_batch_1 = np.vstack([x_batch_1, np.expand_dims(img_1, axis=0)])
+
+            if x_[0] is None: x_[0] = model.predict(x_batch_1)
+            else: x_[0] = np.vstack([x_[0], model.predict(x_batch_1)])
 
             # 2. face and hand
+            x_batch_2 = None
+            for img in x_batch:
+                img   = img.transpose((1,2,0))
+                img_2 = cv2.resize(img[img_size[0]/4-width/4:((img_size[0]+width)/2+img_size[0])/2,
+                                       img_size[1]/4-height/4:((img_size[1]+height/2)+img_size[1])/2],
+                                       np.shape(img)[:2])
+                img_2 = img_2.transpose((2,0,1))
+                if x_batch_2 is None:
+                    x_batch_2 = np.expand_dims(img_2, axis=0)
+                else:
+                    x_batch_2 = np.vstack([x_batch_2, np.expand_dims(img_2, axis=0)])
+            if x_[1] is None: x_[1] = model.predict(x_batch_2)
+            else: x_[1] = np.vstack([x_[1], model.predict(x_batch_2)])
 
             # 3. face, hand, and background
+            if x_[2] is None: x_[2] = model.predict(x_batch)
+            else: x_[2] = np.vstack([x_[2], model.predict(x_batch)])
 
-            
-            if x_ is None: x_ = model.predict(x_batch)
-            else: x_ = np.vstack([x_, model.predict(x_batch)])
-
-                
             if y_ is None: y_ = y_train
             else: y_ = np.vstack([y_, y_train])
             count += 1
-            print count
+            print count, np.shape(x_[0]), np.shape(x_[1]), np.shape(x_[2])
             if count > 4: break
 
+        x_ = np.array(x_)
+        x_ = np.swapaxes(x_, 0, 1)
+        print np.shape(x_), np.shape(x_[0])
+            
         np.save(open(os.path.join(bt_data_path,'x_train_bt_'+str(idx)+'.npy'), 'w'), x_)
         np.save(open(os.path.join(bt_data_path,'y_train_bt_'+str(idx)+'.npy'), 'w'), y_)
-        del x_, y_, train_datagen
+        del x_, y_, train_datagen, x_batch_1, x_batch_2, x_batch
 
         # ------------------------------------------------------------
         test_datagen = ImageDataGenerator(
@@ -323,21 +354,57 @@ def get_multi_bottleneck_images(save_data_path, n_labels, fold_list, vgg=True, u
             horizontal_flip=False,
             dim_ordering="th")
 
-        x_ = None
+        x_ = [None, None, None]
         y_ = None
         count = 0
         for x_batch, y_batch in test_datagen.flow(x_test_img, y_test, batch_size=len(x_test_img), shuffle=False):
-            if x_ is None: x_ = model.predict(x_batch)
-            else: x_ = np.vstack([x_, model.predict(x_batch)])
+
+            # 1. face only
+            x_batch_1 = None
+            for img in x_batch:
+                img   = img.transpose((1,2,0))
+                img_1 = cv2.resize(img[(img_size[0]-width)/2:(img_size[0]+width)/2,
+                                       (img_size[1]-height)/2:(img_size[1]+height)/2],
+                                       np.shape(img)[:2])
+                img_1 = img_1.transpose((2,0,1))
+                if x_batch_1 is None:
+                    x_batch_1 = np.expand_dims(img_1, axis=0)
+                else:
+                    x_batch_1 = np.vstack([x_batch_1, np.expand_dims(img_1, axis=0)])
+            if x_[0] is None: x_[0] = model.predict(x_batch_1)
+            else: x_[0] = np.vstack([x_[0], model.predict(x_batch_1)])
+
+            # 2. face and hand
+            x_batch_2 = None
+            for img in x_batch:
+                img   = img.transpose((1,2,0))
+                img_2 = cv2.resize(img[img_size[0]/4-width/4:((img_size[0]+width)/2+img_size[0])/2,
+                                       img_size[1]/4-height/4:((img_size[1]+height/2)+img_size[1])/2],
+                                       np.shape(img)[:2])
+                img_2 = img_2.transpose((2,0,1))
+                if x_batch_2 is None:
+                    x_batch_2 = np.expand_dims(img_2, axis=0)
+                else:
+                    x_batch_2 = np.vstack([x_batch_2, np.expand_dims(img_2, axis=0)])
+            if x_[1] is None: x_[1] = model.predict(x_batch_2)
+            else: x_[1] = np.vstack([x_[1], model.predict(x_batch_2)])
+
+            # 3. face, hand, and background
+            if x_[2] is None: x_[2] = model.predict(x_batch)
+            else: x_[2] = np.vstack([x_[2], model.predict(x_batch)])
+                
             if y_ is None: y_ = y_test
             else: y_ = np.vstack([y_, y_test])
             count += 1
             print count
             if count > 0: break
 
+        x_ = np.array(x_)
+        x_ = np.swapaxes(x_, 0, 1)
+
         np.save(open(os.path.join(bt_data_path,'x_test_bt_'+str(idx)+'.npy'), 'w'), x_)
         np.save(open(os.path.join(bt_data_path,'y_test_bt_'+str(idx)+'.npy'), 'w'), y_)
-        del x_, y_, test_datagen
+        del x_, y_, test_datagen, x_batch_1, x_batch_2, x_batch
         
         gc.collect()
 
