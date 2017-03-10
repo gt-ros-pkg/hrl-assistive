@@ -67,7 +67,7 @@ def test(save_data_path, n_labels=12, n_folds=8, verbose=False):
     fold_list = range(nFold)
 
     #temp
-    fold_list = [0]
+    fold_list = [0,7] # 41 - 47(new preprocessing) - ?
 
     save_data_path = os.path.join(save_data_path, 'keras')
     cause_class=True
@@ -79,8 +79,8 @@ def test(save_data_path, n_labels=12, n_folds=8, verbose=False):
     ##                      test_only=True, cause_class=cause_class) #70
 
     # training_with images -----------------------------------
-    kt.get_bottleneck_image(save_data_path, n_labels, fold_list)
-    train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=1000, patience=100)
+    ## kt.get_bottleneck_image(save_data_path, n_labels, fold_list)
+    ## train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=1000, patience=100)
     train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=1000,
                                patience=100, load_weights=True)
     train_top_model_with_image(save_data_path, n_labels, fold_list, 
@@ -164,8 +164,8 @@ def train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=400
         else:
             print "Load weight!!!!!!!!!!!!!!!"
             model = km.vgg_image_top_net(np.shape(x_train)[1:], n_labels, weights_path)
-            optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.001)
-            optimizer = SGD(lr=0.001, decay=1e-7, momentum=0.9, nesterov=True)                
+            optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.0001)
+            ## optimizer = SGD(lr=0.01, decay=1e-7, momentum=0.9, nesterov=True)                
             model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
 
         
@@ -563,5 +563,5 @@ if __name__ == '__main__':
         plot(model, to_file='model.png')
         
     else:
-        multi_level_test(save_data_path)
-        #test(save_data_path)
+        #multi_level_test(save_data_path)
+        test(save_data_path)
