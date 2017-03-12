@@ -29,8 +29,7 @@
 #  \author Daehyung Park (Healthcare Robotics Lab, Georgia Tech.)
 
 # System
-import sys, time, copy
-import random
+import sys, time, copy, random
 import numpy as np
 
 # ROS
@@ -47,7 +46,7 @@ from hrl_srvs.srv import None_Bool, None_BoolResponse, String_String
 
 # HRL library
 import hrl_haptic_mpc.haptic_mpc_util as haptic_mpc_util
-import hrl_lib.quaternion as quatMath
+## import hrl_lib.quaternion as quatMath
 
 # Personal library - need to move neccessary libraries to a new package
 from sandbox_dpark_darpa_m3.lib.hrl_mpc_base import mpcBaseAction
@@ -56,7 +55,7 @@ QUEUE_SIZE = 10
 
 
 class armReachAction(mpcBaseAction):
-    def __init__(self, d_robot, controller, arm, tool_id=0, verbose=False):
+    def __init__(self, d_robot, controller, arm, tool_id=0, viz=False, verbose=False):
         mpcBaseAction.__init__(self, d_robot, controller, arm, tool_id)
 
         #Variables...! #
@@ -71,9 +70,7 @@ class armReachAction(mpcBaseAction):
         self.mouthNoise     = np.array([0., 0., 0.])
         self.mouthOffset    = self.mouthManOffset+self.mouthNoise 
 
-
-        self.bowl_pub = None
-        self.mouth_pub = None
+        self.viz = viz
         self.bowl_frame_kinect  = None
         self.mouth_frame_vision = None
         self.bowl_frame         = None
@@ -107,13 +104,15 @@ class armReachAction(mpcBaseAction):
     def initCommsForArmReach(self):
 
         # publishers
-        self.bowl_pub = rospy.Publisher('/hrl_manipulation_task/arm_reacher/bowl_cen_pose', PoseStamped,
-                                        queue_size=QUEUE_SIZE, latch=True)
-        self.mouth_pub = rospy.Publisher('/hrl_manipulation_task/arm_reacher/mouth_pose', PoseStamped,
-                                         queue_size=QUEUE_SIZE, latch=True)
+        if self.viz:
+            self.bowl_pub = rospy.Publisher('/hrl_manipulation_task/arm_reacher/bowl_cen_pose', PoseStamped,
+                                            queue_size=QUEUE_SIZE, latch=True)
+            self.mouth_pub = rospy.Publisher('/hrl_manipulation_task/arm_reacher/mouth_pose', PoseStamped,
+                                             queue_size=QUEUE_SIZE, latch=True)
         self.ee_pose_pub = rospy.Publisher('/hrl_manipulation_task/arm_reacher/'+self.arm_name+\
                                            '_ee_pose', PoseStamped,
                                            queue_size=QUEUE_SIZE, latch=True)
+            
         self.bowl_height_init_pub = rospy.Publisher('/hrl_manipulation_task/arm_reacher/init_bowl_height', Empty,
                                         queue_size=QUEUE_SIZE, latch=True)
         self.kinect_pause = rospy.Publisher('/head_mount_kinect/pause_kinect', String,
@@ -182,20 +181,27 @@ class armReachAction(mpcBaseAction):
         # whole arm roll (rotates right), elbow pitch (rotates towards outer arm),
         # elbow roll (rotates left), wrist pitch (towards top of forearm), wrist roll (rotates right)] (represents positive values)
         self.motions['initScooping1'] = {}
-        self.motions['initScooping1']['left'] = [['PAUSE', 2.0],
-                                                 ['MOVEJ', '[0.6447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 1.1291]', 5.0]]
-        self.motions['initScooping1']['right'] = [['MOVEJ', '[-0.59, 0.131, -1.55, -1.041, 0.098, -1.136, -1.4]', 5.0],
-                                                  ['MOVES', '[0.7, -0.15, -0., -3.1415, 0.0, 1.574]', 2.]]
+        self.motions['initScooping1']['left'] =\
+        [['MOVEJ', '[0.6447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 0.4291]', 5.0]]
+        self.motions['initScooping1']['right'] =\
+        [['MOVEJ', '[-0.59, 0.131, -1.55, -1.041, 0.098, -1.136, -1.4]', 5.0],
+         ['MOVES', '[0.7, 0., 0.1, -3.1415, 0.0, 1.574]', 5.]]
 
         self.motions['initScooping2'] = {}
-        self.motions['initScooping2']['left'] = [['MOVES', '[-0.04, 0.0, -0.15, 0, 0.5, 0]', 3, 'self.bowl_frame']]
-        self.motions['initScooping2']['right'] = []
+        self.motions['initScooping2']['left'] = \
+          [['MOVES', '[-0.04, 0.0, -0.15, 0, 0.5, 0]', 5, 'self.bowl_frame']]
+        self.motions['initScooping2']['right'] =\
+          self.motions['initScooping1']['right'][1:2]
 
-        # only for training setup
-        self.motions['initScooping2Random'] = {}
-        self.motions['initScooping2Random']['left'] = []
-        self.motions['initScooping2Random']['right'] = \
-          [['MOVES', '[0.7+random.uniform(-0.1, 0.1), -0.15+random.uniform(-0.1, 0.1),-0.1+random.uniform(-0.1, 0.1), -3.1415, 0.0, 1.57]', 2.],]
+        self.motions['initScooping12'] = {}
+        self.motions['initScooping12']['left'] = \
+          [['MOVES', '[-0.04, 0.0, -0.15, 0, 0.5, 0]', 7, 'self.bowl_frame']]
+          ## self.motions['initScooping2']['left'][0]]
+          ## [self.motions['initScooping1']['left'][0],
+        self.motions['initScooping12']['right'] = \
+          self.motions['initScooping1']['right'][1:2]
+
+
 
         # [Y (from center of bowl away from Pr2), X (towards right gripper), Z (towards floor) ,
         #  roll?, pitch (tilt downwards), yaw?]
@@ -225,27 +231,30 @@ class armReachAction(mpcBaseAction):
 
         ## Feeding motoins --------------------------------------------------------
         # It uses the l_gripper_spoon_frame aligned with mouth
-        self.motions['initFeeding'] = {}
-        self.motions['initFeeding']['left'] = [['MOVEJ', '[0.327, 0.205, 1.05, -2.08, 2.57, -1.29, 0.576]', 5.0]]
-        self.motions['initFeeding']['right'] = [['MOVES', '[0.22, 0., -0.55, 0., -1.85, 0.]',
-                                                 5., 'self.mouth_frame'],
-                                                ['PAUSE', 2.0]]
 
         self.motions['initFeeding1'] = {}
-        self.motions['initFeeding1']['left'] =
-        [['MOVEJ', '[0.6447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 1.1291]', 5.0],]        
+        self.motions['initFeeding1']['left'] =\
+          [['MOVEJ', '[0.9447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 1.1291]', 5.0],]        
+        self.motions['initFeeding1']['right'] =\
+          [['MOVES', '[0.22, 0., -0.55, 0., -1.85, 0.]', 5., 'self.mouth_frame']]
 
         self.motions['initFeeding2'] = {}
-        self.motions['initFeeding2']['left'] =
+        self.motions['initFeeding2']['left'] =\
         [['MOVEL', '[-0.06, -0.1, -0.2, -0.6, 0., 0.]', 5., 'self.mouth_frame']]
 
         self.motions['initFeeding3'] = {}
-        self.motions['initFeeding3']['left'] =
+        self.motions['initFeeding3']['left'] =\
         [['MOVEL', '[-0.005+self.mouthOffset[0], self.mouthOffset[1], -0.15+self.mouthOffset[2], 0., 0., 0.]',
           5., 'self.mouth_frame'],\
-        ['PAUSE', 1.0]]
+        ['PAUSE', 0.0]]
+
+        self.motions['initFeeding13'] = {}
+        self.motions['initFeeding13']['right'] = self.motions['initFeeding1']['right'][:1]
+        self.motions['initFeeding13']['left'] = [self.motions['initFeeding1']['left'][0],
+                                               self.motions['initFeeding3']['left'][0]]        
+        
         self.motions['runFeeding'] = {}
-        self.motions['runFeeding']['left'] =
+        self.motions['runFeeding']['left'] =\
         [['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], self.mouthOffset[2], 0., 0., 0.]',
           3., 'self.mouth_frame'],\
         ['PAUSE', 0.0],
@@ -339,10 +348,11 @@ class armReachAction(mpcBaseAction):
         mouth_z.Normalize()
         mouth_x = PyKDL.Vector(0.0, 0.0, 1.0)
 
-        # only viz
-        # (optional) publish pose for visualization
-        ps = dh.gen_pose_stamped(PyKDL.Frame(M,p), 'torso_lift_link', rospy.Time.now() )
-        self.mouth_pub.publish(ps)
+        if self.viz:
+            # only viz
+            # (optional) publish pose for visualization
+            ps = dh.gen_pose_stamped(PyKDL.Frame(M,p), 'torso_lift_link', rospy.Time.now() )
+            self.mouth_pub.publish(ps)
 
         # fix mouth direction to y-direction of robot frame (temp??)
         mouth_z = PyKDL.Vector(0.0, 1.0, 0.0)
@@ -368,8 +378,7 @@ class armReachAction(mpcBaseAction):
         self.feeding_dist_pub.publish(msg)
         self.mouthOffset = self.mouthManOffset+self.mouthNoise
         
-        
-
+       
     def stopCallback(self, msg):
         print '\n\nAction Interrupted! Event Stop\n\n'
         print 'Interrupt Data:', msg.data
@@ -408,9 +417,10 @@ class armReachAction(mpcBaseAction):
 
         self.bowlPosition = np.array([p[0], p[1], p[2]])
 
-        # 4. (optional) publish pose for visualization
-        ps = dh.gen_pose_stamped(PyKDL.Frame(M,p), 'torso_lift_link', rospy.Time.now() )
-        self.bowl_pub.publish(ps)
+        if self.viz:
+            # 4. (optional) publish pose for visualization
+            ps = dh.gen_pose_stamped(PyKDL.Frame(M,p), 'torso_lift_link', rospy.Time.now() )
+            self.bowl_pub.publish(ps)
 
         return PyKDL.Frame(M,p)
 
@@ -524,6 +534,7 @@ if __name__ == '__main__':
     controller = 'static'
     #controller = 'actionlib'
     arm        = opt.arm
+    viz        = False
     if opt.arm == 'l':
         tool_id = 1
         verbose = True
@@ -533,7 +544,7 @@ if __name__ == '__main__':
 
 
     rospy.init_node('arm_reacher_feeding_and_scooping')
-    ara = armReachAction(d_robot, controller, arm, tool_id, verbose)
+    ara = armReachAction(d_robot, controller, arm, tool_id, viz=False, verbose=verbose)
     rospy.spin()
 
 
