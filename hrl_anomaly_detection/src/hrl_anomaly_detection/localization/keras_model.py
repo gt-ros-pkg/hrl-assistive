@@ -47,6 +47,7 @@ from keras.optimizers import SGD, Adagrad, Adadelta, RMSprop
 from keras.utils.visualize_util import plot
 from keras.layers.normalization import BatchNormalization
 from keras.regularizers import EigenvalueRegularizer, L1L2Regularizer
+from keras import backend as K
 
 from hrl_execution_monitor.keras_util import model_util as mutil
 random.seed(3334)
@@ -356,24 +357,79 @@ def vgg_multi_top_net(input_shape, n_labels, weights_path=None):
 
 def vgg_multi_image_top_net(input_shape, n_labels, weights_path=None):
 
-    model1 = Sequential()
-    model1.add(Flatten(input_shape=input_shape))
+    weights_file = None
+    if weights_path is not None:
+        weights_file = h5py.File(weights_path, 'r')
+
+    ## model1 = Sequential()
+    ## model1.add(Flatten(input_shape=input_shape))
+    ## #model1.add(BatchNormalization())
+    ## model1.add(Dense(128, init='uniform', name='fc_img1_1', W_regularizer=L1L2Regularizer(0.0,0.0)))
+    ## model1.add(Activation('relu')) 
+    ## model1.add(Dropout(0.4))        
+    ## model1.add(Dense(n_labels, init='uniform', name='fc_img1_2', W_regularizer=L1L2Regularizer(0.0,0.0)))
+    ## model1.add(Activation('relu')) 
+    ## model1.add(Dropout(1.))        
+    
     model2 = Sequential()
     model2.add(Flatten(input_shape=input_shape))
+    model2.add(Dense(128, init='uniform', name='fc_img2_1', W_regularizer=L1L2Regularizer(0.0,0.0)))
+    model2.add(Activation('relu')) 
+    model2.add(Dropout(0.4))        
+    model2.add(Dense(n_labels, init='uniform', name='fc_img2_2', W_regularizer=L1L2Regularizer(0.0,0.0)))
+    model2.add(Activation('relu')) 
+    model2.add(Dropout(0.))        
+    
     model3 = Sequential()
     model3.add(Flatten(input_shape=input_shape))
+    model3.add(Dense(128, init='uniform', name='fc_img3_1', W_regularizer=L1L2Regularizer(0.0,0.0)))
+    model3.add(Activation('relu')) 
+    model3.add(Dropout(0.4))        
+    model3.add(Dense(n_labels, init='uniform', name='fc_img3_2', W_regularizer=L1L2Regularizer(0.0,0.0)))
+    model3.add(Activation('relu')) 
+    model3.add(Dropout(0.))        
 
-    merge = Merge([model1, model2, model3], mode='sum')
+    ## merge = Merge([model1, model2, model3], mode='concat')
+    merge = Merge([model2, model3], mode='concat')
+    ## merge = Merge([model2, model3], mode=euc_dist, output_shape=euc_dist_shape)
     model = Sequential()
     model.add(merge)
+    model.add(BatchNormalization())
 
-    model.add(Dense(1024, init='uniform', name='fc1_1', W_regularizer=L1L2Regularizer(0.0,0.03)))
-    model.add(Activation('relu')) 
-    model.add(Dropout(0.5))        
-    model.add(Dense(128, init='uniform', name='fc1_2', W_regularizer=L1L2Regularizer(0.0,0.01)))
-    model.add(Activation('relu'))
-    model.add(Dropout(0.5))    
+    ## model.add(Dense(1024, init='uniform', name='fc1_1', W_regularizer=L1L2Regularizer(0.0,0.03)))
+    ## model.add(Activation('relu')) 
+    ## model.add(Dropout(0.5))        
+    ## model.add(Dense(128, init='uniform', name='fc1_2', W_regularizer=L1L2Regularizer(0.0,0.01)))
+    ## model.add(Activation('relu'))
+    ## model.add(Dropout(0.5))    
     model.add(Dense(n_labels, activation='softmax', name='fc_img_out'))
    
     if weights_path is not None: model.load_weights(weights_path)
+
+    ## weights_file = h5py.File(weights_path)
+    ## weight = mutil.get_layer_weights(weights_file, layer_name='fc_img2_1')
+    ## print weight
+    ## sys.exit()
+
     return model
+
+
+def euc_dist(x):
+    'Merge function: euclidean_distance(u,v)'
+    s = x[0] - x[1]
+    output = K.sum( s**2, axis=1)
+    output = K.expand_dims(output,1)
+    return output
+
+def euc_dist_shape(input_shape):
+    'Merge output shape'
+    shape = list(input_shape)
+    outshape = (shape[0][0],1)
+    return tuple(outshape)
+
+def sqrt_diff(X):
+    s = X[0]
+    for i in range(1, len(X)):
+        s -= X[i]
+        s = K.sqrt(K.square(s) + 1e-7)
+    return s
