@@ -79,7 +79,6 @@ class logger:
         
         # GUI
         self.feedbackMSG = 0
-        self.feedbackStatus = 0        
         
         self.initParams()
 
@@ -106,7 +105,10 @@ class logger:
         ''' load parameters '''        
         # File saving
         self.folderName = os.path.join(self.record_root_path, self.subject + '_' + self.task)
-        self.nDetector  = rospy.get_param(self.task+'/nDetector')
+        if self.enable_detector:
+            self.nDetector = rospy.get_param(self.task+'/nDetector')
+        else:
+            self.nDetector = 0
 
         
     def initComms(self, task):
@@ -127,9 +129,8 @@ class logger:
     def feedbackCallback(self, msg):
         ''' GUI implementation '''
         #Just...log? idk where this one will go. I assume it is integrated with log....
-        print "Logger feedback received"
+        print "Logger feedback received: ", msg
         self.feedbackMSG = msg.data
-        self.feedbackStatus = feedback_to_label(msg.data)
                     
     def isolationCallback(self, msg):
         ''' save isolated class '''
@@ -240,18 +241,17 @@ class logger:
         # logging by thread
         self.log_stop()
 
-        self.feedbackStatus = 0
         if bCont:
             status = last_status
         else:
             rate = rospy.Rate(2)
-            while self.feedbackStatus == 0 and not rospy.is_shutdown():
+            while self.feedbackMSG == 0 and not rospy.is_shutdown():
                 self.data['feedback'] = self.feedbackMSG
                 rate.sleep()
 
-            status = self.feedbackStatus
-            self.feedbackStatus=0
-            print status
+            status = feedback_to_label(self.feedbackMSG)
+            self.feedbackMSG=0
+            print "Feedback status: ", status
 
                            
         if status == 'success' or status == 'failure':

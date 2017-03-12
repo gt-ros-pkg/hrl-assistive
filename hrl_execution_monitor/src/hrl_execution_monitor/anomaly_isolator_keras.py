@@ -387,6 +387,7 @@ if __name__ == '__main__':
         ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo3'
         save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo'
         save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/'+opt.task+'_demo2'
+        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017/feeding_demo4_henry_isol'    
         
     else:
         rospy.loginfo( "Not supported task")

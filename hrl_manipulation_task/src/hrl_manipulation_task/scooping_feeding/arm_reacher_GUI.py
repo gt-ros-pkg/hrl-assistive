@@ -460,7 +460,7 @@ if __name__ == '__main__':
         # for adaptation, please add 'new' as the subject.         
         log = logger(ft=True, audio=False, audio_wrist=True, kinematics=True, vision_artag=False, \
                      vision_landmark=True, vision_change=False, pps=False, skin=True, \
-                     subject="henry_s6", task='feeding', data_pub=opt.bDataPub,
+                     subject="test", task='feeding', data_pub=opt.bDataPub,
                      en_ad=opt.en_ad, en_ai=opt.en_ai,\
                      record_root_path=opt.sRecordDataPath)
     else:
