@@ -104,7 +104,7 @@ def test(save_data_path, n_labels=12, n_folds=8, verbose=False):
 def multi_level_test(save_data_path, n_labels=12, n_folds=8, verbose=False):
 
     fold_list = range(nFold)
-    fold_list = [6]#,7]
+    fold_list = [7]
 
     save_data_path = os.path.join(save_data_path, 'keras')
     
