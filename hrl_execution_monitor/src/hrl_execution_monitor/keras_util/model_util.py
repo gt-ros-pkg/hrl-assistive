@@ -40,8 +40,12 @@ def get_layer_weights(weights_file=None, layer_name=None):
         ## print weights_file.keys()
         if len(weights_file.keys())==0:
             print "Empty weights file: ", weights_file
-        g = weights_file[layer_name]
+        g = weights_file[layer_name.decode('utf8')]
         weights = [g[p] for p in g]
+        if layer_name.find('batchnormalization')>=0:
+            # gamma beta order is reversed...
+            weights = [weights[1], weights[0], weights[2], weights[3]]
+        
         print 'Weights for "{}" are loaded'.format(layer_name)
         return weights
                                                     

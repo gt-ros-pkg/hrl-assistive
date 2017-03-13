@@ -187,7 +187,7 @@ class multiImgGenerator():
                                                img_size[1]/4-height/4:((img_size[1]+height/2)+img_size[1])/2],
                                                np.shape(img)[:2])
                         img1 = img1.transpose((2,0,1))
-                        if x_batch1 is None:
+                        if x_batch_1 is None:
                             x_batch_1 = np.expand_dims(img1, axis=0)
                         else:
                             x_batch_1 = np.vstack([x_batch_1, np.expand_dims(img1, axis=0)])
