@@ -118,7 +118,7 @@ class armReachAction(mpcBaseAction):
         self.kinect_pause = rospy.Publisher('/head_mount_kinect/pause_kinect', String, queue_size=QUEUE_SIZE, latch=False)
 
         if self.arm_name == 'left':
-            self.feeding_dist_pub = rospy.Publisher('/feeding/manipulation_task/feeding_dist_state', Int64, queue_size=QUEUE_SIZE, latch=True)
+            self.feeding_dist_pub = rospy.Publisher('/feeding/manipulation_task/mouth_depth_offset', Int64, queue_size=QUEUE_SIZE, latch=True)
             msg = Int64()
             msg.data = int(self.mouthManOffset[2]*100.0)
             self.feeding_dist_pub.publish(msg)

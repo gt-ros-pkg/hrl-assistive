@@ -376,9 +376,6 @@
                     <tr>
                       <td colspan='5'>
                         <table id="man_task_status" style="width:600px">
-                          <!--tr>
-                            <th style="text-align:center">1. Select a Task</th>
-                          </tr-->
                           <tr>
                             <td>
                               <button class="centered man_task_cont" id='man_task_Scooping' style="font-size:200%">Scooping</button>
@@ -386,59 +383,12 @@
                           </tr>
                           <tr>
                             <td>
-                              <button class="centered man_task_cont" id='man_task_Feeding' style="font-size:200%">Feeding</button>
-                            </td>
-                          </tr>
-                          <tr>
-                            <td>
                               <button class="centered man_task_cont" id='man_task_Clean' style="font-size:200%">Clean Spoon</button>
                             </td>
                           </tr>
-                        </table>
-                      </td>
-                      <td hidden align="center">
-                        <img id="right_arrows_man1" src="css/arrows/translate_right_on.png" width="50" height="50" >
-                      </td hidden>
-                      <td hidden>
-                        <table id="man_task_buttons" style="width:250px">
-                          <tr hidden>
-                            <td>
-                              <button class="centered man_task_cont" id='man_task_start' style="font-size:120%; opacity: 0.6">Start</button>
-                            </td>
-                          </tr>
                           <tr>
                             <td>
-                              <button class="centered man_task_cont" id='man_task_Continue' style="font-size:120%; opacity: 0.6">Continue</button>
-                            </td>
-                          </tr>
-                          <tr>
-                            <td>
-                              <button class="centered man_task_cont" id='man_task_stop' style="font-size:120%; opacity: 0.6">Stop</button>
-                            </td>
-                          </tr>
-                        </table>
-                      </td hidden>
-                      <td hidden>
-                        <img id="right_arrows_man1" src="css/arrows/translate_right_on.png" width="50" height="50" >
-                      </td>
-                      <td hidden>
-                        <table id="man_task_feedback">
-                          <tr>
-                            <th style="text-align:center">3.Select a Feedback</th>
-                          </tr>
-                          <tr>
-                            <td>
-                              <button class="centered man_task_cont" id='man_task_success' style="font-size:120%; opacity: 0.6">Success</button>
-                            </td>
-                          </tr>
-                          <tr>
-                            <td>
-                              <button class="centered man_task_cont" id='man_task_Fail' style="font-size:120%; opacity: 0.6">Failure</button>
-                            </td>
-                          </tr>
-                          <tr>
-                            <td>
-                              <button class="centered man_task_cont" id='man_task_Skip' style="font-size:120%; opacity: 0.6">Skip</button>
+                              <button class="centered man_task_cont" id='man_task_Feeding' style="font-size:200%">Feeding</button>
                             </td>
                           </tr>
                         </table>
@@ -469,10 +419,63 @@
                       <td colspan="5" style="text-align:center">
                         <button id='man_task_Advanced'> Advanced </button>
                     </tr>
-                    <tr style="height:10px"><td></td></tr>
                     <tr id="advanced_setting_disp" style="display:none">
                       <td colspan='5'>
                         <table>
+                          <tr>
+                            <td colspan='5'>
+                              <table style="width:100%;text-align:center">
+                                <tr>
+                                <td colspan='1'>
+                                  Depth offset
+                                </td>
+                                <td colspan='1'>
+                                  Horizontal offset
+                                </td>
+                                <td colspan='1'>
+                                  Vertical offset
+                                </td>
+                                </tr>
+                                <tr>
+                                  <td colspan='1'>
+                                    <select id="man_task_Feeding_depth_offset">
+                                      <option value="2"> 2cm </option>
+                                      <option value="3"> 3cm </option>
+                                      <option value="4"> 4cm </option>
+                                      <option value="5" selected> 5cm </option>
+                                      <option value="6"> 6cm </option>
+                                      <option value="7"> 7cm </option>
+                                      <option value="8"> 8cm </option>
+                                      <option value="9"> 9cm </option>
+                                    </select>
+                                  </td>
+                                  <td colspan='1'>
+                                    <select id="man_task_Feeding_horiz_dist">
+                                      <option value="-3"> -3cm </option>
+                                      <option value="-2"> -2cm </option>
+                                      <option value="-1"> -1cm </option>
+                                      <option value="0" selected> 0cm </option>
+                                      <option value="1"> 1cm </option>
+                                      <option value="2"> 2cm </option>
+                                      <option value="3"> 3cm </option>
+                                    </select>
+                                  </td>
+                                  <td colspan='1'>
+                                    <select id="man_task_Feeding_vert_dist">
+                                      <option value="-3"> -3cm </option>
+                                      <option value="-2"> -2cm </option>
+                                      <option value="-1"> -1cm </option>
+                                      <option value="0" selected> 0cm </option>
+                                      <option value="1"> 1cm </option>
+                                      <option value="2"> 2cm </option>
+                                      <option value="3"> 3cm </option>
+                                    </select>
+                                  </td>
+                                </tr>
+                              </table>
+                            </td>
+                          </tr>
+                          <tr style="height:10px"> <td> </td></tr>
                           <tr>
                             <th colspan='5'
                                 style="text-align:center">Scooping Anomaly Detection Sensitivity</th>
@@ -514,12 +517,12 @@
                                 </tr>
                               </table>
                             </td>
-                        </tr>
-                          <tr style="height:20px"><td></td></tr>
+                          </tr>
+                          <tr style="height:10px"><td></td></tr>
                           <tr>
                             <th colspan='5'
                                 style="text-align:center">Feeding Anomaly Detection Sensitivity</th>
-                        </tr>
+                          </tr>
                           <tr>
                             <td colspan='5'>
                               <table>
@@ -554,31 +557,6 @@
                                     <label id="ad_feeding_result_2"> 0.0% </label>
                                   </td>
                               </tr>
-                              </table>
-                            </td>
-                          </tr>
-                          <tr>
-                            <td colspan='5'>
-                              <table style="width:100%;text-align:center">
-                                <tr>
-                                <td colspan='1'>
-                                  please select feeding distance
-                                </td>
-                                </tr>
-                                <tr>
-                                  <td colspan='1'>
-                                    <select id="man_task_Feeding_dist">
-                                      <option value="2"> 2cm </option>
-                                      <option value="3"> 3cm </option>
-                                      <option value="4"> 4cm </option>
-                                      <option value="5" selected> 5cm </option>
-                                      <option value="6"> 6cm </option>
-                                      <option value="7"> 7cm </option>
-                                      <option value="8"> 8cm </option>
-                                      <option value="9"> 9cm </option>
-                                    </select>
-                                  </td>
-                                </tr>
                               </table>
                             </td>
                           </tr>

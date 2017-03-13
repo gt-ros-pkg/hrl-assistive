@@ -119,7 +119,7 @@ class armReachAction(mpcBaseAction):
                                             queue_size=QUEUE_SIZE, latch=False)
 
         if self.arm_name == 'left':
-            self.feeding_dist_pub = rospy.Publisher('/feeding/manipulation_task/feeding_dist_state',
+            self.feeding_dist_pub = rospy.Publisher('/feeding/manipulation_task/mouth_depth_offset',
                                                     Int64, queue_size=QUEUE_SIZE, latch=True)
             msg = Int64()
             msg.data = int(self.mouthManOffset[2]*100.0)

@@ -108,6 +108,11 @@ class armReachAction(mpcBaseAction):
                 self.pubCurEEPose()
             rate.sleep()
 
+        if self.arm_name == 'left':
+            self.feeding_depth_pub.publish( Int64(int(self.mouthManOffset[2]*100.0)) )
+            self.feeding_horiz_pub.publish( Int64(int(self.mouthManOffset[2]*100.0)) )            
+            self.feeding_vert_pub.publish( Int64(int(self.mouthManOffset[2]*100.0)) )
+
         rospy.loginfo("Arm Reach Action is initialized.")
 
     def initCommsForArmReach(self):
@@ -120,15 +125,18 @@ class armReachAction(mpcBaseAction):
         self.ee_pose_pub = rospy.Publisher('/hrl_manipulation_task/arm_reacher/'+self.arm_name+\
                                            '_ee_pose', PoseStamped,
                                            queue_size=QUEUE_SIZE, latch=True)
-        self.bowl_height_init_pub = rospy.Publisher('/hrl_manipulation_task/arm_reacher/init_bowl_height', Empty,
-                                        queue_size=QUEUE_SIZE, latch=True)
-        self.kinect_pause = rospy.Publisher('/head_mount_kinect/pause_kinect', String, queue_size=QUEUE_SIZE, latch=False)
+        self.bowl_height_init_pub = rospy.Publisher('/hrl_manipulation_task/arm_reacher/init_bowl_height',
+                                                    Empty, queue_size=QUEUE_SIZE, latch=True)
+        self.kinect_pause = rospy.Publisher('/head_mount_kinect/pause_kinect', String,
+                                            queue_size=QUEUE_SIZE, latch=False)
 
         if self.arm_name == 'left':
-            self.feeding_dist_pub = rospy.Publisher('/feeding/manipulation_task/feeding_dist_state', Int64, queue_size=QUEUE_SIZE, latch=True)
-            msg = Int64()
-            msg.data = int(self.mouthManOffset[2]*100.0)
-            self.feeding_dist_pub.publish(msg)
+            self.feeding_depth_pub = rospy.Publisher('/feeding/manipulation_task/mouth_depth_offset',
+                                                     Int64, queue_size=QUEUE_SIZE, latch=True)
+            self.feeding_horiz_pub = rospy.Publisher('/feeding/manipulation_task/mouth_horiz_offset',
+                                                     Int64, queue_size=QUEUE_SIZE, latch=True)
+            self.feeding_vert_pub = rospy.Publisher('/feeding/manipulation_task/mouth_vert_offset',
+                                                    Int64, queue_size=QUEUE_SIZE, latch=True)
 
         # subscribers
         rospy.Subscriber('/manipulation_task/InterruptAction', String, self.stopCallback)
@@ -139,7 +147,7 @@ class armReachAction(mpcBaseAction):
                          PoseStamped, self.mouthPoseCallback)
         rospy.Subscriber('/hrl_manipulation_task/mouth_noise', FloatArray, self.mouthNoiseCallback)
         if self.arm_name == 'left':
-            rospy.Subscriber('/feeding/manipulation_task/feeding_dist_request', Int64, self.feedingDistCallback)
+            rospy.Subscriber('/feeding/manipulation_task/mouth_depth_request', Int64, self.feedingDepthCallback)
 
         # service
         self.reach_service = rospy.Service('arm_reach_enable', String_String, self.serverCallback)
@@ -425,12 +433,12 @@ class armReachAction(mpcBaseAction):
         self.mouthOffset = self.mouthManOffset+self.mouthNoise
         
 
-    def feedingDistCallback(self, msg):
-        print "Feeding distance requested ", msg.data
+    def feedingDepthCallback(self, msg):
+        print "Feeding depth requested ", msg.data
         self.mouthManOffset[2] = float(msg.data)/100.0
         msg = Int64()
         msg.data = int(self.mouthManOffset[2]*100.0)
-        self.feeding_dist_pub.publish(msg)
+        self.feeding_depth_pub.publish(msg)
         self.mouthOffset = self.mouthManOffset+self.mouthNoise
         
         
