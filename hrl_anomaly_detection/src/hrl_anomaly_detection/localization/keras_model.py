@@ -127,7 +127,7 @@ def sig_net(input_shape, n_labels, weights_path=None, activ_type='relu' ):
     model = Sequential()
     model.add(Dense(128, init='uniform', input_shape=input_shape,
                     W_regularizer=L1L2Regularizer(0.0,0.0),\
-                    name='fc2_1'))
+                    name='fc_sig_1'))
     model.add(Activation(activ_type))
     model.add(Dropout(0.2))
     ## model.add(Dense(128, init='uniform', input_shape=input_shape,
