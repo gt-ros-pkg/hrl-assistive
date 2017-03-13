@@ -104,7 +104,7 @@ def test(save_data_path, n_labels=12, n_folds=8, verbose=False):
 def multi_level_test(save_data_path, n_labels=12, n_folds=8, verbose=False):
 
     fold_list = range(nFold)
-    ## fold_list = [4]
+    fold_list = [0]
 
     save_data_path = os.path.join(save_data_path, 'keras')
 
@@ -119,8 +119,8 @@ def multi_level_test(save_data_path, n_labels=12, n_folds=8, verbose=False):
     ##                            multi=True, load_weights=True, test_only=True)
      
     # training_with images -----------------------------------
-    train_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=1000, patience=10,
-                           multi=True)
+    train_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=1000, patience=10)
+    train_model_with_image(save_data_path, n_labels, fold_list, test_only=True)
 
 
 ## def get_model():
@@ -187,11 +187,6 @@ def train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=400
             
         if test_only is False:
             if multi:
-                ## hist = model.fit([x_train[0], x_train[1], x_train[2]], y_train,
-                                 ## nb_epoch=nb_epoch, batch_size=4096, shuffle=True,
-                                 ## validation_data=([x_test[0], x_test[1], x_test[2]], y_test),
-                                 ## callbacks=callbacks,
-                                 ## class_weight=class_weight)
                 hist = model.fit([x_train[1], x_train[2]], y_train,
                                  nb_epoch=nb_epoch, batch_size=1024, shuffle=True,
                                  validation_data=([x_test[1], x_test[2]], y_test),
@@ -205,7 +200,6 @@ def train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=400
             scores.append( hist.history['val_acc'][-1] )
         else:
             if multi:
-                ## y_pred = model.predict([x_test[0], x_test[1], x_test[2]])
                 y_pred = model.predict([x_test[1], x_test[2]])
             else:
                 y_pred = model.predict(x_test)
@@ -272,25 +266,28 @@ def train_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=400, lo
         if load_weights is False:
             top_weights_path = os.path.join(save_data_path,prefix+'cnn_weights_'+str(idx)+'.h5')
             model = km.vgg_multi_image_net(np.shape(x_train_img)[1:], n_labels,
-                                           top_weights_path=top_weights_path)
-            model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
+                                           top_weights_path=top_weights_path,
+                                           fine_tune=True)
+            ## model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
         else:
             print "Load weight!!!!!!!!!!!!!!!"
             model = km.vgg_multi_image_net(np.shape(x_train_img)[1:], n_labels,
-                                           full_weights_path=full_weights_path)
+                                           full_weights_path=full_weights_path,
+                                           fine_tune=True)
             ## optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.001)
-            optimizer = SGD(lr=0.001, decay=1e-7, momentum=0.9, nesterov=True)                
-            model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+        optimizer = SGD(lr=0.001, decay=1e-7, momentum=0.9, nesterov=True)                
+        model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
         
         class_weight={}
         for i in xrange(n_labels): class_weight[i] = 1.0
 
         # ------------------------------------------------------------
+        
         if test_only is False:
             train_datagen = ku.multiImgGenerator(augmentation=True, rescale=1./255.)
             test_datagen = ku.multiImgGenerator(augmentation=False, rescale=1./255.)
-            train_generator = train_datagen.flow(x_train, y_train, batch_size=1024) 
-            test_generator = test_datagen.flow(x_test, y_test, batch_size=1024) 
+            train_generator = train_datagen.flow(x_train_img, y_train, batch_size=32) 
+            test_generator = test_datagen.flow(x_test_img, y_test, batch_size=32)
 
             hist = model.fit_generator(train_generator,
                                        samples_per_epoch=len(y_train),
@@ -303,9 +300,16 @@ def train_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=400, lo
             scores.append( hist.history['val_acc'][-1] )
 
         else:
-            # TODO
-            ## y_pred = model.predict([x_test[0], x_test[1], x_test[2]])
-            y_pred = model.predict([x_test[1], x_test[2]])
+            ## x_test_img = x_train_img
+            ## y_test = y_train
+            
+            test_datagen = ku.multiImgGenerator(augmentation=False, rescale=1./255.)
+            for x_batch, y_batch in test_datagen.flow(x_test_img, y_test, batch_size=len(x_test_img),
+                                                      shuffle=False):
+                x = x_batch
+                y = y_batch
+                break
+            y_pred = model.predict([x[0], x[1]])
                 
             if cause_class:
                 # cause classification
