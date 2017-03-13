@@ -115,12 +115,12 @@ def multi_level_test(save_data_path, n_labels=12, n_folds=8, verbose=False):
     ##                           multi=True)
     ## train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=1, patience=100,
     ##                            multi=True, load_weights=True)
-    train_top_model_with_image(save_data_path, n_labels, fold_list,\
-                               multi=True, load_weights=True, test_only=True)
+    ## train_top_model_with_image(save_data_path, n_labels, fold_list,\
+    ##                            multi=True, load_weights=True, test_only=True)
      
     # training_with images -----------------------------------
-    ## train_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=1000, patience=10,
-    ##                        multi=True)
+    train_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=1000, patience=10,
+                           multi=True)
 
 
 ## def get_model():
@@ -242,31 +242,27 @@ def train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=400
 
 
 def train_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=400, load_weights=False,
-                           vgg=True,\
-                           patience=5, remove_label=[], use_extra_img=True, test_only=False,\
-                           cause_class=True, multi=False):
-    prefix = 'vgg_'
+                           vgg=True, patience=5, use_extra_img=True, test_only=False,\
+                           cause_class=True):
+    if vgg: prefix = 'vgg_'
+    else: prefix = ''
 
     scores= []
     y_pred_list = []
     y_test_list = []
     for idx in fold_list:
 
-        bt_data_path = os.path.join(save_data_path, 'bt')
-        if test_only is False:
-            x_train = np.load(open(os.path.join(bt_data_path,'x_train_bt_'+str(idx)+'.npy')))
-            y_train = np.load(open(os.path.join(bt_data_path,'y_train_bt_'+str(idx)+'.npy')))
-        x_test = np.load(open(os.path.join(bt_data_path,'x_test_bt_'+str(idx)+'.npy')))
-        y_test = np.load(open(os.path.join(bt_data_path,'y_test_bt_'+str(idx)+'.npy')))
+        # Loading data
+        train_data, test_data = autil.load_data(idx, save_data_path, extra_img=use_extra_img, viz=False)      
+        x_train_img = train_data[1] # sample x 3 x 224 x 224
+        y_train     = train_data[2]
+        x_test_img = test_data[1]
+        y_test     = test_data[2]
 
-        weights_path = os.path.join(save_data_path,prefix+'cnn_weights_'+str(idx)+'.h5')
-        if os.path.isfile(weights_path) is False:
-            print weights_path
-            sys.exit()
-        
+        full_weights_path = os.path.join(save_data_path,prefix+'multi_img_weights_'+str(idx)+'.h5')
         callbacks = [EarlyStopping(monitor='val_loss', min_delta=0, patience=patience,
                                    verbose=0, mode='auto'),
-                     ModelCheckpoint(weights_path,
+                     ModelCheckpoint(full_weights_path,
                                      save_best_only=True,
                                      save_weights_only=True,
                                      monitor='val_loss'),
@@ -274,45 +270,42 @@ def train_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=400, lo
                                        patience=5, min_lr=0.00001)]
 
         if load_weights is False:
-            if multi: model = km.vgg_multi_image_top_net(np.shape(x_test[1])[1:], n_labels)
-            else:     model = km.vgg_image_top_net(np.shape(x_test)[1:], n_labels)
+            top_weights_path = os.path.join(save_data_path,prefix+'cnn_weights_'+str(idx)+'.h5')
+            model = km.vgg_multi_image_net(np.shape(x_train_img)[1:], n_labels,
+                                           top_weights_path=top_weights_path)
             model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
         else:
             print "Load weight!!!!!!!!!!!!!!!"
-            if multi: model = km.vgg_multi_image_top_net(np.shape(x_test[1])[1:], n_labels, weights_path)
-            else:     model = km.vgg_image_top_net(np.shape(x_test)[1:], n_labels, weights_path)
-            optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.001)
+            model = km.vgg_multi_image_net(np.shape(x_train_img)[1:], n_labels,
+                                           full_weights_path=full_weights_path)
+            ## optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.001)
             optimizer = SGD(lr=0.001, decay=1e-7, momentum=0.9, nesterov=True)                
             model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
-
         
         class_weight={}
         for i in xrange(n_labels): class_weight[i] = 1.0
-            
+
+        # ------------------------------------------------------------
         if test_only is False:
-            if multi:
-                ## hist = model.fit([x_train[0], x_train[1], x_train[2]], y_train,
-                                 ## nb_epoch=nb_epoch, batch_size=4096, shuffle=True,
-                                 ## validation_data=([x_test[0], x_test[1], x_test[2]], y_test),
-                                 ## callbacks=callbacks,
-                                 ## class_weight=class_weight)
-                hist = model.fit([x_train[1], x_train[2]], y_train,
-                                 nb_epoch=nb_epoch, batch_size=1024, shuffle=True,
-                                 validation_data=([x_test[1], x_test[2]], y_test),
-                                 callbacks=callbacks,
-                                 class_weight=class_weight)
-            else:
-                hist = model.fit(x_train, y_train, nb_epoch=nb_epoch, batch_size=4096, shuffle=True,
-                                 validation_data=(x_test, y_test), callbacks=callbacks,
-                                 class_weight=class_weight)
+            train_datagen = ku.multiImgGenerator(augmentation=True, rescale=1./255.)
+            test_datagen = ku.multiImgGenerator(augmentation=False, rescale=1./255.)
+            train_generator = train_datagen.flow(x_train, y_train, batch_size=1024) 
+            test_generator = test_datagen.flow(x_test, y_test, batch_size=1024) 
+
+            hist = model.fit_generator(train_generator,
+                                       samples_per_epoch=len(y_train),
+                                       nb_epoch=nb_epoch,
+                                       validation_data=test_generator,
+                                       nb_val_samples=len(y_test),
+                                       callbacks=callbacks,
+                                       class_weight=class_weight)
 
             scores.append( hist.history['val_acc'][-1] )
+
         else:
-            if multi:
-                ## y_pred = model.predict([x_test[0], x_test[1], x_test[2]])
-                y_pred = model.predict([x_test[1], x_test[2]])
-            else:
-                y_pred = model.predict(x_test)
+            # TODO
+            ## y_pred = model.predict([x_test[0], x_test[1], x_test[2]])
+            y_pred = model.predict([x_test[1], x_test[2]])
                 
             if cause_class:
                 # cause classification
@@ -419,7 +412,7 @@ def get_multi_bottleneck_images(save_data_path, n_labels, fold_list, vgg=True, u
             fill_mode='nearest',
             dim_ordering="th")
 
-        x_ = [None, None, None]
+        x_ = [None, None]
         y_ = None
         width  = 70
         height = 70

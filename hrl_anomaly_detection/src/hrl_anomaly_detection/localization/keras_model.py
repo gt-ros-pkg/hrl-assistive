@@ -145,10 +145,8 @@ def sig_net(input_shape, n_labels, weights_path=None, activ_type='relu' ):
     return model
 
 
-def vgg16_net(input_shape, n_labels, weights_path=None,\
-              sig_weights_path=None, img_weights_path=None,\
-              with_multi_top=False, with_img_top=False, bottle_model=False, \
-              input_shape2=None, fine_tune=False, viz=False):
+def vgg16_net(input_shape, n_labels=None, weights_path=None,\
+              fine_tune=False):
     
     # build the VGG16 network
     model = Sequential()
@@ -189,25 +187,26 @@ def vgg16_net(input_shape, n_labels, weights_path=None,\
     model.add(Convolution2D(512, 3, 3, activation='relu', name='conv5_3'))
     model.add(MaxPooling2D((2, 2), strides=(2, 2)))
 
-    if vgg_weights_path is not None:       
-        # load the weights of the VGG16 networks
-        # (trained on ImageNet, won the ILSVRC competition in 2014)
-        # note: when there is a complete match between your model definition
-        # and your weight savefile, you can simply call model.load_weights(filename)        
-        assert os.path.exists(vgg_weights_path), \
-          'Model weights not found (see "weights_path" variable in script).'
-        f = h5py.File(vgg_weights_path)
-        for k in range(f.attrs['nb_layers']):
-            if k >= len(model.layers):
-                # we don't look at the last (fully-connected) layers in the savefile
-                break
-            g = f['layer_{}'.format(k)]
-            weights = [g['param_{}'.format(p)] for p in range(g.attrs['nb_params'])]
-            model.layers[k].set_weights(weights)
-        f.close()
-        print('Model loaded.')
-    # 31 layers---------------------------------------------------------------
+    if weights_path is None: weights_path = vgg_weights_path 
+        
+    # load the weights of the VGG16 networks
+    # (trained on ImageNet, won the ILSVRC competition in 2014)
+    # note: when there is a complete match between your model definition
+    # and your weight savefile, you can simply call model.load_weights(filename)
+    assert os.path.exists(weights_path), \
+      'Model weights not found (see "weights_path" variable in script).'
+    f = h5py.File(weights_path)
 
+    for k in range(f.attrs['nb_layers']):
+        if k >= len(model.layers):
+            # we don't look at the last (fully-connected) layers in the savefile
+            break
+        g = f['layer_{}'.format(k)]
+        weights = [g['param_{}'.format(p)] for p in range(g.attrs['nb_params'])]
+        model.layers[k].set_weights(weights)
+    f.close()
+    print('Model loaded.')
+    # 31 layers---------------------------------------------------------------
 
     if fine_tune and False:
         for layer in model.layers[:25]:
@@ -216,90 +215,7 @@ def vgg16_net(input_shape, n_labels, weights_path=None,\
         for layer in model.layers:
             layer.trainable = False
 
-
-    if with_multi_top:
-        model.add(Flatten())
-
-        # -----------------------------------------------------------
-        weights_file = None
-        if img_weights_path:
-            weights_file = h5py.File(img_weights_path)
-        else:
-            weights_file = h5py.File(weights_path)
-            
-        weight1_1 = mutil.get_layer_weights(weights_file, layer_name='fc1_1')                
-        model.add(Dense(1024, init='uniform', weights=weight1_1, name='fc1_1',
-                        W_regularizer=L1L2Regularizer(0.0,0.03)))
-        model.add(Activation('relu'))
-        model.add(Dropout(0.5))        
-        # -----------------------------------------------------------
-        weight1_2 = mutil.get_layer_weights(weights_file, layer_name='fc1_2')        
-        model.add(Dense(128, init='uniform', weights=weight1_2, name='fc1_2',
-                        W_regularizer=L1L2Regularizer(0.0,0.01)))
-        model.add(Activation('relu'))
-        model.add(Dropout(0.5))        
-        # -----------------------------------------------------------
-        weight1_3 = mutil.get_layer_weights(weights_file, layer_name='fc_img_out')        
-        model.add(Dense(n_labels, init='uniform', weights=weight1_3, name='fc_img_out'))
-        model.add(Activation('softmax'))
-
-
-        if not fine_tune:
-            for layer in model.layers[31:]:
-                layer.trainable = False
-        ## else:
-        ##     for layer in model.layers:
-        ##         layer.trainable = False
-            
-        if weights_path: weights_file.close()        
-        # -----------------------------------------------------------
-        # -----------------------------------------------------------
-        weights_file = None
-        if sig_weights_path:
-            weights_file = h5py.File(sig_weights_path)
-        else:
-            weights_file = h5py.File(weights_path, 'r')
-        weight2_1 = mutil.get_layer_weights(weights_file, layer_name='fc2_1')
-        
-        sig_model = Sequential()
-        sig_model.add(Dense(128, init='uniform', weights=weight2_1,
-                            input_shape=input_shape2, name='fc2_1',
-                            W_regularizer=L1L2Regularizer(0.0,0.0)))
-        sig_model.add(Activation('relu'))        
-        sig_model.add(Dropout(0.2))
-        # -----------------------------------------------------------
-        weight2_2 = mutil.get_layer_weights(weights_file, layer_name='fc_sig_out')        
-        sig_model.add(Dense(n_labels, init='uniform', weights=weight2_2, name='fc_sig_out'))
-        sig_model.add(Activation('softmax'))
-
-        if not fine_tune:
-            for layer in sig_model.layers:
-                layer.trainable = False
-        
-        if weights_path: weights_file.close()        
-        # -----------------------------------------------------------
-        merge   = Merge([model, sig_model], mode='mul') 
-        c_model = Sequential()
-        c_model.add(merge)
-
-        ## if bottle_model: return c_model            
-        ## if weights_path: weights_file = h5py.File(weights_path, 'r')
-        ## else: weights_file = None
-        ## weight3_1 = mutil.get_layer_weights(weights_file, layer_name='fc3_1')
-        ## weight_fc_out = mutil.get_layer_weights(weights_file, layer_name='fc_out')        
-                
-        ## c_model.add(Dense(256, activation='relu', init='uniform', weights=weight3_1, name='fc3_1',
-        ##                   W_regularizer=L1L2Regularizer(0,0.05)))
-        ## c_model.add(Dropout(0.0))
-        ## c_model.add(Dense(n_labels, activation='softmax', name='fc_out', weights=weight_fc_out,
-        ##             W_regularizer=L1L2Regularizer(0,0)))
-        
-        ## if weights_path: weights_file.close()        
-        return c_model
-    
-    
-    else:
-        return model
+    return model
 
 
 
@@ -361,16 +277,6 @@ def vgg_multi_image_top_net(input_shape, n_labels, weights_path=None):
     if weights_path is not None:
         weights_file = h5py.File(weights_path, 'r')
 
-    ## model1 = Sequential()
-    ## model1.add(Flatten(input_shape=input_shape))
-    ## #model1.add(BatchNormalization())
-    ## model1.add(Dense(128, init='uniform', name='fc_img1_1', W_regularizer=L1L2Regularizer(0.0,0.0)))
-    ## model1.add(Activation('relu')) 
-    ## model1.add(Dropout(0.4))        
-    ## model1.add(Dense(n_labels, init='uniform', name='fc_img1_2', W_regularizer=L1L2Regularizer(0.0,0.0)))
-    ## model1.add(Activation('relu')) 
-    ## model1.add(Dropout(1.))        
-    
     model2 = Sequential()
     model2.add(Flatten(input_shape=input_shape))
     model2.add(Dense(128, init='uniform', name='fc_img2_1', W_regularizer=L1L2Regularizer(0.0,0.0)))
@@ -389,47 +295,77 @@ def vgg_multi_image_top_net(input_shape, n_labels, weights_path=None):
     model3.add(Activation('relu')) 
     model3.add(Dropout(0.))        
 
-    ## merge = Merge([model1, model2, model3], mode='concat')
     merge = Merge([model2, model3], mode='concat')
     ## merge = Merge([model2, model3], mode=euc_dist, output_shape=euc_dist_shape)
     model = Sequential()
     model.add(merge)
     model.add(BatchNormalization())
 
-    ## model.add(Dense(1024, init='uniform', name='fc1_1', W_regularizer=L1L2Regularizer(0.0,0.03)))
-    ## model.add(Activation('relu')) 
-    ## model.add(Dropout(0.5))        
-    ## model.add(Dense(128, init='uniform', name='fc1_2', W_regularizer=L1L2Regularizer(0.0,0.01)))
-    ## model.add(Activation('relu'))
-    ## model.add(Dropout(0.5))    
     model.add(Dense(n_labels, activation='softmax', name='fc_img_out'))
    
     if weights_path is not None: model.load_weights(weights_path)
-
-    ## weights_file = h5py.File(weights_path)
-    ## weight = mutil.get_layer_weights(weights_file, layer_name='fc_img2_1')
-    ## print weight
-    ## sys.exit()
-
     return model
 
 
-def euc_dist(x):
-    'Merge function: euclidean_distance(u,v)'
-    s = x[0] - x[1]
-    output = K.sum( s**2, axis=1)
-    output = K.expand_dims(output,1)
-    return output
+def vgg_multi_image_net(input_shape, n_labels, full_weights_path=None, top_weights_path=None,\
+                        fine_tune=False, viz=False):
 
-def euc_dist_shape(input_shape):
-    'Merge output shape'
-    shape = list(input_shape)
-    outshape = (shape[0][0],1)
-    return tuple(outshape)
+    model1 = km.vgg16_net(input_shape, weights_path=full_weights_path, fine_tune=fine_tune)        
+    model1.add(Flatten())
+    model1.add(Dense(128, init='uniform', name='fc_img2_1', W_regularizer=L1L2Regularizer(0.0,0.0)))
+    model1.add(Activation('relu')) 
+    model1.add(Dropout(0.4))        
+    model1.add(Dense(n_labels, init='uniform', name='fc_img2_2', W_regularizer=L1L2Regularizer(0.0,0.0)))
+    model1.add(Activation('relu')) 
+    model1.add(Dropout(0.))        
 
-def sqrt_diff(X):
-    s = X[0]
-    for i in range(1, len(X)):
-        s -= X[i]
-        s = K.sqrt(K.square(s) + 1e-7)
-    return s
+    model2 = km.vgg16_net(input_shape, weights_path=weights_path, fine_tune=fine_tune)    
+    model2.add(Flatten())
+    model2.add(Dense(128, init='uniform', name='fc_img3_1', W_regularizer=L1L2Regularizer(0.0,0.0)))
+    model2.add(Activation('relu')) 
+    model2.add(Dropout(0.4))        
+    model2.add(Dense(n_labels, init='uniform', name='fc_img3_2', W_regularizer=L1L2Regularizer(0.0,0.0)))
+    model2.add(Activation('relu')) 
+    model2.add(Dropout(0.))        
+
+    merge = Merge([model1, model2], mode='concat')
+    model = Sequential()
+    model.add(merge)
+    model.add(BatchNormalization())
+    model.add(Dense(n_labels, activation='softmax', name='fc_img_out'))
+   
+    if full_weights_path is not None: model.load_weights(full_weights_path)
+    elif top_weights_path is not None: model.load_weights(top_weights_path)
+    return model
+
+
+
+
+
+
+
+
+
+
+
+
+
+## def euc_dist(x):
+##     'Merge function: euclidean_distance(u,v)'
+##     s = x[0] - x[1]
+##     output = K.sum( s**2, axis=1)
+##     output = K.expand_dims(output,1)
+##     return output
+
+## def euc_dist_shape(input_shape):
+##     'Merge output shape'
+##     shape = list(input_shape)
+##     outshape = (shape[0][0],1)
+##     return tuple(outshape)
+
+## def sqrt_diff(X):
+##     s = X[0]
+##     for i in range(1, len(X)):
+##         s -= X[i]
+##         s = K.sqrt(K.square(s) + 1e-7)
+##     return s
