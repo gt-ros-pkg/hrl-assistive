@@ -65,8 +65,6 @@ class armReachAction(mpcBaseAction):
         self.bowlPosition = np.array([0, 0, 0])
         # vertical x side x depth
         self.mouthManOffset = np.array([-0.03, 0.0, 0.04]) # -0.03, 0., 0.05
-        ## self.mouthManOffset = np.array([-0.05, 0.0, 0.04]) # -0.03, 0., 0.05
-        ## self.mouthManOffset = np.array([-0.04, 0.02, 0.09]) # -0.02, 0., 0.05
         self.mouthNoise     = np.array([0., 0., 0.])
         self.mouthOffset    = self.mouthManOffset+self.mouthNoise 
 
@@ -404,9 +402,6 @@ class armReachAction(mpcBaseAction):
         M.DoRotY(self.bowl_orient_offset['ry'])
         M.DoRotZ(self.bowl_orient_offset['rz'])
 
-        print self.bowl_pos_offset
-        print pos
-        print quat
         print 'Bowl frame:', p
 
         # 2.* add noise for random training
@@ -534,7 +529,6 @@ if __name__ == '__main__':
     controller = 'static'
     #controller = 'actionlib'
     arm        = opt.arm
-    viz        = False
     if opt.arm == 'l':
         tool_id = 1
         verbose = True
@@ -544,7 +538,7 @@ if __name__ == '__main__':
 
 
     rospy.init_node('arm_reacher_feeding_and_scooping')
-    ara = armReachAction(d_robot, controller, arm, tool_id, viz=False, verbose=verbose)
+    ara = armReachAction(d_robot, controller, arm, tool_id, viz=True, verbose=verbose)
     rospy.spin()
 
 

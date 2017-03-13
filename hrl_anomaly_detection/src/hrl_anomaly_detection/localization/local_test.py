@@ -81,9 +81,9 @@ def test(save_data_path, n_labels=12, n_folds=8, verbose=False):
     # training_with images -----------------------------------
     # 48%
     kt.get_bottleneck_image(save_data_path, n_labels, fold_list)
-    train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=1000, patience=100)
-    train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=1000,
-                               patience=100, load_weights=True)
+    train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=1000, patience=50)
+    ## train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=1000,
+    ##                            patience=100, load_weights=True)
     train_top_model_with_image(save_data_path, n_labels, fold_list, 
                                load_weights=True, test_only=True)
 
@@ -104,15 +104,30 @@ def test(save_data_path, n_labels=12, n_folds=8, verbose=False):
 def multi_level_test(save_data_path, n_labels=12, n_folds=8, verbose=False):
 
     fold_list = range(nFold)
-    fold_list = [0]
+    ## fold_list = [0]
 
     save_data_path = os.path.join(save_data_path, 'keras')
-    
+
+    # training with signals ----------------------------------
+    train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5)
+    train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=800, patience=5, load_weights=True)
+    train_with_signal(save_data_path, n_labels, fold_list, load_weights=True,
+                      test_only=True, cause_class=True) #70
+
+
+    # training the top model with images -----------------------------------
+    # 50
     ## get_multi_bottleneck_images(save_data_path, n_labels, fold_list)
-    train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=1000, patience=100,
-                              multi=True)
-
-
+    ## train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=1000, patience=10,
+    ##                           multi=True)
+    ## train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=1, patience=100,
+    ##                            multi=True, load_weights=True)
+    ## train_top_model_with_image(save_data_path, n_labels, fold_list,\
+    ##                            multi=True, load_weights=True, test_only=True)
+     
+    # training_with images -----------------------------------
+    ## train_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=1000, patience=10)
+    ## train_model_with_image(save_data_path, n_labels, fold_list, test_only=True)
 
 
 ## def get_model():
@@ -129,9 +144,113 @@ def multi_level_test(save_data_path, n_labels=12, n_folds=8, verbose=False):
 
 
 
+def train_with_signal(save_data_path, n_labels, fold_list, nb_epoch=400, load_weights=False,
+                      activ_type='relu', test_only=False, save_pdf=False, patience=50,
+                      cause_class=True):
+
+    scores= []
+    y_test_list = []
+    y_pred_list = []
+    for idx in fold_list:
+
+        # Loading data
+        train_data, test_data = autil.load_data(idx, save_data_path, viz=False)      
+        x_train_sig = train_data[0]
+        y_train     = train_data[2]
+        x_test_sig = test_data[0]
+        y_test     = test_data[2]
+
+        # Scaling
+        scaler      = preprocessing.StandardScaler()
+        x_train_sig = scaler.fit_transform(x_train_sig)
+        x_test_sig  = scaler.transform(x_test_sig)
+
+        weights_path = os.path.join(save_data_path,'sig_weights_'+str(idx)+'.h5')
+        callbacks = [EarlyStopping(monitor='val_loss', min_delta=0, patience=patience,
+                                   verbose=0, mode='auto'),
+                     ModelCheckpoint(weights_path,
+                                     save_best_only=True,
+                                     save_weights_only=True,
+                                     monitor='val_loss'),
+                     ReduceLROnPlateau(monitor='val_loss', factor=0.2,
+                                       patience=20, min_lr=0.00001)]
+        
+        ## # Load pre-trained vgg16 model
+        if load_weights is False:
+            model = km.sig_net(np.shape(x_train_sig)[1:], n_labels, activ_type=activ_type)                    
+            ## optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.0)
+            optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.005)            
+        else:
+            model = km.sig_net(np.shape(x_train_sig)[1:], n_labels,\
+                               weights_path = weights_path, activ_type=activ_type)
+            optimizer = SGD(lr=0.0001, decay=1e-7, momentum=0.9, nesterov=True)
+            #optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.005)            
+
+        model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+        ## model.compile(optimizer=optimizer, loss='categorical_crossentropy', \
+        ##               metrics=['mean_squared_logarithmic_error', 'accuracy'])
+
+        import collections
+        bincnt = collections.Counter(np.argmax(y_train,axis=1))
+
+        class_weight = {}
+        for i in xrange(n_labels):
+            ## class_weight[i] = float(len(y_train))/(float(n_labels)*float(bincnt[i]) )
+            class_weight[i] = 1.0
+        
+
+        if test_only is False:
+            train_datagen = ku.sigGenerator(augmentation=True, noise_mag=0.05 )
+            test_datagen = ku.sigGenerator(augmentation=False)
+            train_generator = train_datagen.flow(x_train_sig, y_train, batch_size=512)
+            test_generator = test_datagen.flow(x_test_sig, y_test, batch_size=512)
+
+            hist = model.fit_generator(train_generator,
+                                       samples_per_epoch=len(y_train),
+                                       nb_epoch=nb_epoch,
+                                       validation_data=test_generator,
+                                       nb_val_samples=len(y_test),
+                                       callbacks=callbacks, class_weight=class_weight)
+
+            scores.append( hist.history['val_acc'][-1] )
+            ## model.save_weights(weights_path)
+            del model
+        else:
+            model.load_weights(weights_path)
+            y_pred = model.predict(x_test_sig)
+
+            if cause_class:
+                y_pred_list += np.argmax(y_pred, axis=1).tolist()
+                y_test_list += np.argmax(y_test, axis=1).tolist()
+                scores.append( accuracy_score(np.argmax(y_test, axis=1).tolist(),
+                                              np.argmax(y_pred, axis=1).tolist() ) )
+            else:
+                y_test_list = []
+                y_pred_list = []
+                for y in np.argmax(y_pred, axis=1):
+                    if y in y_group[0]: y_pred_list.append(0)
+                    elif y in y_group[1]: y_pred_list.append(1)
+                    elif y in y_group[2]: y_pred_list.append(2)
+                    elif y in y_group[3]: y_pred_list.append(3)
+
+                for y in np.argmax(y_test, axis=1):
+                    if y in y_group[0]: y_test_list.append(0)
+                    elif y in y_group[1]: y_test_list.append(1)
+                    elif y in y_group[2]: y_test_list.append(2)
+                    elif y in y_group[3]: y_test_list.append(3)
+                scores.append( accuracy_score(y_test_list, y_pred_list) )
+                            
+            print "score : ", scores
+
+    print 
+    print np.mean(scores), np.std(scores)
+    if test_only: return y_test_list, y_pred_list
+    return
+
+
 def train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=400, load_weights=False,
                                vgg=True,\
-                               patience=5, remove_label=[], use_extra_img=True, test_only=False,\
+                               patience=5, remove_label=[], test_only=False,\
                                cause_class=True, multi=False):
     prefix = 'vgg_'
 
@@ -141,8 +260,9 @@ def train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=400
     for idx in fold_list:
 
         bt_data_path = os.path.join(save_data_path, 'bt')
-        x_train = np.load(open(os.path.join(bt_data_path,'x_train_bt_'+str(idx)+'.npy')))
-        y_train = np.load(open(os.path.join(bt_data_path,'y_train_bt_'+str(idx)+'.npy')))
+        if test_only is False:
+            x_train = np.load(open(os.path.join(bt_data_path,'x_train_bt_'+str(idx)+'.npy')))
+            y_train = np.load(open(os.path.join(bt_data_path,'y_train_bt_'+str(idx)+'.npy')))
         x_test = np.load(open(os.path.join(bt_data_path,'x_test_bt_'+str(idx)+'.npy')))
         y_test = np.load(open(os.path.join(bt_data_path,'y_test_bt_'+str(idx)+'.npy')))
 
@@ -161,13 +281,13 @@ def train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=400
                                        patience=5, min_lr=0.00001)]
 
         if load_weights is False:
-            if multi: model = km.vgg_multi_image_top_net(np.shape(x_train[0])[1:], n_labels)
-            else:     model = km.vgg_image_top_net(np.shape(x_train)[1:], n_labels)
+            if multi: model = km.vgg_multi_image_top_net(np.shape(x_test[1])[1:], n_labels)
+            else:     model = km.vgg_image_top_net(np.shape(x_test)[1:], n_labels)
             model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
         else:
             print "Load weight!!!!!!!!!!!!!!!"
-            if multi: model = km.vgg_multi_image_top_net(np.shape(x_train[0])[1:], n_labels, weights_path)
-            else:     model = km.vgg_image_top_net(np.shape(x_train)[1:], n_labels, weights_path)
+            if multi: model = km.vgg_multi_image_top_net(np.shape(x_test[1])[1:], n_labels, weights_path)
+            else:     model = km.vgg_image_top_net(np.shape(x_test)[1:], n_labels, weights_path)
             optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.001)
             optimizer = SGD(lr=0.001, decay=1e-7, momentum=0.9, nesterov=True)                
             model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
@@ -178,9 +298,10 @@ def train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=400
             
         if test_only is False:
             if multi:
-                hist = model.fit(x_train[:,0], x_train[:,1], x_train[:,2], y_train,
-                                 nb_epoch=nb_epoch, batch_size=4096, shuffle=True,
-                                 validation_data=(x_test, y_test), callbacks=callbacks,
+                hist = model.fit([x_train[1], x_train[2]], y_train,
+                                 nb_epoch=nb_epoch, batch_size=1024, shuffle=True,
+                                 validation_data=([x_test[1], x_test[2]], y_test),
+                                 callbacks=callbacks,
                                  class_weight=class_weight)
             else:
                 hist = model.fit(x_train, y_train, nb_epoch=nb_epoch, batch_size=4096, shuffle=True,
@@ -189,7 +310,11 @@ def train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=400
 
             scores.append( hist.history['val_acc'][-1] )
         else:
-            y_pred = model.predict(x_test)
+            if multi:
+                y_pred = model.predict([x_test[1], x_test[2]])
+            else:
+                y_pred = model.predict(x_test)
+                
             if cause_class:
                 # cause classification
                 y_pred_list += np.argmax(y_pred, axis=1).tolist()
@@ -219,6 +344,114 @@ def train_top_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=400
     print 
     print np.mean(scores), np.std(scores)
     return
+
+
+def train_model_with_image(save_data_path, n_labels, fold_list, nb_epoch=400, load_weights=False,
+                           vgg=True, patience=5, use_extra_img=True, test_only=False,\
+                           cause_class=True):
+    if vgg: prefix = 'vgg_'
+    else: prefix = ''
+
+    scores= []
+    y_pred_list = []
+    y_test_list = []
+    for idx in fold_list:
+
+        # Loading data
+        train_data, test_data = autil.load_data(idx, save_data_path, extra_img=use_extra_img, viz=False)      
+        x_train_img = train_data[1] # sample x 3 x 224 x 224
+        y_train     = train_data[2]
+        x_test_img = test_data[1]
+        y_test     = test_data[2]
+
+        full_weights_path = os.path.join(save_data_path,prefix+'multi_img_weights_'+str(idx)+'.h5')
+        callbacks = [EarlyStopping(monitor='val_loss', min_delta=0, patience=patience,
+                                   verbose=0, mode='auto'),
+                     ModelCheckpoint(full_weights_path,
+                                     save_best_only=True,
+                                     save_weights_only=True,
+                                     monitor='val_loss'),
+                     ReduceLROnPlateau(monitor='val_loss', factor=0.2,
+                                       patience=5, min_lr=0.00001)]
+
+        if load_weights is False:
+            top_weights_path = os.path.join(save_data_path,prefix+'cnn_weights_'+str(idx)+'.h5')
+            model = km.vgg_multi_image_net(np.shape(x_train_img)[1:], n_labels,
+                                           top_weights_path=top_weights_path,
+                                           fine_tune=True)
+            ## model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
+        else:
+            print "Load weight!!!!!!!!!!!!!!!"
+            model = km.vgg_multi_image_net(np.shape(x_train_img)[1:], n_labels,
+                                           full_weights_path=full_weights_path,
+                                           fine_tune=True)
+            ## optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.001)
+        optimizer = SGD(lr=0.001, decay=1e-7, momentum=0.9, nesterov=True)                
+        model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+        
+        class_weight={}
+        for i in xrange(n_labels): class_weight[i] = 1.0
+
+        # ------------------------------------------------------------
+        
+        if test_only is False:
+            train_datagen = ku.multiImgGenerator(augmentation=True, rescale=1./255.)
+            test_datagen = ku.multiImgGenerator(augmentation=False, rescale=1./255.)
+            train_generator = train_datagen.flow(x_train_img, y_train, batch_size=32) 
+            test_generator = test_datagen.flow(x_test_img, y_test, batch_size=32)
+
+            hist = model.fit_generator(train_generator,
+                                       samples_per_epoch=len(y_train),
+                                       nb_epoch=nb_epoch,
+                                       validation_data=test_generator,
+                                       nb_val_samples=len(y_test),
+                                       callbacks=callbacks,
+                                       class_weight=class_weight)
+
+            scores.append( hist.history['val_acc'][-1] )
+
+        else:
+            ## x_test_img = x_train_img
+            ## y_test = y_train
+            
+            test_datagen = ku.multiImgGenerator(augmentation=False, rescale=1./255.)
+            for x_batch, y_batch in test_datagen.flow(x_test_img, y_test, batch_size=len(x_test_img),
+                                                      shuffle=False):
+                x = x_batch
+                y = y_batch
+                break
+            y_pred = model.predict([x[0], x[1]])
+                
+            if cause_class:
+                # cause classification
+                y_pred_list += np.argmax(y_pred, axis=1).tolist()
+                y_test_list += np.argmax(y_test, axis=1).tolist()
+                scores.append( accuracy_score(np.argmax(y_test, axis=1).tolist(),
+                                              np.argmax(y_pred, axis=1).tolist() ) )
+            else:
+                # type classification
+                y_test_list = []
+                y_pred_list = []
+                for y in np.argmax(y_pred, axis=1):
+                    if y in y_group[0]: y_pred_list.append(0)
+                    elif y in y_group[1]: y_pred_list.append(1)
+                    elif y in y_group[2]: y_pred_list.append(2)
+                    elif y in y_group[3]: y_pred_list.append(3)
+
+                for y in np.argmax(y_test, axis=1):
+                    if y in y_group[0]: y_test_list.append(0)
+                    elif y in y_group[1]: y_test_list.append(1)
+                    elif y in y_group[2]: y_test_list.append(2)
+                    elif y in y_group[3]: y_test_list.append(3)
+                scores.append( accuracy_score(y_test_list, y_pred_list) )
+
+            print "score : ", scores        
+        gc.collect()
+
+    print 
+    print np.mean(scores), np.std(scores)
+    return
+
 
 
 def get_multi_bottleneck_images(save_data_path, n_labels, fold_list, vgg=True, use_extra_img=True,
@@ -294,7 +527,7 @@ def get_multi_bottleneck_images(save_data_path, n_labels, fold_list, vgg=True, u
             fill_mode='nearest',
             dim_ordering="th")
 
-        x_ = [None, None, None]
+        x_ = [None, None]
         y_ = None
         width  = 70
         height = 70
@@ -306,20 +539,20 @@ def get_multi_bottleneck_images(save_data_path, n_labels, fold_list, vgg=True, u
 
             ## crop data using three levels
             # 1. face only
-            x_batch_1 = None
-            for img in x_batch:
-                img   = img.transpose((1,2,0))
-                img_1 = cv2.resize(img[(img_size[0]-width)/2:(img_size[0]+width)/2,
-                                       (img_size[1]-height)/2:(img_size[1]+height)/2],
-                                       np.shape(img)[:2])
-                img_1 = img_1.transpose((2,0,1))
-                if x_batch_1 is None:
-                    x_batch_1 = np.expand_dims(img_1, axis=0)
-                else:
-                    x_batch_1 = np.vstack([x_batch_1, np.expand_dims(img_1, axis=0)])
+            ## x_batch_1 = None
+            ## for img in x_batch:
+            ##     img   = img.transpose((1,2,0))
+            ##     img_1 = cv2.resize(img[(img_size[0]-width)/2:(img_size[0]+width)/2,
+            ##                            (img_size[1]-height)/2:(img_size[1]+height)/2],
+            ##                            np.shape(img)[:2])
+            ##     img_1 = img_1.transpose((2,0,1))
+            ##     if x_batch_1 is None:
+            ##         x_batch_1 = np.expand_dims(img_1, axis=0)
+            ##     else:
+            ##         x_batch_1 = np.vstack([x_batch_1, np.expand_dims(img_1, axis=0)])
 
-            if x_[0] is None: x_[0] = model.predict(x_batch_1)
-            else: x_[0] = np.vstack([x_[0], model.predict(x_batch_1)])
+            ## if x_[0] is None: x_[0] = model.predict(x_batch_1)
+            ## else: x_[0] = np.vstack([x_[0], model.predict(x_batch_1)])
 
             # 2. face and hand
             x_batch_2 = None
@@ -343,16 +576,16 @@ def get_multi_bottleneck_images(save_data_path, n_labels, fold_list, vgg=True, u
             if y_ is None: y_ = y_train
             else: y_ = np.vstack([y_, y_train])
             count += 1
-            print count, np.shape(x_[0]), np.shape(x_[1]), np.shape(x_[2])
+            print count
             if count > 4: break
 
-        x_ = np.array(x_)
-        x_ = np.swapaxes(x_, 0, 1)
-        print np.shape(x_), np.shape(x_[0])
+        ## x_ = np.array(x_)
+        ## x_ = np.swapaxes(x_, 0, 1)
+        ## print np.shape(x_)
             
         np.save(open(os.path.join(bt_data_path,'x_train_bt_'+str(idx)+'.npy'), 'w'), x_)
         np.save(open(os.path.join(bt_data_path,'y_train_bt_'+str(idx)+'.npy'), 'w'), y_)
-        del x_, y_, train_datagen, x_batch_1, x_batch_2, x_batch
+        del x_, y_, train_datagen, x_batch_2, x_batch
 
         # ------------------------------------------------------------
         test_datagen = ImageDataGenerator(
@@ -366,19 +599,19 @@ def get_multi_bottleneck_images(save_data_path, n_labels, fold_list, vgg=True, u
         for x_batch, y_batch in test_datagen.flow(x_test_img, y_test, batch_size=len(x_test_img), shuffle=False):
 
             # 1. face only
-            x_batch_1 = None
-            for img in x_batch:
-                img   = img.transpose((1,2,0))
-                img_1 = cv2.resize(img[(img_size[0]-width)/2:(img_size[0]+width)/2,
-                                       (img_size[1]-height)/2:(img_size[1]+height)/2],
-                                       np.shape(img)[:2])
-                img_1 = img_1.transpose((2,0,1))
-                if x_batch_1 is None:
-                    x_batch_1 = np.expand_dims(img_1, axis=0)
-                else:
-                    x_batch_1 = np.vstack([x_batch_1, np.expand_dims(img_1, axis=0)])
-            if x_[0] is None: x_[0] = model.predict(x_batch_1)
-            else: x_[0] = np.vstack([x_[0], model.predict(x_batch_1)])
+            ## x_batch_1 = None
+            ## for img in x_batch:
+            ##     img   = img.transpose((1,2,0))
+            ##     img_1 = cv2.resize(img[(img_size[0]-width)/2:(img_size[0]+width)/2,
+            ##                            (img_size[1]-height)/2:(img_size[1]+height)/2],
+            ##                            np.shape(img)[:2])
+            ##     img_1 = img_1.transpose((2,0,1))
+            ##     if x_batch_1 is None:
+            ##         x_batch_1 = np.expand_dims(img_1, axis=0)
+            ##     else:
+            ##         x_batch_1 = np.vstack([x_batch_1, np.expand_dims(img_1, axis=0)])
+            ## if x_[0] is None: x_[0] = model.predict(x_batch_1)
+            ## else: x_[0] = np.vstack([x_[0], model.predict(x_batch_1)])
 
             # 2. face and hand
             x_batch_2 = None
@@ -405,12 +638,12 @@ def get_multi_bottleneck_images(save_data_path, n_labels, fold_list, vgg=True, u
             print count
             if count > 0: break
 
-        x_ = np.array(x_)
-        x_ = np.swapaxes(x_, 0, 1)
+        ## x_ = np.array(x_)
+        ## x_ = np.swapaxes(x_, 0, 1)
 
         np.save(open(os.path.join(bt_data_path,'x_test_bt_'+str(idx)+'.npy'), 'w'), x_)
         np.save(open(os.path.join(bt_data_path,'y_test_bt_'+str(idx)+'.npy'), 'w'), y_)
-        del x_, y_, test_datagen, x_batch_1, x_batch_2, x_batch
+        del x_, y_, test_datagen, x_batch_2, x_batch
         
         gc.collect()
 
