@@ -146,7 +146,7 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
                               HMM_dict, data_renew, startIdx, nState, cov, \
                               success_files=success_files, failure_files=failure_files,\
                               noise_mag=noise_mag, diag=False, cov_type='full', \
-                              verbose=verbose)
+                              inc_hmm_param=True, verbose=verbose)
 
     # Split test data to two groups
     n_AHMM_sample = 10
