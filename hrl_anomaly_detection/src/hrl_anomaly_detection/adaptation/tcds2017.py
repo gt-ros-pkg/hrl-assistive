@@ -140,15 +140,69 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
 
     #-----------------------------------------------------------------------------------------    
     # Training HMM, and getting classifier training and testing data
+    noise_mag = 0.03
     dm.saveHMMinducedFeatures(kFold_list, successData, failureData,\
                               task_name, processed_data_path,\
                               HMM_dict, data_renew, startIdx, nState, cov, \
                               success_files=success_files, failure_files=failure_files,\
-                              noise_mag=0.03, diag=False, cov_type='full', \
+                              noise_mag=noise_mag, diag=False, cov_type='full', \
                               verbose=verbose)
 
+    # Split test data to two groups
+    n_AHMM_sample = 10
+    for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
+      in enumerate(kFold_list):
+
+        normalTestData = copy.copy(successData[:, normalTestIdx, :]) * HMM_dict['scale'] 
+        abnormalTestData  = copy.copy(failureData[:, abnormalTestIdx, :]) * HMM_dict['scale'] 
+        X_ptrain = normalTestData[:n_AHMM_sample]
+        noise_arr = np.random.normal(0.0, noise_mag, np.shape(X_ptrain))
+      
+        modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
+        d            = ut.load_pickle(modeling_pkl)
+
+        # Update
+        ml = hmm.learning_hmm(nState, d['nEmissionDim'])
+        ml.set_hmm_object(d['A'], d['B'], d['pi'], d['out_a_num'], d['vec_num'], \
+                          d['mat_num'], d['u_denom'])
+        ml.partial_fit(X_ptrain+noise_arr)
+        
+        # Classifier test data
+        n_jobs=-1
+        ll_classifier_test_X, ll_classifier_test_Y, ll_classifier_test_idx =\
+          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData[n_AHMM_sample:], abnormalTestData, \
+                                                   startIdx, n_jobs=n_jobs)
+
+        if success_files is not None:
+            ll_classifier_test_labels = [success_files[i] for i in normalTestIdx[n_AHMM_sample:]]
+            ll_classifier_test_labels += [failure_files[i] for i in abnormalTestIdx]
+        else:
+            ll_classifier_test_labels = None
+
+        #-----------------------------------------------------------------------------------------
+        modeling_pkl = os.path.join(processed_data_path, 'hmm_update_'+task_name+'_'+str(idx)+'.pkl')
+        d = {}
+        d['nEmissionDim'] = ml.nEmissionDim
+        d['A']            = ml.A 
+        d['B']            = ml.B 
+        d['pi']           = ml.pi
+        d['F']            = ml.F
+        d['nState']       = nState
+        d['startIdx']     = startIdx
+        d['ll_classifier_test_X']   = ll_classifier_test_X
+        d['ll_classifier_test_Y']   = ll_classifier_test_Y            
+        d['ll_classifier_test_idx'] = ll_classifier_test_idx
+        d['ll_classifier_test_labels'] = ll_classifier_test_labels
+        d['nLength']      = nLength
+        d['scale']        = HMM_dict['scale']
+        d['cov']          = HMM_dict['cov']
+        ut.save_pickle(d, modeling_pkl)
+      
+    pkl_prefix = 'hmm_update_'+task_name
+
+
     #-----------------------------------------------------------------------------------------
-    roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
+    roc_pkl = os.path.join(processed_data_path, 'roc_update_'+task_name+'.pkl')
 
     if os.path.isfile(roc_pkl) is False or HMM_dict['renew'] or SVM_dict['renew']: ROC_data = {}
     else: ROC_data = ut.load_pickle(roc_pkl)
@@ -163,7 +217,8 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
                                                                          ROC_dict, \
                                                                          SVM_dict, HMM_dict, \
                                                                          startIdx=startIdx, nState=nState,\
-                                                                         n_jobs=n_jobs) \
+                                                                         n_jobs=n_jobs,\
+                                                                         modeling_pkl_prefix=pkl_prefix) \
                                                                          for idx in xrange(len(kFold_list)) \
                                                                          for method in method_list )
 
