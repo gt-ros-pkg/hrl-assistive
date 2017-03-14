@@ -128,9 +128,6 @@ class armReachAction(mpcBaseAction):
                                                      Int64, queue_size=QUEUE_SIZE, latch=True)
             self.feeding_vert_pub = rospy.Publisher('/feeding/manipulation_task/mouth_vert_offset',
                                                     Int64, queue_size=QUEUE_SIZE, latch=True)
-            msg = Int64()
-            msg.data = int(self.mouthManOffset[2]*100.0)
-            self.feeding_dist_pub.publish(msg)
 
         # subscribers
         rospy.Subscriber('/manipulation_task/InterruptAction', String, self.stopCallback)
