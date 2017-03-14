@@ -731,10 +731,10 @@ class ScoreGenerator(object):
         return output
 
     def objective_function_one_config(self, current_parameters):
-        # current_parameters = [1.73500286,  0.69365097, -2.17188387,  0.2316305 ,  0.17488576,
-        # 0.87341131]
+        current_parameters = [1.7721064 ,  0.82599354, -2.69712509,  0.27923376,  0.19418021,
+        0.88565537]
         # current_parameters[0]=2.5
-        # self.heady = 0.0
+        self.heady = 0.0
         if not self.a_model_is_loaded:
             print 'Somehow a model has not been loaded. This is bad!'
             return None

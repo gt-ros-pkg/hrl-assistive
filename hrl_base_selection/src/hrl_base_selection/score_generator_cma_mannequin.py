@@ -590,7 +590,10 @@ class ScoreGenerator(object):
                 else:
                     maxiter = 10
                     popsize = 3000  # m.pow(6, 2)*100
-                    parameters_min = np.array([0.2, -3., -m.pi-.001,  0., 0., 0., 0.2, -3., -m.pi-.001,  0.,  0., 0.])
+                    if self.task == 'feeding_trajectory':
+                        parameters_min = np.array([0.2, -3., -m.pi - .001, 0., 0., 55.*m.pi/180., 0.2, -3., -m.pi - .001, 0., 0., 55.*m.pi/180.])
+                    else:
+                        parameters_min = np.array([0.2, -3., -m.pi-.001,  0., 0., 0., 0.2, -3., -m.pi-.001,  0.,  0., 0.])
                      # parameters_max = np.array([ 3.,  3.,  m.pi+.001, 0.3, 0.2, 80.*m.pi/180.,  3.,  3.,  m.pi+.001, 0.3, 0.2, 80.*m.pi/180.])
                     # Henry's bed can only rise a few centimeters because of the overbed table
                     parameters_max = np.array([3.,  3.,  m.pi+.001, 0.3, 0.2, 80.*m.pi/180.,  3.,  3.,  m.pi+.001, 0.3, 0.2, 80.*m.pi/180.])
@@ -1080,6 +1083,15 @@ class ScoreGenerator(object):
         if not self.a_model_is_loaded:
             print 'Somehow a model has not been loaded. This is bad!'
             return None
+        parameters = [[ 0.78062408,  0.53540329],
+       [ 1.03958875, -0.89983494],
+       [-3.11454592, -0.08683541],
+       [ 0.2443988 ,  0.11760562],
+       [ 0.03440107,  0.07498624],
+       [ 0.50149404,  0.23139831]]
+        current_parameters = [parameters[0][0], parameters[1][0], parameters[2][0],parameters[3][0],parameters[4][0], parameters[5][0],
+                              parameters[0][1],parameters[1][1],parameters[2][1],parameters[3][1],parameters[4][1],parameters[5][1]]
+        self.heady = 0.
         # print current_parameters
         # print len(current_parameters)
         # print 'head rest angle: ', self.head_rest_angle
