@@ -199,6 +199,74 @@ class multiImgGenerator():
             
 
 
+class multiGenerator():
+    ''' multi scale image and signal data augmentation '''
+    
+    def __init__(self, augmentation=False, rescale=1.0):
+
+        if augmentation:
+            self.datagen = ImageDataGenerator(
+                rotation_range=20,
+                rescale=rescale,
+                width_shift_range=0.05,
+                height_shift_range=0.05,
+                zoom_range=0.1,
+                horizontal_flip=False,
+                fill_mode='nearest',
+                dim_ordering="th")
+        else:
+            self.datagen = ImageDataGenerator(
+                rescale=rescale,
+                dim_ordering="th")
+        pass
+
+    def flow(self, x_sig, x_img, y, batch_size=32, shuffle=True):
+
+        assert len(x_img) == len(y), "data should have the same length"
+        assert len(x_img) == len(x_sig), "data should have the same length"
+        
+        if type(x_img) is not np.ndarray: x_img = np.array(x)
+        if type(x_sig) is not np.ndarray: x_sig = np.array(x)
+        if type(y) is not np.ndarray: y = np.array(y)
+
+
+        width    = 70
+        height   = 70
+        img_size = np.shape(x_img)[-2:]
+            
+        while 1:
+            idx_list = range(len(x_img))
+            if shuffle: random.shuffle(idx_list)
+            
+            x_sig_new = x_sig[idx_list]
+            i = -1
+
+            for x_batch_img, y_batch in self.datagen.flow(x_img[idx_list], y[idx_list],
+                                                      batch_size=batch_size, shuffle=False):
+                if (i+1)*batch_size >= len(y):
+                    break
+                else:
+                    # 2. face and hand
+                    x_batch_img_1 = None
+                    for img in x_batch_img:
+                        img   = img.transpose((1,2,0))
+                        img1 = cv2.resize(img[img_size[0]/4-width/4:((img_size[0]+width)/2+img_size[0])/2,
+                                               img_size[1]/4-height/4:((img_size[1]+height/2)+img_size[1])/2],
+                                               np.shape(img)[:2])
+                        img1 = img1.transpose((2,0,1))
+                        if x_batch_img_1 is None:
+                            x_batch_img_1 = np.expand_dims(img1, axis=0)
+                        else:
+                            x_batch_img_1 = np.vstack([x_batch_img_1, np.expand_dims(img1, axis=0)])
+                    
+                    i += 1
+                    yield [x_sig_new[i*batch_size:(i+1)*batch_size], x_batch_img_1, x_batch_img ], y_batch
+
+            gc.collect()
+            
+
+
+
 
 def extract_hypercolumn(model, layer_indexes, instance):
     import theano

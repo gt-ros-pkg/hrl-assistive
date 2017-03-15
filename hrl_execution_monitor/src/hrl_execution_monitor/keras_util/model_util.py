@@ -46,6 +46,6 @@ def get_layer_weights(weights_file=None, layer_name=None):
             # gamma beta order is reversed...
             weights = [weights[1], weights[0], weights[2], weights[3]]
         
-        print 'Weights for "{}" are loaded'.format(layer_name)
+        ## print 'Weights for "{}" are loaded'.format(layer_name)
         return weights
                                                     
