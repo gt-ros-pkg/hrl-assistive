@@ -2933,7 +2933,9 @@ def saveHMMinducedFeatures(kFold_list, successData, failureData,\
                            HMM_dict, data_renew, startIdx, nState, cov, \
                            success_files=None, failure_files=None,\
                            noise_mag = 0.03, one_class=True, suffix=None, n_jobs=-1,\
-                           add_logp_d=False, diag=False, cov_type='full', verbose=False):
+                           add_logp_d=False, diag=False, cov_type='full',\
+                           inc_hmm_param=False,\
+                           verbose=False):
     """
     Training HMM, and getting classifier training and testing data.
     """
@@ -3052,6 +3054,13 @@ def saveHMMinducedFeatures(kFold_list, successData, failureData,\
         d['nLength']      = nLength
         d['scale']        = HMM_dict['scale']
         d['cov']          = HMM_dict['cov']
+        if inc_hmm_param:
+            [A, B, pi, out_a_num, vec_num, mat_num, u_denom] = ml.get_hmm_object()
+            d['out_a_num'] = out_a_num
+            d['vec_num']   = vec_num
+            d['mat_num']   = mat_num
+            d['u_denom']   = u_denom            
+            
         if diag:
             d['ll_classifier_diag_train_X']  = ll_classifier_diag_train_X
             d['ll_classifier_diag_train_Y']  = ll_classifier_diag_train_Y            

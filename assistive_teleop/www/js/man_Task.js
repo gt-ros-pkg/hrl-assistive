@@ -61,8 +61,10 @@ var ManipulationTask = function (ros) {
     manTask.STATUS_TOPIC = "manipulation_task/status";
     manTask.current_step = 1;
     manTask.max_step = 0;
-    manTask.feedback_received = false;
-    manTask.feedingDistanceSynched = true;
+    manTask.feedback_received   = false;
+    manTask.feedingDepthSynched = true;
+    manTask.feedingHorizSynched = true;
+    manTask.feedingVertSynched  = true;
     manTask.handshaked = false;
     manTask.current_task = 'Init';
     manTask.anomaly_detected = false;
@@ -152,11 +154,24 @@ var ManipulationTask = function (ros) {
 
     // Function for start, stop, and continue
 
-    manTask.feedingDistancePub = new manTask.ros.Topic({
-        name: 'feeding/manipulation_task/feeding_dist_request',
+    manTask.feedingDepthPub = new manTask.ros.Topic({
+        name: 'feeding/manipulation_task/mouth_depth_request',
         messageType: 'std_msgs/Int64'
     });
-    manTask.feedingDistancePub.advertise();
+    manTask.feedingDepthPub.advertise();
+
+    manTask.feedingHorizPub = new manTask.ros.Topic({
+        name: 'feeding/manipulation_task/mouth_horiz_request',
+        messageType: 'std_msgs/Int64'
+    });
+    manTask.feedingHorizPub.advertise();
+
+    manTask.feedingVertPub = new manTask.ros.Topic({
+        name: 'feeding/manipulation_task/mouth_vert_request',
+        messageType: 'std_msgs/Int64'
+    });
+    manTask.feedingVertPub.advertise();
+
 
     manTask.start = function () {
         if (manTask.available) {
@@ -316,29 +331,78 @@ var ManipulationTask = function (ros) {
         }
     });
 
-    manTask.feedingDistanceRequest = function() {
-        if (manTask.feedingDistanceSynched) {
-            var new_dist = parseInt(document.getElementById("man_task_Feeding_dist").value);
+    // Advanced options --------------------------------------------------
+    // 1. feeding depth
+    manTask.feedingDepthRequest = function() {
+        if (manTask.feedingDepthSynched) {
+            var new_dist = parseInt(document.getElementById("man_task_Feeding_depth_offset").value);
             var msg = new manTask.ros.Message({
                 data: new_dist
             });
-            manTask.feedingDistancePub.publish(msg);
-            manTask.feedingDistanceSynched = false;
-            document.getElementById("man_task_Feeding_dist").disabled = true;
+            manTask.feedingDepthPub.publish(msg);
+            manTask.feedingDepthSynched = false;
+            document.getElementById("man_task_Feeding_depth_offset").disabled = true;
         }
     }
 
-    manTask.feedingDistanceSub = new manTask.ros.Topic({
-        name: 'feeding/manipulation_task/feeding_dist_state',
+    manTask.feedingDepthSub = new manTask.ros.Topic({
+        name: 'feeding/manipulation_task/mouth_depth_offset',
         messageType: 'std_msgs/Int64'
     });
-    manTask.feedingDistanceSub.subscribe(function (msg) {
-        document.getElementById("man_task_Feeding_dist").value = msg.data;
-        manTask.feedingDistanceSynched = true;
-        document.getElementById("man_task_Feeding_dist").disabled = false;
+    manTask.feedingDepthSub.subscribe(function (msg) {
+        document.getElementById("man_task_Feeding_depth_offset").value = msg.data;
+        manTask.feedingDepthSynched = true;
+        document.getElementById("man_task_Feeding_depth_offset").disabled = false;
+    });
+
+    // 2. feeding horizontal offset
+    manTask.feedingHorizRequest = function() {
+        if (manTask.feedingHorizSynched) {
+            var new_dist = parseInt(document.getElementById("man_task_Feeding_horiz_offset").value);
+            var msg = new manTask.ros.Message({
+                data: new_dist
+            });
+            manTask.feedingHorizPub.publish(msg);
+            manTask.feedingHorizSynched = false;
+            document.getElementById("man_task_Feeding_horiz_offset").disabled = true;
+        }
+    }
+
+    manTask.feedingHorizSub = new manTask.ros.Topic({
+        name: 'feeding/manipulation_task/mouth_horiz_offset',
+        messageType: 'std_msgs/Int64'
+    });
+    manTask.feedingHorizSub.subscribe(function (msg) {
+        document.getElementById("man_task_Feeding_horiz_offset").value = msg.data;
+        manTask.feedingHorizSynched = true;
+        document.getElementById("man_task_Feeding_horiz_offset").disabled = false;
+    });
+
+    // 3. feeding vertical offset
+    manTask.feedingVertRequest = function() {
+        if (manTask.feedingVertSynched) {
+            var new_dist = parseInt(document.getElementById("man_task_Feeding_vert_offset").value);
+            var msg = new manTask.ros.Message({
+                data: new_dist
+            });
+            manTask.feedingVertPub.publish(msg);
+            manTask.feedingVertSynched = false;
+            document.getElementById("man_task_Feeding_vert_offset").disabled = true;
+        }
+    }
+
+    manTask.feedingVertSub = new manTask.ros.Topic({
+        name: 'feeding/manipulation_task/mouth_vert_offset',
+        messageType: 'std_msgs/Int64'
+    });
+    manTask.feedingVertSub.subscribe(function (msg) {
+        document.getElementById("man_task_Feeding_vert_offset").value = msg.data;
+        manTask.feedingVertSynched = true;
+        document.getElementById("man_task_Feeding_vert_offset").disabled = false;
     });
 
 
+    // ------------------------------------------------------------------
     manTask.guiStatusSub = new manTask.ros.Topic({
         name: 'manipulation_task/gui_status',
         messageType: 'std_msgs/String'});
@@ -492,13 +556,6 @@ var ManipulationTask = function (ros) {
 
             fullscreenStop('#fullscreenOverlay', previous_css);
             previous_css = fullscreenStart('#fullscreenOverlay2');
-            /*
-            if (manTask.anomaly_detected) {
-                document.getElementById("fullscreen_anomaly_paragraph").innerHTML = "Anomaly was detected";
-            } else {
-                document.getElementById("fullscreen_anomaly_paragraph").innerHTML = "Anomaly was not detected";
-            }
-            */
             enableButton('#ad_scooping_sense_min');
             enableButton('#ad_scooping_sense_max');
             enableButton('#ad_scooping_slider');
@@ -572,30 +629,23 @@ var ManipulationTask = function (ros) {
     });
     manTask.scoopingResultSub.subscribe( function(msg) {
         if (msg.data.length == 2) {
-            //document.getElementById('ad_scooping_result_1').innerHTML = msg.data[0];
-            //document.getElementById('ad_scooping_result_1').innerHTML = document.getElementById('ad_scooping_result_1').innerHTML + "%";
             document.getElementById('ad_scooping_result_2').innerHTML = msg.data[1];
             document.getElementById('ad_scooping_result_2').innerHTML = parseFloat(document.getElementById('ad_scooping_result_2').innerHTML).toFixed(1) + "%";
         }
     });
-
 
     manTask.feedingResultSub= new manTask.ros.Topic({
         name: 'feeding/manipulation_task/eval_status',
         messageType: 'hrl_msgs/FloatArray'
     });
     manTask.feedingResultSub.subscribe( function(msg) {
-        //document.getElementById('ad_feeding_result_1').innerHTML = "hello";
         if (msg.data.length == 2) {
-            //document.getElementById('ad_feeding_result_1').innerHTML = msg.data[0];
-            //document.getElementById('ad_feeding_result_1').innerHTML = document.getElementById('ad_feeding_result_1').innerHTML + "%";
             document.getElementById('ad_feeding_result_2').innerHTML = msg.data[1];
             document.getElementById('ad_feeding_result_2').innerHTML = parseFloat(document.getElementById('ad_feeding_result_2').innerHTML).toFixed(1) + "%";
         }
     });
 
     //part added 1/20/17 to display anomaly type
-
     manTask.anomalyResultSub = new manTask.ros.Topic({
         name: 'manipulation_task/anomaly_type',
         messageType: 'std_msgs/String'});
@@ -634,27 +684,25 @@ var ManipulationTask = function (ros) {
 
 var initManTaskTab = function() {
     assistive_teleop.manTask = new ManipulationTask(assistive_teleop.ros);
-    assistive_teleop.log('initiating manipulation Task');
-    $('#man_task_Feeding_dist').change(function(){
-        assistive_teleop.manTask.feedingDistanceRequest();
-    });
+    
+    // Main tasks
     $('#man_task_Scooping').click(function(){
         if(assistive_teleop.manTask.handshaked) {
             assistive_teleop.manTask.scoop();
         }
     });
-
     $('#man_task_Feeding').click(function(){
         if(assistive_teleop.manTask.handshaked) {
             assistive_teleop.manTask.feed();
         }
     });
-
     $('#man_task_Clean').click(function(){
         if(assistive_teleop.manTask.handshaked) {
             assistive_teleop.manTask.both();
         }
     });
+
+    // need?
     $('#man_task_start').click(function(){
         assistive_teleop.manTask.start()
     });
@@ -667,22 +715,23 @@ var initManTaskTab = function() {
     $('#man_task_Continue').click(function(){
         assistive_teleop.manTask.continue_();
     });
+
+    // Advanced options
     $('#man_task_Advanced').click(function(){
         assistive_teleop.manTask.advanced();
     });
+    assistive_teleop.log('initiating manipulation Task');
+    $('#man_task_Feeding_depth_offset').change(function(){
+        assistive_teleop.manTask.feedingDepthRequest();
+    });
+    $('#man_task_Feeding_horiz_offset').change(function(){
+        assistive_teleop.manTask.feedingHorizRequest();
+    });
+    $('#man_task_Feeding_vert_offset').change(function(){
+        assistive_teleop.manTask.feedingVertRequest();
+    });
 
-    /*
-    $('#man_task_success').click(function(){
-        assistive_teleop.manTask.success();
-    });
-    $('#man_task_Fail').click(function(){
-        assistive_teleop.manTask.failure();
-    });
 
-    $('#man_task_Skip').click(function(){
-        assistive_teleop.manTask.skip();
-    });
-    */
     $('#question_skip').click(function() {
         assistive_teleop.manTask.question_skip();
     });
