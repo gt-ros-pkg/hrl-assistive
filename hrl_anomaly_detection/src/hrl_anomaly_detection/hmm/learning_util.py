@@ -30,22 +30,24 @@ import numpy as np
 import sys, os, copy
 from scipy.stats import norm, entropy
 
-def init_trans_mat(nState):
+def init_trans_mat(nState, mode='linear'):
     # Reset transition probability matrix
     trans_prob_mat = np.zeros((nState, nState))
 
     for i in xrange(nState):
-        # Exponential function
-        # From y = a*e^(-bx)
-        ## a = 0.4
-        ## b = np.log(0.00001/a)/(-(nState-i))
-        ## f = lambda x: a*np.exp(-b*x)
 
-        # Linear function
-        # From y = -a*x + b
-        b = 0.4
-        a = b/float(nState)
-        f = lambda x: -a*x+b
+        if mode == 'exp':
+            # Exponential function
+            # From y = a*e^(-bx)
+            a = 0.4
+            b = np.log(0.00001/a)/(-(nState-i))
+            f = lambda x: a*np.exp(-b*x)
+        else:
+            # Linear function
+            # From y = -a*x + b
+            b = 0.4
+            a = b/float(nState)
+            f = lambda x: -a*x+b
 
         for j in np.array(range(nState-i))+i:
             trans_prob_mat[i, j] = f(j)
