@@ -344,11 +344,11 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
                           d['mat_num'], d['u_denom'])
         ## ret = ml.partial_fit(X_ptrain+noise_arr, learningRate=0.9)
         ## ret = ml.fit(X_ptrain+noise_arr)
-        print idx, ret
-        if np.isnan(ret):
-            print "kFold_list ........ partial fit error... "
-            print ret
-            sys.exit()
+        ## print idx, ret
+        ## if np.isnan(ret):
+        ##     print "kFold_list ........ partial fit error... "
+        ##     print ret
+        ##     sys.exit()
 
         # Comparison of
         ## import hmm_viz as hv
