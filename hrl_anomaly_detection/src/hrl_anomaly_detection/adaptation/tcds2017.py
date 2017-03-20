@@ -323,7 +323,7 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
 
         ## if idx != 4: continue
         inc_model_pkl = os.path.join(processed_data_path, 'hmm_update_'+task_name+'_'+str(idx)+'.pkl')
-        if not(os.path.isfile(inc_model_pkl) is False or HMM_dict['renew'] or data_renew) :
+        if not(os.path.isfile(inc_model_pkl) is False or HMM_dict['renew'] or data_renew) and False:
             print idx, " : updated hmm exists"
             continue
 
