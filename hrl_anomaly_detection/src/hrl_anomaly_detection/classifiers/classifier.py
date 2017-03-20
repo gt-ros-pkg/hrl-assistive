@@ -273,8 +273,8 @@ class classifier(learning_base):
                 ## print "Error>> ll_idx is not inserted"
                 ## sys.exit()
             else:
-                if len(np.shape(y))>1: y = y[:,0]
-                ll_idx  = [ ll_idx[i] for i in xrange(len(ll_idx)) if y[i]<0 ]
+                if len(np.shape(y))>1: y = np.array(y)[:,0]
+                ll_idx  = [ ll_idx[i] for i in xrange(len(ll_idx)) if y[i]<0 ]                
                     
             ll_logp = [ X[i,0] for i in xrange(len(X)) if y[i]<0 ]
             ll_post = [ X[i,-self.nPosteriors:] for i in xrange(len(X)) if y[i]<0 ]
