@@ -60,6 +60,7 @@ from sklearn import svm
 from mvpa2.datasets.base import Dataset
 from hrl_anomaly_detection import data_manager as dm
 
+import warnings
 
 
 
@@ -71,6 +72,7 @@ def getLikelihoods(normTrainFeatures, abnormTrainFeatures, normTestFeatures, abn
     '''
     Visualize likelihood distribution
     '''
+    warnings.simplefilter("always", DeprecationWarning)
 
     print "======================================"
     print "Training data: ", np.shape(normTrainFeatures)
@@ -204,6 +206,7 @@ def Run_AE_HMM_SVM(X_normalTrain, X_abnormalTrain, X_normalTest, X_abnormalTest,
     '''
     Input: dimension x sample x length
     '''
+    warnings.simplefilter("always", DeprecationWarning)
 
     print "Raw Data: ", np.shape(X_normalTrain)
 
@@ -356,6 +359,7 @@ def getHMMFeatures(ml, X, startIdx=4, cpu_mode=False):
     '''
     Input: dimension x sample x length
     '''
+    warnings.simplefilter("always", DeprecationWarning)
 
     nEmissionDim = len(X)
 
@@ -394,6 +398,7 @@ def getHMMFeatures(ml, X, startIdx=4, cpu_mode=False):
         
 
 if __name__ == '__main__':
+    warnings.simplefilter("always", DeprecationWarning)
 
     import optparse
     p = optparse.OptionParser()

@@ -195,11 +195,11 @@ def onlineEvaluationSingleIncrementalICRA(task, raw_data_path, save_data_path, p
                                               time_sort=True,\
                                               no_split=True)
 
-    trainData,_ = dm.getDataList(unused_fileList, rf_center, rf_radius,\
-                               handFeatureParams,\
-                               downSampleSize = downSampleSize, \
-                               cut_data       = cut_data,\
-                               handFeatures   = handFeatures)
+    trainData,_ = dm.getDataList(unused_fileList, handFeatureParams,\
+                                 rf_center, rf_radius,\                                 
+                                 downSampleSize = downSampleSize, \
+                                 cut_data       = cut_data,\
+                                 handFeatures   = handFeatures)
 
 
     for fit_method in fit_methods:
@@ -506,12 +506,12 @@ def dataCompPlot(task, dim, all_data, one_data, rf_center='kinEEPos', local_rang
 
     (success_list, failure_list) = \
       util.getSubjectFileList(raw_data_path2, subjects2, task, time_sort=True)
-    successData2,_ = dm.getDataList(success_list, rf_center, local_range,\
-                                  handFeatureParams,\
-                                  downSampleSize = downSampleSize, \
-                                  cut_data       = cut_data,\
-                                  handFeatures   = handFeatures,\
-                                  renew_minmax   = False)
+    successData2,_ = dm.getDataList(success_list, handFeatureParams,\
+                                    rf_center, local_range,\                                  
+                                    downSampleSize = downSampleSize, \
+                                    cut_data       = cut_data,\
+                                    handFeatures   = handFeatures,\
+                                    renew_minmax   = False)
 
     ## failureData2,_ = dm.getDataList(failure_list, rf_center, local_range,\
     ##                               handFeatureParams,\

@@ -200,7 +200,7 @@ def rnd_fold_index(nNormal, nAbnormal, train_ratio=0.8, nSet=1):
 
 
 #-------------------------------------------------------------------------------------------------
-def getDataList(fileNames, rf_center, local_range, param_dict, downSampleSize=200, \
+def getDataList(fileNames, param_dict=None, rf_center='kinEEPos', local_range=10.0, downSampleSize=200, \
                 cut_data=None, \
                 handFeatures=['crossmodal_targetEEDist'], \
                 renew_minmax=False):
@@ -214,8 +214,11 @@ def getDataList(fileNames, rf_center, local_range, param_dict, downSampleSize=20
             print "Error>> there is no recorded file: ", fileName
             sys.exit()
 
-    max_time = param_dict['timeList'][-1]
-    print "max time is ", max_time
+    if param_dict is not None:
+        max_time = param_dict['timeList'][-1]
+        print "max time is ", max_time
+    else:
+        max_time = None
     
     _, data_dict = util.loadData(fileNames, isTrainingData=False,
                                  downSampleSize=downSampleSize,
@@ -421,7 +424,7 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
                 save_pdf=False, solid_color=True, \
                 handFeatures=[], data_renew=False,\
                 time_sort=False, max_time=None, \
-                target_class=None, ros_bag_image=False):
+                target_class=None, ros_bag_image=False, pkl_prefix=''):
     """
     Get data per subject. It also returns leave-one-out cross-validataion indices.
     """
@@ -429,7 +432,7 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
     if os.path.isdir(processed_data_path) is False:
         os.system('mkdir -p '+processed_data_path)
 
-    save_pkl = os.path.join(processed_data_path, 'feature_extraction_'+rf_center+'_'+\
+    save_pkl = os.path.join(processed_data_path, pkl_prefix+'feature_extraction_'+rf_center+'_'+\
                             str(local_range) )
             
     if os.path.isfile(save_pkl) and data_renew is False:
@@ -451,24 +454,23 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
                                             time_sort=time_sort, no_split=True)
 
         print "start to load data"
-        # loading and time-sync    
-        all_data_pkl     = os.path.join(processed_data_path, task_name+'_all_'+rf_center+\
-                                        '_'+str(local_range))
-        _, all_data_dict = util.loadData(file_list, isTrainingData=False,
-                                         downSampleSize=downSampleSize,\
-                                         renew=data_renew, save_pkl=all_data_pkl,\
-                                         max_time=max_time)
-        max_time = all_data_dict['timesList'][0][-1]
-        print "max time is ", max_time
-
         # Task-oriented hand-crafted features
         if init_param_dict is not None:
-            _, _ = extractHandFeature(all_data_dict, handFeatures,\
-                                            init_param_dict=init_param_dict, cut_data=cut_data)
-            param_dict=init_param_dict                                            
+            param_dict=init_param_dict
+            max_time = max_time #all_data_dict['timesList'][0][-1]
         else:
+            # loading and time-sync    
+            all_data_pkl     = os.path.join(processed_data_path, pkl_prefix+task_name+'_all_'+rf_center+\
+                                            '_'+str(local_range))
+            _, all_data_dict = util.loadData(file_list, isTrainingData=False,
+                                             downSampleSize=downSampleSize,\
+                                             renew=data_renew, save_pkl=all_data_pkl,\
+                                             max_time=max_time)
+            
+            max_time = all_data_dict['timesList'][0][-1]
             _, param_dict = extractHandFeature(all_data_dict, handFeatures,\
                                                      cut_data=cut_data)
+        print "max time is ", max_time
 
         # leave-one-person-out
         successDataList = []
@@ -552,7 +554,7 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
     # -------------------- Display -----------------------------------------------
     fig = plt.figure()
     if success_viz:
-        if True:
+        if True and False:
             p,n,m,k = np.shape(successDataList)
             successDataList = np.swapaxes(successDataList, 0,1)
             
@@ -595,7 +597,7 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
                     else: ax.plot(successData[i].T, c=color)
 
     if failure_viz:
-        if True:#iros 2017 paper
+        if True and False:#iros 2017 paper
             p,n,m,k = np.shape(failureDataList)
             failureDataList = np.swapaxes(failureDataList, 0,1)
             
@@ -1685,11 +1687,12 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
 
             # cumulation
             if len(mag)>1:
+
                 unimodal_ftForce_integ = [0.0]                
                 for i in xrange(1,len(mag)):
                     unimodal_ftForce_integ.append( unimodal_ftForce_integ[-1] +
                                                    (mag[i]+mag[i-1])*(timeList[i]-timeList[i-1])/2.0 )
-                
+
             if dataSample is None: dataSample = np.array(unimodal_ftForce_integ)
             else: dataSample = np.vstack([dataSample, unimodal_ftForce_integ])
 
@@ -2968,6 +2971,7 @@ def saveHMMinducedFeatures(kFold_list, successData, failureData,\
         abnormalTestData  = copy.copy(failureData[:, abnormalTestIdx, :]) * HMM_dict['scale'] 
         if one_class: abnormalTrainData = None
 
+        
         # training hmm
         if verbose: print "start to fit hmm"
         nEmissionDim = len(normalTrainData)
@@ -2995,7 +2999,7 @@ def saveHMMinducedFeatures(kFold_list, successData, failureData,\
             print "hmm training failed"
             sys.exit()
 
-        if verbose: print "Start to extract features "
+        if verbose: print "Start to extract features with fold ", idx
         # Classifier training data
         ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
           hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData, \
@@ -3070,3 +3074,5 @@ def saveHMMinducedFeatures(kFold_list, successData, failureData,\
             d['ll_classifier_diag_test_idx'] = ll_classifier_diag_test_idx
         
         ut.save_pickle(d, modeling_pkl)
+
+

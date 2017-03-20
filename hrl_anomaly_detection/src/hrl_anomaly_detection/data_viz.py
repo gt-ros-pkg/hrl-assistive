@@ -699,7 +699,7 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
 def ft_disp(timeList, ftForce, ftForceLocal=None):
 
     fig = plt.figure()            
-    gs = gridspec.GridSpec(4, 2)
+    gs = gridspec.GridSpec(12, 6)
     # --------------------------------------------------
     ax1 = fig.add_subplot(gs[0,0])
     ax1.plot(timeList, ftForce[0,:])        
@@ -723,7 +723,7 @@ def ft_disp(timeList, ftForce, ftForceLocal=None):
     plt.show()
 
 
-def viz(X1, normTest=None, abnormTest=None, skip=False):
+def viz(X1, normTest=None, abnormTest=None, skip=False, minmax=None):
     '''
     dim x sample x length
     X1: normal data
@@ -741,6 +741,9 @@ def viz(X1, normTest=None, abnormTest=None, skip=False):
 
     for i in xrange(len(X1)):
 
+        if minmax is not None:
+            X1[i] = np.array(X1[i])*(minmax[1][i]-minmax[0][i]) + minmax[0][i]
+
         n_col = int(i/n_rows)
         n_row = i%n_rows
         ax    = fig.add_subplot(n_rows,n_cols,i+1)
@@ -749,13 +752,12 @@ def viz(X1, normTest=None, abnormTest=None, skip=False):
         means = np.mean(X1[i], axis=0)
         stds  = np.std(X1[i], axis=0)
 
-        print np.shape(x), np.shape(means)
 
         ax.plot(x, means, 'k-')
         ax.fill_between(x, means-stds, means+stds, facecolor='blue', alpha=0.5)
         ax.set_xlim([0,x[-1]])
-        ax.set_ylim([0,1])
-        plt.yticks([0,1.0])
+        ## ax.set_ylim([0,1])
+        ## plt.yticks([0,1.0])
 
     if normTest is not None:
         for i in xrange(len(normTest)):

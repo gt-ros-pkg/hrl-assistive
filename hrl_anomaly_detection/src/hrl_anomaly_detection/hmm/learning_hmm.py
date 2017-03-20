@@ -368,6 +368,18 @@ class learning_hmm(learning_base):
         return x_pred
 
 
+    def generate_sample(self, n_sample, n_length):
+        '''
+        Input
+        @ n_sample: number of generated samples
+        @ n_length: target length of a sample
+        Output
+        @ A list of generated samples
+        '''        
+        obs_seq = self.ml.sample(n_sample, n_length, seed=3586662)
+        
+        return obs_seq
+
     def conditional_prob(self, x):
         '''
         Input
@@ -480,26 +492,36 @@ class learning_hmm(learning_base):
 
     def loglikelihoods(self, X, bPosterior=False, bIdx=False, startIdx=1):
         '''
-        X: dimension x sample x length
+        @ X: dimension x sample x length
+        @ bIdx: enable to return indices 
         return: the likelihoods over time (in single data)
         '''
         # sample x some length
         X_test = util.convert_sequence(X, emission=False)
-        ## X_test = np.squeeze(X_test)
+        return self.loglikelihoods_from_seqs(X, bPosterior=bPosterior, bIdx=bIdx, startIdx=startIdx)
 
+
+    def loglikelihoods_from_seqs(self, X, bPosterior=False, bIdx=False, startIdx=1):
+        '''
+        X: sample x (length*dim)
+        return: the likelihoods over time (in single data)
+        '''
         ll_likelihoods = []
         ll_posteriors  = []        
-        for i in xrange(len(X[0])):
+        for i in xrange(len(X)):
             l_likelihood = []
             l_posterior  = []        
 
-            for j in xrange(startIdx, len(X[0][i])):
+            for j in xrange(startIdx, len(X[i])/self.nEmissionDim):
 
-                try:
-                    final_ts_obj = ghmm.EmissionSequence(self.F,X_test[i,:j*self.nEmissionDim].tolist())
-                except:
-                    print "failed to make sequence"
-                    continue
+                if isinstance(X[i], np.ndarray) or isinstance(X[i], list):
+                    try:
+                        final_ts_obj = ghmm.EmissionSequence(self.F,X[i,:j*self.nEmissionDim].tolist())
+                    except:
+                        print "failed to make sequence"
+                        continue
+                else:
+                    final_ts_obj = ghmm.EmissionSequence(self.F, list(X[i])[:j*self.nEmissionDim] )
 
                 try:
                     logp = self.ml.loglikelihood(final_ts_obj)
@@ -518,9 +540,9 @@ class learning_hmm(learning_base):
         
         if bIdx:
             ll_idx = []
-            for ii in xrange(len(X[0])):
+            for ii in xrange(len(X)):
                 l_idx = []
-                for jj in xrange(startIdx, len(X[0][ii])):
+                for jj in xrange(startIdx, len(X[ii])/self.nEmissionDim):
                     l_idx.append( jj )
                 ll_idx.append(l_idx)
             
@@ -666,16 +688,16 @@ def getHMMinducedFlattenFeatures(ll_logp, ll_post, ll_idx, l_labels=None, c=1.0,
     return X_flat, Y_flat, idx_flat
 
 
-def getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, abnormalTrainData=None, startIdx=4, \
+def getHMMinducedFeaturesFromRawFeatures(ml, normalData, abnormalData=None, startIdx=4, \
                                          add_logp_d=False, cov_type='full', n_jobs=-1):
 
-    if abnormalTrainData is not None:
-        testDataX = np.vstack([ np.swapaxes(normalTrainData,0,1), np.swapaxes(abnormalTrainData,0,1) ])
+    if abnormalData is not None:
+        testDataX = np.vstack([ np.swapaxes(normalData,0,1), np.swapaxes(abnormalData,0,1) ])
         testDataX = np.swapaxes(testDataX, 0,1)
-        testDataY = np.hstack([ -np.ones(len(normalTrainData[0])), \
-                                np.ones(len(abnormalTrainData[0])) ])
+        testDataY = np.hstack([ -np.ones(len(normalData[0])), \
+                                np.ones(len(abnormalData[0])) ])
     else:
-        testDataX = normalTrainData
+        testDataX = normalData
         testDataY = -np.ones(len(testDataX[0]))
         
     return getHMMinducedFeaturesFromRawCombinedFeatures(ml, testDataX, testDataY, startIdx, \

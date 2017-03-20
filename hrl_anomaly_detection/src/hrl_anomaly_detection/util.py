@@ -358,14 +358,15 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=10
             raw_data_dict['kinDesEEPosList'].append(local_kin_des_ee_pos)
             raw_data_dict['kinDesEEQuatList'].append(local_kin_des_ee_quat)
 
-            data_dict['kinEEPosList'].append(interpolationData(kin_time, local_kin_ee_pos, new_times))
+            data_dict['kinEEPosList'].append(interpolationData(kin_time, local_kin_ee_pos, new_times,
+                                                               spline=False))
             data_dict['kinEEQuatList'].append(interpolationData(kin_time, local_kin_ee_quat, new_times, True))
             data_dict['kinTargetPosList'].append(interpolationData(kin_time, local_kin_target_pos, new_times))
             data_dict['kinTargetQuatList'].append(interpolationData(kin_time, local_kin_target_quat, \
                                                                     new_times, True))
             data_dict['kinJntPosList'].append(interpolationData(kin_time, kin_jnt_pos, new_times))
-            data_dict['kinJntEffList'].append(interpolationData(kin_time, kin_jnt_eff, new_times))
-            data_dict['kinPosList'].append(interpolationData(kin_time, local_kin_pos, new_times))
+            data_dict['kinJntEffList'].append(interpolationData(kin_time, kin_jnt_eff, new_times, spline=False))
+            data_dict['kinPosList'].append(interpolationData(kin_time, local_kin_pos, new_times, spline=False))
             data_dict['kinVelList'].append(interpolationData(kin_time, local_kin_vel, new_times))
 
             data_dict['kinDesEEPosList'].append(interpolationData(kin_time, local_kin_des_ee_pos, new_times, \
@@ -396,7 +397,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=10
             raw_data_dict['ftForceList'].append(local_ft_force)
             raw_data_dict['ftTorqueList'].append(local_ft_torque)
 
-            res = interpolationData(ft_time, local_ft_force, new_times)
+            res = interpolationData(ft_time, local_ft_force, new_times, spline=False)
             data_dict['ftForceList'].append(res)                                         
 
             res = interpolationData(ft_time, local_ft_torque, new_times)
@@ -445,7 +446,7 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=10
                 print fileName, np.shape(vision_quat)
                 sys.exit()
 
-            vision_pos_array  = interpolationData(vision_time, vision_pos, new_times, spline=True)
+            vision_pos_array  = interpolationData(vision_time, vision_pos, new_times, spline=False)
             data_dict['visionLandmarkPosList'].append(vision_pos_array)                                         
             vision_quat_array = interpolationData(vision_time, vision_quat, new_times, True)
             data_dict['visionLandmarkQuatList'].append(vision_quat_array)
@@ -765,7 +766,7 @@ def interpolationData(time_array, data_array, new_time_array, quat_flag=False, s
         return np.zeros((nDim,len(new_time_array)))
 
     # remove repeated data
-    if spline is True:
+    if True:
         temp_time_array = [time_array[0]]
         temp_data_array = target_array[:,0:1]
         for i in xrange(1, len(time_array)):        
@@ -809,13 +810,9 @@ def interpolationData(time_array, data_array, new_time_array, quat_flag=False, s
                 
             else:
                 interp = interpolate.interp1d([0.0]+time_array+[time_array[-1]+0.1], [target_array[i][0]]+target_array[i].tolist()+[target_array[i][-1]] )
-                ## if new_time_array[-1]>time_array[-1]:
-                ##     interp = interpolate.interp1d(time_array+[time_array[-1]+0.1], target_array[i].tolist()+[target_array[i][-1]] )
-                ## else:
-                ##     interp = interpolate.interp1d(time_array, target_array[i] )
                 interp_data = interp(new_time_array)
         except:
-            print "splrep failed (maybe new_time_array is over range of time_array)", spline
+            print "Interpolation failed (maybe new_time_array is over range of time_array)", spline
             print np.shape(time_array), np.shape(target_array[i]), i,n
             print new_time_array[0], time_array[0]
             print new_time_array[-1], time_array[-1]

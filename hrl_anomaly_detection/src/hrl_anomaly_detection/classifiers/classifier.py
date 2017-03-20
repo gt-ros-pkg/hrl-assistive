@@ -272,14 +272,17 @@ class classifier(learning_base):
                 ll_idx = [ idx_list[j] for j in xrange(len(idx_list)) for i in xrange(nSample) if y[i*(self.nLength-self.startIdx)+1]<0 ]
                 ## print "Error>> ll_idx is not inserted"
                 ## sys.exit()
-            else: ll_idx  = [ ll_idx[i] for i in xrange(len(ll_idx)) if y[i]<0 ]
+            else:
+                if len(np.shape(y))>1: y = y[:,0]
+                ll_idx  = [ ll_idx[i] for i in xrange(len(ll_idx)) if y[i]<0 ]
+                    
             ll_logp = [ X[i,0] for i in xrange(len(X)) if y[i]<0 ]
             ll_post = [ X[i,-self.nPosteriors:] for i in xrange(len(X)) if y[i]<0 ]
 
             self.g_mu_list = np.linspace(0, self.nLength-1, self.nPosteriors)
             self.g_sig = float(self.nLength) / float(self.nPosteriors) * self.std_coff
 
-            if self.parallel:
+            if self.parallel and False:
                 r = Parallel(n_jobs=-1)(delayed(learn_time_clustering)(i, ll_idx, ll_logp, ll_post, \
                                                                        self.g_mu_list[i],\
                                                                        self.g_sig, self.nPosteriors)
@@ -397,7 +400,7 @@ class classifier(learning_base):
 
 
 
-    def partial_fit(self, X, y=None, classes=None, sample_weight=None, n_iter=1, shuffle=True):
+    def partial_fit(self, X, y=None, shuffle=True, **kwargs):
         '''
         X: samples x hmm-feature vec
         y: sample
@@ -417,8 +420,77 @@ class classifier(learning_base):
             self.dt.set_params(class_weight=d)
             
             X_features = self.rbf_feature.transform(X)
-            for i in xrange(n_iter):
-                self.dt.partial_fit(X_features,y, classes=classes, sample_weight=sample_weight)
+            for i in xrange(kwargs['n_iter']):
+                self.dt.partial_fit(X_features,y,
+                                    classes=kwargs['classes'],
+                                    sample_weight=kwargs['sample_weight'])
+
+        elif self.method.find( 'progress')>=0:
+            ## self.g_mu_list 
+            ## self.g_sig
+            
+            # Get params for new data
+            nSample  = len(y)/(self.nLength-self.startIdx)
+            idx_list = range(self.nLength)[self.startIdx:]
+            ll_idx = [ idx_list[j] for j in xrange(len(idx_list)) for i in xrange(nSample)
+                       if y[i*(self.nLength-self.startIdx)+1]<0 ]            
+            ll_logp = [ X[i,0] for i in xrange(len(X)) if y[i]<0 ]
+            ll_post = [ X[i,-self.nPosteriors:] for i in xrange(len(X)) if y[i]<0 ]
+
+            if self.parallel:
+                r = Parallel(n_jobs=-1)(delayed(learn_time_clustering)(i, ll_idx, ll_logp, ll_post, \
+                                                                       self.g_mu_list[i],\
+                                                                       self.g_sig, self.nPosteriors)
+                                                                       for i in xrange(self.nPosteriors))
+                _, l_statePosterior, ll_mu, ll_std = zip(*r)
+            else:
+                l_statePosterior = []
+                ll_mu            = []
+                ll_std           = []
+                for i in xrange(self.nPosteriors):
+                    _,p,m,s = learn_time_clustering(i, ll_idx, ll_logp, ll_post, self.g_mu_list[i],\
+                                                  self.g_sig, self.nPosteriors)
+                    l_statePosterior.append(p)
+                    ll_mu.append(m)
+                    ll_std.append(s)
+            
+            # Get params for old data
+            ## self.l_statePosterior 
+            ## self.ll_mu            
+            ## self.ll_std           
+
+            # Update using bayesian inference
+            # 0) Find the best cluster indices
+                        
+            # 1) Find all likelihood in ith cluster
+            l_idx = []
+            ll_c_post = [[] for i in xrange(self.nPosteriors)]
+            ll_c_logp = [[] for i in xrange(self.nPosteriors)]
+            for i, post in enumerate(ll_post):
+                min_index, min_dist = findBestPosteriorDistribution(post, self.l_statePosterior)
+                ll_c_post[min_index].append(post)
+                ll_c_logp[min_index].append(ll_logp[i])
+
+            mu_mu   = kwargs['mu_mu']
+            std_mu  = kwargs['std_mu']
+            mu_std  = kwargs['mu_std']
+            std_std = kwargs['std_std']
+                
+            # 2) Run optimization
+            from scipy.optimize import minimize
+            for i in xrange(self.nPosteriors):
+
+                x0 = [mu_mu[i], mu_std[i]]
+                
+                #L-BFGS
+                res = minimize(param_posterior, x0, args=(ll_c_logp[i],
+                                                          mu_mu[i], std_mu[i], mu_std[i], std_std[i]),
+                               method='L-BFGS-B',
+                               bounds=((mu_mu[i]-5.0*std_mu[i], mu_mu[i]+5.0*std_mu[i]),
+                                       (mu_std[i]-5.0*std_std[i], mu_std[i]+5.0*std_std[i])))
+
+                self.ll_mu[i]  = res.x[0]
+                self.ll_std[i] = res.x[1]
             
         else:
             print "Not available method, ", self.method
@@ -799,7 +871,8 @@ def learn_time_clustering(i, ll_idx, ll_logp, ll_post, g_mu, g_sig, nState):
         weight    = norm(loc=g_mu, scale=g_sig).pdf(idx)    
         if weight < 1e-3: continue
         g_lhood2 += weight * ((logp - l_likelihood_mean )**2)
-        
+
+    ## print g_lhood2/(weight_sum - weight2_sum/weight_sum), weight_sum - weight2_sum/weight_sum, weight_sum 
     l_likelihood_std = np.sqrt(g_lhood2/(weight_sum - weight2_sum/weight_sum))
 
     return i, l_statePosterior, l_likelihood_mean, l_likelihood_std
@@ -942,6 +1015,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                     ROC_data, ROC_dict, SVM_dict, HMM_dict,\
                     raw_data=None, startIdx=4, nState=25, \
                     modeling_pkl_prefix=None, failsafe=False, delay_estimation=False,\
+                    adaptation=False, \
                     save_model=False, load_model=False, n_jobs=-1):
 
     #-----------------------------------------------------------------------------------------
@@ -1040,6 +1114,28 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                                                                    ll_classifier_train_idx,\
                                                                    remove_fp=remove_fp)
 
+        if method.find('progress')>=0:
+
+            mu_list  = [ [] for i in xrange(nState) ]
+            std_list = [ [] for i in xrange(nState) ]
+
+            for i in xrange(len(nor_train_inds)):
+                # compute theta per person
+                if n_jobs == 1: parallel = True
+                else: parallel = False
+                dtc = classifier( method=method, nPosteriors=nState, nLength=nLength, parallel=parallel )
+
+                X_train_p, Y_train_p, idx_train_p =\
+                dm.flattenSample(np.array(ll_classifier_train_X)[nor_train_inds[i]], \
+                                 np.array(ll_classifier_train_Y)[nor_train_inds[i]], \
+                                 np.array(ll_classifier_train_idx)[nor_train_inds[i]],\
+                                 remove_fp=remove_fp)
+                dtc.fit( X_train_p, Y_train_p, idx_train_p )
+                for j in xrange(nState):
+                    mu_list[j].append( dtc.ll_mu[j] )
+                    std_list[j].append( dtc.ll_std[j] )
+
+
 
     #-----------------------------------------------------------------------------------------
     # Generate parameter list for ROC curve
@@ -1064,6 +1160,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
         X_scaled = X_train_org
     print method, " : Before classification : ", np.shape(X_scaled), np.shape(Y_train_org)
 
+    # Get TEST data
     X_test = []
     Y_test = [] 
     for j in xrange(len(ll_classifier_test_X)):
@@ -1141,6 +1238,14 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
         if ret is False: raise ValueError("Classifier fitting error")
         if j==0 and save_model: dtc.save_model(clf_pkl)
 
+        # Adaptation
+        if adaptation:
+            dtc.partial_fit(ll_classifier_ptrain_X, ll_classifier_ptrain_Y, shuffle=False,
+                            mu_mu=np.mean(mu_list, axis=1),
+                            std_mu=np.std(mu_list, axis=1),
+                            mu_std=np.mean(std_list, axis=1),
+                            std_std=np.std(std_list, axis=1) )
+            
         # evaluate the classifier
         tp_l = []
         fp_l = []
@@ -1408,3 +1513,24 @@ def run_classifiers_boost(idx, processed_data_path, task_name, method_list,\
     return data
 
 
+def param_posterior(x, l, mu_mu, std_mu, mu_std, std_std):
+
+    mu_n  = x[0]
+    std_n = x[1]
+
+    p = 0
+    N = float(len(l))
+    if isinstance(l, list): l = np.array(l)
+    
+    # 1st term
+    p += np.log(std_n)*N + np.sum( (mu_n-l)**2 )/(2.0*std_n**2)
+    
+    # 2nd term
+    p += (mu_n-mu_mu)**2 / (2.0*std_mu**2)
+    
+    # 3rd term
+    p += (std_n-mu_std)**2 / (2.0*std_std**2)
+
+    return p
+
+    

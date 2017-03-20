@@ -61,12 +61,16 @@ shapes = itertools.cycle(['x','v', 'o', '+'])
 matplotlib.rcParams['pdf.fonttype'] = 42
 matplotlib.rcParams['ps.fonttype'] = 42 
 
+import warnings
+warnings.simplefilter("always", DeprecationWarning)
+
 
 def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
                           step_mag, pkl_prefix=None,\
                           data_renew=False, save_pdf=False, verbose=False, debug=False,\
                           no_plot=False, delay_plot=False, find_param=False, all_plot=False,\
                           save_model=False, load_model=False):
+    warnings.simplefilter("always", DeprecationWarning)
 
     ## Parameters
     # data
@@ -359,6 +363,7 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
                          step_mag, pkl_prefix,\
                          data_renew=False, save_pdf=False, verbose=False, debug=False,\
                          no_plot=False, delay_plot=False, find_param=False, all_plot=False):
+    warnings.simplefilter("always", DeprecationWarning)
 
     ## Parameters
     # data
@@ -578,6 +583,7 @@ def evaluation_acc_param2(subject_names, task_name, raw_data_path, processed_dat
                           step_mag_list,\
                           data_renew=False, save_pdf=False, verbose=False, debug=False,\
                           no_plot=False, delay_plot=False, find_param=False, all_plot=False):
+    warnings.simplefilter("always", DeprecationWarning)
 
     ## Parameters
     # data

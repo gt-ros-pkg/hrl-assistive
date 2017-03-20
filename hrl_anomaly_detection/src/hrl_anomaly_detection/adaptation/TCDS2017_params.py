@@ -128,7 +128,7 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                    
 
     modality_list   = ['ft' ,'kinematics', 'audioWrist', 'vision_landmark']
-    raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/AURO2016/'
+    raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/AURO2016/'
 
     data_param_dict= {'renew': data_renew, 'rf_center': rf_center, 'local_range': local_range,\
                       'downSampleSize': 140, 'cut_data': None, \
@@ -139,9 +139,10 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                       'isolationFeatures': isolationFeatures,\
                       'handFeatures_noise': True, 'max_time': 7.0}
 
-    save_data_path = os.path.expanduser('~')+\
-      '/hrl_file_server/dpark_data/anomaly/AURO2016/'+task+'_data/'+\
-      str(data_param_dict['downSampleSize'])+'_'+str(dim)
+    save_data_path = None
+    ## os.path.expanduser('~')+\
+    ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+task+'_data/'+\
+    ##   str(data_param_dict['downSampleSize'])+'_'+str(dim)
 
     param_dict = {'data_param': data_param_dict, 'HMM': HMM_param_dict, \
                   'SVM': SVM_param_dict, 'ROC': ROC_param_dict, 'AD': AD_param_dict}

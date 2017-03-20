@@ -49,9 +49,9 @@ A = util.init_trans_mat(nState, mode='linear').tolist()
 ## for i in xrange(nState):
 ##     for j in xrange(i,i+3):
 ##         if j > nState-1: continue
-##         if j==i:   A[i,j] = 0.4
-##         if j==i+1: A[i,j] = 0.4
-##         if j==i+2: A[i,j] = 0.2           
+##         if j==i:   A[i,j] = 0.5
+##         if j==i+1: A[i,j] = 0.5
+##         ## if j==i+2: A[i,j] = 0.2           
 ##     A[i]/=np.sum(A[i])
 
 
