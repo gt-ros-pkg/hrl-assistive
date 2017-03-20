@@ -802,7 +802,11 @@ if __name__ == '__main__':
         '''
         nPoints = param_dict['ROC']['nPoints']
                
-        ## ep 12-89.5 7-82
+        ## br
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## c11
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
