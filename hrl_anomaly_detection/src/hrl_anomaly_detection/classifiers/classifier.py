@@ -1222,7 +1222,17 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             thresholds = ROC_dict[method+'_param_range']
             dtc.set_params( ths_mult = thresholds[j] )
             if not load_model:
-                if j==0: ret = dtc.fit(X_scaled, Y_train_org, idx_train_org)
+                if j==0:
+                    ret = dtc.fit(X_scaled, Y_train_org, idx_train_org)
+
+                    # Adaptation
+                    if adaptation is True:            
+                        dtc.partial_fit(ll_classifier_ptrain_X, ll_classifier_ptrain_Y, shuffle=False,
+                                        mu_mu=np.mean(mu_list, axis=1),
+                                        std_mu=np.std(mu_list, axis=1),
+                                        mu_std=np.mean(std_list, axis=1),
+                                        std_std=np.std(std_list, axis=1) )
+                   
         elif method == 'change':
             thresholds = ROC_dict[method+'_param_range']
             dtc.set_params( ths_mult = thresholds[j] )
@@ -1237,14 +1247,6 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
 
         if ret is False: raise ValueError("Classifier fitting error")
         if j==0 and save_model: dtc.save_model(clf_pkl)
-
-        # Adaptation
-        if adaptation is True:            
-            dtc.partial_fit(ll_classifier_ptrain_X, ll_classifier_ptrain_Y, shuffle=False,
-                            mu_mu=np.mean(mu_list, axis=1),
-                            std_mu=np.std(mu_list, axis=1),
-                            mu_std=np.mean(std_list, axis=1),
-                            std_std=np.std(std_list, axis=1) )
             
         # evaluate the classifier
         tp_l = []
