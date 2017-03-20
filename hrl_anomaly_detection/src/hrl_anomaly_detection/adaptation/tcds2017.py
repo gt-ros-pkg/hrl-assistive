@@ -343,7 +343,7 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
         ml.set_hmm_object(d['A'], d['B'], d['pi'], d['out_a_num'], d['vec_num'], \
                           d['mat_num'], d['u_denom'])
         ## ret = ml.partial_fit(X_ptrain+noise_arr, learningRate=0.6)
-        ## ret = ml.fit(X_ptrain+noise_arr)
+        ret = ml.fit(X_ptrain+noise_arr)
         ## print idx, ret
         ## if np.isnan(ret):
         ##     print "kFold_list ........ partial fit error... "
@@ -429,7 +429,7 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
                                                                          startIdx=startIdx, nState=nState,\
                                                                          n_jobs=n_jobs,\
                                                                          modeling_pkl_prefix=pkl_prefix,\
-                                                                         adaptation=True) \
+                                                                         adaptation=False) \
                                                                          for idx in xrange(len(td['successDataList'])) )
 
     print "finished to run run_classifiers"
@@ -805,16 +805,16 @@ if __name__ == '__main__':
         '''
         nPoints = param_dict['ROC']['nPoints']
                
-        ## c11
+        ## br
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## ## 
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
-        ## c12
+        ## c11
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation3'
+          '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
+        ## c12
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation3'
         ## c8
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation4'
