@@ -1114,7 +1114,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                                                                    ll_classifier_train_idx,\
                                                                    remove_fp=remove_fp)
 
-        if method.find('progress')>=0 and adaptation:
+        if method.find('progress')>=0 and adaptation is True:
 
             mu_list  = [ [] for i in xrange(nState) ]
             std_list = [ [] for i in xrange(nState) ]
@@ -1239,7 +1239,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
         if j==0 and save_model: dtc.save_model(clf_pkl)
 
         # Adaptation
-        if adaptation:            
+        if adaptation is True:            
             dtc.partial_fit(ll_classifier_ptrain_X, ll_classifier_ptrain_Y, shuffle=False,
                             mu_mu=np.mean(mu_list, axis=1),
                             std_mu=np.std(mu_list, axis=1),

@@ -389,9 +389,12 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
         d['F']            = ml.F
         d['nState']       = nState
         d['startIdx']     = startIdx
-        d['ll_classifier_train_X']  = ll_classifier_train_X
-        d['ll_classifier_train_Y']  = ll_classifier_train_Y            
-        d['ll_classifier_train_idx']= ll_classifier_train_idx
+        ## d['ll_classifier_train_X']  = ll_classifier_train_X
+        ## d['ll_classifier_train_Y']  = ll_classifier_train_Y            
+        ## d['ll_classifier_train_idx']= ll_classifier_train_idx
+        d['ll_classifier_train_X']  = ll_classifier_ptrain_X
+        d['ll_classifier_train_Y']  = ll_classifier_ptrain_Y            
+        d['ll_classifier_train_idx']= ll_classifier_ptrain_idx
         d['ll_classifier_ptrain_X']  = ll_classifier_ptrain_X
         d['ll_classifier_ptrain_Y']  = ll_classifier_ptrain_Y            
         d['ll_classifier_ptrain_idx']= ll_classifier_ptrain_idx
@@ -426,7 +429,7 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
                                                                          startIdx=startIdx, nState=nState,\
                                                                          n_jobs=n_jobs,\
                                                                          modeling_pkl_prefix=pkl_prefix,\
-                                                                         adaptation=True) \
+                                                                         adaptation=False) \
                                                                          for idx in xrange(len(td['successDataList'])) )
 
     print "finished to run run_classifiers"
@@ -806,12 +809,12 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## c11
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
-        ## c12
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation3'
+        ## ## c11
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
+        ## ## c12
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation3'
         param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
                                                      'unimodal_kinJntEff_1',\
                                                      'unimodal_ftForce_integ',\
