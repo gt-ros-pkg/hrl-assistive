@@ -342,7 +342,7 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
         ml = hmm.learning_hmm(nState, d['nEmissionDim'])
         ml.set_hmm_object(d['A'], d['B'], d['pi'], d['out_a_num'], d['vec_num'], \
                           d['mat_num'], d['u_denom'])
-        ret = ml.partial_fit(X_ptrain+noise_arr, learningRate=0.0)
+        ret = ml.partial_fit(X_ptrain+noise_arr, learningRate=0.4)
         ## ret = ml.fit(X_ptrain+noise_arr)
         ## print idx, ret
         ## if np.isnan(ret):
@@ -442,103 +442,103 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
 
 
 
-def temp():
+## def temp():
 
-    # Split test data to two groups
-    n_AHMM_sample = 10
-    for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
-      in enumerate(kFold_list):
+##     # Split test data to two groups
+##     n_AHMM_sample = 10
+##     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
+##       in enumerate(kFold_list):
 
-        ## if idx != 4: continue
-        inc_model_pkl = os.path.join(processed_data_path, 'hmm_update_'+task_name+'_'+str(idx)+'.pkl')
-        if not(os.path.isfile(inc_model_pkl) is False or HMM_dict['renew'] or data_renew) and False :
-            print idx, " : updated hmm exists"
-            continue
+##         ## if idx != 4: continue
+##         inc_model_pkl = os.path.join(processed_data_path, 'hmm_update_'+task_name+'_'+str(idx)+'.pkl')
+##         if not(os.path.isfile(inc_model_pkl) is False or HMM_dict['renew'] or data_renew) and False :
+##             print idx, " : updated hmm exists"
+##             continue
  
-        normalTrainData  = copy.copy(successData[:, normalTrainIdx, :]) * HMM_dict['scale']
-        normalTestData   = copy.copy(successData[:, normalTestIdx, :]) * HMM_dict['scale'] 
-        abnormalTestData = copy.copy(failureData[:, abnormalTestIdx, :]) * HMM_dict['scale']
+##         normalTrainData  = copy.copy(successData[:, normalTrainIdx, :]) * HMM_dict['scale']
+##         normalTestData   = copy.copy(successData[:, normalTestIdx, :]) * HMM_dict['scale'] 
+##         abnormalTestData = copy.copy(failureData[:, abnormalTestIdx, :]) * HMM_dict['scale']
 
-        # person-wise indices from normal training data
-        nor_train_inds = [ np.arange(len(kFold_list[i][2])) for i in xrange(len(kFold_list)) if i!=idx ]
-        for i in xrange(1,len(nor_train_inds)):
-            nor_train_inds[i] += (nor_train_inds[i-1][-1]+1)
+##         # person-wise indices from normal training data
+##         nor_train_inds = [ np.arange(len(kFold_list[i][2])) for i in xrange(len(kFold_list)) if i!=idx ]
+##         for i in xrange(1,len(nor_train_inds)):
+##             nor_train_inds[i] += (nor_train_inds[i-1][-1]+1)
 
-        ## noise_mag=0.01
-        X_ptrain = copy.copy(normalTestData[:n_AHMM_sample])
-        noise_arr = np.random.normal(0.0, noise_mag, np.shape(X_ptrain))*HMM_dict['scale']
-        nLength   = len(normalTestData[0][0]) - startIdx
+##         ## noise_mag=0.01
+##         X_ptrain = copy.copy(normalTestData[:n_AHMM_sample])
+##         noise_arr = np.random.normal(0.0, noise_mag, np.shape(X_ptrain))*HMM_dict['scale']
+##         nLength   = len(normalTestData[0][0]) - startIdx
       
-        model_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
-        d            = ut.load_pickle(model_pkl)
+##         model_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
+##         d            = ut.load_pickle(model_pkl)
 
-        # Update
-        ml = hmm.learning_hmm(nState, d['nEmissionDim'])
-        ## ml.set_hmm_object(d['A'], d['B'], d['pi'], d['out_a_num'], d['vec_num'], \
-        ##                   d['mat_num'], d['u_denom'])
-        ## ret = ml.partial_fit(X_ptrain+noise_arr, learningRate=0.9)
-        ret = ml.fit(X_ptrain+noise_arr)
-        print idx, ret
-        if np.isnan(ret):
-            print "kFold_list ........ partial fit error... "
-            print ret
-            sys.exit()
+##         # Update
+##         ml = hmm.learning_hmm(nState, d['nEmissionDim'])
+##         ## ml.set_hmm_object(d['A'], d['B'], d['pi'], d['out_a_num'], d['vec_num'], \
+##         ##                   d['mat_num'], d['u_denom'])
+##         ## ret = ml.partial_fit(X_ptrain+noise_arr, learningRate=0.9)
+##         ret = ml.fit(X_ptrain+noise_arr)
+##         print idx, ret
+##         if np.isnan(ret):
+##             print "kFold_list ........ partial fit error... "
+##             print ret
+##             sys.exit()
 
-        # Comparison of
-        ## import hmm_viz as hv
-        ## ## hv.data_viz(normalTrainData[:,40:60], X_ptrain)
-        ## hv.data_viz(normalTrainData, X_ptrain)
-        ## sys.exit()
+##         # Comparison of
+##         ## import hmm_viz as hv
+##         ## ## hv.data_viz(normalTrainData[:,40:60], X_ptrain)
+##         ## hv.data_viz(normalTrainData, X_ptrain)
+##         ## sys.exit()
 
-        # Comparison of HMMs
-        ml_temp = hmm.learning_hmm(nState, d['nEmissionDim'])
-        ml_temp.set_hmm_object(d['A'], d['B'], d['pi'], d['out_a_num'], d['vec_num'], \
-                               d['mat_num'], d['u_denom'])
-        import hmm_viz as hv
-        hv.hmm_emission_viz(ml_temp, ml)
-        sys.exit()
+##         # Comparison of HMMs
+##         ml_temp = hmm.learning_hmm(nState, d['nEmissionDim'])
+##         ml_temp.set_hmm_object(d['A'], d['B'], d['pi'], d['out_a_num'], d['vec_num'], \
+##                                d['mat_num'], d['u_denom'])
+##         import hmm_viz as hv
+##         hv.hmm_emission_viz(ml_temp, ml)
+##         sys.exit()
 
-        # Classifier test data
-        n_jobs=-1
-        ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
-          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, startIdx=startIdx, n_jobs=n_jobs)
-        ll_classifier_ptrain_X, ll_classifier_ptrain_Y, ll_classifier_ptrain_idx =\
-          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData[:,:n_AHMM_sample], startIdx=startIdx, \
-                                                   n_jobs=n_jobs)
-        ll_classifier_test_X, ll_classifier_test_Y, ll_classifier_test_idx =\
-          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData[:,n_AHMM_sample:], abnormalTestData, \
-                                                   startIdx, n_jobs=n_jobs)
+##         # Classifier test data
+##         n_jobs=-1
+##         ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
+##           hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, startIdx=startIdx, n_jobs=n_jobs)
+##         ll_classifier_ptrain_X, ll_classifier_ptrain_Y, ll_classifier_ptrain_idx =\
+##           hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData[:,:n_AHMM_sample], startIdx=startIdx, \
+##                                                    n_jobs=n_jobs)
+##         ll_classifier_test_X, ll_classifier_test_Y, ll_classifier_test_idx =\
+##           hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData[:,n_AHMM_sample:], abnormalTestData, \
+##                                                    startIdx, n_jobs=n_jobs)
 
-        if success_files is not None:
-            ll_classifier_test_labels = [success_files[i] for i in normalTestIdx[n_AHMM_sample:]]
-            ll_classifier_test_labels += [failure_files[i] for i in abnormalTestIdx]
-        else:
-            ll_classifier_test_labels = None
+##         if success_files is not None:
+##             ll_classifier_test_labels = [success_files[i] for i in normalTestIdx[n_AHMM_sample:]]
+##             ll_classifier_test_labels += [failure_files[i] for i in abnormalTestIdx]
+##         else:
+##             ll_classifier_test_labels = None
 
-        #-----------------------------------------------------------------------------------------
-        d = {}
-        d['nEmissionDim'] = ml.nEmissionDim
-        d['A']            = ml.A 
-        d['B']            = ml.B 
-        d['pi']           = ml.pi
-        d['F']            = ml.F
-        d['nState']       = nState
-        d['startIdx']     = startIdx
-        d['ll_classifier_train_X']  = ll_classifier_train_X
-        d['ll_classifier_train_Y']  = ll_classifier_train_Y            
-        d['ll_classifier_train_idx']= ll_classifier_train_idx
-        d['ll_classifier_ptrain_X']  = ll_classifier_ptrain_X
-        d['ll_classifier_ptrain_Y']  = ll_classifier_ptrain_Y            
-        d['ll_classifier_ptrain_idx']= ll_classifier_ptrain_idx
-        d['ll_classifier_test_X']   = ll_classifier_test_X
-        d['ll_classifier_test_Y']   = ll_classifier_test_Y            
-        d['ll_classifier_test_idx'] = ll_classifier_test_idx
-        d['ll_classifier_test_labels'] = ll_classifier_test_labels
-        d['nLength']      = nLength
-        d['scale']        = HMM_dict['scale']
-        d['cov']          = HMM_dict['cov']
-        d['nor_train_inds'] = nor_train_inds
-        ut.save_pickle(d, inc_model_pkl)
+##         #-----------------------------------------------------------------------------------------
+##         d = {}
+##         d['nEmissionDim'] = ml.nEmissionDim
+##         d['A']            = ml.A 
+##         d['B']            = ml.B 
+##         d['pi']           = ml.pi
+##         d['F']            = ml.F
+##         d['nState']       = nState
+##         d['startIdx']     = startIdx
+##         d['ll_classifier_train_X']  = ll_classifier_train_X
+##         d['ll_classifier_train_Y']  = ll_classifier_train_Y            
+##         d['ll_classifier_train_idx']= ll_classifier_train_idx
+##         d['ll_classifier_ptrain_X']  = ll_classifier_ptrain_X
+##         d['ll_classifier_ptrain_Y']  = ll_classifier_ptrain_Y            
+##         d['ll_classifier_ptrain_idx']= ll_classifier_ptrain_idx
+##         d['ll_classifier_test_X']   = ll_classifier_test_X
+##         d['ll_classifier_test_Y']   = ll_classifier_test_Y            
+##         d['ll_classifier_test_idx'] = ll_classifier_test_idx
+##         d['ll_classifier_test_labels'] = ll_classifier_test_labels
+##         d['nLength']      = nLength
+##         d['scale']        = HMM_dict['scale']
+##         d['cov']          = HMM_dict['cov']
+##         d['nor_train_inds'] = nor_train_inds
+##         ut.save_pickle(d, inc_model_pkl)
     
 
 
@@ -812,15 +812,15 @@ if __name__ == '__main__':
         ## c11
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
-        ## c12
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation3'
+        ## ep
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation3'
         ## c8
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation4'
-        ## ep
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation5'
+        ## c12
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation5'
         param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
                                                      'unimodal_kinJntEff_1',\
                                                      'unimodal_ftForce_integ',\
