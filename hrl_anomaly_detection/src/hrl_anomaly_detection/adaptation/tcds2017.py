@@ -342,7 +342,7 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
         ml = hmm.learning_hmm(nState, d['nEmissionDim'])
         ml.set_hmm_object(d['A'], d['B'], d['pi'], d['out_a_num'], d['vec_num'], \
                           d['mat_num'], d['u_denom'])
-        ret = ml.partial_fit(X_ptrain+noise_arr, learningRate=0.08 )
+        ret = ml.partial_fit(X_ptrain+noise_arr, learningRate=0.005 )
         ## ret = ml.fit(X_ptrain+noise_arr)
         ## print idx, ret
         if np.isnan(ret):
