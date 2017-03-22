@@ -345,12 +345,12 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
                           
         ## ret = ml.partial_fit(X_ptrain+noise_arr, learningRate=0.4, max_iter=30, nrSteps=1)
         ## ret = ml.partial_fit(X_ptrain+noise_arr, learningRate=0.4, max_iter=50, nrSteps=1)
-        ## ret = ml.fit(X_ptrain+noise_arr)
+        ret = ml.fit(X_ptrain+noise_arr)
         ## print idx, ret
-        ## if np.isnan(ret):
-        ##     print "kFold_list ........ partial fit error... "
-        ##     print ret
-        ##     sys.exit()
+        if np.isnan(ret):
+            print "kFold_list ........ partial fit error... "
+            print ret
+            sys.exit()
 
         # Comparison of
         ## import hmm_viz as hv
@@ -815,8 +815,8 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation4'
         ## c11
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
         ## c12
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation5'
