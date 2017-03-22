@@ -346,12 +346,12 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
                           
         #ret = ml.partial_fit(X_ptrain+noise_arr, learningRate=0.4, max_iter=30, nrSteps=1)
         ## ret = ml.partial_fit(X_ptrain+noise_arr, learningRate=0.4, max_iter=50, nrSteps=1)
-        ret = ml.fit(X_ptrain+noise_arr)
+        #ret = ml.fit(X_ptrain+noise_arr)
         ## print idx, ret
-        if np.isnan(ret):
-            print "kFold_list ........ partial fit error... "
-            print ret
-            sys.exit()
+        ## if np.isnan(ret):
+        ##     print "kFold_list ........ partial fit error... "
+        ##     print ret
+        ##     sys.exit()
 
         # Comparison of
         ## import hmm_viz as hv
@@ -432,7 +432,7 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
                                                                          startIdx=startIdx, nState=nState,\
                                                                          n_jobs=n_jobs,\
                                                                          modeling_pkl_prefix=pkl_prefix,\
-                                                                         adaptation=False) \
+                                                                         adaptation=True) \
                                                                          for idx in xrange(len(td['successDataList'])) )
 
     print "finished to run run_classifiers"
@@ -822,8 +822,8 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation5'
         ## ep
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation3'
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation3'
         param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
                                                      'unimodal_kinJntEff_1',\
                                                      'unimodal_ftForce_integ',\
