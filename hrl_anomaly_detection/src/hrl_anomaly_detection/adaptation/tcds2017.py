@@ -289,14 +289,15 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
     d['param_dict']['feature_max'] = np.array(d['param_dict']['feature_max'])[feature_list].tolist()
 
     tgt_raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/ICRA2017/'
-    tgt_subjects = ['zack', 'hkim', 'ari', 'park', 'jina', 'linda']
+    ## tgt_subjects = ['zack', 'hkim', 'ari', 'park', 'jina', 'linda']
+    tgt_subjects = ['ari', 'park', 'jina', 'linda', 'sai', 'hyun']
 
     # Extract data from designated location
     td = dm.getDataLOPO(tgt_subjects, task_name, tgt_raw_data_path, save_data_path,\
                         downSampleSize=data_dict['downSampleSize'],\
                         init_param_dict=d['param_dict'],\
                         handFeatures=param_dict['data_param']['handFeatures'], \
-                        data_renew=False, max_time=data_dict['max_time'],
+                        data_renew=True, max_time=data_dict['max_time'],
                         pkl_prefix='tgt_')
 
     nEmissionDim = len(param_dict['data_param']['handFeatures'])
@@ -345,7 +346,7 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
                           
         ## ret = ml.partial_fit(X_ptrain+noise_arr, learningRate=0.4, max_iter=30, nrSteps=1)
         ## ret = ml.partial_fit(X_ptrain+noise_arr, learningRate=0.4, max_iter=50, nrSteps=1)
-        ret = ml.fit(X_ptrain+noise_arr)
+        ## ret = ml.fit(X_ptrain+noise_arr)
         ## print idx, ret
         if np.isnan(ret):
             print "kFold_list ........ partial fit error... "
@@ -431,7 +432,7 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
                                                                          startIdx=startIdx, nState=nState,\
                                                                          n_jobs=n_jobs,\
                                                                          modeling_pkl_prefix=pkl_prefix,\
-                                                                         adaptation=True) \
+                                                                         adaptation=False) \
                                                                          for idx in xrange(len(td['successDataList'])) )
 
     print "finished to run run_classifiers"
@@ -815,8 +816,8 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation4'
         ## c11
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
         ## c12
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation5'
