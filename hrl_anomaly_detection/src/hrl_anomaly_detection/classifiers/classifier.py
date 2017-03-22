@@ -428,6 +428,7 @@ class classifier(learning_base):
         elif self.method.find( 'progress')>=0:
             ## self.g_mu_list 
             ## self.g_sig
+            if type(X) == list: X = np.array(X)
             
             # Get params for new data
             nSample  = len(y)/(self.nLength-self.startIdx)
