@@ -488,8 +488,8 @@ class classifier(learning_base):
                 res = minimize(param_posterior, x0, args=(ll_c_logp[i],
                                                           mu_mu[i], std_mu[i], mu_std[i], std_std[i]),
                                method='L-BFGS-B',
-                               bounds=((mu_mu[i]-15.0*std_mu[i], mu_mu[i]+15.0*std_mu[i]),
-                                       (mu_std[i]-15.0*std_std[i], mu_std[i]+15.0*std_std[i]))
+                               bounds=((mu_mu[i]-5.0*std_mu[i], mu_mu[i]+5.0*std_mu[i]),
+                                       (mu_std[i]-5.0*std_std[i], mu_std[i]+5.0*std_std[i]))
                                        )
 
                 self.ll_mu[i]  = res.x[0]
@@ -1537,10 +1537,10 @@ def param_posterior(x, l, mu_mu, std_mu, mu_std, std_std):
     p += np.log(std_n)*N + np.sum( (mu_n-l)**2 )/(2.0*std_n**2)
     
     # 2nd term
-    p += (mu_n-mu_mu)**2 / (2.0*std_mu**2) *0.5
+    p += (mu_n-mu_mu)**2 / (2.0*std_mu**2) #*0.5
     
     # 3rd term
-    p += (std_n-mu_std)**2 / (2.0*std_std**2) *0.5
+    p += (std_n-mu_std)**2 / (2.0*std_std**2) #*0.5
 
     return p
 
