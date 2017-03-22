@@ -1528,10 +1528,10 @@ def param_posterior(x, l, mu_mu, std_mu, mu_std, std_std):
     p += np.log(std_n)*N + np.sum( (mu_n-l)**2 )/(2.0*std_n**2)
     
     # 2nd term
-    p += (mu_n-mu_mu)**2 / (2.0*std_mu**2) *0.5
+    p += (mu_n-mu_mu)**2 / (2.0*std_mu**2) #*0.5
     
     # 3rd term
-    p += (std_n-mu_std)**2 / (2.0*std_std**2) *0.5
+    p += (std_n-mu_std)**2 / (2.0*std_std**2) #*0.5
 
     return p
 
