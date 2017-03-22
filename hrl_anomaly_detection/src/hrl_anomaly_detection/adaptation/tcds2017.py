@@ -344,14 +344,14 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
         ml.set_hmm_object(d['A'], d['B'], d['pi'], d['out_a_num'], d['vec_num'], \
                           d['mat_num'], d['u_denom'])
                           
-        ## ret = ml.partial_fit(X_ptrain+noise_arr, learningRate=0.4, max_iter=30, nrSteps=1)
+        #ret = ml.partial_fit(X_ptrain+noise_arr, learningRate=0.4, max_iter=30, nrSteps=1)
         ## ret = ml.partial_fit(X_ptrain+noise_arr, learningRate=0.4, max_iter=50, nrSteps=1)
         ## ret = ml.fit(X_ptrain+noise_arr)
         ## print idx, ret
-        if np.isnan(ret):
-            print "kFold_list ........ partial fit error... "
-            print ret
-            sys.exit()
+        ## if np.isnan(ret):
+        ##     print "kFold_list ........ partial fit error... "
+        ##     print ret
+        ##     sys.exit()
 
         # Comparison of
         ## import hmm_viz as hv
