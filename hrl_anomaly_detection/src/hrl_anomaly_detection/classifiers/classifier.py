@@ -486,8 +486,8 @@ class classifier(learning_base):
                 res = minimize(param_posterior, x0, args=(ll_c_logp[i],
                                                           mu_mu[i], std_mu[i], mu_std[i], std_std[i]),
                                method='L-BFGS-B',
-                               bounds=((mu_mu[i]-5.0*std_mu[i], mu_mu[i]+5.0*std_mu[i]),
-                                       (mu_std[i]-5.0*std_std[i], mu_std[i]+5.0*std_std[i])))
+                               bounds=((mu_mu[i]-15.0*std_mu[i], mu_mu[i]+15.0*std_mu[i]),
+                                       (mu_std[i]-15.0*std_std[i], mu_std[i]+15.0*std_std[i])))
 
                 self.ll_mu[i]  = res.x[0]
                 self.ll_std[i] = res.x[1]
