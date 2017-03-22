@@ -430,7 +430,7 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
                                                                          startIdx=startIdx, nState=nState,\
                                                                          n_jobs=n_jobs,\
                                                                          modeling_pkl_prefix=pkl_prefix,\
-                                                                         adaptation=False) \
+                                                                         adaptation=True) \
                                                                          for idx in xrange(len(td['successDataList'])) )
 
     print "finished to run run_classifiers"
