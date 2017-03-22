@@ -42,6 +42,7 @@ from joblib import Parallel, delayed
 from scipy.stats import multivariate_normal
 
 from hrl_anomaly_detection.hmm.learning_base import learning_base
+import warnings
 
 os.system("taskset -p 0xff %d" % os.getpid())
 random.seed(3334)
@@ -241,7 +242,7 @@ class learning_hmm(learning_base):
             return ret/float(nData)
 
 
-    def partial_fit(self, xData, learningRate=0.2, nrSteps=100):
+    def partial_fit(self, xData, learningRate=0.2, nrSteps=1, max_iter=100):
         ''' Online update of HMM using online Baum-Welch algorithm
         '''
         
@@ -256,17 +257,24 @@ class learning_hmm(learning_base):
         if learningRate < 1e-5: learningRate = 1e-5
 
         final_seq = ghmm.SequenceSet(self.F, X_train)
-        ret = self.ml.baumWelch(final_seq, nrSteps=nrSteps, learningRate=learningRate)
+        for i in xrange(max_iter):
+            ret = self.ml.baumWelch(final_seq, nrSteps=nrSteps, learningRate=learningRate)
 
-        if np.isnan(ret):
-            print 'Baum Welch return:', ret
-            return 'Failure'
+            if np.isnan(ret):
+                print 'Baum Welch return:', ret
+                return 'Failure'            
+            if i > 0: 
+                if abs(last_ret - ret) < 1.0:
+                    print "Partial fitting is converged to ", ret, " from ", last_ret
+                    break                
+            last_ret=ret
+
         print 'Baum Welch return:', ret/float(nData)
 
         [self.A, self.B, self.pi] = self.ml.asMatrices()
         self.A = np.array(self.A)
         self.B = np.array(self.B)
-        
+
         return ret
 
         
@@ -498,7 +506,7 @@ class learning_hmm(learning_base):
         '''
         # sample x some length
         X_test = util.convert_sequence(X, emission=False)
-        return self.loglikelihoods_from_seqs(X, bPosterior=bPosterior, bIdx=bIdx, startIdx=startIdx)
+        return self.loglikelihoods_from_seqs(X_test, bPosterior=bPosterior, bIdx=bIdx, startIdx=startIdx)
 
 
     def loglikelihoods_from_seqs(self, X, bPosterior=False, bIdx=False, startIdx=1):
@@ -558,6 +566,7 @@ class learning_hmm(learning_base):
         '''
         shape?
         '''
+        warnings.simplefilter("always", DeprecationWarning)
         X = [np.array(data) for data in xData]
         X_test = util.convert_sequence(X) # Training input
         X_test = X_test.tolist()
