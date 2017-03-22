@@ -480,6 +480,8 @@ class classifier(learning_base):
             from scipy.optimize import minimize
             for i in xrange(self.nPosteriors):
 
+                if len(ll_c_logp[i])==0: continue
+
                 x0 = [mu_mu[i], mu_std[i]]
                 
                 #L-BFGS
@@ -487,7 +489,8 @@ class classifier(learning_base):
                                                           mu_mu[i], std_mu[i], mu_std[i], std_std[i]),
                                method='L-BFGS-B',
                                bounds=((mu_mu[i]-15.0*std_mu[i], mu_mu[i]+15.0*std_mu[i]),
-                                       (mu_std[i]-15.0*std_std[i], mu_std[i]+15.0*std_std[i])))
+                                       (mu_std[i]-15.0*std_std[i], mu_std[i]+15.0*std_std[i]))
+                                       )
 
                 self.ll_mu[i]  = res.x[0]
                 self.ll_std[i] = res.x[1]
@@ -1135,6 +1138,12 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                     mu_list[j].append( dtc.ll_mu[j] )
                     std_list[j].append( dtc.ll_std[j] )
 
+            X_train_p, Y_train_p, idx_train_p =\
+            dm.flattenSample(np.array(ll_classifier_ptrain_X), \
+                             np.array(ll_classifier_ptrain_Y), \
+                             np.array(ll_classifier_ptrain_idx),\
+                             remove_fp=remove_fp)
+
 
 
     #-----------------------------------------------------------------------------------------
@@ -1227,7 +1236,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
 
                     # Adaptation
                     if adaptation is True:            
-                        dtc.partial_fit(ll_classifier_ptrain_X, ll_classifier_ptrain_Y, shuffle=False,
+                        dtc.partial_fit(X_train_p, Y_train_p, shuffle=False,
                                         mu_mu=np.mean(mu_list, axis=1),
                                         std_mu=np.std(mu_list, axis=1),
                                         mu_std=np.mean(std_list, axis=1),
