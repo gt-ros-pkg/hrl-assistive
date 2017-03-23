@@ -297,7 +297,7 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
                         downSampleSize=data_dict['downSampleSize'],\
                         init_param_dict=d['param_dict'],\
                         handFeatures=param_dict['data_param']['handFeatures'], \
-                        data_renew=True, max_time=data_dict['max_time'],
+                        data_renew=False, max_time=data_dict['max_time'],
                         pkl_prefix='tgt_')
 
     nEmissionDim = len(param_dict['data_param']['handFeatures'])
