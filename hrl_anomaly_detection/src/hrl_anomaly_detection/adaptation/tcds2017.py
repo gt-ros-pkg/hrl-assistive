@@ -297,7 +297,7 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
                         downSampleSize=data_dict['downSampleSize'],\
                         init_param_dict=d['param_dict'],\
                         handFeatures=param_dict['data_param']['handFeatures'], \
-                        data_renew=False, max_time=data_dict['max_time'],
+                        data_renew=True, max_time=data_dict['max_time'],
                         pkl_prefix='tgt_')
 
     nEmissionDim = len(param_dict['data_param']['handFeatures'])
@@ -344,14 +344,14 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
         ml.set_hmm_object(d['A'], d['B'], d['pi'], d['out_a_num'], d['vec_num'], \
                           d['mat_num'], d['u_denom'])
                           
-        ret = ml.partial_fit(X_ptrain+noise_arr, learningRate=0.6, max_iter=30, nrSteps=1)
+        ## ret = ml.partial_fit(X_ptrain+noise_arr, learningRate=0.6, max_iter=30, nrSteps=1)
         ## ret = ml.partial_fit(X_ptrain+noise_arr, learningRate=0.4, max_iter=50, nrSteps=1)
         #ret = ml.fit(X_ptrain+noise_arr)
         ## print idx, ret
-        if np.isnan(ret):
-            print "kFold_list ........ partial fit error... "
-            print ret
-            sys.exit()
+        ## if np.isnan(ret):
+        ##     print "kFold_list ........ partial fit error... "
+        ##     print ret
+        ##     sys.exit()
 
         # Comparison of
         ## import hmm_viz as hv
@@ -392,12 +392,12 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
         d['F']            = ml.F
         d['nState']       = nState
         d['startIdx']     = startIdx
-        d['ll_classifier_train_X']  = ll_classifier_train_X
-        d['ll_classifier_train_Y']  = ll_classifier_train_Y            
-        d['ll_classifier_train_idx']= ll_classifier_train_idx
-        ## d['ll_classifier_train_X']  = ll_classifier_ptrain_X
-        ## d['ll_classifier_train_Y']  = ll_classifier_ptrain_Y            
-        ## d['ll_classifier_train_idx']= ll_classifier_ptrain_idx
+        ## d['ll_classifier_train_X']  = ll_classifier_train_X
+        ## d['ll_classifier_train_Y']  = ll_classifier_train_Y            
+        ## d['ll_classifier_train_idx']= ll_classifier_train_idx
+        d['ll_classifier_train_X']  = ll_classifier_ptrain_X
+        d['ll_classifier_train_Y']  = ll_classifier_ptrain_Y            
+        d['ll_classifier_train_idx']= ll_classifier_ptrain_idx
         d['ll_classifier_ptrain_X']  = ll_classifier_ptrain_X
         d['ll_classifier_ptrain_Y']  = ll_classifier_ptrain_Y            
         d['ll_classifier_ptrain_idx']= ll_classifier_ptrain_idx
@@ -822,8 +822,8 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation5'
         ## ep
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation3'
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation3'
         param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
                                                      'unimodal_kinJntEff_1',\
                                                      'unimodal_ftForce_integ',\
