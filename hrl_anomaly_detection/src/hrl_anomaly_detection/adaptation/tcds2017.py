@@ -345,13 +345,13 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
                           d['mat_num'], d['u_denom'])
                           
         ## ret = ml.partial_fit(X_ptrain+noise_arr, learningRate=0.6, max_iter=30, nrSteps=1)
-        ## ret = ml.partial_fit(X_ptrain+noise_arr, learningRate=0.4, max_iter=50, nrSteps=1)
+        ret = ml.partial_fit(X_ptrain+noise_arr, learningRate=0.3, max_iter=50, nrSteps=1)
         #ret = ml.fit(X_ptrain+noise_arr)
         ## print idx, ret
-        ## if np.isnan(ret):
-        ##     print "kFold_list ........ partial fit error... "
-        ##     print ret
-        ##     sys.exit()
+        if np.isnan(ret):
+            print "kFold_list ........ partial fit error... "
+            print ret
+            sys.exit()
 
         # Comparison of
         ## import hmm_viz as hv
@@ -392,12 +392,12 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
         d['F']            = ml.F
         d['nState']       = nState
         d['startIdx']     = startIdx
-        ## d['ll_classifier_train_X']  = ll_classifier_train_X
-        ## d['ll_classifier_train_Y']  = ll_classifier_train_Y            
-        ## d['ll_classifier_train_idx']= ll_classifier_train_idx
-        d['ll_classifier_train_X']  = ll_classifier_ptrain_X
-        d['ll_classifier_train_Y']  = ll_classifier_ptrain_Y            
-        d['ll_classifier_train_idx']= ll_classifier_ptrain_idx
+        d['ll_classifier_train_X']  = ll_classifier_train_X
+        d['ll_classifier_train_Y']  = ll_classifier_train_Y            
+        d['ll_classifier_train_idx']= ll_classifier_train_idx
+        ## d['ll_classifier_train_X']  = ll_classifier_ptrain_X
+        ## d['ll_classifier_train_Y']  = ll_classifier_ptrain_Y            
+        ## d['ll_classifier_train_idx']= ll_classifier_ptrain_idx
         d['ll_classifier_ptrain_X']  = ll_classifier_ptrain_X
         d['ll_classifier_ptrain_Y']  = ll_classifier_ptrain_Y            
         d['ll_classifier_ptrain_idx']= ll_classifier_ptrain_idx
@@ -809,21 +809,21 @@ if __name__ == '__main__':
         nPoints = param_dict['ROC']['nPoints']
                
         ## br
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation/'+\
-        ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         ## c8
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation4'
         ## c11
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
         ## c12
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation5'
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation5'
         ## ep
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation3'
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation3'
         param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
                                                      'unimodal_kinJntEff_1',\
                                                      'unimodal_ftForce_integ',\
