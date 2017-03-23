@@ -100,6 +100,17 @@ class wrist_audio_collector:
 
         return device_index
 
+    def re_init_device(self):
+        self.p.close(self.stream)
+        rospy.sleep(1.0)
+        deviceIndex = self.find_input_device()
+        devInfo = self.p.get_device_info_by_index(deviceIndex)
+        print 'Audio device:', deviceIndex
+        print 'Sample rate:', devInfo['defaultSampleRate']
+        print 'Max input channels:',  devInfo['maxInputChannels']
+        
+        self.stream = self.p.open(format=self.FORMAT, channels=self.CHANNEL, rate=self.RATE, input=True, frames_per_buffer=self.FRAME_SIZE, input_device_index=deviceIndex)
+        
         
     def get_data(self, mfcc=False):
         
@@ -110,9 +121,9 @@ class wrist_audio_collector:
                 print "Audio read failure due to input over flow. Please, adjust frame_size(chunk size)"
                 print "If you are running record_data.py, please ignore this message since it is just one time warning by delay"
             try:
-                data       = self.stream.read(self.FRAME_SIZE)
+                data = self.stream.read(self.FRAME_SIZE)
             except:
-                data       = self.stream.read(self.FRAME_SIZE)
+                data = self.stream.read(self.FRAME_SIZE)
             ## self.stream.stop_stream()
             ## self.stream.close()
             ## sys.exit()
@@ -120,12 +131,14 @@ class wrist_audio_collector:
         audio_time = rospy.Time.now() #rospy.get_rostime().to_sec()        
         audio_data = np.fromstring(data, np.int16)
         audio_rms  = self.get_rms(data)-self.noise_rms
+
+        # direction
         if audio_rms > 0.0:
             signals   = np.reshape(audio_data, (self.FRAME_SIZE, self.CHANNEL)).astype(float).T
             timeshift = self.calculate_timeshift(signals)
         else:
             timeshift = 0
-
+            
         audio_angle = self.calculate_angle([timeshift])
         if audio_angle is None: audio_angle = 0.0
 
@@ -233,22 +246,21 @@ class wrist_audio_collector:
             ##     math.sqrt( self.MIC_DIST**2 - sig_dist**2 ) / sig_dist )
         else:
             angle = None
+
         return angle
 
 
     def run(self, mfcc=False):
         
-        ## import hrl_lib.circular_buffer as cb
-        ## self.rms_buf  = cb.CircularBuffer(100, (1,))
-        ## import matplotlib.pyplot as plt
-        
+        import hrl_lib.circular_buffer as cb
+        rms_buf  = cb.CircularBuffer(20, (1,))
+        ## import matplotlib.pyplot as plt        
         ## fig = plt.figure()
-        ## ax = fig.add_subplot(111)
+        ## ax  = fig.add_subplot(111)
         ## plt.ion()
         ## plt.show()
 
         # Measure white noise
-        count = 0
         rms_list = []
         while not rospy.is_shutdown():
             audio_time, audio_data, audio_rms, audio_mfcc, audio_angle = self.get_data(mfcc)
@@ -261,7 +273,7 @@ class wrist_audio_collector:
 
         # Measure sound and azimuth angle
         msg = audio()        
-        ## rate = rospy.Rate(25) # 25Hz, nominally.    
+        rate = rospy.Rate(25) # 25Hz, nominally.    
         while not rospy.is_shutdown():
             audio_time, audio_data, audio_rms, audio_mfcc, audio_angle = self.get_data(mfcc)
 
@@ -270,8 +282,17 @@ class wrist_audio_collector:
             msg.audio_rms     = audio_rms 
             msg.audio_azimuth = audio_angle
             if audio_mfcc is not None:
-                msg.audio_mfcc    = audio_mfcc
+                msg.audio_mfcc = audio_mfcc
             self.audio_pub.publish(msg)
+
+            # check integrity of rms values
+            if len(rms_buf) > 20:                
+                if np.sum(np.abs(rms_buf.get_array()-audio_rms)) == 0.0:
+                    print "Warning: Audio rms values do not change... "
+                    self.re_init_device()
+                
+            rms_buf.append(audio_rms)
+            rate.sleep()
 
 
 

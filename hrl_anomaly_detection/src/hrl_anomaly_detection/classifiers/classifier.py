@@ -490,7 +490,7 @@ class classifier(learning_base):
                                                           mu_mu[i], std_mu[i], mu_std[i], std_std[i]),
                                method='L-BFGS-B',
                                bounds=((mu_mu[i]-10.0*std_mu[i], mu_mu[i]+10.0*std_mu[i]),
-                                       (mu_std[i]-10.0*std_std[i], mu_std[i]+10.0*std_std[i]))
+                                       (1e-5, mu_std[i]+10.0*std_std[i]))
                                        )
 
                 self.ll_mu[i]  = res.x[0]
@@ -1533,6 +1533,7 @@ def param_posterior(x, l, mu_mu, std_mu, mu_std, std_std):
     p = 0
     N = float(len(l))
     if isinstance(l, list): l = np.array(l)
+    if std_n < 1e-5: p = 100000000000
     
     # 1st term
     p += np.log(std_n)*N + np.sum( (mu_n-l)**2 )/(2.0*std_n**2)
