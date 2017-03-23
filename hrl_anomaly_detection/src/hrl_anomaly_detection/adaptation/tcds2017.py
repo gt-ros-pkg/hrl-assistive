@@ -297,7 +297,7 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
                         downSampleSize=data_dict['downSampleSize'],\
                         init_param_dict=d['param_dict'],\
                         handFeatures=param_dict['data_param']['handFeatures'], \
-                        data_renew=True, max_time=data_dict['max_time'],
+                        data_renew=False, max_time=data_dict['max_time'],
                         pkl_prefix='tgt_')
 
     nEmissionDim = len(param_dict['data_param']['handFeatures'])
@@ -344,12 +344,15 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
         ml.set_hmm_object(d['A'], d['B'], d['pi'], d['out_a_num'], d['vec_num'], \
                           d['mat_num'], d['u_denom'])
                           
-        ## ret = ml.partial_fit(X_ptrain+noise_arr, learningRate=0.6, max_iter=30, nrSteps=1)
-        ret = ml.partial_fit(X_ptrain+noise_arr, learningRate=0.4, max_iter=50, nrSteps=1)
+        ret = ml.partial_fit(X_ptrain+noise_arr, learningRate=0.7, max_iter=30, nrSteps=1)
+        ## ret = ml.partial_fit(X_ptrain+noise_arr, learningRate=0.4, max_iter=50, nrSteps=1)
         #ret = ml.fit(X_ptrain+noise_arr)
         ## print idx, ret
-        if np.isnan(ret):
-            print "kFold_list ........ partial fit error... "
+        try:
+            if np.isnan(ret):
+                print "kFold_list ........ partial fit error... ", ret
+                sys.exit()
+        except:
             print ret
             sys.exit()
 
@@ -812,18 +815,18 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## c8
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation4'
-        ## c11
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
-        ## c12
+        ## ## c8
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation4'
+        ## ## c11
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
+        ## ## c12
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation5'
-        ## ep
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation3'
+        ## ## ep
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation3'
         param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
                                                      'unimodal_kinJntEff_1',\
                                                      'unimodal_ftForce_integ',\
