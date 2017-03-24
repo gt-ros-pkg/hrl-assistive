@@ -460,7 +460,8 @@ class classifier(learning_base):
                 weights = []
                 for j, post in enumerate(ll_post):
                     weights.append( 1.0 / symmetric_entropy(post, self.l_statePosterior[i]) )
-                weights = np.array(weights)**2
+                ## weights = np.array(weights)**2
+                weights = [w if w > 0.1 else 0.0 for w in weights ]
                 print np.amax(weights), np.amin(weights)
                 
                 # 2) Run optimization
