@@ -29,7 +29,7 @@
 #  \author Daehyung Park (Healthcare Robotics Lab, Georgia Tech.)
 
 # system
-import rospy
+import rospy, rosnode
 import os, threading, copy
 
 from pykdl_utils.kdl_kinematics import create_kdl_kin
@@ -359,6 +359,11 @@ class robot_kinematics(threading.Thread):
     ##     self.cancelled = True
     ##     self.isReset = False
 
+    def check_nodes(self):
+        ## ret1 = rosnode.rosnode_ping('/realtime_loop', max_count=1)
+        ret2 = rosnode.rosnode_ping('/haptic_mpc', max_count=1)
+        return ret2
+        
 
     def reset(self, init_time):
         self.init_time = init_time

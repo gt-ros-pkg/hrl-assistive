@@ -29,7 +29,7 @@
 #  \author Daehyung Park (Healthcare Robotics Lab, Georgia Tech.)
 
 # system
-import rospy, roslib
+import rospy, rosnode
 import os, threading, copy
 
 # util
@@ -129,7 +129,12 @@ class realsense_vision():
                 plt.draw()
                 
             rate.sleep()
-            
+
+    def check_nodes(self):
+        ret = rosnode.rosnode_ping('/SR300/driver', max_count=1)
+        return ret
+
+    
     def reset(self, init_time):
         self.init_time = init_time
         self.isReset = True

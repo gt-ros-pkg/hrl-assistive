@@ -29,7 +29,7 @@
 #  \author Daehyung Park (Healthcare Robotics Lab, Georgia Tech.)
 
 # system
-import rospy, roslib
+import rospy, rosnode
 import os, threading, copy
 
 # util
@@ -152,6 +152,12 @@ class fabric_skin():
     ##     """End this timer thread"""
     ##     self.cancelled = True
     ##     self.isReset = False
+
+    def check_nodes(self):
+        ''' check the status of skin program '''
+        ret = rosnode.rosnode_ping('/upperarm_and_forearm_taxels_driver', max_count=1)
+        return ret
+    
 
     def reset(self, init_time):
         

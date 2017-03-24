@@ -29,7 +29,7 @@
 #  \author Daehyung Park (Healthcare Robotics Lab, Georgia Tech.)
 
 # system
-import rospy, roslib
+import rospy, rosnode
 import os, threading, copy, sys
 
 from hrl_anomaly_detection.msg import audio
@@ -92,7 +92,13 @@ class wrist_audio():
         self.audio_mfcc    = msg.audio_mfcc
         self.audio_data    = msg.audio_data
         
+
+    def check_nodes(self):
+        ''' check the status of sound recording program '''
+        ret = rosnode.rosnode_ping('/wrist_audio_publisher', max_count=1)
+        return ret
     
+        
     def reset(self, init_time):
         self.init_time = init_time
         self.isReset = True

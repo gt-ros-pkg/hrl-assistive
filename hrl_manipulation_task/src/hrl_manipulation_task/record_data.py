@@ -29,8 +29,8 @@
 #  \author Daehyung Park (Healthcare Robotics Lab, Georgia Tech.)
 
 # system
-import rospy
-import os, sys, threading, copy
+import rospy, rosnode
+import os, sys, threading, copy, time
 import gc
 
 # util
@@ -76,6 +76,7 @@ class logger:
         self.enable_log_thread = False
         self.enable_detector = en_ad
         self.enable_isolator = en_ai
+        self.last_t = time.time()
         
         # GUI
         self.feedbackMSG = 0
@@ -109,22 +110,17 @@ class logger:
             self.nDetector = rospy.get_param(self.task+'/nDetector')
         else:
             self.nDetector = 0
-
-        
+       
     def initComms(self, task):
         ''' Record data and publish raw data '''        
         if self.data_pub:
             self.rawDataPub = rospy.Publisher('/hrl_manipulation_task/raw_data', MultiModality,
-                                                 queue_size=QUEUE_SIZE)
-
+                                              queue_size=QUEUE_SIZE)
         # GUI implementation       
-        rospy.Subscriber("/manipulation_task/user_feedback", StringArray,
-                         self.feedbackCallback)
-        rospy.Subscriber("/manipulation_task/anomaly_type", String,
-                         self.isolationCallback)
+        rospy.Subscriber("/manipulation_task/user_feedback", StringArray, self.feedbackCallback)
+        rospy.Subscriber("/manipulation_task/anomaly_type", String, self.isolationCallback)
 
         self.setTask(task)
-
     
     def feedbackCallback(self, msg):
         ''' GUI implementation '''
@@ -198,14 +194,12 @@ class logger:
             status = last_status
         else:
             flag = raw_input('Enter trial\'s status (e.g. 1:success, 2:failure, 3: skip): ')
-            if flag == '1':   status = 'success'
+            if   flag == '1': status = 'success'
             elif flag == '2': status = 'failure'
             elif flag == '3': status = 'skip'
             else: status = flag
 
         if status == 'success' or status == 'failure':
-            ## if status == 'failure':
-            ##     failure_class = raw_input('Enter failure reason if there is: ')
             failure_class=''
 
             if not os.path.exists(self.folderName): os.makedirs(self.folderName)
@@ -222,7 +216,8 @@ class logger:
                         test_id = int((os.path.split(f)[1]).split('_')[1])
 
             if status == 'failure':        
-                fileName = os.path.join(self.folderName, 'iteration_%d_%s_%s.pkl' % (test_id+1, status, failure_class))
+                fileName = os.path.join(self.folderName,
+                                        'iteration_%d_%s_%s.pkl' % (test_id+1, status, failure_class))
             else:
                 fileName = os.path.join(self.folderName, 'iteration_%d_%s.pkl' % (test_id+1, status))
 
@@ -275,8 +270,6 @@ class logger:
                     
 
 
-
-                
             if not os.path.exists(self.folderName): os.makedirs(self.folderName)
 
             # get next file id
@@ -420,16 +413,14 @@ class logger:
 
             if self.audio_kinect is not None: 
                 if self.audio_kinect.feature is not None:           
-                    msg.audio_feature     = np.squeeze(self.audio_kinect.feature.T).tolist()
-                    msg.audio_power       = self.audio_kinect.power
-                    msg.audio_azimuth     = self.audio_kinect.azimuth+self.audio_kinect.base_azimuth
-                msg.audio_head_joints     = [self.audio_kinect.head_joints[0], self.audio_kinect.head_joints[1]]
-                msg.audio_cmd             = self.audio_kinect.recog_cmd if type(self.audio_kinect.recog_cmd)==str() else 'None'
+                    msg.audio_feature  = np.squeeze(self.audio_kinect.feature.T).tolist()
+                    msg.audio_power    = self.audio_kinect.power
+                    msg.audio_azimuth  = self.audio_kinect.azimuth+self.audio_kinect.base_azimuth
+                msg.audio_head_joints  = [self.audio_kinect.head_joints[0], self.audio_kinect.head_joints[1]]
+                msg.audio_cmd          = self.audio_kinect.recog_cmd \
+                  if type(self.audio_kinect.recog_cmd)==str() else 'None'
 
-            # TODO
             if self.audio_wrist is not None: 
-                ##     if len(self.audio_wrist.audio_data) <2: continue
-                ##     audio_wrist_rms, audio_wrist_mfcc = self.audio_wrist.get_feature(self.audio_wrist.audio_data[-1])
                 msg.audio_wrist_rms       = self.audio_wrist.audio_rms
                 msg.audio_wrist_azimuth   = self.audio_wrist.audio_azimuth
                 msg.audio_wrist_mfcc      = self.audio_wrist.audio_mfcc
@@ -496,6 +487,44 @@ class logger:
         rate = rospy.Rate(100) # 25Hz, nominally.
         while not rospy.is_shutdown():
 
+            t = time.time()
+            if t-self.last_t>2.0:
+                self.data['node_time']        = [self.kinematics.time]
+
+                if 'arm_reacher_nodes' not in self.data.keys():
+                    self.data['arm_reacher_nodes'] = [rosnode.rosnode_ping(
+                        '/arm_reacher_server_left', max_count=1)]
+                else:
+                    self.data['arm_reacher_nodes'].append( rosnode.rosnode_ping(
+                        '/arm_reacher_server_left', max_count=1) )
+
+                if self.audio_wrist is not None:
+                    if 'audio_wrist_nodes' not in self.data.keys():
+                        self.data['audio_wrist_nodes'] = [self.audio_wrist.check_nodes()]
+                    else:
+                        self.data['audio_wrist_nodes'].append( self.audio_wrist.check_nodes() )
+                    
+                if self.kinematics is not None:
+                    if 'kinematics_nodes' not in self.data.keys():
+                        self.data['kinematics_nodes'] = [self.kinemtaics.check_nodes()]
+                    else:
+                        self.data['kinematics_nodes'].append( self.kinemtaics.check_nodes() )
+
+                if self.vision_landmark is not None:
+                    if 'vision_landmark_nodes' not in self.data.keys():
+                        self.data['vision_landmark_nodes'] = [self.vision_landmark.check_nodes() ]
+                    else:
+                        self.data['vision_landmark_nodes'].append( self.vision_landmark.check_nodes())
+
+                if self.fabric_skin is not None:
+                    if 'fabric_skin_nodes' not in self.data.keys():
+                        self.data['fabric_skin_nodes'] = [ self.fabric_skin.check_nodes() ]
+                    else:
+                        self.data['fabric_skin_nodes'].append( self.fabric_skin.check_nodes() )
+                        
+                        
+                self.last_t = t
+
             if self.audio_kinect is not None: 
                 if 'audio_time' not in self.data.keys():
                     self.data['audio_time']    = [self.audio_kinect.time]
@@ -522,15 +551,15 @@ class logger:
                     
             if self.kinematics is not None:
                 if 'kinematics_time' not in self.data.keys():
-                    self.data['kinematics_time'] = [self.kinematics.time]
-                    self.data['kinematics_ee_pos'] = self.kinematics.ee_pos
+                    self.data['kinematics_time']    = [self.kinematics.time]
+                    self.data['kinematics_ee_pos']  = self.kinematics.ee_pos
                     self.data['kinematics_ee_quat'] = self.kinematics.ee_quat
                     self.data['kinematics_jnt_pos'] = self.kinematics.main_jnt_positions
                     self.data['kinematics_jnt_vel'] = self.kinematics.main_jnt_velocities
                     self.data['kinematics_jnt_eff'] = self.kinematics.main_jnt_efforts
                     self.data['kinematics_target_pos']  = self.kinematics.target_pos
                     self.data['kinematics_target_quat'] = self.kinematics.target_quat
-                    self.data['kinematics_des_ee_pos'] = self.kinematics.des_ee_pos
+                    self.data['kinematics_des_ee_pos']  = self.kinematics.des_ee_pos
                     self.data['kinematics_des_ee_quat'] = self.kinematics.des_ee_quat
                 else:
                     self.data['kinematics_time'].append(self.kinematics.time)
@@ -635,7 +664,7 @@ class logger:
                     self.data['fabric_skin_values_y'].append(self.fabric_skin.values_y)
                     self.data['fabric_skin_values_z'].append(self.fabric_skin.values_z)
                     
-            if self.enable_log_thread == False: break
+            if self.enable_log_thread is False: break
             rate.sleep()
 
 

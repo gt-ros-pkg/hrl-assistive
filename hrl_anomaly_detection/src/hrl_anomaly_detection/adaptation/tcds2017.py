@@ -344,9 +344,9 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
         ml.set_hmm_object(d['A'], d['B'], d['pi'], d['out_a_num'], d['vec_num'], \
                           d['mat_num'], d['u_denom'])
                           
-        ret = ml.partial_fit(X_ptrain+noise_arr, learningRate=0.6, max_iter=50, nrSteps=1)
+        ## ret = ml.partial_fit(X_ptrain+noise_arr, learningRate=0.6, max_iter=40, nrSteps=1)
         ## ret = ml.partial_fit(X_ptrain+noise_arr, learningRate=0.4, max_iter=50, nrSteps=1)
-        #ret = ml.fit(X_ptrain+noise_arr)
+        ret = ml.fit(X_ptrain+noise_arr)
         ## print idx, ret
         try:
             if np.isnan(ret):
@@ -398,9 +398,11 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
         d['ll_classifier_train_X']  = ll_classifier_train_X
         d['ll_classifier_train_Y']  = ll_classifier_train_Y            
         d['ll_classifier_train_idx']= ll_classifier_train_idx
-        ## d['ll_classifier_train_X']  = ll_classifier_ptrain_X
-        ## d['ll_classifier_train_Y']  = ll_classifier_ptrain_Y            
-        ## d['ll_classifier_train_idx']= ll_classifier_ptrain_idx
+        
+        d['ll_classifier_train_X']  = ll_classifier_ptrain_X
+        d['ll_classifier_train_Y']  = ll_classifier_ptrain_Y            
+        d['ll_classifier_train_idx']= ll_classifier_ptrain_idx
+        
         d['ll_classifier_ptrain_X']  = ll_classifier_ptrain_X
         d['ll_classifier_ptrain_Y']  = ll_classifier_ptrain_Y            
         d['ll_classifier_ptrain_idx']= ll_classifier_ptrain_idx
@@ -435,7 +437,7 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
                                                                          startIdx=startIdx, nState=nState,\
                                                                          n_jobs=n_jobs,\
                                                                          modeling_pkl_prefix=pkl_prefix,\
-                                                                         adaptation=True) \
+                                                                         adaptation=False) \
                                                                          for idx in xrange(len(td['successDataList'])) )
 
     print "finished to run run_classifiers"
@@ -822,8 +824,8 @@ if __name__ == '__main__':
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
         ## ## c12
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation5'
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation5'
         ## ## ep
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation3'
@@ -832,7 +834,7 @@ if __name__ == '__main__':
                                                      'unimodal_ftForce_integ',\
                                                      'crossmodal_landmarkEEDist']
         param_dict['HMM']['scale'] = 5.0
-        param_dict['ROC']['progress_param_range'] = -np.logspace(-0.2, 1.7, nPoints)+1.0
+        param_dict['ROC']['progress_param_range'] = -np.logspace(-0.2, 2.2, nPoints)+1.0
         param_dict['ROC']['methods'] = ['progress']
 
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        

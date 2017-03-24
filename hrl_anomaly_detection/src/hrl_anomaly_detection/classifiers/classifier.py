@@ -400,7 +400,7 @@ class classifier(learning_base):
 
 
 
-    def partial_fit(self, X, y=None, shuffle=True, **kwargs):
+    def partial_fit(self, X, y=None, X_idx=None, shuffle=True, **kwargs):
         '''
         X: samples x hmm-feature vec
         y: sample
@@ -411,6 +411,7 @@ class classifier(learning_base):
             random.shuffle(idx_list)
             X = [X[ii] for ii in idx_list]
             y = [y[ii] for ii in idx_list]
+            if X_idx is not None: X_idx = [X_idx[ii] for ii in idx_list]
             if sample_weight is not None:
                 sample_weight = [sample_weight[ii] for ii in idx_list]
 
@@ -426,75 +427,71 @@ class classifier(learning_base):
                                     sample_weight=kwargs['sample_weight'])
 
         elif self.method.find( 'progress')>=0:
-            ## self.g_mu_list 
-            ## self.g_sig
             if type(X) == list: X = np.array(X)
             
             # Get params for new data
             nSample  = len(y)/(self.nLength-self.startIdx)
             idx_list = range(self.nLength)[self.startIdx:]
-            ll_idx = [ idx_list[j] for j in xrange(len(idx_list)) for i in xrange(nSample)
-                       if y[i*(self.nLength-self.startIdx)+1]<0 ]            
+            ## ll_idx = [ idx_list[j] for j in xrange(len(idx_list)) for i in xrange(nSample)
+            ##            if y[i*(self.nLength-self.startIdx)+1]<0 ]
+            ll_idx  = [ X_idx[i] for i in xrange(len(X_idx)) if y[i]<0 ]                            
             ll_logp = [ X[i,0] for i in xrange(len(X)) if y[i]<0 ]
             ll_post = [ X[i,-self.nPosteriors:] for i in xrange(len(X)) if y[i]<0 ]
 
-            if self.parallel:
-                r = Parallel(n_jobs=-1)(delayed(learn_time_clustering)(i, ll_idx, ll_logp, ll_post, \
-                                                                       self.g_mu_list[i],\
-                                                                       self.g_sig, self.nPosteriors)
-                                                                       for i in xrange(self.nPosteriors))
-                _, l_statePosterior, ll_mu, ll_std = zip(*r)
-            else:
-                l_statePosterior = []
-                ll_mu            = []
-                ll_std           = []
-                for i in xrange(self.nPosteriors):
-                    _,p,m,s = learn_time_clustering(i, ll_idx, ll_logp, ll_post, self.g_mu_list[i],\
-                                                  self.g_sig, self.nPosteriors)
-                    l_statePosterior.append(p)
-                    ll_mu.append(m)
-                    ll_std.append(s)
+            ## if self.parallel:
+            ##     r = Parallel(n_jobs=-1)(delayed(learn_time_clustering)(i, ll_idx, ll_logp, ll_post, \
+            ##                                                            self.g_mu_list[i],\
+            ##                                                            self.g_sig, self.nPosteriors)
+            ##                                                            for i in xrange(self.nPosteriors))
+            ##     _, l_statePosterior, ll_mu, ll_std = zip(*r)
+            ## else:
+            ##     l_statePosterior = []
+            ##     ll_mu            = []
+            ##     ll_std           = []
+            ##     for i in xrange(self.nPosteriors):
+            ##         _,p,m,s = learn_time_clustering(i, ll_idx, ll_logp, ll_post, self.g_mu_list[i],\
+            ##                                       self.g_sig, self.nPosteriors)
+            ##         l_statePosterior.append(p)
+            ##         ll_mu.append(m)
+            ##         ll_std.append(s)
             
-            # Get params for old data
-            ## self.l_statePosterior 
-            ## self.ll_mu            
-            ## self.ll_std           
-
             # Update using bayesian inference
-            # 0) Find the best cluster indices
-                        
-            # 1) Find all likelihood in ith cluster
-            l_idx = []
-            ll_c_post = [[] for i in xrange(self.nPosteriors)]
-            ll_c_logp = [[] for i in xrange(self.nPosteriors)]
-            for i, post in enumerate(ll_post):
-                min_index, min_dist = findBestPosteriorDistribution(post, self.l_statePosterior)
-                ll_c_post[min_index].append(post)
-                ll_c_logp[min_index].append(ll_logp[i])
-
             mu_mu   = kwargs['mu_mu']
             std_mu  = kwargs['std_mu']
             mu_std  = kwargs['mu_std']
             std_std = kwargs['std_std']
-                
-            # 2) Run optimization
             from scipy.optimize import minimize
+            
+            ## # 1) Find all likelihood in ith cluster
+            ## l_idx = []
+            ## ll_c_post = [[] for i in xrange(self.nPosteriors)]
+            ## ll_c_logp = [[] for i in xrange(self.nPosteriors)]
+            ## for i, post in enumerate(ll_post):
+            ##     min_index, min_dist = findBestPosteriorDistribution(post, self.l_statePosterior)
+            ##     ll_c_post[min_index].append(post)
+            ##     ll_c_logp[min_index].append(ll_logp[i])
+
             for i in xrange(self.nPosteriors):
-
-                if len(ll_c_logp[i])==0: continue
-
+                # 1-new) Find time-based weight per cluster
+                weights = norm(loc=self.g_mu_list[i], scale=self.g_sig).pdf(ll_idx) 
+                ## for j in xrange(len(ll_idx)):
+                ##     weights[j] = norm(loc=self.g_mu_list[i], scale=self.g_sig).pdf(ll_idx[j]) 
+                
+                # 2) Run optimization
+                ## if len(ll_c_logp[i])==0: continue
                 x0 = [mu_mu[i], mu_std[i]]
                 
                 #L-BFGS
-                res = minimize(param_posterior, x0, args=(ll_c_logp[i],
+                res = minimize(param_posterior, x0, args=(ll_logp, weights,\
                                                           mu_mu[i], std_mu[i], mu_std[i], std_std[i]),
                                method='L-BFGS-B',
-                               bounds=((mu_mu[i]-10.0*std_mu[i], mu_mu[i]+10.0*std_mu[i]),
-                                       (1e-5, mu_std[i]+10.0*std_std[i]))
+                               bounds=((mu_mu[i]-15.0*std_mu[i], mu_mu[i]+15.0*std_mu[i]),
+                                       (1e-5, mu_std[i]+15.0*std_std[i]))
                                        )
 
                 self.ll_mu[i]  = res.x[0]
                 self.ll_std[i] = res.x[1]
+                print i, ": Number of iterations: ", res.nit
             
         else:
             print "Not available method, ", self.method
@@ -849,33 +846,35 @@ def learn_time_clustering(i, ll_idx, ll_logp, ll_post, g_mu, g_sig, nState):
     weight_sum  = 0.0
     weight2_sum = 0.0
 
+    weights = norm(loc=g_mu, scale=g_sig).pdf(ll_idx)
+    ## g_post  += np.sum( ll_post * weights )
+    ## g_lhood += np.sum( ll_logp * weights )
+    weight_sum = np.sum(weights)
+    weight2_sum = np.sum(weights**2)
+
     for j in xrange(n):
-
-        idx  = ll_idx[j]
-        logp = ll_logp[j]
-        post = ll_post[j]
-
-        weight = norm(loc=g_mu, scale=g_sig).pdf(idx)
-
-        if weight < 1e-3: continue
-        g_post   += post * weight
-        g_lhood  += logp * weight
-        weight_sum += weight
-        weight2_sum += weight**2
+        ## idx  = ll_idx[j]
+        ## logp = ll_logp[j]
+        ## post = ll_post[j]
+        ## weight = norm(loc=g_mu, scale=g_sig).pdf(idx)
+        if weights[j] < 1e-3: continue
+        g_post   += ll_post[j] * weights[j]
+        g_lhood  += ll_logp[j] * weights[j]
+        ## weight_sum += weights[j]
+        ## weight2_sum += weights[j]**2
 
     if abs(weight_sum)<1e-3: weight_sum=1e-3
     l_statePosterior   = g_post / weight_sum 
     l_likelihood_mean  = g_lhood / weight_sum 
 
+    ## g_lhood2 = np.sum( weights * ( (ll_logp-l_likelihood_mean)**2 ) )
     for j in xrange(n):
-
-        idx  = ll_idx[j]
-        logp = ll_logp[j]
-
-        weight    = norm(loc=g_mu, scale=g_sig).pdf(idx)    
-        if weight < 1e-3: continue
-        g_lhood2 += weight * ((logp - l_likelihood_mean )**2)
-
+        ## idx  = ll_idx[j]
+        ## logp = ll_logp[j]
+        ## weight    = norm(loc=g_mu, scale=g_sig).pdf(idx)    
+        if weights[j] < 1e-3: continue
+        g_lhood2 += weights[j] * ((ll_logp[j] - l_likelihood_mean )**2)
+        
     ## print g_lhood2/(weight_sum - weight2_sum/weight_sum), weight_sum - weight2_sum/weight_sum, weight_sum 
     l_likelihood_std = np.sqrt(g_lhood2/(weight_sum - weight2_sum/weight_sum))
 
@@ -1237,7 +1236,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
 
                     # Adaptation
                     if adaptation is True:            
-                        dtc.partial_fit(X_train_p, Y_train_p, shuffle=False,
+                        dtc.partial_fit(X_train_p, Y_train_p, idx_train_p, shuffle=False,
                                         mu_mu=np.mean(mu_list, axis=1),
                                         std_mu=np.std(mu_list, axis=1),
                                         mu_std=np.mean(std_list, axis=1),
@@ -1525,7 +1524,7 @@ def run_classifiers_boost(idx, processed_data_path, task_name, method_list,\
     return data
 
 
-def param_posterior(x, l, mu_mu, std_mu, mu_std, std_std):
+def param_posterior(x, l, w, mu_mu, std_mu, mu_std, std_std):
 
     mu_n  = x[0]
     std_n = x[1]
@@ -1533,10 +1532,11 @@ def param_posterior(x, l, mu_mu, std_mu, mu_std, std_std):
     p = 0
     N = float(len(l))
     if isinstance(l, list): l = np.array(l)
+    if isinstance(w, list): w = np.array(w)
     if std_n < 1e-5: p = 100000000000
     
     # 1st term
-    p += np.log(std_n)*N + np.sum( (mu_n-l)**2 )/(2.0*std_n**2)
+    p += np.log(std_n)*N + np.sum( w*(mu_n-l)**2 )/(2.0*std_n**2)
     
     # 2nd term
     p += (mu_n-mu_mu)**2 / (2.0*std_mu**2) #*0.5
