@@ -427,33 +427,14 @@ class classifier(learning_base):
                                     sample_weight=kwargs['sample_weight'])
 
         elif self.method.find( 'progress')>=0:
+            assert len(X)==len(y), "X and y sizes should be same"
+            assert len(X)==len(X_idx), "X and y sizes should be same"
             if type(X) == list: X = np.array(X)
             
             # Get params for new data
-            nSample  = len(y)/(self.nLength-self.startIdx)
-            idx_list = range(self.nLength)[self.startIdx:]
-            ## ll_idx = [ idx_list[j] for j in xrange(len(idx_list)) for i in xrange(nSample)
-            ##            if y[i*(self.nLength-self.startIdx)+1]<0 ]
             ll_idx  = [ X_idx[i] for i in xrange(len(X_idx)) if y[i]<0 ]                            
             ll_logp = [ X[i,0] for i in xrange(len(X)) if y[i]<0 ]
             ll_post = [ X[i,-self.nPosteriors:] for i in xrange(len(X)) if y[i]<0 ]
-
-            ## if self.parallel:
-            ##     r = Parallel(n_jobs=-1)(delayed(learn_time_clustering)(i, ll_idx, ll_logp, ll_post, \
-            ##                                                            self.g_mu_list[i],\
-            ##                                                            self.g_sig, self.nPosteriors)
-            ##                                                            for i in xrange(self.nPosteriors))
-            ##     _, l_statePosterior, ll_mu, ll_std = zip(*r)
-            ## else:
-            ##     l_statePosterior = []
-            ##     ll_mu            = []
-            ##     ll_std           = []
-            ##     for i in xrange(self.nPosteriors):
-            ##         _,p,m,s = learn_time_clustering(i, ll_idx, ll_logp, ll_post, self.g_mu_list[i],\
-            ##                                       self.g_sig, self.nPosteriors)
-            ##         l_statePosterior.append(p)
-            ##         ll_mu.append(m)
-            ##         ll_std.append(s)
             
             # Update using bayesian inference
             mu_mu   = kwargs['mu_mu']
@@ -474,14 +455,9 @@ class classifier(learning_base):
             for i in xrange(self.nPosteriors):
                 # 1-new) Find time-based weight per cluster
                 weights = norm(loc=self.g_mu_list[i], scale=self.g_sig).pdf(ll_idx) 
-                ## for j in xrange(len(ll_idx)):
-                ##     weights[j] = norm(loc=self.g_mu_list[i], scale=self.g_sig).pdf(ll_idx[j]) 
                 
                 # 2) Run optimization
-                ## if len(ll_c_logp[i])==0: continue
                 x0 = [mu_mu[i], mu_std[i]]
-                
-                #L-BFGS
                 res = minimize(param_posterior, x0, args=(ll_logp, weights,\
                                                           mu_mu[i], std_mu[i], mu_std[i], std_std[i]),
                                method='L-BFGS-B',
@@ -867,13 +843,13 @@ def learn_time_clustering(i, ll_idx, ll_logp, ll_post, g_mu, g_sig, nState):
     l_statePosterior   = g_post / weight_sum 
     l_likelihood_mean  = g_lhood / weight_sum 
 
-    ## g_lhood2 = np.sum( weights * ( (ll_logp-l_likelihood_mean)**2 ) )
-    for j in xrange(n):
-        ## idx  = ll_idx[j]
-        ## logp = ll_logp[j]
-        ## weight    = norm(loc=g_mu, scale=g_sig).pdf(idx)    
-        if weights[j] < 1e-3: continue
-        g_lhood2 += weights[j] * ((ll_logp[j] - l_likelihood_mean )**2)
+    g_lhood2 = np.sum( weights * ( (ll_logp-l_likelihood_mean)**2 ) )
+    ## for j in xrange(n):
+    ##     ## idx  = ll_idx[j]
+    ##     ## logp = ll_logp[j]
+    ##     ## weight    = norm(loc=g_mu, scale=g_sig).pdf(idx)    
+    ##     if weights[j] < 1e-3: continue
+    ##     g_lhood2 += weights[j] * ((ll_logp[j] - l_likelihood_mean )**2)
         
     ## print g_lhood2/(weight_sum - weight2_sum/weight_sum), weight_sum - weight2_sum/weight_sum, weight_sum 
     l_likelihood_std = np.sqrt(g_lhood2/(weight_sum - weight2_sum/weight_sum))
