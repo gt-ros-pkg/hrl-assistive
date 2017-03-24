@@ -464,6 +464,7 @@ class classifier(learning_base):
                 ## ## weights = np.array(weights)**2
                 ## weights = [w if w > 0.1 else 0.0 for w in weights ]
 
+                weights = []
                 for j, post in enumerate(ll_post):
                     min_index, min_dist = findBestPosteriorDistribution(post, self.l_statePosterior)
                     if min_index == i: weights.append(1.0)
