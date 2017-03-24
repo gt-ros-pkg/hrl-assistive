@@ -821,15 +821,15 @@ if __name__ == '__main__':
         ## ## c8
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation4'
-        ## ## c11
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
-        ## ## c12
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation5'
-        ## ep
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation3'
+        ## ## ## c11
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
+        ## ## ## c12
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation5'
+        ## ## ep
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation3'
         param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
                                                      'unimodal_kinJntEff_1',\
                                                      'unimodal_ftForce_integ',\
@@ -848,7 +848,7 @@ if __name__ == '__main__':
         auc_list = []
         for max_iter in [1,5,10,20,40]:            
             ret = evaluation_single_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
-                                       max_iter=max_iter, learning_rate=0.4, save_pdf=opt.bSavePdf, \
+                                       max_iter=max_iter, learning_rate=0.1, save_pdf=opt.bSavePdf, \
                                        verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                                        find_param=False, data_gen=opt.bDataGen)
             auc_list.append(ret['progress'])
