@@ -198,6 +198,7 @@ def gen_likelihoods(subject_names, task_name, raw_data_path, processed_data_path
 
 
 def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
+                         learning_rate=0.2, max_iter=1,\
                          data_renew=False, save_pdf=False, verbose=False, debug=False,\
                          no_plot=False, delay_plot=True, find_param=False, data_gen=False,\
                          target_class=None):
@@ -345,7 +346,7 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
                           d['mat_num'], d['u_denom'])
                           
         ## ret = ml.partial_fit(X_ptrain+noise_arr, learningRate=0.5, max_iter=20, nrSteps=1)
-        ret = ml.partial_fit(X_ptrain+noise_arr, learningRate=0.5, max_iter=5, nrSteps=1)
+        ret = ml.partial_fit(X_ptrain+noise_arr, learningRate=learning_rate, max_iter=max_iter, nrSteps=1)
         ## ret = ml.fit(X_ptrain+noise_arr)
         ## print idx, ret
         try:
@@ -445,7 +446,7 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
     ut.save_pickle(ROC_data, roc_pkl)
 
     # ---------------- ROC Visualization ----------------------
-    roc_info(ROC_data, nPoints, no_plot=no_plot, ROC_dict=ROC_dict)
+    return roc_info(ROC_data, nPoints, no_plot=no_plot, ROC_dict=ROC_dict)
     ## class_info(method_list, ROC_data, nPoints, kFold_list)
 
 
@@ -821,14 +822,14 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation4'
         ## ## c11
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
         ## ## c12
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation5'
         ## ## ep
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation3'
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation3'
         param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
                                                      'unimodal_kinJntEff_1',\
                                                      'unimodal_ftForce_integ',\
@@ -837,11 +838,23 @@ if __name__ == '__main__':
         param_dict['ROC']['progress_param_range'] = -np.logspace(-0.2, 2.2, nPoints)+1.0
         param_dict['ROC']['methods'] = ['progress']
 
-        if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
-        evaluation_single_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
-                             save_pdf=opt.bSavePdf, \
-                             verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
-                             find_param=False, data_gen=opt.bDataGen)
+        if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
+
+        ## evaluation_single_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
+        ##                      save_pdf=opt.bSavePdf, \
+        ##                      verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
+        ##                      find_param=False, data_gen=opt.bDataGen)
+
+        auc_list = []
+        for max_iter in [1,5,10,20,40]:            
+            ret = evaluation_single_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
+                                       max_iter=max_iter, learning_rate=0.2, save_pdf=opt.bSavePdf, \
+                                       verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
+                                       find_param=False, data_gen=opt.bDataGen)
+            auc_list.append(ret['progress'])
+        print "-------------------------------"
+        print learning_rate
+        print auc_list
 
         # no adapt: 76
 
