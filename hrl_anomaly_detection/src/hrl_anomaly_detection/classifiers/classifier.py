@@ -451,18 +451,27 @@ class classifier(learning_base):
             ##     min_index, min_dist = findBestPosteriorDistribution(post, self.l_statePosterior)
             ##     ll_c_post[min_index].append(post)
             ##     ll_c_logp[min_index].append(ll_logp[i])
+            
 
             for i in xrange(self.nPosteriors):
                 # 1-new) Find time-based weight per cluster
                 ## weights = norm(loc=self.g_mu_list[i], scale=self.g_sig).pdf(ll_idx) 
 
                 # 1-new-new) Find KL-based weight per cluster
-                weights = []
+                ## weights = []
+                ## for j, post in enumerate(ll_post):
+                ##     weights.append( 1.0 / symmetric_entropy(post, self.l_statePosterior[i]) )
+                ## ## weights = np.array(weights)**2
+                ## weights = [w if w > 0.1 else 0.0 for w in weights ]
+
                 for j, post in enumerate(ll_post):
-                    weights.append( 1.0 / symmetric_entropy(post, self.l_statePosterior[i]) )
-                ## weights = np.array(weights)**2
-                weights = [w if w > 0.1 else 0.0 for w in weights ]
+                    min_index, min_dist = findBestPosteriorDistribution(post, self.l_statePosterior)
+                    if min_index == i: weights.append(1.0)
+                    else: weights.append(0.0)
+                
                 print np.amax(weights), np.amin(weights)
+
+                
                 
                 # 2) Run optimization
                 x0 = [mu_mu[i], mu_std[i]]
