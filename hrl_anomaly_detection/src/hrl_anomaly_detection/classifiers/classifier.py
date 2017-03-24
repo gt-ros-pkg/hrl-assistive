@@ -454,7 +454,14 @@ class classifier(learning_base):
 
             for i in xrange(self.nPosteriors):
                 # 1-new) Find time-based weight per cluster
-                weights = norm(loc=self.g_mu_list[i], scale=self.g_sig).pdf(ll_idx) 
+                ## weights = norm(loc=self.g_mu_list[i], scale=self.g_sig).pdf(ll_idx) 
+
+                # 1-new-new) Find KL-based weight per cluster
+                weights = []
+                for j, post in enumerate(ll_post):
+                    weights.append( 1.0 / symmetric_entropy(post, self.l_statePosterior[i]) )
+                weights = np.array(weights)**2
+                print np.amax(weights), np.amin(weights)
                 
                 # 2) Run optimization
                 x0 = [mu_mu[i], mu_std[i]]
@@ -467,7 +474,7 @@ class classifier(learning_base):
 
                 self.ll_mu[i]  = res.x[0]
                 self.ll_std[i] = res.x[1]
-                print i, ": Number of iterations: ", res.nit
+                ## print i, ": Number of iterations: ", res.nit
             
         else:
             print "Not available method, ", self.method
