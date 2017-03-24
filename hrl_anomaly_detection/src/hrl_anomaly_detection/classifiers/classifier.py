@@ -811,45 +811,24 @@ def findBestPosteriorDistribution(post, l_statePosterior):
 
 def learn_time_clustering(i, ll_idx, ll_logp, ll_post, g_mu, g_sig, nState):
 
-    l_likelihood_mean = 0.0
-    l_likelihood_mean2 = 0.0
-    l_statePosterior = np.zeros(nState)
-    n = len(ll_idx)
+    weights     = norm(loc=g_mu, scale=g_sig).pdf(ll_idx)
+    weight_sum  = np.sum(weights)
+    weight2_sum = np.sum(weights**2)
 
     g_post = np.zeros(nState)
     g_lhood = 0.0
-    g_lhood2 = 0.0
-    weight_sum  = 0.0
-    weight2_sum = 0.0
-
-    weights = norm(loc=g_mu, scale=g_sig).pdf(ll_idx)
-    g_post  = np.matmul(weights,ll_post) 
-    g_lhood = np.sum( ll_logp * weights )
-    weight_sum = np.sum(weights)
-    weight2_sum = np.sum(weights**2)
-
-    ## for j in xrange(n):
-    ##     ## idx  = ll_idx[j]
-    ##     ## logp = ll_logp[j]
-    ##     ## post = ll_post[j]
-    ##     ## weight = norm(loc=g_mu, scale=g_sig).pdf(idx)
-    ##     if weights[j] < 1e-3: continue
-    ##     g_post   += ll_post[j] * weights[j]
-    ##     g_lhood  += ll_logp[j] * weights[j]
-    ##     ## weight_sum += weights[j]
-    ##     ## weight2_sum += weights[j]**2
+    ## g_post  = np.matmul(weights,ll_post) 
+    ## g_lhood = np.sum( ll_logp * weights )
+    for j in xrange(len(ll_idx)):
+        if weights[j] < 1e-3: continue
+        g_post   += ll_post[j] * weights[j]
+        g_lhood  += ll_logp[j] * weights[j]
 
     if abs(weight_sum)<1e-3: weight_sum=1e-3
-    l_statePosterior   = g_post / weight_sum 
-    l_likelihood_mean  = g_lhood / weight_sum 
+    l_statePosterior  = g_post / weight_sum 
+    l_likelihood_mean = g_lhood / weight_sum 
 
     g_lhood2 = np.sum( weights * ( (ll_logp-l_likelihood_mean)**2 ) )
-    ## for j in xrange(n):
-    ##     ## idx  = ll_idx[j]
-    ##     ## logp = ll_logp[j]
-    ##     ## weight    = norm(loc=g_mu, scale=g_sig).pdf(idx)    
-    ##     if weights[j] < 1e-3: continue
-    ##     g_lhood2 += weights[j] * ((ll_logp[j] - l_likelihood_mean )**2)
         
     ## print g_lhood2/(weight_sum - weight2_sum/weight_sum), weight_sum - weight2_sum/weight_sum, weight_sum 
     l_likelihood_std = np.sqrt(g_lhood2/(weight_sum - weight2_sum/weight_sum))
