@@ -458,17 +458,17 @@ class classifier(learning_base):
                 ## weights = norm(loc=self.g_mu_list[i], scale=self.g_sig).pdf(ll_idx) 
 
                 # 1-new-new) Find KL-based weight per cluster
-                ## weights = []
-                ## for j, post in enumerate(ll_post):
-                ##     weights.append( 1.0 / symmetric_entropy(post, self.l_statePosterior[i]) )
-                ## ## weights = np.array(weights)**2
-                ## weights = [w if w > 0.1 else 0.0 for w in weights ]
-
                 weights = []
                 for j, post in enumerate(ll_post):
-                    min_index, min_dist = findBestPosteriorDistribution(post, self.l_statePosterior)
-                    if min_index == i: weights.append(1.0)
-                    else: weights.append(0.0)
+                    weights.append( 1.0 / symmetric_entropy(post, self.l_statePosterior[i]) )
+                weights = np.array(weights)**2
+                weights = [w if w > 0.01 else 0.0 for w in weights ]
+
+                ## weights = []
+                ## for j, post in enumerate(ll_post):
+                ##     min_index, min_dist = findBestPosteriorDistribution(post, self.l_statePosterior)
+                ##     if min_index == i: weights.append(1.0)
+                ##     else: weights.append(0.0)
                 
                 print np.amax(weights), np.amin(weights)
 
