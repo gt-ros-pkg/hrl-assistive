@@ -832,9 +832,9 @@ if __name__ == '__main__':
         ## c11
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
-        ## ## ## c12
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation5'
+        ## ## c12
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation5'
         ## ## ep
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation3'
@@ -859,8 +859,8 @@ if __name__ == '__main__':
             param_dict['ADT']['lr']       = 0.8
             param_dict['ADT']['max_iter'] = 10
             param_dict['ADT']['n_pTrain'] = n_pTrain
-            param_dict['ADT']['HMM']      = 'old' #'adapt' #'renew'
-            param_dict['ADT']['CLF']      = 'adapt' #'adapt' #'renew'
+            param_dict['ADT']['HMM']      = 'adapt' #'adapt' #'renew'
+            param_dict['ADT']['CLF']      = 'old' #'adapt' #'renew'
             
             ret = evaluation_single_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
                                        save_pdf=opt.bSavePdf, \
