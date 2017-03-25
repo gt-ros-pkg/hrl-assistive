@@ -198,7 +198,6 @@ def gen_likelihoods(subject_names, task_name, raw_data_path, processed_data_path
 
 
 def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
-                         learning_rate=0.2, max_iter=1,\
                          data_renew=False, save_pdf=False, verbose=False, debug=False,\
                          no_plot=False, delay_plot=True, find_param=False, data_gen=False,\
                          target_class=None):
@@ -215,6 +214,9 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
 
     # ROC
     ROC_dict = param_dict['ROC']
+
+    # Adaptation
+    ADT_dict = param_dict['ADT']
 
     # parameters
     startIdx    = 4
@@ -320,7 +322,7 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
     normalTrainData  = copy.copy(successData) * HMM_dict['scale']
     
     # Split test data to two groups
-    n_AHMM_sample = 10
+    n_AHMM_sample = ADT_dict['n_pTrain']
     for idx in xrange(len(td['successDataList'])):
 
         ## if idx != 4: continue
@@ -346,7 +348,8 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
                           d['mat_num'], d['u_denom'])
                           
         ## ret = ml.partial_fit(X_ptrain+noise_arr, learningRate=0.5, max_iter=20, nrSteps=1)
-        ret = ml.partial_fit(X_ptrain+noise_arr, learningRate=learning_rate, max_iter=max_iter, nrSteps=1)
+        ret = ml.partial_fit(X_ptrain+noise_arr, learningRate=ADT_dict['lr'],
+                             max_iter=ADT_dict['max_iter'], nrSteps=1)
         ## ret = ml.fit(X_ptrain+noise_arr)
         ## print idx, ret
         try:
@@ -819,8 +822,8 @@ if __name__ == '__main__':
           '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
         ## ## c8
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation4'
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation4'
         ## ## ## c11
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
@@ -835,7 +838,7 @@ if __name__ == '__main__':
                                                      'unimodal_ftForce_integ',\
                                                      'crossmodal_landmarkEEDist']
         param_dict['HMM']['scale'] = 5.0
-        param_dict['ROC']['progress_param_range'] = -np.logspace(-0.2, 2.2, nPoints)+1.0
+        param_dict['ROC']['progress_param_range'] = -np.logspace(-1.2, 2.2, nPoints)+3.0
         param_dict['ROC']['methods'] = ['progress']
 
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
@@ -846,14 +849,18 @@ if __name__ == '__main__':
         ##                      find_param=False, data_gen=opt.bDataGen)
 
         auc_list = []
-        for max_iter in [1,5,10,20,40]:            
+        for n_pTrain in [2,4,8,16]:
+            param_dict['ADT'] = {}
+            param_dict['ADT']['lr']       = 0.6
+            param_dict['ADT']['max_iter'] = 20
+            param_dict['ADT']['n_pTrain'] = n_pTrain
+            
             ret = evaluation_single_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
-                                       max_iter=max_iter, learning_rate=0.1, save_pdf=opt.bSavePdf, \
+                                       save_pdf=opt.bSavePdf, \
                                        verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                                        find_param=False, data_gen=opt.bDataGen)
             auc_list.append(ret['progress'])
         print "-------------------------------"
-        print learning_rate
         print auc_list
 
         # no adapt: 76
