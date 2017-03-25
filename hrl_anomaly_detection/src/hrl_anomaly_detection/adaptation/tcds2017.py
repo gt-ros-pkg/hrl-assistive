@@ -352,6 +352,7 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
                                  max_iter=ADT_dict['max_iter'], nrSteps=1)
         elif ADT_dict['HMM'] == 'renew':
             ret = ml.fit(X_ptrain+noise_arr)
+        else: ret = 0
             
         try:
             if np.isnan(ret):
