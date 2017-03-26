@@ -693,6 +693,8 @@ if __name__ == '__main__':
                  default=False, help='Generate likelihoods.')
     p.add_option('--eval_single', '--es', action='store_true', dest='evaluation_single',
                  default=False, help='Evaluate with single detector.')
+    p.add_option('--eval_single2', '--es2', action='store_true', dest='evaluation_single2',
+                 default=False, help='Evaluate with single detector.')
     p.add_option('--eval_double', '--ed', action='store_true', dest='evaluation_double',
                  default=False, help='Evaluate with double detectors.')
     
@@ -862,6 +864,62 @@ if __name__ == '__main__':
             param_dict['ADT']['n_pTrain'] = n_pTrain
             param_dict['ADT']['HMM']      = 'old' #'adapt' #'renew'
             param_dict['ADT']['CLF']      = 'adapt' #'adapt' #'renew'
+            
+            ret = evaluation_single_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
+                                       save_pdf=opt.bSavePdf, \
+                                       verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
+                                       find_param=False, data_gen=opt.bDataGen)
+            auc_list.append(ret['progress'])
+        print "-------------------------------"
+        print auc_list
+
+        # no adapt: 76
+
+    elif opt.evaluation_single2:
+        '''
+        evaluation with selected feature set 5,6
+        '''
+        nPoints = param_dict['ROC']['nPoints']
+               
+        ## br
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        ## ## c8
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation4'
+        ## c11
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
+        ## ## c12
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation5'
+        ## ## ep
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation3'
+        param_dict['data_param']['handFeatures'] = ['unimodal_kinVel',\
+                                                    'unimodal_ftForce_zero',\
+                                                    'unimodal_kinDesEEChange',\
+                                                    'crossmodal_landmarkEEDist']
+        param_dict['HMM']['scale'] = 9.0
+        param_dict['ROC']['progress_param_range'] = -np.logspace(-1.2, 2.2, nPoints)+3.0
+        param_dict['ROC']['methods'] = ['progress']
+
+        if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
+
+        ## evaluation_single_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
+        ##                      save_pdf=opt.bSavePdf, \
+        ##                      verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
+        ##                      find_param=False, data_gen=opt.bDataGen)
+
+        auc_list = []
+        for n_pTrain in [3]:
+            param_dict['ADT'] = {}
+            param_dict['ADT']['lr']       = 0.8
+            param_dict['ADT']['max_iter'] = 10
+            param_dict['ADT']['n_pTrain'] = n_pTrain
+            param_dict['ADT']['HMM']      = 'renew' #'adapt' #'renew'
+            param_dict['ADT']['CLF']      = 'renew' #'adapt' #'renew'
             
             ret = evaluation_single_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
                                        save_pdf=opt.bSavePdf, \
