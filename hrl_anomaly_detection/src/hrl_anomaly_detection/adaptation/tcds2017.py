@@ -645,10 +645,10 @@ def evaluation_acc(subject_names, task_name, raw_data_path, processed_data_path,
             fn = l_data[i][method_list[0]]['fn_l'][0]
             acc = float(np.sum(tp+tn)) / float(np.sum(tp+fn+fp+tn)) * 100.0
 
-            tps += tp
-            fps += fp
-            tns += tn
-            fns += fn
+            tps += np.sum(tp)
+            fps += np.sum(fp)
+            tns += np.sum(tn)
+            fns += np.sum(fn)
             acc_raws.append(acc)
 
         acc_raw_list.append(acc_raws)
@@ -1036,12 +1036,12 @@ if __name__ == '__main__':
     save_data_path = os.path.expanduser('~')+\
       '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation/'+\
       str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-    ## ## c8
-    ## save_data_path = os.path.expanduser('~')+\
-    ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation4'
-    ## c11
+    ## c8
     save_data_path = os.path.expanduser('~')+\
-      '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
+      '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation4'
+    ## c11
+    ## save_data_path = os.path.expanduser('~')+\
+    ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
     ## ## c12
     ## save_data_path = os.path.expanduser('~')+\
     ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation5'
@@ -1159,12 +1159,12 @@ if __name__ == '__main__':
         ##                      find_param=False, data_gen=opt.bDataGen)
 
         auc_list = []
-        for n_pTrain in [10]:
+        for lr in [0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
             param_dict['ADT'] = {}
-            param_dict['ADT']['lr']       = 0.8
+            param_dict['ADT']['lr']       = lr #0.8
             param_dict['ADT']['max_iter'] = 10
-            param_dict['ADT']['n_pTrain'] = n_pTrain
-            param_dict['ADT']['HMM']      = 'old' #'adapt' #'renew'
+            param_dict['ADT']['n_pTrain'] = 10
+            param_dict['ADT']['HMM']      = 'adapt' #'renew'
             param_dict['ADT']['CLF']      = 'adapt' #'adapt' #'renew'
             
             ret = evaluation_single_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
