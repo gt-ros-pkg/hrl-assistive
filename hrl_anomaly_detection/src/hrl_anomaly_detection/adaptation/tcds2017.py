@@ -1158,6 +1158,8 @@ if __name__ == '__main__':
         ##                      verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
         ##                      find_param=False, data_gen=opt.bDataGen)
 
+        param_dict['ADT']['data_renew'] = True
+
         auc_list = []
         for lr in [0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
             param_dict['ADT'] = {}
@@ -1166,12 +1168,15 @@ if __name__ == '__main__':
             param_dict['ADT']['n_pTrain'] = 10
             param_dict['ADT']['HMM']      = 'adapt' #'renew'
             param_dict['ADT']['CLF']      = 'adapt' #'adapt' #'renew'
+            param_dict['ADT']['HMM_renew']  = True
             
             ret = evaluation_single_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
                                        save_pdf=opt.bSavePdf, \
                                        verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                                        find_param=False, data_gen=opt.bDataGen)
             auc_list.append(ret['progress'])
+            param_dict['ADT']['data_renew'] = False
+            
         print "-------------------------------"
         print auc_list
 
