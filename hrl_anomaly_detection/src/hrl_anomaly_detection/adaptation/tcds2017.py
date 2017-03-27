@@ -1042,9 +1042,9 @@ if __name__ == '__main__':
     ## c11
     ## save_data_path = os.path.expanduser('~')+\
     ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
-    ## ## c12
-    ## save_data_path = os.path.expanduser('~')+\
-    ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation5'
+    ## c12
+    save_data_path = os.path.expanduser('~')+\
+      '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation5'
     ## ## ep
     ## save_data_path = os.path.expanduser('~')+\
     ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation3'
@@ -1165,7 +1165,7 @@ if __name__ == '__main__':
         for lr in [0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
             param_dict['ADT']['lr']       = lr #0.8
             param_dict['ADT']['max_iter'] = 10
-            param_dict['ADT']['n_pTrain'] = 10
+            param_dict['ADT']['n_pTrain'] = 5 # 10
             param_dict['ADT']['HMM']      = 'adapt' #'renew'
             param_dict['ADT']['CLF']      = 'adapt' #'adapt' #'renew'
             param_dict['ADT']['HMM_renew']  = True
