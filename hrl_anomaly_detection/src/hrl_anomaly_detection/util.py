@@ -1368,7 +1368,7 @@ def combineData(X1,X2, target_features, all_features, first_axis='dim', add_nois
 
 def roc_info(ROC_data, nPoints, delay_plot=False, no_plot=False, save_pdf=False,\
              timeList=None, legend=False, verbose=True, ROC_dict=None,\
-             multi_ad=False, padding=False):
+             multi_ad=False, padding=False, acc=False):
     # ---------------- ROC Visualization ----------------------
     
     if verbose: print "Start to visualize ROC curves!!!"
@@ -1385,12 +1385,12 @@ def roc_info(ROC_data, nPoints, delay_plot=False, no_plot=False, save_pdf=False,
         if delay_plot:
             fig = plt.figure(figsize=(5,8))
             colors = itertools.cycle(['y', 'g', 'b', 'k', 'y','r', 'b', ])
-            
         else:
             fig = plt.figure()
 
 
     auc_rates = {}
+    acc_rates = {}
     for method in sorted(ROC_data.keys()):
 
         tp_ll = ROC_data[method]['tp_l']
@@ -1452,6 +1452,7 @@ def roc_info(ROC_data, nPoints, delay_plot=False, no_plot=False, save_pdf=False,
         ## auc = metrics.auc(fpr_l + [100], tpr_l + [100], True)
         auc_rates[method] = auc
         if verbose: print auc
+        if acc: acc_rates[method] = acc_l
 
         if method == 'svm': label='HMM-BPSVM'
         elif method == 'progress': label='HMM-D'
@@ -1542,6 +1543,7 @@ def roc_info(ROC_data, nPoints, delay_plot=False, no_plot=False, save_pdf=False,
     elif no_plot is False:
         plt.show()
 
+    if acc: return auc_rates, acc_rates
     return auc_rates
 
 
@@ -2449,6 +2451,7 @@ def update_roc_data(ROC_data, new_data, nPoints, method_list):
                 print "Error when collect ROC data:", new_data[i]
                 sys.exit()
             if ROC_data[method]['complete'] == True: continue
+
             ROC_data[method]['tp_l'][j] += new_data[i][method]['tp_l'][j]
             ROC_data[method]['fp_l'][j] += new_data[i][method]['fp_l'][j]
             ROC_data[method]['tn_l'][j] += new_data[i][method]['tn_l'][j]

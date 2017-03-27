@@ -460,6 +460,197 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
 
 
 
+def evaluation_acc(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
+                   data_renew=False, save_pdf=False, verbose=False, debug=False,\
+                   no_plot=False, delay_plot=True, find_param=False, data_gen=False,\
+                   target_class=None):
+    ## Parameters
+    # data
+    data_dict  = param_dict['data_param']
+    data_renew = data_dict['renew']
+    # HMM
+    HMM_dict   = param_dict['HMM']
+    nState     = HMM_dict['nState']
+    cov        = HMM_dict['cov']
+    # SVM
+    SVM_dict   = param_dict['SVM']
+
+    # ROC
+    ROC_dict = param_dict['ROC']
+
+    # Adaptation
+    ADT_dict = param_dict['ADT']
+
+    # parameters
+    startIdx    = 4
+    method_list = ROC_dict['methods'] 
+    nPoints     = ROC_dict['nPoints']
+    
+    #------------------------------------------
+
+    if os.path.isdir(processed_data_path) is False:
+        os.system('mkdir -p '+processed_data_path)
+
+    crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
+    
+    if os.path.isfile(crossVal_pkl) and data_renew is False and data_gen is False:
+        print "CV data exists and no renew"
+        d = ut.load_pickle(crossVal_pkl)
+        kFold_list = d['kFoldList'] 
+        successData = d['successData']
+        failureData = d['failureData']
+        success_files = d['success_files']
+        failure_files = d['failure_files']        
+    else:
+        '''
+        Use augmented data? if nAugment is 0, then aug_successData = successData
+        '''        
+        d = dm.getDataLOPO(subject_names, task_name, raw_data_path, \
+                           processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
+                           downSampleSize=data_dict['downSampleSize'],\
+                           handFeatures=data_dict['isolationFeatures'], \
+                           cut_data=data_dict['cut_data'], \
+                           data_renew=data_renew, max_time=data_dict['max_time'])
+
+
+        successData, failureData, success_files, failure_files, kFold_list \
+          = dm.LOPO_data_index(d['successDataList'], d['failureDataList'],\
+                               d['successFileList'], d['failureFileList'],\
+                               target_class=target_class)
+
+        d['successData']   = successData
+        d['failureData']   = failureData
+        d['success_files']   = success_files
+        d['failure_files']   = failure_files        
+        d['kFoldList']     = kFold_list
+        ut.save_pickle(d, crossVal_pkl)
+        if data_gen: sys.exit()
+
+
+    # select feature for detection
+    feature_list = []
+    for feature in param_dict['data_param']['handFeatures']:
+        idx = [ i for i, x in enumerate(param_dict['data_param']['isolationFeatures']) if feature == x][0]
+        feature_list.append(idx)
+
+    successData = successData[feature_list]
+    failureData = failureData[feature_list]
+
+    #-----------------------------------------------------------------------------------------    
+    # Training HMM, and getting classifier training and testing data
+    noise_mag = 0.03
+    dm.saveHMMinducedFeatures(kFold_list, successData, failureData,\
+                              task_name, processed_data_path,\
+                              HMM_dict, data_renew, startIdx, nState, cov, \
+                              success_files=success_files, failure_files=failure_files,\
+                              noise_mag=noise_mag, diag=False, cov_type='full', \
+                              inc_hmm_param=True, verbose=verbose)
+
+    roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
+
+    if os.path.isfile(roc_pkl) is False or HMM_dict['renew'] or SVM_dict['renew']: ROC_data = {}
+    else: ROC_data = ut.load_pickle(roc_pkl)
+    ROC_data = util.reset_roc_data(ROC_data, method_list, ROC_dict['update_list'], nPoints)
+
+    # parallelization
+    if debug: n_jobs=1
+    else: n_jobs=-1
+    l_data = Parallel(n_jobs=n_jobs, verbose=10)(delayed(cf.run_classifiers)( idx, processed_data_path, \
+                                                                         task_name, \
+                                                                         method_list[0], ROC_data, \
+                                                                         ROC_dict, \
+                                                                         SVM_dict, HMM_dict, \
+                                                                         startIdx=startIdx, nState=nState,\
+                                                                         n_jobs=n_jobs) \
+                                                                         for idx in xrange(len(kFold_list[:1])) \
+                                                                         )
+
+    print "finished to run run_classifiers"
+    ROC_data = util.update_roc_data(ROC_data, l_data, nPoints, method_list)
+    ut.save_pickle(ROC_data, roc_pkl)
+
+    # ---------------- ROC Visualization ----------------------
+    _, acc_list = roc_info(ROC_data, nPoints, no_plot=no_plot, ROC_dict=ROC_dict, acc=True)
+    acc_idx = np.argmax(acc_list['progress'])
+    print "Max acc: ", acc_list['progress'][acc_idx], " and Idx: ", acc_idx
+    print "------------------------------------------------------------"
+
+    d['param_dict']['feature_names'] = np.array(d['param_dict']['feature_names'])[feature_list].tolist()
+    d['param_dict']['feature_min'] = np.array(d['param_dict']['feature_min'])[feature_list].tolist()
+    d['param_dict']['feature_max'] = np.array(d['param_dict']['feature_max'])[feature_list].tolist()
+
+    tgt_raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/ICRA2017/'
+    tgt_subjects = ['ari', 'park', 'jina', 'linda', 'sai', 'hyun']
+
+    # Extract data from designated location
+    td = dm.getDataLOPO(tgt_subjects, task_name, tgt_raw_data_path, save_data_path,\
+                        downSampleSize=data_dict['downSampleSize'],\
+                        init_param_dict=d['param_dict'],\
+                        handFeatures=param_dict['data_param']['handFeatures'], \
+                        data_renew=ADT_dict['data_renew'], max_time=data_dict['max_time'],
+                        pkl_prefix='tgt_')
+
+    nEmissionDim = len(param_dict['data_param']['handFeatures'])
+
+    # person-wise indices from normal training data
+    nor_train_inds = [ np.arange(len(kFold_list[i][2])) for i in xrange(len(kFold_list)) ]
+    for i in xrange(1,len(nor_train_inds)):
+        nor_train_inds[i] += (nor_train_inds[i-1][-1]+1)
+    normalTrainData  = copy.copy(successData) * HMM_dict['scale']
+    
+    ADT_dict['HMM_renew'] = True
+    ROC_dict[method_list[0]+'_param_range'] = ROC_dict[method_list[0]+'_param_range'][acc_idx:acc_idx+1]
+    ROC_dict['nPoints'] = nPoints = 1
+
+    acc_list = []
+    for test in ['old', 'adapt', 'renew']:
+        ADT_dict['HMM'] = test
+        ADT_dict['CLF'] = test
+        pkl_prefix = 'hmm_'+test+'_'+task_name
+        saveAHMMinducedFeatures(td, task_name, processed_data_path, HMM_dict, ADT_dict, noise_mag,
+                                pkl_prefix, normalTrainData, nor_train_inds)
+
+        ROC_data = {}
+        ROC_data = util.reset_roc_data(ROC_data, method_list, ROC_dict['update_list'], nPoints)
+
+        if ADT_dict['CLF'] == 'adapt': adapt=True
+        else: adapt=False
+
+        # parallelization
+        if debug: n_jobs=1
+        else: n_jobs=-1
+        l_data = Parallel(n_jobs=n_jobs, verbose=10)(delayed(cf.run_classifiers)( idx, processed_data_path, \
+                                                                             task_name, \
+                                                                             method_list[0], ROC_data, \
+                                                                             ROC_dict, \
+                                                                             SVM_dict, HMM_dict, \
+                                                                             startIdx=startIdx, nState=nState,\
+                                                                             n_jobs=n_jobs,\
+                                                                             modeling_pkl_prefix=pkl_prefix,\
+                                                                             adaptation=adapt) \
+                                                                             for idx in xrange(len(td['successDataList'])) )
+
+
+        print "finished to run run_classifiers"
+        ROC_data = util.update_roc_data(ROC_data, l_data, nPoints, method_list)
+
+        # ---------------- ROC Visualization ----------------------
+        tp_ll = ROC_data[method_list[0]]['tp_l']
+        fp_ll = ROC_data[method_list[0]]['fp_l']
+        tn_ll = ROC_data[method_list[0]]['tn_l']
+        fn_ll = ROC_data[method_list[0]]['fn_l']
+
+        i = 0
+        acc = float(np.sum(tp_ll[i]+tn_ll[i])) / float(np.sum(tp_ll[i]+fn_ll[i]+fp_ll[i]+tn_ll[i])) * 100.0 
+        acc_list.append(acc)
+        
+        ## _, acc = roc_info(ROC_data, 1, no_plot=no_plot, ROC_dict=ROC_dict, acc=True)
+        ## acc_list.append(acc['progress'])
+        
+    return acc_list
+
+
+
 ## def temp():
 
 ##     # Split test data to two groups
@@ -656,9 +847,6 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
     else: ROC_data = ut.load_pickle(roc_pkl)
     ROC_data = util.reset_roc_data(ROC_data, [method_list[0][:-1]], ROC_dict['update_list'], nPoints)
 
-    # temp
-    kFold_list = kFold_list[:8]
-
     # parallelization
     if debug: n_jobs=1
     else: n_jobs=-1
@@ -681,7 +869,115 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
 
 
 
+def saveAHMMinducedFeatures(td, task_name, processed_data_path, HMM_dict, ADT_dict, noise_mag,
+                            pkl_prefix, normalTrainData, nor_train_inds, startIdx=4):
+    nState      = HMM_dict['nState']
+    tgt_hmm_idx = 0
 
+    # Split test data to two groups
+    n_AHMM_sample = ADT_dict['n_pTrain']
+    for idx in xrange(len(td['successDataList'])):
+
+        ## if idx != 4: continue
+        inc_model_pkl = os.path.join(processed_data_path, pkl_prefix+'_'+str(idx)+'.pkl')
+        if not(os.path.isfile(inc_model_pkl) is False or HMM_dict['renew'] or ADT_dict['HMM_renew']) :
+            print idx, " : updated hmm exists"
+            continue
+
+        normalTestData   = np.array(copy.copy(td['successDataList'][idx])) * HMM_dict['scale'] 
+        abnormalTestData = np.array(copy.copy(td['failureDataList'][idx])) * HMM_dict['scale']
+
+        X_ptrain = copy.copy(normalTestData[:n_AHMM_sample])
+        noise_arr = np.random.normal(0.0, noise_mag, np.shape(X_ptrain))*HMM_dict['scale']
+        nLength   = len(normalTestData[0][0]) - startIdx
+      
+        model_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(tgt_hmm_idx)+'.pkl')
+        d         = ut.load_pickle(model_pkl)
+
+        # Update
+        ml = hmm.learning_hmm(nState, d['nEmissionDim'])
+        ml.set_hmm_object(d['A'], d['B'], d['pi'], d['out_a_num'], d['vec_num'], \
+                          d['mat_num'], d['u_denom'])
+
+        if ADT_dict['HMM'] == 'adapt':
+            ret = ml.partial_fit(X_ptrain+noise_arr, learningRate=ADT_dict['lr'],
+                                 max_iter=ADT_dict['max_iter'], nrSteps=1)
+        elif ADT_dict['HMM'] == 'renew':
+            ret = ml.fit(X_ptrain+noise_arr)
+        else: ret = 0
+            
+        try:
+            if np.isnan(ret):
+                print "kFold_list ........ partial fit error... ", ret
+                sys.exit()
+        except:
+            print ret
+            sys.exit()
+
+        # Comparison of
+        ## import hmm_viz as hv
+        ## hv.data_viz(normalTrainData, X_ptrain)
+        ## sys.exit()
+
+        # Comparison of HMMs
+        ## ml_temp = hmm.learning_hmm(nState, d['nEmissionDim'])
+        ## ml_temp.set_hmm_object(d['A'], d['B'], d['pi'], d['out_a_num'], d['vec_num'], \
+        ##                        d['mat_num'], d['u_denom'])
+        ## import hmm_viz as hv
+        ## hv.hmm_emission_viz(ml_temp, ml)
+        ## sys.exit()
+
+        # Classifier test data
+        n_jobs=-1
+        ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
+          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, startIdx=startIdx, n_jobs=n_jobs)
+        ll_classifier_ptrain_X, ll_classifier_ptrain_Y, ll_classifier_ptrain_idx =\
+          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData[:,:n_AHMM_sample], startIdx=startIdx, \
+                                                   n_jobs=n_jobs)
+        ll_classifier_test_X, ll_classifier_test_Y, ll_classifier_test_idx =\
+          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData[:,n_AHMM_sample:], abnormalTestData, \
+                                                   startIdx, n_jobs=n_jobs)
+
+        ## if success_files is not None:
+        ##     ll_classifier_test_labels = [success_files[i] for i in normalTestIdx[n_AHMM_sample:]]
+        ##     ll_classifier_test_labels += [failure_files[i] for i in abnormalTestIdx]
+        ## else:
+        ll_classifier_test_labels = None
+
+        #-----------------------------------------------------------------------------------------
+        d = {}
+        d['nEmissionDim'] = ml.nEmissionDim
+        d['A']            = ml.A 
+        d['B']            = ml.B 
+        d['pi']           = ml.pi
+        d['F']            = ml.F
+        d['nState']       = nState
+        d['startIdx']     = startIdx
+        d['ll_classifier_train_X']  = ll_classifier_train_X
+        d['ll_classifier_train_Y']  = ll_classifier_train_Y            
+        d['ll_classifier_train_idx']= ll_classifier_train_idx
+
+        if ADT_dict['CLF'] == 'renew':
+            d['ll_classifier_train_X']  = ll_classifier_ptrain_X
+            d['ll_classifier_train_Y']  = ll_classifier_ptrain_Y            
+            d['ll_classifier_train_idx']= ll_classifier_ptrain_idx
+        
+        d['ll_classifier_ptrain_X']  = ll_classifier_ptrain_X
+        d['ll_classifier_ptrain_Y']  = ll_classifier_ptrain_Y            
+        d['ll_classifier_ptrain_idx']= ll_classifier_ptrain_idx
+        d['ll_classifier_test_X']   = ll_classifier_test_X
+        d['ll_classifier_test_Y']   = ll_classifier_test_Y            
+        d['ll_classifier_test_idx'] = ll_classifier_test_idx
+        d['ll_classifier_test_labels'] = ll_classifier_test_labels
+        d['nLength']      = nLength
+        d['scale']        = HMM_dict['scale']
+        d['cov']          = HMM_dict['cov']
+        d['nor_train_inds'] = nor_train_inds
+        ut.save_pickle(d, inc_model_pkl)
+
+
+
+    
 
 if __name__ == '__main__':
 
@@ -695,6 +991,8 @@ if __name__ == '__main__':
                  default=False, help='Evaluate with single detector.')
     p.add_option('--eval_single2', '--es2', action='store_true', dest='evaluation_single2',
                  default=False, help='Evaluate with single detector.')
+    p.add_option('--eval_acc', '--eaa', action='store_true', dest='evaluation_acc',
+                 default=False, help='Evaluate acc with single detector.')
     p.add_option('--eval_double', '--ed', action='store_true', dest='evaluation_double',
                  default=False, help='Evaluate with double detectors.')
     
@@ -723,13 +1021,23 @@ if __name__ == '__main__':
     ## target_class = [11,4,13,10]
 
 
-    ## # aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-    ## raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/ICRA2017/'    
+    ## br
+    save_data_path = os.path.expanduser('~')+\
+      '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation/'+\
+      str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+    ## ## c8
     ## save_data_path = os.path.expanduser('~')+\
-    ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2/'+\
-    ##   str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-    ## subjects = ['zack']
-    ## param_dict['data_param']['downSampleSize'] = 200
+    ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation4'
+    ## c11
+    save_data_path = os.path.expanduser('~')+\
+      '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
+    ## ## c12
+    ## save_data_path = os.path.expanduser('~')+\
+    ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation5'
+    ## ## ep
+    ## save_data_path = os.path.expanduser('~')+\
+    ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation3'
+
 
 
     #---------------------------------------------------------------------------           
@@ -824,23 +1132,6 @@ if __name__ == '__main__':
         evaluation with selected feature set 5,6
         '''
         nPoints = param_dict['ROC']['nPoints']
-               
-        ## br
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## ## c8
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation4'
-        ## c11
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
-        ## ## c12
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation5'
-        ## ## ep
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation3'
         param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
                                                      'unimodal_kinJntEff_1',\
                                                      'unimodal_ftForce_integ',\
@@ -880,23 +1171,6 @@ if __name__ == '__main__':
         evaluation with selected feature set 5,6
         '''
         nPoints = param_dict['ROC']['nPoints']
-               
-        ## br
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation/'+\
-          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        ## ## c8
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation4'
-        ## c11
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
-        ## ## c12
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation5'
-        ## ## ep
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation3'
         param_dict['data_param']['handFeatures'] = ['unimodal_kinVel',\
                                                     'unimodal_ftForce_zero',\
                                                     'unimodal_kinDesEEChange',\
@@ -930,6 +1204,41 @@ if __name__ == '__main__':
         print auc_list
 
         # no adapt: 76
+
+
+    elif opt.evaluation_acc:
+        '''
+        evaluation with selected feature set 5,6
+        '''
+        nPoints = param_dict['ROC']['nPoints']
+        param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
+                                                     'unimodal_kinJntEff_1',\
+                                                     'unimodal_ftForce_integ',\
+                                                     'crossmodal_landmarkEEDist']
+        param_dict['HMM']['scale'] = 5.0
+        param_dict['ROC']['progress_param_range'] = -np.logspace(-1.2, 2.2, nPoints)+3.0
+        param_dict['ROC']['methods'] = ['progress']
+
+        if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
+
+        acc_list = []
+        for n_pTrain in [10]:
+            param_dict['ADT'] = {}
+            param_dict['ADT']['lr']       = 0.8
+            param_dict['ADT']['max_iter'] = 10
+            param_dict['ADT']['n_pTrain'] = n_pTrain
+            param_dict['ADT']['HMM']      = 'adapt' #'renew'
+            param_dict['ADT']['CLF']      = 'adapt' #'renew'
+            param_dict['ADT']['data_renew'] = False
+            
+            ret = evaluation_acc(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
+                                 save_pdf=opt.bSavePdf, \
+                                 verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
+                                 find_param=False, data_gen=opt.bDataGen)
+            acc_list.append(ret)
+        print "-------------------------------"
+        print acc_list
+
 
 
     elif opt.evaluation_double:
