@@ -1158,11 +1158,11 @@ if __name__ == '__main__':
         ##                      verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
         ##                      find_param=False, data_gen=opt.bDataGen)
 
+        param_dict['ADT'] = {}
         param_dict['ADT']['data_renew'] = True
 
         auc_list = []
         for lr in [0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
-            param_dict['ADT'] = {}
             param_dict['ADT']['lr']       = lr #0.8
             param_dict['ADT']['max_iter'] = 10
             param_dict['ADT']['n_pTrain'] = 10
