@@ -1229,7 +1229,7 @@ if __name__ == '__main__':
             param_dict['ADT']['n_pTrain'] = n_pTrain
             param_dict['ADT']['HMM']      = 'adapt' #'renew'
             param_dict['ADT']['CLF']      = 'adapt' #'renew'
-            param_dict['ADT']['data_renew'] = False
+            param_dict['ADT']['data_renew'] = True
             
             ret = evaluation_acc(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
                                  save_pdf=opt.bSavePdf, \
