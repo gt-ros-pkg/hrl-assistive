@@ -597,16 +597,17 @@ def evaluation_acc(subject_names, task_name, raw_data_path, processed_data_path,
     for i in xrange(1,len(nor_train_inds)):
         nor_train_inds[i] += (nor_train_inds[i-1][-1]+1)
     normalTrainData  = copy.copy(successData) * HMM_dict['scale']
-    
-    ADT_dict['HMM_renew'] = True
+
+    if HMM_dict['renew'] or SVM_dict['renew'] or ADT_dict['data_renew']: ADT_dict['HMM_renew'] = True
     ROC_dict[method_list[0]+'_param_range'] = ROC_dict[method_list[0]+'_param_range'][acc_idx:acc_idx+1]
     ROC_dict['nPoints'] = nPoints = 1
 
     acc_list = []
+    acc_raw_list = []
     for test in ['old', 'adapt', 'renew']:
         ADT_dict['HMM'] = test
         ADT_dict['CLF'] = test
-        pkl_prefix = 'hmm_'+test+'_'+task_name
+        pkl_prefix      = 'hmm_'+test+'_'+task_name
         saveAHMMinducedFeatures(td, task_name, processed_data_path, HMM_dict, ADT_dict, noise_mag,
                                 pkl_prefix, normalTrainData, nor_train_inds)
 
@@ -632,22 +633,32 @@ def evaluation_acc(subject_names, task_name, raw_data_path, processed_data_path,
 
 
         print "finished to run run_classifiers"
-        ROC_data = util.update_roc_data(ROC_data, l_data, nPoints, method_list)
+        tps = 0
+        fps = 0
+        tns = 0
+        fns = 0
+        acc_raws = []
+        for i in xrange(len(l_data)):
+            tp = l_data[i][method_list[0]]['tp_l'][0]
+            fp = l_data[i][method_list[0]]['fp_l'][0]
+            tn = l_data[i][method_list[0]]['tn_l'][0]
+            fn = l_data[i][method_list[0]]['fn_l'][0]
+            acc = float(np.sum(tp+tn)) / float(np.sum(tp+fn+fp+tn)) * 100.0
 
-        # ---------------- ROC Visualization ----------------------
-        tp_ll = ROC_data[method_list[0]]['tp_l']
-        fp_ll = ROC_data[method_list[0]]['fp_l']
-        tn_ll = ROC_data[method_list[0]]['tn_l']
-        fn_ll = ROC_data[method_list[0]]['fn_l']
+            tps += tp
+            fps += fp
+            tns += tn
+            fns += fn
+            acc_raws.append(acc)
 
-        i = 0
-        acc = float(np.sum(tp_ll[i]+tn_ll[i])) / float(np.sum(tp_ll[i]+fn_ll[i]+fp_ll[i]+tn_ll[i])) * 100.0 
+        acc_raw_list.append(acc_raws)
+        acc = float(np.sum(tps+tns)) / float(np.sum(tps+fns+fps+tns)) * 100.0 
         acc_list.append(acc)
         
         ## _, acc = roc_info(ROC_data, 1, no_plot=no_plot, ROC_dict=ROC_dict, acc=True)
         ## acc_list.append(acc['progress'])
-        
-    return acc_list
+
+    return acc_list, acc_raw_list
 
 
 
@@ -1222,6 +1233,7 @@ if __name__ == '__main__':
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
 
         acc_list = []
+        acc_raw_list = []
         for n_pTrain in [10]:
             param_dict['ADT'] = {}
             param_dict['ADT']['lr']       = 0.8
@@ -1229,14 +1241,17 @@ if __name__ == '__main__':
             param_dict['ADT']['n_pTrain'] = n_pTrain
             param_dict['ADT']['HMM']      = 'adapt' #'renew'
             param_dict['ADT']['CLF']      = 'adapt' #'renew'
-            param_dict['ADT']['data_renew'] = True
+            param_dict['ADT']['data_renew'] = False
+            param_dict['ADT']['HMM_renew']  = False
             
-            ret = evaluation_acc(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
-                                 save_pdf=opt.bSavePdf, \
-                                 verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
-                                 find_param=False, data_gen=opt.bDataGen)
-            acc_list.append(ret)
+            a, ar = evaluation_acc(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
+                                   save_pdf=opt.bSavePdf, \
+                                   verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
+                                   find_param=False, data_gen=opt.bDataGen)
+            acc_list.append(a)
+            acc_raw_list.append(ar)
         print "-------------------------------"
+        print acc_raw_list
         print acc_list
 
 
