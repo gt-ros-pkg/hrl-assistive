@@ -359,8 +359,9 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
                 print "kFold_list ........ partial fit error... ", ret
                 sys.exit()
         except:
-            print ret
-            sys.exit()
+            print ret, " w/ lr=", ADT_dict['lr']
+            return None
+            ## sys.exit()
 
         # Comparison of
         ## import hmm_viz as hv
@@ -1159,7 +1160,7 @@ if __name__ == '__main__':
         ##                      find_param=False, data_gen=opt.bDataGen)
 
         param_dict['ADT'] = {}
-        param_dict['ADT']['data_renew'] = True
+        param_dict['ADT']['data_renew'] = False
 
         auc_list = []
         for lr in [0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
@@ -1174,8 +1175,9 @@ if __name__ == '__main__':
                                        save_pdf=opt.bSavePdf, \
                                        verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                                        find_param=False, data_gen=opt.bDataGen)
+            if ret is None: break
             auc_list.append(ret['progress'])
-            param_dict['ADT']['data_renew'] = False
+            #param_dict['ADT']['data_renew'] = False
             
         print "-------------------------------"
         print auc_list

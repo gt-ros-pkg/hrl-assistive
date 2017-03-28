@@ -29,15 +29,27 @@ haptic_mpc:
         max: [109.0, 68.0, 220.0, 0.01, 179.0, 0.01, 179.0]
         min: [-26.0, -24.0, -41.0, -132.0, -179.0, -120.0, -179.0]
 
-    # tool frame
+    # tool frame  
     tool_frame_1:
       name: 'l_gripper_spoon_frame'
-      pos: [0.00635, 0.031, 0.2032]
-      rpy: [0, 0, -1.570796006]
+      pos: 
+        x: 0.00635
+        y: 0.031
+        z: 0.2032
+      rpy: 
+        rx: 0
+        ry: 0
+        rz: -1.570796006
     tool_frame_2:
       name: 'l_gripper_push_frame'
-      pos: [0.08, 0.0, 0.0]
-      rpy: [0, 0, 0]
+      pos: 
+        x: 0.08
+        y: 0.0
+        z: 0.0
+      rpy: 
+        rx: 0
+        ry: 0
+        rz: 0
 
   groups:
     - name: left_arm_joints

@@ -43,10 +43,12 @@ from pr2_controllers_msgs.msg import JointTrajectoryControllerState
 from visualization_msgs.msg import Marker, MarkerArray
 from sensor_msgs.msg import JointState
 
+import warnings
 
 class viz():
 
     def __init__(self, verbose=False):
+        warnings.simplefilter("always", DeprecationWarning)
         self.verbose = verbose
         self.lock = threading.Lock()
 
@@ -246,6 +248,7 @@ class viz():
 
 
 if __name__ == '__main__':
+    warnings.simplefilter("always", DeprecationWarning)
     rospy.init_node('rf_viz')
 
     v = viz()
