@@ -1,6 +1,9 @@
 <launch>
   
   <arg name="arm1" default="l"/>
+  <arg name="l_tool_id" default="1"/>
+  <arg name="r_tool_id" default="0"/>
+
   <!--remap from="/ar_track_alvar/bowl_cen_pose" to="hrl_feeding_task/bowl_location"/-->  
   <!--remap from="/ar_track_alvar/mouth_pose" to="hrl_feeding_task/head_location"/-->  
 
@@ -9,14 +12,15 @@
 
 
   <node name="arm_reacher_server_left" pkg="hrl_manipulation_task"
-        type="arm_reacher_server.py" args="-a $(arg arm1)"
+        type="arm_reacher_server.py" args="-a $(arg arm1) -ti $(arg l_tool_id)"
         output="screen">
     <remap from="/ar_track_alvar/mouth_pose" to="/hrl_manipulation_task/mouth_pose" />
   </node>
   
   <group ns="right" >
     <arg name="arm2" default="r"/>
-    <node name="arm_reacher_server_right" pkg="hrl_manipulation_task" type="arm_reacher_server.py" args="-a $(arg arm2)" output="screen"/>
+    <node name="arm_reacher_server_right" pkg="hrl_manipulation_task"
+          type="arm_reacher_server.py" args="-a $(arg arm2) -ti $(arg r_tool_id)" output="screen"/>
   </group>
 
 </launch>

@@ -627,6 +627,8 @@ if __name__ == '__main__':
     import optparse
     p = optparse.OptionParser()
     haptic_mpc_util.initialiseOptParser(p)
+    p.add_option('--tool_id', '--ti', action='store', dest='tool_id',
+                 default=0, help='Select a tool id.')    
     opt = haptic_mpc_util.getValidInput(p)
 
     # Initial variables
@@ -634,11 +636,12 @@ if __name__ == '__main__':
     controller = 'static'
     #controller = 'actionlib'
     arm        = opt.arm
+    tool_id    = opt.tool_id
     if opt.arm == 'l':
-        tool_id = 1
+        ## tool_id = 1
         verbose = True
     else:
-        tool_id = 0
+        ## tool_id = 0
         verbose = False
 
 

@@ -300,7 +300,7 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
                         downSampleSize=data_dict['downSampleSize'],\
                         init_param_dict=d['param_dict'],\
                         handFeatures=param_dict['data_param']['handFeatures'], \
-                        data_renew=False, max_time=data_dict['max_time'],
+                        data_renew=ADT_dict['data_renew'], max_time=data_dict['max_time'],
                         pkl_prefix='tgt_')
 
     nEmissionDim = len(param_dict['data_param']['handFeatures'])
@@ -320,117 +320,19 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
     for i in xrange(1,len(nor_train_inds)):
         nor_train_inds[i] += (nor_train_inds[i-1][-1]+1)
     normalTrainData  = copy.copy(successData) * HMM_dict['scale']
-    
-    # Split test data to two groups
-    n_AHMM_sample = ADT_dict['n_pTrain']
-    for idx in xrange(len(td['successDataList'])):
 
-        ## if idx != 4: continue
-        inc_model_pkl = os.path.join(processed_data_path, 'hmm_update_'+task_name+'_'+str(idx)+'.pkl')
-        if not(os.path.isfile(inc_model_pkl) is False or HMM_dict['renew'] or data_renew) and False:
-            print idx, " : updated hmm exists"
-            continue
+    if HMM_dict['renew'] or SVM_dict['renew'] or ADT_dict['data_renew']: ADT_dict['HMM_renew'] = True
 
-        normalTestData   = np.array(copy.copy(td['successDataList'][idx])) * HMM_dict['scale'] 
-        abnormalTestData = np.array(copy.copy(td['failureDataList'][idx])) * HMM_dict['scale']
-
-        ## noise_mag=0.01
-        X_ptrain = copy.copy(normalTestData[:n_AHMM_sample])
-        noise_arr = np.random.normal(0.0, noise_mag, np.shape(X_ptrain))*HMM_dict['scale']
-        nLength   = len(normalTestData[0][0]) - startIdx
-      
-        model_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(0)+'.pkl')
-        d         = ut.load_pickle(model_pkl)
-
-        # Update
-        ml = hmm.learning_hmm(nState, d['nEmissionDim'])
-        ml.set_hmm_object(d['A'], d['B'], d['pi'], d['out_a_num'], d['vec_num'], \
-                          d['mat_num'], d['u_denom'])
-
-        if ADT_dict['HMM'] == 'adapt':
-            ret = ml.partial_fit(X_ptrain+noise_arr, learningRate=ADT_dict['lr'],
-                                 max_iter=ADT_dict['max_iter'], nrSteps=1)
-        elif ADT_dict['HMM'] == 'renew':
-            ret = ml.fit(X_ptrain+noise_arr)
-        else: ret = 0
-            
-        try:
-            if np.isnan(ret):
-                print "kFold_list ........ partial fit error... ", ret
-                sys.exit()
-        except:
-            print ret, " w/ lr=", ADT_dict['lr']
-            return None
-            ## sys.exit()
-
-        # Comparison of
-        ## import hmm_viz as hv
-        ## hv.data_viz(normalTrainData, X_ptrain)
-        ## sys.exit()
-
-        # Comparison of HMMs
-        ## ml_temp = hmm.learning_hmm(nState, d['nEmissionDim'])
-        ## ml_temp.set_hmm_object(d['A'], d['B'], d['pi'], d['out_a_num'], d['vec_num'], \
-        ##                        d['mat_num'], d['u_denom'])
-        ## import hmm_viz as hv
-        ## hv.hmm_emission_viz(ml_temp, ml)
-        ## sys.exit()
-
-        # Classifier test data
-        n_jobs=-1
-        ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
-          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, startIdx=startIdx, n_jobs=n_jobs)
-        ll_classifier_ptrain_X, ll_classifier_ptrain_Y, ll_classifier_ptrain_idx =\
-          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData[:,:n_AHMM_sample], startIdx=startIdx, \
-                                                   n_jobs=n_jobs)
-        ll_classifier_test_X, ll_classifier_test_Y, ll_classifier_test_idx =\
-          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData[:,n_AHMM_sample:], abnormalTestData, \
-                                                   startIdx, n_jobs=n_jobs)
-
-        ## if success_files is not None:
-        ##     ll_classifier_test_labels = [success_files[i] for i in normalTestIdx[n_AHMM_sample:]]
-        ##     ll_classifier_test_labels += [failure_files[i] for i in abnormalTestIdx]
-        ## else:
-        ll_classifier_test_labels = None
-
-        #-----------------------------------------------------------------------------------------
-        d = {}
-        d['nEmissionDim'] = ml.nEmissionDim
-        d['A']            = ml.A 
-        d['B']            = ml.B 
-        d['pi']           = ml.pi
-        d['F']            = ml.F
-        d['nState']       = nState
-        d['startIdx']     = startIdx
-        d['ll_classifier_train_X']  = ll_classifier_train_X
-        d['ll_classifier_train_Y']  = ll_classifier_train_Y            
-        d['ll_classifier_train_idx']= ll_classifier_train_idx
-
-        if ADT_dict['CLF'] == 'renew':
-            d['ll_classifier_train_X']  = ll_classifier_ptrain_X
-            d['ll_classifier_train_Y']  = ll_classifier_ptrain_Y            
-            d['ll_classifier_train_idx']= ll_classifier_ptrain_idx
-        
-        d['ll_classifier_ptrain_X']  = ll_classifier_ptrain_X
-        d['ll_classifier_ptrain_Y']  = ll_classifier_ptrain_Y            
-        d['ll_classifier_ptrain_idx']= ll_classifier_ptrain_idx
-        d['ll_classifier_test_X']   = ll_classifier_test_X
-        d['ll_classifier_test_Y']   = ll_classifier_test_Y            
-        d['ll_classifier_test_idx'] = ll_classifier_test_idx
-        d['ll_classifier_test_labels'] = ll_classifier_test_labels
-        d['nLength']      = nLength
-        d['scale']        = HMM_dict['scale']
-        d['cov']          = HMM_dict['cov']
-        d['nor_train_inds'] = nor_train_inds
-        ut.save_pickle(d, inc_model_pkl)
-      
-    pkl_prefix = 'hmm_update_'+task_name
-
+    pkl_prefix = 'hmm_'+ADT_dict['HMM']+'_'+task_name
+    ## pkl_prefix = 'hmm_update_'+task_name
+    saveAHMMinducedFeatures(td, task_name, processed_data_path, HMM_dict, ADT_dict, noise_mag,
+                            pkl_prefix, normalTrainData, nor_train_inds)
 
     #-----------------------------------------------------------------------------------------
     roc_pkl = os.path.join(processed_data_path, 'roc_update_'+task_name+'.pkl')
 
-    if os.path.isfile(roc_pkl) is False or HMM_dict['renew'] or SVM_dict['renew']: ROC_data = {}
+    if os.path.isfile(roc_pkl) is False or HMM_dict['renew'] or SVM_dict['renew'] \
+      or ADT_dict['HMM_renew'] or ADT_dict['CLF_renew']: ROC_data = {}
     else: ROC_data = ut.load_pickle(roc_pkl)
     ROC_data = util.reset_roc_data(ROC_data, method_list, ROC_dict['update_list'], nPoints)
 
@@ -1044,8 +946,8 @@ if __name__ == '__main__':
     ## save_data_path = os.path.expanduser('~')+\
     ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
     ## c12
-    save_data_path = os.path.expanduser('~')+\
-      '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation5'
+    ## save_data_path = os.path.expanduser('~')+\
+    ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation5'
     ## ## ep
     ## save_data_path = os.path.expanduser('~')+\
     ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation3'
@@ -1166,10 +1068,11 @@ if __name__ == '__main__':
         for lr in [0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
             param_dict['ADT']['lr']       = lr #0.8
             param_dict['ADT']['max_iter'] = 10
-            param_dict['ADT']['n_pTrain'] = 5 # 10
+            param_dict['ADT']['n_pTrain'] = 10
             param_dict['ADT']['HMM']      = 'adapt' #'renew'
             param_dict['ADT']['CLF']      = 'adapt' #'adapt' #'renew'
-            param_dict['ADT']['HMM_renew']  = True
+            param_dict['ADT']['HMM_renew'] = True
+            param_dict['ADT']['CLF_renew'] = True
             
             ret = evaluation_single_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
                                        save_pdf=opt.bSavePdf, \
