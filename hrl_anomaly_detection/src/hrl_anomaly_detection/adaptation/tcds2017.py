@@ -305,6 +305,7 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
 
     nEmissionDim = len(param_dict['data_param']['handFeatures'])
 
+
     ## # Comparison of
     ## from hrl_anomaly_detection import data_viz as dv
     ## import hmm_viz as hv
@@ -801,7 +802,7 @@ def saveAHMMinducedFeatures(td, task_name, processed_data_path, HMM_dict, ADT_di
         normalTestData   = np.array(copy.copy(td['successDataList'][idx])) * HMM_dict['scale'] 
         abnormalTestData = np.array(copy.copy(td['failureDataList'][idx])) * HMM_dict['scale']
 
-        X_ptrain = copy.copy(normalTestData[:n_AHMM_sample])
+        X_ptrain = copy.copy(normalTestData[:,:n_AHMM_sample])
         noise_arr = np.random.normal(0.0, noise_mag, np.shape(X_ptrain))*HMM_dict['scale']
         nLength   = len(normalTestData[0][0]) - startIdx
       
@@ -943,8 +944,8 @@ if __name__ == '__main__':
     save_data_path = os.path.expanduser('~')+\
       '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation4'
     ## c11
-    save_data_path = os.path.expanduser('~')+\
-      '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
+    ## save_data_path = os.path.expanduser('~')+\
+    ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
     ## c12
     ## save_data_path = os.path.expanduser('~')+\
     ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation5'
@@ -1065,10 +1066,11 @@ if __name__ == '__main__':
         param_dict['ADT']['data_renew'] = False
 
         auc_list = []
+        ## for lr in [0.8]:
         for lr in [0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
             param_dict['ADT']['lr']       = lr #0.8
             param_dict['ADT']['max_iter'] = 10
-            param_dict['ADT']['n_pTrain'] = 5 #10
+            param_dict['ADT']['n_pTrain'] = 10 #5 #10
             param_dict['ADT']['HMM']      = 'adapt' #'renew'
             param_dict['ADT']['CLF']      = 'adapt' #'adapt' #'renew'
             param_dict['ADT']['HMM_renew'] = True

@@ -127,7 +127,7 @@ class learning_hmm(learning_base):
         else:
             X = [np.array(data) for data in xData]
         nData = len(xData[0])
-        
+
         param_dict = {}
 
         # Load pre-trained HMM without training

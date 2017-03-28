@@ -101,9 +101,9 @@ if __name__ == '__main__':
     ## armReachActionRight("initScooping1") #fix
     ## print armReachActionLeft('getBowlPos')
     ## print armReachActionLeft('lookAtBowl')
-    print armReachActionLeft('initScooping2')
-    print armReachActionLeft('runScooping')
-    print armReachActionLeft('initScooping2')
+    ## print armReachActionLeft('initScooping2')
+    ## print armReachActionLeft('runScooping')
+    ## print armReachActionLeft('initScooping2')
     ## self.armReachActionRight("getHeadPos")
     ## self.armReachActionRight("initFeeding")
     sys.exit()
