@@ -30,6 +30,7 @@ haptic_mpc:
         min: [-26.0, -24.0, -41.0, -132.0, -179.0, -120.0, -179.0]
 
     # tool frame  
+    tool_id: 1
     tool_frame_1:
       name: 'l_gripper_spoon_frame'
       pos: 

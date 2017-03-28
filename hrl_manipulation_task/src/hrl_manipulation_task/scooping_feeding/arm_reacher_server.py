@@ -55,8 +55,8 @@ QUEUE_SIZE = 10
 
 
 class armReachAction(mpcBaseAction):
-    def __init__(self, d_robot, controller, arm, tool_id=0, verbose=False):
-        mpcBaseAction.__init__(self, d_robot, controller, arm, tool_id)
+    def __init__(self, d_robot, controller, arm, verbose=False):
+        mpcBaseAction.__init__(self, d_robot, controller, arm)
 
         #Variables...! #
         self.stop_motion = False
@@ -627,8 +627,6 @@ if __name__ == '__main__':
     import optparse
     p = optparse.OptionParser()
     haptic_mpc_util.initialiseOptParser(p)
-    p.add_option('--tool_id', '--ti', action='store', dest='tool_id',
-                 default=0, help='Select a tool id.')    
     opt = haptic_mpc_util.getValidInput(p)
 
     # Initial variables
@@ -636,17 +634,13 @@ if __name__ == '__main__':
     controller = 'static'
     #controller = 'actionlib'
     arm        = opt.arm
-    tool_id    = opt.tool_id
     if opt.arm == 'l':
-        ## tool_id = 1
         verbose = True
     else:
-        ## tool_id = 0
         verbose = False
 
-
     rospy.init_node('arm_reacher_feeding_and_scooping')
-    ara = armReachAction(d_robot, controller, arm, tool_id, verbose)
+    ara = armReachAction(d_robot, controller, arm, verbose)
     rospy.spin()
 
 

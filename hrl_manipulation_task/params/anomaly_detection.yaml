@@ -8,7 +8,6 @@ hrl_manipulation_task:
   head_audio_frame: head_mount_kinect_ir_link
 
   main_ee_frame: l_gripper_tool_frame
-
   # Silicon Spoon frame
   main_ee_pos_offset:
     x: 0.00635

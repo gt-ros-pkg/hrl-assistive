@@ -24,6 +24,9 @@ haptic_mpc:
         max: [26.0, 68.0, 41.0, 0.010, 270.0, 0.01, 180.0]
         min: [-109.0, -24.0, -220.0, -132.0, -270.0, -120.0, -180.0]
 
+    # tool frame  
+    tool_id: 0
+
   groups:
     - name: right_arm_joints
       joints:
