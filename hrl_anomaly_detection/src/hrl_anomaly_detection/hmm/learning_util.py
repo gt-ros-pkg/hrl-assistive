@@ -93,7 +93,12 @@ def vectors_to_mean_cov(vecs, nState, nEmissionDim, cov_type='full'):
         ## temp_vecs = [vec[:, m_init:(m_init+DIVS)] for vec in vecs]
         temp_vecs = [np.reshape(vec[:, m_init:(m_init+DIVS)], (1, DIVS*m)) for vec in vecs]
         for i, mu in enumerate(mus):
-            mu[index] = np.mean(temp_vecs[i].flatten())
+            try:
+                mu[index] = np.mean(temp_vecs[i].flatten())
+            except:
+                print np.shape(vecs)
+                print np.shape(temp_vecs), i, index
+                sys.exit()
 
         ## print np.shape(temp_vecs), np.shape(cov)
         cov[index, :, :] = np.cov(np.concatenate(temp_vecs, axis=0))
