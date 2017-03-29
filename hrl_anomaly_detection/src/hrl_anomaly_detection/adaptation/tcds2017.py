@@ -325,9 +325,11 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
     if HMM_dict['renew'] or SVM_dict['renew'] or ADT_dict['data_renew']: ADT_dict['HMM_renew'] = True
 
     pkl_prefix = 'hmm_'+ADT_dict['HMM']+'_'+task_name
-    ## pkl_prefix = 'hmm_update_'+task_name
-    saveAHMMinducedFeatures(td, task_name, processed_data_path, HMM_dict, ADT_dict, noise_mag,
-                            pkl_prefix, normalTrainData, nor_train_inds)
+    ret = saveAHMMinducedFeatures(td, task_name, processed_data_path, HMM_dict, ADT_dict, noise_mag,
+                                  pkl_prefix, normalTrainData, nor_train_inds)
+    if ret is None:
+        print "Save AHMM return None"
+        return ret
 
     #-----------------------------------------------------------------------------------------
     roc_pkl = os.path.join(processed_data_path, 'roc_update_'+task_name+'.pkl')
@@ -512,8 +514,9 @@ def evaluation_acc(subject_names, task_name, raw_data_path, processed_data_path,
         ADT_dict['HMM'] = test
         ADT_dict['CLF'] = test
         pkl_prefix      = 'hmm_'+test+'_'+task_name
-        saveAHMMinducedFeatures(td, task_name, processed_data_path, HMM_dict, ADT_dict, noise_mag,
-                                pkl_prefix, normalTrainData, nor_train_inds)
+        ret = saveAHMMinducedFeatures(td, task_name, processed_data_path, HMM_dict, ADT_dict, noise_mag,
+                                      pkl_prefix, normalTrainData, nor_train_inds)
+        if ret is None: return ret
 
         ROC_data = {}
         ROC_data = util.reset_roc_data(ROC_data, method_list, ROC_dict['update_list'], nPoints)
@@ -791,6 +794,7 @@ def saveAHMMinducedFeatures(td, task_name, processed_data_path, HMM_dict, ADT_di
 
     # Split test data to two groups
     n_AHMM_sample = ADT_dict['n_pTrain']
+    n_AHMM_test_idx = 10
     for idx in xrange(len(td['successDataList'])):
 
         ## if idx != 4: continue
@@ -827,6 +831,7 @@ def saveAHMMinducedFeatures(td, task_name, processed_data_path, HMM_dict, ADT_di
                 sys.exit()
         except:
             print ret
+            return None
             sys.exit()
 
         # Comparison of
@@ -850,7 +855,7 @@ def saveAHMMinducedFeatures(td, task_name, processed_data_path, HMM_dict, ADT_di
           hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData[:,:n_AHMM_sample], startIdx=startIdx, \
                                                    n_jobs=n_jobs)
         ll_classifier_test_X, ll_classifier_test_Y, ll_classifier_test_idx =\
-          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData[:,n_AHMM_sample:], abnormalTestData, \
+          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData[:,n_AHMM_test_idx:], abnormalTestData, \
                                                    startIdx, n_jobs=n_jobs)
 
         ## if success_files is not None:
@@ -890,8 +895,8 @@ def saveAHMMinducedFeatures(td, task_name, processed_data_path, HMM_dict, ADT_di
         d['nor_train_inds'] = nor_train_inds
         ut.save_pickle(d, inc_model_pkl)
 
-
-
+    return True
+        
     
 
 if __name__ == '__main__':
@@ -941,8 +946,8 @@ if __name__ == '__main__':
       '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation/'+\
       str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
     ## c8
-    save_data_path = os.path.expanduser('~')+\
-      '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation4'
+    ## save_data_path = os.path.expanduser('~')+\
+    ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation4'
     ## c11
     ## save_data_path = os.path.expanduser('~')+\
     ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
@@ -950,8 +955,8 @@ if __name__ == '__main__':
     ## save_data_path = os.path.expanduser('~')+\
     ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation5'
     ## ## ep
-    save_data_path = os.path.expanduser('~')+\
-      '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation3'
+    ## save_data_path = os.path.expanduser('~')+\
+    ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation3'
 
 
 
@@ -1052,7 +1057,7 @@ if __name__ == '__main__':
                                                      'unimodal_ftForce_integ',\
                                                      'crossmodal_landmarkEEDist']
         param_dict['HMM']['scale'] = 5.0
-        param_dict['ROC']['progress_param_range'] = -np.logspace(-1.2, 2.2, nPoints)+3.0
+        param_dict['ROC']['progress_param_range'] = -np.logspace(-1.2, 2.4, nPoints)+1.0
         param_dict['ROC']['methods'] = ['progress']
 
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
@@ -1063,16 +1068,16 @@ if __name__ == '__main__':
         ##                      find_param=False, data_gen=opt.bDataGen)
 
         param_dict['ADT'] = {}
-        param_dict['ADT']['data_renew'] = True
+        param_dict['ADT']['data_renew'] = False
 
         auc_list = []
-        ## for lr in [0.8]:
-        for lr in [0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
-            param_dict['ADT']['lr']       = lr #0.8
+        ## for lr in [0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
+        for clf in ['old', 'renew']:
+            param_dict['ADT']['lr']       = 0.001
             param_dict['ADT']['max_iter'] = 20
             param_dict['ADT']['n_pTrain'] = 10 #5 #10
-            param_dict['ADT']['HMM']      = 'adapt' #'renew'
-            param_dict['ADT']['CLF']      = 'adapt' #'adapt' #'renew'
+            param_dict['ADT']['HMM']      = 'adapt'
+            param_dict['ADT']['CLF']      = clf #'adapt' #'renew'
             param_dict['ADT']['HMM_renew'] = True
             param_dict['ADT']['CLF_renew'] = True
             
@@ -1082,6 +1087,7 @@ if __name__ == '__main__':
                                        find_param=False, data_gen=opt.bDataGen)
             if ret is None: break
             auc_list.append(ret['progress'])
+            ## param_dict['ADT']['HMM_renew'] = False
             #param_dict['ADT']['data_renew'] = False
             
         print "-------------------------------"
