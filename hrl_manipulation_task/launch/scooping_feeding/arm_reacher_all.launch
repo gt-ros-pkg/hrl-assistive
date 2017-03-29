@@ -1,25 +1,66 @@
 <launch>
   
-  <arg name="arm1" default="l"/>
+  <arg name="l_tool_id" default="1"/>
+  <arg name="r_tool_id" default="0"/>
+  <arg name="sensor" default="false"/>
+  <arg name="client" default="false"/>
+  <arg name="fast" default="false"/>
 
-  <!--remap from="/ar_track_alvar/bowl_cen_pose" to="hrl_feeding_task/bowl_location"/-->  
-  <!--remap from="/ar_track_alvar/mouth_pose" to="hrl_feeding_task/head_location"/-->  
-
+  <!-- Load parameters -->
   <arg name="ad_param" default="$(find hrl_manipulation_task)/params/anomaly_detection.yaml" />    
   <rosparam command="load" file="$(arg ad_param)" />
 
+  <param name="haptic_mpc/pr2/tool_id" value="$(arg l_tool_id)"/>
+  <param name="right/haptic_mpc/pr2/tool_id" value="$(arg r_tool_id)"/>
 
-  <node name="arm_reacher_server_left" pkg="hrl_manipulation_task"
-        type="arm_reacher_server.py" args="-a $(arg arm1)"
-        output="screen">
-    <remap from="/ar_track_alvar/mouth_pose" to="/hrl_manipulation_task/mouth_pose" />
-  </node>
-  
-  <group ns="right" >
-    <arg name="arm2" default="r"/>
-    <node name="arm_reacher_server_right" pkg="hrl_manipulation_task"
-          type="arm_reacher_server.py" args="-a $(arg arm2)" output="screen"/>
+  <!-- Run arm reacher servers -->
+  <group if="$(arg fast)">
+    <node name="arm_reacher_server_left" pkg="hrl_manipulation_task"
+          type="arm_reacher_server_fast.py" args="-a l"
+          output="screen">
+      <remap from="/ar_track_alvar/mouth_pose"
+             to="/hrl_manipulation_task/mouth_pose" />
+    </node>
+    
+    <group ns="right" >
+      <node name="arm_reacher_server_right" pkg="hrl_manipulation_task"
+            type="arm_reacher_server_fast.py" args="-a r"
+            output="screen">
+      </node>
+    </group>
+  </group>
+  <group unless="$(arg fast)">
+    <node name="arm_reacher_server_left" pkg="hrl_manipulation_task"
+          type="arm_reacher_server.py" args="-a l"
+          output="screen">
+      <remap from="/ar_track_alvar/mouth_pose"
+             to="/hrl_manipulation_task/mouth_pose" />
+    </node>
+    
+    <group ns="right" >
+      <node name="arm_reacher_server_right" pkg="hrl_manipulation_task"
+            type="arm_reacher_server.py" args="-a r"
+            output="screen">
+      </node>
+    </group>
   </group>
 
+
+  <!-- Run sensor programs -->
+  <group if="$(arg sensor)">
+    <include file="$(find hrl_manipulation_task)/launch/scooping_feeding/sensor_feeding_icra_2017.launch" />
+    <include file="$(find hrl_manipulation_task)/launch/pr2_tactile_sleeve.launch" />
+  </group>
+  
+  <!-- Run arm reacher client (Only for test) -->
+  <group if="$(arg client)">
+    <include file="$(find
+                   assistive_teleop)/launch/hrl_manipulation_task_assistive.launch"
+             />
+    <node name="arm_reacher_client" pkg="hrl_manipulation_task"
+          type="arm_reacher_GUI.py" args="" output="screen">
+    </node>
+  </group>
+  
 </launch>
 

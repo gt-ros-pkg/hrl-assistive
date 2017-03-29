@@ -65,45 +65,45 @@ if __name__ == '__main__':
     ## print t
     ## sys.exit()
 
-    ## if True:
-    ##     #print armReachActionLeft("movestest")
-    ##     print armReachActionLeft("getBowlPos")
-    ##     print armReachActionLeft("initScooping2")
-    ##     print armReachActionLeft("runScooping")
-    ##     sys.exit()
 
-    ## if True:
-    ##     #print armReachActionLeft("movestest")
-    ##     print armReachActionLeft("getHeadPos")
-    ##     print armReachActionLeft("initFeeding2")
-    ##     print armReachActionLeft("initFeeding3")
-    ##     print armReachActionLeft("runFeeding")
-    ##     sys.exit()
-
-    #---------------------------- Scooping test ----------------------
     ## print armReachActionLeft("initArms")
     ## print armReachActionRight("initArms")
+    ## sys.exit()
 
-    ## leftProc = multiprocessing.Process(target=armReachLeft, args=('initScooping1',))
-    ## rightProc = multiprocessing.Process(target=armReachRight, args=('initScooping1',))
+
+    #---------------------------- Stabbing test ----------------------
+    ## print armReachActionLeft("initArms")
+    ## rospy.sleep(1)
+    ## print armReachActionLeft('getBowlPos')
+    ## ## print armReachActionLeft('lookAtBowl')
+    ## print armReachActionLeft('initStabbing2')
+    ## print armReachActionLeft('runStabbing')
+    ## sys.exit()
+
+    #---------------------------- Scooping test ----------------------
+    ## rospy.sleep(1)
+    ## leftProc = multiprocessing.Process(target=armReachLeft, args=('initScooping12',))
+    ## rightProc = multiprocessing.Process(target=armReachRight, args=('initScooping12',))
+    ## leftProc.start(); rightProc.start()
+    ## leftProc.join(); rightProc.join()
+    ## rospy.sleep(2)
     ## print armReachActionLeft('getBowlPos')
     ## print armReachActionLeft('lookAtBowl')
     ## print armReachActionLeft('initScooping2')
     ## print armReachActionLeft('runScooping')
     ## print armReachActionLeft('cleanSpoon1')
-
     ## sys.exit()
 
 
     ## armReachActionLeft("initArms")
     ## armReachActionRight("initArms")
-    ## armReachActionLeft("initScooping1") #fix
+    #armReachActionLeft("initScooping1") #fix
     ## armReachActionRight("initScooping1") #fix
     ## print armReachActionLeft('getBowlPos')
     ## print armReachActionLeft('lookAtBowl')
-    print armReachActionLeft('initScooping2')
-    print armReachActionLeft('runScooping')
-    print armReachActionLeft('initScooping2')
+    ## print armReachActionLeft('initScooping2')
+    ## print armReachActionLeft('runScooping')
+    ## print armReachActionLeft('initScooping2')
     ## self.armReachActionRight("getHeadPos")
     ## self.armReachActionRight("initFeeding")
     sys.exit()

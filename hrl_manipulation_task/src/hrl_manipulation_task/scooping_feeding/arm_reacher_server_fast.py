@@ -181,6 +181,44 @@ class armReachAction(mpcBaseAction):
                                               10.0]]
         self.motions['initArms']['right'] = [['MOVEJ', '[-0.59, 0.0, -1.574, -1.041, 0.0, -1.136, -1.65]', 10.0]]
 
+
+        ## Stabbing motoins --------------------------------------------------------
+        # Used to perform motions relative to bowl/mouth positions > It should use relative frame
+        # [shoulder (towards left shoulder), arm pitch on shoulder (towards ground),
+        # whole arm roll (rotates right), elbow pitch (rotates towards outer arm),
+        # elbow roll (rotates left), wrist pitch (towards top of forearm), wrist roll (rotates right)]
+        # (represents positive values)
+        self.motions['initStabbing1'] = {}
+        self.motions['initStabbing1']['left'] \
+          = [['PAUSE', 2.0],
+             ['MOVEJ', '[0.6447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 1.1291]', 5.0]]
+        self.motions['initStabbing1']['right'] = \
+          [['MOVEJ', '[-0.59, 0.131, -1.55, -1.041, 0.098, -1.136, -1.4]', 5.0],
+           ['MOVES', '[0.7, -0.15, -0., -3.1415, 0.0, 1.574]', 5.]]
+
+        self.motions['initStabbing2'] = {}
+        self.motions['initStabbing2']['left'] = [
+            ['MOVES', '[0.7, -0.15, -0., -3.1415, 0.0, 1.574]', 3.],
+            ['MOVES', '[0.0, 0.0, -0.15, 0, 0, 0]', 5, 'self.bowl_frame']]
+        self.motions['initStabbing2']['right'] = []
+
+        self.motions['initStabbing12'] = {}
+        self.motions['initStabbing12']['left'] = \
+          [['MOVES', '[0.0, 0.0, -0.15, 0, 0, 0]', 7, 'self.bowl_frame']]
+        self.motions['initStabbing12']['right'] = \
+          [self.motions['initStabbing1']['right'][1]]
+
+        # [Y (from center of bowl away from Pr2), X (towards right gripper), Z (towards floor) ,
+        # roll?, pitch (tilt downwards), yaw?]
+        self.motions['runStabbing'] = {}
+        self.motions['runStabbingRight'] = {}
+        self.motions['runStabbingLeft'] = {}
+        self.motions['runStabbing']['left'] = \
+          [['MOVES', '[-0.0, 0.0,  0.06, 0, 0.0, 0]', 3, 'self.bowl_frame'],
+           ['PAUSE', 0.0],
+           ['MOVES', '[ 0.0, 0.0,  -0.15, 0, 0., 0]', 3, 'self.bowl_frame'],]
+
+
         ## Scooping motoins --------------------------------------------------------
         # Used to perform motions relative to bowl/mouth positions > It should use relative frame
         # [shoulder (towards left shoulder), arm pitch on shoulder (towards ground),
@@ -240,7 +278,7 @@ class armReachAction(mpcBaseAction):
 
         self.motions['initFeeding1'] = {}
         self.motions['initFeeding1']['left'] =\
-          [['MOVEJ', '[0.9447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 1.1291]', 5.0],]        
+          [['MOVEJ', '[0.3447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 1.1291]', 5.0],]        
         self.motions['initFeeding1']['right'] =\
           [['MOVES', '[0.22, 0., -0.55, 0., -1.85, 0.]', 5., 'self.mouth_frame']]
 
@@ -255,7 +293,9 @@ class armReachAction(mpcBaseAction):
         ['PAUSE', 0.0]]
 
         self.motions['initFeeding13'] = {}
-        self.motions['initFeeding13']['right'] = self.motions['initFeeding1']['right'][:1]
+        self.motions['initFeeding13']['right'] = [
+            ['PAUSE', 2.0],
+            self.motions['initFeeding1']['right'][0]]
         self.motions['initFeeding13']['left'] = [self.motions['initFeeding1']['left'][0],
                                                self.motions['initFeeding3']['left'][0]]        
         
@@ -323,7 +363,7 @@ class armReachAction(mpcBaseAction):
             return 'Completed head movement to right'
 
         else:
-            if task == 'initScooping1':
+            if task == 'initScooping1' or task == 'initStabbing1':
                 self.kinect_pause.publish('start')
             elif task == 'initFeeding':
                 self.kinect_pause.publish('pause')

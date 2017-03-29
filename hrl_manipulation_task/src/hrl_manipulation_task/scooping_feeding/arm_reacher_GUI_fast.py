@@ -75,6 +75,12 @@ class armReacherGUI:
         self.right_mtx = False
         self.status_lock = threading.RLock()
 
+        # Get the id of main tool
+        main_arm = rospy.get_param('/hrl_manipulation_task/arm')
+        if main_arm == 'r': prefix = 'right/'
+        else: prefix = ''
+        self.cur_tool = rospy.get_param(prefix+'haptic_mpc/pr2/tool_id', 0)
+
 
         self.initComms()
         self.run()
@@ -194,7 +200,11 @@ class armReacherGUI:
             if self.inputStatus and self.actionStatus == 'Scooping':
                 self.inputStatus = False
                 rospy.loginfo("Scooping Starting...")
-                self.scooping(self.armReachActionLeft, self.armReachActionRight, self.log, self.detection_flag)
+                if self.cur_tool == 3:
+                    # fork
+                    self.stabbing(self.armReachActionLeft, self.armReachActionRight, self.log, self.detection_flag)
+                else:                
+                    self.scooping(self.armReachActionLeft, self.armReachActionRight, self.log, self.detection_flag)
                 if self.feedback_received:
                     self.guiStatusPub.publish("select task")
             elif self.inputStatus and self.actionStatus == 'Feeding':
@@ -215,11 +225,75 @@ class armReacherGUI:
 
     def initMotion(self, armReachActionLeft, armReachActionRight):
         rospy.loginfo("Initializing arms")
-        leftProc = multiprocessing.Process(target=self.ServiceCallLeft, args=("initScooping1",))
-        rightProc = multiprocessing.Process(target=self.ServiceCallRight, args=("initScooping1",))
+        if self.cur_tool == 3:        
+            leftProc = multiprocessing.Process(target=self.ServiceCallLeft, args=("initStabbing1",))
+            rightProc = multiprocessing.Process(target=self.ServiceCallRight, args=("initStabbing1",))
+        else:
+            leftProc = multiprocessing.Process(target=self.ServiceCallLeft, args=("initScooping1",))
+            rightProc = multiprocessing.Process(target=self.ServiceCallRight, args=("initScooping1",))
+            
         leftProc.start(); rightProc.start()
         leftProc.join(); rightProc.join()
         self.proceedPub.publish("Set: Scooping 1, Scooping 2, Scooping 3")
+
+
+    def stabbing(self, armReachActionLeft, armReachActionRight, log, detection_flag, \
+                 train=False, abnormal=False):
+        while not self.emergencyStatus and not rospy.is_shutdown():
+
+            if self.log != None:
+                self.log.setTask('scooping')
+                self.log.initParams()
+            self.FeedNumber = 0
+            
+            ## -----------------------------------
+            if self.ScoopNumber < 1:
+                if self.renew_arm:
+                    self.initMotion(armReachActionLeft, armReachActionRight)                    
+                    if self.emergencyStatus: break
+                    self.renew_arm = False
+                    self.ScoopNumber = 1
+                else:
+                    leftProc = multiprocessing.Process(target=self.ServiceCallLeft,
+                                                       args=("initStabbing12",))
+                    rightProc = multiprocessing.Process(target=self.ServiceCallRight,
+                                                        args=("initStabbing12",))
+                    leftProc.start(); rightProc.start()
+                    leftProc.join(); rightProc.join()                    
+                    self.ScoopNumber = 2
+        
+            if self.ScoopNumber < 2:        
+                if self.renew_bowl:
+                    self.ServiceCallLeft("getBowlPos")            
+                    self.ServiceCallLeft('lookAtBowl')
+                    self.renew_bowl = False
+                if self.emergencyStatus: break
+                self.ServiceCallLeft("initStabbing2")
+                if self.emergencyStatus: break
+                self.ScoopNumber = 2            
+                
+            ## -----------------------------------
+            if self.log is not None and False:
+                self.log.log_start()
+                if detection_flag: self.log.enableDetector(True)
+        
+            ## rospy.loginfo("Running scooping!")
+            self.ServiceCallLeft("runStabbing")
+            self.proceedPub.publish("Done")
+            self.motion_complete = True
+            if self.emergencyStatus:
+                if detection_flag: self.log.enableDetector(False)                
+                break
+            
+            if self.log is not None and False:
+                self.guiStatusPub.publish("request feedback")
+                if detection_flag: self.log.enableDetector(False)
+                self.log.close_log_file_GUI()
+            else:
+                self.guiStatusPub.publish("select task")
+            self.ScoopNumber = 3
+            break
+
 
     def scooping(self, armReachActionLeft, armReachActionRight, log, detection_flag, \
                  train=False, abnormal=False):

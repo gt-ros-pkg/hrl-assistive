@@ -39,6 +39,8 @@ import numpy as np
 import hrl_haptic_manipulation_in_clutter_msgs.msg as haptic_msgs
 from std_msgs.msg import Empty
 
+QUEUE_SIZE = 10
+
 class fabric_skin():
 
     def __init__(self, verbose=False, viz=False):
@@ -78,8 +80,10 @@ class fabric_skin():
         '''
         if self.verbose: print "fabric_skin>> Initialize pusblishers and subscribers"
 
-        self.zero_forearm_pub = rospy.Publisher('/pr2_fabric_l_forearm_sensor/zero_sensor', Empty)
-        self.zero_upperarm_pub = rospy.Publisher('/pr2_fabric_l_upperarm_sensor/zero_sensor', Empty)
+        self.zero_forearm_pub = rospy.Publisher('/pr2_fabric_l_forearm_sensor/zero_sensor', Empty,\
+                                                queue_size=QUEUE_SIZE)
+        self.zero_upperarm_pub = rospy.Publisher('/pr2_fabric_l_upperarm_sensor/zero_sensor', Empty,\
+                                                 queue_size=QUEUE_SIZE)
 
         input_topic = '/pressure/'+self.fabric_arm+'_gripper_motor'
         rospy.Subscriber('haptic_mpc/robot_state', haptic_msgs.RobotHapticState, \
@@ -175,6 +179,8 @@ class fabric_skin():
         
 
     def isReady(self):
+        if self.check_nodes() is False: return False
+        
         if self.centers_x is not None:
           return True
         else:

@@ -75,6 +75,12 @@ class armReacherGUI:
         self.quick_feeding = quick_feeding
         self.quick_feeding_ready=False
 
+        # Get the id of main tool
+        main_arm = rospy.get_param('/hrl_manipulation_task/arm')
+        if main_arm == 'r': prefix = 'right/'
+        else: prefix = ''
+        self.cur_tool = rospy.get_param(prefix+'haptic_mpc/pr2/tool_id', 0)
+
         self.initComms()
         self.run()
 
@@ -209,7 +215,11 @@ class armReacherGUI:
                 self.inputStatus = False
                 self.quick_feeding_ready = False
                 rospy.loginfo("Scooping Starting...")
-                self.scooping(self.armReachActionLeft, self.armReachActionRight, self.log, self.detection_flag)
+                if self.cur_tool == 3:
+                    # fork
+                    self.stabbing(self.armReachActionLeft, self.armReachActionRight, self.log, self.detection_flag)
+                else:
+                    self.scooping(self.armReachActionLeft, self.armReachActionRight, self.log, self.detection_flag)
                 if self.feedback_received:
                     self.guiStatusPub.publish("select task")
             elif self.inputStatus and self.actionStatus == 'Feeding':
@@ -238,8 +248,6 @@ class armReacherGUI:
         leftProc.join(); rightProc.join()
         self.ScoopNumber = 1
         self.proceedPub.publish("Set: Scooping 1, Scooping 2, Scooping 3")
-        #self.proceedPub.publish("Start: Scooping 1, Scooping 2")
-        #self.proceedPub.publish("Next: Scooping 3")
 
     def scooping(self, armReachActionLeft, armReachActionRight, log, detection_flag, \
                  train=False, abnormal=False):
@@ -252,7 +260,6 @@ class armReacherGUI:
             
             ## Scooping -----------------------------------    
             if self.ScoopNumber < 1:
-                #self.proceedPub.publish("Start: Scooping 1, Scooping 2")
                 self.proceedPub.publish("Set: , Scooping 1, Scooping 2")
                 rospy.loginfo("Initializing arms for scooping")
                 self.initMotion(armReachActionLeft, armReachActionRight)
@@ -266,13 +273,11 @@ class armReacherGUI:
                 self.ServiceCallLeft('lookAtBowl')
                 if self.emergencyStatus: break
                 self.ScoopNumber = 2            
-                #self.proceedPub.publish("Next: Scooping 4")
                 self.proceedPub.publish("Set: Scooping 2, Scooping 3, Scooping 4")
             if self.ScoopNumber < 3:        
                 self.ServiceCallLeft("initScooping2")
                 if self.emergencyStatus: break
                 self.ScoopNumber = 3            
-                #self.proceedPub.publish("Next: Done")
                 self.proceedPub.publish("Set: Scooping 3, Scooping 4, Done")
     
             if self.log is not None:
@@ -296,7 +301,60 @@ class armReacherGUI:
             self.ScoopNumber = 0
             break
 
+
+    def stabbing(self, armReachActionLeft, armReachActionRight, log, detection_flag, \
+                 train=False, abnormal=False):
+        while not self.emergencyStatus and not rospy.is_shutdown():
+
+            if self.log != None:
+                self.log.setTask('scooping')
+                self.log.initParams()
+            self.FeedNumber = 0
+            
+            ## Scooping -----------------------------------    
+            if self.ScoopNumber < 1:
+                self.proceedPub.publish("Set: , Scooping 1, Scooping 2")
+                rospy.loginfo("Initializing arms for scooping")
+                self.initMotion(armReachActionLeft, armReachActionRight)
+                if self.emergencyStatus: break
+                self.ScoopNumber = 1
+                self.proceedPub.publish("Set: Scooping 1, Scooping 2, Scooping 3")
+                #self.proceedPub.publish("Next: Scooping 3")
+        
+            if self.ScoopNumber < 2:        
+                self.ServiceCallLeft("getBowlPos")            
+                self.ServiceCallLeft('lookAtBowl')
+                if self.emergencyStatus: break
+                self.ScoopNumber = 2            
+                self.proceedPub.publish("Set: Scooping 2, Scooping 3, Scooping 4")
+            if self.ScoopNumber < 3:        
+                self.ServiceCallLeft("initStabbing2")
+                if self.emergencyStatus: break
+                self.ScoopNumber = 3            
+                self.proceedPub.publish("Set: Scooping 3, Scooping 4, Done")
     
+            if self.log is not None:
+                self.log.log_start()
+                if detection_flag: self.log.enableDetector(True)
+        
+            rospy.loginfo("Running scooping!")
+            self.ServiceCallLeft("runStabbing")
+            self.proceedPub.publish("Done")
+            self.motion_complete = True
+            self.guiStatusPub.publish("request feedback")
+            if self.emergencyStatus:
+                if detection_flag: self.log.enableDetector(False)                
+                break
+            if self.log is not None:
+                self.logRequestPub.publish("Requesting Feedback!")    
+                if detection_flag: self.log.enableDetector(False)
+                self.log.close_log_file_GUI()
+            else:
+                self.logRequestPub.publish("No feedback requested")
+            self.ScoopNumber = 0
+            break
+
+        
     def feeding(self, armReachActionLeft, armReachActionRight, log, detection_flag, isolation_flag):
 
         while not self.emergencyStatus and not rospy.is_shutdown():
@@ -450,7 +508,7 @@ if __name__ == '__main__':
     p.add_option('--en_quick_feeding', '--eqf', action='store_true', dest='bQuickFeeding',
                  default=False, help='Enable a quick feeding mode.')
     p.add_option('--data_path', action='store', dest='sRecordDataPath',
-                 default='/home/dpark/hrl_file_server/dpark_data/anomaly/IROS2017', \
+                 default='/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2018', \
                  help='Enter a record data path')
  
     opt, args = p.parse_args()
@@ -458,8 +516,8 @@ if __name__ == '__main__':
 
     if opt.bLog or opt.bDataPub:
         # for adaptation, please add 'new' as the subject.         
-        log = logger(ft=True, audio=False, audio_wrist=True, kinematics=True, vision_artag=False, \
-                     vision_landmark=True, vision_change=False, pps=False, skin=True, \
+        log = logger(ft=False, audio_wrist=False, kinematics=True, \
+                     vision_landmark=False, skin=True, \
                      subject="test", task='feeding', data_pub=opt.bDataPub,
                      en_ad=opt.en_ad, en_ai=opt.en_ai,\
                      record_root_path=opt.sRecordDataPath)

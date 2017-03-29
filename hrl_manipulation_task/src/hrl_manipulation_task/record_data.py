@@ -506,9 +506,9 @@ class logger:
                     
                 if self.kinematics is not None:
                     if 'kinematics_nodes' not in self.data.keys():
-                        self.data['kinematics_nodes'] = [self.kinemtaics.check_nodes()]
+                        self.data['kinematics_nodes'] = [self.kinematics.check_nodes()]
                     else:
-                        self.data['kinematics_nodes'].append( self.kinemtaics.check_nodes() )
+                        self.data['kinematics_nodes'].append( self.kinematics.check_nodes() )
 
                 if self.vision_landmark is not None:
                     if 'vision_landmark_nodes' not in self.data.keys():
@@ -521,8 +521,7 @@ class logger:
                         self.data['fabric_skin_nodes'] = [ self.fabric_skin.check_nodes() ]
                     else:
                         self.data['fabric_skin_nodes'].append( self.fabric_skin.check_nodes() )
-                        
-                        
+                                                
                 self.last_t = t
 
             if self.audio_kinect is not None: 

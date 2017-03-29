@@ -185,9 +185,10 @@ class armReachAction(mpcBaseAction):
         self.motions = {}
 
         self.motions['movestest'] = {}
-        self.motions['movestest']['left'] = [['MOVEJ', '[0.6447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 1.1291]', 3.0],\
-                                             ['MOVEL', '[0, 0.0, 0.2, 0., 0, 0]', 4.0, 'self.getEndeffectorFrame(self.cur_tool)'],\
-                                             ['MOVEL', '[0, 0.0, -0.2, 0., 0, 0]', 4.0, 'self.getEndeffectorFrame(self.cur_tool)']]
+        self.motions['movestest']['left'] = \
+          [['MOVEJ', '[0.6447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 1.1291]', 3.0],\
+           ['MOVEL', '[0, 0.0, 0.2, 0., 0, 0]', 4.0, 'self.getEndeffectorFrame(self.cur_tool)'],\
+          ['MOVEL', '[0, 0.0, -0.2, 0., 0, 0]', 4.0, 'self.getEndeffectorFrame(self.cur_tool)']]
 
 
         ## Testing Motions ---------------------------------------------------------
@@ -208,8 +209,10 @@ class armReachAction(mpcBaseAction):
 
         ## Init arms ---------------------------------------------------------------
         self.motions['initArms'] = {}
-        self.motions['initArms']['left']  = [['MOVEJ', '[0.6447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 1.1291]', 10.0]]
-        self.motions['initArms']['right'] = [['MOVEJ', '[-0.59, 0.0, -1.574, -1.041, 0.0, -1.136, -1.65]', 10.0]]
+        self.motions['initArms']['left']  = \
+          [['MOVEJ', '[0.6447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 1.1291]', 10.0]]
+        self.motions['initArms']['right'] = \
+          [['MOVEJ', '[-0.59, 0.0, -1.574, -1.041, 0.0, -1.136, -1.65]', 10.0]]
 
         ## Init arms ---------------------------------------------------------------
         self.motions['cleanSpoon1'] = {}
@@ -223,29 +226,25 @@ class armReachAction(mpcBaseAction):
            ['MOVEL', '[ 0.05-0.01, 0.0-self.highBowlDiff[1],  -0.1, 0, 1.5, 0]', 3, 'self.bowl_frame'],]
         self.motions['cleanSpoon1']['right'] = []
 
-        
-        ## self.motions['cleanSpoon1']['left']  = [['MOVEL', '[ 0.0, 0.0,  -0.01, 0, 1.4, 0]', 3, 'self.bowl_frame'],\
-        ##                                         ['PAUSE', 3.0],\
-        ##                                         ['MOVEL', '[ 0.0, 0.0,  -0.1, 0, 1.4, 0]', 3, 'self.bowl_frame']]
-        ## self.motions['cleanSpoon1']['right'] = [['PAUSE', 3.0],\
-        ##                                         ['MOVET', '[0., -0.1, 0.0, 0., 0., 0.]', 3., 'self.default_frame'],\
-        ##                                         ['PAUSE', 2.0],\
-        ##                                         ['MOVET', '[0., 0.1, 0.0, 0., 0., 0.]', 3., 'self.default_frame'] ]
-                                                
 
         ## Scooping motoins --------------------------------------------------------
         # Used to perform motions relative to bowl/mouth positions > It should use relative frame
         # [shoulder (towards left shoulder), arm pitch on shoulder (towards ground),
         # whole arm roll (rotates right), elbow pitch (rotates towards outer arm),
-        # elbow roll (rotates left), wrist pitch (towards top of forearm), wrist roll (rotates right)] (represents positive values)
+        # elbow roll (rotates left), wrist pitch (towards top of forearm), wrist roll (rotates right)]
+        # (represents positive values)
         self.motions['initScooping1'] = {}
-        self.motions['initScooping1']['left'] = [['PAUSE', 2.0],
-                                                 ['MOVEJ', '[0.6447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 1.1291]', 5.0]]
-        self.motions['initScooping1']['right'] = [['MOVEJ', '[-0.59, 0.131, -1.55, -1.041, 0.098, -1.136, -1.4]', 5.0],
-                                                  ['MOVES', '[0.7, -0.15, -0., -3.1415, 0.0, 1.574]', 2.]]
+        self.motions['initScooping1']['left'] = \
+          [['PAUSE', 2.0],
+           ['MOVEJ', '[0.6447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 1.1291]', 5.0]]
+        self.motions['initScooping1']['right'] = \
+          [['MOVEJ', '[-0.59, 0.131, -1.55, -1.041, 0.098, -1.136, -1.4]', 5.0],
+           ['MOVES', '[0.7, -0.15, -0., -3.1415, 0.0, 1.574]', 2.]]
+           ## ['MOVES', '[0.7, -0.04, -0.04, -3.1415, 0.0, 0.0]', 2.]]
 
         self.motions['initScooping2'] = {}
-        self.motions['initScooping2']['left'] = [['MOVES', '[-0.04, 0.0, -0.15, 0, 0.5, 0]', 3, 'self.bowl_frame']]
+        self.motions['initScooping2']['left'] = \
+          [['MOVES', '[-0.04, 0.0, -0.15, 0, 0.5, 0]', 3, 'self.bowl_frame']]
         self.motions['initScooping2']['right'] = []
 
         # only for training setup
@@ -254,7 +253,8 @@ class armReachAction(mpcBaseAction):
         self.motions['initScooping2Random']['right'] = \
           [['MOVES', '[0.7+random.uniform(-0.1, 0.1), -0.15+random.uniform(-0.1, 0.1),-0.1+random.uniform(-0.1, 0.1), -3.1415, 0.0, 1.57]', 2.],]
 
-        # [Y (from center of bowl away from Pr2), X (towards right gripper), Z (towards floor) , roll?, pitch (tilt downwards), yaw?]
+        # [Y (from center of bowl away from Pr2), X (towards right gripper), Z (towards floor) , \
+        # roll?, pitch (tilt downwards), yaw?]
         self.motions['runScooping'] = {}
         self.motions['runScoopingRight'] = {}
         self.motions['runScoopingLeft'] = {}
@@ -264,53 +264,67 @@ class armReachAction(mpcBaseAction):
            ['MOVEL', '[ 0.05, 0.0-self.highBowlDiff[1],  0.03, 0, 0.8, 0]', 3, 'self.bowl_frame'],
            ['PAUSE', 0.0],
            ['MOVES', '[ 0.05-0.01, 0.0-self.highBowlDiff[1],  -0.1, 0, 1.5, 0]', 3, 'self.bowl_frame'],]
-           ## ['MOVES', '[ 0.05, 0.0-self.highBowlDiff[1],  -0.1, 0, 1.3, 0]', 3, 'self.bowl_frame'],]
 
+        ## Stabbing motoins --------------------------------------------------------
+        # Used to perform motions relative to bowl/mouth positions > It should use relative frame
+        # [shoulder (towards left shoulder), arm pitch on shoulder (towards ground),
+        # whole arm roll (rotates right), elbow pitch (rotates towards outer arm),
+        # elbow roll (rotates left), wrist pitch (towards top of forearm), wrist roll (rotates right)]
+        # (represents positive values)
+        self.motions['initStabbing1'] = {}
+        self.motions['initStabbing1']['left'] \
+          = [['PAUSE', 2.0],
+             ['MOVEJ', '[0.6447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 1.1291]', 5.0]]
+        self.motions['initStabbing1']['right'] = \
+          [['MOVEJ', '[-0.59, 0.131, -1.55, -1.041, 0.098, -1.136, -1.4]', 5.0],
+           ['MOVES', '[0.7, -0.15, -0., -3.1415, 0.0, 1.574]', 2.]]
 
-        ## self.motions['runWiping'] = {}
-        ## self.motions['runWiping']['left'] = \
-        ##   [['MOVES', '[-0.05, 0.0-self.highBowlDiff[1],  0.04, 0, 0.7, 0]', 3, 'self.bowl_frame'],
-        ##    ['PAUSE', 0.0],
-        ##    ['MOVEL', '[ 0.05, 0.0-self.highBowlDiff[1],  0.03, 0, 0.8, 0]', 3, 'self.bowl_frame'],
-        ##    ['PAUSE', 0.0],
-        ##    ['MOVEL', '[ 0.05-0.005, 0.0-self.highBowlDiff[1],  -0.06, 0, 1.5, 0]', 3, 'self.bowl_frame'],
-        ##    ['PAUSE', 0.0],
-        ##    ['MOVEL', '[ 0.05+0.005, 0.05-self.highBowlDiff[1],  -0.06, 0, 1.5, 0]', 3, 'self.bowl_frame'],
-        ##    ['PAUSE', 0.0],
-        ##    ['MOVEL', '[ 0.05+0.005, 0.05-self.highBowlDiff[1],  -0.03, 0, 1.5, 0]', 3, 'self.bowl_frame'],
-        ##    ['PAUSE', 0.0],
-        ##    ['MOVEL', '[ 0.05-0.07, 0.05-self.highBowlDiff[1],  -0.03, 0, 1.5, 0]', 3, 'self.bowl_frame'],
-        ##    ['PAUSE', 0.0],
-        ##    ['MOVEL', '[ 0.05, 0.0-self.highBowlDiff[1],  -0.06, 0, 1.5, 0]', 3, 'self.bowl_frame'],]
+        self.motions['initStabbing2'] = {}
+        self.motions['initStabbing2']['left'] = [
+            ['MOVES', '[0.7, -0.15, -0., -3.1415, 0.0, 1.574]', 2.],
+            ['MOVES', '[0.0, 0.0, -0.15, 0, 0, 0]', 3, 'self.bowl_frame']]
+        self.motions['initStabbing2']['right'] = []
+
+        # [Y (from center of bowl away from Pr2), X (towards right gripper), Z (towards floor) ,
+        # roll?, pitch (tilt downwards), yaw?]
+        self.motions['runStabbing'] = {}
+        self.motions['runStabbingRight'] = {}
+        self.motions['runStabbingLeft'] = {}
+        self.motions['runStabbing']['left'] = \
+          [['MOVES', '[-0.0, 0.0,  0.06, 0, 0.0, 0]', 3, 'self.bowl_frame'],
+           ['PAUSE', 0.0],
+           ['MOVES', '[ 0.0, 0.0,  -0.1, 0, 1.5, 0]', 3, 'self.bowl_frame'],]
 
 
         ## Feeding motoins --------------------------------------------------------
         # It uses the l_gripper_spoon_frame aligned with mouth
         self.motions['initFeeding'] = {}
-        self.motions['initFeeding']['left'] = [['MOVEJ', '[0.327, 0.205, 1.05, -2.08, 2.57, -1.29, 0.576]', 5.0]]
-        self.motions['initFeeding']['right'] = [['MOVES', '[0.22, 0., -0.55, 0., -1.85, 0.]', 5., 'self.mouth_frame'],
-                                                ['PAUSE', 2.0]]
+        self.motions['initFeeding']['left'] = \
+          [['MOVEJ', '[0.327, 0.205, 1.05, -2.08, 2.57, -1.29, 0.576]', 5.0]]
+        self.motions['initFeeding']['right'] = \
+          [['MOVES', '[0.22, 0., -0.55, 0., -1.85, 0.]', 5., 'self.mouth_frame'],
+           ['PAUSE', 2.0]]
 
         self.motions['initFeeding1'] = {}
-        self.motions['initFeeding1']['left'] = [['MOVEJ', '[0.6447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 1.1291]', 5.0],]        
-                                                ## ['MOVET', '[-0.05, -0.2, -0.15, 0.6, 0., 0.]', 5.0]]
-                                                ## ['MOVEL', '[ -0.1, -0.1, -0.3, -0.8, 0., 0.]', 7., 'self.mouth_frame'],
-                                                ## ['PAUSE', 2.0]]
+        self.motions['initFeeding1']['left'] = \
+          [['MOVEJ', '[0.6447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 1.1291]', 5.0],]        
 
         self.motions['initFeeding2'] = {}
-        self.motions['initFeeding2']['left'] = [['MOVEL', '[-0.06, -0.1, -0.2, -0.6, 0., 0.]', 5., 'self.mouth_frame']]
+        self.motions['initFeeding2']['left'] = \
+          [['MOVEL', '[-0.06, -0.1, -0.2, -0.6, 0., 0.]', 5., 'self.mouth_frame']]
 
         self.motions['initFeeding3'] = {}
-        self.motions['initFeeding3']['left'] = [['MOVEL', '[-0.005+self.mouthOffset[0], self.mouthOffset[1], -0.15+self.mouthOffset[2], 0., 0., 0.]', 5., 'self.mouth_frame'],\
-                                                ['PAUSE', 1.0]]
+        self.motions['initFeeding3']['left'] = \
+          [['MOVEL', '[-0.005+self.mouthOffset[0], self.mouthOffset[1], -0.15+self.mouthOffset[2], 0., 0., 0.]',
+            5., 'self.mouth_frame'],\
+           ['PAUSE', 1.0]]
         self.motions['runFeeding'] = {}
-        self.motions['runFeeding']['left'] = [['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], self.mouthOffset[2], 0., 0., 0.]', 3., 'self.mouth_frame'],\
-                                              ['PAUSE', 0.0],
-                                              ['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], -0.15+self.mouthOffset[2], 0., 0., 0.]', 4., 'self.mouth_frame']]
-                                              ## ['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], -0.2+self.mouthOffset[2], 0., 0., 0.]', 4., 'self.mouth_frame']]
-        ## self.motions['runFeeding']['left'] = [['MOVES', '[-0.02, 0.0, 0.05, 0., 0., 0.]', 5., 'self.mouth_frame'],\
-        ##                                       ['PAUSE', 0.5],
-        ##                                       ['MOVES', '[-0.02, 0.0, -0.1, 0., 0., 0.]', 5., 'self.mouth_frame']]
+        self.motions['runFeeding']['left'] = \
+          [['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], self.mouthOffset[2], 0., 0., 0.]', 3.,
+            'self.mouth_frame'],\
+           ['PAUSE', 0.0],
+          ['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], -0.15+self.mouthOffset[2], 0., 0., 0.]', 4.,
+           'self.mouth_frame']]
 
         rospy.loginfo("Parameters are loaded.")
 
@@ -368,7 +382,7 @@ class armReachAction(mpcBaseAction):
             return 'Completed head movement to right'
 
         else:
-            if task == 'initScooping1':
+            if task == 'initScooping1' or task == 'initStabbing1':
                 self.kinect_pause.publish('start')
             elif task == 'initFeeding':
                 self.kinect_pause.publish('pause')
@@ -635,9 +649,9 @@ if __name__ == '__main__':
     #controller = 'actionlib'
     arm        = opt.arm
     if opt.arm == 'l':
-        verbose = True
-    else:
         verbose = False
+    else:
+        verbose = True
 
     rospy.init_node('arm_reacher_feeding_and_scooping')
     ara = armReachAction(d_robot, controller, arm, verbose)

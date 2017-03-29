@@ -108,34 +108,46 @@ class robot_kinematics(threading.Thread):
         if self.main_arm == 'l': self.sub_arm = 'r'
         else: self.sub_arm = 'l'
 
-        self.main_ee_frame         = rospy.get_param('hrl_manipulation_task/main_ee_frame')
-        self.main_ee_pos_offset    = rospy.get_param('hrl_manipulation_task/main_ee_pos_offset', None)        
-        self.main_ee_orient_offset = rospy.get_param('hrl_manipulation_task/main_ee_orient_offset', None)
-        self.main_joint_names      = rospy.get_param('/hrl_manipulation_task/main_joints')
+        # main arm
+        if self.main_arm == 'r': prefix = 'right/'
+        else: prefix = ''
+        cur_tool = rospy.get_param(prefix+'haptic_mpc/pr2/tool_id', 0)
+        ee_frame = rospy.get_param(prefix+'haptic_mpc/pr2/end_effector_frame')
+        ee_pos_offset     = rospy.get_param(prefix+'haptic_mpc/pr2/tool_frame_'+str(cur_tool)+'/pos', None)
+        ee_orient_offset  = rospy.get_param(prefix+'haptic_mpc/pr2/tool_frame_'+str(cur_tool)+'/rpy', None)
+        self.main_arm_kdl = create_kdl_kin(self.torso_frame, ee_frame)
+        self.main_joint_names = rospy.get_param(prefix+'haptic_mpc/groups')[0]['joints']
 
-        self.sub_ee_frame         = rospy.get_param('hrl_manipulation_task/sub_ee_frame')
-        self.sub_ee_pos_offset    = rospy.get_param('hrl_manipulation_task/sub_ee_pos_offset', None)        
-        self.sub_ee_orient_offset = rospy.get_param('hrl_manipulation_task/sub_ee_orient_offset', None)        
-        self.sub_joint_names      = rospy.get_param('/hrl_manipulation_task/sub_joints')
+        if ee_pos_offset is None:
+            self.main_offset = PyKDL.Frame()
+        else:
+            p = PyKDL.Vector(ee_pos_offset['x'], \
+                             ee_pos_offset['y'], \
+                             ee_pos_offset['z'])
+            M = PyKDL.Rotation.RPY(ee_orient_offset['rx'], ee_orient_offset['ry'], \
+                                   ee_orient_offset['rz'])
+                               
+            self.main_offset = PyKDL.Frame(M,p)
 
-        self.main_arm_kdl = create_kdl_kin(self.torso_frame, self.main_ee_frame)
-        self.sub_arm_kdl  = create_kdl_kin(self.torso_frame, self.sub_ee_frame)
+        # sub arm
+        if self.sub_arm == 'r': prefix = 'right/'
+        else: prefix = ''
+        cur_tool = rospy.get_param(prefix+'haptic_mpc/pr2/tool_id', 0)
+        ee_frame = rospy.get_param(prefix+'haptic_mpc/pr2/end_effector_frame')
+        ee_pos_offset     = rospy.get_param(prefix+'haptic_mpc/pr2/tool_frame_'+str(cur_tool)+'/pos', None)
+        ee_orient_offset  = rospy.get_param(prefix+'haptic_mpc/pr2/tool_frame_'+str(cur_tool)+'/rpy', None)
+        self.sub_arm_kdl = create_kdl_kin(self.torso_frame, ee_frame)
+        self.sub_joint_names = rospy.get_param(prefix+'haptic_mpc/groups')[0]['joints']
 
-        p = PyKDL.Vector(self.main_ee_pos_offset['x'], \
-                         self.main_ee_pos_offset['y'], \
-                         self.main_ee_pos_offset['z'])
-        M = PyKDL.Rotation.RPY(self.main_ee_orient_offset['rx'], self.main_ee_orient_offset['ry'], \
-                               self.main_ee_orient_offset['rz'])
-        self.main_offset = PyKDL.Frame(M,p)
-
-        p = PyKDL.Vector(self.sub_ee_pos_offset['x'], \
-                         self.sub_ee_pos_offset['y'], \
-                         self.sub_ee_pos_offset['z'])
-        M = PyKDL.Rotation.RPY(self.sub_ee_orient_offset['rx'], self.sub_ee_orient_offset['ry'], \
-                               self.sub_ee_orient_offset['rz'])
-        self.sub_offset = PyKDL.Frame(M,p)
-
-        
+        if ee_pos_offset is None:
+            self.sub_offset = PyKDL.Frame()
+        else:
+            p = PyKDL.Vector(ee_pos_offset['x'], \
+                             ee_pos_offset['y'], \
+                             ee_pos_offset['z'])
+            M = PyKDL.Rotation.RPY(ee_orient_offset['rx'], ee_orient_offset['ry'], \
+                                   ee_orient_offset['rz'])
+            self.sub_offset = PyKDL.Frame(M,p)        
         
         
     def initComms(self):
@@ -386,6 +398,7 @@ class robot_kinematics(threading.Thread):
         
 
     def isReady(self):
+        if self.check_nodes() is False: return False
 
         if self.ee_pos is not None and self.ee_quat is not None:
           return True

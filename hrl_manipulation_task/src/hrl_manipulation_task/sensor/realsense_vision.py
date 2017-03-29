@@ -141,6 +141,7 @@ class realsense_vision():
 
         
     def isReady(self):
+        if self.check_nodes() is False: return False
         if self.landmark_pos is not None:
           return True
         else:
