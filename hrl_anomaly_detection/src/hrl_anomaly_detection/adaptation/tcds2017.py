@@ -334,9 +334,10 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
     #-----------------------------------------------------------------------------------------
     roc_pkl = os.path.join(processed_data_path, 'roc_update_'+task_name+'.pkl')
 
-    if os.path.isfile(roc_pkl) is False or HMM_dict['renew'] or SVM_dict['renew'] \
-      or ADT_dict['HMM_renew'] or ADT_dict['CLF_renew']: ROC_data = {}
-    else: ROC_data = ut.load_pickle(roc_pkl)
+    ## if os.path.isfile(roc_pkl) is False or HMM_dict['renew'] or SVM_dict['renew'] \
+    ##   or ADT_dict['HMM_renew'] or ADT_dict['CLF_renew']: ROC_data = {}
+    ## else: ROC_data = ut.load_pickle(roc_pkl)
+    ROC_data = {}
     ROC_data = util.reset_roc_data(ROC_data, method_list, ROC_dict['update_list'], nPoints)
 
     if ADT_dict['CLF'] == 'adapt': adapt=True
@@ -358,7 +359,7 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
 
     print "finished to run run_classifiers"
     ROC_data = util.update_roc_data(ROC_data, l_data, nPoints, method_list)
-    ut.save_pickle(ROC_data, roc_pkl)
+    ## ut.save_pickle(ROC_data, roc_pkl)
 
     # ---------------- ROC Visualization ----------------------
     return roc_info(ROC_data, nPoints, no_plot=no_plot, ROC_dict=ROC_dict)
@@ -849,8 +850,9 @@ def saveAHMMinducedFeatures(td, task_name, processed_data_path, HMM_dict, ADT_di
 
         # Classifier test data
         n_jobs=-1
-        ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
-          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, startIdx=startIdx, n_jobs=n_jobs)
+        if ADT_dict['CLF'] is not 'renew':        
+            ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
+              hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, startIdx=startIdx, n_jobs=n_jobs)
         ll_classifier_ptrain_X, ll_classifier_ptrain_Y, ll_classifier_ptrain_idx =\
           hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData[:,:n_AHMM_sample], startIdx=startIdx, \
                                                    n_jobs=n_jobs)
@@ -873,14 +875,15 @@ def saveAHMMinducedFeatures(td, task_name, processed_data_path, HMM_dict, ADT_di
         d['F']            = ml.F
         d['nState']       = nState
         d['startIdx']     = startIdx
-        d['ll_classifier_train_X']  = ll_classifier_train_X
-        d['ll_classifier_train_Y']  = ll_classifier_train_Y            
-        d['ll_classifier_train_idx']= ll_classifier_train_idx
 
         if ADT_dict['CLF'] == 'renew':
             d['ll_classifier_train_X']  = ll_classifier_ptrain_X
             d['ll_classifier_train_Y']  = ll_classifier_ptrain_Y            
             d['ll_classifier_train_idx']= ll_classifier_ptrain_idx
+        else:
+            d['ll_classifier_train_X']  = ll_classifier_train_X
+            d['ll_classifier_train_Y']  = ll_classifier_train_Y            
+            d['ll_classifier_train_idx']= ll_classifier_train_idx
         
         d['ll_classifier_ptrain_X']  = ll_classifier_ptrain_X
         d['ll_classifier_ptrain_Y']  = ll_classifier_ptrain_Y            
@@ -949,8 +952,8 @@ if __name__ == '__main__':
     ## save_data_path = os.path.expanduser('~')+\
     ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation4'
     ## c11
-    ## save_data_path = os.path.expanduser('~')+\
-    ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
+    save_data_path = os.path.expanduser('~')+\
+      '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
     ## c12
     ## save_data_path = os.path.expanduser('~')+\
     ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation5'
@@ -1072,11 +1075,11 @@ if __name__ == '__main__':
 
         auc_list = []
         ## for lr in [0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
-        for clf in ['old', 'renew']:
-            param_dict['ADT']['lr']       = 0.001
-            param_dict['ADT']['max_iter'] = 20
+        for clf in ['old', 'adapt', 'renew']:
+            param_dict['ADT']['lr']       = 0.1
+            param_dict['ADT']['max_iter'] = 40
             param_dict['ADT']['n_pTrain'] = 10 #5 #10
-            param_dict['ADT']['HMM']      = 'adapt'
+            param_dict['ADT']['HMM']      = clf #'adapt'
             param_dict['ADT']['CLF']      = clf #'adapt' #'renew'
             param_dict['ADT']['HMM_renew'] = True
             param_dict['ADT']['CLF_renew'] = True
