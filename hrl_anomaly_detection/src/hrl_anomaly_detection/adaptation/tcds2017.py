@@ -821,7 +821,7 @@ def saveAHMMinducedFeatures(td, task_name, processed_data_path, HMM_dict, ADT_di
 
         if ADT_dict['HMM'] == 'adapt':
             ret = ml.partial_fit(X_ptrain+noise_arr, learningRate=ADT_dict['lr'],
-                                 max_iter=ADT_dict['max_iter'], nrSteps=1)
+                                 max_iter=ADT_dict['max_iter'], nrSteps=ADT_dict['nrSteps'])
         elif ADT_dict['HMM'] == 'renew':
             ret = ml.fit(X_ptrain+noise_arr)
         else: ret = 0
@@ -952,8 +952,8 @@ if __name__ == '__main__':
     ## save_data_path = os.path.expanduser('~')+\
     ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation4'
     ## c11
-    save_data_path = os.path.expanduser('~')+\
-      '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
+    ## save_data_path = os.path.expanduser('~')+\
+    ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
     ## c12
     ## save_data_path = os.path.expanduser('~')+\
     ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation5'
@@ -1065,22 +1065,18 @@ if __name__ == '__main__':
 
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
 
-        ## evaluation_single_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
-        ##                      save_pdf=opt.bSavePdf, \
-        ##                      verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
-        ##                      find_param=False, data_gen=opt.bDataGen)
-
         param_dict['ADT'] = {}
         param_dict['ADT']['data_renew'] = False
 
         auc_list = []
-        ## for lr in [0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
-        for clf in ['old', 'adapt', 'renew']:
-            param_dict['ADT']['lr']       = 0.1
-            param_dict['ADT']['max_iter'] = 40
+        for lr in [0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
+            #for clf in ['adapt', 'renew']:
+            param_dict['ADT']['lr']       = lr #0.1
+            param_dict['ADT']['max_iter'] = 1
             param_dict['ADT']['n_pTrain'] = 10 #5 #10
-            param_dict['ADT']['HMM']      = clf #'adapt'
-            param_dict['ADT']['CLF']      = clf #'adapt' #'renew'
+            param_dict['ADT']['nrSteps']  = 1
+            param_dict['ADT']['HMM']      = 'adapt'
+            param_dict['ADT']['CLF']      = 'adapt' #'renew'
             param_dict['ADT']['HMM_renew'] = True
             param_dict['ADT']['CLF_renew'] = True
             
@@ -1112,11 +1108,6 @@ if __name__ == '__main__':
         param_dict['ROC']['methods'] = ['progress']
 
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
-
-        ## evaluation_single_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
-        ##                      save_pdf=opt.bSavePdf, \
-        ##                      verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
-        ##                      find_param=False, data_gen=opt.bDataGen)
 
         auc_list = []
         for n_pTrain in [3]:
