@@ -1068,15 +1068,16 @@ if __name__ == '__main__':
         param_dict['ADT'] = {}
         param_dict['ADT']['data_renew'] = False
 
+        auc_complete = []
         auc_list = []
-        for lr in [0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
-            #for clf in ['adapt', 'renew']:
-            param_dict['ADT']['lr']       = lr #0.1
+        #for lr in [0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
+        for clf in ['old', 'renew']:
+            param_dict['ADT']['lr']       = 0.2 #lr #0.1
             param_dict['ADT']['max_iter'] = 1
-            param_dict['ADT']['n_pTrain'] = 10 #5 #10
-            param_dict['ADT']['nrSteps']  = 1
+            param_dict['ADT']['n_pTrain'] = 5
+            param_dict['ADT']['nrSteps']  = 20
             param_dict['ADT']['HMM']      = 'adapt'
-            param_dict['ADT']['CLF']      = 'adapt' #'renew'
+            param_dict['ADT']['CLF']      = clf #'adapt' #'renew'
             param_dict['ADT']['HMM_renew'] = True
             param_dict['ADT']['CLF_renew'] = True
             
@@ -1086,10 +1087,12 @@ if __name__ == '__main__':
                                        find_param=False, data_gen=opt.bDataGen)
             if ret is None: break
             auc_list.append(ret['progress'])
+            auc_complete.append(ret['progress_complete'])
             ## param_dict['ADT']['HMM_renew'] = False
             #param_dict['ADT']['data_renew'] = False
             
         print "-------------------------------"
+        print auc_complete
         print auc_list
 
         # no adapt: 76
@@ -1146,11 +1149,12 @@ if __name__ == '__main__':
 
         acc_list = []
         acc_raw_list = []
-        for n_pTrain in [10]:
+        for n_pTrain in [5]:
             param_dict['ADT'] = {}
-            param_dict['ADT']['lr']       = 0.8
-            param_dict['ADT']['max_iter'] = 10
+            param_dict['ADT']['lr']       = 0.2
+            param_dict['ADT']['max_iter'] = 1
             param_dict['ADT']['n_pTrain'] = n_pTrain
+            param_dict['ADT']['nrSteps']  = 20
             param_dict['ADT']['HMM']      = 'adapt' #'renew'
             param_dict['ADT']['CLF']      = 'adapt' #'renew'
             param_dict['ADT']['data_renew'] = False

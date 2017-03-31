@@ -1451,6 +1451,10 @@ def roc_info(ROC_data, nPoints, delay_plot=False, no_plot=False, save_pdf=False,
             auc = metrics.auc(fpr_l, tpr_l, True)
         ## auc = metrics.auc(fpr_l + [100], tpr_l + [100], True)
         auc_rates[method] = auc
+        if fpr_l[0] > 99.9 and fpr_l[-1] < 0.1:
+            auc_rates[method+'_complete'] = True
+        else:
+            auc_rates[method+'_complete'] = False
         if verbose: print auc
         if acc: acc_rates[method] = acc_l
 
