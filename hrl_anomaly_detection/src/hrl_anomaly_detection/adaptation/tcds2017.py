@@ -512,12 +512,14 @@ def evaluation_acc(subject_names, task_name, raw_data_path, processed_data_path,
     acc_list = []
     acc_raw_list = []
     for test in ['old', 'adapt', 'renew']:
+        #for test in ['old']:
         ADT_dict['HMM'] = test
         ADT_dict['CLF'] = test
         pkl_prefix      = 'hmm_'+test+'_'+task_name
         ret = saveAHMMinducedFeatures(td, task_name, processed_data_path, HMM_dict, ADT_dict, noise_mag,
                                       pkl_prefix, normalTrainData, nor_train_inds)
-        if ret is None: return ret
+        print ADT_dict
+        if ret is None: return ret, None
 
         ROC_data = {}
         ROC_data = util.reset_roc_data(ROC_data, method_list, ROC_dict['update_list'], nPoints)
@@ -850,12 +852,23 @@ def saveAHMMinducedFeatures(td, task_name, processed_data_path, HMM_dict, ADT_di
 
         # Classifier test data
         n_jobs=-1
-        if ADT_dict['CLF'] is not 'renew':        
+        if ADT_dict['HMM'] is 'old' and ADT_dict['CLF'] is 'old':
+            ll_classifier_train_X = copy.copy(d['ll_classifier_train_X'])
+            ll_classifier_train_Y = copy.copy(d['ll_classifier_train_Y'])
+            ll_classifier_train_idx = copy.copy(d['ll_classifier_train_idx'])
+        elif ADT_dict['CLF'] is not 'renew':        
             ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
               hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, startIdx=startIdx, n_jobs=n_jobs)
-        ll_classifier_ptrain_X, ll_classifier_ptrain_Y, ll_classifier_ptrain_idx =\
-          hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData[:,:n_AHMM_sample], startIdx=startIdx, \
-                                                   n_jobs=n_jobs)
+              
+        if ADT_dict['CLF'] is 'adapt' or ADT_dict['CLF'] is 'renew':        
+            ll_classifier_ptrain_X, ll_classifier_ptrain_Y, ll_classifier_ptrain_idx =\
+              hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData[:,:n_AHMM_sample], startIdx=startIdx, \
+                                                       n_jobs=n_jobs)
+        else:
+            ll_classifier_ptrain_X = None
+            ll_classifier_ptrain_Y = None
+            ll_classifier_ptrain_idx = None
+            
         ll_classifier_test_X, ll_classifier_test_Y, ll_classifier_test_idx =\
           hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData[:,n_AHMM_test_idx:], abnormalTestData, \
                                                    startIdx, n_jobs=n_jobs)
@@ -1071,25 +1084,26 @@ if __name__ == '__main__':
         auc_complete = []
         auc_list = []
         #for lr in [0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
-        for clf in ['old', 'renew']:
-            param_dict['ADT']['lr']       = 0.2 #lr #0.1
-            param_dict['ADT']['max_iter'] = 1
-            param_dict['ADT']['n_pTrain'] = 5
-            param_dict['ADT']['nrSteps']  = 20
-            param_dict['ADT']['HMM']      = 'adapt'
-            param_dict['ADT']['CLF']      = clf #'adapt' #'renew'
-            param_dict['ADT']['HMM_renew'] = True
-            param_dict['ADT']['CLF_renew'] = True
-            
-            ret = evaluation_single_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
-                                       save_pdf=opt.bSavePdf, \
-                                       verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
-                                       find_param=False, data_gen=opt.bDataGen)
-            if ret is None: break
-            auc_list.append(ret['progress'])
-            auc_complete.append(ret['progress_complete'])
-            ## param_dict['ADT']['HMM_renew'] = False
-            #param_dict['ADT']['data_renew'] = False
+        for clf in ['old', 'adapt']:
+            for n_pTrain in range(5,17):
+                param_dict['ADT']['lr']       = 0.2 #lr #0.1
+                param_dict['ADT']['max_iter'] = 1
+                param_dict['ADT']['n_pTrain'] = n_pTrain
+                param_dict['ADT']['nrSteps']  = 20
+                param_dict['ADT']['HMM']      = 'old'
+                param_dict['ADT']['CLF']      = clf #'adapt' #'renew'
+                param_dict['ADT']['HMM_renew'] = True
+                param_dict['ADT']['CLF_renew'] = True
+
+                ret = evaluation_single_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
+                                           save_pdf=opt.bSavePdf, \
+                                           verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
+                                           find_param=False, data_gen=opt.bDataGen)
+                if ret is None: break
+                auc_list.append(ret['progress'])
+                auc_complete.append(ret['progress_complete'])
+                ## param_dict['ADT']['HMM_renew'] = False
+                #param_dict['ADT']['data_renew'] = False
             
         print "-------------------------------"
         print auc_complete
@@ -1142,23 +1156,24 @@ if __name__ == '__main__':
                                                      'unimodal_ftForce_integ',\
                                                      'crossmodal_landmarkEEDist']
         param_dict['HMM']['scale'] = 5.0
-        param_dict['ROC']['progress_param_range'] = -np.logspace(-1.2, 2.2, nPoints)+3.0
+        param_dict['ROC']['progress_param_range'] = -np.logspace(-1.2, 2.4, nPoints)+1.0
         param_dict['ROC']['methods'] = ['progress']
 
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
+        param_dict['ADT'] = {}
+        param_dict['ADT']['data_renew'] = False
 
         acc_list = []
         acc_raw_list = []
-        for n_pTrain in [5]:
-            param_dict['ADT'] = {}
+        for n_pTrain in [10]:
             param_dict['ADT']['lr']       = 0.2
             param_dict['ADT']['max_iter'] = 1
             param_dict['ADT']['n_pTrain'] = n_pTrain
             param_dict['ADT']['nrSteps']  = 20
             param_dict['ADT']['HMM']      = 'adapt' #'renew'
             param_dict['ADT']['CLF']      = 'adapt' #'renew'
-            param_dict['ADT']['data_renew'] = False
-            param_dict['ADT']['HMM_renew']  = False
+            param_dict['ADT']['HMM_renew'] = True
+            param_dict['ADT']['CLF_renew'] = True
             
             a, ar = evaluation_acc(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
                                    save_pdf=opt.bSavePdf, \
