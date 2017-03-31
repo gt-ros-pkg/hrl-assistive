@@ -959,8 +959,7 @@ if __name__ == '__main__':
 
     ## br
     save_data_path = os.path.expanduser('~')+\
-      '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation/'+\
-      str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+      '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation/'
     ## c8
     ## save_data_path = os.path.expanduser('~')+\
     ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation4'
@@ -1067,7 +1066,7 @@ if __name__ == '__main__':
         '''
         evaluation with selected feature set 5,6
         '''
-        nPoints = param_dict['ROC']['nPoints']
+        nPoints = param_dict['ROC']['nPoints'] = 100
         param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
                                                      'unimodal_kinJntEff_1',\
                                                      'unimodal_ftForce_integ',\
@@ -1084,8 +1083,8 @@ if __name__ == '__main__':
         auc_complete = []
         auc_list = []
         #for lr in [0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
-        for clf in ['old', 'adapt']:
-            for n_pTrain in range(5,11):
+        for clf in ['adapt']:
+            for n_pTrain in [10]:
                 param_dict['ADT']['lr']       = 0.2 #lr #0.1
                 param_dict['ADT']['max_iter'] = 1
                 param_dict['ADT']['n_pTrain'] = n_pTrain
