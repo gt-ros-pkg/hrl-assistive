@@ -1085,7 +1085,7 @@ if __name__ == '__main__':
         auc_list = []
         #for lr in [0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
         for clf in ['old', 'adapt']:
-            for n_pTrain in range(5,17):
+            for n_pTrain in range(5,11):
                 param_dict['ADT']['lr']       = 0.2 #lr #0.1
                 param_dict['ADT']['max_iter'] = 1
                 param_dict['ADT']['n_pTrain'] = n_pTrain
