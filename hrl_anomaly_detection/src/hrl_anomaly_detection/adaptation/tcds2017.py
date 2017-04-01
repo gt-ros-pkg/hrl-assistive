@@ -361,8 +361,27 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
     ROC_data = util.update_roc_data(ROC_data, l_data, nPoints, method_list)
     ## ut.save_pickle(ROC_data, roc_pkl)
 
+    auc_raw_list=[]
+    for i in xrange(len(l_data)):
+        tp_ll = l_data[i][method_list[0]]['tp_l']
+        fp_ll = l_data[i][method_list[0]]['fp_l']
+        tn_ll = l_data[i][method_list[0]]['tn_l']
+        fn_ll = l_data[i][method_list[0]]['fn_l']
+
+        tpr_l = []
+        fpr_l = []
+        for j in xrange(nPoints):
+            tpr_l.append( float(np.sum(tp_ll[j]))/float(np.sum(tp_ll[j])+np.sum(fn_ll[j]))*100.0 )
+            fpr_l.append( float(np.sum(fp_ll[j]))/float(np.sum(fp_ll[j])+np.sum(tn_ll[j]))*100.0 )
+        
+        from sklearn import metrics 
+        auc = metrics.auc(fpr_l, tpr_l, True)
+        auc_raw_list.append(auc)
+
     # ---------------- ROC Visualization ----------------------
-    return roc_info(ROC_data, nPoints, no_plot=no_plot, ROC_dict=ROC_dict)
+    d = roc_info(ROC_data, nPoints, no_plot=no_plot, ROC_dict=ROC_dict)
+    d[method_list[0]+'_auc_raw'] = auc_raw_list
+    return d
     ## class_info(method_list, ROC_data, nPoints, kFold_list)
 
 
@@ -1082,14 +1101,15 @@ if __name__ == '__main__':
 
         auc_complete = []
         auc_list = []
+        auc_raw_list = []
         #for lr in [0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
-        for clf in ['adapt']:
+        for clf in ['old', 'adapt', 'renew']:
             for n_pTrain in [10]:
                 param_dict['ADT']['lr']       = 0.2 #lr #0.1
                 param_dict['ADT']['max_iter'] = 1
                 param_dict['ADT']['n_pTrain'] = n_pTrain
                 param_dict['ADT']['nrSteps']  = 20
-                param_dict['ADT']['HMM']      = 'old'
+                param_dict['ADT']['HMM']      = clf #'adapt'
                 param_dict['ADT']['CLF']      = clf #'adapt' #'renew'
                 param_dict['ADT']['HMM_renew'] = True
                 param_dict['ADT']['CLF_renew'] = True
@@ -1100,13 +1120,16 @@ if __name__ == '__main__':
                                            find_param=False, data_gen=opt.bDataGen)
                 if ret is None: break
                 auc_list.append(ret['progress'])
+                auc_raw_list.append(ret['progress_auc_raw'])
                 auc_complete.append(ret['progress_complete'])
                 ## param_dict['ADT']['HMM_renew'] = False
                 #param_dict['ADT']['data_renew'] = False
             
         print "-------------------------------"
         print auc_complete
+        print auc_raw_list
         print auc_list
+
 
         # no adapt: 76
 
@@ -1114,6 +1137,22 @@ if __name__ == '__main__':
         '''
         evaluation with selected feature set 5,6
         '''
+        ## br
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data2_adaptation/'
+        ## c8
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data2_adaptation4'
+        ## c11
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data2_adaptation2'
+        ## c12
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data2_adaptation5'
+        ## ## ep
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data2_adaptation3'
+        
         nPoints = param_dict['ROC']['nPoints']
         param_dict['data_param']['handFeatures'] = ['unimodal_kinVel',\
                                                     'unimodal_ftForce_zero',\
@@ -1125,24 +1164,45 @@ if __name__ == '__main__':
 
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
 
+        param_dict['ADT'] = {}
+        param_dict['ADT']['data_renew'] = True
+
+        auc_complete = []
         auc_list = []
-        for n_pTrain in [3]:
-            param_dict['ADT'] = {}
-            param_dict['ADT']['lr']       = 0.8
-            param_dict['ADT']['max_iter'] = 10
-            param_dict['ADT']['n_pTrain'] = n_pTrain
-            param_dict['ADT']['HMM']      = 'renew' #'adapt' #'renew'
-            param_dict['ADT']['CLF']      = 'renew' #'adapt' #'renew'
+        auc_raw_list = []
+        for lr in [0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
+            #for clf in ['old', 'adapt', 'renew']:
+            for n_pTrain in [10]:
+                param_dict['ADT']['lr']       = lr #0.1
+                param_dict['ADT']['max_iter'] = 1
+                param_dict['ADT']['n_pTrain'] = n_pTrain
+                param_dict['ADT']['nrSteps']  = 20
+                param_dict['ADT']['HMM']      = 'adapt'
+                param_dict['ADT']['CLF']      = 'adapt' #'renew'
+                param_dict['ADT']['HMM_renew'] = True
+                param_dict['ADT']['CLF_renew'] = True
+
+                ret = evaluation_single_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
+                                           save_pdf=opt.bSavePdf, \
+                                           verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
+                                           find_param=False, data_gen=opt.bDataGen)
+                if ret is None: break
+                auc_list.append(ret['progress'])
+                auc_raw_list.append(ret['progress_auc_raw'])
+                auc_complete.append(ret['progress_complete'])
             
-            ret = evaluation_single_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
-                                       save_pdf=opt.bSavePdf, \
-                                       verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
-                                       find_param=False, data_gen=opt.bDataGen)
-            auc_list.append(ret['progress'])
         print "-------------------------------"
+        print auc_complete
+        print auc_raw_list
         print auc_list
 
-        # no adapt: 76
+
+    elif opt.evaluation_single_inc:
+        '''
+        evaluation of incremental learning
+        '''
+
+        
 
 
     elif opt.evaluation_acc:
