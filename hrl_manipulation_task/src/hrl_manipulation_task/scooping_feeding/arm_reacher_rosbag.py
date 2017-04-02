@@ -70,7 +70,8 @@ class rosbagStarter:
         self.guiStatus = msg.data
         if self.guiStatus == 'in motion' or self.guiStatus == 'standby':
             print self.actionStatus
-            if self.actionStatus.lower() == 'scooping' or self.actionStatus.lower() == 'feeding':
+            ## if self.actionStatus.lower() == 'scooping' or self.actionStatus.lower() == 'feeding':
+            if self.actionStatus.lower() == 'feeding':
                 self.rosbagStopped = False
                 self.startRosbag()
         elif self.guiStatus == 'request feedback' or self.guiStatus == 'stopped':
@@ -207,6 +208,8 @@ class rosbagStarter:
             self.rosbaggerPub.publish(self.rosbagStatus)
             rate.sleep()
 
+        # failsafe
+        self.stopRosbag()
 
  
 if __name__ == '__main__':
