@@ -1038,10 +1038,10 @@ def saveAHMMinducedFeatures(td, task_name, processed_data_path, HMM_dict, ADT_di
             print idx, " : updated hmm exists"
             continue
 
-        normalTestData   = np.array(copy.deepcopy(td['successDataList'][idx])) * HMM_dict['scale'] 
-        abnormalTestData = np.array(copy.deepcopy(td['failureDataList'][idx])) * HMM_dict['scale']
+        normalTestData   = np.array(td['successDataList'][idx]) * HMM_dict['scale'] 
+        abnormalTestData = np.array(td['failureDataList'][idx]) * HMM_dict['scale']
 
-        X_ptrain = copy.deepcopy(normalTestData[:,:n_AHMM_sample])
+        X_ptrain  = copy.deepcopy(normalTestData[:,:n_AHMM_sample])
         noise_arr = np.random.normal(0.0, noise_mag, np.shape(X_ptrain))*HMM_dict['scale']
         nLength   = len(normalTestData[0][0]) - startIdx
       
