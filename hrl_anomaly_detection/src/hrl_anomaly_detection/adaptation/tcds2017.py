@@ -355,7 +355,8 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
                                                                          n_jobs=n_jobs,\
                                                                          modeling_pkl_prefix=pkl_prefix,\
                                                                          adaptation=adapt) \
-                                                                         for idx in xrange(len(td['successDataList'])) )
+                                                                         for idx in xrange(1) )
+                                                                         ## for idx in xrange(len(td['successDataList'])) )
 
     print "finished to run run_classifiers"
     ROC_data = util.update_roc_data(ROC_data, l_data, nPoints, method_list)
@@ -1034,7 +1035,7 @@ def saveAHMMinducedFeatures(td, task_name, processed_data_path, HMM_dict, ADT_di
 
         ## if idx != 4: continue
         inc_model_pkl = os.path.join(processed_data_path, pkl_prefix+'_'+str(idx)+'.pkl')
-        if not(os.path.isfile(inc_model_pkl) is False or HMM_dict['renew'] or ADT_dict['HMM_renew']) :
+        if os.path.isfile(inc_model_pkl) and HMM_dict['renew'] is False and ADT_dict['HMM_renew'] is False :
             print idx, " : updated hmm exists"
             continue
 
@@ -1144,6 +1145,8 @@ def saveAHMMinducedFeatures(td, task_name, processed_data_path, HMM_dict, ADT_di
         d['cov']          = HMM_dict['cov']
         d['nor_train_inds'] = nor_train_inds
         ut.save_pickle(d, inc_model_pkl)
+        del ml
+        break
 
     return True
         
@@ -1300,7 +1303,7 @@ if __name__ == '__main__':
         '''
         evaluation with selected feature set 5,6
         '''
-        nPoints = param_dict['ROC']['nPoints'] = 100
+        nPoints = param_dict['ROC']['nPoints'] = 10
         param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
                                                      'unimodal_kinJntEff_1',\
                                                      'unimodal_ftForce_integ',\
