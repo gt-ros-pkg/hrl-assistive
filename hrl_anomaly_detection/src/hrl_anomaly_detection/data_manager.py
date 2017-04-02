@@ -624,7 +624,7 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
                     for lidx, l in enumerate(failureFileList[fidx]):
                         if int(l.split('/')[-1].split('_')[0]) in target_class:
                             if failure_data is None:
-                                failure_data = copy.copy(np.array(failureData)[:,lidx:lidx+1,:])
+                                failure_data = copy.deepcopy(np.array(failureData)[:,lidx:lidx+1,:])
                             else:
                                 failure_data = np.vstack([failure_data, np.array(failureData)[:,lidx:lidx+1,:] ])
                 else:
@@ -1081,7 +1081,7 @@ def getPCAData(nFiles, data_pkl=None, window=1, gamma=1., pos_dict=None, use_tes
             dd = ut.load_pickle(modeling_pkl_prefix+'_'+str(file_idx)+'.pkl')
             step_idx_l = dd['step_idx_l']
 
-            abnormalTestData = copy.copy(normalTestData)
+            abnormalTestData = copy.deepcopy(normalTestData)
             for i in xrange(len(abnormalTestData)):
                 abnormalTestData[i,step_idx_l[len(normalTestData)+i],:] += step_mag
         else:
@@ -1544,7 +1544,7 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
 
         param_dict['feature_names'] = []
     else:
-        param_dict = copy.copy(init_param_dict)
+        param_dict = copy.deepcopy(init_param_dict)
         isTrainingData=False
             
 
@@ -1563,8 +1563,8 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
         if 'unimodal_audioPower' in feature_list:
             unimodal_audioPower = d['audioPowerList'][idx]
             
-            if dataSample is None: dataSample = copy.copy(np.array(unimodal_audioPower))
-            else: dataSample = np.vstack([dataSample, copy.copy(unimodal_audioPower)])
+            if dataSample is None: dataSample = copy.deepcopy(np.array(unimodal_audioPower))
+            else: dataSample = np.vstack([dataSample, copy.deepcopy(unimodal_audioPower)])
             if 'audioPower' not in param_dict['feature_names']:
                 param_dict['feature_names'].append('audioPower')
 
@@ -1575,8 +1575,8 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
                 unimodal_audioWristRMS -= np.amin(unimodal_audioWristRMS)
                 ## unimodal_audioWristRMS -= np.mean(audioWristRMS[:startOffsetSize])
 
-            if dataSample is None: dataSample = copy.copy(np.array(unimodal_audioWristRMS))
-            else: dataSample = np.vstack([dataSample, copy.copy(unimodal_audioWristRMS)])
+            if dataSample is None: dataSample = copy.deepcopy(np.array(unimodal_audioWristRMS))
+            else: dataSample = np.vstack([dataSample, copy.deepcopy(unimodal_audioWristRMS)])
             if 'audioWristRMS' not in param_dict['feature_names']:
                 param_dict['feature_names'].append('audioWristRMS')
 
@@ -1587,8 +1587,8 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
                 unimodal_audioWristFrontRMS -= np.amin(unimodal_audioWristFrontRMS[:startOffsetSize])
                 ## unimodal_audioWristFrontRMS -= np.mean(audioWristFrontRMS[:startOffsetSize])
 
-            if dataSample is None: dataSample = copy.copy(np.array(unimodal_audioWristFrontRMS))
-            else: dataSample = np.vstack([dataSample, copy.copy(unimodal_audioWristFrontRMS)])
+            if dataSample is None: dataSample = copy.deepcopy(np.array(unimodal_audioWristFrontRMS))
+            else: dataSample = np.vstack([dataSample, copy.deepcopy(unimodal_audioWristFrontRMS)])
             if 'audioWristFrontRMS' not in param_dict['feature_names']:
                 param_dict['feature_names'].append('audioWristFrontRMS')
 
@@ -1599,8 +1599,8 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
             ##     unimodal_audioWristAzimuth -= np.mean(unimodal_audioWristAzimuth[:startOffsetSize])
             unimodal_audioWristAzimuth = np.abs(unimodal_audioWristAzimuth)
             
-            if dataSample is None: dataSample = copy.copy(np.array(unimodal_audioWristAzimuth))
-            else: dataSample = np.vstack([dataSample, copy.copy(unimodal_audioWristAzimuth)])
+            if dataSample is None: dataSample = copy.deepcopy(np.array(unimodal_audioWristAzimuth))
+            else: dataSample = np.vstack([dataSample, copy.deepcopy(unimodal_audioWristAzimuth)])
             if 'audioWristAzimuth' not in param_dict['feature_names']:
                 param_dict['feature_names'].append('audioWristAzimuth')
 
@@ -2288,8 +2288,8 @@ def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, param_dict=None, 
         # Audio --------------------------------------------
         if 'kinectAudio' in raw_feature_list:
             audioPower   = d['audioPowerList'][idx]                        
-            if dataSample is None: dataSample = copy.copy(np.array(audioPower))
-            else: dataSample = np.vstack([dataSample, copy.copy(audioPower)])
+            if dataSample is None: dataSample = copy.deepcopy(np.array(audioPower))
+            else: dataSample = np.vstack([dataSample, copy.deepcopy(audioPower)])
             if idx == 0: dataDim.append(['kinectAudio', len(audioPower)])
 
         # AudioWrist ---------------------------------------
@@ -2297,8 +2297,8 @@ def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, param_dict=None, 
             audioWristRMS  = d['audioWristRMSList'][idx]
             ## audioWristMFCC = d['audioWristMFCCList'][idx]            
 
-            if dataSample is None: dataSample = copy.copy(np.array(audioWristRMS))
-            else: dataSample = np.vstack([dataSample, copy.copy(audioWristRMS)])
+            if dataSample is None: dataSample = copy.deepcopy(np.array(audioWristRMS))
+            else: dataSample = np.vstack([dataSample, copy.deepcopy(audioWristRMS)])
             ## dataSample = np.vstack([dataSample, copy.copy(audioWristMFCC)])
             
             if idx == 0: dataDim.append(['wristAudio_RMS', 1])                
@@ -2491,7 +2491,7 @@ def export_images(folder_list, data_dict, downSampleSize):
 #-------------------------------------------------------------------------------------------------
 
 def normalization(x, mu, std):
-    new_x = copy.copy(x)
+    new_x = copy.deepcopy(x)
     for i in xrange(len(x)):
         new_x[i] = (x[i]-mu[i])/std[i]
     return new_x
@@ -2500,7 +2500,7 @@ def scale(x, x_min, x_max):
     '''
     scale data between 0 and 1
     '''
-    new_x = copy.copy(x)
+    new_x = copy.deepcopy(x)
     for i in xrange(len(x)):
         new_x[i] = (x[i]-x_min[i])/(x_max[i]-x_min[i])
     return new_x
@@ -2965,10 +2965,10 @@ def saveHMMinducedFeatures(kFold_list, successData, failureData,\
             continue
 
         # dim x sample x length
-        normalTrainData   = copy.copy(successData[:, normalTrainIdx, :]) * HMM_dict['scale']
-        abnormalTrainData = copy.copy(failureData[:, abnormalTrainIdx, :]) * HMM_dict['scale'] 
-        normalTestData    = copy.copy(successData[:, normalTestIdx, :]) * HMM_dict['scale'] 
-        abnormalTestData  = copy.copy(failureData[:, abnormalTestIdx, :]) * HMM_dict['scale'] 
+        normalTrainData   = copy.deepcopy(successData[:, normalTrainIdx, :]) * HMM_dict['scale']
+        abnormalTrainData = copy.deepcopy(failureData[:, abnormalTrainIdx, :]) * HMM_dict['scale'] 
+        normalTestData    = copy.deepcopy(successData[:, normalTestIdx, :]) * HMM_dict['scale'] 
+        abnormalTestData  = copy.deepcopy(failureData[:, abnormalTestIdx, :]) * HMM_dict['scale'] 
         if one_class: abnormalTrainData = None
 
         

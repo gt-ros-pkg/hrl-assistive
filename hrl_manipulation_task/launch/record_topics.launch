@@ -33,7 +33,6 @@
                                                        /pr2_fabric_l_forearm_sensor/taxels/raw_data
                                                        /pr2_fabric_l_forearm_sensor/viz/taxel_array_array
                                                        /pr2_fabric_l_forearm_sensor/viz/taxel_array_text_array
-                                                       /pr2_fabric_l_forearm_sensor/zero_sensor
                                                        /pr2_fabric_l_upperarm_sensor/disable_sensor
                                                        /pr2_fabric_l_upperarm_sensor/enable_sensor
                                                        /pr2_fabric_l_upperarm_sensor/taxels/data_valid
@@ -41,7 +40,6 @@
                                                        /pr2_fabric_l_upperarm_sensor/taxels/raw_data
                                                        /pr2_fabric_l_upperarm_sensor/viz/taxel_array_array
                                                        /pr2_fabric_l_upperarm_sensor/viz/taxel_array_text_array
-                                                       /pr2_fabric_l_upperarm_sensor/zero_sensor
                                                        /pr2_fabric_r_forearm_sensor/disable_sensor
                                                        /pr2_fabric_r_forearm_sensor/enable_sensor
                                                        /pr2_fabric_r_forearm_sensor/taxels/data_valid
@@ -49,7 +47,6 @@
                                                        /pr2_fabric_r_forearm_sensor/taxels/raw_data
                                                        /pr2_fabric_r_forearm_sensor/viz/taxel_array_array
                                                        /pr2_fabric_r_forearm_sensor/viz/taxel_array_text_array
-                                                       /pr2_fabric_r_forearm_sensor/zero_sensor
                                                        /pr2_fabric_r_upperarm_sensor/disable_sensor
                                                        /pr2_fabric_r_upperarm_sensor/enable_sensor
                                                        /pr2_fabric_r_upperarm_sensor/taxels/data_valid
@@ -57,7 +54,6 @@
                                                        /pr2_fabric_r_upperarm_sensor/taxels/raw_data
                                                        /pr2_fabric_r_upperarm_sensor/viz/taxel_array_array
                                                        /pr2_fabric_r_upperarm_sensor/viz/taxel_array_text_array
-                                                       /pr2_fabric_r_upperarm_sensor/zero_sensor
                                                        /SR300/depth_registered/sw_registered/image_rect
                                                        /SR300/depth_registered/sw_registered/camera_info
                                                        /SR300/rgb/image_raw
@@ -66,7 +62,6 @@
                                                        /SR300/depth/camera_info
                                                        /head_mount_kinect/hd/points
                                                        /head_mount_kinect/hd/camera_info
-                                                       /hrl_manipulation_task/InterruptAction
                                                        /feeding/manipulation_task/ad_sensitivity_request
                                                        /feeding/manipulation_task/ad_sensitivity_state
                                                        /feeding/manipulation_task/eval_status
@@ -74,6 +69,7 @@
                                                        /feeding/manipulation_task/feeding_dist_state
                                                        /manipulation_task/anomaly_type
                                                        /manipulation_task/anomaly_prob
+                                                       /manipulation_task/InterruptAction
                                                        /manipulation_task/available
                                                        /manipulation_task/emergency
                                                        /manipulation_task/gui_status
@@ -86,6 +82,9 @@
                                                        /scooping/manipulation_task/eval_status
                                                        /feeding/manipulation_task/hmm_input0
                                                        /feeding/manipulation_task/hmm_input1
+                                                       /feeding/manipulation_task/mouth_depth_offset
+                                                       /feeding/manipulation_task/mouth_horiz_offset
+                                                       /feeding/manipulation_task/mouth_vert_offset
                                                        " output="screen"/>
 </launch>
 
