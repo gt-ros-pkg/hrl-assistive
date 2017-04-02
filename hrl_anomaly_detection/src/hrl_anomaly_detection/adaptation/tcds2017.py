@@ -352,8 +352,7 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
                                                                          n_jobs=n_jobs,\
                                                                          modeling_pkl_prefix=pkl_prefix,\
                                                                          adaptation=adapt) \
-                                                                         for idx in xrange(1) )
-                                                                         ## for idx in xrange(len(td['successDataList'])) )
+                                                                         for idx in xrange(len(td['successDataList'])) )
     #temp
 
 
@@ -1050,7 +1049,7 @@ def saveAHMMinducedFeatures(td, task_name, processed_data_path, HMM_dict, ADT_di
         del ml
 
         #temp
-        break
+        #break
 
     return True
         
@@ -1207,7 +1206,7 @@ if __name__ == '__main__':
         '''
         evaluation with selected feature set 5,6
         '''
-        nPoints = param_dict['ROC']['nPoints'] = 10
+        nPoints = param_dict['ROC']['nPoints'] = 100
         param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
                                                      'unimodal_kinJntEff_1',\
                                                      'unimodal_ftForce_integ',\
@@ -1226,7 +1225,7 @@ if __name__ == '__main__':
         auc_raw_list = []
         #for lr in [0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
         for clf in ['adapt']:
-            for n_pTrain in [5,6,7]:
+            for n_pTrain in [8,9,10]:
                 param_dict['ADT']['lr']       = 0.2 #lr #0.1
                 param_dict['ADT']['max_iter'] = 1
                 param_dict['ADT']['n_pTrain'] = n_pTrain
