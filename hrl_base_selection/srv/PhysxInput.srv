@@ -1,0 +1,10 @@
+float64[] sphere_x
+float64[] sphere_y
+float64[] sphere_z
+float64[] sphere_r
+uint32[] first_sphere_list
+uint32[] second_sphere_list
+float64[] start_pos
+float64[] end_pos
+---
+bool intialization_success

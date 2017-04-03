@@ -11,6 +11,8 @@ add_service_files(
     BaseMove.srv 
     RealtimeBaseMove.srv
     SetBaseModel.srv
+    InitPhysxBodyModel.srv
+    PhysxInput.srv
 )
 
 add_message_files(DIRECTORY msg

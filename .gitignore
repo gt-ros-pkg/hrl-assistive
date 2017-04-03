@@ -27,10 +27,13 @@ bin
 build
 msg_gen
 srv_gen
+data
 .ropeproject
 .idea
 
 # Files specific to this repo #
 ###############################
 *.dat
+*.dae
+*.zip
 assistive_teleop/www/jqueryui
