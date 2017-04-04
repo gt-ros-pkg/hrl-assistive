@@ -79,6 +79,12 @@ class armReachAction(mpcBaseAction):
         self.initParamsForArmReach()
         self.setMotions()
 
+
+        if self.arm_name == 'left':
+            self.feeding_depth_pub.publish( Int64(int(self.mouthManOffset[2]*100.0)) )
+            self.feeding_horiz_pub.publish( Int64(int(self.mouthManOffset[2]*100.0)) )            
+            self.feeding_vert_pub.publish( Int64(int(self.mouthManOffset[2]*100.0)) )
+
         rate = rospy.Rate(5)
         print_flag = True
         while not rospy.is_shutdown():
@@ -93,51 +99,62 @@ class armReachAction(mpcBaseAction):
                     print self.getEndeffectorRPY(tool=self.cur_tool) #*180.0/np.pi
                     print "--------------------------------"
                     print_flag = False
-                ## break
                 self.pubCurEEPose()
-            rate.sleep()
+                ## break
 
-        if self.arm_name == 'left':
-            self.feeding_depth_pub.publish( Int64(int(self.mouthManOffset[2]*100.0)) )
-            self.feeding_horiz_pub.publish( Int64(int(self.mouthManOffset[2]*100.0)) )            
-            self.feeding_vert_pub.publish( Int64(int(self.mouthManOffset[2]*100.0)) )
+            # temp
+            ## if self.arm_name == 'left':
+            ##     self.getBowlFrame()                
+                
+            rate.sleep()
 
         rospy.loginfo("Arm Reach Action is initialized.")
 
     def initCommsForArmReach(self):
 
         # publishers
-        if self.viz:
-            self.bowl_pub = rospy.Publisher('/hrl_manipulation_task/arm_reacher/bowl_cen_pose', PoseStamped,
-                                            queue_size=QUEUE_SIZE, latch=True)
-            self.mouth_pub = rospy.Publisher('/hrl_manipulation_task/arm_reacher/mouth_pose', PoseStamped,
-                                             queue_size=QUEUE_SIZE, latch=True)
-        self.ee_pose_pub = rospy.Publisher('/hrl_manipulation_task/arm_reacher/'+self.arm_name+\
-                                           '_ee_pose', PoseStamped,
-                                           queue_size=QUEUE_SIZE, latch=True)
+        self.bowl_pub\
+        = rospy.Publisher('/hrl_manipulation_task/arm_reacher/bowl_cen_pose', PoseStamped,\
+                          queue_size=QUEUE_SIZE, latch=True)
+        self.mouth_pub\
+        = rospy.Publisher('/hrl_manipulation_task/arm_reacher/mouth_pose', PoseStamped,\
+                          queue_size=QUEUE_SIZE, latch=True)
+        self.ee_pose_pub\
+        = rospy.Publisher('/hrl_manipulation_task/arm_reacher/'+self.arm_name+\
+                          '_ee_pose', PoseStamped, queue_size=QUEUE_SIZE, latch=True)
             
-        self.bowl_height_init_pub = rospy.Publisher('/hrl_manipulation_task/arm_reacher/init_bowl_height', Empty,
-                                        queue_size=QUEUE_SIZE, latch=True)
-        self.kinect_pause = rospy.Publisher('/head_mount_kinect/pause_kinect', String,
-                                            queue_size=QUEUE_SIZE, latch=False)
+        self.bowl_height_init_pub\
+        = rospy.Publisher('/hrl_manipulation_task/arm_reacher/init_bowl_height', Empty,\
+                          queue_size=QUEUE_SIZE, latch=True)
+        self.kinect_pause\
+        = rospy.Publisher('/head_mount_kinect/pause_kinect', String,\
+                          queue_size=QUEUE_SIZE, latch=False)
 
         if self.arm_name == 'left':
-            self.feeding_depth_pub = rospy.Publisher('/feeding/manipulation_task/mouth_depth_offset',
-                                                     Int64, queue_size=QUEUE_SIZE, latch=True)
-            self.feeding_horiz_pub = rospy.Publisher('/feeding/manipulation_task/mouth_horiz_offset',
-                                                     Int64, queue_size=QUEUE_SIZE, latch=True)
-            self.feeding_vert_pub = rospy.Publisher('/feeding/manipulation_task/mouth_vert_offset',
-                                                    Int64, queue_size=QUEUE_SIZE, latch=True)
+            self.feeding_depth_pub\
+            = rospy.Publisher('/feeding/manipulation_task/mouth_depth_offset',\
+                              Int64, queue_size=QUEUE_SIZE, latch=True)
+            self.feeding_horiz_pub\
+            = rospy.Publisher('/feeding/manipulation_task/mouth_horiz_offset',\
+                              Int64, queue_size=QUEUE_SIZE, latch=True)
+            self.feeding_vert_pub\
+            = rospy.Publisher('/feeding/manipulation_task/mouth_vert_offset',\
+                              Int64, queue_size=QUEUE_SIZE, latch=True)
 
         # subscribers
         rospy.Subscriber('/manipulation_task/InterruptAction', String, self.stopCallback)
+        rospy.Subscriber('/hrl_manipulation_task/bowl_highest_point', Point,\
+                         self.highestBowlPointCallback)
         rospy.Subscriber('/hrl_manipulation_task/mouth_pose',
                          PoseStamped, self.mouthPoseCallback)
         rospy.Subscriber('/hrl_manipulation_task/mouth_noise', FloatArray, self.mouthNoiseCallback)
         if self.arm_name == 'left':
-            rospy.Subscriber('/feeding/manipulation_task/mouth_depth_request', Int64, self.feedingDepthCallback)
-            rospy.Subscriber('/feeding/manipulation_task/mouth_horiz_request', Int64, self.feedingHorizCallback)
-            rospy.Subscriber('/feeding/manipulation_task/mouth_vert_request', Int64, self.feedingVertCallback)
+            rospy.Subscriber('/feeding/manipulation_task/mouth_depth_request',\
+                             Int64, self.feedingDepthCallback)
+            rospy.Subscriber('/feeding/manipulation_task/mouth_horiz_request',\
+                             Int64, self.feedingHorizCallback)
+            rospy.Subscriber('/feeding/manipulation_task/mouth_vert_request',\
+                             Int64, self.feedingVertCallback)
 
         # service
         self.reach_service = rospy.Service('arm_reach_enable', String_String, self.serverCallback)
@@ -177,7 +194,7 @@ class armReachAction(mpcBaseAction):
 
         ## Init arms ---------------------------------------------------------------
         self.motions['initArms'] = {}
-        self.motions['initArms']['left']  = [['MOVEJ', '[0.6447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 1.1291]',
+        self.motions['initArms']['left']  = [['MOVEJ', '[0.6447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 1.1291]',\
                                               10.0]]
         self.motions['initArms']['right'] = [['MOVEJ', '[-0.59, 0.0, -1.574, -1.041, 0.0, -1.136, -1.65]', 10.0]]
 
@@ -195,11 +212,12 @@ class armReachAction(mpcBaseAction):
         self.motions['initStabbing1']['right'] = \
           [['MOVEJ', '[-0.59, 0.131, -1.55, -1.041, 0.098, -1.136, -1.4]', 5.0],
            ['MOVES', '[0.7, -0.15, -0., -3.1415, 0.0, 1.574]', 5.]]
+           ## ['MOVES', '[0.7, -0.15, -0., -3.1415, 0.0, 1.574]', 5.]]
 
         self.motions['initStabbing2'] = {}
         self.motions['initStabbing2']['left'] = [
-            ['MOVES', '[0.7, -0.15, -0., -3.1415, 0.0, 1.574]', 3.],
-            ['MOVES', '[0.0, 0.0, -0.15, 0, 0, 0]', 5, 'self.bowl_frame']]
+            #['MOVES', '[0.7, -0.15, -0., -3.1415, 0.0, 1.574]', 3.],
+            ['MOVES', '[0.0+self.highBowlDiff[0], 0.0-self.highBowlDiff[1], -0.15, 0, 0, 0]', 5, 'self.bowl_frame']]
         self.motions['initStabbing2']['right'] = []
 
         self.motions['initStabbing12'] = {}
@@ -214,9 +232,11 @@ class armReachAction(mpcBaseAction):
         self.motions['runStabbingRight'] = {}
         self.motions['runStabbingLeft'] = {}
         self.motions['runStabbing']['left'] = \
-          [['MOVES', '[-0.0, 0.0,  0.06, 0, 0.0, 0]', 3, 'self.bowl_frame'],
+          [['MOVES', '[0.0+self.highBowlDiff[0], 0.0-self.highBowlDiff[1],  0.06, 0, 0.0, 0]', 3,
+            'self.bowl_frame'],
            ['PAUSE', 0.0],
-           ['MOVES', '[ 0.0, 0.0,  -0.15, 0, 0., 0]', 3, 'self.bowl_frame'],]
+           ['MOVES', '[0.0+self.highBowlDiff[0], 0.0-self.highBowlDiff[1],  -0.15, 0, 0., 0]', 3,
+            'self.bowl_frame'],]
 
 
         ## Scooping motoins --------------------------------------------------------
@@ -263,13 +283,13 @@ class armReachAction(mpcBaseAction):
         ## Clean spoon motoins --------------------------------------------------------
         self.motions['cleanSpoon1'] = {}
         self.motions['cleanSpoon1']['left'] = \
-          [['MOVEL', '[ 0.05+0.005, 0.05-self.highBowlDiff[1],  -0.09, 0, 1.5, 0]', 3, 'self.bowl_frame'],
+          [['MOVEL', '[ 0.05+0.005, 0.05,  -0.09, 0, 1.5, 0]', 3, 'self.bowl_frame'],
            ['PAUSE', 0.0],
-           ['MOVEL', '[ 0.05+0.005, 0.05-self.highBowlDiff[1],  -0.03, 0, 1.5, 0]', 3, 'self.bowl_frame'],
+           ['MOVEL', '[ 0.05+0.005, 0.05,  -0.03, 0, 1.5, 0]', 3, 'self.bowl_frame'],
            ['PAUSE', 0.0],
-           ['MOVEL', '[ 0.05-0.07, 0.02-self.highBowlDiff[1],  -0.03, 0, 1.5, 0]', 3, 'self.bowl_frame'],
+           ['MOVEL', '[ 0.05-0.07, 0.02,  -0.03, 0, 1.5, 0]', 3, 'self.bowl_frame'],
            ['PAUSE', 0.0],
-           ['MOVEL', '[ 0.05-0.01, 0.0-self.highBowlDiff[1],  -0.1, 0, 1.5, 0]', 3, 'self.bowl_frame'],]
+           ['MOVEL', '[ 0.05-0.01, 0.0,  -0.1, 0, 1.5, 0]', 3, 'self.bowl_frame'],]
         self.motions['cleanSpoon1']['right'] = []
                                                 
 
@@ -278,7 +298,7 @@ class armReachAction(mpcBaseAction):
 
         self.motions['initFeeding1'] = {}
         self.motions['initFeeding1']['left'] =\
-          [['MOVEJ', '[0.3447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 1.1291]', 5.0],]        
+          [['MOVEJ', '[0.5447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 1.1291]', 5.0],]        
         self.motions['initFeeding1']['right'] =\
           [['MOVES', '[0.22, 0., -0.55, 0., -1.85, 0.]', 5., 'self.mouth_frame']]
 
@@ -346,11 +366,14 @@ class armReachAction(mpcBaseAction):
                 return "No kinect head position available! \n Code won't work! \n \
                 Provide head position and try again!"
 
+        elif task == "getBowlHighestPoint":
+            self.bowl_height_init_pub.publish(Empty())
+            return "Completed to get the highest point in the bowl."
+
         elif task == "lookAtBowl":
             self.lookAt(self.bowl_frame)
             # Account for the time it takes to turn the head
             rospy.sleep(2)
-            self.bowl_height_init_pub.publish(Empty())
             return "Completed to move head"
 
         elif task == "lookAtMouth":
@@ -369,6 +392,22 @@ class armReachAction(mpcBaseAction):
                 self.kinect_pause.publish('pause')
             self.parsingMovements(self.motions[task][self.arm_name])
             return "Completed to execute "+task
+
+
+    def highestBowlPointCallback(self, data):
+        if not self.arm_name == 'left':
+            return
+        # Find difference between current highest point in bowl and center of bowl
+        print 'Highest Point original position:', [data.x, data.y, data.z]
+        print 'Bowl Position:', self.bowlPosition
+        # Subtract 0.01 to account for the bowl center position being slightly off center
+        self.highBowlDiff = np.array([data.x, data.y, data.z]) - self.bowlPosition -\
+          np.array([0.03,0,0])
+        if np.linalg.norm(self.highBowlDiff) > 0.15: self.highBowlDiff = np.array([0.0,0,0])
+        print '-'*25
+        print 'Highest bowl point difference:', self.highBowlDiff
+        print '-'*25
+
 
     def bowlPoseCallback(self, data):
         p = PyKDL.Vector(data.pose.position.x, data.pose.position.y, data.pose.position.z)

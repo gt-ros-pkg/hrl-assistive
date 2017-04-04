@@ -65,6 +65,8 @@ if __name__ == '__main__':
     ## print t
     ## sys.exit()
 
+    ## print armReachActionLeft('getBowlPos')
+    ## sys.exit()
 
     ## print armReachActionLeft("initArms")
     ## print armReachActionRight("initArms")
@@ -106,7 +108,7 @@ if __name__ == '__main__':
     ## print armReachActionLeft('initScooping2')
     ## self.armReachActionRight("getHeadPos")
     ## self.armReachActionRight("initFeeding")
-    sys.exit()
+    ## sys.exit()
 
 
     #---------------------------- Face registration ----------------------

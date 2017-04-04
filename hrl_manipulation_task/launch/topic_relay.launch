@@ -3,4 +3,9 @@
   <node name="pts_relay_node" pkg="topic_tools" type="relay"
         args="/SR300/depth/points /SR300/depth/points_relay" output="screen" />
 
+  <node name="img_relay_node2" pkg="topic_tools" type="relay"
+        args="/head_mount_kinect/qhd/image_color_rect /image" output="screen" />
+  <node name="pts_relay_node2" pkg="topic_tools" type="relay"
+        args="/head_mount_kinect/qhd/points /point_cloud" output="screen" />
+
 </launch>

@@ -260,14 +260,18 @@ class armReacherGUI:
                                                         args=("initStabbing12",))
                     leftProc.start(); rightProc.start()
                     leftProc.join(); rightProc.join()                    
-                    self.ScoopNumber = 2
-        
+                    self.ScoopNumber = 1
+                self.ServiceCallLeft("getBowlPos")            
+                
             if self.ScoopNumber < 2:        
                 if self.renew_bowl:
-                    self.ServiceCallLeft("getBowlPos")            
                     self.ServiceCallLeft('lookAtBowl')
                     self.renew_bowl = False
                 if self.emergencyStatus: break
+
+                self.ServiceCallLeft("getBowlHighestPoint")
+                rospy.sleep(4.0)
+                
                 self.ServiceCallLeft("initStabbing2")
                 if self.emergencyStatus: break
                 self.ScoopNumber = 2            
@@ -276,7 +280,7 @@ class armReacherGUI:
             if self.log is not None and False:
                 self.log.log_start()
                 if detection_flag: self.log.enableDetector(True)
-        
+                    
             ## rospy.loginfo("Running scooping!")
             self.ServiceCallLeft("runStabbing")
             self.proceedPub.publish("Done")
@@ -319,10 +323,10 @@ class armReacherGUI:
                     leftProc.start(); rightProc.start()
                     leftProc.join(); rightProc.join()                    
                     self.ScoopNumber = 2
+                self.ServiceCallLeft("getBowlPos")            
         
             if self.ScoopNumber < 2:        
                 if self.renew_bowl:
-                    self.ServiceCallLeft("getBowlPos")            
                     self.ServiceCallLeft('lookAtBowl')
                     self.renew_bowl = False
                 if self.emergencyStatus: break
@@ -334,7 +338,8 @@ class armReacherGUI:
             if self.log is not None and False:
                 self.log.log_start()
                 if detection_flag: self.log.enableDetector(True)
-        
+
+            self.ServiceCallLeft("getBowlHighestPoint")
             ## rospy.loginfo("Running scooping!")
             self.ServiceCallLeft("runScooping")
             self.proceedPub.publish("Done")
