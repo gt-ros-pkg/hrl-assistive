@@ -469,13 +469,23 @@ def evaluation_single_inc(subject_names, task_name, raw_data_path, processed_dat
     if HMM_dict['renew'] or SVM_dict['renew'] or ADT_dict['data_renew']: ADT_dict['HMM_renew'] = True
 
     # Incremental learning ------------------------------------------------------------------
-    n_AHMM_test_idx = 10
+    tgt_hmm_idx = 0
+    n_AHMM_sample = n_AHMM_test_idx = 10
+    n_start  = 5
     n_offset = 2
+    s_idx_list = [0,5,7,9]
+    e_idx_list = [5,7,9,11] #range(n_start,ADT_dict['n_pTrain']+1, n_offset) #4,6,8,10
+    #s_idx_list = [0,5,8]
+    #e_idx_list = [5,8,11]
+    #s_idx_list = [0,5]
+    #e_idx_list = [5,11]
+    
     for idx in xrange(len(td['successDataList'])):
 
         # each subject
         normalTestData   = np.array(copy.deepcopy(td['successDataList'][idx])) * HMM_dict['scale'] 
         abnormalTestData = np.array(copy.deepcopy(td['failureDataList'][idx])) * HMM_dict['scale']
+        nLength = len(normalTestData[0][0]) - startIdx
 
         model_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(tgt_hmm_idx)+'.pkl')
         d         = ut.load_pickle(model_pkl)
@@ -487,10 +497,12 @@ def evaluation_single_inc(subject_names, task_name, raw_data_path, processed_dat
         # partial fitting
         X_ptrain = copy.deepcopy(normalTestData[:,:n_AHMM_sample])
         X_ptrain += np.random.normal(0.0, noise_mag, np.shape(X_ptrain))*HMM_dict['scale']
-        
-        for i in range(2, ADT_dict['n_pTrain'], n_offset):
 
-            ret = ml.partial_fit(X_ptrain[:,(i-n_offset):i], learningRate=ADT_dict['lr'],
+        #e_idx_list = range(n_start, ADT_dict['n_pTrain']+1, n_offset)
+        #for i in range(n_start, ADT_dict['n_pTrain'], n_offset):
+        for i in xrange(len(s_idx_list)):
+
+            ret = ml.partial_fit(X_ptrain[:,s_idx_list[i]:e_idx_list[i]], learningRate=ADT_dict['lr'],
                                  max_iter=ADT_dict['max_iter'], nrSteps=ADT_dict['nrSteps'])
 
             if ret is None:
@@ -498,11 +510,12 @@ def evaluation_single_inc(subject_names, task_name, raw_data_path, processed_dat
                 return ret
 
             # Data extraction
+            n_jobs = -1
             ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx =\
               hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, startIdx=startIdx, n_jobs=n_jobs)
             
             ll_classifier_ptrain_X, ll_classifier_ptrain_Y, ll_classifier_ptrain_idx =\
-              hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData[:,:i], startIdx=startIdx, \
+              hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData[:,:e_idx_list[i]], startIdx=startIdx, \
                                                        n_jobs=n_jobs)
             
             ll_classifier_test_X, ll_classifier_test_Y, ll_classifier_test_idx =\
@@ -531,7 +544,7 @@ def evaluation_single_inc(subject_names, task_name, raw_data_path, processed_dat
             d['ll_classifier_test_X']   = ll_classifier_test_X
             d['ll_classifier_test_Y']   = ll_classifier_test_Y            
             d['ll_classifier_test_idx'] = ll_classifier_test_idx
-            d['ll_classifier_test_labels'] = ll_classifier_test_labels
+            d['ll_classifier_test_labels'] = None
             d['nLength']      = nLength
             d['scale']        = HMM_dict['scale']
             d['cov']          = HMM_dict['cov']
@@ -542,17 +555,19 @@ def evaluation_single_inc(subject_names, task_name, raw_data_path, processed_dat
     #-----------------------------------------------------------------------------------------
 
     ROC_dict_list = []
-    for n in range(2, ADT_dict['n_pTrain'], n_offset):
+    #for n in range(n_start, ADT_dict['n_pTrain'], n_offset):
+    for n in xrange(len(s_idx_list)):
         pkl_prefix = 'hmm_'+ADT_dict['HMM']+'_'+task_name+'_'+str(n)
 
         roc_pkl = os.path.join(processed_data_path, 'roc_'+ADT_dict['HMM']+'_'+task_name+'_'+str(n)+'.pkl')
         if os.path.isfile(roc_pkl) and not ADT_dict['HMM'] and not ADT_dict['CLF']:
-            ROC_dict_list.append(ut.load_pickle(roc_pkl))
-        else:               
-            ROC_dict = {}
+           ROC_dict_list.append(ut.load_pickle(roc_pkl))
 
         if ADT_dict['CLF'] == 'adapt': adapt=True
         else: adapt=False
+
+        ROC_data = {}
+        ROC_data = util.reset_roc_data(ROC_data, method_list, ROC_dict['update_list'], nPoints)
 
         # parallelization
         if debug: n_jobs=1
@@ -568,8 +583,9 @@ def evaluation_single_inc(subject_names, task_name, raw_data_path, processed_dat
                                                                              adaptation=adapt) \
                                                                              for idx in xrange(len(td['successDataList'])) )
 
-        print "finished to run run_classifiers"
-
+        print "finished to run run_classifiers: ", n
+        ROC_data = util.update_roc_data(ROC_data, l_data, nPoints, method_list)
+        
         auc_raw_list=[]
         for i in xrange(len(l_data)):
             tp_ll = l_data[i][method_list[0]]['tp_l']
@@ -588,10 +604,10 @@ def evaluation_single_inc(subject_names, task_name, raw_data_path, processed_dat
             auc_raw_list.append(auc)
 
         # ---------------- ROC Visualization ----------------------
-        ROC_dict = roc_info(ROC_data, nPoints, no_plot=no_plot, ROC_dict=ROC_dict)
-        ROC_dict[method_list[0]+'_auc_raw'] = auc_raw_list
-        ut.save_pickle(ROC_data, roc_pkl)
-        ROC_dict_list.append(ROC_dict)
+        ROC_ret = roc_info(ROC_data, nPoints, no_plot=no_plot, ROC_dict=ROC_dict)
+        ROC_ret[method_list[0]+'_auc_raw'] = auc_raw_list
+        ut.save_pickle(ROC_ret, roc_pkl)
+        ROC_dict_list.append(ROC_ret)
         
     return ROC_dict_list
     ## class_info(method_list, ROC_data, nPoints, kFold_list)
@@ -1067,6 +1083,9 @@ if __name__ == '__main__':
                  default=False, help='Evaluate with single detector.')
     p.add_option('--eval_single2', '--es2', action='store_true', dest='evaluation_single2',
                  default=False, help='Evaluate with single detector.')
+    p.add_option('--eval_single_inc', '--esi', action='store_true', dest='evaluation_single_inc',
+                 default=False, help='Evaluate with single detector.')
+     
     p.add_option('--eval_acc', '--eaa', action='store_true', dest='evaluation_acc',
                  default=False, help='Evaluate acc with single detector.')
     p.add_option('--eval_double', '--ed', action='store_true', dest='evaluation_double',
@@ -1225,13 +1244,13 @@ if __name__ == '__main__':
         auc_raw_list = []
         #for lr in [0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
         for clf in ['adapt']:
-            for n_pTrain in [8,9,10]:
+            for n_pTrain in [5,6,7,8,9,10]:
                 param_dict['ADT']['lr']       = 0.2 #lr #0.1
                 param_dict['ADT']['max_iter'] = 1
                 param_dict['ADT']['n_pTrain'] = n_pTrain
                 param_dict['ADT']['nrSteps']  = 20
-                param_dict['ADT']['HMM']      = 'adapt'
-                param_dict['ADT']['CLF']      = clf #'adapt' #'renew'
+                param_dict['ADT']['HMM']      = 'old'
+                param_dict['ADT']['CLF']      = 'renew'
                 param_dict['ADT']['HMM_renew'] = True
                 param_dict['ADT']['CLF_renew'] = True
 
@@ -1274,13 +1293,13 @@ if __name__ == '__main__':
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data2_adaptation3'
         
-        nPoints = param_dict['ROC']['nPoints']
+        nPoints = param_dict['ROC']['nPoints'] = 100
         param_dict['data_param']['handFeatures'] = ['unimodal_kinVel',\
                                                     'unimodal_ftForce_zero',\
                                                     'unimodal_kinDesEEChange',\
                                                     'crossmodal_landmarkEEDist']
         param_dict['HMM']['scale'] = 9.0
-        param_dict['ROC']['progress_param_range'] = -np.logspace(-1.2, 2.2, nPoints)+3.0
+        param_dict['ROC']['progress_param_range'] = -np.logspace(-1.2, 2.6, nPoints)+3.0
         param_dict['ROC']['methods'] = ['progress']
 
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
@@ -1291,16 +1310,16 @@ if __name__ == '__main__':
         auc_complete = []
         auc_list = []
         auc_raw_list = []
-        for lr in [0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
+        for lr in [0.3]:
             #for clf in ['old', 'adapt', 'renew']:
-            for n_pTrain in [10]:
-                param_dict['ADT']['lr']       = lr #0.1
+            for n_pTrain in [5]:
+                param_dict['ADT']['lr']       = 0.2 #lr #0.1
                 param_dict['ADT']['max_iter'] = 1
                 param_dict['ADT']['n_pTrain'] = n_pTrain
-                param_dict['ADT']['nrSteps']  = 10
+                param_dict['ADT']['nrSteps']  = 30
                 param_dict['ADT']['HMM']      = 'adapt'
                 param_dict['ADT']['CLF']      = 'adapt' #'renew'
-                param_dict['ADT']['HMM_renew'] = True
+                param_dict['ADT']['HMM_renew'] = False
                 param_dict['ADT']['CLF_renew'] = True
 
                 ret = evaluation_single_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
@@ -1339,32 +1358,20 @@ if __name__ == '__main__':
         param_dict['ADT'] = {}
         param_dict['ADT']['data_renew'] = False
 
-        auc_complete = []
-        auc_list     = []
-        auc_raw_list = []
-        
         param_dict['ADT']['lr']       = 0.2 #lr #0.1
         param_dict['ADT']['max_iter'] = 1
         param_dict['ADT']['n_pTrain'] = 10
-        param_dict['ADT']['nrSteps']  = 20
+        param_dict['ADT']['nrSteps']  = 5 #20
         param_dict['ADT']['HMM']      = 'adapt'
         param_dict['ADT']['CLF']      = 'adapt' #'renew'
-        param_dict['ADT']['HMM_renew'] = True
-        param_dict['ADT']['CLF_renew'] = True
+        param_dict['ADT']['HMM_renew'] = False
+        param_dict['ADT']['CLF_renew'] = False
 
         ret = evaluation_single_inc(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
                                     save_pdf=opt.bSavePdf, \
                                     verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                                     find_param=False, data_gen=opt.bDataGen)
-        
-        auc_list.append(ret['progress'])
-        auc_raw_list.append(ret['progress_auc_raw'])
-        auc_complete.append(ret['progress_complete'])
-            
-        print "-------------------------------"
-        print auc_complete
-        print auc_raw_list
-        print auc_list
+        print ret
         
 
 

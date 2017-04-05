@@ -1413,6 +1413,14 @@ def roc_info(ROC_data, nPoints, delay_plot=False, no_plot=False, save_pdf=False,
             time_step = 1.0
 
         for i in xrange(nPoints):
+            if np.sum(tp_ll[i])+np.sum(fn_ll[i]):
+                print "Zero!!!!!!!!!!"
+                print tp_ll[i]
+                print fn_ll[i]
+                print fp_ll[i]
+                print fn_ll[i]
+                
+            
             tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
             fnr_l.append( 100.0 - tpr_l[-1] )
             fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
