@@ -591,11 +591,17 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
 
                 print "successData shape: ", n,m,k
                 for i in xrange(n):
-                    if n>9: ax = fig.add_subplot(n/2,2,i+1)
+                    if n>9: ax = fig.add_subplot(round(float(n)/2),2,i+1)
                     else:   ax = fig.add_subplot(n*100+10+i+1)
                     if solid_color: ax.plot(successData[i].T, c='b')
                     else: ax.plot(successData[i].T, c=color)
 
+                    ## if AddFeature_names[i].find('EEChange')>=0:
+                    ##     for j in xrange(m):
+                    ##         if np.amax(successData[i][j])>0.9:
+                    ##             print np.amax(successData[i][j]), successFileList[0][j]
+                    ##             ax.plot(successData[i][j], c='m')
+                    
     if failure_viz:
         if True and False:#iros 2017 paper
             p,n,m,k = np.shape(failureDataList)
@@ -643,7 +649,7 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
     #------------------------------------------------------------------------------
     ## plt.tight_layout()
     for i in xrange(n):
-        if n>9: ax = fig.add_subplot(n/2,2,i+1)
+        if n>9: ax = fig.add_subplot(round(float(n)/2),2,i+1)
         else:   ax = fig.add_subplot(n*100+10+i+1)
 
         if AddFeature_names[i] == 'kinVel':
@@ -669,6 +675,11 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
                           verticalalignment='center',
                           horizontalalignment='center')
             ax.yaxis.set_label_coords(-0.17,0.5)
+        elif AddFeature_names[i].find('fabricForce')>=0:
+            ax.set_ylabel('Skin Contact'+'\n'+'Force(N)', rotation='horizontal',
+                          verticalalignment='center',
+                          horizontalalignment='center')
+            ax.yaxis.set_label_coords(-0.17,0.5)            
         elif AddFeature_names[i].find('force')>=0 or AddFeature_names[i].find('Force')>=0:
             ax.set_ylabel('Force on'+'\n'+'Spoon(N)', rotation='horizontal',
                           verticalalignment='center',
@@ -676,7 +687,10 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
             ax.yaxis.set_label_coords(-0.17,0.5)
         elif AddFeature_names[i].find('dist')>=0 or AddFeature_names[i].find('change')>=0\
            or AddFeature_names[i].find('Change')>=0 or AddFeature_names[i].find('Dist')>=0:
-            ax.set_ylabel('Distance'+'\n'+'(m)')
+            ax.set_ylabel(AddFeature_names[i], fontsize=18)
+            ## ax.set_ylabel('Distance'+'\n'+'(m)', rotation='horizontal',
+            ##               verticalalignment='center',
+            ##               horizontalalignment='center')
             ax.yaxis.set_label_coords(-0.17,0.5)
         elif AddFeature_names[i] == 'audioWristRMS':
             ax.set_ylabel('Sound'+'\n'+'Energy', rotation='horizontal',

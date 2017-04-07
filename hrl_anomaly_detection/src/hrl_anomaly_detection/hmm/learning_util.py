@@ -152,8 +152,8 @@ def convert_sequence(data, emission=False):
     return: data with sample x ???
     TODO: need to replace entire code it looks too inefficient conversion.
     '''
-    if type(data) is list: X = np.array(copy.copy(data))
-    else: X = copy.copy(data)
+    if type(data) is list: X = np.array(copy.deepcopy(data))
+    else: X = copy.deepcopy(data)
 
     if len(np.shape(X)) == 2: X = np.array([X])
     else: X = np.swapaxes(X,0,1)

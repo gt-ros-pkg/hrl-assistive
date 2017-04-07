@@ -899,12 +899,9 @@ def computeLikelihoods(idx, A, B, pi, F, X, nEmissionDim, nState, startIdx=2, \
                 else: l_posterior.append( l_posterior[-1] )
 
         l_idx.append( i )
-            
 
-    if bPosterior:
-        return idx, l_idx, l_likelihood, l_posterior
-    else:
-        return idx, l_idx, l_likelihood
+    if bPosterior: return idx, l_idx, l_likelihood, l_posterior
+    else:          return idx, l_idx, l_likelihood
 
 
 ## ####################################################################

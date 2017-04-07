@@ -656,9 +656,15 @@ def data_plot(subject_names, task_name, raw_data_path, processed_data_path, \
                                                     
                 else:
                     interp_time = np.linspace(time_lim[0], time_lim[1], num=downSampleSize)
-                    if len(data_list) == 0: continue
+                    if len(data_list) == 0: continue                    
                     for i in xrange(len(data_list)):
-                        ax.plot(interp_time, np.squeeze(data_list[i]), c=color)                
+                        ax.plot(interp_time, np.squeeze(data_list[i]), c=color)
+
+                    if continuousPlot:
+                        new_color = 'm'
+                        i         = fidx
+                        ax.plot(interp_time, np.squeeze(data_list[i]), c=new_color, lw=3.0)
+                        
                 
                 ax.set_xlim(time_lim)
                 ax.set_title(modality)

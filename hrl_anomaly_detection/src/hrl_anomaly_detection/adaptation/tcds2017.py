@@ -471,14 +471,14 @@ def evaluation_single_inc(subject_names, task_name, raw_data_path, processed_dat
     # Incremental learning ------------------------------------------------------------------
     tgt_hmm_idx = 0
     n_AHMM_sample = n_AHMM_test_idx = 10
-    n_start  = 5
-    n_offset = 2
+    ## n_start  = 5
+    ## n_offset = 2
     s_idx_list = [0,5,7,9]
     e_idx_list = [5,7,9,11] #range(n_start,ADT_dict['n_pTrain']+1, n_offset) #4,6,8,10
     #s_idx_list = [0,5,8]
     #e_idx_list = [5,8,11]
-    #s_idx_list = [0,5]
-    #e_idx_list = [5,11]
+    s_idx_list = [0,5]
+    e_idx_list = [5,11]
     
     for idx in xrange(len(td['successDataList'])):
 
@@ -502,9 +502,9 @@ def evaluation_single_inc(subject_names, task_name, raw_data_path, processed_dat
         #for i in range(n_start, ADT_dict['n_pTrain'], n_offset):
         for i in xrange(len(s_idx_list)):
 
-            ret = ml.partial_fit(X_ptrain[:,s_idx_list[i]:e_idx_list[i]], learningRate=ADT_dict['lr'],
+            ret = ml.partial_fit(copy.deepcopy(X_ptrain[:,s_idx_list[i]:e_idx_list[i]]),
+                                 learningRate=ADT_dict['lr'],
                                  max_iter=ADT_dict['max_iter'], nrSteps=ADT_dict['nrSteps'])
-
             if ret is None:
                 print "Save AHMM return None"
                 return ret
@@ -515,13 +515,12 @@ def evaluation_single_inc(subject_names, task_name, raw_data_path, processed_dat
               hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTrainData, startIdx=startIdx, n_jobs=n_jobs)
             
             ll_classifier_ptrain_X, ll_classifier_ptrain_Y, ll_classifier_ptrain_idx =\
-              hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData[:,:e_idx_list[i]], startIdx=startIdx, \
-                                                       n_jobs=n_jobs)
+              hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData[:,s_idx_list[i]:e_idx_list[i]],
+                                                       startIdx=startIdx, n_jobs=n_jobs)
             
             ll_classifier_test_X, ll_classifier_test_Y, ll_classifier_test_idx =\
               hmm.getHMMinducedFeaturesFromRawFeatures(ml, normalTestData[:,n_AHMM_test_idx:],
-                                                       abnormalTestData, \
-                                                       startIdx, n_jobs=n_jobs)
+                                                       abnormalTestData, startIdx, n_jobs=n_jobs)
 
             #-----------------------------------------------------------------------------------------
             pkl_prefix = 'hmm_'+ADT_dict['HMM']+'_'+task_name+'_'+str(i)
@@ -560,7 +559,7 @@ def evaluation_single_inc(subject_names, task_name, raw_data_path, processed_dat
         pkl_prefix = 'hmm_'+ADT_dict['HMM']+'_'+task_name+'_'+str(n)
 
         roc_pkl = os.path.join(processed_data_path, 'roc_'+ADT_dict['HMM']+'_'+task_name+'_'+str(n)+'.pkl')
-        if os.path.isfile(roc_pkl) and not ADT_dict['HMM'] and not ADT_dict['CLF']:
+        if os.path.isfile(roc_pkl) and not ADT_dict['HMM'] and not ADT_dict['CLF'] :
            ROC_dict_list.append(ut.load_pickle(roc_pkl))
 
         if ADT_dict['CLF'] == 'adapt': adapt=True
@@ -1140,6 +1139,13 @@ if __name__ == '__main__':
         Before localization: Raw data plot
         After localization: Raw or interpolated data plot
         '''
+        raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/ICRA2017/'    
+        subjects = ['jina']
+        
+        ## br
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data3_adaptation/'
+        
         successData = True
         failureData = False
         modality_list   = ['kinematics', 'kinematics_des', 'audioWrist', 'ft', 'vision_landmark'] # raw plot
@@ -1153,6 +1159,14 @@ if __name__ == '__main__':
                   modality_list=modality_list, data_renew=opt.bDataRenew, verbose=opt.bVerbose)
 
     elif opt.bFeaturePlot:
+
+        raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/ICRA2017/'    
+        subjects = ['jina']
+        
+        ## br
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data3_adaptation/'
+          
         success_viz = True
         failure_viz = False
         param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', \
@@ -1168,7 +1182,7 @@ if __name__ == '__main__':
                                                     ## 'unimodal_ftForceX', \
                                                     ## 'unimodal_ftForceY', \
                                                     ## 'unimodal_ftForceZ', \
-                                                    ## 'unimodal_kinEEChange', \
+                                                    'unimodal_kinEEChange', \
                                                     'unimodal_kinDesEEChange', \
                                                     'crossmodal_landmarkEEDist', \
                                                     ## 'crossmodal_landmarkEEAng',\
@@ -1281,8 +1295,8 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data2_adaptation/'
         ## c8
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data2_adaptation4'
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data2_adaptation4'
         ## c11
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data2_adaptation2'
@@ -1310,16 +1324,16 @@ if __name__ == '__main__':
         auc_complete = []
         auc_list = []
         auc_raw_list = []
-        for lr in [0.3]:
+        for lr in [0.05,0.1,0.2,0.3,0.4,0.5]:
             #for clf in ['old', 'adapt', 'renew']:
-            for n_pTrain in [5]:
+            for n_pTrain in [10]:
                 param_dict['ADT']['lr']       = 0.2 #lr #0.1
                 param_dict['ADT']['max_iter'] = 1
                 param_dict['ADT']['n_pTrain'] = n_pTrain
                 param_dict['ADT']['nrSteps']  = 30
                 param_dict['ADT']['HMM']      = 'adapt'
                 param_dict['ADT']['CLF']      = 'adapt' #'renew'
-                param_dict['ADT']['HMM_renew'] = False
+                param_dict['ADT']['HMM_renew'] = True
                 param_dict['ADT']['CLF_renew'] = True
 
                 ret = evaluation_single_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
