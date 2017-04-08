@@ -1353,19 +1353,24 @@ if __name__ == '__main__':
                                                save_pdf=opt.bSavePdf, \
                                                verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                                                find_param=False, data_gen=opt.bDataGen)
-                    if ret is None:
-                        auc_list.append(None)
-                        auc_raw_list.append(None)
-                        auc_complete.append(None)                        
-                    else:
-                        auc_list.append(ret['progress'])
-                        auc_raw_list.append(ret['progress_auc_raw'])
-                        auc_complete.append(ret['progress_complete'])
-                                               
+
+                    for i, method in enumerate(param_dict['ROC']['methods']):
+
+                        if ret is None:
+                            auc_list[i].append(None)
+                            auc_raw_list[i].append(None)
+                            auc_complete[i].append(None)                        
+                        else:
+                            auc_list[i].append(ret['progress'])
+                            auc_raw_list[i].append(ret['progress_auc_raw'])
+                            auc_complete[i].append(ret['progress_complete'])
+
         print "-------------------------------"
-        print auc_complete
-        print auc_raw_list
-        print auc_list
+        for i, method in enumerate(param_dict['ROC']['methods']):
+            print auc_complete[i]
+            print auc_raw_list[i]
+            print auc_list[i]
+
 
 
     elif opt.evaluation_single_inc:
