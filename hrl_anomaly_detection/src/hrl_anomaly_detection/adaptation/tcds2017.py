@@ -1361,9 +1361,9 @@ if __name__ == '__main__':
                             auc_raw_list[i].append(None)
                             auc_complete[i].append(None)                        
                         else:
-                            auc_list[i].append(ret['progress'])
-                            auc_raw_list[i].append(ret['progress_auc_raw'])
-                            auc_complete[i].append(ret['progress_complete'])
+                            auc_list[i].append(ret[method])
+                            auc_raw_list[i].append(ret[method+'_auc_raw'])
+                            auc_complete[i].append(ret[method+'_complete'])
 
         print "-------------------------------"
         for i, method in enumerate(param_dict['ROC']['methods']):
