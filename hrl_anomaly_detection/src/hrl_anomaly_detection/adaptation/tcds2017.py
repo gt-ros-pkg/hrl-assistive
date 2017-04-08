@@ -329,8 +329,8 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
         return ret
 
     #-----------------------------------------------------------------------------------------
-    roc_pkl = os.path.join(processed_data_path, 'roc_update_'+task_name+'_npTrain_'+ADT_dict['n_pTrain']+\
-                           '_nrSteps_'+ADT_dict['nrSteps']+'_lr_'+ADT_dict['lr']+'.pkl')
+    roc_pkl = os.path.join(processed_data_path, 'roc_update_'+task_name+'_npTrain_'+str(ADT_dict['n_pTrain'])+\
+                           '_nrSteps_'+str(ADT_dict['nrSteps'])+'_lr_'+str(ADT_dict['lr'])+'.pkl')
     if os.path.isfile(roc_pkl) is False or HMM_dict['renew'] or SVM_dict['renew'] \
       or ADT_dict['HMM_renew'] or ADT_dict['CLF_renew']:
         ROC_data = {}
@@ -1261,34 +1261,34 @@ if __name__ == '__main__':
             auc_raw_list.append([])
 
             
-        #for lr in [0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
-        for clf in ['adapt']:
-            for n_pTrain in [5,6,7,8,9,10]:
-                param_dict['ADT']['lr']       = 0.2 #lr #0.1
-                param_dict['ADT']['max_iter'] = 1
-                param_dict['ADT']['n_pTrain'] = n_pTrain
-                param_dict['ADT']['nrSteps']  = 20
-                param_dict['ADT']['HMM']      = 'old'
-                param_dict['ADT']['CLF']      = 'renew'
-                param_dict['ADT']['HMM_renew'] = True
-                param_dict['ADT']['CLF_renew'] = True
+        for nrSteps in [5,10,20,30,50,80,100]:
+            for lr in [0.05,0.1,0.2,0.3,0.4,0.5]:
+                for n_pTrain in [10]:
+                    param_dict['ADT']['lr']       = lr #0.1
+                    param_dict['ADT']['max_iter'] = 1
+                    param_dict['ADT']['n_pTrain'] = n_pTrain
+                    param_dict['ADT']['nrSteps']  = n_pTrain
+                    param_dict['ADT']['HMM']      = 'adapt'
+                    param_dict['ADT']['CLF']      = 'adapt'
+                    param_dict['ADT']['HMM_renew'] = True
+                    param_dict['ADT']['CLF_renew'] = True
 
-                ret = evaluation_single_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
-                                           save_pdf=opt.bSavePdf, \
-                                           verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
-                                           find_param=False, data_gen=opt.bDataGen)
+                    ret = evaluation_single_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
+                                               save_pdf=opt.bSavePdf, \
+                                               verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
+                                               find_param=False, data_gen=opt.bDataGen)
 
-                for i, method in enumerate(param_dict['ROC']['methods']):
-                                           
-                    if ret is None:
-                        auc_list[i].append(None)
-                        auc_raw_list[i].append(None)
-                        auc_complete[i].append(None)                        
-                    else:
-                        auc_list[i].append(ret['progress'])
-                        auc_raw_list[i].append(ret['progress_auc_raw'])
-                        auc_complete[i].append(ret['progress_complete'])
-            
+                    for i, method in enumerate(param_dict['ROC']['methods']):
+
+                        if ret is None:
+                            auc_list[i].append(None)
+                            auc_raw_list[i].append(None)
+                            auc_complete[i].append(None)                        
+                        else:
+                            auc_list[i].append(ret['progress'])
+                            auc_raw_list[i].append(ret['progress_auc_raw'])
+                            auc_complete[i].append(ret['progress_complete'])
+
         print "-------------------------------"
         for i, method in enumerate(param_dict['ROC']['methods']):
             print auc_complete[i]
