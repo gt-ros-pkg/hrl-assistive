@@ -365,6 +365,7 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
     for method in method_list:
         auc_raw_list=[]
         for i in xrange(len(l_data)):
+            break
             tp_ll = l_data[i][method]['tp_l']
             fp_ll = l_data[i][method]['fp_l']
             tn_ll = l_data[i][method]['tn_l']
@@ -1335,9 +1336,14 @@ if __name__ == '__main__':
         auc_complete = []
         auc_list = []
         auc_raw_list = []
+        for method in param_dict['ROC']['methods']:
+            auc_complete.append([])
+            auc_list.append([])
+            auc_raw_list.append([])
+        
         for nrSteps in [5,10,20,30,50,80,100]:
             for lr in [0.05,0.1,0.2,0.3,0.4,0.5]:
-                for n_pTrain in [10]:
+                for n_pTrain in [5]:
                     ## for n_pTrain in range(5,11):
                 
                     param_dict['ADT']['lr']       = lr #0.1
