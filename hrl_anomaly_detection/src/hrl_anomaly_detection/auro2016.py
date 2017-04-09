@@ -148,7 +148,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
     osvm_data = None ; bpsvm_data = None
     if 'osvm' in method_list  and ROC_data['osvm']['complete'] is False:
-        osvm_data = dm.getPCAData(len(kFold_list), crossVal_pkl, \
+        osvm_data = dm.getRawData(len(kFold_list), crossVal_pkl, \
                                   window=SVM_dict['raw_window_size'],
                                   use_test=True, use_pca=False )
 
@@ -262,7 +262,7 @@ def evaluation_unexp(subject_names, task_name, raw_data_path, processed_data_pat
 
     osvm_data = None ; bpsvm_data = None
     if 'osvm' in method_list  and ROC_data['osvm']['complete'] is False:
-        osvm_data = dm.getPCAData(len(kFold_list), crossVal_pkl, \
+        osvm_data = dm.getRawData(len(kFold_list), crossVal_pkl, \
                                   window=SVM_dict['raw_window_size'],
                                   use_test=True, use_pca=False)
 
@@ -396,7 +396,7 @@ def evaluation_modality(subject_names, task_name, raw_data_path, processed_data_
 
         osvm_data = None ; bpsvm_data = None
         if 'osvm' in method_list  and ROC_data['osvm']['complete'] is False:
-            osvm_data = dm.getPCAData(len(kFold_list), crossVal_pkl, \
+            osvm_data = dm.getRawData(len(kFold_list), crossVal_pkl, \
                                       window=SVM_dict['raw_window_size'],
                                       use_test=True, use_pca=False )
 

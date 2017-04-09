@@ -395,7 +395,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
     osvm_data = None ; bpsvm_data = None
     if 'osvm' in method_list  and ROC_data['osvm']['complete'] is False:
-        osvm_data = dm.getPCAData(len(kFold_list), crossVal_pkl, \
+        osvm_data = dm.getRawData(len(kFold_list), crossVal_pkl, \
                                   window=SVM_dict['raw_window_size'],
                                   use_test=True, use_pca=False)
     if 'bpsvm' in method_list and ROC_data['bpsvm']['complete'] is False:
@@ -414,7 +414,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
             idx_dict={'abnormal_train_cut_idx': l_cut_idx}
             pos_dict.append(idx_dict)
                     
-        bpsvm_data = dm.getPCAData(len(kFold_list), crossVal_pkl, \
+        bpsvm_data = dm.getRawData(len(kFold_list), crossVal_pkl, \
                                    window=SVM_dict['raw_window_size'], \
                                    pos_dict=pos_dict, use_test=True, use_pca=False)
 
@@ -732,7 +732,7 @@ def evaluation_drop(subject_names, task_name, raw_data_path, processed_data_path
             pos_dict.append(idx_dict)
             drop_dict.append([d['drop_idx_l'], d['drop_length']])
                     
-        bpsvm_data = dm.getPCAData(len(kFold_list), crossVal_pkl, \
+        bpsvm_data = dm.getRawData(len(kFold_list), crossVal_pkl, \
                                    window=SVM_dict['raw_window_size'], \
                                    pos_dict=pos_dict, use_test=True, use_pca=False,
                                    test_drop_elements=drop_dict)
@@ -1107,7 +1107,7 @@ def evaluation_freq(subject_names, task_name, raw_data_path, processed_data_path
             idx_dict={'abnormal_train_cut_idx': l_cut_idx}
             pos_dict.append(idx_dict)
                     
-        bpsvm_data = dm.getPCAData(len(kFold_list), crossVal_pkl, \
+        bpsvm_data = dm.getRawData(len(kFold_list), crossVal_pkl, \
                                    window=SVM_dict['raw_window_size'], \
                                    pos_dict=pos_dict, use_test=True, use_pca=False)
 

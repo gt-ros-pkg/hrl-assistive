@@ -326,7 +326,7 @@ def evaluation_step_noise(subject_names, task_name, raw_data_path, processed_dat
         foldData = (kFold_list, successData, failureData)
         
         modeling_pkl_prefix = os.path.join(processed_data_path, 'hmm_'+pkl_prefix)
-        osvm_data = dm.getPCAData(len(kFold_list), crossVal_pkl, \
+        osvm_data = dm.getRawData(len(kFold_list), crossVal_pkl, \
                                   window=SVM_dict['raw_window_size'],
                                   use_test=True, use_pca=False, \
                                   step_anomaly_info=(modeling_pkl_prefix, step_mag/HMM_dict['scale']) )
@@ -524,7 +524,7 @@ def evaluation_acc_param(subject_names, task_name, raw_data_path, processed_data
             normalFoldData = (fold_list, normalTrainData/HMM_dict['scale'], normalTrainData/HMM_dict['scale'])
             modeling_pkl_prefix = os.path.join(processed_data_path, 'hmm_'+pkl_target_prefix+'_'+str(idx) )
             
-            osvm_data = dm.getPCAData(len(fold_list), normalFoldData=normalFoldData, \
+            osvm_data = dm.getRawData(len(fold_list), normalFoldData=normalFoldData, \
                                       window=SVM_dict['raw_window_size'],
                                       use_test=True, use_pca=False, \
                                       step_anomaly_info=(modeling_pkl_prefix,step_mag/HMM_dict['scale']))

@@ -199,7 +199,7 @@ def gen_likelihoods(subject_names, task_name, raw_data_path, processed_data_path
 
 def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
                          data_renew=False, save_pdf=False, verbose=False, debug=False,\
-                         no_plot=False, delay_plot=True, find_param=False, data_gen=False,\
+                         no_plot=False, delay_plot=True, find_param=False, \
                          target_class=None):
     ## Parameters
     # data
@@ -230,14 +230,14 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
 
     crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
     
-    if os.path.isfile(crossVal_pkl) and data_renew is False and data_gen is False:
+    if os.path.isfile(crossVal_pkl) and data_renew is False:
         print "CV data exists and no renew"
         d = ut.load_pickle(crossVal_pkl)
-        kFold_list = d['kFoldList'] 
-        successData = d['successData']
-        failureData = d['failureData']
-        success_files = d['success_files']
-        failure_files = d['failure_files']        
+
+        #temp
+        (d['successWinData'], d['failureWinData'])\
+        = dm.getWindowData(d['successData'], d['failureData'], window=SVM_dict['raw_window_size'] )
+        ut.save_pickle(d, crossVal_pkl)        
     else:
         '''
         Use augmented data? if nAugment is 0, then aug_successData = successData
@@ -249,19 +249,14 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
                            cut_data=data_dict['cut_data'], \
                            data_renew=data_renew, max_time=data_dict['max_time'])
 
-
-        successData, failureData, success_files, failure_files, kFold_list \
+        d['successData'], d['failureData'], d['success_files'], d['failure_files'], d['kFoldList'] \
           = dm.LOPO_data_index(d['successDataList'], d['failureDataList'],\
-                               d['successFileList'], d['failureFileList'],\
-                               target_class=target_class)
+                               d['successFileList'], d['failureFileList'])
 
-        d['successData']   = successData
-        d['failureData']   = failureData
-        d['success_files']   = success_files
-        d['failure_files']   = failure_files        
-        d['kFoldList']     = kFold_list
+        # sample x length x dim => window?
+        (d['successWinData'], d['failureWinData'])\
+        = dm.getWindowData(d['successData'], d['failureData'], window=SVM_dict['raw_window_size'] )
         ut.save_pickle(d, crossVal_pkl)
-        if data_gen: sys.exit()
 
 
     # select feature for detection
@@ -270,63 +265,77 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
         idx = [ i for i, x in enumerate(param_dict['data_param']['isolationFeatures']) if feature == x][0]
         feature_list.append(idx)
 
-    successData = successData[feature_list]
-    failureData = failureData[feature_list]
+    print np.shape(d['successWinData'])
+
+    d['successData']    = d['successData'][feature_list]
+    d['failureData']    = d['failureData'][feature_list]
+    d['successWinData'] = d['successWinData'][feature_list]
+    d['failureWinData'] = d['failureWinData'][feature_list]
+
 
     #-----------------------------------------------------------------------------------------    
-    # Training HMM, and getting classifier training and testing data
-    noise_mag = 0.03
-    dm.saveHMMinducedFeatures(kFold_list, successData, failureData,\
-                              task_name, processed_data_path,\
-                              HMM_dict, data_renew, startIdx, nState, cov, \
-                              success_files=success_files, failure_files=failure_files,\
-                              noise_mag=noise_mag, diag=False, cov_type='full', \
-                              inc_hmm_param=True, verbose=verbose)
-    print "------------------------------------------------------------"
-
-    d['param_dict']['feature_names'] = np.array(d['param_dict']['feature_names'])[feature_list].tolist()
-    d['param_dict']['feature_min'] = np.array(d['param_dict']['feature_min'])[feature_list].tolist()
-    d['param_dict']['feature_max'] = np.array(d['param_dict']['feature_max'])[feature_list].tolist()
+    ## one_class_data = None; two_class_data = None
 
     tgt_raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/ICRA2017/'
     ## tgt_subjects = ['zack', 'hkim', 'ari', 'park', 'jina', 'linda']
     tgt_subjects = ['ari', 'park', 'jina', 'linda', 'sai', 'hyun']
 
-    # Extract data from designated location
-    td = dm.getDataLOPO(tgt_subjects, task_name, tgt_raw_data_path, save_data_path,\
-                        downSampleSize=data_dict['downSampleSize'],\
-                        init_param_dict=d['param_dict'],\
-                        handFeatures=param_dict['data_param']['handFeatures'], \
-                        data_renew=ADT_dict['data_renew'], max_time=data_dict['max_time'],
-                        pkl_prefix='tgt_')
+    crossVal_pkl = os.path.join(processed_data_path, 'cv_td_'+task_name+'.pkl')
+    if os.path.isfile(crossVal_pkl) and data_renew is False and ADT_dict['data_renew'] is False:
+        print "CV data exists and no renew"
+        td = ut.load_pickle(crossVal_pkl)
+    else:
+        d['param_dict']['feature_names'] = np.array(d['param_dict']['feature_names'])[feature_list].tolist()
+        d['param_dict']['feature_min'] = np.array(d['param_dict']['feature_min'])[feature_list].tolist()
+        d['param_dict']['feature_max'] = np.array(d['param_dict']['feature_max'])[feature_list].tolist()
+        
+        # Extract data from designated location
+        td = dm.getDataLOPO(tgt_subjects, task_name, tgt_raw_data_path, save_data_path,\
+                            downSampleSize=data_dict['downSampleSize'],\
+                            init_param_dict=d['param_dict'],\
+                            handFeatures=param_dict['data_param']['handFeatures'], \
+                            data_renew=ADT_dict['data_renew'], max_time=data_dict['max_time'],
+                            pkl_prefix='tgt_')
 
-    nEmissionDim = len(param_dict['data_param']['handFeatures'])
+        td_successData, td_failureData, _, _, td_kFold_list \
+          = dm.LOPO_data_index(td['successDataList'], td['failureDataList'],\
+                               td['successFileList'], td['failureFileList'])
+
+        td['win_data'] = dm.getRawData(len(td['successDataList']),
+                                           normalFoldData=(np.array(td_kFoldList)[:,[0,2]],
+                                                           td_successData, td_failureData),\
+                                                           window=SVM_dict['raw_window_size'],
+                                                           use_test=True, use_pca=False ) 
+        ut.save_pickle(td, crossVal_pkl)
+    
+
+    #-----------------------------------------------------------------------------------------    
+    #-----------------------------------------------------------------------------------------    
+    # Training HMM, and getting classifier training and testing data
+    noise_mag = 0.03
+    dm.saveHMMinducedFeatures(d['kFold_list'], d['successData'], d['failureData'],\
+                              task_name, processed_data_path,\
+                              HMM_dict, data_renew, startIdx, nState, cov, \
+                              success_files=d['success_files'], failure_files=d['failure_files'],\
+                              noise_mag=noise_mag, diag=False, cov_type='full', \
+                              inc_hmm_param=True, verbose=verbose)
 
     #-------------------------------------------------------------------------------------
+    if HMM_dict['renew'] or SVM_dict['renew'] or ADT_dict['data_renew']: ADT_dict['HMM_renew'] = True
+    pkl_prefix = 'hmm_'+ADT_dict['HMM']+'_'+task_name
+    ret = saveAHMMinducedFeatures(td, task_name, processed_data_path, HMM_dict, ADT_dict, noise_mag,
+                                  pkl_prefix, copy.deepcopy(d['successData']),
+                                  d['kFold_list'])
+    if ret is None: return ret
+
     ## # Comparison of
     ## from hrl_anomaly_detection import data_viz as dv
-    ## import hmm_viz as hv
-    
+    ## import hmm_viz as hv   
     ## hv.data_viz(successData, td['successDataList'][0], raw_viz=True)
     ## hv.data_viz(successData, td['successDataList'][0], raw_viz=True,
     ##             minmax=(d['param_dict']['feature_min'], d['param_dict']['feature_max'] ))
     ## dv.viz( successData, minmax=(d['param_dict']['feature_min'], d['param_dict']['feature_max'] ) )
-    ## dv.viz( td['successDataList'][0], minmax=(d['param_dict']['feature_min'], d['param_dict']['feature_max'] ) )
-
-    # person-wise indices from normal training data
-    nor_train_inds = [ np.arange(len(kFold_list[i][2])) for i in xrange(len(kFold_list)) ]
-    for i in xrange(1,len(nor_train_inds)):
-        nor_train_inds[i] += (nor_train_inds[i-1][-1]+1)
-    normalTrainData  = copy.deepcopy(successData) * HMM_dict['scale']
-
-    if HMM_dict['renew'] or SVM_dict['renew'] or ADT_dict['data_renew']: ADT_dict['HMM_renew'] = True
-
-    pkl_prefix = 'hmm_'+ADT_dict['HMM']+'_'+task_name
-    ret = saveAHMMinducedFeatures(td, task_name, processed_data_path, HMM_dict, ADT_dict, noise_mag,
-                                  pkl_prefix, normalTrainData, nor_train_inds)
-    if ret is None:
-        print "Save AHMM return None"
-        return ret
+    ## dv.viz( td['successDataList'][0], minmax=(d['param_dict']['feature_min'], d['param_dict']['feature_max']))
 
     #-----------------------------------------------------------------------------------------
     roc_pkl = os.path.join(processed_data_path, 'roc_update_'+task_name+'_npTrain_'+str(ADT_dict['n_pTrain'])+\
@@ -349,6 +358,8 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
                                                                          method, ROC_data, \
                                                                          ROC_dict, \
                                                                          SVM_dict, HMM_dict, \
+                                                                         raw_data=(d['raw_win_data'],
+                                                                                   None),\
                                                                          startIdx=startIdx, nState=nState,\
                                                                          n_jobs=n_jobs,\
                                                                          modeling_pkl_prefix=pkl_prefix,\
@@ -386,7 +397,7 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
 
 def evaluation_single_inc(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
                           data_renew=False, save_pdf=False, verbose=False, debug=False,\
-                          no_plot=False, delay_plot=True, find_param=False, data_gen=False,\
+                          no_plot=False, delay_plot=True, find_param=False, \
                           target_class=None):
     ## Parameters
     # data
@@ -415,7 +426,7 @@ def evaluation_single_inc(subject_names, task_name, raw_data_path, processed_dat
     if os.path.isdir(processed_data_path) is False: sys.exit()
     crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
     
-    if os.path.isfile(crossVal_pkl) and data_renew is False and data_gen is False:
+    if os.path.isfile(crossVal_pkl) and data_renew is False:
         print "CV data exists and no renew"
         d = ut.load_pickle(crossVal_pkl)
         kFold_list = d['kFoldList'] 
@@ -615,7 +626,7 @@ def evaluation_single_inc(subject_names, task_name, raw_data_path, processed_dat
 
 def evaluation_acc(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
                    data_renew=False, save_pdf=False, verbose=False, debug=False,\
-                   no_plot=False, delay_plot=True, find_param=False, data_gen=False,\
+                   no_plot=False, delay_plot=True, find_param=False, \
                    target_class=None):
     ## Parameters
     # data
@@ -646,7 +657,7 @@ def evaluation_acc(subject_names, task_name, raw_data_path, processed_data_path,
 
     crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
     
-    if os.path.isfile(crossVal_pkl) and data_renew is False and data_gen is False:
+    if os.path.isfile(crossVal_pkl) and data_renew is False :
         print "CV data exists and no renew"
         d = ut.load_pickle(crossVal_pkl)
         kFold_list = d['kFoldList'] 
@@ -677,7 +688,6 @@ def evaluation_acc(subject_names, task_name, raw_data_path, processed_data_path,
         d['failure_files']   = failure_files        
         d['kFoldList']     = kFold_list
         ut.save_pickle(d, crossVal_pkl)
-        if data_gen: sys.exit()
 
 
     # select feature for detection
@@ -745,11 +755,6 @@ def evaluation_acc(subject_names, task_name, raw_data_path, processed_data_path,
 
     nEmissionDim = len(param_dict['data_param']['handFeatures'])
 
-    # person-wise indices from normal training data
-    nor_train_inds = [ np.arange(len(kFold_list[i][2])) for i in xrange(len(kFold_list)) ]
-    for i in xrange(1,len(nor_train_inds)):
-        nor_train_inds[i] += (nor_train_inds[i-1][-1]+1)
-    normalTrainData  = copy.deepcopy(successData) * HMM_dict['scale']
 
     if HMM_dict['renew'] or SVM_dict['renew'] or ADT_dict['data_renew']: ADT_dict['HMM_renew'] = True
     ROC_dict[method_list[0]+'_param_range'] = ROC_dict[method_list[0]+'_param_range'][acc_idx:acc_idx+1]
@@ -763,8 +768,7 @@ def evaluation_acc(subject_names, task_name, raw_data_path, processed_data_path,
         ADT_dict['CLF'] = test
         pkl_prefix      = 'hmm_'+test+'_'+task_name
         ret = saveAHMMinducedFeatures(td, task_name, processed_data_path, HMM_dict, ADT_dict, noise_mag,
-                                      pkl_prefix, normalTrainData, nor_train_inds)
-        print ADT_dict
+                                      pkl_prefix, copy.deepcopy(successData), kFold_list)
         if ret is None: return ret, None
 
         ROC_data = {}
@@ -824,7 +828,7 @@ def evaluation_acc(subject_names, task_name, raw_data_path, processed_data_path,
 
 def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
                          data_renew=False, save_pdf=False, verbose=False, debug=False,\
-                         no_plot=False, delay_plot=True, find_param=False, data_gen=False):
+                         no_plot=False, delay_plot=True, find_param=False):
 
     ## Parameters
     # data
@@ -850,7 +854,7 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
 
     crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
     
-    if os.path.isfile(crossVal_pkl) and data_renew is False and data_gen is False:
+    if os.path.isfile(crossVal_pkl) and data_renew is False:
         print "CV data exists and no renew"
         d = ut.load_pickle(crossVal_pkl)
         kFold_list    = d['kFoldList'] 
@@ -880,7 +884,6 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
         d['failure_files'] = failure_files
         d['kFoldList']     = kFold_list
         ut.save_pickle(d, crossVal_pkl)
-        if data_gen: sys.exit()
 
     #-----------------------------------------------------------------------------------------
     # feature selection
@@ -938,11 +941,19 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
 
 
 def saveAHMMinducedFeatures(td, task_name, processed_data_path, HMM_dict, ADT_dict, noise_mag,
-                            pkl_prefix, normalTrainData, nor_train_inds, startIdx=4):
+                            pkl_prefix, normalTrainData, kFold_list, startIdx=4):
     nState      = HMM_dict['nState']
     tgt_hmm_idx = 0
     random.seed(3334)
     np.random.seed(3334)
+
+    normalTrainData *= HMM_dict['scale']
+
+    # person-wise indices from normal training data
+    nor_train_inds = [ np.arange(len(kFold_list[i][2])) for i in xrange(len(kFold_list)) ]
+    for i in xrange(1,len(nor_train_inds)):
+        nor_train_inds[i] += (nor_train_inds[i-1][-1]+1)
+
 
     # Split test data to two groups
     n_AHMM_sample = ADT_dict['n_pTrain']
@@ -1277,7 +1288,7 @@ if __name__ == '__main__':
                     ret = evaluation_single_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
                                                save_pdf=opt.bSavePdf, \
                                                verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
-                                               find_param=False, data_gen=opt.bDataGen)
+                                               find_param=False)
 
                     for i, method in enumerate(param_dict['ROC']['methods']):
 
@@ -1358,7 +1369,7 @@ if __name__ == '__main__':
                     ret = evaluation_single_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
                                                save_pdf=opt.bSavePdf, \
                                                verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
-                                               find_param=False, data_gen=opt.bDataGen)
+                                               find_param=False)
 
                     for i, method in enumerate(param_dict['ROC']['methods']):
 
@@ -1412,7 +1423,7 @@ if __name__ == '__main__':
         ret = evaluation_single_inc(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
                                     save_pdf=opt.bSavePdf, \
                                     verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
-                                    find_param=False, data_gen=opt.bDataGen)
+                                    find_param=False)
         print ret
         
 
@@ -1449,7 +1460,7 @@ if __name__ == '__main__':
             a, ar = evaluation_acc(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
                                    save_pdf=opt.bSavePdf, \
                                    verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
-                                   find_param=False, data_gen=opt.bDataGen)
+                                   find_param=False)
             acc_list.append(a)
             acc_raw_list.append(ar)
         print "-------------------------------"
@@ -1492,5 +1503,5 @@ if __name__ == '__main__':
         evaluation_double_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
                              save_pdf=opt.bSavePdf, \
                              verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
-                             find_param=False, data_gen=opt.bDataGen)
+                             find_param=False)
 
