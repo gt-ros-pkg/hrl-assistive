@@ -1343,7 +1343,7 @@ if __name__ == '__main__':
         
         for nrSteps in [5,10,20,30,50,80,100]:
             for lr in [0.05,0.1,0.2,0.3,0.4,0.5]:
-                for n_pTrain in [5]:
+                for n_pTrain in [10]:
                     ## for n_pTrain in range(5,11):
                 
                     param_dict['ADT']['lr']       = lr #0.1
