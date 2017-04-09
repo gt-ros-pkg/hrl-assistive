@@ -228,7 +228,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
         normalFoldData = (fold_list, normalTrainData, abnormalTrainData)
 
-        osvm_data = dm.getPCAData(len(fold_list), normalFoldData=normalFoldData, \
+        osvm_data = dm.getRawData(len(fold_list), normalFoldData=normalFoldData, \
                                   window=SVM_dict['raw_window_size'],
                                   use_test=True, use_pca=False )
 

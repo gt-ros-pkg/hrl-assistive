@@ -460,11 +460,12 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
             max_time = max_time #all_data_dict['timesList'][0][-1]
         else:
             # loading and time-sync    
-            all_data_pkl     = os.path.join(processed_data_path, pkl_prefix+task_name+'_all_'+rf_center+\
-                                            '_'+str(local_range))
+            ## all_data_pkl     = os.path.join(processed_data_path, pkl_prefix+task_name+'_all_'+rf_center+\
+            ##                                 '_'+str(local_range))
             _, all_data_dict = util.loadData(file_list, isTrainingData=False,
                                              downSampleSize=downSampleSize,\
-                                             renew=data_renew, save_pkl=all_data_pkl,\
+                                             renew=data_renew,\
+                                             #save_pkl=all_data_pkl,\
                                              max_time=max_time)
             
             max_time = all_data_dict['timesList'][0][-1]
@@ -1026,7 +1027,7 @@ def getHMMData(method, nFiles, processed_data_path, task_name, default_params, n
     return data 
 
 
-def getPCAData(nFiles, data_pkl=None, window=1, gamma=1., pos_dict=None, use_test=True, use_pca=True,\
+def getRawData(nFiles, data_pkl=None, window=1, gamma=1., pos_dict=None, use_test=True, use_pca=True,\
                test_drop_elements=None, step_anomaly_info=None, normalFoldData=None):
 
     if data_pkl is not None:
@@ -1320,7 +1321,43 @@ def getPCAData(nFiles, data_pkl=None, window=1, gamma=1., pos_dict=None, use_tes
         data[file_idx]['nLength']       = len(normalTrainData[0][0])
         data[file_idx]['step_idx_l']    = step_idx_l
     return data 
-    
+
+
+def getWindowData(successData, failureData, window=1):
+    '''
+    Extract a sequence of data extracted by a sliding window
+    '''
+
+    if window == 0:
+        print "wrong window size"
+        sys.exit()
+
+    # dim x sample x length => sample x dim x length
+    normalData   = np.swapaxes(successData, 0, 1)
+    abnormalData = np.swapaxes(failureData, 0, 1)         
+
+    # sample x dim x length = > sample x length x dim 
+    normalData   = np.swapaxes(normalData, 1, 2)
+    abnormalData = np.swapaxes(abnormalData, 1, 2)         
+
+    #--------------------------------------------------------------------------------
+    # Normal data
+    normalData_label = [[-1]*len(normalData[0])]*len(normalData)
+
+    # flatten the data
+    if window==1: success_win_data, _, _ = flattenSample(normalData, normalData_label)
+    else: success_win_data, _, _ = flattenSampleWithWindow(normalData, normalData_label, window=window)
+
+    #--------------------------------------------------------------------------------
+    # Abnormal data
+    abnormalData_label = [[1]*len(abnormalData[0])]*len(abnormalData)
+
+    # flatten the data
+    if window==1: failure_win_data, _, _ = flattenSample(abnormalData, abnormalData_label)
+    else: failure_win_data, _, _ = flattenSampleWithWindow(abnormalData, abnormalData_label, window=window)
+
+    return success_win_data, failure_win_data
+
 
 def getHMMCuttingIdx(ll_X, ll_Y, ll_idx):
     '''

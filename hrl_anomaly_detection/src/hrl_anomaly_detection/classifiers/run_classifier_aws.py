@@ -648,12 +648,12 @@ if __name__ == '__main__':
             for param_idx, param in enumerate( list(ParameterGrid(parameters)) ):
                 if method is 'osvm':
                     data_pkl = os.path.join(save_data_path, 'cv_'+opt.task+'.pkl' )
-                    data = dm.getPCAData(nFiles, data_pkl, \
+                    data = dm.getRawData(nFiles, data_pkl, \
                                          window=param_dict['SVM']['raw_window_size'],\
                                          pos_dict=None, use_test=False)
                 elif method is 'bpsvm':
                     data_pkl = os.path.join(save_data_path, 'cv_'+opt.task+'.pkl' )
-                    data = dm.getPCAData(nFiles, data_pkl, gamma=param['pca_gamma'],\
+                    data = dm.getRawData(nFiles, data_pkl, gamma=param['pca_gamma'],\
                                          window=param_dict['SVM']['raw_window_size'],\
                                          pos_dict=pos_dict, use_test=False, use_pca=False)
                     
