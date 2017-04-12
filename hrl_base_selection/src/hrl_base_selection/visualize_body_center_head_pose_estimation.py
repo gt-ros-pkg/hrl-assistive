@@ -9,7 +9,6 @@ import cPickle as pkl
 import hrl_lib.circular_buffer as cb
 import tf
 from scipy import ndimage
-from skimage.feature import blob_doh
 from hrl_msgs.msg import FloatArrayBare
 from helper_functions import createBMatrix, Bmat_to_pos_quat
 
