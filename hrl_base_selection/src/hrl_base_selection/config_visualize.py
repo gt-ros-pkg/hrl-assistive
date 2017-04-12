@@ -210,7 +210,7 @@ class ConfigVisualize(object):
             self.originsubject_B_originworld = np.matrix(np.eye(4))
         elif self.model == 'autobed':
             # self.env.Load(''.join([pkg_path, '/collada/bed_and_body_expanded_rounded.dae']))
-            self.env.Load(''.join([pkg_path, '/collada/bed_and_environment_henry_tray_rounded.dae']))
+            self.env.Load(''.join([pkg_path, '/collada/bed_and_environment_mannequin_openrave_rounded.dae']))
             # self.env.Load(''.join([pkg_path, '/urdf/bed_and_body_v3/robots/test.dae']))
             self.autobed = self.env.GetRobots()[0]
             # v = self.autobed.GetActiveDOFValues()

@@ -38,16 +38,17 @@ def calibrate(z):
     print 'Hit the end stop.'
     print 'Setting the origin.'
     z.estop()
+    z.engage_brake()
     z.set_origin()
     print '__________________________'
     print 'Calibration Over'
     pos = z.get_position_meters()
     print 'Current position is: ', pos
-    st = 0.9
-    z.move_position(st)
-    rospy.sleep(5.0)
-    print 'Current position is: ', pos
-    print 'Movement Over'
+    # st = 0.9
+    # z.move_position(st)
+    # rospy.sleep(5.0)
+    # print 'Current position is: ', pos
+    # print 'Movement Over'
     #go_pos = 0.1
     #print 'Going to position: ', go_pos
     #print '__________________________'
@@ -88,9 +89,9 @@ def log_until_stopped(z,pos,tolerance=0.005):
 # Trying to confirm that the units of acceln and velocity are indeed
 # SI units. Sinusoidal trajectory is the next step
 def test_linear(z):
-    st = 0.9
+    st = 0.13
     z.move_position(st)
-    dist = 0.8
+    dist = -0.13
     vel = 0.4
     acc = 0.5
     pos = st+dist
@@ -100,6 +101,7 @@ def test_linear(z):
     t1 = time.time()
     print 'measured time:', t1-t0
     print 'calculated time:', time_to_reach(dist,vel,acc)
+    z.engage_brake()
 
     #mpu.plot_yx(deck_x,deck_t,scatter_size=0,linewidth=1,axis=None,
     #            ylabel='position (meters)',xlabel='time (s)')
@@ -246,7 +248,8 @@ if __name__ == '__main__':
 
     opt, args = p.parse_args()
 
-    z = zenither.Zenither(robot='test_rig')
+    # z = zenither.Zenither(robot='test_rig')
+    z = zenither.Zenither(robot='henrybot')
 
     if opt.calib:
         calibrate(z)
@@ -256,7 +259,12 @@ if __name__ == '__main__':
 
     if opt.move:
         # move_to_place(z, 0.43)
-        move_to_place(z, 0.3)
+        z.disengage_brake()
+        rospy.sleep(1)
+        # rospy.sleep(5)
+        move_to_place(z, 0.00)
+        rospy.sleep(1)
+        z.engage_brake()
 
     if opt.test_lin:
         test_linear(z)

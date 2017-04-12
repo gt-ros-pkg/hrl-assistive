@@ -35,8 +35,8 @@ roslib.load_manifest('hrl_lib')
 from hrl_lib.util import save_pickle, load_pickle
 #from sPickle import Pickler
 import tf.transformations as tft
-from score_generator_cma_mannequin import ScoreGenerator
-# from score_generator_cma import ScoreGenerator
+# from score_generator_cma_mannequin import ScoreGenerator
+from score_generator_cma import ScoreGenerator
 #import data_clustering as clust
 #import joblib
 #from joblib import Memory

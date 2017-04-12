@@ -12,6 +12,7 @@
 *.so
 *.pyc
 *~
+*.dae
 # files created by text editors #
 #################################
 *.swp

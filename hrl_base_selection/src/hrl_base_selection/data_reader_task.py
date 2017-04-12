@@ -43,7 +43,8 @@ class DataReader_Task(object):
                                [1.180539, 0.155222, 0.061160, -0.048171, -0.076155, -0.513218, 0.853515],
                                [1.181696, 0.153536, 0.118200, 0.022272, 0.045203, -0.551630, 0.832565]]
             # goal_B_gripper = np.matrix(np.eye(4))
-            goal_B_gripper = np.matrix([[1., 0., 0., -0.04],
+            # goal_B_gripper = np.matrix([[1., 0., 0., -0.04],
+            goal_B_gripper = np.matrix([[1., 0., 0., 0.0],
                                         [0., 1., 0., 0.0],
                                         [0., 0., 1., 0.0],
                                         [0., 0., 0., 1.]])
@@ -100,9 +101,9 @@ class DataReader_Task(object):
             rot = z*y
             quat = tft.quaternion_from_matrix(rot)
             liftlink_B_reference = createBMatrix([0., 0., 0.], [0., 0., 0., 1.])
-            liftlink_B_goal = [[.15, 0.0, -0.065, quat[0],  quat[1],  quat[2],  quat[3]],
-                               [.25, 0.0, -0.065, quat[0],  quat[1],  quat[2],  quat[3]],
-                               [.35, 0.0, -0.065, quat[0],  quat[1],  quat[2],  quat[3]]]
+            liftlink_B_goal = [[.13, 0.0, -0.065, quat[0],  quat[1],  quat[2],  quat[3]],
+                               [.23, 0.0, -0.065, quat[0],  quat[1],  quat[2],  quat[3]],
+                               [.33, 0.0, -0.065, quat[0],  quat[1],  quat[2],  quat[3]]]
             for i in xrange(len(liftlink_B_goal)):
                 self.goals.append(liftlink_B_reference.I*createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][3:]))  # all in reference to head
             # left_side = self.goals[2]
@@ -508,7 +509,7 @@ if __name__ == "__main__":
     visualize_only = False
     model = 'autobed'  # options are: 'chair', 'bed', 'autobed', 'wall'
     optimization = 'cma'  # 'cma' or 'brute'
-    task = 'blanket_feet_knees' # options are: wiping_mouth, 'wiping_forehead', 'blanket_feet_knees', bathing, brushing, feeding, shaving, scratching_upperarm/forearm/thigh/chest/knee_left/right
+    task = 'shaving' # options are: wiping_mouth, 'wiping_forehead', 'blanket_feet_knees', bathing, brushing, feeding, shaving, scratching_upperarm/forearm/thigh/chest/knee_left/right
     rospy.init_node(optimization+'_'+model+'_'+task)
     full_start_time = time.time()
     if visualize_only:
@@ -518,12 +519,12 @@ if __name__ == "__main__":
         rospy.spin()
     else:
         # for task in ['wiping_mouth', 'wiping_forehead', 'blanket_feet_knees', 'scratching_knee_left', 'scratching_knee_left', 'scratching_upper_arm_left', 'scratching_upper_arm_right', 'scratching_forearm_left', 'scratching_forearm_right']: #'wiping_face', 'scratching_knee_left', 'scratching_forearm_left','scratching_upper_arm_left']:#'scratching_knee_left', 'scratching_knee_right', 'scratching_thigh_left', 'scratching_thigh_right']:
-        for task in ['bathe_legs','feeding_trajectory']: #'wiping_forehead', 'blanket_feet_knees','wiping_mouth', 'arm_cuffs', 'feeding_trajectory', 'bathe_legs'
+        for task in ['blanket_feet_knees']: #'wiping_forehead', 'blanket_feet_knees','wiping_mouth', 'arm_cuffs', 'feeding_trajectory', 'bathe_legs', 'shaving'
             subject = 'any_subject'
             print 'STARTING TASK ', task
             #rospy.init_node(''.join(['data_reader_', subject, '_', model, '_', task]))
             this_start_time = time.time()
-            shaving_data_reader = DataReader_Task(task, model, optimization, visualize=False)
+            shaving_data_reader = DataReader_Task(task, model, optimization, visualize=True)
             shaving_data_reader.generate_score()
             print 'Done! Time to generate all scores for this task: %fs' % (time.time() - this_start_time)
             print 'TASK COMPLETED WAS ', task
