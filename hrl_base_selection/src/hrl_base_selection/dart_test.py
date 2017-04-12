@@ -17,8 +17,6 @@ from hrl_base_selection.srv import InitPhysxBodyModel, PhysxInput
 from matplotlib.cbook import flatten
 
 
-
-
 class GravityCompensationController(object):
 
     def __init__(self, robot):
@@ -43,9 +41,9 @@ class MyWorld(pydart.World):
     def __init__(self, ):
         # pydart.World.__init__(self, 0.001)
         self.human_reference_center_floor_point = None
-        rospy.wait_for_service('init_physx_body_model')
+        # rospy.wait_for_service('init_physx_body_model')
         self.init_physx_service = rospy.ServiceProxy('init_physx_body_model', InitPhysxBodyModel)
-        rospy.wait_for_service('body_config_input_to_physx')
+        # rospy.wait_for_service('body_config_input_to_physx')
         self.update_physx_config_service = rospy.ServiceProxy('body_config_input_to_physx', PhysxInput)
         print('pydart create_world OK')
         rospack = rospkg.RosPack()
@@ -70,9 +68,29 @@ class MyWorld(pydart.World):
 
         # Move bit lower (for camera)
         positions = self.robot.positions()
-        positions['rootJoint_pos_z'] = 2.
-        positions['rootJoint_pos_x'] = 2.
+        positions['rootJoint_pos_x'] = 0.8
+        positions['rootJoint_pos_y'] = 0.
+        positions['rootJoint_pos_z'] = 0.1
+        positions['rootJoint_rot_z'] = 3.14
         self.robot.set_positions(positions)
+
+        positions = self.human.positions()
+        positions['j_pelvis1_x'] = 0.
+        positions['j_pelvis1_y'] = 0.
+        positions['j_pelvis1_z'] = 1.
+        self.human.set_positions(positions)
+
+        print 'human self collision check'
+        print self.human.self_collision_check()
+        print 'robot self collision check'
+        print self.robot.self_collision_check()
+
+        print 'adjacency'
+        print self.human.adjacent_body_check()
+
+        print 'world collision list'
+        self.check_collision()
+        print self.collision_result.contacted_bodies
 
         # Initialize the controller
         self.controller = GravityCompensationController(self.robot)
@@ -95,27 +113,39 @@ class MyWorld(pydart.World):
                 self.joint_to_floor_z = float(bodypart['visualization_shape']['geometry']['multi_sphere']['sphere'][0]['radius'])
         self.estimate_center_floor_point()
 
+        # positions = self.human.positions()
+        # positions['j_pelvis1_x'] -= self.human_reference_center_floor_point[0]
+        # positions['j_pelvis1_y'] -= self.human_reference_center_floor_point[1]
+        # positions['j_pelvis1_z'] -= self.human_reference_center_floor_point[2]
+        # self.human.set_positions(positions)
+        # self.estimate_center_floor_point()
+
     def estimate_center_floor_point(self):
         x_position = self.human.joint(self.skel_joints[self.center_reference_joint_index]['@name']).position_in_world_frame()[0]
         y_position = self.human.joint(self.skel_joints[self.center_reference_joint_index]['@name']).position_in_world_frame()[1]
         z_position = self.human.joint(self.skel_joints[self.lowest_reference_joint_index]['@name']).position_in_world_frame()[2] - self.joint_to_floor_z
 
         self.human_reference_center_floor_point = np.array([x_position, y_position, z_position])
-        self.human_reference_center_floor_point = np.array([1., 1., 0.])
-        print self.human_reference_center_floor_point
+        # self.human_reference_center_floor_point = np.array([1., 1., 0.])
+        print 'Position of the floor center of the human body with respect to the floor: ', self.human_reference_center_floor_point
 
     def on_key_press(self, key):
         if key == 'G':
             self.controller.enabled = not self.controller.enabled
         if key == 'J':
             q = self.human.q
-            q['j_shin_left'] = -2.
-            q['j_bicep_right_x'] = 1.
-            q['j_bicep_right_y'] = 0.
-            q['j_bicep_right_z'] = 2.
-            q['j_forearm_right_1'] = 0.
-            q['j_forearm_right_2'] = 0.5
-
+            # q['j_shin_left'] = -2.
+            # q['j_bicep_right_x'] = 1.
+            # q['j_bicep_right_y'] = 0.
+            # q['j_bicep_right_z'] = 0.
+            # q['j_forearm_right_1'] = 0.
+            # q['j_forearm_right_2'] = 0.5
+            # q['j_shin_left'] = -2.
+            q['j_bicep_right_x'] = -1.570796
+            q['j_bicep_right_y'] = 1.0
+            q['j_bicep_right_z'] = 1.
+            q['j_forearm_right_1'] = 1.570796
+            q['j_forearm_right_2'] = 0.
 
             self.human.set_positions(q)
             links = []

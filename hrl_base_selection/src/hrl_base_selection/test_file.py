@@ -8,25 +8,65 @@ import os
 #from openravepy.misc import InitOpenRAVELogging 
 #InitOpenRAVELogging() 
 
-from openravepy import *
+# from openravepy import *
 import numpy, time
 import rospkg
 import math as m
 import numpy as np
 import rospy
+import roslib
+roslib.load_manifest('hrl_base_selection')
+from hrl_base_selection.helper_functions import createBMatrix, Bmat_to_pos_quat
+
 
 rospy.init_node('test_node')
 
-env = Environment()  # create openrave environment
-env.SetViewer('qtcoin')  # attach viewer (optional)
+env = op.Environment()  # create openrave environment
+
+# collisionChecker = op.RaveCreateCollisionChecker(env, 'bullet')
+# env.SetCollisionChecker(collisionChecker)
+print 'Changed collision checker'
+
+# env.SetViewer('qtcoin')  # attach viewer (optional)
 
 rospack = rospkg.RosPack()
 pkg_path = rospack.get_path('hrl_base_selection')
-env.Load(''.join([pkg_path, '/collada/bed_and_environment_henry_rounded.dae']))
+env.Load('robots/pr2-beta-static.zae')
+robot = env.GetRobots()[0]
+robot.CheckLimitsAction=2
+robot.SetActiveManipulator('leftarm')
+manip = robot.GetActiveManipulator()
+ikmodel = op.databases.inversekinematics.InverseKinematicsModel(robot, iktype=op.IkParameterization.Type.Transform6D)
+if not ikmodel.load():
+    print 'IK model not found. Will now generate an IK model. This will take a while!'
+    ikmodel.autogenerate()
+
+goal_B_gripper = np.matrix([[ 0., 0., 1., 0.0],
+                            [ 0., 1., 0., 0.0],
+                            [-1., 0., 0., 0.0],
+                            [ 0., 0., 0., 1.0]])
+goal = np.matrix([[ 1.,    0.,    0.,    0.6 ],
+                  [ 0.,    1.,    0.,    0.27],
+                  [ 0.,    0.,    1.,    1.05],
+                  [ 0.,    0.,    0.,    1.  ]])
+
+
+Tgoal = np.array([[1.,-1,0,-0.21],[-1,0,0,0.04],[0,0,-1,0.92],[0,0,0,1]])
+Tgoal = np.array(goal*goal_B_gripper)
+for i in [-0.01, -0.02, -0.03, -0.04, -0.05, -0.06, 0, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06]:
+    Tgoal[1, 3] += i
+    sols = manip.FindIKSolutions(Tgoal, op.IkFilterOptions.CheckEnvCollisions) # get collision-free solution
+    print sols
+
+rospy.spin()
+
+
+# env.Load(''.join([pkg_path, '/collada/bed_and_environment_henry_rounded.dae']))
 # env.Load(''.join([pkg_path, '/collada/wheelchair_henry_rounded.dae']))
 # env.Load(''.join([pkg_path, '/collada/human.dae']))
-autobed = env.GetRobots()[0]
+# autobed = env.GetRobots()[0]
 # wheelchair = env.GetRobots()[0]
+autobed=None
 
 def set_autobed(z, headrest_th, head_x, head_y):
     bz = z
@@ -134,9 +174,9 @@ h = 0
 th = 20.
 head_x = 0.
 head_y = 0.
-set_autobed(h, th, head_x, head_y)
+# set_autobed(h, th, head_x, head_y)
 # set_wheelchair()
-time.sleep(30)
+# time.sleep(30)
 # set_autobed(h, th, 0, 0)
 # time.sleep(30)
 

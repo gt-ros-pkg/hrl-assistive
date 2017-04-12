@@ -9,17 +9,17 @@
         <skeleton name="ground skeleton">
             <mobile>false</mobile>
             <body name="ground">
-                <transformation>0 -0.92 0 0 0 0</transformation>
+                <transformation>0 0 -0.05 0 0 0</transformation>
                 <visualization_shape>
                     <transformation>0 0 0 0 0 0</transformation>
                     <geometry>
                         <box>
-                            <size>5.0 0.1 5.0</size>
+                            <size>5.0 5.0 0.1</size>
                         </box>
                     </geometry>
                 </visualization_shape>
                 <collision_shape>
-                    <transformation>0 0 0 0 0 0</transformation>
+                    <transformation>0 0 -0.05 0 0 0</transformation>
                     <geometry>
                         <box>
                             <size>10.0 0.1 10.0</size>
@@ -234,11 +234,10 @@
                     <offset>0.0 -0.0383070599423 0.0</offset>
                 </inertia>
                 <visualization_shape><geometry><multi_sphere><sphere><radius>0.0499667121959</radius><position>0 0 0</position></sphere><sphere><radius>0.0499667121959</radius><position>0 0.0999334243918 0</position></sphere></multi_sphere></geometry></visualization_shape><collision_shape><geometry><multi_sphere><sphere><radius>0.0499667121959</radius><position>0 0 0</position></sphere><sphere><radius>0.0499667121959</radius><position>0 0.0999334243918 0</position></sphere></multi_sphere></geometry></collision_shape></body>
-			
-
+          
             
 	    <joint name="j_pelvis1" type="translational">
-		 <transformation>0.0 0.0 0.0 0.0 0.0 0.0</transformation>
+		 <transformation>0.0 0.0 0.0 0.0 0.0 </transformation>
                 <parent>world</parent>
                 <child>h_pelvis1</child>
                 <init_pos>0 0 0</init_pos>
@@ -250,7 +249,7 @@
                 <parent>h_pelvis1</parent>
                 <child>h_pelvis</child>
 		 <axis_order>zyx</axis_order>
-                <init_pos>0 0 0</init_pos>
+                <init_pos>0 0 1.570796</init_pos>
                 <init_vel>0 0 0</init_vel>
             </joint>
 
@@ -500,7 +499,7 @@
                 <init_vel>0 0 0</init_vel>
 				<axis>
 					<limit>
-						<lower>-0.65</lower>
+						<lower>-3.65</lower>
 						<upper>2.7</upper>
 					</limit>
 				</axis>
@@ -512,13 +511,13 @@
 				</axis2>
 				<axis3>
 					<limit>
-						<lower>-0.001</lower>
-						<upper>0.001</upper>
+						<lower>-3.001</lower>
+						<upper>3.001</upper>
 					</limit>
 				</axis3>
             </joint>
 			
-			<joint name="j_becip_left_roll" type="revolute">
+			<joint name="j_bicep_left_roll" type="revolute">
                 <transformation>0.0 0.0 0.0 0.0 0.0 0.0</transformation>
                 <parent>h_bicep_left_midjoint</parent>
                 <child>h_bicep_left</child>
@@ -636,7 +635,7 @@
 				</axis3>
             </joint>
 			
-			<joint name="j_becip_right_roll" type="revolute">
+			<joint name="j_bicep_right_roll" type="revolute">
                 <transformation>0.0 0.0 0.0 0.0 0.0 0.0</transformation>
                 <parent>h_bicep_right_midjoint</parent>
                 <child>h_bicep_right</child>

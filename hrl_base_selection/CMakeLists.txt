@@ -13,6 +13,7 @@ add_service_files(
     SetBaseModel.srv
     InitPhysxBodyModel.srv
     PhysxInput.srv
+    IKService.srv
 )
 
 add_message_files(DIRECTORY msg
