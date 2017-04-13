@@ -1471,7 +1471,7 @@ if __name__ == '__main__':
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
 
         param_dict['ADT'] = {}
-        param_dict['ADT']['data_renew'] = False
+        param_dict['ADT']['data_renew'] = True
 
         auc_complete = []
         auc_list = []
@@ -1494,7 +1494,7 @@ if __name__ == '__main__':
                     param_dict['ADT']['HMM']      = 'old'
                     param_dict['ADT']['CLF']      = 'adapt'
                     param_dict['ADT']['HMM_renew'] = False
-                    param_dict['ADT']['WIN_renew'] = False
+                    param_dict['ADT']['WIN_renew'] = True
                     param_dict['ADT']['CLF_renew'] = True
 
                     ret = evaluation_single_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \

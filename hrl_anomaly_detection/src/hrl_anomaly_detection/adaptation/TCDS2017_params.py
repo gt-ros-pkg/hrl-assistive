@@ -28,7 +28,7 @@ def getParams(task, bDataRenew, bHMMRenew, bCFRenew, dim=0, rf_center='kinEEPos'
     # common params
     param_dict['ROC']['methods'] = [ 'hmmgp']
     param_dict['ROC']['update_list'] = [ ]
-    param_dict['SVM']['raw_window_size'] = 5
+    param_dict['SVM']['raw_window_size'] = 10
 
     if bDataRenew or bHMMRenew:
         param_dict['HMM']['renew'] = True
