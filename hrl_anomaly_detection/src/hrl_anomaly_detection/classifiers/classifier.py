@@ -681,7 +681,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
         dtc = hmmgp.hmmgp( nPosteriors=nState, parallel=parallel )
     elif method == 'ipca':
         from hrl_anomaly_detection.classifiers import ipca
-        dtc = ipca.ipca(n_components=len(X_train[0])/10, batch_size=500 )        
+        dtc = ipca.ipca(n_components=len(X_train[0])/8, batch_size=1000 )        
     else:
         dtc = classifier( method=method, nPosteriors=nState, nLength=nLength, parallel=parallel )
 
