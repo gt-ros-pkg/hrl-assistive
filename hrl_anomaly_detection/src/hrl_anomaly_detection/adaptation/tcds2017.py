@@ -1487,13 +1487,14 @@ if __name__ == '__main__':
         ##     for lr in [0.05,0.1,0.2,0.3,0.4,0.5]:
         for nrSteps in [20]:
             for lr in [0.2]:
-                for n_pTrain in [10]:
+                ## for n_pTrain in [10]:
+                for clf in ['old', 'adapt']:
                     param_dict['ADT']['lr']       = lr #0.1
                     param_dict['ADT']['max_iter'] = 1
-                    param_dict['ADT']['n_pTrain'] = n_pTrain
+                    param_dict['ADT']['n_pTrain'] = 10 #n_pTrain
                     param_dict['ADT']['nrSteps']  = nrSteps
                     param_dict['ADT']['HMM']      = 'old'
-                    param_dict['ADT']['CLF']      = 'adapt'
+                    param_dict['ADT']['CLF']      = clf
                     param_dict['ADT']['HMM_renew'] = False
                     param_dict['ADT']['WIN_renew'] = True
                     param_dict['ADT']['CLF_renew'] = True
