@@ -418,7 +418,8 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
     pkl_prefix = 'hmm_'+ADT_dict['HMM']+'_'+task_name
     ret = saveAHMMFeatures(d, td, task_name, processed_data_path, HMM_dict, ADT_dict, noise_mag, pkl_prefix)
     if ret is None: return ret
-    ret = saveWindowFeaturesForADP(td, processed_data_path, ADT_dict, pkl_prefix)
+    ret = saveWindowFeaturesForADP(td, processed_data_path, ADT_dict, pkl_prefix,
+                                   win_size=SVM_dict['raw_window_size'])
     if ret is None: return ret
 
 
