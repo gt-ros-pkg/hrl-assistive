@@ -1340,21 +1340,8 @@ def getWindowData(successData, failureData, window=1):
     normalData   = np.swapaxes(normalData, 1, 2)
     abnormalData = np.swapaxes(abnormalData, 1, 2)         
 
-    #--------------------------------------------------------------------------------
-    # Normal data
-    normalData_label = [[-1]*len(normalData[0])]*len(normalData)
-
-    # flatten the data
-    if window==1: success_win_data, _, _ = flattenSample(normalData, normalData_label)
-    else: success_win_data, _, _ = flattenSampleWithWindow(normalData, normalData_label, window=window)
-
-    #--------------------------------------------------------------------------------
-    # Abnormal data
-    abnormalData_label = [[1]*len(abnormalData[0])]*len(abnormalData)
-
-    # flatten the data
-    if window==1: failure_win_data, _, _ = flattenSample(abnormalData, abnormalData_label)
-    else: failure_win_data, _, _ = flattenSampleWithWindow(abnormalData, abnormalData_label, window=window)
+    success_win_data = sampleWithWindow(normalData, window=window)
+    failure_win_data = sampleWithWindow(abnormalData, window=window)
 
     return success_win_data, failure_win_data
 
@@ -2910,16 +2897,14 @@ def sampleWithWindow(ll_X, window=2):
         sys.exit()
 
     ll_X_new = []
-    for i in xrange(len(ll_X)):
+    for i in xrange(len(ll_X)): # per sample
         l_X_new = []
-        for j in xrange(len(ll_X[i])):
+        for j in xrange(len(ll_X[i])): # per time
 
             X = []
-            for k in range(window,0,-1):
-                if j-k < 0:
-                    X+= ll_X[i][0].tolist()
-                else:
-                    X+= ll_X[i][j-k].tolist()
+            for k in range(window,0,-1): # flattening features?
+                if j-k < 0: X+= ll_X[i][0].tolist()
+                else:       X+= ll_X[i][j-k].tolist()
 
             l_X_new.append(X)
         ll_X_new.append(l_X_new)

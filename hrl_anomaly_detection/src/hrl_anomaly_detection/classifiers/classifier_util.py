@@ -6,6 +6,34 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from hrl_anomaly_detection import data_manager as dm
+from scipy.stats import norm, entropy
+
+
+
+def symmetric_entropy(p,q):
+    '''
+    Return the sum of KL divergences
+    '''
+    pp = np.array(p)+1e-6
+    qq = np.array(q)+1e-6
+    
+    ## return min(entropy(p,np.array(q)+1e-6), entropy(q,np.array(p)+1e-6))
+    return min(entropy(pp,qq), entropy(qq,pp))
+
+
+def findBestPosteriorDistribution(post, l_statePosterior):
+    # Find the best posterior distribution
+    min_dist  = 100000000
+    min_index = 0
+
+    for j in xrange(len(l_statePosterior)):
+        dist = symmetric_entropy(post, l_statePosterior[j])
+        
+        if min_dist > dist:
+            min_index = j
+            min_dist  = dist
+
+    return min_index, min_dist
 
 
 def getProcessSGDdata(X, y, sample_weight=None, remove_overlap=True):

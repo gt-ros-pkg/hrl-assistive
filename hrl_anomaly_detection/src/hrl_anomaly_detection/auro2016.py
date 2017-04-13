@@ -177,7 +177,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
     
     # ---------------- ROC Visualization ----------------------
-    roc_info(method_list, ROC_data, nPoints, no_plot=True)
+    roc_info(ROC_data, nPoints, no_plot=True)
 
 
 def evaluation_unexp(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
@@ -427,7 +427,7 @@ def evaluation_modality(subject_names, task_name, raw_data_path, processed_data_
         processed_data_path = os.path.join(org_processed_data_path, modality)
         roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
         ROC_data = ut.load_pickle(roc_pkl)        
-        roc_info(method_list, ROC_data, nPoints, no_plot=True)
+        roc_info(ROC_data, nPoints, no_plot=True)
 
 
 def detection_info(method_list, ROC_data, nPoints, kFold_list, zero_fp_flag=False, save_pdf=False):

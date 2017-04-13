@@ -45,61 +45,28 @@ import random, copy
 
 from scipy.stats import norm, entropy
 from joblib import Parallel, delayed
-from hrl_anomaly_detection.hmm.learning_base import learning_base
+from hrl_anomaly_detection.classifiers.clf_base import clf_base
 from sklearn import metrics
 from sklearn.externals import joblib
 
 from hrl_anomaly_detection import data_manager as dm
 from hrl_anomaly_detection import util as util
+from hrl_anomaly_detection.classifiers import classifier_util as cutil
+
+from sklearn import preprocessing
+import warnings
 
 
-class classifier(learning_base):
+class classifier(clf_base):
     def __init__(self, method='svm', nPosteriors=10, nLength=None, startIdx=4, parallel=False,\
-                 ths_mult=-1.0,\
-                 #progress time or state?
-                 std_coff = 1.0,\
-                 logp_offset = 0.0,\
-                 class_weight=1.0, \
-                 # svm
-                 svm_type    = 0,\
-                 kernel_type = 2,\
-                 degree      = 3,\
-                 gamma       = 0.3,\
-                 nu          = 0.5,\
-                 cost        = 4.,\
-                 coef0       = 0.,\
-                 w_negative  = 7.0,\
-                 # bpsvm
-                 bpsvm_w_negative = 7.0,\
-                 bpsvm_cost       = 4.,\
-                 bpsvm_gamma      = 0.3,\
-                 # hmmsvm_diag
-                 hmmsvm_diag_nu = 0.5,\
-                 hmmsvm_diag_w_negative  = 7.0,\
-                 hmmsvm_diag_cost        = 4.,\
-                 hmmsvm_diag_gamma       = 0.3,\
-                 # hmmosvm
-                 hmmosvm_nu  = 0.00316,\
-                 # osvm
-                 osvm_nu     = 0.00316,\
-                 # sgd
-                 sgd_gamma      = 2.0,\
-                 sgd_w_negative = 1.0,\
-                 sgd_n_iter     = 10,\
-                 # progress svm
-                 progress_svm_w_negative = 7.0,\
-                 progress_svm_cost       = 4.,\
-                 progress_svm_gamma      = 0.3,\
-                 # hmmgp
-                 theta0 = 1.0,\
-                 nugget = 100.0,\
-                 hmmgp_logp_offset = 0.0,\
-                 verbose=False):
+                 ths_mult=-1.0, class_weight=1.0, verbose=False, **kwargs):
         '''
         class_weight : positive class weight for svm
         nLength : only for progress-based classifier
         ths_mult: only for progress-based classifier
-        '''              
+        '''
+        warnings.simplefilter("always", DeprecationWarning)
+        
         self.method = method
         self.nPosteriors = nPosteriors
         self.dt     = None
@@ -115,35 +82,35 @@ class classifier(learning_base):
         if self.method.find('svm')>=0:
             sys.path.insert(0, '/usr/lib/pymodules/python2.7')
             import svmutil as svm
-            self.svm_type    = svm_type
-            self.kernel_type = kernel_type
-            self.degree      = degree 
-            self.gamma       = gamma
-            self.cost        = cost
-            self.coef0       = coef0
-            self.w_negative  = w_negative
-            self.bpsvm_w_negative = bpsvm_w_negative
-            self.bpsvm_cost       = bpsvm_cost
-            self.bpsvm_gamma      = bpsvm_gamma                        
-            self.hmmsvm_diag_nu         = hmmsvm_diag_nu
-            self.hmmsvm_diag_w_negative = hmmsvm_diag_w_negative
-            self.hmmsvm_diag_cost       = hmmsvm_diag_cost
-            self.hmmsvm_diag_gamma      = hmmsvm_diag_gamma
-            self.hmmosvm_nu  = hmmosvm_nu
-            self.osvm_nu     = osvm_nu
-            self.nu          = nu
-            self.progress_svm_w_negative = progress_svm_w_negative
-            self.progress_svm_cost       = progress_svm_cost
-            self.progress_svm_gamma      = progress_svm_gamma
-        elif self.method == 'progress' or self.method == 'progress_state' or self.method == 'progress_diag':
+            self.svm_type                = kwargs.get('svm_type',0)
+            self.kernel_type             = kwargs.get('kernel_type',2)
+            self.degree                  = kwargs.get('degree',3) 
+            self.gamma                   = kwargs.get('gamma',0.3)
+            self.cost                    = kwargs.get('cost',4.)
+            self.coef0                   = kwargs.get('coef0',0)
+            self.w_negative              = kwargs.get('w_negative',7.)
+            self.bpsvm_w_negative        = kwargs.get('bpsvm_w_negative',7.)
+            self.bpsvm_cost              = kwargs.get('bpsvm_cost',4.)
+            self.bpsvm_gamma             = kwargs.get('bpsvm_gamma',0.3)                        
+            self.hmmsvm_diag_nu          = kwargs.get('hmmsvm_diag_nu',0.5)
+            self.hmmsvm_diag_w_negative  = kwargs.get('hmmsvm_diag_w_negative',7.)
+            self.hmmsvm_diag_cost        = kwargs.get('hmmsvm_diag_cost',4.)
+            self.hmmsvm_diag_gamma       = kwargs.get('hmmsvm_diag_gamma',0.3)
+            self.hmmosvm_nu              = kwargs.get('hmmosvm_nu',0.00316)
+            self.osvm_nu                 = kwargs.get('osvm_nu',0.00316)
+            self.nu                      = kwargs.get('nu',0.5)
+            self.progress_svm_w_negative = kwargs.get('progress_svm_w_negative',7.0)
+            self.progress_svm_cost       = kwargs.get('progress_svm_cost',4.)
+            self.progress_svm_gamma      = kwargs.get('progress_svm_gamma',0.3)
+        elif self.method == 'progress_state':
             if nLength is None:
                 print "Need to input nLength or automatically set to 200"
-                self.nLength   = 200
+                self.nLength = 200
             else:
                 ## print "Set data length to ", nLength
-                self.nLength   = nLength
-            self.std_coff  = std_coff
-            self.logp_offset = logp_offset
+                self.nLength = nLength
+            self.std_coff    = kwargs.get('std_coff',1.0)
+            self.logp_offset = kwargs.get('logp_offset',0.0)
             self.ll_mu  = np.zeros(nPosteriors)
             self.ll_std = np.zeros(nPosteriors)
             self.l_statePosterior = None
@@ -155,30 +122,20 @@ class classifier(learning_base):
             self.mu  = 0.0
             self.std = 0.0
         elif self.method == 'sgd':
-            self.sgd_w_negative = sgd_w_negative             
-            self.sgd_gamma      = sgd_gamma
-            self.sgd_n_iter     = sgd_n_iter 
+            self.sgd_w_negative = kwargs.get('sgd_w_negative',1.0)
+            self.sgd_gamma      = kwargs.get('sgd_gamma',2.0)
+            self.sgd_n_iter     = kwargs.get('sgd_n_iter',10) 
             ## self.cost         = cost
-        elif self.method == 'hmmgp':
-            from sklearn import gaussian_process
-            self.regr = 'linear' #'constant' #'constant', 'linear', 'quadratic'
-            self.corr = 'squared_exponential' 
-            self.nugget = nugget
-            self.theta0 = theta0
-            self.hmmgp_logp_offset = hmmgp_logp_offset
-
-            self.dt = gaussian_process.GaussianProcess(regr=self.regr, theta0=self.theta0, corr=self.corr, \
-                                                       normalize=True, nugget=self.nugget)            
         elif self.method == 'hmmsvr':
-            self.svm_type    = svm_type
-            self.kernel_type = kernel_type
-            self.degree      = degree 
-            self.gamma       = gamma
-            self.cost        = cost
-            self.coef0       = coef0
-            self.nu          = nu
+            self.svm_type    = kwargs.get('svm_type',0)
+            self.kernel_type = kwargs.get('kernel_type',2)
+            self.degree      = kwargs.get('degree',3)
+            self.gamma       = kwargs.get('gamma',0.3)
+            self.cost        = kwargs.get('cost',4.)
+            self.coef0       = kwargs.get('coef0',0.)
+            self.nu          = kwargs.get('nu',0.5)
                         
-        learning_base.__init__(self)
+        clf_base.__init__(self)
 
 
 
@@ -186,11 +143,6 @@ class classifier(learning_base):
         '''
         ll_idx is the index list of each sample in a sequence.
         '''
-        # get custom precomputed kernel for svms
-        ## if 'svm' in self.method:
-        ##     self.X_train=X
-        ##     ## y_train=y
-        ##     K_train = custom_kernel(self.X_train, self.X_train, gamma=self.gamma)
 
         if self.method.find('svm')>=0 :
             sys.path.insert(0, '/usr/lib/pymodules/python2.7')
@@ -263,44 +215,6 @@ class classifier(learning_base):
                 return False
             return True
         
-        elif self.method == 'progress' or self.method == 'progress_diag':
-            if type(X) == list: X = np.array(X)
-            if ll_idx is None:
-                # Need to artificially generate ll_idx....
-                nSample  = len(y)/(self.nLength-self.startIdx)
-                idx_list = range(self.nLength)[self.startIdx:]
-                ll_idx = [ idx_list[j] for j in xrange(len(idx_list)) for i in xrange(nSample) if y[i*(self.nLength-self.startIdx)+1]<0 ]
-                ## print "Error>> ll_idx is not inserted"
-                ## sys.exit()
-            else:
-                if len(np.shape(y))>1: y = np.array(y)[:,0]
-                ll_idx  = [ ll_idx[i] for i in xrange(len(ll_idx)) if y[i]<0 ]                
-                    
-            ll_logp = [ X[i,0] for i in xrange(len(X)) if y[i]<0 ]
-            ll_post = [ X[i,-self.nPosteriors:] for i in xrange(len(X)) if y[i]<0 ]
-
-            self.g_mu_list = np.linspace(0, self.nLength-1, self.nPosteriors)
-            self.g_sig = float(self.nLength) / float(self.nPosteriors) * self.std_coff
-
-            if self.parallel and False:
-                r = Parallel(n_jobs=-1)(delayed(learn_time_clustering)(i, ll_idx, ll_logp, ll_post, \
-                                                                       self.g_mu_list[i],\
-                                                                       self.g_sig, self.nPosteriors)
-                                                                       for i in xrange(self.nPosteriors))
-                _, self.l_statePosterior, self.ll_mu, self.ll_std = zip(*r)
-            else:
-                self.l_statePosterior = []
-                self.ll_mu            = []
-                self.ll_std           = []
-                for i in xrange(self.nPosteriors):
-                    _,p,m,s = learn_time_clustering(i, ll_idx, ll_logp, ll_post, self.g_mu_list[i],\
-                                                  self.g_sig, self.nPosteriors)
-                    self.l_statePosterior.append(p)
-                    self.ll_mu.append(m)
-                    self.ll_std.append(s)
-
-            return True
-
         elif self.method == 'progress_state':
             '''
             state-based clustering using knn
@@ -314,38 +228,12 @@ class classifier(learning_base):
             self.progress_neighbors = 10
             
             from sklearn.neighbors import NearestNeighbors
-            from hrl_anomaly_detection.hmm.learning_util import symmetric_entropy
-            self.dt = NearestNeighbors(n_neighbors=self.progress_neighbors, metric=symmetric_entropy)
+            self.dt = NearestNeighbors(n_neighbors=self.progress_neighbors, metric=cutil.symmetric_entropy)
             self.dt.fit(ll_post)
             
             self.ll_logp = np.array(ll_logp)
             
             return True
-
-        elif self.method == 'hmmgp':
-            '''
-            gaussian process
-            '''
-            if type(X) == list: X = np.array(X)
-            
-            # extract only negatives
-            ll_logp = [ X[i,0] for i in xrange(len(X)) if y[i]<0 ]
-            ll_post = [ X[i,-self.nPosteriors:] for i in xrange(len(X)) if y[i]<0 ]
-
-            # to prevent multiple same input we add noise into X
-            ll_post = np.array(ll_post) + np.random.normal(0.0, 0.001, np.shape(ll_post))
-
-            if False:
-                from sklearn.utils import check_array
-                ll_logp = check_array(ll_logp).T
-                import sandbox_dpark_darpa_m3.lib.gaussian_process.spgp.spgp as gp
-                self.dt = gp.Gaussian_Process(ll_post,ll_logp,M=400)
-                self.dt.training('./spgp_obs.pkl', renew=True)
-            else:
-                self.dt.fit( ll_post, ll_logp )          
-                ## idx_list = range(len(ll_post))
-                ## random.shuffle(idx_list)
-                ## self.dt.fit( ll_post[idx_list[:600]], np.array(ll_logp)[idx_list[:600]])          
 
         elif self.method == 'fixed':
             if type(X) == list: X = np.array(X)
@@ -397,10 +285,13 @@ class classifier(learning_base):
                 self.dt = SGDClassifier(verbose=0,class_weight=d,n_iter=self.sgd_n_iter, #learning_rate='constant',\
                                         eta0=1e-2, shuffle=True, average=True, fit_intercept=True)
             self.dt.fit(X_features, y)
+            
+        else:
+            print self.method, " is not supported in this classifier.py"
+            sys.exit()
 
 
-
-    def partial_fit(self, X, y=None, X_idx=None, shuffle=True, **kwargs):
+    def partial_fit(self, X, y=None, X_idx=None, shuffle=False, **kwargs):
         '''
         X: samples x hmm-feature vec
         y: sample
@@ -425,69 +316,6 @@ class classifier(learning_base):
                 self.dt.partial_fit(X_features,y,
                                     classes=kwargs['classes'],
                                     sample_weight=kwargs['sample_weight'])
-
-        elif self.method.find( 'progress')>=0:
-            assert len(X)==len(y), "X and y sizes should be same"
-            assert len(X)==len(X_idx), "X and y sizes should be same"
-            if type(X) == list: X = np.array(X)
-            
-            # Get params for new data
-            ll_idx  = [ X_idx[i] for i in xrange(len(X_idx)) if y[i]<0 ]                            
-            ll_logp = [ X[i,0] for i in xrange(len(X)) if y[i]<0 ]
-            ll_post = [ X[i,-self.nPosteriors:] for i in xrange(len(X)) if y[i]<0 ]
-            
-            # Update using bayesian inference
-            mu_mu   = kwargs['mu_mu']
-            std_mu  = kwargs['std_mu']
-            mu_std  = kwargs['mu_std']
-            std_std = kwargs['std_std']
-            from scipy.optimize import minimize
-            
-            ## # 1) Find all likelihood in ith cluster
-            ## l_idx = []
-            ## ll_c_post = [[] for i in xrange(self.nPosteriors)]
-            ## ll_c_logp = [[] for i in xrange(self.nPosteriors)]
-            ## for i, post in enumerate(ll_post):
-            ##     min_index, min_dist = findBestPosteriorDistribution(post, self.l_statePosterior)
-            ##     ll_c_post[min_index].append(post)
-            ##     ll_c_logp[min_index].append(ll_logp[i])
-            
-
-            for i in xrange(self.nPosteriors):
-                # 1-new) Find time-based weight per cluster
-                ## weights = norm(loc=self.g_mu_list[i], scale=self.g_sig).pdf(ll_idx) 
-
-                # 1-new-new) Find KL-based weight per cluster
-                weights = []
-                for j, post in enumerate(ll_post):
-                    weights.append( 1.0 / symmetric_entropy(post, self.l_statePosterior[i]) )
-                weights = np.array(weights)**2
-                weights = [w if w > 0.01 else 0.0 for w in weights ]
-                weights = [w if w < 1.0 else 1.0 for w in weights ]
-
-                ## weights = []
-                ## for j, post in enumerate(ll_post):
-                ##     min_index, min_dist = findBestPosteriorDistribution(post, self.l_statePosterior)
-                ##     if min_index == i: weights.append(1.0)
-                ##     else: weights.append(0.0)
-                
-                ## print np.amax(weights), np.amin(weights)
-
-                
-                
-                # 2) Run optimization
-                x0 = [mu_mu[i], mu_std[i]]
-                res = minimize(param_posterior, x0, args=(ll_logp, weights,\
-                                                          mu_mu[i], std_mu[i], mu_std[i], std_std[i]),
-                               method='L-BFGS-B',
-                               bounds=((mu_mu[i]-15.0*std_mu[i], mu_mu[i]+15.0*std_mu[i]),
-                                       (1e-5, mu_std[i]+15.0*std_std[i]))
-                                       )
-
-                self.ll_mu[i]  = res.x[0]
-                self.ll_std[i] = res.x[1]
-                ## print i, ": Number of iterations: ", res.nit
-            
         else:
             print "Not available method, ", self.method
             sys.exit()
@@ -525,36 +353,6 @@ class classifier(learning_base):
                         if err>0: p_labels[i] = 1.0
             return p_labels
         
-        elif self.method == 'progress' or self.method == 'progress_diag':
-            if len(np.shape(X))==1: X = [X]
-
-            l_err = []
-            for i in xrange(len(X)):
-                logp = X[i][0]
-                post = X[i][-self.nPosteriors:]
-
-                # Find the best posterior distribution
-                try:
-                    min_index, min_dist = findBestPosteriorDistribution(post, self.l_statePosterior)
-                except:
-                    print i
-                    print self.l_statePosterior
-                    sys.exit()
-                nState = len(post)
-
-                if (type(self.ths_mult) == list or type(self.ths_mult) == np.ndarray or \
-                    type(self.ths_mult) == tuple) and len(self.ths_mult)>1:
-                    err = (self.ll_mu[min_index] + self.ths_mult[min_index]*self.ll_std[min_index]) - logp - self.logp_offset                        
-                else:
-                    err = (self.ll_mu[min_index] + self.ths_mult*self.ll_std[min_index]) - logp - self.logp_offset
-
-                l_err.append(err)
-
-            if debug:
-                return l_err, self.ll_mu[min_index], self.ll_std[min_index]
-            else:
-                return l_err
-
         elif self.method == 'progress_state':
             if len(np.shape(X))==1: X = [X]
 
@@ -570,43 +368,6 @@ class classifier(learning_base):
                 l_err.append(err)
 
             return l_err            
-
-        elif self.method.find('hmmgp')>=0:
-            '''
-            gaussian process
-            '''
-            if len(np.shape(X))==1: X = [X]
-            if type(X) is list: X= np.array(X)
-            
-            logps = X[:,0]
-            posts = X[:,-self.nPosteriors:]
-
-            if False:
-                y_pred, sigma = self.dt.predict(posts, True)
-            else:
-                try:
-                    y_pred, MSE = self.dt.predict(posts, eval_MSE=True)
-                    sigma = np.sqrt(MSE)
-                except:
-                    print "posterior probability is weired"
-                    ## for i, post in enumerate(posts):                        
-                    ##     print i, post
-                    #sys.exit()
-                    return np.ones(len(posts))
-
-            ## mult_coeff = []
-            ## for post in posts:
-            ##     min_index = np.argmax(post)
-            ##     ## mult_coeff.append( 1.0 + 0.* float(min_index)/(float(self.nPosteriors)-1.0) )
-            ##     mult_coeff.append( 1.0 + 3.* float(min_index)/(float(self.nPosteriors)-1.0) )
-            ## mult_coeff = np.array(mult_coeff)
-
-            ## l_err = y_pred + mult_coeff*self.ths_mult*sigma - logps #- self.logp_offset
-            l_err = y_pred + self.ths_mult*sigma - logps - self.hmmgp_logp_offset
-            if debug:
-                return l_err, y_pred, sigma
-            else:
-                return l_err                
 
         elif self.method == 'fixed':
             if len(np.shape(X))==1: X = [X]
@@ -696,17 +457,6 @@ class classifier(learning_base):
             with open(fileName, 'wb') as f:
                 pickle.dump(self.dt, f)
                 pickle.dump(self.rbf_feature, f)
-        elif self.method.find('progress')>=0 :
-            d = {'g_mu_list': self.g_mu_list, 'g_sig': self.g_sig, \
-                 'l_statePosterior': self.l_statePosterior,\
-                 'll_mu': self.ll_mu, 'll_std': self.ll_std}
-            ut.save_pickle(d, fileName)            
-        elif self.method.find('hmmgp')>=0:            
-            import pickle
-            with open(fileName, 'wb') as f:
-                pickle.dump(self.dt, f)
-                pickle.dump(self.ths_mult, f)
-                pickle.dump(self.hmmgp_logp_offset, f)
         else:
             print "Not available method"
 
@@ -721,283 +471,23 @@ class classifier(learning_base):
             with open(fileName, 'rb') as f:
                 self.dt = pickle.load(f)
                 self.rbf_feature = pickle.load(f)
-        elif self.method.find('progress')>=0:
-            print "Start to load a progress based classifier"
-            d = ut.load_pickle(fileName)
-            self.g_mu_list = d['g_mu_list']
-            self.g_sig     = d['g_sig']
-            self.l_statePosterior = d['l_statePosterior']
-            self.ll_mu            = d['ll_mu']
-            self.ll_std           = d['ll_std']
-        elif self.method.find('hmmgp')>=0:
-            import pickle
-            with open(fileName, 'rb') as f:
-                self.dt       = pickle.load(f)
-                self.ths_mult = pickle.load(f)
-                self.hmmgp_logp_offset = pickle.load(f)
         else:
             print "Not available method"
         
-            
-
-        
-####################################################################
-# functions for distances
-####################################################################
-
-def custom_kernel(x1,x2, gamma=1.0):
-    '''
-    Similarity estimation between (loglikelihood, state distribution) feature vector.
-    kernel must take as arguments two matrices of shape (n_samples_1, n_features), (n_samples_2, n_features)
-    and return a kernel matrix of shape (n_samples_1, n_samples_2)
-    '''
-
-    if len(np.shape(x1)) == 2: 
-
-        kernel_mat       = np.zeros((len(x1), len(x2)+1))
-        kernel_mat[:,:1] = np.arange(len(x1))[:,np.newaxis]+1
-        kernel_mat[:,1:] = metrics.pairwise.pairwise_distances(x1[:,0],x2[:,0], metric='l1') 
-        kernel_mat[:,1:] += gamma*metrics.pairwise.euclidean_distances(x1[:,1:],x2[:,1:])*\
-          (metrics.pairwise.pairwise_distances(np.argmax(x1[:,1:],axis=1),\
-                                               np.argmax(x2[:,1:],axis=1),
-                                               metric='l1') + 1.0)
-        return np.exp(-kernel_mat)
-    else:
-        d1 = abs(x1[0] - x2[0]) 
-        d2 = np.linalg.norm(x1[1:]-x2[1:])*( abs(np.argmax(x1[1:])-np.argmax(x2[1:])) + 1.0)
-        return np.exp(-(d1 + gamma*d2))
-
-def customDist(i,j, x1, x2, gamma):
-    return i,j,(x1-x2)**2 + gamma*1.0/symmetric_entropy(x1,x2)
-
-
-def custom_kernel2(x1,x2):
-    '''
-    Similarity estimation between state distribution feature vector.
-    kernel must take as arguments two matrices of shape (n_samples_1, n_features), (n_samples_2, n_features)
-    and return a kernel matrix of shape (n_samples_1, n_samples_2)
-    '''
-
-    if len(np.shape(x1)) == 2: 
-
-        ## print np.shape(x1), np.shape(x2)
-        kernel_mat = scipy.spatial.distance.cdist(x1, x2, 'euclidean')        
-
-        ## for i in xrange(len(x1)):
-        ##     for j in xrange(len(x2)):
-        ##         ## kernel_mat[i,j] = 1.0/symmetric_entropy(x1[i], x2[j])
-        ##         kernel_mat[i,j] = np.linalg.norm(x1[i]-x2[j])
-
-        return kernel_mat
-
-    else:
-
-        ## return 1.0/symmetric_entropy(x1, x2)
-        return np.linalg.norm(x1[i]-x2[j])
-
-def KLS(p,q, gamma=3.0):
-    return np.exp(-gamma*( entropy(p,np.array(q)+1e-6) + entropy(q,np.array(p)+1e-6) ) )
-
-def symmetric_entropy(p,q):
-    '''
-    Return the sum of KL divergences
-    '''
-    pp = np.array(p)+1e-6
-    qq = np.array(q)+1e-6
-    
-    ## return min(entropy(p,np.array(q)+1e-6), entropy(q,np.array(p)+1e-6))
-    return min(entropy(pp,qq), entropy(qq,pp))
-
-
-def findBestPosteriorDistribution(post, l_statePosterior):
-    # Find the best posterior distribution
-    min_dist  = 100000000
-    min_index = 0
-
-    for j in xrange(len(l_statePosterior)):
-        dist = symmetric_entropy(post, l_statePosterior[j])
-        
-        if min_dist > dist:
-            min_index = j
-            min_dist  = dist
-
-    return min_index, min_dist
-
 
 ####################################################################
 # functions for paralell computation
 ####################################################################
 
-def learn_time_clustering(i, ll_idx, ll_logp, ll_post, g_mu, g_sig, nState):
-
-    weights     = norm(loc=g_mu, scale=g_sig).pdf(ll_idx)
-    weight_sum  = np.sum(weights)
-    weight2_sum = np.sum(weights**2)
-
-    g_post = np.zeros(nState)
-    g_lhood = 0.0
-    ## g_post  = np.matmul(weights,ll_post) 
-    ## g_lhood = np.sum( ll_logp * weights )
-    for j in xrange(len(ll_idx)):
-        if weights[j] < 1e-3: continue
-        g_post   += ll_post[j] * weights[j]
-        g_lhood  += ll_logp[j] * weights[j]
-
-    if abs(weight_sum)<1e-3: weight_sum=1e-3
-    l_statePosterior  = g_post / weight_sum 
-    l_likelihood_mean = g_lhood / weight_sum 
-
-    g_lhood2 = np.sum( weights * ( (ll_logp-l_likelihood_mean)**2 ) )
-        
-    ## print g_lhood2/(weight_sum - weight2_sum/weight_sum), weight_sum - weight2_sum/weight_sum, weight_sum 
-    l_likelihood_std = np.sqrt(g_lhood2/(weight_sum - weight2_sum/weight_sum))
-
-    return i, l_statePosterior, l_likelihood_mean, l_likelihood_std
-
-
-def update_time_cluster(i, ll_idx, ll_logp, ll_post, rbf_mu, rbf_sig, mu, sig, nState, N, \
-                        update_weight=1.0):
-
-    g_lhood = 0.0
-    weight_sum  = 0.0
-
-    n = len(ll_idx)
-    for j in xrange(n): # per execution
-
-        idx  = ll_idx[j]
-        logp = ll_logp[j]
-        post = ll_post[j]
-
-        weight    = norm(loc=rbf_mu, scale=rbf_sig).pdf(idx)
-
-        ## if weight < 1e-3: continue
-        g_lhood  = np.sum(logp * weight)
-        weight_sum = np.sum(weight)
-        if abs(weight_sum)<1e-3: weight_sum=1e-3        
-
-        x_new   = g_lhood / weight_sum
-        mu_new  = ( float(N-update_weight)*mu + update_weight*x_new )/(N)
-        try:
-            sig_new = np.sqrt( (float(N-update_weight)*( sig*sig + mu*mu)+update_weight*mu_new*mu_new)/float(N) \
-                               - mu_new*mu_new )
-        except:
-            print (float(N-update_weight)*( sig*sig + mu*mu)+update_weight*mu_new*mu_new)/float(N) - mu_new*mu_new
-            print (float(N-update_weight)*( sig*sig + mu*mu)+update_weight*mu_new*mu_new)/float(N), mu_new*mu_new
-
-
-        mu  = mu_new
-        sig = sig_new
-
-    return i, mu, sig
-
-
-def run_classifier(j, X_train, Y_train, idx_train, X_test, Y_test, idx_test, \
-                   method, nState, nLength, nPoints, param_dict, ROC_dict, dtc=None):
-
-    # classifier # TODO: need to make it efficient!!
-    if dtc is None:
-        dtc = classifier( method=method, nPosteriors=nState, nLength=nLength )        
-    dtc.set_params( **param_dict )
-    if method == 'svm' or method == 'hmmsvm_diag' or\
-      method == 'sgd' or method == 'progress_svm' or method == 'svm_fixed':
-        if method == 'svm_fixed': 
-            weights = ROC_dict['svm_param_range']
-        else:
-            weights = ROC_dict[method+'_param_range']
-            
-        dtc.set_params( class_weight=weights[j] )
-        ret = dtc.fit(X_train, Y_train)
-    elif method == 'bpsvm':
-        weights = ROC_dict[method+'_param_range']
-        ## dtc.set_params( kernel_type=0 )
-        dtc.set_params( class_weight=weights[j] )
-        ret = dtc.fit(X_train, Y_train)
-    elif method == 'hmmosvm' or method == 'osvm' or method == 'progress_osvm':
-        weights = ROC_dict[method+'_param_range']
-        dtc.set_params( svm_type=2 )
-        dtc.set_params( gamma=weights[j] )
-        ret = dtc.fit(X_train, np.array(Y_train)*-1.0)
-    elif method == 'progress' or method == 'progress_diag' or method == 'progress_state' \
-      or method == 'fixed' or method == 'hmmgp':
-        thresholds = ROC_dict[method+'_param_range']
-        dtc.set_params( ths_mult = thresholds[j] )
-        if j==0: ret = dtc.fit(X_train, Y_train, idx_train)                
-    elif method == 'rfc':
-        weights = ROC_dict[method+'_param_range']
-        dtc.set_params( svm_type=2 )
-        ret = dtc.fit(X_train, np.array(Y_train)*-1.0)
-    else:
-        print "Not available method: ", method
-        return "Not available method", -1
-
-    if ret is False:
-        print "fit failed, ", weights[j]
-        sys.exit()
-        return 'fit failed', [],[],[],[],[]
-
-    # evaluate the classifier
-    tp_l = []
-    fp_l = []
-    tn_l = []
-    fn_l = []
-    delay_l = []
-    delay_idx = 0
-    for ii in xrange(len(X_test)):
-        if len(Y_test[ii])==0: continue
-
-        if method.find('osvm')>=0:
-            est_y = dtc.predict(X_test[ii], y=np.array(Y_test[ii])*-1.0)
-            est_y = np.array(est_y)* -1.0
-        else:
-            est_y = dtc.predict(X_test[ii], y=Y_test[ii])
-        
-        anomaly = False
-        for jj in xrange(len(est_y)):
-            if est_y[jj] > 0.0:
-
-                ## if method == 'hmmosvm':
-                ##     window_size = 5
-                ##     if jj >= window_size:
-                ##         if np.sum(est_y[jj-window_size:jj])>=window_size:
-                ##             anomaly = True                            
-                ##             break
-                ##     continue                        
-
-                ## if Y_test[ii][0] < 0:
-                ## print jj, est_y[jj], Y_test[ii][0] #, " - ", X_test[ii][jj]
-                    
-                if idx_test is not None:
-                    try:
-                        delay_idx = idx_test[ii][jj]
-                    except:
-                        print "Error!!!!!!!!!!!!!!!!!!"
-                        print np.shape(idx_test), ii, jj
-                anomaly = True                            
-                break        
-
-        if Y_test[ii][0] > 0.0:
-            if anomaly:
-                tp_l.append(1)
-                delay_l.append(delay_idx)
-            else: fn_l.append(1)
-        elif Y_test[ii][0] <= 0.0:
-            if anomaly: fp_l.append(1)
-            else: tn_l.append(1)
-
-    return j, tp_l, fp_l, fn_l, tn_l, delay_l
-
-
-
 def run_classifiers(idx, processed_data_path, task_name, method,\
                     ROC_data, ROC_dict, SVM_dict, HMM_dict,\
-                    raw_data=None, startIdx=4, nState=25, \
+                    startIdx=4, nState=25, \
                     modeling_pkl_prefix=None, failsafe=False, delay_estimation=False,\
                     adaptation=False, \
                     save_model=False, load_model=False, n_jobs=-1):
 
     #-----------------------------------------------------------------------------------------
     nPoints    = ROC_dict['nPoints']
-    add_logp_d = HMM_dict.get('add_logp_d', False)
 
     # pass method if there is existing result
     data = {}
@@ -1005,21 +495,34 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
     if ROC_data[method]['complete'] == True: return data
     #-----------------------------------------------------------------------------------------
 
-    # train a classifier and evaluate it using test data.
-    from sklearn import preprocessing
+    if modeling_pkl_prefix is not None:
+        modeling_pkl = os.path.join(processed_data_path, modeling_pkl_prefix+'_'+str(idx)+'.pkl')            
+    else:        
+        modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
 
-    if method == 'osvm' or method == 'bpsvm':
+    print "start to load hmm data, ", modeling_pkl
+    d            = ut.load_pickle(modeling_pkl)
+    for k, v in d.iteritems():
+        exec '%s = v' % k        
+
+    # train a classifier and evaluate it using test data.
+    if method == 'ipca' or method == 'osvm' or method == 'bpsvm' or method == 'sgd':
         if method == 'osvm': raw_data_idx = 0
         elif method == 'bpsvm': raw_data_idx = 1
 
-        X_train_org   = raw_data[raw_data_idx][idx]['X_scaled']
-        Y_train_org   = raw_data[raw_data_idx][idx]['Y_train_org']
-        idx_train_org = raw_data[raw_data_idx][idx]['idx_train_org']
-        ll_classifier_test_X    = raw_data[raw_data_idx][idx]['X_test']
-        ll_classifier_test_Y    = raw_data[raw_data_idx][idx]['Y_test']
-        ll_classifier_test_idx  = raw_data[raw_data_idx][idx]['idx_test']
+        X_train                 = ll_window_train_X
+        Y_train                 = ll_window_train_Y
+        idx_train               = None        
+        ll_classifier_test_X    = ll_window_test_X
+        ll_classifier_test_Y    = ll_window_test_Y
+        ll_classifier_test_idx  = None        
         ll_classifier_test_labels = None
-        step_idx_l = raw_data[raw_data_idx][idx]['step_idx_l']
+        ## step_idx_l = raw_data[raw_data_idx][idx]['step_idx_l']
+
+        if method.find('ipca')>=0 and adaptation is True:
+            X_train_p  = ll_window_ptrain_X
+            Y_train_p  = ll_window_ptrain_Y
+            idx_train_p= None
 
         # TODO: set automatically!
         if processed_data_path.find('feeding')>=0:
@@ -1028,15 +531,6 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             nLength = 200
     else:
 
-        if modeling_pkl_prefix is not None:
-            modeling_pkl = os.path.join(processed_data_path, modeling_pkl_prefix+'_'+str(idx)+'.pkl')            
-        else:        
-            modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
-
-        print "start to load hmm data, ", modeling_pkl
-        d            = ut.load_pickle(modeling_pkl)
-        for k, v in d.iteritems():
-            exec '%s = v' % k        
         ## nState, ll_classifier_train_?, ll_classifier_test_?, nLength    
         ll_classifier_test_labels = d.get('ll_classifier_test_labels', None)
 
@@ -1086,7 +580,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
         # flatten the data
         if method.find('svm')>=0 or method.find('sgd')>=0: remove_fp=True
         else: remove_fp = False
-        X_train_org, Y_train_org, idx_train_org = dm.flattenSample(ll_classifier_train_X, \
+        X_train, Y_train, idx_train = dm.flattenSample(ll_classifier_train_X, \
                                                                    ll_classifier_train_Y, \
                                                                    ll_classifier_train_idx,\
                                                                    remove_fp=remove_fp)
@@ -1100,7 +594,8 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                 # compute theta per person
                 if n_jobs == 1: parallel = True
                 else: parallel = False
-                dtc = classifier( method=method, nPosteriors=nState, nLength=nLength, parallel=parallel )
+                from hrl_anomaly_detection.classifiers import hmmd
+                dtc = hmmd.hmmd( nPosteriors=nState, nLength=nLength, parallel=parallel )                
 
                 X_train_p, Y_train_p, idx_train_p =\
                 dm.flattenSample(np.array(ll_classifier_train_X)[nor_train_inds[i]], \
@@ -1124,24 +619,24 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
     # Generate parameter list for ROC curve
     # pass method if there is existing result
     # data preparation
-    if (method.find('svm')>=0 or method.find('sgd')>=0) and not(method == 'osvm' or method == 'bpsvm'):
+    if (method.find('svm')>=0 or method.find('ipca')>=0) and \
+      not(method == 'osvm' or method == 'bpsvm'):
         scr_pkl  = os.path.join(processed_data_path, 'scr_'+method+'_'+str(idx)+'.pkl')
 
         import pickle
         if load_model:
             with open(scr_pkl, 'rb') as f:            
                 scaler = pickle.load(f)
-                
-        scaler   = preprocessing.StandardScaler()
-        X_scaled = scaler.fit_transform(X_train_org)
+
+        scaler      = preprocessing.StandardScaler()
+        X_train = scaler.fit_transform(X_train)
 
         if save_model:
             with open(scr_pkl, 'wb') as f:
                 pickle.dump(scaler, f)
                 
-    else:
-        X_scaled = X_train_org
-    print method, " : Before classification : ", np.shape(X_scaled), np.shape(Y_train_org)
+        
+    print method, " : Before classification : ", np.shape(X_train), np.shape(Y_train)
 
     # Get TEST data
     X_test = []
@@ -1149,7 +644,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
     for j in xrange(len(ll_classifier_test_X)):
         if len(ll_classifier_test_X[j])==0: continue
 
-        if (method.find('svm')>=0 or method.find('sgd')>=0) and not(method == 'osvm' or method == 'bpsvm'):
+        if (method.find('svm')>=0 or method.find('ipca')>=0) and not(method == 'osvm' or method == 'bpsvm'):
             try:
                 X = scaler.transform(ll_classifier_test_X[j])
             except:
@@ -1165,7 +660,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             X = ll_classifier_test_X[j]
 
         X_test.append(X)
-        Y_test.append(ll_classifier_test_Y[j])
+        Y_test.append(np.ones(len(X))*ll_classifier_test_Y[j])
 
 
     if modeling_pkl_prefix is not None:
@@ -1178,7 +673,19 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
     # classifier # TODO: need to make it efficient!!
     if n_jobs == 1: parallel = True
     else: parallel = False
-    dtc = classifier( method=method, nPosteriors=nState, nLength=nLength, parallel=parallel )
+    if method == 'progress' or method == 'progress_diag':
+        from hrl_anomaly_detection.classifiers import hmmd
+        dtc = hmmd.hmmd( nPosteriors=nState, nLength=nLength, parallel=parallel )
+    elif method == 'hmmgp':
+        from hrl_anomaly_detection.classifiers import hmmgp
+        dtc = hmmgp.hmmgp( nPosteriors=nState, parallel=parallel )
+    elif method == 'ipca':
+        from hrl_anomaly_detection.classifiers import ipca
+        dtc = ipca.ipca(n_components=len(X_train[0])/10, batch_size=500 )        
+    else:
+        dtc = classifier( method=method, nPosteriors=nState, nLength=nLength, parallel=parallel )
+
+        
     for j in xrange(nPoints):
             
         if load_model: dtc.load_model(clf_pkl)
@@ -1193,40 +700,47 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             else:
                 weights = ROC_dict[method+'_param_range']
             dtc.set_params( class_weight=weights[j] )
-            if not load_model: ret = dtc.fit(X_scaled, Y_train_org, idx_train_org)
+            if not load_model: ret = dtc.fit(X_train, Y_train, idx_train)
         elif method == 'hmmosvm' or method == 'osvm' or method == 'progress_osvm':
             weights = ROC_dict[method+'_param_range']
             dtc.set_params( svm_type=2 )
             dtc.set_params( kernel_type=2 )
             dtc.set_params( gamma=weights[j] )
-            if not load_model: ret = dtc.fit(X_scaled, np.array(Y_train_org)*-1.0)
+            if not load_model: ret = dtc.fit(X_train, np.array(Y_train)*-1.0)
         elif method == 'progress' or method == 'progress_diag' or \
-          method == 'fixed' or method == 'hmmgp':
+          method == 'fixed' or method == 'hmmgp' or method == 'ipca':
             thresholds = ROC_dict[method+'_param_range']
-            dtc.set_params( ths_mult = thresholds[j] )
+            if method == 'ipca':
+                dtc.set_params( ths = thresholds[j] )
+            else:
+                dtc.set_params( ths_mult = thresholds[j] )
+                
             if not load_model:
                 if j==0:
-                    ret = dtc.fit(X_scaled, Y_train_org, idx_train_org)
+                    ret = dtc.fit(X_train, y=Y_train, ll_idx=idx_train)
 
                     # Adaptation
-                    if adaptation is True:            
-                        dtc.partial_fit(X_train_p, Y_train_p, idx_train_p, shuffle=False,
-                                        mu_mu=np.mean(mu_list, axis=1),
-                                        std_mu=np.std(mu_list, axis=1),
-                                        mu_std=np.mean(std_list, axis=1),
-                                        std_std=np.std(std_list, axis=1) )
+                    if adaptation is True:
+                        if method == 'ipca':
+                            dtc.partial_fit(X_train_p)
+                        else:
+                            dtc.partial_fit(X_train_p, Y_train_p, idx_train_p,
+                                            mu_mu=np.mean(mu_list, axis=1),
+                                            std_mu=np.std(mu_list, axis=1),
+                                            mu_std=np.mean(std_list, axis=1),
+                                            std_std=np.std(std_list, axis=1) )
                    
         elif method == 'change':
             thresholds = ROC_dict[method+'_param_range']
             dtc.set_params( ths_mult = thresholds[j] )
             if not load_model:                
                 if j==0: ret = dtc.fit(ll_classifier_train_X, ll_classifier_train_Y, ll_classifier_train_idx)
-        elif method == 'rnd':
+        else:
+            # rnd
             weights = ROC_dict[method+'_param_range']
             dtc.set_params( class_weight=weights[j] )
+            dtc.set_params( ths_mult = weights[j] )
             ret = True
-        else:
-            raise ValueError("Not available method: "+method)
 
         if ret is False: raise ValueError("Classifier fitting error")
         if j==0 and save_model: dtc.save_model(clf_pkl)
@@ -1387,11 +901,21 @@ def run_classifiers_boost(idx, processed_data_path, task_name, method_list,\
     if n_jobs == 1: parallel = True
     else: parallel = False
     dtc = {}
-    dtc[0] = classifier( method=method_list[0][:-1], nPosteriors=nState, nLength=nLength, parallel=parallel )
+    if method_list[0][:-1] == 'progress' or method_list[0][:-1] == 'progress_diag':
+        from hrl_anomaly_detection.classifiers import hmmd
+        dtc[0] = hmmd.hmmd( nPosteriors=nState, nLength=nLength, parallel=parallel )
+    else:    
+        dtc[0] = classifier( method=method_list[0][:-1], nPosteriors=nState, nLength=nLength,
+                             parallel=parallel )
     clf_pkl = []
     clf_pkl.append(os.path.join(processed_data_path, 'clf_'+method_list[0]+'_'+str(idx)+'.pkl'))
     if nDetector>1:
-        dtc[1] = classifier( method=method_list[1][:-1], nPosteriors=nState, nLength=nLength, parallel=parallel )
+        if method_list[1][:-1] == 'progress' or method_list[1][:-1] == 'progress_diag':
+            from hrl_anomaly_detection.classifiers import hmmd
+            dtc[1] = hmmd.hmmd( nPosteriors=nState, nLength=nLength, parallel=parallel )
+        else:        
+            dtc[1] = classifier( method=method_list[1][:-1], nPosteriors=nState, nLength=nLength,
+                                 parallel=parallel )
         clf_pkl.append(os.path.join(processed_data_path, 'clf_'+method_list[1]+'_'+str(idx)+'.pkl'))
         
     for j in xrange(nPoints):
@@ -1498,26 +1022,3 @@ def run_classifiers_boost(idx, processed_data_path, task_name, method_list,\
     return data
 
 
-def param_posterior(x, l, w, mu_mu, std_mu, mu_std, std_std):
-
-    mu_n  = x[0]
-    std_n = x[1]
-
-    p = 0
-    N = float(len(l))
-    if isinstance(l, list): l = np.array(l)
-    if isinstance(w, list): w = np.array(w)
-    if std_n < 1e-5: p = 100000000000
-    
-    # 1st term
-    p += np.log(std_n)*N + np.sum( w*(mu_n-l)**2 )/(2.0*std_n**2)
-    
-    # 2nd term
-    p += (mu_n-mu_mu)**2 / (2.0*std_mu**2) #*0.5
-    
-    # 3rd term
-    p += (std_n-mu_std)**2 / (2.0*std_std**2) #*0.5
-
-    return p
-
-    

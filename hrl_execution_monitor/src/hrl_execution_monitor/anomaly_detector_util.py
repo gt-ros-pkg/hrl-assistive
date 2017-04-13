@@ -179,9 +179,15 @@ def get_detector_modules(save_data_path, task_name, param_dict, detector_id, fol
     m_gen.set_hmm_object(d['A'], d['B'], d['pi'])
 
     # load classifier
-    m_clf = cf.classifier( method=method[:-1], nPosteriors=d['nState'],
+    if method[:-1] == 'progress':
+        from hrl_anomaly_detection.classifiers import hmmd
+        m_clf = hmmd.hmmd( nPosteriors=d['nState'],
                            nLength=param_dict['data_param']['downSampleSize'],
-                           parallel=True )
+                           parallel=True )        
+    else:
+        m_clf = cf.classifier( method=method[:-1], nPosteriors=d['nState'],
+                               nLength=param_dict['data_param']['downSampleSize'],
+                               parallel=True )
     m_clf.load_model(clf_pkl)
 
     return m_param_dict, m_gen, m_clf
