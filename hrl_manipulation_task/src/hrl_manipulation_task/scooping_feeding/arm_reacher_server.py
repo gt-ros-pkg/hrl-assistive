@@ -89,6 +89,11 @@ class armReachAction(mpcBaseAction):
         self.initParamsForArmReach()
         self.setMotions()
 
+        if self.arm_name == 'left':
+            self.feeding_depth_pub.publish( Int64(int(self.mouthManOffset[2]*100.0)) )
+            self.feeding_horiz_pub.publish( Int64(int(-self.mouthManOffset[1]*100.0)) )            
+            self.feeding_vert_pub.publish( Int64(int(self.mouthManOffset[0]*100.0)) )
+
         rate = rospy.Rate(5)
         print_flag = True
         while not rospy.is_shutdown():
@@ -106,11 +111,6 @@ class armReachAction(mpcBaseAction):
                 ## break
                 self.pubCurEEPose()
             rate.sleep()
-
-        if self.arm_name == 'left':
-            self.feeding_depth_pub.publish( Int64(int(self.mouthManOffset[2]*100.0)) )
-            self.feeding_horiz_pub.publish( Int64(int(self.mouthManOffset[2]*100.0)) )            
-            self.feeding_vert_pub.publish( Int64(int(self.mouthManOffset[2]*100.0)) )
 
         rospy.loginfo("Arm Reach Action is initialized.")
 
@@ -382,10 +382,14 @@ class armReachAction(mpcBaseAction):
             return 'Completed head movement to right'
 
         else:
-            if task == 'initScooping1' or task == 'initStabbing1':
+            if task.find('initScooping')>=0 or task.find('initStabbing')>=0:
                 self.kinect_pause.publish('start')
-            elif task == 'initFeeding':
+            elif task.find('initFeeding')>=0:
                 self.kinect_pause.publish('pause')
+            ## if task == 'initScooping1' or task == 'initStabbing1':
+            ##     self.kinect_pause.publish('start')
+            ## elif task == 'initFeeding':
+            ##     self.kinect_pause.publish('pause')
             self.parsingMovements(self.motions[task][self.arm_name])
             return "Completed to execute "+task
 
@@ -455,15 +459,15 @@ class armReachAction(mpcBaseAction):
         
     def feedingHorizCallback(self, msg):
         print "Feeding horizonal offset requested ", msg.data
-        self.mouthManOffset[2] = float(msg.data)/100.0
-        self.feeding_horiz_pub.publish( Int64(int(self.mouthManOffset[2]*100.0)) )
+        self.mouthManOffset[1] = -float(msg.data)/100.0
+        self.feeding_horiz_pub.publish( Int64(int(-self.mouthManOffset[1]*100.0)) )
         self.mouthOffset = self.mouthManOffset+self.mouthNoise
 
 
     def feedingVertCallback(self, msg):
         print "Feeding vertical offset requested ", msg.data
-        self.mouthManOffset[2] = float(msg.data)/100.0
-        self.feeding_vert_pub.publish( Int64(int(self.mouthManOffset[2]*100.0)) )
+        self.mouthManOffset[0] = float(msg.data)/100.0
+        self.feeding_vert_pub.publish( Int64(int(self.mouthManOffset[0]*100.0)) )
         self.mouthOffset = self.mouthManOffset+self.mouthNoise        
         
 

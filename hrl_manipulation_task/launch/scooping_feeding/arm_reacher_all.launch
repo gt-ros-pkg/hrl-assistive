@@ -5,6 +5,7 @@
   <arg name="sensor" default="false"/>
   <arg name="client" default="false"/>
   <arg name="fast" default="false"/>
+  <arg name="locator" default="false"/>
 
   <!-- Load parameters -->
   <arg name="ad_param" default="$(find hrl_manipulation_task)/params/anomaly_detection.yaml" />    
@@ -51,6 +52,15 @@
     <include file="$(find hrl_manipulation_task)/launch/scooping_feeding/sensor_feeding_icra_2017.launch" />
     <include file="$(find hrl_manipulation_task)/launch/pr2_tactile_sleeve.launch" />
   </group>
+
+  <group if="$(arg locator)">
+    <node name="img_relay_node2" pkg="topic_tools" type="relay"
+          args="/head_mount_kinect/qhd/image_color_rect /image" output="screen" />
+    <node name="pts_relay_node2" pkg="topic_tools" type="relay"
+          args="/head_mount_kinect/qhd/points /point_cloud" output="screen" />
+  </group>
+
+
   
   <!-- Run arm reacher client (Only for test) -->
   <group if="$(arg client)">

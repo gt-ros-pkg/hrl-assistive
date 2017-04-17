@@ -88,7 +88,7 @@
       <table id="feeding_questions" style="width:100%;table-layout:fixed">
         <tr>
           <td colspan='3'>
-              Did the robot feed you yogurt?
+              Did the robot feed you?
           </td>
           <td style="text-align:center" id="feeding_questions1_yes" onclick="manTask_yes(this.id)" value="false">
             <label> yes </label>
@@ -99,7 +99,7 @@
         </tr>
         <tr>
           <td colspan='3'>
-            Did the robot cause any uncomfortable collisions?
+            Did the robot generate a beep (anomaly detection)?
           </td>
           <td style="text-align:center" id="feeding_questions2_yes" onclick="manTask_yes(this.id)" value="false">
             <label> yes </label>
@@ -110,8 +110,8 @@
         </tr>
         <tr>
           <td colspan='3'>
-            Was there any unexpected noise during feeding? <br>
-            (excluding noise from robot)
+            If the robot generated a beep, was there any unexpected
+            collision, noise, uncomfortable contact, etc? (default: No)
           </td>
           <td style="text-align:center" id="feeding_questions3_yes" onclick="manTask_yes(this.id)" value="false">
             <label> yes </label>
@@ -374,7 +374,9 @@
                         <table id="man_task_status" style="width:600px">
                           <tr>
                             <td>
-                              <button class="centered man_task_cont" id='man_task_Scooping' style="font-size:200%">Scooping</button>
+                              <button class="centered man_task_cont"
+                              id='man_task_Scooping'
+                              style="font-size:200%">Scooping / Stabbing</button>
                             </td>
                           </tr>
                           <tr>
@@ -415,22 +417,34 @@
                       <td colspan="5" style="text-align:right">
                         <button id='man_task_Advanced'> Advanced Options </button>
                     </tr>
-                    <tr id="advanced_setting_disp" style="display:none">
-                      <td colspan='5'>
+                    <tr id="advanced_setting_disp"
+                        style="display:none">
+                      <td colspan='5'>                        
                         <table>
                           <tr>
                             <td colspan='5'>
                               <table style="width:100%;text-align:center">
                                 <tr>
-                                <td colspan='1'>
-                                  Depth offset
-                                </td>
-                                <td colspan='1'>
-                                  Horizontal offset
-                                </td>
-                                <td colspan='1'>
-                                  Vertical offset
-                                </td>
+                                  <th colspan='5'
+                                      style="text-align:center">Feeding Location Offset</th>
+                                </tr>
+                                <tr>
+                                  <td colspan='5'>
+                                  <img src="css/imgs/front.png" alt="Front Face"
+                                       style="width:477px;height:134px;margin-left:0px"
+                                       align="middle">
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td colspan='1'>
+                                    Depth offset
+                                  </td>
+                                  <td colspan='1'>
+                                    Horizontal offset
+                                  </td>
+                                  <td colspan='1'>
+                                    Vertical offset
+                                  </td>
                                 </tr>
                                 <tr>
                                   <td colspan='1'>
@@ -458,13 +472,13 @@
                                   </td>
                                   <td colspan='1'>
                                     <select id="man_task_Feeding_vert_offset">
-                                      <option value="-3"> -3cm </option>
+                                      <option value="-5"> -5cm </option>
+                                      <option value="-4"> -4cm </option>
+                                      <option value="-3" selected> -3cm </option>
                                       <option value="-2"> -2cm </option>
                                       <option value="-1"> -1cm </option>
-                                      <option value="0" selected> 0cm </option>
+                                      <option value="0"> 0cm </option>
                                       <option value="1"> 1cm </option>
-                                      <option value="2"> 2cm </option>
-                                      <option value="3"> 3cm </option>
                                     </select>
                                   </td>
                                 </tr>

@@ -241,9 +241,9 @@ class logger:
         else:
             rate = rospy.Rate(2)
             while self.feedbackMSG == 0 and not rospy.is_shutdown():
-                self.data['feedback'] = self.feedbackMSG
                 rate.sleep()
 
+            self.data['feedback'] = self.feedbackMSG
             status = feedback_to_label(self.feedbackMSG)
             self.feedbackMSG=0
             print "Feedback status: ", status

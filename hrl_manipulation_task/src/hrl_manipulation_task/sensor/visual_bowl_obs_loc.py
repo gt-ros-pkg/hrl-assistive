@@ -260,6 +260,7 @@ class ArmReacherClient:
             x_offset = [30,50]
             y_offset = [40,30]
             with self.image_lock:
+                if np.shape(self.image)[0] == 0: continue
                 image = self.image[bowlProjY-y_offset[0]:bowlProjY+y_offset[1],
                                    bowlProjX-x_offset[0]:bowlProjX+x_offset[1]].copy()
                 #debug
@@ -320,6 +321,7 @@ class ArmReacherClient:
 
             point = self.tf.transformPoint('torso_lift_link', point)
             point = np.array([point.point.x, point.point.y, point.point.z])
+            #point[0] += 0.02 
 
             print point
             self.publishHighestBowlPoint(point)

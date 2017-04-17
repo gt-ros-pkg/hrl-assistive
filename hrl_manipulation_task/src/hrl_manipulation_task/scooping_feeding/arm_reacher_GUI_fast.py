@@ -370,7 +370,8 @@ class armReacherGUI:
                 rospy.loginfo("Initializing left arm for feeding")
                 self.proceedPub.publish("Set: , Feeding 1, Feeding 2")
                 if self.renew_mouth:
-                    self.ServiceCallLeft("initFeeding1")
+                    if self.cur_tool == 4: self.ServiceCallLeft("initFeeding1_pspoon")
+                    else:                  self.ServiceCallLeft("initFeeding1")
                     if self.emergencyStatus: break
                     self.ServiceCallRight("getHeadPos")
                     self.ServiceCallRight("initFeeding1")
@@ -378,8 +379,13 @@ class armReacherGUI:
                     self.FeedNumber = 1
                     self.proceedPub.publish("Set: Feeding 1, Feeding 2, Feeding 3")
                 else:
-                    leftProc = multiprocessing.Process(target=self.ServiceCallLeft,
-                                                       args=("initFeeding13",))
+                    if self.cur_tool == 4: 
+                        leftProc = multiprocessing.Process(target=self.ServiceCallLeft,
+                                                           args=("initFeeding13_pspoon",))
+                    else:
+                        leftProc = multiprocessing.Process(target=self.ServiceCallLeft,
+                                                           args=("initFeeding13",))
+                        
                     rightProc = multiprocessing.Process(target=self.ServiceCallRight,
                                                         args=("initFeeding13",))
                     leftProc.start(); rightProc.start()
@@ -413,7 +419,8 @@ class armReacherGUI:
                     if isolation_flag: self.log.enableIsolator(True)
 
                 rospy.loginfo("Running feeding")
-                self.ServiceCallLeft("runFeeding")
+                if self.cur_tool == 4: self.ServiceCallLeft("runFeeding_pspoon")
+                else:                  self.ServiceCallLeft("runFeeding")
                 self.proceedPub.publish("Done")
                 emergencyStatus = self.emergencyStatus
                 if self.log is not None:

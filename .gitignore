@@ -29,6 +29,8 @@ msg_gen
 srv_gen
 .ropeproject
 .idea
+jqueryui
+jqueryui_new
 
 # Files specific to this repo #
 ###############################

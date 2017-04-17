@@ -82,8 +82,8 @@ class armReachAction(mpcBaseAction):
 
         if self.arm_name == 'left':
             self.feeding_depth_pub.publish( Int64(int(self.mouthManOffset[2]*100.0)) )
-            self.feeding_horiz_pub.publish( Int64(int(self.mouthManOffset[2]*100.0)) )            
-            self.feeding_vert_pub.publish( Int64(int(self.mouthManOffset[2]*100.0)) )
+            self.feeding_horiz_pub.publish( Int64(int(-self.mouthManOffset[1]*100.0)) )            
+            self.feeding_vert_pub.publish( Int64(int(self.mouthManOffset[0]*100.0)) )
 
         rate = rospy.Rate(5)
         print_flag = True
@@ -210,7 +210,7 @@ class armReachAction(mpcBaseAction):
           = [['PAUSE', 2.0],
              ['MOVEJ', '[0.6447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 1.1291]', 5.0]]
         self.motions['initStabbing1']['right'] = \
-          [['MOVEJ', '[-0.59, 0.131, -1.55, -1.041, 0.098, -1.136, -1.4]', 5.0],
+          [['MOVEJ', '[-0.59, 0.131, -1.55, -1.041, 0.098, -1.136, -1.4]', 3.0],
            ['MOVES', '[0.7, -0.15, -0., -3.1415, 0.0, 1.574]', 5.]]
            ## ['MOVES', '[0.7, -0.15, -0., -3.1415, 0.0, 1.574]', 5.]]
 
@@ -222,7 +222,8 @@ class armReachAction(mpcBaseAction):
 
         self.motions['initStabbing12'] = {}
         self.motions['initStabbing12']['left'] = \
-          [['MOVES', '[0.0, 0.0, -0.15, 0, 0, 0]', 7, 'self.bowl_frame']]
+          [['PAUSE', 1.0],
+           ['MOVES', '[0.0, 0.0, -0.15, 0, 0, 0]', 7, 'self.bowl_frame']]
         self.motions['initStabbing12']['right'] = \
           [self.motions['initStabbing1']['right'][1]]
 
@@ -235,6 +236,7 @@ class armReachAction(mpcBaseAction):
           [['MOVES', '[0.0+self.highBowlDiff[0], 0.0-self.highBowlDiff[1],  0.06, 0, 0.0, 0]', 3,
             'self.bowl_frame'],
            ['PAUSE', 0.0],
+           ['MOVES', '[0.0+self.highBowlDiff[0], 0.0-self.highBowlDiff[1],  0.0, 0, 0., 0]', 3,'self.bowl_frame'],
            ['MOVES', '[0.0+self.highBowlDiff[0], 0.0-self.highBowlDiff[1],  -0.15, 0, 0., 0]', 3,
             'self.bowl_frame'],]
 
@@ -248,8 +250,8 @@ class armReachAction(mpcBaseAction):
         self.motions['initScooping1']['left'] =\
         [['MOVEJ', '[0.6447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 0.4291]', 5.0]]
         self.motions['initScooping1']['right'] =\
-        [['MOVEJ', '[-0.59, 0.131, -1.55, -1.041, 0.098, -1.136, -1.4]', 5.0],
-         ['MOVES', '[0.7, 0., 0.1, -3.1415, 0.0, 1.574]', 5.]]
+        [['MOVEJ', '[-0.59, 0.131, -1.55, -1.041, 0.098, -1.136, -1.6]', 5.0],
+         ['MOVES', '[0.7, 0., 0., -3.1415, 0.0, 1.574]', 5.]]
 
         self.motions['initScooping2'] = {}
         self.motions['initScooping2']['left'] = \
@@ -273,11 +275,11 @@ class armReachAction(mpcBaseAction):
         self.motions['runScoopingRight'] = {}
         self.motions['runScoopingLeft'] = {}
         self.motions['runScooping']['left'] = \
-          [['MOVES', '[-0.05, 0.0-self.highBowlDiff[1],  0.04, 0, 0.6, 0]', 3, 'self.bowl_frame'],
+          [['MOVES', '[-0.04, 0.03-self.highBowlDiff[1],  0.04, -0.2, 0.8, 0]', 3, 'self.bowl_frame'],
            ['PAUSE', 0.0],
-           ['MOVEL', '[ 0.05, 0.0-self.highBowlDiff[1],  0.03, 0, 0.8, 0]', 3, 'self.bowl_frame'],
+           ['MOVEL', '[ 0.04, -0.02-self.highBowlDiff[1],  0.03, -0.1, 0.8, 0]', 3, 'self.bowl_frame'],
            ['PAUSE', 0.0],
-           ['MOVES', '[ 0.05-0.01, 0.0-self.highBowlDiff[1],  -0.1, 0, 1.5, 0]', 3, 'self.bowl_frame'],]
+           ['MOVES', '[ 0.04-0.01, -0.02-self.highBowlDiff[1],  -0.1, 0, 1.5, 0]', 3, 'self.bowl_frame'],]
 
 
         ## Clean spoon motoins --------------------------------------------------------
@@ -293,7 +295,7 @@ class armReachAction(mpcBaseAction):
         self.motions['cleanSpoon1']['right'] = []
                                                 
 
-        ## Feeding motoins --------------------------------------------------------
+        ## Feeding motoins for a silicon spoon----------------------------------------------------
         # It uses the l_gripper_spoon_frame aligned with mouth
 
         self.motions['initFeeding1'] = {}
@@ -314,7 +316,7 @@ class armReachAction(mpcBaseAction):
 
         self.motions['initFeeding13'] = {}
         self.motions['initFeeding13']['right'] = [
-            ['PAUSE', 2.0],
+            ['PAUSE', 4.0],
             self.motions['initFeeding1']['right'][0]]
         self.motions['initFeeding13']['left'] = [self.motions['initFeeding1']['left'][0],
                                                self.motions['initFeeding3']['left'][0]]        
@@ -325,6 +327,24 @@ class armReachAction(mpcBaseAction):
           3., 'self.mouth_frame'],\
         ['PAUSE', 0.0],
         ['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], -0.15+self.mouthOffset[2], 0., 0., 0.]',
+         4., 'self.mouth_frame']]
+
+        ## Feeding motoins for a plastic spoon----------------------------------------------------
+
+        self.motions['initFeeding1_pspoon'] = {}
+        self.motions['initFeeding1_pspoon']['left'] =\
+          [['MOVEJ', '[0.7447, 0.1256, 0.721, -1.9, 1.374, -0.7956, 1.0291]', 7.0],]        
+
+        self.motions['initFeeding13_pspoon'] = {}
+        self.motions['initFeeding13_pspoon']['left'] = [self.motions['initFeeding1_pspoon']['left'][0],
+                                                        self.motions['initFeeding3']['left'][0]]        
+          
+        self.motions['runFeeding_pspoon'] = {}
+        self.motions['runFeeding_pspoon']['left'] =\
+        [['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], self.mouthOffset[2], 0., -0.3, 0.]',
+          3., 'self.mouth_frame'],\
+        ['PAUSE', 0.0],
+        ['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], -0.15+self.mouthOffset[2], 0., -0.5, 0.]',
          4., 'self.mouth_frame']]
 
         rospy.loginfo("Parameters are loaded.")
@@ -386,9 +406,9 @@ class armReachAction(mpcBaseAction):
             return 'Completed head movement to right'
 
         else:
-            if task == 'initScooping1' or task == 'initStabbing1':
+            if task.find('initScooping')>=0 or task.find('initStabbing')>=0:
                 self.kinect_pause.publish('start')
-            elif task == 'initFeeding':
+            elif task.find('initFeeding')>=0:
                 self.kinect_pause.publish('pause')
             self.parsingMovements(self.motions[task][self.arm_name])
             return "Completed to execute "+task
@@ -464,8 +484,8 @@ class armReachAction(mpcBaseAction):
         
     def feedingHorizCallback(self, msg):
         print "Feeding horizonal offset requested ", msg.data
-        self.mouthManOffset[1] = float(msg.data)/100.0
-        self.feeding_horiz_pub.publish( Int64(int(self.mouthManOffset[1]*100.0)) )
+        self.mouthManOffset[1] = -float(msg.data)/100.0
+        self.feeding_horiz_pub.publish( Int64(int(-self.mouthManOffset[1]*100.0)) )
         self.mouthOffset = self.mouthManOffset+self.mouthNoise
 
 
