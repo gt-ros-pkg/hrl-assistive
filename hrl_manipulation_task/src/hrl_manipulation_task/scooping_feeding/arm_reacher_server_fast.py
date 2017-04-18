@@ -272,8 +272,6 @@ class armReachAction(mpcBaseAction):
         # [Y (from center of bowl away from Pr2), X (towards right gripper), Z (towards floor) ,
         #  roll?, pitch (tilt downwards), yaw?]
         self.motions['runScooping'] = {}
-        self.motions['runScoopingRight'] = {}
-        self.motions['runScoopingLeft'] = {}
         self.motions['runScooping']['left'] = \
           [['MOVES', '[-0.04, 0.03-self.highBowlDiff[1],  0.04, -0.2, 0.8, 0]', 3, 'self.bowl_frame'],
            ['PAUSE', 0.0],
@@ -281,6 +279,13 @@ class armReachAction(mpcBaseAction):
            ['PAUSE', 0.0],
            ['MOVES', '[ 0.04-0.01, -0.02-self.highBowlDiff[1],  -0.1, 0, 1.5, 0]', 3, 'self.bowl_frame'],]
 
+        self.motions['runScooping_pspoon'] = {}
+        self.motions['runScooping_pspoon']['left'] = \
+          [['MOVES', '[-0.04, 0.03-self.highBowlDiff[1],  0.04, -0.2, 0.8, 0]', 3, 'self.bowl_frame'],
+           ['PAUSE', 0.0],
+           ['MOVEL', '[ 0.04, -0.0-self.highBowlDiff[1],  0.03, -0.1, 0.8, 0]', 3, 'self.bowl_frame'],
+           ['PAUSE', 0.0],
+           ['MOVES', '[ 0.04-0.01, -0.0-self.highBowlDiff[1],  -0.1, 0, 1.5, 0]', 3, 'self.bowl_frame'],]
 
         ## Clean spoon motoins --------------------------------------------------------
         self.motions['cleanSpoon1'] = {}

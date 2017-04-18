@@ -63,11 +63,11 @@ var assistive_teleop = {
         //initBodyRegistration('tabBodyReg');
         //initEllControl();
         initCartControl();
-        initTaskInterface('tabTasks');
         //initRYDSTab('tabRYDS');
-        initManTaskTab();
-        initAdGUI('scooping');
-        initAdGUI('feeding');
+        //initTaskInterface('tabTasks');
+        initManTaskTab(); // feeding
+        initCalibTaskTab(); // feeding calibration
+        initAdGUI('feeding'); // feeding anomaly detector
         if (window.location.hash.search('ft') !== -1) {
           initFTDisplay('FTDisplay', {});
         }

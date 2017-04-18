@@ -215,8 +215,10 @@
                   </li>
                   <li><a href="#tabManTasks">FeedingTask</a>
                   </li>
-                  <li><a href="#tabTasks">ReachTask</a>
+                  <li><a href="#tabCalibTasks">Calibration</a>
                   </li>
+                  <!--li><a href="#tabTasks">ReachTask</a>
+                  </li-->
                 </ul>
 
                 <div id="tab_cart_control">
@@ -354,7 +356,7 @@
 
                 <div id="tabServoing"></div>
 
-                <div id="tabTasks"></div>
+                <!--div id="tabTasks"></div-->
 
                 <div id="tabManTasks" style="width:600px">
                   <table id="man_task_layout">
@@ -486,49 +488,6 @@
                             </td>
                           </tr>
                           <tr style="height:10px"> <td> </td></tr>
-                          <tr>
-                            <th colspan='5'
-                                style="text-align:center">Scooping Anomaly Detection Sensitivity</th>
-                          </tr>
-                          <tr>
-                            <td colspan='5'>
-                              <table>
-                                <tr>
-                                  <td>
-                                    <button class="centered man_task_cont" id='ad_scooping_sense_min' style="font-size:80%">Down</button>
-                                  </td>
-                                  <td>
-                                    <div class="slider" style="width:450px" id="ad_scooping_slider"></div>
-                                  </td>
-                                  <td>
-                                    <button  class="centered man_task_cont" id='ad_scooping_sense_max' style="font-size:80%">Up</button>
-                                  </td>
-                                </tr>
-                              </table>
-                            </td>
-                          </tr>
-                          <tr>
-                            <td colspan='5' style="height:1px">
-                              <table style="width:100%">
-                                <tr>
-                                  <td colspan='1' style="font-size:0%;width:50%;text-align:right">
-                                    <!--delete font-size style -->
-                                    <label>
-                                      Accuracy with <br>
-                                      most recent 10 data
-                                    </label>
-                                  </td>
-                                  <td colspan='1'
-                                      style="height:0px;width:50%;font-size:0%;text-align:left">
-                                    <!-- change font size to 200% -->
-                                    :
-                                    <label id="ad_scooping_result_2" style="text-align:center"> 0.0% </label>
-                                  </td>
-                                </tr>
-                              </table>
-                            </td>
-                          </tr>
-                          <tr style="height:10px"><td></td></tr>
                           <tr>
                             <th colspan='5'
                                 style="text-align:center">Feeding Anomaly Detection Sensitivity</th>

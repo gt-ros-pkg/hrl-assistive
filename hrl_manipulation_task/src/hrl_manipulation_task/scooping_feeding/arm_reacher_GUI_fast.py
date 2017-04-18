@@ -341,7 +341,8 @@ class armReacherGUI:
 
             self.ServiceCallLeft("getBowlHighestPoint")
             ## rospy.loginfo("Running scooping!")
-            self.ServiceCallLeft("runScooping")
+            if self.cur_tool == 4: self.ServiceCallLeft("runScooping_pspoon")
+            else: self.ServiceCallLeft("runScooping")
             self.proceedPub.publish("Done")
             self.motion_complete = True
             if self.emergencyStatus:
