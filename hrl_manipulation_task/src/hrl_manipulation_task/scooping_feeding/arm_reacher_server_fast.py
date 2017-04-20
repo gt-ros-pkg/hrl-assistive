@@ -39,7 +39,7 @@ import actionlib
 
 # Msg
 from geometry_msgs.msg import Pose, PoseStamped, Point, PointStamped, Quaternion
-from std_msgs.msg import String, Empty, Int64
+from std_msgs.msg import String, Empty, Int64, String
 import pr2_controllers_msgs.msg
 from hrl_msgs.msg import FloatArray
 from hrl_srvs.srv import None_Bool, None_BoolResponse, String_String
@@ -182,6 +182,7 @@ class armReachAction(mpcBaseAction):
         MOVET: MOVES with respect to the current tool frame (ex. MOVET pos-euler timeout) (experimental!!)
         MOVEJ: joint motion (ex. MOVEJ joint timeout)
         PAUSE: Add pause time between motions (ex. PAUSE duration)
+        STOP:  stop at the current pose (ex. STOP)
 
         #TOOL: Set a tool frame for MOVET. Defualt is 0 which is end-effector frame.
 
@@ -217,28 +218,30 @@ class armReachAction(mpcBaseAction):
         self.motions['initStabbing2'] = {}
         self.motions['initStabbing2']['left'] = [
             #['MOVES', '[0.7, -0.15, -0., -3.1415, 0.0, 1.574]', 3.],
-            ['MOVES', '[0.0+self.highBowlDiff[0], 0.0-self.highBowlDiff[1], -0.15, 0, 0, 0]', 5, 'self.bowl_frame']]
+            ['MOVES', '[-0.02+self.highBowlDiff[0], 0.03-self.highBowlDiff[1], -0.15, 0, 0, 0]', 5, 'self.bowl_frame']]
         self.motions['initStabbing2']['right'] = []
 
         self.motions['initStabbing12'] = {}
         self.motions['initStabbing12']['left'] = \
           [['PAUSE', 1.0],
-           ['MOVES', '[0.0, 0.0, -0.15, 0, 0, 0]', 7, 'self.bowl_frame']]
+           ['MOVES', '[-0.02, 0.03, -0.15, 0, 0, 0]', 7, 'self.bowl_frame']]
         self.motions['initStabbing12']['right'] = \
           [self.motions['initStabbing1']['right'][1]]
 
         # [Y (from center of bowl away from Pr2), X (towards right gripper), Z (towards floor) ,
         # roll?, pitch (tilt downwards), yaw?]
         self.motions['runStabbing'] = {}
-        self.motions['runStabbingRight'] = {}
-        self.motions['runStabbingLeft'] = {}
         self.motions['runStabbing']['left'] = \
-          [['MOVES', '[0.0+self.highBowlDiff[0], 0.0-self.highBowlDiff[1],  0.06, 0, 0.0, 0]', 3,
+          [['MOVES', '[-0.02+self.highBowlDiff[0], 0.03-self.highBowlDiff[1],  0.08, 0, -0.15, 0]', 5,
             'self.bowl_frame'],
-           ['PAUSE', 0.0],
-           ['MOVES', '[0.0+self.highBowlDiff[0], 0.0-self.highBowlDiff[1],  0.0, 0, 0., 0]', 3,'self.bowl_frame'],
-           ['MOVES', '[0.0+self.highBowlDiff[0], 0.0-self.highBowlDiff[1],  -0.15, 0, 0., 0]', 3,
+           ['MOVES', '[-0.02+self.highBowlDiff[0], 0.01-self.highBowlDiff[1],  0.0, 0, 0, 0]', 2,'self.bowl_frame'],
+           ['MOVES', '[-0.02+self.highBowlDiff[0], 0.01-self.highBowlDiff[1],  -0.15, 0, 0., 0]', 3,
             'self.bowl_frame'],]
+        self.motions['runStabbing']['right'] = \
+          [['PAUSE', 5.0],
+           ['STOP'],
+           ['PAUSE', 3.0],
+           self.motions['initStabbing1']['right'][1] ]
 
 
         ## Scooping motoins --------------------------------------------------------

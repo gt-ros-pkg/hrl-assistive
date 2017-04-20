@@ -71,6 +71,16 @@ haptic_mpc:
         rx: 0
         ry: 0
         rz: -1.570796006
+    tool_frame_5:
+      name: 'l_gripper_pfork_frame'
+      pos: 
+        x: 0.0
+        y: -0.012
+        z: 0.164
+      rpy: 
+        rx: 0
+        ry: 0
+        rz: -1.570796006
 
   groups:
     - name: left_arm_joints

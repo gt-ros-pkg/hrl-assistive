@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <script type="text/javascript" src="js/calib_task.js"></script>
+    <link type="text/css" href="jqueryui/themes/sunny/jquery-ui.min.css" rel="stylesheet" />
+    <script type="text/javascript" src="jqueryui/jquery-1.10.2.js"></script>
+    <script type="text/javascript" src="jqueryui/ui/minified/jquery-ui.min.js"></script>
+  </head>
+
+  <table>
+    <!--td>
+      <img src="css/robots/camera.jpg" alt="Camera"
+           style="width:200px;margin-left:0px"
+           align="left">
+    </td-->
+    <td style="width:270px">
+      <div class="default_control" id="bpd_mouth_offset">
+        <table>
+          <td colspan='3' style="font-size:125%;width:270px;text-align:left">
+            <strong> Adjust a feeding position </strong>
+          </td>
+        </table>
+
+        <!-- Translate Cartesian Buttonpad-->
+        <table>
+            <tr>
+                <td>
+                    <button class="bpd" id="b7"></button>
+                </td>
+                <td>
+                    <button class="bpd arrow_trans_up" id="b8"></button>
+                </td>
+                <td>
+                    <button class="bpd arrow_trans_out" id="b9"></button>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <button class="bpd arrow_trans_left" id="b4"></button>
+                </td>
+                <td>
+                    <button class="bpd" id="b5""></button>
+                </td>
+                <td>
+                    <button class="bpd arrow_trans_right" id="b6"></button>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <button class="bpd arrow_trans_in" id="b1"></button>
+                </td>
+                <td>
+                    <button class="bpd arrow_trans_down" id="b2"></button>
+                </td>
+                <td>
+                    <button class="bpd" id="b3"></button>
+                </td>
+            </tr>
+        </table> 
+        <table>
+          <tr>
+            <td colspan='1' style="width:80px;text-align:center">
+              In-Out
+            </td>
+            <td colspan='1' style="width:80px;text-align:center">
+              Left-Right
+            </td>
+            <td colspan='1' style="width:80px;text-align:center">
+              Up-Down
+            </td>
+          </tr>
+          <tr>
+            <td colspan='1' style="width:80px;text-align:center">
+              <select id="task_Feeding_depth_offset">
+                <option value="2"> 2cm </option>
+                <option value="3"> 3cm </option>
+                <option value="4"> 4cm </option>
+                <option value="5" selected> 5cm </option>
+                <option value="6"> 6cm </option>
+                <option value="7"> 7cm </option>
+                <option value="8"> 8cm </option>
+                <option value="9"> 9cm </option>
+              </select>
+            </td>
+            <td colspan='1' style="width:80px;text-align:center">
+              <select id="task_Feeding_horiz_offset">
+                <option value="-3"> -3cm </option>
+                <option value="-2"> -2cm </option>
+                <option value="-1"> -1cm </option>
+                <option value="0" selected> 0cm </option>
+                <option value="1"> 1cm </option>
+                <option value="2"> 2cm </option>
+                <option value="3"> 3cm </option>
+              </select>
+            </td>
+            <td colspan='1' style="width:80px;text-align:center">
+              <select id="task_Feeding_vert_offset">
+                <option value="-5"> -5cm </option>
+                <option value="-4"> -4cm </option>
+                <option value="-3" selected> -3cm </option>
+                <option value="-2"> -2cm </option>
+                <option value="-1"> -1cm </option>
+                <option value="0"> 0cm </option>
+                <option value="1"> 1cm </option>
+              </select>
+            </td>
+          </tr>
+        </table>
+      </div>
+      <!--END Translate Cart Buttonpad -->
+    </td>
+    <td style="width:10px"></td>
+    <td style="width:200px" valign='top'>
+        <table>
+            <tr>
+                <td colspan='2' style="font-size:125%;width:200px;text-align:center">
+                    <strong> Select a task </strong>
+                </td>      
+            </tr>
+            <tr>
+                <td>
+                    <button class="centered man_task_cont" id='task_Feeding',
+                            style="font-size:100%">Feeding</button>
+                </td>
+            </tr>
+
+        </table>
+        <table cellspacing="10">
+            <tr>
+                <td colspan='2' style="font-size:125%;width:200px;text-align:center">
+                    <strong> Reset parameters </strong>
+                </td>      
+            </tr>
+            <tr>
+                <td>
+                    <button class="centered man_task_cont" id='offset_reset',
+                            style="font-size:130%">Reset Position</button>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <button class="centered man_task_cont" id='loc_reset',
+                            style="font-size:130%">Reset System</button>
+                </td>
+            </tr>
+        </table>
+    </td>
+  </table>
+
+</html>

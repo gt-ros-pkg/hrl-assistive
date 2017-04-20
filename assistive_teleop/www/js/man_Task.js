@@ -62,9 +62,6 @@ var ManipulationTask = function (ros) {
     manTask.current_step = 1;
     manTask.max_step = 0;
     manTask.feedback_received   = false;
-    manTask.feedingDepthSynched = true;
-    manTask.feedingHorizSynched = true;
-    manTask.feedingVertSynched  = true;
     manTask.handshaked = false;
     manTask.current_task = 'Init';
     manTask.anomaly_detected = false;
@@ -153,24 +150,6 @@ var ManipulationTask = function (ros) {
     manTask.questionPub.advertise();
 
     // Function for start, stop, and continue
-
-    manTask.feedingDepthPub = new manTask.ros.Topic({
-        name: 'feeding/manipulation_task/mouth_depth_request',
-        messageType: 'std_msgs/Int64'
-    });
-    manTask.feedingDepthPub.advertise();
-
-    manTask.feedingHorizPub = new manTask.ros.Topic({
-        name: 'feeding/manipulation_task/mouth_horiz_request',
-        messageType: 'std_msgs/Int64'
-    });
-    manTask.feedingHorizPub.advertise();
-
-    manTask.feedingVertPub = new manTask.ros.Topic({
-        name: 'feeding/manipulation_task/mouth_vert_request',
-        messageType: 'std_msgs/Int64'
-    });
-    manTask.feedingVertPub.advertise();
 
 
     manTask.start = function () {
@@ -332,77 +311,6 @@ var ManipulationTask = function (ros) {
     });
 
     // Advanced options --------------------------------------------------
-    // 1. feeding depth
-    manTask.feedingDepthRequest = function() {
-        if (manTask.feedingDepthSynched) {
-            var new_dist = parseInt(document.getElementById("man_task_Feeding_depth_offset").value);
-            var msg = new manTask.ros.Message({
-                data: new_dist
-            });
-            manTask.feedingDepthPub.publish(msg);
-            manTask.feedingDepthSynched = false;
-            document.getElementById("man_task_Feeding_depth_offset").disabled = true;
-        }
-    }
-
-    manTask.feedingDepthSub = new manTask.ros.Topic({
-        name: 'feeding/manipulation_task/mouth_depth_offset',
-        messageType: 'std_msgs/Int64'
-    });
-    manTask.feedingDepthSub.subscribe(function (msg) {
-        document.getElementById("man_task_Feeding_depth_offset").value = msg.data;
-        manTask.feedingDepthSynched = true;
-        document.getElementById("man_task_Feeding_depth_offset").disabled = false;
-    });
-
-    // 2. feeding horizontal offset
-    manTask.feedingHorizRequest = function() {
-        if (manTask.feedingHorizSynched) {
-            var new_dist = parseInt(document.getElementById("man_task_Feeding_horiz_offset").value);
-            var msg = new manTask.ros.Message({
-                data: new_dist
-            });
-            manTask.feedingHorizPub.publish(msg);
-            manTask.feedingHorizSynched = false;
-            document.getElementById("man_task_Feeding_horiz_offset").disabled = true;
-        }
-    }
-
-    manTask.feedingHorizSub = new manTask.ros.Topic({
-        name: 'feeding/manipulation_task/mouth_horiz_offset',
-        messageType: 'std_msgs/Int64'
-    });
-    manTask.feedingHorizSub.subscribe(function (msg) {
-        document.getElementById("man_task_Feeding_horiz_offset").value = msg.data;
-        manTask.feedingHorizSynched = true;
-        document.getElementById("man_task_Feeding_horiz_offset").disabled = false;
-    });
-
-    // 3. feeding vertical offset
-    manTask.feedingVertRequest = function() {
-        if (manTask.feedingVertSynched) {
-            var new_dist = parseInt(document.getElementById("man_task_Feeding_vert_offset").value);
-            var msg = new manTask.ros.Message({
-                data: new_dist
-            });
-            manTask.feedingVertPub.publish(msg);
-            manTask.feedingVertSynched = false;
-            document.getElementById("man_task_Feeding_vert_offset").disabled = true;
-        }
-    }
-
-    manTask.feedingVertSub = new manTask.ros.Topic({
-        name: 'feeding/manipulation_task/mouth_vert_offset',
-        messageType: 'std_msgs/Int64'
-    });
-    manTask.feedingVertSub.subscribe(function (msg) {
-        document.getElementById("man_task_Feeding_vert_offset").value = msg.data;
-        manTask.feedingVertSynched = true;
-        document.getElementById("man_task_Feeding_vert_offset").disabled = false;
-    });
-
-
-    // ------------------------------------------------------------------
     manTask.guiStatusSub = new manTask.ros.Topic({
         name: 'manipulation_task/gui_status',
         messageType: 'std_msgs/String'});
@@ -684,7 +592,7 @@ var ManipulationTask = function (ros) {
 
 var initManTaskTab = function() {
     assistive_teleop.manTask = new ManipulationTask(assistive_teleop.ros);
-    
+
     // Main tasks
     $('#man_task_Scooping').click(function(){
         if(assistive_teleop.manTask.handshaked) {
@@ -720,17 +628,6 @@ var initManTaskTab = function() {
     $('#man_task_Advanced').click(function(){
         assistive_teleop.manTask.advanced();
     });
-    assistive_teleop.log('initiating manipulation Task');
-    $('#man_task_Feeding_depth_offset').change(function(){
-        assistive_teleop.manTask.feedingDepthRequest();
-    });
-    $('#man_task_Feeding_horiz_offset').change(function(){
-        assistive_teleop.manTask.feedingHorizRequest();
-    });
-    $('#man_task_Feeding_vert_offset').change(function(){
-        assistive_teleop.manTask.feedingVertRequest();
-    });
-
 
     $('#question_skip').click(function() {
         assistive_teleop.manTask.question_skip();

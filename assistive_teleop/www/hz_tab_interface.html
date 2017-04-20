@@ -27,23 +27,31 @@
   <script type="text/javascript" src="js/teleop/cart_control.js"></script>
   <script type="text/javascript" src="js/ar_servo.js"></script>
   <script type="text/javascript" src="js/run_stop.js"></script>
-  <script type="text/javascript" src="js/tasks.js"></script>
   <script type="text/javascript" src="js/force_level_widget.js"></script>
   <script type="text/javascript" src="js/skin_util.js"></script>
-  <script type="text/javascript" src="js/traj_play.js"></script>
+  <!--script type="text/javascript" src="js/traj_play.js"></script-->
   <script type="text/javascript" src="js/numeric-1.2.6.js"></script>
+
   <script type="text/javascript" src="js/man_Task.js"></script>
   <script type="text/javascript" src="js/ad_slider.js"></script>
+  <!--script type="text/javascript" src="js/tasks.js"></script-->
 
 
   <link href="js/keyboard/css/keyboard.css" rel="stylesheet">
   <script src="js/keyboard/js/jquery.keyboard.js"></script>
-  <link type="text/css" href="css/rfh_interface.css" rel="stylesheet"/>
+  <link type="text/css" href="css/rfh_interface.css"
+  rel="stylesheet"/>
+
+
+  <script>
+    $(function(){$("#calibTasks").load("calib_tab_interface.html");});
+  </script>
+
 </head>
 
 <body onload="assistive_teleop.start()" ondragstart="return false;" ondrop="return false;">
   <div id="fullscreenOverlay2" style="width:0;z-index:10;position:fixed;overflow-x:hidden;background-color:black;opacity:1.0;top:0;left:0">
-    <div style="top:30%;left:20%;width:60%;position:relative;color:white;font-size:40px">
+    <div style="top:10%;left:20%;width:60%;position:relative;color:white;font-size:30px">
       <div style="text-align:center">
         <label style="font-size:120%">
           Please provide feedback <br>
@@ -51,7 +59,7 @@
       </div>
       <table id="scooping_questions" style="width:100%;table-layout:fixed">
         <tr>
-          <td colspan='3'>
+          <td colspan='5'>
             Did the robot scoop yogurt?
           </td>
           <td style="text-align:center" id="scooping_questions1_yes" onclick="manTask_yes(this.id)" value="false">
@@ -62,7 +70,7 @@
           </td>
         </tr>
         <tr>
-          <td colspan='3'>
+          <td colspan='5'>
             Did any unexpected collisions occur?
           </td>
           <td style="text-align:center" id="scooping_questions2_yes" onclick="manTask_yes(this.id)" value="false">
@@ -73,7 +81,7 @@
           </td>
         </tr>
         <tr>
-          <td colspan='3'>
+          <td colspan='5'>
             Was there unexpected noise during scooping? <br>
             (excluding noise from the robot)
           </td>
@@ -87,7 +95,7 @@
       </table>
       <table id="feeding_questions" style="width:100%;table-layout:fixed">
         <tr>
-          <td colspan='3'>
+          <td colspan='5'>
               Did the robot feed you?
           </td>
           <td style="text-align:center" id="feeding_questions1_yes" onclick="manTask_yes(this.id)" value="false">
@@ -98,7 +106,7 @@
           </td>
         </tr>
         <tr>
-          <td colspan='3'>
+          <td colspan='5'>
             Did the robot generate a beep (anomaly detection)?
           </td>
           <td style="text-align:center" id="feeding_questions2_yes" onclick="manTask_yes(this.id)" value="false">
@@ -109,9 +117,9 @@
           </td>
         </tr>
         <tr>
-          <td colspan='3'>
+          <td colspan='5'>
             If the robot generated a beep, was there any unexpected
-            collision, noise, uncomfortable contact, etc? (default: No)
+            collision, noise, uncomfortable contact, etc?
           </td>
           <td style="text-align:center" id="feeding_questions3_yes" onclick="manTask_yes(this.id)" value="false">
             <label> yes </label>
@@ -126,10 +134,10 @@
       <table style="width:100%">
         <tr>
           <td>
-            <button class="centered man_task_cont" style="font-size:120%" id="question_send"> SEND </button>
+            <button class="centered man_task_cont" style="font-size:100%" id="question_send"> SEND </button>
           </td>
           <td>
-            <button class="centered man_task_cont" style="font-size:120%" id="question_skip"> SKIP </button>
+            <button class="centered man_task_cont" style="font-size:100%" id="question_skip"> SKIP </button>
           </td>
         </tr>
       </table>
@@ -215,7 +223,7 @@
                   </li>
                   <li><a href="#tabManTasks">FeedingTask</a>
                   </li>
-                  <li><a href="#tabCalibTasks">Calibration</a>
+                  <li><a href="#calibTasks">Calibration</a>
                   </li>
                   <!--li><a href="#tabTasks">ReachTask</a>
                   </li-->
@@ -355,7 +363,6 @@
                 <!-- END TAB CART CONTROL -->
 
                 <div id="tabServoing"></div>
-
                 <!--div id="tabTasks"></div-->
 
                 <div id="tabManTasks" style="width:600px">
@@ -423,70 +430,6 @@
                         style="display:none">
                       <td colspan='5'>                        
                         <table>
-                          <tr>
-                            <td colspan='5'>
-                              <table style="width:100%;text-align:center">
-                                <tr>
-                                  <th colspan='5'
-                                      style="text-align:center">Feeding Location Offset</th>
-                                </tr>
-                                <tr>
-                                  <td colspan='5'>
-                                  <img src="css/imgs/front.png" alt="Front Face"
-                                       style="width:477px;height:134px;margin-left:0px"
-                                       align="middle">
-                                  </td>
-                                </tr>
-                                <tr>
-                                  <td colspan='1'>
-                                    Depth offset
-                                  </td>
-                                  <td colspan='1'>
-                                    Horizontal offset
-                                  </td>
-                                  <td colspan='1'>
-                                    Vertical offset
-                                  </td>
-                                </tr>
-                                <tr>
-                                  <td colspan='1'>
-                                    <select id="man_task_Feeding_depth_offset">
-                                      <option value="2"> 2cm </option>
-                                      <option value="3"> 3cm </option>
-                                      <option value="4"> 4cm </option>
-                                      <option value="5" selected> 5cm </option>
-                                      <option value="6"> 6cm </option>
-                                      <option value="7"> 7cm </option>
-                                      <option value="8"> 8cm </option>
-                                      <option value="9"> 9cm </option>
-                                    </select>
-                                  </td>
-                                  <td colspan='1'>
-                                    <select id="man_task_Feeding_horiz_offset">
-                                      <option value="-3"> -3cm </option>
-                                      <option value="-2"> -2cm </option>
-                                      <option value="-1"> -1cm </option>
-                                      <option value="0" selected> 0cm </option>
-                                      <option value="1"> 1cm </option>
-                                      <option value="2"> 2cm </option>
-                                      <option value="3"> 3cm </option>
-                                    </select>
-                                  </td>
-                                  <td colspan='1'>
-                                    <select id="man_task_Feeding_vert_offset">
-                                      <option value="-5"> -5cm </option>
-                                      <option value="-4"> -4cm </option>
-                                      <option value="-3" selected> -3cm </option>
-                                      <option value="-2"> -2cm </option>
-                                      <option value="-1"> -1cm </option>
-                                      <option value="0"> 0cm </option>
-                                      <option value="1"> 1cm </option>
-                                    </select>
-                                  </td>
-                                </tr>
-                              </table>
-                            </td>
-                          </tr>
                           <tr style="height:10px"> <td> </td></tr>
                           <tr>
                             <th colspan='5'
@@ -534,8 +477,7 @@
                     </tr>
                   </table>
                 </div>
-
-
+                <div id="calibTasks"></div>
               </div>
               <!-- END Tabs -->
             </td>

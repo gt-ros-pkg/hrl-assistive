@@ -99,6 +99,7 @@ class armReacherGUI:
         rospy.Subscriber("/manipulation_task/user_feedback", StringArray, self.feedbackCallback)
         rospy.Subscriber("/manipulation_task/status", String, self.statusCallback)
         rospy.Subscriber("/manipulation_task/gui_status", String, self.guiCallback, queue_size=1)
+        rospy.Subscriber('/manipulation_task/arm_reach_reset', String, self.resetCallback)
         
         rospy.wait_for_service("/arm_reach_enable")
         rospy.wait_for_service("/right/arm_reach_enable")
@@ -186,6 +187,14 @@ class armReacherGUI:
         self.guiStatusReady = True
         self.gui_status = msg.data
 
+    def resetCallback(self, msg):
+        if msg.data == 'true':
+            print '\n\nReset internal parameters\n\n'
+            self.renew_arm   = True
+            self.renew_bowl  = True
+            self.renew_mouth = True
+
+
     # --------------------------------------------------------------------------
     def run(self):
         rospy.loginfo("Continous run function called")
@@ -200,7 +209,7 @@ class armReacherGUI:
             if self.inputStatus and self.actionStatus == 'Scooping':
                 self.inputStatus = False
                 rospy.loginfo("Scooping Starting...")
-                if self.cur_tool == 3:
+                if self.cur_tool == 3 or self.cur_tool == 5:
                     # fork
                     self.stabbing(self.armReachActionLeft, self.armReachActionRight, self.log, self.detection_flag)
                 else:                
@@ -225,7 +234,7 @@ class armReacherGUI:
 
     def initMotion(self, armReachActionLeft, armReachActionRight):
         rospy.loginfo("Initializing arms")
-        if self.cur_tool == 3:        
+        if self.cur_tool == 3 or self.cur_tool == 5:        
             leftProc = multiprocessing.Process(target=self.ServiceCallLeft, args=("initStabbing1",))
             rightProc = multiprocessing.Process(target=self.ServiceCallRight, args=("initStabbing1",))
         else:
@@ -269,8 +278,8 @@ class armReacherGUI:
                     self.renew_bowl = False
                 if self.emergencyStatus: break
 
-                self.ServiceCallLeft("getBowlHighestPoint")
-                rospy.sleep(4.0)
+                #self.ServiceCallLeft("getBowlHighestPoint")
+                #rospy.sleep(4.0)
                 
                 self.ServiceCallLeft("initStabbing2")
                 if self.emergencyStatus: break
@@ -282,7 +291,14 @@ class armReacherGUI:
                 if detection_flag: self.log.enableDetector(True)
                     
             ## rospy.loginfo("Running scooping!")
-            self.ServiceCallLeft("runStabbing")
+            leftProc = multiprocessing.Process(target=self.ServiceCallLeft,
+                                               args=("runStabbing",))
+            rightProc = multiprocessing.Process(target=self.ServiceCallRight,
+                                                args=("runStabbing",))
+            leftProc.start(); rightProc.start()
+            leftProc.join(); rightProc.join()                    
+            ## self.ServiceCallLeft("runStabbing")
+            ## self.ServiceCallRight("runStabbing")
             self.proceedPub.publish("Done")
             self.motion_complete = True
             if self.emergencyStatus:
