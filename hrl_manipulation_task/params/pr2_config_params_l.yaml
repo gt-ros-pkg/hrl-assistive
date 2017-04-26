@@ -75,8 +75,18 @@ haptic_mpc:
       name: 'l_gripper_pfork_frame'
       pos: 
         x: 0.0
-        y: -0.012
+        y: -0.015
         z: 0.164
+      rpy: 
+        rx: 0
+        ry: 0
+        rz: -1.570796006
+    tool_frame_6:
+      name: 'l_gripper_pspoon2_frame'
+      pos: 
+        x: 0.0
+        y: 0.0
+        z: 0.188
       rpy: 
         rx: 0
         ry: 0

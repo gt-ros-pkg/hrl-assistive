@@ -155,7 +155,7 @@ class hmmd(clf_base):
         
         return
 
-    def predict(self, X, y=None):
+    def predict(self, X, y=None, debug=False):
         ''' '''
 
         if len(np.shape(X))==1: X = [X]
@@ -182,10 +182,10 @@ class hmmd(clf_base):
 
             l_err.append(err)
 
-        ## if debug:
-        ##     return l_err, self.ll_mu[min_index], self.ll_std[min_index]
-        ## else:
-        return l_err
+        if debug:
+            return l_err, self.ll_mu[min_index], self.ll_std[min_index]
+        else:
+            return l_err
 
     def score(self, X, y):
         return self.dt.score(X,y)

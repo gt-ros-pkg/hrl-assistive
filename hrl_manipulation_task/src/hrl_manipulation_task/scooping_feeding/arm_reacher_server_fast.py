@@ -163,10 +163,20 @@ class armReachAction(mpcBaseAction):
 
     def initParamsForArmReach(self):
 
-        ## Off set : 11 cm x direction, - 5 cm z direction.
-        self.bowl_pos_offset    = rospy.get_param('/hrl_manipulation_task/sub_ee_pos_offset')
-        self.bowl_orient_offset = rospy.get_param('/hrl_manipulation_task/sub_ee_orient_offset')
+        ## Off set : 11 cm x direction, - 4 cm z direction.
+        ## self.bowl_pos_offset    = rospy.get_param('/hrl_manipulation_task/sub_ee_pos_offset')
+        ## self.bowl_orient_offset = rospy.get_param('/hrl_manipulation_task/sub_ee_orient_offset')
+        self.org_tool = copy.copy(self.cur_tool)
 
+        if self.arm_name == 'left':
+            r_tool_id = rospy.get_param('/right/haptic_mpc'+self.robot_path+'/tool_id', 0)        
+            pos = rospy.get_param('right/haptic_mpc'+self.robot_path+'/tool_frame_'+str(r_tool_id)+'/pos', None)
+            rpy = rospy.get_param('right/haptic_mpc'+self.robot_path+'/tool_frame_'+str(r_tool_id)+'/rpy', None)
+            p = PyKDL.Vector(pos['x'], pos['y'], pos['z'])
+            M = PyKDL.Rotation.RPY(rpy['rx'], rpy['ry'], rpy['rz'])
+            self.r_tool_offset = PyKDL.Frame(M,p)
+             
+        pass
 
     def setMotions(self):
         '''
@@ -182,9 +192,8 @@ class armReachAction(mpcBaseAction):
         MOVET: MOVES with respect to the current tool frame (ex. MOVET pos-euler timeout) (experimental!!)
         MOVEJ: joint motion (ex. MOVEJ joint timeout)
         PAUSE: Add pause time between motions (ex. PAUSE duration)
-        STOP:  stop at the current pose (ex. STOP)
-
-        #TOOL: Set a tool frame for MOVET. Defualt is 0 which is end-effector frame.
+        STOP:  Stop at the current pose (ex. STOP)
+        TOOL:  Set a tool frame. Defualt is 0 which is end-effector frame.
 
         joint or pose: we use radian and meter unit. The order of euler angle follows original x-y-z order (RPY).
         timeout or duration: we use second
@@ -211,37 +220,43 @@ class armReachAction(mpcBaseAction):
           = [['PAUSE', 2.0],
              ['MOVEJ', '[0.6447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 1.1291]', 5.0]]
         self.motions['initStabbing1']['right'] = \
-          [['MOVEJ', '[-0.59, 0.131, -1.55, -1.041, 0.098, -1.136, -1.4]', 3.0],
-           ['MOVES', '[0.7, -0.15, -0., -3.1415, 0.0, 1.574]', 5.]]
+          [['MOVEJ', '[-0.59, 0.131, -1.55, -1.041, 0.098, -1.136, -1.4]', 3.0*2],
+           ['TOOL', 0],
+           ['MOVES', '[0.7, -0.15, -0., -3.1415, 0.0, 1.574]', 5.],
+           ['TOOL', self.org_tool]
+          ]
            ## ['MOVES', '[0.7, -0.15, -0., -3.1415, 0.0, 1.574]', 5.]]
 
         self.motions['initStabbing2'] = {}
         self.motions['initStabbing2']['left'] = [
             #['MOVES', '[0.7, -0.15, -0., -3.1415, 0.0, 1.574]', 3.],
-            ['MOVES', '[-0.02+self.highBowlDiff[0], 0.03-self.highBowlDiff[1], -0.15, 0, 0, 0]', 5, 'self.bowl_frame']]
+            ['MOVES', '[-0.03+self.highBowlDiff[0], 0.0-self.highBowlDiff[1], -0.1, 0, -0.1, 0]', 5*1.5, 'self.bowl_frame']]
         self.motions['initStabbing2']['right'] = []
 
         self.motions['initStabbing12'] = {}
         self.motions['initStabbing12']['left'] = \
           [['PAUSE', 1.0],
-           ['MOVES', '[-0.02, 0.03, -0.15, 0, 0, 0]', 7, 'self.bowl_frame']]
+           ['MOVES', '[-0.03, 0.0, -0.1, 0, -0.1, 0]', 7, 'self.bowl_frame']]
         self.motions['initStabbing12']['right'] = \
-          [self.motions['initStabbing1']['right'][1]]
+          self.motions['initStabbing1']['right'][1:]
 
         # [Y (from center of bowl away from Pr2), X (towards right gripper), Z (towards floor) ,
         # roll?, pitch (tilt downwards), yaw?]
         self.motions['runStabbing'] = {}
         self.motions['runStabbing']['left'] = \
-          [['MOVES', '[-0.02+self.highBowlDiff[0], 0.03-self.highBowlDiff[1],  0.08, 0, -0.15, 0]', 5,
-            'self.bowl_frame'],
-           ['MOVES', '[-0.02+self.highBowlDiff[0], 0.01-self.highBowlDiff[1],  0.0, 0, 0, 0]', 2,'self.bowl_frame'],
-           ['MOVES', '[-0.02+self.highBowlDiff[0], 0.01-self.highBowlDiff[1],  -0.15, 0, 0., 0]', 3,
-            'self.bowl_frame'],]
+          [['MOVES', '[-0.03+self.highBowlDiff[0], 0.015-self.highBowlDiff[1], 0.05, 0, -0.1, 0]', 5, 'self.bowl_frame'],
+           ['STOP'],
+           ['MOVET', '[0.0,0,-0.15,0,0.0,0]',5]]
+        
+           ##['MOVES', '[-0.03+self.highBowlDiff[0]+random.choice([-0.01, 0, 0.01]), 0.0-self.highBowlDiff[1]++random.choice([-0.015, 0, 0.015]), 0.04, 0, 0., 0]', 5, 'self.bowl_frame'],
+           ## ['MOVES', '[-0.03+self.highBowlDiff[0], 0.0-self.highBowlDiff[1],  0.0, 0, 0., 0]', 2,
+           ##  'self.bowl_frame'],
+           ## ['MOVES', '[-0.03+self.highBowlDiff[0], 0.0-self.highBowlDiff[1], -0.15, 0, 0., 0]', 3,
+           ##  'self.bowl_frame'],]
         self.motions['runStabbing']['right'] = \
           [['PAUSE', 5.0],
            ['STOP'],
-           ['PAUSE', 3.0],
-           self.motions['initStabbing1']['right'][1] ]
+           ['PAUSE', 3.0]] + self.motions['initStabbing1']['right'][1:] 
 
 
         ## Scooping motoins --------------------------------------------------------
@@ -254,13 +269,15 @@ class armReachAction(mpcBaseAction):
         [['MOVEJ', '[0.6447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 0.4291]', 5.0]]
         self.motions['initScooping1']['right'] =\
         [['MOVEJ', '[-0.59, 0.131, -1.55, -1.041, 0.098, -1.136, -1.6]', 5.0],
-         ['MOVES', '[0.7, 0., 0., -3.1415, 0.0, 1.574]', 5.]]
+         ['TOOL', 0],
+         ['MOVES', '[0.7, 0., 0., -3.1415, 0.0, 1.574]', 5.],
+         ['TOOL', self.org_tool]]
 
         self.motions['initScooping2'] = {}
         self.motions['initScooping2']['left'] = \
           [['MOVES', '[-0.04, 0.0, -0.15, 0, 0.5, 0]', 5, 'self.bowl_frame']]
         self.motions['initScooping2']['right'] =\
-          self.motions['initScooping1']['right'][1:2]
+          self.motions['initScooping1']['right'][1:]
 
         self.motions['initScooping12'] = {}
         self.motions['initScooping12']['left'] = \
@@ -268,7 +285,7 @@ class armReachAction(mpcBaseAction):
           ## self.motions['initScooping2']['left'][0]]
           ## [self.motions['initScooping1']['left'][0],
         self.motions['initScooping12']['right'] = \
-          self.motions['initScooping1']['right'][1:2]
+          self.motions['initScooping1']['right'][1:]
 
 
 
@@ -284,7 +301,7 @@ class armReachAction(mpcBaseAction):
 
         self.motions['runScooping_pspoon'] = {}
         self.motions['runScooping_pspoon']['left'] = \
-          [['MOVES', '[-0.04, 0.03-self.highBowlDiff[1],  0.04, -0.2, 0.8, 0]', 3, 'self.bowl_frame'],
+          [['MOVES', '[-0.04, 0.03-self.highBowlDiff[1],  0.04, -0.2, 0.5, 0]', 3, 'self.bowl_frame'],
            ['PAUSE', 0.0],
            ['MOVEL', '[ 0.04, -0.0-self.highBowlDiff[1],  0.03, -0.1, 0.8, 0]', 3, 'self.bowl_frame'],
            ['PAUSE', 0.0],
@@ -310,7 +327,9 @@ class armReachAction(mpcBaseAction):
         self.motions['initFeeding1']['left'] =\
           [['MOVEJ', '[0.5447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 1.1291]', 5.0],]        
         self.motions['initFeeding1']['right'] =\
-          [['MOVES', '[0.22, 0., -0.55, 0., -1.85, 0.]', 5., 'self.mouth_frame']]
+          [['TOOL', 0],
+           ['MOVES', '[0.22, 0., -0.55, 0., -1.85, 0.]', 5., 'self.mouth_frame'],
+           ['TOOL', self.org_tool]]
 
         self.motions['initFeeding2'] = {}
         self.motions['initFeeding2']['left'] =\
@@ -324,8 +343,7 @@ class armReachAction(mpcBaseAction):
 
         self.motions['initFeeding13'] = {}
         self.motions['initFeeding13']['right'] = [
-            ['PAUSE', 4.0],
-            self.motions['initFeeding1']['right'][0]]
+            ['PAUSE', 4.0]]+self.motions['initFeeding1']['right']
         self.motions['initFeeding13']['left'] = [self.motions['initFeeding1']['left'][0],
                                                self.motions['initFeeding3']['left'][0]]        
         
@@ -347,13 +365,30 @@ class armReachAction(mpcBaseAction):
         self.motions['initFeeding13_pspoon']['left'] = [self.motions['initFeeding1_pspoon']['left'][0],
                                                         self.motions['initFeeding3']['left'][0]]        
           
+        ## self.motions['runFeeding_pspoon'] = {}
+        ## self.motions['runFeeding_pspoon']['left'] =\
+        ## [['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], self.mouthOffset[2], 0., -0.3, 0.]',
+        ##   3., 'self.mouth_frame'],\
+        ## ['PAUSE', 0.0],
+        ## ['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], -0.15+self.mouthOffset[2], 0., -0.5, 0.]',
+        ##  4., 'self.mouth_frame']]
+
         self.motions['runFeeding_pspoon'] = {}
         self.motions['runFeeding_pspoon']['left'] =\
-        [['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], self.mouthOffset[2], 0., -0.3, 0.]',
+        [['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], self.mouthOffset[2], 0., -0.1, 0.]',
           3., 'self.mouth_frame'],\
         ['PAUSE', 0.0],
-        ['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], -0.15+self.mouthOffset[2], 0., -0.5, 0.]',
+        ['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], -0.15+self.mouthOffset[2], 0., -0.15, 0.]',
          4., 'self.mouth_frame']]
+
+        self.motions['runFeeding_pspoon2'] = {}
+        self.motions['runFeeding_pspoon2']['left'] =\
+        [['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], self.mouthOffset[2], 0., -0.1, 0.]',
+          3., 'self.mouth_frame'],\
+        ['PAUSE', 0.0],
+        ['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], -0.15+self.mouthOffset[2], 0., -0.1, 0.]',
+         4., 'self.mouth_frame']]
+
 
         rospy.loginfo("Parameters are loaded.")
 
@@ -428,9 +463,14 @@ class armReachAction(mpcBaseAction):
         # Find difference between current highest point in bowl and center of bowl
         print 'Highest Point original position:', [data.x, data.y, data.z]
         print 'Bowl Position:', self.bowlPosition
+        
         # Subtract 0.01 to account for the bowl center position being slightly off center
-        self.highBowlDiff = np.array([data.x, data.y, data.z]) - self.bowlPosition -\
-          np.array([0.03,0,0])
+        # x: left
+        # y: out
+        self.highBowlDiff = np.array([data.x, data.y, data.z])
+        ## self.highBowlDiff = np.array([data.x, data.y, data.z]) - self.bowlPosition -\
+        ##   np.array([0.03,0,0])
+          
         if np.linalg.norm(self.highBowlDiff) > 0.15: self.highBowlDiff = np.array([0.0,0,0])
         print '-'*25
         print 'Highest bowl point difference:', self.highBowlDiff
@@ -516,35 +556,41 @@ class armReachAction(mpcBaseAction):
     def getBowlFrame(self, addNoise=False):
         # Get frame info from right arm and upate bowl_pos
 
-        # 1. right arm ('r_gripper_tool_frame') from tf
+        ## # 1. right arm ('r_gripper_tool_frame') from tf
         self.tf_lstnr.waitForTransform(self.torso_frame, 'r_gripper_tool_frame', rospy.Time(0), rospy.Duration(5.0))
         [pos, quat] = self.tf_lstnr.lookupTransform(self.torso_frame, 'r_gripper_tool_frame', rospy.Time(0))
 
         p = PyKDL.Vector(pos[0],pos[1],pos[2])
         M = PyKDL.Rotation.Quaternion(quat[0], quat[1], quat[2], quat[3])
 
-        # 2. add offset to called TF value. Make sure Orientation is up right.
-        p = p + M*PyKDL.Vector(self.bowl_pos_offset['x'], self.bowl_pos_offset['y'], self.bowl_pos_offset['z'])
-        M.DoRotX(self.bowl_orient_offset['rx'])
-        M.DoRotY(self.bowl_orient_offset['ry'])
-        M.DoRotZ(self.bowl_orient_offset['rz'])
+        ## # 2. add offset to called TF value. Make sure Orientation is up right.
+        ## p = p + M*PyKDL.Vector(self.bowl_pos_offset['x'], self.bowl_pos_offset['y'], self.bowl_pos_offset['z'])
+        ## M.DoRotX(self.bowl_orient_offset['rx'])
+        ## M.DoRotY(self.bowl_orient_offset['ry'])
+        ## M.DoRotZ(self.bowl_orient_offset['rz'])
 
-        print 'Bowl frame:', p
+        ## print 'Bowl frame:', p
 
-        # 2.* add noise for random training
-        if addNoise:
-            p = p + PyKDL.Vector(random.uniform(-0.1, 0.1),
-                                 random.uniform(-0.1, 0.1),
-                                 random.uniform(-0.1, 0.1))
+        ## # 2.* add noise for random training
+        ## if addNoise:
+        ##     p = p + PyKDL.Vector(random.uniform(-0.1, 0.1),
+        ##                          random.uniform(-0.1, 0.1),
+        ##                          random.uniform(-0.1, 0.1))
+        ## self.bowlPosition = np.array([p[0], p[1], p[2]])
 
-        self.bowlPosition = np.array([p[0], p[1], p[2]])
+
+        #
+        frame = PyKDL.Frame(M,p) * self.r_tool_offset
+        self.bowlPosition = np.array([frame.p[0], frame.p[1], frame.p[2]])
 
         if self.viz:
             # 4. (optional) publish pose for visualization
-            ps = dh.gen_pose_stamped(PyKDL.Frame(M,p), 'torso_lift_link', rospy.Time.now() )
+            ## ps = dh.gen_pose_stamped(PyKDL.Frame(M,p), 'torso_lift_link', rospy.Time.now() )
+            ps = dh.gen_pose_stamped(frame, 'torso_lift_link', rospy.Time.now() )
             self.bowl_pub.publish(ps)
 
-        return PyKDL.Frame(M,p)
+        return frame
+        ## return PyKDL.Frame(M,p)
 
     def lookAt(self, target, tag_base='head'):
 
@@ -654,7 +700,7 @@ if __name__ == '__main__':
     # Initial variables
     d_robot    = 'pr2'
     controller = 'static'
-    #controller = 'actionlib'
+    ## controller = 'actionlib'
     arm        = opt.arm
     if opt.arm == 'l':
         verbose = True

@@ -1,7 +1,7 @@
 <launch>
   
   <arg name="l_tool_id" default="1"/>
-  <arg name="r_tool_id" default="0"/>
+  <arg name="r_tool_id" default="1"/>
   <arg name="sensor" default="false"/>
   <arg name="client" default="false"/>
   <arg name="fast" default="false"/>

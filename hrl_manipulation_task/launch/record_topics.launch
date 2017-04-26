@@ -65,8 +65,6 @@
                                                        /feeding/manipulation_task/ad_sensitivity_request
                                                        /feeding/manipulation_task/ad_sensitivity_state
                                                        /feeding/manipulation_task/eval_status
-                                                       /feeding/manipulation_task/feeding_dist_request
-                                                       /feeding/manipulation_task/feeding_dist_state
                                                        /manipulation_task/anomaly_type
                                                        /manipulation_task/anomaly_prob
                                                        /manipulation_task/InterruptAction
@@ -75,7 +73,6 @@
                                                        /manipulation_task/gui_status
                                                        /manipulation_task/proceed
                                                        /manipulation_task/status
-                                                       /manipulation_task/user_feedback
                                                        /manipulation_task/user_input
                                                        /scooping/manipulation_task/ad_sensitivity_request
                                                        /scooping/manipulation_task/ad_sensitivity_state
@@ -89,6 +86,10 @@
 </launch>
 
 
+<!--  /manipulation_task/user_feedback 
+     /feeding/manipulation_task/feeding_dist_request
+     /feeding/manipulation_task/feeding_dist_state
+-->
 
 <!--                                                       /pressure/r_gripper_motor
                                                        /head_traj_controller/state

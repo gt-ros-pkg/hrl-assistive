@@ -75,7 +75,7 @@ var CalibInterface = function (ros) {
     taskUI.depth_pos = function() {
         if (taskUI.feedingDepthSynched) {
             var dist = parseInt(document.getElementById("task_Feeding_depth_offset").value)+1;
-            if (dist>9) dist = 9
+            if (dist>9) dist = 9;
 
             var msg = new taskUI.ros.Message({
                 data: dist
@@ -89,7 +89,7 @@ var CalibInterface = function (ros) {
     taskUI.depth_neg = function() {
         if (taskUI.feedingDepthSynched) {
             var dist = parseInt(document.getElementById("task_Feeding_depth_offset").value)-1;
-            if (dist<2) dist = 2
+            if (dist<2) dist = 2;
 
             var msg = new taskUI.ros.Message({
                 data: dist
@@ -98,7 +98,7 @@ var CalibInterface = function (ros) {
             taskUI.feedingDepthSynched = false;
             document.getElementById("task_Feeding_depth_offset").disabled = true;
         }
-    }
+    };
 
 
     taskUI.feedingDepthSub.subscribe(function (msg) {
@@ -123,7 +123,7 @@ var CalibInterface = function (ros) {
     taskUI.horiz_pos = function() {
         if (taskUI.feedingHorizSynched) {
             var dist = parseInt(document.getElementById("task_Feeding_horiz_offset").value)+1;
-            if (dist>3) dist = 3
+            if (dist>3) dist = 3;
 
             var msg = new taskUI.ros.Message({
                 data: dist
@@ -137,7 +137,7 @@ var CalibInterface = function (ros) {
     taskUI.horiz_neg = function() {
         if (taskUI.feedingHorizSynched) {
             var dist = parseInt(document.getElementById("task_Feeding_horiz_offset").value)-1;
-            if (dist<-3) dist = -3
+            if (dist<-3) dist = -3;
 
             var msg = new taskUI.ros.Message({
                 data: dist
@@ -171,7 +171,7 @@ var CalibInterface = function (ros) {
     taskUI.vert_pos = function() {
         if (taskUI.feedingVertSynched) {
             var dist = parseInt(document.getElementById("task_Feeding_vert_offset").value)+1;
-            if (dist>1) dist = 1
+            if (dist>1) dist = 1;
 
             var msg = new taskUI.ros.Message({
                 data: dist
@@ -185,7 +185,7 @@ var CalibInterface = function (ros) {
     taskUI.vert_neg = function() {
         if (taskUI.feedingVertSynched) {
             var dist = parseInt(document.getElementById("task_Feeding_vert_offset").value)-1;
-            if (dist<-5) dist = -5
+            if (dist<-5) dist = -5;
 
             var msg = new taskUI.ros.Message({
                 data: dist
@@ -212,7 +212,7 @@ var CalibInterface = function (ros) {
       });
       taskUI.resetPub.publish(msg);
       assistive_teleop.log("Resetting internal parameters");
-    };
+    }
 
     taskUI.reset_offset = function () {
         if (taskUI.feedingDepthSynched && taskUI.feedingHorizSynched && taskUI.feedingVertSynched) {
@@ -239,8 +239,8 @@ var CalibInterface = function (ros) {
             document.getElementById("task_Feeding_vert_offset").disabled = true;
 
             assistive_teleop.log("Resetting feeding offset");
-        };
-    };
+        }
+    }
 
     // --------------------------------------------------------
     // Feeding Button
@@ -254,12 +254,12 @@ var CalibInterface = function (ros) {
             taskUI.statusPub.publish(msg);
             taskUI.current_step = 0;
             taskUI.max_step = 5;
-            taskUI.available=false
+            taskUI.available=false;
             return true;
         } else {
             return false;
         }
-    };
+    }
 
     taskUI.guiStatusSub.subscribe(function(msg) {
         if(msg.data == 'select task' || msg.data == 'stopped') {
@@ -286,7 +286,7 @@ var CalibInterface = function (ros) {
 
 var initCalibInterface = function (tabDivId) {
     assistive_teleop.taskUI = new CalibInterface(assistive_teleop.ros);
-    var divRef = "#"+tabDivId;
+    //var divRef = "#"+tabDivId;
 
     $('.bpd, .man_task_cont').button();
     $('#task_Feeding_depth_offset').change(function(){

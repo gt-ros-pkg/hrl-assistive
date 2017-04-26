@@ -32,20 +32,24 @@
   <!--script type="text/javascript" src="js/traj_play.js"></script-->
   <script type="text/javascript" src="js/numeric-1.2.6.js"></script>
 
+
+
   <script type="text/javascript" src="js/man_Task.js"></script>
   <script type="text/javascript" src="js/ad_slider.js"></script>
   <!--script type="text/javascript" src="js/tasks.js"></script-->
 
+  <script>
+   $(function(){$("#stabbingTasks").load("stabbing_tab_interface.html"); });
+  </script>
+  <script>
+   $(function(){$("#calibTasks").load("calib_tab_interface.html"); });
+  </script>
 
   <link href="js/keyboard/css/keyboard.css" rel="stylesheet">
   <script src="js/keyboard/js/jquery.keyboard.js"></script>
   <link type="text/css" href="css/rfh_interface.css"
-  rel="stylesheet"/>
+        rel="stylesheet"/>
 
-
-  <script>
-    $(function(){$("#calibTasks").load("calib_tab_interface.html");});
-  </script>
 
 </head>
 
@@ -222,6 +226,8 @@
                   <li><a href="#tab_cart_control">Default Controls</a>
                   </li>
                   <li><a href="#tabManTasks">FeedingTask</a>
+                  </li>
+                  <li><a href="#stabbingTasks">Stabbing Task</a>
                   </li>
                   <li><a href="#calibTasks">Calibration</a>
                   </li>
@@ -477,6 +483,7 @@
                     </tr>
                   </table>
                 </div>
+                <div id="stabbingTasks"></div>
                 <div id="calibTasks"></div>
               </div>
               <!-- END Tabs -->

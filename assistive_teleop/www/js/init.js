@@ -65,6 +65,7 @@ var assistive_teleop = {
         initCartControl();
         initManTaskTab(); // feeding
         initAdGUI('feeding'); // feeding anomaly detector
+        initStabInterface('stabbingTasks'); // stabbing 
         initCalibInterface('calibTasks'); // feeding calibration
         //initTaskInterface('tabTasks');
         if (window.location.hash.search('ft') !== -1) {

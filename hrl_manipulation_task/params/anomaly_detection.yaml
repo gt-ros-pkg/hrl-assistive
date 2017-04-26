@@ -9,10 +9,14 @@ hrl_manipulation_task:
 
   # bowl center                                                                                                    
   sub_ee_frame: r_gripper_tool_frame
+  #sub_ee_pos_offset:
+  #  x: 0.11
+  #  y: 0
+  #  z: 0.04
   sub_ee_pos_offset:
-    x: 0.11
+    x: 0.01
     y: 0
-    z: 0.04
+    z: -0.025
   sub_ee_orient_offset:
     rx: 0
     ry: 0

@@ -357,7 +357,7 @@ class armReacherGUI:
 
             self.ServiceCallLeft("getBowlHighestPoint")
             ## rospy.loginfo("Running scooping!")
-            if self.cur_tool == 4: self.ServiceCallLeft("runScooping_pspoon")
+            if self.cur_tool == 4 or self.cur_tool==6: self.ServiceCallLeft("runScooping_pspoon")
             else: self.ServiceCallLeft("runScooping")
             self.proceedPub.publish("Done")
             self.motion_complete = True
@@ -387,7 +387,7 @@ class armReacherGUI:
                 rospy.loginfo("Initializing left arm for feeding")
                 self.proceedPub.publish("Set: , Feeding 1, Feeding 2")
                 if self.renew_mouth:
-                    if self.cur_tool == 4: self.ServiceCallLeft("initFeeding1_pspoon")
+                    if self.cur_tool == 4 or self.cur_tool == 6 : self.ServiceCallLeft("initFeeding1_pspoon")
                     else:                  self.ServiceCallLeft("initFeeding1")
                     if self.emergencyStatus: break
                     self.ServiceCallRight("getHeadPos")
@@ -396,7 +396,7 @@ class armReacherGUI:
                     self.FeedNumber = 1
                     self.proceedPub.publish("Set: Feeding 1, Feeding 2, Feeding 3")
                 else:
-                    if self.cur_tool == 4: 
+                    if self.cur_tool == 4 or self.cur_tool == 6: 
                         leftProc = multiprocessing.Process(target=self.ServiceCallLeft,
                                                            args=("initFeeding13_pspoon",))
                     else:
@@ -436,7 +436,8 @@ class armReacherGUI:
                     if isolation_flag: self.log.enableIsolator(True)
 
                 rospy.loginfo("Running feeding")
-                if self.cur_tool == 4: self.ServiceCallLeft("runFeeding_pspoon")
+                if self.cur_tool == 4 : self.ServiceCallLeft("runFeeding_pspoon")
+                elif self.cur_tool == 6 : self.ServiceCallLeft("runFeeding_pspoon2")
                 else:                  self.ServiceCallLeft("runFeeding")
                 self.proceedPub.publish("Done")
                 emergencyStatus = self.emergencyStatus

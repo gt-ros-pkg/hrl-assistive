@@ -619,7 +619,7 @@ def getSubjectFileList(root_path, subject_names, task_name, exact_name=True, tim
 
         name_flag = False
         for name in subject_names:
-            if d.find(name) >= 0: 
+            if d.find(name+'_') >= 0:
                 if exact_name:
                     if d.split(name+'_')[1] == task_name: name_flag = True
                 else:
