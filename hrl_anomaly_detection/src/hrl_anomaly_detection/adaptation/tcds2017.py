@@ -128,7 +128,7 @@ def gen_likelihoods(subject_names, task_name, raw_data_path, processed_data_path
     successData = successData[feature_list]
     failureData = failureData[feature_list]
 
-    kFold_list = kFold_list[:1]
+    ## kFold_list = kFold_list[:1]
 
     #-----------------------------------------------------------------------------------------    
     # Training HMM, and getting classifier training and testing data
@@ -267,7 +267,7 @@ def evaluation_std(subject_names, task_name, raw_data_path, processed_data_path,
     #-------------------------------------------------------------------------------------
     pkl_prefix = 'hmm_'+task_name
     for method in method_list:
-        if method.find('ipca')>=0:            
+        if method.find('ipca')>=0 or method.find('mlp')>=0:            
             saveWindowFeatures(d, processed_data_path, pkl_prefix, win_size=SVM_dict['raw_window_size'], \
                                WIN_renew=False)
             break
@@ -280,7 +280,7 @@ def evaluation_std(subject_names, task_name, raw_data_path, processed_data_path,
     ROC_data = util.reset_roc_data(ROC_data, method_list, ROC_dict['update_list'], nPoints)
 
     # temp
-    ## d['kFoldList'] = d['kFoldList'][:1]
+    #d['kFoldList'] = d['kFoldList'][:1]
 
     # parallelization
     if debug: n_jobs=1
@@ -408,7 +408,7 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
 
     pkl_prefix = 'hmm_'+task_name
     for method in method_list:
-        if method.find('ipca')>=0:            
+        if method.find('ipca')>=0 or method.find('mlp')>=0:            
             saveWindowFeatures(d, processed_data_path, pkl_prefix, win_size=SVM_dict['raw_window_size'], \
                                WIN_renew=ADT_dict['data_renew'])
             break
@@ -1443,7 +1443,8 @@ if __name__ == '__main__':
         param_dict['HMM']['scale'] = 5.0
         param_dict['ROC']['progress_param_range'] = -np.logspace(-1.2, 2.4, nPoints)+1.0
         param_dict['ROC']['ipca_param_range'] = np.logspace(0, 1.0, nPoints)-1
-        param_dict['ROC']['methods'] = ['ipca'] #['progress']
+        param_dict['ROC']['mlp_param_range'] = np.logspace(-0.8, 0.0, nPoints)
+        param_dict['ROC']['methods'] = ['mlp'] #['ipca'] #['progress']
 
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
 
@@ -1467,12 +1468,13 @@ if __name__ == '__main__':
         param_dict['HMM']['scale'] = 5.0
         param_dict['ROC']['progress_param_range'] = -np.logspace(-1.2, 2.4, nPoints)+1.0
         param_dict['ROC']['ipca_param_range'] = np.logspace(0, 2.5, nPoints)-1
-        param_dict['ROC']['methods'] = ['ipca'] #['progress']
+        param_dict['ROC']['mlp_param_range'] = np.logspace(-0.8, 0.2, nPoints)-0.2
+        param_dict['ROC']['methods'] = ['mlp'] #['ipca'] #['progress']
 
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
 
         param_dict['ADT'] = {}
-        param_dict['ADT']['data_renew'] = True
+        param_dict['ADT']['data_renew'] = False
 
         auc_complete = []
         auc_list = []
@@ -1488,7 +1490,7 @@ if __name__ == '__main__':
         for nrSteps in [20]:
             for lr in [0.2]:
                 ## for n_pTrain in [10]:
-                for clf in ['old', 'adapt']:
+                for clf in ['renew']:
                     param_dict['ADT']['lr']       = lr #0.1
                     param_dict['ADT']['max_iter'] = 1
                     param_dict['ADT']['n_pTrain'] = 10 #n_pTrain

@@ -54,7 +54,7 @@ QUEUE_SIZE = 10
 
 class anomaly_detector:
     def __init__(self, task_name, method, detector_id, save_data_path,\
-                 param_dict, debug=False, no_alarm=False, viz=False):
+                 param_dict, debug=False, en_alarm=True, viz=False):
         '''
         no_alarm: detect anomalies, but does not stop the robot
         '''
@@ -64,7 +64,7 @@ class anomaly_detector:
         self.method          = method
         self.id              = detector_id
         self.save_data_path  = save_data_path
-        self.no_alarm        = no_alarm
+        self.en_alarm        = en_alarm       
         self.debug           = debug
         self.viz             = viz
         self.fig             = None
@@ -160,6 +160,12 @@ class anomaly_detector:
         rospy.Subscriber('manipulation_task/ad_sensitivity_request', Float64, self.sensitivityCallback)
         rospy.Subscriber("/manipulation_task/emergency", String, self.emergencyCallback, queue_size=10)
         ## rospy.Subscriber('/manipulation_task/proceed', String, self.debugCallback)
+
+        if self.en_alarm is False:
+            self.ad_sync_pub             = rospy.Publisher("manipulation_task/ad_sync",
+                                                           Bool, queue_size=QUEUE_SIZE)
+            rospy.Subscriber('manipulation_task/ad_sync', Bool, self.adSyncCallback)
+
 
         # Service
         self.detection_service = rospy.Service('anomaly_detector'+str(self.id)+'_enable',
@@ -312,6 +318,15 @@ class anomaly_detector:
             self.hmm_input_pub.publish(msg)
             self.lock.release()
 
+    def adSyncCallback(self, msg):
+        if msg.data and len(self.dataList)>0:
+            msg = FloatMatrix()
+            msg.header.stamp = rospy.Time.now()        
+            msg.size = self.nEmissionDim
+            self.lock.acquire()            
+            msg.data = np.array(self.dataList).flatten().tolist()
+            self.hmm_input_pub.publish(msg)
+            self.lock.release()
 
     ## def debugCallback(self, msg):
     ##     if msg.data.find("Set: Feeding 3, Feeding 4, retrieving")>=0:            
@@ -334,7 +349,10 @@ class anomaly_detector:
 
     def set_anomaly_alarm(self):
         rospy.loginfo( '-'*15 +  'Anomaly has occured!' + '-'*15 )
-        if self.no_alarm is False:
+        if self.en_alarm is False:
+            self.soundHandle.play(1) #(2)
+            self.ad_sync_pub.publish(True)
+        else:
             self.soundHandle.play(1) #(2)
             self.action_interruption_pub.publish(self.task_name+'_anomaly')
             self.task_interruption_pub.publish(self.task_name+'_anomaly')
@@ -522,8 +540,8 @@ if __name__ == '__main__':
                  help='type the method name')
     p.add_option('--id', action='store', dest='id', type=int, default=0,
                  help='type the detector id')
-    p.add_option('--no_alarm', '--na', action='store_true', dest='no_alarm',
-                 default=False, help='Disable alarming.')
+    p.add_option('--alarm', action='store_true', dest='en_alarm',
+                 default=False, help='Enable alarming.')
     p.add_option('--debug', '--d', action='store_true', dest='bDebug',
                  default=False, help='Enable debugging mode.')
     
@@ -545,7 +563,8 @@ if __name__ == '__main__':
 
 
     ad = anomaly_detector(opt.task, opt.method, opt.id, save_data_path, \
-                          param_dict, debug=opt.bDebug, no_alarm=opt.no_alarm, viz=False)
+                          param_dict, debug=opt.bDebug, en_alarm=opt.en_alarm,\
+                          viz=False)
     ad.run()
 
 

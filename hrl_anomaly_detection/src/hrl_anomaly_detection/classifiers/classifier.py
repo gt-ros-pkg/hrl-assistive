@@ -506,7 +506,8 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
         exec '%s = v' % k        
 
     # train a classifier and evaluate it using test data.
-    if method == 'ipca' or method == 'osvm' or method == 'bpsvm' or method == 'sgd':
+    if method == 'ipca' or method == 'osvm' or method == 'bpsvm' or method == 'sgd' or \
+      method == 'mlp':
         if method == 'osvm': raw_data_idx = 0
         elif method == 'bpsvm': raw_data_idx = 1
 
@@ -519,7 +520,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
         ll_classifier_test_labels = None
         ## step_idx_l = raw_data[raw_data_idx][idx]['step_idx_l']
 
-        if method.find('ipca')>=0 and adaptation is True:
+        if adaptation is True:
             X_train_p  = ll_window_ptrain_X
             Y_train_p  = ll_window_ptrain_Y
             idx_train_p= None
@@ -619,7 +620,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
     # Generate parameter list for ROC curve
     # pass method if there is existing result
     # data preparation
-    if (method.find('svm')>=0 or method.find('ipca')>=0) and \
+    if (method.find('svm')>=0 or method.find('ipca')>=0 or method.find('mlp')>=0) and \
       not(method == 'osvm' or method == 'bpsvm'):
         scr_pkl  = os.path.join(processed_data_path, 'scr_'+method+'_'+str(idx)+'.pkl')
 
@@ -628,7 +629,9 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             with open(scr_pkl, 'rb') as f:            
                 scaler = pickle.load(f)
 
-        scaler      = preprocessing.StandardScaler()
+        print "Training data is scaled ", np.shape(X_train)
+        if method.find('mlp')>=0: scaler = preprocessing.MinMaxScaler()
+        else:                     scaler = preprocessing.StandardScaler()
         X_train = scaler.fit_transform(X_train)
 
         if save_model:
@@ -644,7 +647,8 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
     for j in xrange(len(ll_classifier_test_X)):
         if len(ll_classifier_test_X[j])==0: continue
 
-        if (method.find('svm')>=0 or method.find('ipca')>=0) and not(method == 'osvm' or method == 'bpsvm'):
+        if (method.find('svm')>=0 or method.find('ipca')>=0 or method.find('mlp')>=0) and \
+          not(method == 'osvm' or method == 'bpsvm'):
             try:
                 X = scaler.transform(ll_classifier_test_X[j])
             except:
@@ -682,6 +686,9 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
     elif method == 'ipca':
         from hrl_anomaly_detection.classifiers import ipca
         dtc = ipca.ipca(n_components=len(X_train[0])/8, batch_size=1000 )        
+    elif method == 'mlp':
+        from hrl_anomaly_detection.classifiers import mlp
+        dtc = mlp.mlp(enconding_dim=4, patience=10)        
     else:
         dtc = classifier( method=method, nPosteriors=nState, nLength=nLength, parallel=parallel )
 
@@ -708,20 +715,24 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             dtc.set_params( gamma=weights[j] )
             if not load_model: ret = dtc.fit(X_train, np.array(Y_train)*-1.0)
         elif method == 'progress' or method == 'progress_diag' or \
-          method == 'fixed' or method == 'hmmgp' or method == 'ipca':
+          method == 'fixed' or method == 'hmmgp' or method == 'ipca' or method == 'mlp':
             thresholds = ROC_dict[method+'_param_range']
-            if method == 'ipca':
+            if method == 'ipca' or method == 'mlp':
                 dtc.set_params( ths = thresholds[j] )
             else:
                 dtc.set_params( ths_mult = thresholds[j] )
                 
             if not load_model:
                 if j==0:
-                    ret = dtc.fit(X_train, y=Y_train, ll_idx=idx_train)
+
+                    if method == 'mlp':
+                        ret = dtc.fit(X_train, y=Y_train, ll_idx=idx_train, Xv=X_test[1])
+                    else:
+                        ret = dtc.fit(X_train, y=Y_train, ll_idx=idx_train)
 
                     # Adaptation
                     if adaptation is True:
-                        if method == 'ipca':
+                        if method == 'ipca' or method == 'mlp':
                             dtc.partial_fit(X_train_p)
                         else:
                             dtc.partial_fit(X_train_p, Y_train_p, idx_train_p,

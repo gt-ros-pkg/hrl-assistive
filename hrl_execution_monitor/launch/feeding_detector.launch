@@ -3,6 +3,7 @@
 
     <!--arg name="ad_param" default="$(find hrl_manipulation_task)/params/anomaly_detection.yaml" /-->    
     <!--rosparam command="load" file="$(arg ad_param)" /-->
+    <arg name="alarm" default="1"/>
 
     <group ns="scooping" >
       <arg name="ad_param" default="$(find hrl_execution_monitor)/params/anomaly_detection_scooping.yaml" />    
@@ -10,19 +11,23 @@
 
       <!--node name="soundplay_node" pkg="sound_play" type="soundplay_node.py"/-->
       <node name="anomaly_detector" pkg="hrl_execution_monitor"
-            type="anomaly_detector.py" args="--task scooping --id 0" output="screen" />
+            type="anomaly_detector.py" args="--task scooping --id 0 --alarm $(arg alarm)" output="screen" />
     </group>
 
     <group ns="feeding" >
       <arg name="ad_param" default="$(find hrl_execution_monitor)/params/anomaly_detection_feeding.yaml" />    
       <rosparam command="load" file="$(arg ad_param)" />
 
-      <node name="soundplay_node" pkg="sound_play" type="soundplay_node.py"/>
+      <node name="soundplay_node" pkg="sound_play"
+            type="soundplay_node.py"/>
+
+      
       <node name="anomaly_detector0" pkg="hrl_execution_monitor"
-            type="anomaly_detector.py" args="--task feeding --id 0"
+            type="anomaly_detector.py" args="--task feeding --id 0
+                                             --alarm $(arg alarm)"
             output="screen" />
       <node name="anomaly_detector1" pkg="hrl_execution_monitor"
-            type="anomaly_detector.py" args="--task feeding --id 1"
+            type="anomaly_detector.py" args="--task feeding --id 1 --alarm $(arg alarm)"
             output="screen" />
       <!--node name="anomaly_isolator" pkg="hrl_execution_monitor"
             type="anomaly_isolator.py" args="-task feeding -au "
