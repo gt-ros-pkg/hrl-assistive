@@ -1,0 +1,4 @@
+string outcome
+float64[] forces
+---
+bool intialization_success

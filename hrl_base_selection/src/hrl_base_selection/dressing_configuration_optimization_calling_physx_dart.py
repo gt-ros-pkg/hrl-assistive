@@ -23,15 +23,18 @@ from sensor_msgs.msg import JointState
 from std_msgs.msg import String
 
 roslib.load_manifest('hrl_base_selection')
-from hrl_base_selection.helper_functions import createBMatrix, Bmat_to_pos_quat
+from hrl_base_selection.helper_functions import createBMatrix, Bmat_to_pos_quat, calc_axis_angle
 from hrl_base_selection.dart_setup import DartDressingWorld
 from hrl_base_selection.msg import PhysxOutcome
-from hrl_base_selection.srv import InitPhysxBodyModel, PhysxInput, PhysxOutput, IKService
+from hrl_base_selection.srv import InitPhysxBodyModel, PhysxInput, IKService, PhysxOutput
 
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from hrl_msgs.msg import FloatArrayBare
 
 import random, threading
+
+import openravepy as op
+from openravepy.misc import InitOpenRAVELogging
 
 import tf.transformations as tft
 
@@ -55,8 +58,16 @@ class ScoreGeneratorDressingwithPhysx(object):
         self.human_arm = None
         self.human_opposite_arm = None
 
+        self.setup_openrave()
+
+        self.set_robot_arm(robot_arm)
+        self.set_human_arm(human_arm)
+
         self.start_traj = []
         self.end_traj = []
+
+        self.axis = []
+        self.angle = None
 
         rospack = rospkg.RosPack()
         self.pkg_path = rospack.get_path('hrl_base_selection')
@@ -74,7 +85,7 @@ class ScoreGeneratorDressingwithPhysx(object):
         self.reference_names = None
 
         self.best_physx_score = 100.
-        self.best_openrave_results = []
+        self.best_pr2_results = [[], []]
 
         self.arm_traj_parameters = []
         self.pr2_parameters = []
@@ -106,16 +117,12 @@ class ScoreGeneratorDressingwithPhysx(object):
         self.physx_output = False
         self.physx_outcome = None
         self.setup_dart()
-        self.setup_ik_service()
+
+        # self.setup_ik_service()
         self.setup_physx()
         self.update_physx_from_dart(initialization=True)
-        self.setup_physx_calls()
-        self.set_robot_arm(robot_arm)
-        self.set_human_arm(human_arm)
+        # self.setup_physx_calls()
 
-    def setup_physx_calls(self):
-        self.traj_to_simulator_pub = rospy.Publisher('physx_simulator_input', FloatArrayBare, queue_size=1)
-        self.simulator_result_sub = rospy.Subscriber('physx_simulator_result', PhysxOutcome, self.simulator_result_cb)
 
     def output_results_for_use(self):
         traj_and_arm_config_results = load_pickle(self.pkg_path+'/data/saved_results/large_search_space/best_trajectory_and_arm_config.pkl')
@@ -247,6 +254,8 @@ class ScoreGeneratorDressingwithPhysx(object):
         origin_B_traj_start[0:3, 1] = np.reshape(y_orth, [3, 1])
         origin_B_traj_start[0:3, 2] = np.reshape(z_orth, [3, 1])
         origin_B_traj_start[0:3, 3] = copy.copy(origin_B_traj_start_pos[0:3, 3])
+        translation, quaternion = Bmat_to_pos_quat(origin_B_traj_start)
+        self.axis, self.angle = calc_axis_angle(quaternion)
 
         # print 'origin_B_traj_start'
         # print origin_B_traj_start
@@ -317,7 +326,7 @@ class ScoreGeneratorDressingwithPhysx(object):
     def simulator_result_handler(self, msg):
         with self.frame_lock:
 
-            self.physx_outcome = msg.outcome
+            self.physx_outcome = str(msg.outcome)
             forces = [float(i) for i in msg.forces]
             temp_force_cost = 0.
             for force in forces:
@@ -334,8 +343,8 @@ class ScoreGeneratorDressingwithPhysx(object):
 
         # maxiter = 30/
         # popsize = m.pow(5, 2)*100
-        # maxiter = 5
-        # popsize = 100
+        maxiter = 10
+        popsize = 10
 
         ### Current: Two positions, first with respect to the fist, second with respect to the upper arm, centered at
         # the shoulder and pointing X down the upper arm
@@ -344,23 +353,24 @@ class ScoreGeneratorDressingwithPhysx(object):
         #                  human_arm_elbow_angle,
         #                  human_upper_arm_quaternion(euler:xzy): r, y, p ]
 
-        parameters_min = np.array([0.1, -0.07, 0.05,
-                                   -0.15, -0.05, 0.05,
+        parameters_min = np.array([0.1, -0.07, 0.06,
+                                   -0.15, -0.07, 0.08,
                                    0.,
-                                   m.radians(-5.), m.radians(-15.), m.radians(-30.)])
-        parameters_max = np.array([0.25, 0.07, 0.2,
-                                   0.05, 0.05, 0.2,
+                                   m.radians(-115.), m.radians(-100.), m.radians(-20.)])
+        parameters_max = np.array([0.2, 0.07, 0.2,
+                                   0.05, 0.07, 0.2,
                                    m.radians(135.),
-                                   m.radians(115), m.radians(115), m.radians(30)])
-        parameters_scaling = (parameters_max-parameters_min)/4.
+                                   m.radians(5.), m.radians(20.), m.radians(130)])
+        parameters_scaling = (parameters_max-parameters_min)/2.
         parameters_initialization = (parameters_max+parameters_min)/2.
         parameters_initialization[6] = 0.0
-        parameters_initialization[8] = 0.
-        parameters_initialization[9] = m.radians(0.)
-        parameters_scaling[6] = m.radians(90)
-        parameters_scaling[7] = m.radians(90)
-        parameters_scaling[8] = m.radians(90)
-        parameters_scaling[9] = m.radians(40)
+        parameters_initialization[7] = 0.0
+        parameters_initialization[8] = m.radians(0.)
+        parameters_initialization[9] = m.radians(70.)
+        # parameters_scaling[6] = m.radians(90)
+        # parameters_scaling[7] = m.radians(90)
+        # parameters_scaling[8] = m.radians(90)
+        # parameters_scaling[9] = m.radians(40)
         opts1 = {'seed': 1234, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter, 'maxfevals': 1e8,
                  'CMA_cmean': 0.25,
                  'verb_filenameprefix': 'outcma_arm_and_trajectory',
@@ -375,6 +385,10 @@ class ScoreGeneratorDressingwithPhysx(object):
 
         print 'Outcome is: '
         print self.optimization_results
+        print 'Best trajectory and arm config: \n', self.optimization_results[0]
+        print 'Associated score: ', self.optimization_results[1]
+        print 'Best PR2 configuration: \n', self.best_pr2_results[0]
+        print 'Associated score: ', self.best_pr2_results[1]
         optimized_traj_arm_output = [self.optimization_results[0], self.optimization_results[1]]
         optimized_pr2_output = [self.best_pr2_results[0], self.best_pr2_results[1]]
 
@@ -383,14 +397,12 @@ class ScoreGeneratorDressingwithPhysx(object):
 
     def objective_function_traj_and_arm_config(self, params):
         # params[7:] = [0., 0., 1.]
-        # params = [0., 0.,  0.2,
-        #           -0.2,  0.0, 0.2,
+        # params = [0.1, 0.,  0.1,
+        #           -0.1,  0.0, 0.1,
         #           0.,
-        #           0.0,  m.radians(0), m.radians(-90)]
-        # params = [1.71860146e-01,  -9.45158225e-03,   8.73129841e-02,
-        #  3.03018418e-02,  -7.06433255e-03,   1.68311316e-01,
-        #  1.37321557e-03,  -1.48717942e-01,   4.26887851e-01,
-        # -1.95806881e+00]
+        #           0.0,  m.radians(0.), m.radians(70)]
+        # params = [0.17374768,  0.0647019,   0.09521618,  0.01036762, -0.05860782,  0.10786874,
+        #           0.01046108, -0.92726507, -0.69534598,  0.72062966]
 
         arm = self.human_arm.split('a')[0]
 
@@ -430,7 +442,7 @@ class ScoreGeneratorDressingwithPhysx(object):
             # path_distance = np.linalg.norm(np.array(params[0:3])-np.array(params[3:6]))
             print 'params'
             print params
-            self.set_human_model_dof([params[7], params[8], -params[9], params[6]], self.human_arm)
+            self.set_human_model_dof_dart([params[7], params[8], params[9], params[6]], self.human_arm)
 
             skeleton_frame_B_worldframe = np.matrix([[1.,  0., 0., 0.],
                                                      [0.,  0., 1., 0.],
@@ -450,8 +462,8 @@ class ScoreGeneratorDressingwithPhysx(object):
             # origin_B_hr = np.matrix(self.human.bodynode('h_hand_right').world_transform())
 
             z_origin = np.array([0., 0., 1.])
-            x_vector = (np.array(origin_B_hand)[0:3, 1])
-            x_vector /= p.linalg.norm(x_vector)
+            x_vector = (-1*np.array(origin_B_hand)[0:3, 1])
+            x_vector /= np.linalg.norm(x_vector)
             y_orth = np.cross(z_origin, x_vector)
             y_orth /= np.linalg.norm(y_orth)
             z_orth = np.cross(x_vector, y_orth)
@@ -565,6 +577,9 @@ class ScoreGeneratorDressingwithPhysx(object):
             origin_B_traj_start[0:3, 3] = np.array(origin_B_traj_start_pos)[0:3, 3]
             origin_B_traj_start = np.matrix(origin_B_traj_start)
 
+            # print 'origin_B_upperarm_pointed_down_shoulder'
+            # print origin_B_upperarm_pointed_down_shoulder
+
             # print 'origin_B_traj_start'
             # print origin_B_traj_start
 
@@ -642,8 +657,8 @@ class ScoreGeneratorDressingwithPhysx(object):
                 # print origin_B_traj_waypoint
                 self.goals.append(copy.copy(origin_B_traj_waypoint))
                 upperarm_vector = np.array((origin_B_upperarm.I*origin_B_traj_waypoint))[0:3, 3]
-                forearm_vector = np.linalg.norm((origin_B_forearm.I*origin_B_traj_waypoint)[0:3, 3])
-                hand_vector = np.linalg.norm((origin_B_hand.I*origin_B_traj_waypoint)[0:3, 3])
+                forearm_vector = np.array((origin_B_forearm.I*origin_B_traj_waypoint))[0:3, 3]
+                hand_vector = np.array((origin_B_hand.I*origin_B_traj_waypoint))[0:3, 3]
                 min_distance = np.min([np.linalg.norm([upperarm_vector[0], upperarm_vector[2]]),
                                        np.linalg.norm([forearm_vector[0], forearm_vector[2]]),
                                        np.linalg.norm([hand_vector[0], hand_vector[2]])])
@@ -655,14 +670,16 @@ class ScoreGeneratorDressingwithPhysx(object):
         start_time = rospy.Time.now()
         self.set_goals()
         # print self.origin_B_grasps
-        maxiter = 5
-        popsize = 4*20
+        maxiter = 2#20
+        popsize = 2#4*20*2
         # cma parameters: [pr2_base_x, pr2_base_y, pr2_base_theta, pr2_base_height,
         # human_arm_dof_1, human_arm_dof_2, human_arm_dof_3, human_arm_dof_4, human_arm_dof_5,
         # human_arm_dof_6, human_arm_dof_7]
-        parameters_min = np.array([-2., -2., -m.pi-.001, 0.])
-        parameters_max = np.array([2., 2., m.pi+.001, 0.3])
-        parameters_scaling = (parameters_max-parameters_min)/4.
+        parameters_min = np.array([-2., -2., -2.5/3.*m.pi-.001, 0.])
+        parameters_max = np.array([2., 2., 2.5/3.*m.pi+.001, 0.3])
+        # parameters_min = np.array([-0.1, -1.0, m.pi/2. - .001, 0.2])
+        # parameters_max = np.array([0.8, -0.3, 2.5*m.pi/2. + .001, 0.3])
+        parameters_scaling = (parameters_max-parameters_min)/2.
         parameters_initialization = (parameters_max+parameters_min)/2.
         opts1 = {'seed': 1234, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter, 'maxfevals': 1e8,
                  'CMA_cmean': 0.25,
@@ -670,23 +687,25 @@ class ScoreGeneratorDressingwithPhysx(object):
                  'scaling_of_variables': list(parameters_scaling),
                  'tolfun': 1e-3,
                  'bounds': [list(parameters_min), list(parameters_max)]}
-        self.openrave_optimization_results = cma.fmin(self.objective_function_one_config,
+        self.kinematics_optimization_results = cma.fmin(self.objective_function_one_config,
                                                       list(parameters_initialization),
                                                       1.,
                                                       options=opts1)
 
-        self.pr2_parameters.append([self.openrave_optimization_results[0], self.openrave_optimization_results[1]])
+        self.pr2_parameters.append([self.kinematics_optimization_results[0], self.kinematics_optimization_results[1]])
         save_pickle(self.pr2_parameters, self.pkg_path+'/data/all_pr2_configs.pkl')
         elapsed_time = rospy.Time.now()-start_time
         print 'Done with openrave round. Time elapsed:', elapsed_time.to_sec()
         print 'Openrave results:'
-        print self.openrave_optimization_results
+        print self.kinematics_optimization_results
         self.force_cost = 0.
-        if self.openrave_optimization_results[1] < 0.:
-
+        if self.kinematics_optimization_results[1] < 0.:
             self.physx_output = False
             self.physx_outcome = None
-            self.update_physx_from_dart(start_traj=origin_B_traj_start_pos, end_traj=origin_B_traj_end_pos)
+            traj_start = np.array(origin_B_traj_start_pos)[0:3, 3]
+            traj_end = np.array(origin_B_traj_end_pos)[0:3, 3]
+
+            self.update_physx_from_dart(origin_B_upperarm_pointed_down_shoulder=origin_B_upperarm_pointed_down_shoulder, start_traj=traj_start, end_traj=traj_end)
 
             # pos_a, quat_a = Bmat_to_pos_quat(origin_B_upperarm_world)
 
@@ -710,26 +729,26 @@ class ScoreGeneratorDressingwithPhysx(object):
                 with self.frame_lock:
                     alpha = 1.  # cost on forces
                     beta = 1.  # cost on manipulability
-                    physx_score = self.force_cost*alpha + self.openrave_optimization_results[1]*beta
+                    physx_score = self.force_cost*alpha + self.kinematics_optimization_results[1]*beta
                     if physx_score < self.best_physx_score:
                         self.best_physx_score = physx_score
-                        self.best_openrave_results = self.openrave_optimization_results
+                        self.best_pr2_results = self.kinematics_optimization_results
                     self.arm_traj_parameters.append([params, physx_score])
 
                     save_pickle(self.arm_traj_parameters, self.pkg_path+'/data/all_arm_traj_configs.pkl')
-                    print 'Force cost was: ', force_cost
+                    print 'Force cost was: ', self.force_cost
                     print 'Physx score was: ', physx_score
                     return physx_score
         self.physx_outcome = None
         self.physx_output = False
         alpha = 1.  # cost on forces
         beta = 1.  # cost on manipulability
-        self.arm_traj_parameters.append([params, 10. + self.force_cost*alpha + self.openrave_optimization_results[1]*beta])
+        self.arm_traj_parameters.append([params, 10. + self.force_cost*alpha + self.kinematics_optimization_results[1]*beta])
         save_pickle(self.arm_traj_parameters, self.pkg_path+'/data/all_arm_traj_configs.pkl')
-        physx_score = 10. + self.force_cost*alpha + self.openrave_optimization_results[1]*beta
+        physx_score = 10. + self.force_cost*alpha + self.kinematics_optimization_results[1]*beta
         print 'Force cost was: ', self.force_cost
-        print 'Physx score was: ', physx_score
-        print 'Kinematics score was: ', self.openrave_optimization_results[1]
+        print 'Kinematics score was: ', self.kinematics_optimization_results[1]
+        print 'Total score was: ', physx_score
         return physx_score
 
     def calculate_scores(self, task_dict, model, ref_options):
@@ -740,98 +759,6 @@ class ScoreGeneratorDressingwithPhysx(object):
         self.setup_human_openrave(model)
 
         self.handle_score_generation()
-
-    def old_stuff(self):
-        # The reference frame for the pr2 base link
-        origin_B_pr2 = np.matrix(np.eye(4))
-        pr2_B_head = []
-        # Sets the wheelchair location based on the location of the head using a few homogeneous transforms.
-        # This is only used to visualize in rviz, because the visualization is done before initializing openrave
-        self.origin_B_references = []
-        if self.model == 'green_kevin':
-            headmodel = self.human_model.GetLink('green_kevin/head_link')
-            ual = self.human_model.GetLink('green_kevin/arm_left_link')
-            uar = self.human_model.GetLink('green_kevin/arm_right_link')
-            fal = self.human_model.GetLink('green_kevin/forearm_left_link')
-            far = self.human_model.GetLink('green_kevin/forearm_right_link')
-            hl = self.human_model.GetLink('green_kevin/hand_left_link')
-            hr = self.human_model.GetLink('green_kevin/hand_right_link')
-            thl = self.human_model.GetLink('green_kevin/quad_left_link')
-            thr = self.human_model.GetLink('green_kevin/quad_right_link')
-            calfl = self.human_model.GetLink('green_kevin/calf_left_link')
-            calfr = self.human_model.GetLink('green_kevin/calf_right_link')
-            ub = self.human_model.GetLink('green_kevin/upper_body_link')
-            origin_B_head = np.matrix(headmodel.GetTransform())
-            origin_B_ual = np.matrix(ual.GetTransform())
-            origin_B_uar = np.matrix(uar.GetTransform())
-            origin_B_fal = np.matrix(fal.GetTransform())
-            origin_B_far = np.matrix(far.GetTransform())
-            origin_B_hl = np.matrix(hl.GetTransform())
-            origin_B_hr = np.matrix(hr.GetTransform())
-            origin_B_thl = np.matrix(thl.GetTransform())
-            origin_B_thr = np.matrix(thr.GetTransform())
-            origin_B_calfl = np.matrix(calfl.GetTransform())
-            origin_B_calfr = np.matrix(calfr.GetTransform())
-            origin_B_ub = np.matrix(ub.GetTransform())
-        else:
-            print 'I GOT A BAD MODEL. NOT SURE WHAT TO DO NOW!'
-        # origin_B_head = np.matrix(headmodel.GetTransform())
-
-        for y in self.reference_names:
-            if y == 'head':
-                self.origin_B_references.append(origin_B_head)
-            elif y == 'base_link':
-                self.origin_B_references.append(origin_B_pr2)
-            elif y == 'upper_arm_left':
-                self.origin_B_references.append(origin_B_ual)
-            elif y == 'upper_arm_right':
-                self.origin_B_references.append(origin_B_uar)
-            elif y == 'forearm_left':
-                self.origin_B_references.append(origin_B_fal)
-            elif y == 'forearm_right':
-                self.origin_B_references.append(origin_B_far)
-            elif y == 'hand_left':
-                self.origin_B_references.append(origin_B_hl)
-            elif y == 'hand_right':
-                self.origin_B_references.append(origin_B_hr)
-            elif y == 'thigh_left':
-                self.origin_B_references.append(origin_B_thl)
-            elif y == 'thigh_right':
-                self.origin_B_references.append(origin_B_thr)
-            elif y == 'knee_left':
-                self.origin_B_references.append(origin_B_calfl)
-            elif y == 'knee_right':
-                self.origin_B_references.append(origin_B_calfr)
-            elif y == 'upper_body':
-                self.origin_B_references.append(origin_B_ub)
-            elif y is None:
-                self.origin_B_references.append(np.matrix(np.eye(4)))
-        # Sets the wheelchair location based on the location of the head using a few homogeneous transforms.
-        self.pr2_B_headfloor = np.matrix([[       1.,        0.,   0.,         0.],
-                                          [       0.,        1.,   0.,         0.],
-                                          [       0.,        0.,   1.,         0.],
-                                          [       0.,        0.,   0.,         1.]])
-
-        self.selection_mat = []
-        self.reference_mat = []
-        self.origin_B_grasps = []
-        self.weights = []
-        self.goal_list = []
-        if self.goals is not None:
-            self.number_goals = len(self.goals)
-            print 'Score generator received a list of desired goal locations on initialization. ' \
-                  # 'It contains ', len(goals), ' goal locations.'
-            self.selection_mat = np.zeros(len(self.goals))
-            self.goal_list = np.zeros([len(self.goals), 4, 4])
-            self.reference_mat = np.zeros(len(self.goals))
-            for it in xrange(len(self.goals)):
-                #self.goal_list.append(pr2_B_head*np.matrix(target[0])*goal_B_gripper)
-                self.reference_mat[it] = int(self.goals[it, 2])
-
-                # goal_list is origin_B_goal
-                self.goal_list[it] = copy.copy(self.origin_B_references[int(self.reference_mat[it])]*np.matrix(self.goals[it, 0]))
-                self.selection_mat[it] = self.goals[it, 1]
-            self.set_goals()
 
     def receive_new_goals(self, goals, task, human_arm, pr2_arm, reference_options=None):
         if pr2_arm == 'rightarm':
@@ -928,23 +855,34 @@ class ScoreGeneratorDressingwithPhysx(object):
     def set_goals(self, single_goal=False):
         self.origin_B_grasps = []
         for num in xrange(len(self.goals)):
-            self.origin_B_grasps.append(np.array(np.matrix(self.goals[num])))#*np.matrix(self.gripper_B_tool.I)*np.matrix(self.goal_B_gripper)))
+            self.origin_B_grasps.append(np.array(np.matrix(self.goals[num]))*np.matrix(self.gripper_B_tool.I))#*np.matrix(self.goal_B_gripper)))
             # print 'self.goals[', num, ']'
             # print self.goals[num]
             # print 'self.origin_B_grasps[', num, ']'
             # print self.origin_B_grasps[num]
 
     def set_robot_arm(self, arm):
-        # Set robot arm for dressing
-        print 'Setting the robot arm being used by base selection to ', arm
-        self.robot_arm = arm
-        if 'left' in arm:
-            self.robot_arm = 'leftarm'
-            self.robot_opposite_arm = 'rightarm'
-            return True
-        elif 'right' in arm:
-            self.robot_arm = 'rightarm'
-            self.robot_opposite_arm = 'leftarm'
+        if self.robot_arm == arm:
+            return False
+        elif 'left' in arm or 'right' in arm:
+            # Set robot arm for dressing
+            print 'Setting the robot arm being used by base selection to ', arm
+            if 'left' in arm:
+                self.robot_arm = 'leftarm'
+                self.robot_opposite_arm = 'rightarm'
+            elif 'right' in arm:
+                self.robot_arm = 'rightarm'
+                self.robot_opposite_arm = 'leftarm'
+            for robot_arm in [self.robot_opposite_arm, self.robot_arm]:
+                self.op_robot.SetActiveManipulator(robot_arm)
+                self.manip = self.op_robot.GetActiveManipulator()
+                ikmodel = op.databases.inversekinematics.InverseKinematicsModel(self.op_robot,
+                                                                                iktype=op.IkParameterization.Type.Transform6D)
+                if not ikmodel.load():
+                    print 'IK model not found for this arm. Generating the ikmodel for the ', robot_arm
+                    print 'This will take a while'
+                    ikmodel.autogenerate()
+                self.manipprob = op.interfaces.BaseManipulation(self.op_robot)
             return True
         else:
             print 'ERROR'
@@ -969,7 +907,8 @@ class ScoreGeneratorDressingwithPhysx(object):
 
     def objective_function_one_config(self, current_parameters):
         # start_time = rospy.Time.now()
-        # current_parameters = [0.70538102, -0.36536968, -1.4965914,  0.12652826]
+        # current_parameters = [0.3, -0.9, 2.5*m.pi/3., 0.3]
+        # current_parameters = [-0.34303706, -0.7381042,   1.2557902,   0.29065268]
         x = current_parameters[0]
         y = current_parameters[1]
         th = current_parameters[2]
@@ -979,21 +918,48 @@ class ScoreGeneratorDressingwithPhysx(object):
                                   [ m.sin(th),  m.cos(th),     0.,         y],
                                   [        0.,         0.,     1.,        0.],
                                   [        0.,         0.,     0.,        1.]])
-        positions = self.robot.positions()
-        positions['rootJoint_pos_x'] = x
-        positions['rootJoint_pos_y'] = y
-        positions['rootJoint_pos_z'] = 0.
-        positions['rootJoint_rot_z'] = th
-        self.robot.set_positions(positions)
+        v = self.robot.positions()
+        v['rootJoint_pos_x'] = x
+        v['rootJoint_pos_y'] = y
+        v['rootJoint_pos_z'] = 0.
+        v['rootJoint_rot_z'] = th
+
+        # sign_flip = 1.
+        # if 'right' in self.robot_arm:
+        #     sign_flip = -1.
+        v['l_shoulder_pan_joint'] = 3.14 / 2
+        v['l_shoulder_lift_joint'] = -0.52
+        v['l_upper_arm_roll_joint'] = 0.
+        v['l_elbow_flex_joint'] = -3.14 * 2 / 3
+        v['l_forearm_roll_joint'] = 0.
+        v['l_wrist_flex_joint'] = 0.
+        v['l_wrist_roll_joint'] = 0.
+        v['l_gripper_l_finger_joint'] = .24
+        v['l_gripper_r_finger_joint'] = .24
+        v['r_shoulder_pan_joint'] = -1 * 3.14 / 2
+        v['r_shoulder_lift_joint'] = -0.52
+        v['r_upper_arm_roll_joint'] = 0.
+        v['r_elbow_flex_joint'] = -3.14 * 2 / 3
+        v['r_forearm_roll_joint'] = 0.
+        v['r_wrist_flex_joint'] = 0.
+        v['r_wrist_roll_joint'] = 0.
+        v['r_gripper_l_finger_joint'] = .24
+        v['r_gripper_r_finger_joint'] = .24
+        v['torso_lift_joint'] = 0.3
+
+        v['torso_lift_joint'] = z
+
+        self.robot.set_positions(v)
+        self.dart_world.set_gown(self.robot_arm)
 
         # PR2 is too close to the person (who is at the origin). PR2 base is 0.668m x 0.668m
         distance_from_origin = np.linalg.norm(origin_B_pr2[:2, 3])
         if distance_from_origin <= 0.334:
             return 10. + 1. + (0.4 - distance_from_origin)
 
-        v = self.robot.q
-        v['torso_lift_joint'] = z
-        self.robot.set_positions(v)
+        # v = self.robot.q
+        # v['torso_lift_joint'] = z
+        # self.robot.set_positions(v)
 
         distance = 10000000.
         out_of_reach = True
@@ -1014,120 +980,119 @@ class ScoreGeneratorDressingwithPhysx(object):
         manip = 0.
         reached = 0.
 
-        with self.robot:
-            sign_flip = 1.
-            if 'right' in self.arm:
-                sign_flip = -1.
-            v = self.robot.q
-            v[self.opposite_arm[0] + '_shoulder_pan_joint']
-            v[self.opposite_arm[0] + '_shoulder_pan_joint'] = -sign_flip * 3.14 / 2
-            v[self.opposite_arm[0] + '_shoulder_lift_joint'] = -0.52
-            v[self.opposite_arm[0] + '_upper_arm_roll_joint'] = 0.
-            v[self.opposite_arm[0] + '_elbow_flex_joint'] = -3.14 * 2 / 3
-            v[self.opposite_arm[0] + '_forearm_roll_joint'] = 0.
-            v[self.opposite_arm[0] + '_wrist_flex_joint'] = 0.
-            v[self.opposite_arm[0] + '_wrist_roll_joint'] = 0.
-            self.robot.set_positions(v)
+        # sign_flip = 1.
+        # if 'right' in self.robot_arm:
+        #     sign_flip = -1.
+        # v = self.robot.q
+        # v[self.robot_opposite_arm[0] + '_shoulder_pan_joint'] = -sign_flip * 3.14 / 2
+        # v[self.robot_opposite_arm[0] + '_shoulder_lift_joint'] = -0.52
+        # v[self.robot_opposite_arm[0] + '_upper_arm_roll_joint'] = 0.
+        # v[self.robot_opposite_arm[0] + '_elbow_flex_joint'] = -3.14 * 2 / 3
+        # v[self.robot_opposite_arm[0] + '_forearm_roll_joint'] = 0.
+        # v[self.robot_opposite_arm[0] + '_wrist_flex_joint'] = 0.
+        # v[self.robot_opposite_arm[0] + '_wrist_roll_joint'] = 0.
+        # self.robot.set_positions(v)
 
-            self.dart_world.check_collision()
-            collisions = self.dart_world.collision_result.contacted_bodies
-            for collision in collisions:
-                if (collision[0] in self.human.bodies)
-            not_close_to_collision = True
-            if self.manip.CheckIndependentCollision(op.CollisionReport()):
-                not_close_to_collision = False
-            check_if_base_is_near_collision = False
-            if check_if_base_is_near_collision:
-                origin_B_pr2 = np.matrix([[ m.cos(th), -m.sin(th),     0., x+.04],
-                                          [ m.sin(th),  m.cos(th),     0., y+.04],
-                                          [        0.,         0.,     1.,        0.],
-                                          [        0.,         0.,     0.,        1.]])
-                self.robot.SetTransform(np.array(origin_B_pr2))
-                self.env.UpdatePublishedBodies()
-                if self.manip.CheckIndependentCollision(op.CollisionReport()):
-                    not_close_to_collision = False
+        in_collision = self.is_dart_in_collision()
 
-                origin_B_pr2 = np.matrix([[ m.cos(th), -m.sin(th),     0., x-.04],
-                                          [ m.sin(th),  m.cos(th),     0., y+.04],
-                                          [        0.,         0.,     1.,        0.],
-                                          [        0.,         0.,     0.,        1.]])
-                self.robot.SetTransform(np.array(origin_B_pr2))
-                self.env.UpdatePublishedBodies()
-                if self.manip.CheckIndependentCollision(op.CollisionReport()):
-                    not_close_to_collision = False
+        close_to_collision = False
+        check_if_PR2_is_near_collision = False
+        if check_if_PR2_is_near_collision:
+            positions = self.robot.positions()
+            positions['rootJoint_pos_x'] = x + 0.04
+            positions['rootJoint_pos_y'] = y + 0.04
+            positions['rootJoint_pos_z'] = 0.
+            positions['rootJoint_rot_z'] = th
+            self.robot.set_positions(positions)
+            self.dart_world.set_gown(self.robot_arm)
+            close_to_collision = np.max([self.is_dart_in_collision(), close_to_collision])
 
-                origin_B_pr2 = np.matrix([[ m.cos(th), -m.sin(th),     0., x-.04],
-                                          [ m.sin(th),  m.cos(th),     0., y-.04],
-                                          [        0.,         0.,     1.,        0.],
-                                          [        0.,         0.,     0.,        1.]])
-                self.robot.SetTransform(np.array(origin_B_pr2))
-                self.env.UpdatePublishedBodies()
-                if self.manip.CheckIndependentCollision(op.CollisionReport()):
-                    not_close_to_collision = False
+            positions['rootJoint_pos_x'] = x - 0.04
+            positions['rootJoint_pos_y'] = y + 0.04
+            positions['rootJoint_pos_z'] = 0.
+            positions['rootJoint_rot_z'] = th
+            self.robot.set_positions(positions)
+            self.dart_world.set_gown(self.robot_arm)
+            close_to_collision = np.max([self.is_dart_in_collision(), close_to_collision])
 
-                origin_B_pr2 = np.matrix([[ m.cos(th), -m.sin(th),     0., x+.04],
-                                          [ m.sin(th),  m.cos(th),     0., y-.04],
-                                          [        0.,         0.,     1.,        0.],
-                                          [        0.,         0.,     0.,        1.]])
-                self.robot.SetTransform(np.array(origin_B_pr2))
-                self.env.UpdatePublishedBodies()
-                if self.manip.CheckIndependentCollision(op.CollisionReport()):
-                    not_close_to_collision = False
+            positions['rootJoint_pos_x'] = x - 0.04
+            positions['rootJoint_pos_y'] = y - 0.04
+            positions['rootJoint_pos_z'] = 0.
+            positions['rootJoint_rot_z'] = th
+            self.robot.set_positions(positions)
+            self.dart_world.set_gown(self.robot_arm)
+            close_to_collision = np.max([self.is_dart_in_collision(), close_to_collision])
 
-                origin_B_pr2 = np.matrix([[ m.cos(th), -m.sin(th),     0., x],
-                                          [ m.sin(th),  m.cos(th),     0., y],
-                                          [        0.,         0.,     1.,        0.],
-                                          [        0.,         0.,     0.,        1.]])
-                self.robot.SetTransform(np.array(origin_B_pr2))
-                self.env.UpdatePublishedBodies()
+            positions['rootJoint_pos_x'] = x + 0.04
+            positions['rootJoint_pos_y'] = y - 0.04
+            positions['rootJoint_pos_z'] = 0.
+            positions['rootJoint_rot_z'] = th
+            self.robot.set_positions(positions)
+            self.dart_world.set_gown(self.robot_arm)
+            close_to_collision = np.max([self.is_dart_in_collision(), close_to_collision])
 
-            if not_close_to_collision:
-                reached = np.zeros(len(self.origin_B_grasps))
-                manip = np.zeros(len(self.origin_B_grasps))
-                for num, Tgrasp in enumerate(self.origin_B_grasps):
-                    sols = []
-                    sols = self.manip.FindIKSolutions(Tgrasp, filteroptions=op.IkFilterOptions.CheckEnvCollisions)
-                    if not list(sols):
-                        sign_flip = 1.
-                        if 'right' in self.arm:
-                            sign_flip = -1.
-                        v = self.robot.GetActiveDOFValues()
-                        v[self.robot.GetJoint(self.opposite_arm[0]+'_shoulder_pan_joint').GetDOFIndex()] = -sign_flip*0.023593
-                        v[self.robot.GetJoint(self.opposite_arm[0]+'_shoulder_lift_joint').GetDOFIndex()] = 1.1072800
-                        v[self.robot.GetJoint(self.opposite_arm[0]+'_upper_arm_roll_joint').GetDOFIndex()] = -sign_flip*1.5566882
-                        v[self.robot.GetJoint(self.opposite_arm[0]+'_elbow_flex_joint').GetDOFIndex()] = -2.124408
-                        v[self.robot.GetJoint(self.opposite_arm[0]+'_forearm_roll_joint').GetDOFIndex()] = -sign_flip*1.4175
-                        v[self.robot.GetJoint(self.opposite_arm[0]+'_wrist_flex_joint').GetDOFIndex()] = -1.8417
-                        v[self.robot.GetJoint(self.opposite_arm[0]+'_wrist_roll_joint').GetDOFIndex()] = 0.21436
-                        self.robot.SetActiveDOFValues(v, 2)
-                        self.env.UpdatePublishedBodies()
-                        sols = self.manip.FindIKSolutions(Tgrasp, filteroptions=op.IkFilterOptions.CheckEnvCollisions)
+            positions['rootJoint_pos_x'] = x
+            positions['rootJoint_pos_y'] = y
+            positions['rootJoint_pos_z'] = 0.
+            positions['rootJoint_rot_z'] = th
+            self.robot.set_positions(positions)
+            self.dart_world.set_gown(self.robot_arm)
 
-                    if list(sols):  # not None:
-                        reached[num] = 1.
-                        for solution in sols:
-                            self.robot.SetDOFValues(solution, self.manip.GetArmIndices())
-                            self.env.UpdatePublishedBodies()
-                            # if self.visualize:
-                            #     rospy.sleep(0.5)
-                            J = np.matrix(np.vstack([self.manip.CalculateJacobian(), self.manip.CalculateAngularVelocityJacobian()]))
+        if not close_to_collision:# and not in_collision:
+            reached = np.zeros(len(self.origin_B_grasps))
+            manip = np.zeros(len(self.origin_B_grasps))
+            for num, origin_B_grasp in enumerate(self.origin_B_grasps):
+                pr2_B_grasp = origin_B_pr2.I * origin_B_grasp
+                # resp = self.call_ik_service(pr2_B_grasp, z)
+                # sols = resp.ik_sols.data
+                # print 'sols'
+                # print sols
+                # jacobians = resp.jacobians.data
+                # jacobians = [float(i) for i in jacobians]
+                # if len(sols) > 0:
+                #     sols = np.reshape(sols, [len(sols)/7, 7])
+                #     print 'sols reshape:'
+                    # print sols
+                    # jacobians = np.reshape(jacobians, [len(jacobians)/42, 6, 7])
+                # else:
+                #     sols = []
+                #     jacobians = []
+                # sols = self.manip.FindIKSolutions(pr2_B_grasp, filteroptions=op.IkFilterOptions.CheckEnvCollisions)
+                sols, jacobians = self.ik_request(pr2_B_grasp, z)
+                if list(sols):  # not None:
+                    # print 'final sols'
+                    # print sols
+                    for i in xrange(len(sols)):
+                        v = self.robot.q
+                        v[self.robot_arm[0] + '_shoulder_pan_joint'] = sols[i][0]
+                        v[self.robot_arm[0] + '_shoulder_lift_joint'] = sols[i][1]
+                        v[self.robot_arm[0] + '_upper_arm_roll_joint'] = sols[i][2]
+                        v[self.robot_arm[0] + '_elbow_flex_joint'] = sols[i][3]
+                        v[self.robot_arm[0] + '_forearm_roll_joint'] = sols[i][4]
+                        v[self.robot_arm[0] + '_wrist_flex_joint'] = sols[i][5]
+                        v[self.robot_arm[0] + '_wrist_roll_joint'] = sols[i][6]
+                        self.robot.set_positions(v)
+                        self.dart_world.set_gown(self.robot_arm)
+                        if not self.is_dart_in_collision():
+                            reached[num] = 1.
+                            J = np.matrix(jacobians[i])
                             try:
-                                joint_limit_weight = self.gen_joint_limit_weight(solution, self.arm)
+                                joint_limit_weight = self.gen_joint_limit_weight(sols[i], self.robot_arm)
                                 manip[num] = np.max([copy.copy((m.pow(np.linalg.det(J*joint_limit_weight*J.T), (1./6.)))/(np.trace(J*joint_limit_weight*J.T)/6.)), manip[num]])
                             except ValueError:
                                 print 'WARNING!!'
                                 print 'Jacobian may be singular or close to singular'
                                 print 'Determinant of J*JT is: ', np.linalg.det(J*J.T)
                                 manip[num] = np.max([0., manip[num]])
-                        if self.visualize:
-                            rospy.sleep(1.5)
-                for num in xrange(len(reached)):
-                    manip_score += copy.copy(reached[num] * manip[num])
-                    reach_score += copy.copy(reached[num])
-            else:
-                # print 'In base collision! single config distance: ', distance
-                if distance < 2.0:
-                    return 10. + 1. + (1.25 - distance)
+                if self.visualize:
+                    rospy.sleep(0.5)
+            for num in xrange(len(reached)):
+                manip_score += copy.copy(reached[num] * manip[num])
+                reach_score += copy.copy(reached[num])
+        else:
+            # print 'In base collision! single config distance: ', distance
+            if distance < 2.0:
+                return 10. + 1. + (1.25 - distance)
 
         # self.human_model.SetActiveManipulator('leftarm')
         # self.human_manip = self.robot.GetActiveManipulator()
@@ -1163,6 +1128,23 @@ class ScoreGeneratorDressingwithPhysx(object):
                     rospy.sleep(2.0)
             return 10.-beta*reach_score-gamma*manip_score #+ zeta*angle_cost
 
+    def is_dart_in_collision(self):
+        self.dart_world.check_collision()
+        # collided_bodies = self.dart_world.collision_result.contacted_bodies
+        for contact in self.dart_world.collision_result.contacts:
+            if ((self.robot == contact.skel1 or self.robot == contact.skel2) and
+                    (self.human == contact.skel1 or self.human == contact.skel2)) or \
+                    ((self.robot == contact.skel1 or self.robot == contact.skel2) and
+                     (self.gown == contact.skel1 or self.gown == contact.skel2)):
+                return True
+        return False
+
+    def visualize_dart(self):
+        win = pydart.gui.viewer.PydartWindow(self.dart_world)
+        win.camera_event(1)
+        win.set_capture_rate(10)
+        win.run_application()
+
     def setup_dart(self, filename='fullbody_alex_capsule.skel'):
         # Setup Dart ENV
         pydart.init()
@@ -1172,18 +1154,15 @@ class ScoreGeneratorDressingwithPhysx(object):
 
         # Lets you visualize dart.
         if self.visualize:
-            win = pydart.gui.viewer.PydartWindow(self.dart_world)
-            win.camera_event(1)
-            win.set_capture_rate(10)
-            win.run_application()
+            t = threading.Thread(target=self.visualize_dart)
+            t.start()
 
         self.robot = self.dart_world.robot
         self.human = self.dart_world.human
-
-
+        self.gown = self.dart_world.gown_box
 
         sign_flip = 1.
-        if 'right' in self.arm:
+        if 'right' in self.robot_arm:
             sign_flip = -1.
         v = self.robot.q
         v['l_shoulder_pan_joint'] = -sign_flip*3.14/2
@@ -1204,6 +1183,7 @@ class ScoreGeneratorDressingwithPhysx(object):
         v['r_gripper_l_finger_joint'] = .54
         v['torso_lift_joint'] = 0.3
         self.robot.set_positions(v)
+        self.dart_world.set_gown(self.robot_arm)
 
         # robot_start = np.matrix([[1., 0., 0., 0.],
         #                          [0., 1., 0., 0.],
@@ -1226,28 +1206,119 @@ class ScoreGeneratorDressingwithPhysx(object):
         positions['rootJoint_pos_z'] = 0.
         positions['rootJoint_rot_z'] = 3.14
         self.robot.set_positions(positions)
+        self.dart_world.set_gown(self.robot_arm)
+        print 'Dart is ready!'
 
-    def setup_ik_service(self, model):
+    def setup_openrave(self):
+        # Setup Openrave ENV
+        op.RaveSetDebugLevel(op.DebugLevel.Error)
+        InitOpenRAVELogging()
+        self.env = op.Environment()
+
+        self.check_self_collision = True
+
+        # if self.visualize:
+        #     self.env.SetViewer('qtcoin')
+
+        self.env.Load('robots/pr2-beta-static.zae')
+        self.op_robot = self.env.GetRobots()[0]
+        self.op_robot.CheckLimitsAction = 2
+
+        robot_start = np.matrix([[m.cos(0.), -m.sin(0.), 0., 0.],
+                                 [m.sin(0.), m.cos(0.), 0., 0.],
+                                 [0., 0., 1., 0.],
+                                 [0., 0., 0., 1.]])
+        self.op_robot.SetTransform(np.array(robot_start))
+
+        self.goal_B_gripper = np.matrix([[0., 0., 1., 0.0],
+                                         [0., 1., 0., 0.0],
+                                         [-1., 0., 0., 0.0],
+                                         [0., 0., 0., 1.0]])
+
+        self.gripper_B_tool = np.matrix([[0., -1., 0., 0.03],
+                                         [1., 0., 0., 0.0],
+                                         [0., 0., 1., -0.05],
+                                         [0., 0., 0., 1.0]])
+
+        self.origin_B_grasp = None
+
+        # self.set_openrave_arm(self.robot_opposite_arm)
+        # self.set_openrave_arm(self.robot_arm)
+        print 'Openrave IK is now ready'
+
+    def setup_ik_service(self):
         print 'Looking for IK service.'
         rospy.wait_for_service('ikfast_service')
         print 'Found IK service.'
-        self.ik_service = rospy.ServiceProxy('ikfast_service', IKService)
+        self.ik_service = rospy.ServiceProxy('ikfast_service', IKService, persistent=True)
         print 'IK service is ready for use!'
 
+    def ik_request(self, pr2_B_grasp, spine_height):
+        with self.frame_lock:
+            jacobians = []
+            with self.env:
+                v = self.op_robot.GetActiveDOFValues()
+                v[self.op_robot.GetJoint('l_shoulder_pan_joint').GetDOFIndex()] = 3.14 / 2
+                v[self.op_robot.GetJoint('l_shoulder_lift_joint').GetDOFIndex()] = -0.52
+                v[self.op_robot.GetJoint('l_upper_arm_roll_joint').GetDOFIndex()] = 0.
+                v[self.op_robot.GetJoint('l_elbow_flex_joint').GetDOFIndex()] = -3.14 * 2 / 3
+                v[self.op_robot.GetJoint('l_forearm_roll_joint').GetDOFIndex()] = 0.
+                v[self.op_robot.GetJoint('l_wrist_flex_joint').GetDOFIndex()] = 0.
+                v[self.op_robot.GetJoint('l_wrist_roll_joint').GetDOFIndex()] = 0.
+                v[self.op_robot.GetJoint('r_shoulder_pan_joint').GetDOFIndex()] = -3.14 / 2
+                v[self.op_robot.GetJoint('r_shoulder_lift_joint').GetDOFIndex()] = -0.52
+                v[self.op_robot.GetJoint('r_upper_arm_roll_joint').GetDOFIndex()] = 0.
+                v[self.op_robot.GetJoint('r_elbow_flex_joint').GetDOFIndex()] = -3.14 * 2 / 3
+                v[self.op_robot.GetJoint('r_forearm_roll_joint').GetDOFIndex()] = 0.
+                v[self.op_robot.GetJoint('r_wrist_flex_joint').GetDOFIndex()] = 0.
+                v[self.op_robot.GetJoint('r_wrist_roll_joint').GetDOFIndex()] = 0.
+                v[self.op_robot.GetJoint('torso_lift_joint').GetDOFIndex()] = spine_height
+                self.op_robot.SetActiveDOFValues(v, checklimits=2)
+                self.env.UpdatePublishedBodies()
+
+                # base_footprint_B_tool_goal = createBMatrix(goal_position, goal_orientation)
+
+                origin_B_grasp = np.array(np.matrix(pr2_B_grasp)*self.goal_B_gripper)  # * self.gripper_B_tool.I * self.goal_B_gripper)
+                # print 'here'
+                # print self.origin_B_grasp
+                # sols = self.manip.FindIKSolutions(self.origin_B_grasp,4)
+                # init_time = rospy.Time.now()
+                if self.check_self_collision:
+                    sols = self.manip.FindIKSolutions(origin_B_grasp, filteroptions=op.IkFilterOptions.CheckEnvCollisions)
+                else:
+                    sols = self.manip.FindIKSolutions(origin_B_grasp, filteroptions=op.IkFilterOptions.IgnoreSelfCollisions)
+                if list(sols):
+                    with self.op_robot:
+                        for sol in sols:
+                            # self.robot.SetDOFValues(sol, self.manip.GetArmIndices(), checklimits=2)
+                            self.op_robot.SetDOFValues(sol, self.manip.GetArmIndices())
+                            self.env.UpdatePublishedBodies()
+                            jacobians.append(np.vstack([self.manip.CalculateJacobian(), self.manip.CalculateAngularVelocityJacobian()]))
+                            # if self.visualize:
+                            #     rospy.sleep(1.5)
+                    # print jacobians[0]
+                    return sols, jacobians
+                else:
+                    return [], []
+
     def call_ik_service(self, Bmat, pr2_height):
-        pos, quat = Bmat_to_pos_quat(Bmat_to_pos_quat)
+        pos, quat = Bmat_to_pos_quat(Bmat)
         return self.ik_service(pos, quat, pr2_height, self.robot_arm)
 
     # Setup physx services and initialized the human in Physx
     def setup_physx(self):
         print 'Setting up services and looking for Physx services'
 
-        print 'Found Physx services'
-        self.physx_output_service = rospy.Service('physx_output', PhysxOutput)
+        # print 'Found Physx services'
+        self.physx_output_service = rospy.Service('physx_output', PhysxOutput, self.simulator_result_handler)
         rospy.wait_for_service('init_physx_body_model')
         self.init_physx_service = rospy.ServiceProxy('init_physx_body_model', InitPhysxBodyModel)
         rospy.wait_for_service('body_config_input_to_physx')
         self.update_physx_config_service = rospy.ServiceProxy('body_config_input_to_physx', PhysxInput)
+
+        self.traj_to_simulator_pub = rospy.Publisher('physx_simulator_input', FloatArrayBare, queue_size=1)
+        # self.simulator_result_sub = rospy.Subscriber('physx_simulator_result', PhysxOutcome, self.simulator_result_cb)
+        print 'Physx calls are ready!'
 
     def set_human_model_dof_dart(self, dof, human_arm):
         # bth = m.degrees(headrest_th)
@@ -1262,20 +1333,20 @@ class ScoreGeneratorDressingwithPhysx(object):
             q['j_bicep_left_x'] = dof[0]
             q['j_bicep_left_y'] = dof[1]
             q['j_bicep_left_z'] = dof[2]
-            q['j_forearm_left_1'] = 0.
-            q['j_forearm_left_2'] = dof[3]
+            q['j_forearm_left_1'] = dof[3]
+            q['j_forearm_left_2'] = 0.
         if human_arm == 'rightarm':
             q['j_bicep_right_x'] = dof[0]
             q['j_bicep_right_y'] = dof[1]
             q['j_bicep_right_z'] = dof[2]
-            q['j_forearm_right_1'] = 0.
-            q['j_forearm_right_2'] = dof[3]
+            q['j_forearm_right_1'] = dof[3]
+            q['j_forearm_right_2'] = 0.
         else:
             print 'I am not sure what arm to set the dof for.'
             return False
         self.human.set_positions(q)
 
-    def update_physx_from_dart(self, start_traj=[], end_traj=[], initialization=False):
+    def update_physx_from_dart(self, origin_B_upperarm_pointed_down_shoulder=[], start_traj=[], end_traj=[], initialization=False):
         links = []
         spheres = []
         for bodypart in self.dart_world.skel_bodies:
@@ -1323,16 +1394,20 @@ class ScoreGeneratorDressingwithPhysx(object):
         if initialization:
             resp = self.init_physx_service(spheres_x, spheres_y, spheres_z, spheres_r,
                                            first_sphere_list, second_sphere_list)
+            print 'Is physx initialized with the person model?', resp
         else:
+
             if start_traj == []:
                 start_traj = self.start_traj
             if end_traj == []:
                 end_traj = self.end_traj
-            if end_traj == [] or start_traj == []:
-                print 'I am missing a start trajectory or an end trajectory'
+            if end_traj == [] or start_traj == [] or origin_B_upperarm_pointed_down_shoulder == []:
+                print 'I am missing a start trajectory, an end trajectory, or the transform from origin to pointing ' \
+                      'down shoulder'
                 return False
+            origin_B_upperarm_pointed_down_shoulder = list(flatten(np.array(origin_B_upperarm_pointed_down_shoulder)))
             resp = self.update_physx_config_service(spheres_x, spheres_y, spheres_z, spheres_r, first_sphere_list,
-                                                    second_sphere_list, start_traj, end_traj)
+                                                    second_sphere_list, start_traj, end_traj, origin_B_upperarm_pointed_down_shoulder)
         print 'Physx update was successful? ', resp
         return resp
 
@@ -1519,16 +1594,16 @@ class ScoreGeneratorDressingwithPhysx(object):
 
             with self.robot:
                 sign_flip = 1.
-                if 'right' in self.arm:
+                if 'right' in self.robot_arm:
                     sign_flip = -1.
                 v = self.robot.GetActiveDOFValues()
-                v[self.robot.GetJoint(self.opposite_arm[0]+'_shoulder_pan_joint').GetDOFIndex()] = -sign_flip*3.14/2
-                v[self.robot.GetJoint(self.opposite_arm[0]+'_shoulder_lift_joint').GetDOFIndex()] = -0.52
-                v[self.robot.GetJoint(self.opposite_arm[0]+'_upper_arm_roll_joint').GetDOFIndex()] = 0.
-                v[self.robot.GetJoint(self.opposite_arm[0]+'_elbow_flex_joint').GetDOFIndex()] = -3.14*2/3
-                v[self.robot.GetJoint(self.opposite_arm[0]+'_forearm_roll_joint').GetDOFIndex()] = 0.
-                v[self.robot.GetJoint(self.opposite_arm[0]+'_wrist_flex_joint').GetDOFIndex()] = 0.
-                v[self.robot.GetJoint(self.opposite_arm[0]+'_wrist_roll_joint').GetDOFIndex()] = 0.
+                v[self.robot.GetJoint(self.robot_opposite_arm[0]+'_shoulder_pan_joint').GetDOFIndex()] = -sign_flip*3.14/2
+                v[self.robot.GetJoint(self.robot_opposite_arm[0]+'_shoulder_lift_joint').GetDOFIndex()] = -0.52
+                v[self.robot.GetJoint(self.robot_opposite_arm[0]+'_upper_arm_roll_joint').GetDOFIndex()] = 0.
+                v[self.robot.GetJoint(self.robot_opposite_arm[0]+'_elbow_flex_joint').GetDOFIndex()] = -3.14*2/3
+                v[self.robot.GetJoint(self.robot_opposite_arm[0]+'_forearm_roll_joint').GetDOFIndex()] = 0.
+                v[self.robot.GetJoint(self.robot_opposite_arm[0]+'_wrist_flex_joint').GetDOFIndex()] = 0.
+                v[self.robot.GetJoint(self.robot_opposite_arm[0]+'_wrist_roll_joint').GetDOFIndex()] = 0.
                 self.robot.SetActiveDOFValues(v, 2)
                 self.env.UpdatePublishedBodies()
                 not_close_to_collision = True
@@ -1541,16 +1616,16 @@ class ScoreGeneratorDressingwithPhysx(object):
                         sols = self.manip.FindIKSolutions(Tgrasp, filteroptions=op.IkFilterOptions.CheckEnvCollisions)
                         if not list(sols):
                             sign_flip = 1.
-                            if 'right' in self.arm:
+                            if 'right' in self.robot_arm:
                                 sign_flip = -1.
                             v = self.robot.GetActiveDOFValues()
-                            v[self.robot.GetJoint(self.opposite_arm[0]+'_shoulder_pan_joint').GetDOFIndex()] = -sign_flip*0.023593
-                            v[self.robot.GetJoint(self.opposite_arm[0]+'_shoulder_lift_joint').GetDOFIndex()] = 1.1072800
-                            v[self.robot.GetJoint(self.opposite_arm[0]+'_upper_arm_roll_joint').GetDOFIndex()] = -sign_flip*1.5566882
-                            v[self.robot.GetJoint(self.opposite_arm[0]+'_elbow_flex_joint').GetDOFIndex()] = -2.124408
-                            v[self.robot.GetJoint(self.opposite_arm[0]+'_forearm_roll_joint').GetDOFIndex()] = -sign_flip*1.4175
-                            v[self.robot.GetJoint(self.opposite_arm[0]+'_wrist_flex_joint').GetDOFIndex()] = -1.8417
-                            v[self.robot.GetJoint(self.opposite_arm[0]+'_wrist_roll_joint').GetDOFIndex()] = 0.21436
+                            v[self.robot.GetJoint(self.robot_opposite_arm[0]+'_shoulder_pan_joint').GetDOFIndex()] = -sign_flip*0.023593
+                            v[self.robot.GetJoint(self.robot_opposite_arm[0]+'_shoulder_lift_joint').GetDOFIndex()] = 1.1072800
+                            v[self.robot.GetJoint(self.robot_opposite_arm[0]+'_upper_arm_roll_joint').GetDOFIndex()] = -sign_flip*1.5566882
+                            v[self.robot.GetJoint(self.robot_opposite_arm[0]+'_elbow_flex_joint').GetDOFIndex()] = -2.124408
+                            v[self.robot.GetJoint(self.robot_opposite_arm[0]+'_forearm_roll_joint').GetDOFIndex()] = -sign_flip*1.4175
+                            v[self.robot.GetJoint(self.robot_opposite_arm[0]+'_wrist_flex_joint').GetDOFIndex()] = -1.8417
+                            v[self.robot.GetJoint(self.robot_opposite_arm[0]+'_wrist_roll_joint').GetDOFIndex()] = 0.21436
                             self.robot.SetActiveDOFValues(v, 2)
                             self.env.UpdatePublishedBodies()
                             sols = self.manip.FindIKSolutions(Tgrasp, filteroptions=op.IkFilterOptions.CheckEnvCollisions)
@@ -1566,12 +1641,12 @@ class ScoreGeneratorDressingwithPhysx(object):
     def gen_joint_limit_weight(self, q, side):
         # define the total range limit for each joint
         if 'left' in side:
-            joint_min = [-40., -30., -44., -133., -400., -130., -400.]
-            joint_max = [130., 80., 224., 0., 400., 0., 400.]
+            joint_min = np.array([-40., -30., -44., -133., -400., -130., -400.])
+            joint_max = np.array([130., 80., 224., 0., 400., 0., 400.])
         elif 'right' in side:
             # print 'Need to check the joint limits for the right arm'
-            joint_min = [-130., -30., -224., -133., -400., -130., -400.]
-            joint_max = [40., 80., 44., 0., 400., 0., 400.]
+            joint_min = np.array([-130., -30., -224., -133., -400., -130., -400.])
+            joint_max = np.array([40., 80., 44., 0., 400., 0., 400.])
         joint_range = joint_max - joint_min
         # l1_max = 40.
         # l2_min = -30.
@@ -1614,7 +1689,7 @@ if __name__ == "__main__":
     outer_elapsed_time = rospy.Time.now()-outer_start_time
     print 'Done with openrave round. Time elapsed:', outer_elapsed_time.to_sec()
     print 'Everything is complete!'
-    rospy.spin()
+    # rospy.spin()
 
     #selector.choose_task(mytask)
     # score_sheet = selector.handle_score_generation()

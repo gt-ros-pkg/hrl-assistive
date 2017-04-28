@@ -6,5 +6,6 @@ uint32[] first_sphere_list
 uint32[] second_sphere_list
 float64[] start_pos
 float64[] end_pos
+float64[] origin_B_upper_arm
 ---
 bool intialization_success

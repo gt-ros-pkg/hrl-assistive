@@ -1,5 +1,6 @@
 import pydart2 as pydart
 import numpy as np
+import math as m
 import copy
 import rospkg
 import time
@@ -11,6 +12,7 @@ from hrl_lib.util import save_pickle, load_pickle
 from std_msgs.msg import String
 from hrl_msgs.msg import FloatArrayBare
 roslib.load_manifest('hrl_base_selection')
+from hrl_base_selection.helper_functions import createBMatrix, Bmat_to_pos_quat, calc_axis_angle
 from hrl_base_selection.msg import PhysxOutcome
 from hrl_base_selection.srv import InitPhysxBodyModel, PhysxInput
 
@@ -68,7 +70,7 @@ class MyWorld(pydart.World):
 
         # Move bit lower (for camera)
         positions = self.robot.positions()
-        positions['rootJoint_pos_x'] = 0.8
+        positions['rootJoint_pos_x'] = 2.8
         positions['rootJoint_pos_y'] = 0.
         positions['rootJoint_pos_z'] = 0.1
         positions['rootJoint_rot_z'] = 3.14
@@ -80,17 +82,52 @@ class MyWorld(pydart.World):
         positions['j_pelvis1_z'] = 1.
         self.human.set_positions(positions)
 
-        print 'human self collision check'
-        print self.human.self_collision_check()
-        print 'robot self collision check'
-        print self.robot.self_collision_check()
+        # print 'human self collision check'
+        # print self.human.self_collision_check()
+        # print 'robot self collision check'
+        # print self.robot.self_collision_check()
 
-        print 'adjacency'
-        print self.human.adjacent_body_check()
+        # print 'adjacency'
+        # print self.human.adjacent_body_check()
+
+        q = self.human.q
+        # q['j_shin_left'] = -2.
+        # q['j_bicep_right_x'] = 1.
+        # q['j_bicep_right_y'] = 0.
+        # q['j_bicep_right_z'] = 0.
+        # q['j_forearm_right_1'] = 0.
+        # q['j_forearm_right_2'] = 0.5
+        # q['j_shin_left'] = -2.
+        q['j_bicep_right_x'] = m.radians(0.0)
+        q['j_bicep_right_y'] = m.radians(0.)
+        q['j_bicep_right_z'] = m.radians(90.00)
+        q['j_forearm_right_1'] = m.radians(90.)
+        q['j_forearm_right_2'] = 0.
+
+        self.human.set_positions(q)
+
+        origin_B_hand = np.matrix(self.human.bodynode('h_hand_right').world_transform())
+        print 'origin_B_hand'
+        print origin_B_hand
+
+        origin_B_upperarm = np.matrix(self.human.bodynode('h_bicep_right').world_transform())
+        skeleton_frame_B_worldframe = np.matrix([[1., 0., 0., 0.],
+                                                 [0., 0., 1., 0.],
+                                                 [0., -1., 0., 0.],
+                                                 [0., 0., 0., 1.]])
+        origin_B_upperarm_world = origin_B_upperarm * skeleton_frame_B_worldframe
+        print 'origin_B_upperarm_world'
+        print origin_B_upperarm_world
 
         print 'world collision list'
         self.check_collision()
-        print self.collision_result.contacted_bodies
+        # print 'self.collision_result.contacts'
+        # print self.collision_result.contacts
+        # for contact in self.collision_result.contacts:
+        #     print contact#.skel1, contact.skel2
+
+        # print 'number of contacts:'
+        # print len(self.collision_result.contacts)
 
         # Initialize the controller
         self.controller = GravityCompensationController(self.robot)
@@ -185,8 +222,8 @@ class MyWorld(pydart.World):
                             sphere_2_index = spheres.index(sphere_data)
                         links.append([sphere_1_index, sphere_2_index])
 
-            for sphere in spheres:
-                print sphere
+            # for sphere in spheres:
+            #     print sphere
 
 
                 # except:
@@ -268,14 +305,14 @@ class MyWorld(pydart.World):
             # print spheres
             # print 'body names'
             # print body_names
-            print 'links'
-            print links
-            print 'len(spheres)'
-            print len(spheres)
+            # print 'links'
+            # print links
+            # print 'len(spheres)'
+            # print len(spheres)
             # print 'len(body_names)'
             # print len(body_names)
-            print 'len(links)'
-            print len(links)
+            # print 'len(links)'
+            # print len(links)
             spheres = np.array(spheres)
             links = np.array(links)
             spheres_x = [float(i) for i in spheres[:, 0]]
@@ -300,8 +337,45 @@ class MyWorld(pydart.World):
                                            second_sphere_list)
             print 'Physx initialization was successful? ', resp
             rospy.sleep(1)
+
+            import tf.transformations as tft
+            thx = m.radians(90.)
+            x = np.matrix([[1, 0, 0, 0], [0, m.cos(thx), -m.sin(thx), 0], [0, m.sin(thx), m.cos(thx), 0], [0, 0, 0, 1]])
+            thz = m.radians(180)
+            z = np.matrix([[m.cos(thz), -m.sin(thz), 0 ,0],[m.sin(thz),m.cos(thz),0,0],[0, 0,1,0],[0,0,0,1]])
+            thy = m.radians(0.)
+            y = np.matrix([[m.cos(thy), 0, m.sin(thy) ,0],[0,1,0,0],[-m.sin(thy), 0,m.cos(thy),0],[0,0,0,1]])
+            rot = z*y*x
+            quat = tft.quaternion_from_matrix(rot)
+
+            print 'x_vector:', rot[0:3, 0]
+            print 'rot'
+            print rot
+            # liftlink_B_reference = createBMatrix([0., 0., 0.], [0., 0., 0., 1.])
+
             start_traj = [float(i) for i in [-3., 0., 0.]]
             end_traj = [float(i) for i in [0., 0., 0.]]
+
+            quaternion = quat
+            axis, angle = calc_axis_angle(quaternion)
+            rospy.sleep(4)
+            start_traj = [float(i) for i in [0.1, 0., 0.]]
+            end_traj = [float(i) for i in [0.6, 0., 0.]]
+            # translation = start_traj
+            # resp = self.update_physx_config_service(spheres_x, spheres_y, spheres_z, spheres_r, first_sphere_list,
+            #                                         second_sphere_list, start_traj, end_traj, axis, angle)
+            # print 'Physx update was successful? ', resp
+            # rospy.sleep(4)
+            # start_traj = [float(i) for i in [0.3, 0., 0.]]
+            # end_traj = [float(i) for i in [0., 0., 0.]]
+            # translation = start_traj
+            # resp = self.update_physx_config_service(spheres_x, spheres_y, spheres_z, spheres_r, first_sphere_list,
+            #                                         second_sphere_list, start_traj, end_traj, axis, angle)
+            # print 'Physx update was successful? ', resp
+
+            start_traj = [float(i) for i in [0.8, 0., 1.]]
+            end_traj = [float(i) for i in [0.3, 0., 1.1]]
+            # translation = start_traj
             resp = self.update_physx_config_service(spheres_x, spheres_y, spheres_z, spheres_r, first_sphere_list,
                                                     second_sphere_list, start_traj, end_traj)
             print 'Physx update was successful? ', resp
@@ -314,7 +388,7 @@ class MyWorld(pydart.World):
 
 
 if __name__ == '__main__':
-    rospy.init_node('dart_test_file')
+    rospy.init_node('dart_test_file_s')
     print('Example: gravity compensation')
 
     pydart.init()

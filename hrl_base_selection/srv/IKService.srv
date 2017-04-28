@@ -1,0 +1,8 @@
+float64[] position
+float64[] orientation
+float64 spine_height
+string arm
+---
+std_msgs/Float64MultiArray ik_sols
+std_msgs/Float64MultiArray jacobians
+

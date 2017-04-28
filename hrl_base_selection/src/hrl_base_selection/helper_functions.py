@@ -4,6 +4,7 @@
 import numpy as np
 import roslib; roslib.load_manifest('hrl_base_selection')
 import rospy
+import math as m
 
 import tf.transformations as tft
 
@@ -21,6 +22,23 @@ def Bmat_to_pos_quat(Bmat):
     quat = tft.quaternion_from_matrix(Bmat) # order is xyzw because ROS uses xyzw order.    
 
     return pos, quat
+
+# Calculate an axis-angle from a quaternion
+def calc_axis_angle(quat):
+    quat /= np.linalg.norm(quat)
+    angle = 2 * m.acos(quat[3])
+    s = m.sqrt(1 - quat[3] * quat[3])
+    # test to avoid divide by zero, s is always positive due to sqrt
+    # if s close to zero then direction of axis not important
+    if (s < 0.001) :
+        x = 1.#q1.x // if it is important that axis is normalised then replace with x=1; y=z=0;
+        y = 0.#q1.y
+        z = 0.#q1.z
+    else:
+        x = quat[0] / s  # normalize axis
+        y = quat[1] / s
+        z = quat[2] / s
+    return [x, y, z], angle
 
 def is_number(s):
     try:
