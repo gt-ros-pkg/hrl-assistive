@@ -2872,6 +2872,15 @@ def saveHMMinducedFeatures(kFold_list, successData, failureData,\
 
         # Training HMM, and getting classifier training and testing data
         modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
+
+        ## # temp label saving
+        ## ddd = ut.load_pickle(modeling_pkl)        
+        ## ll_classifier_test_labels = [success_files[i] for i in normalTestIdx]
+        ## ll_classifier_test_labels += [failure_files[i] for i in abnormalTestIdx]
+        ## ddd['ll_classifier_test_labels'] = ll_classifier_test_labels
+        ## ut.save_pickle(ddd, modeling_pkl)
+        ## continue
+        
         if not (os.path.isfile(modeling_pkl) is False or HMM_dict['renew'] or data_renew):
             print idx, " : learned hmm exists"
             continue

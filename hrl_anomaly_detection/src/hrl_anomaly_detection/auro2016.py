@@ -101,14 +101,14 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
         d = ut.load_pickle(crossVal_pkl)
         kFold_list = d['kFoldList'] 
         successData = d['successData']
-        failureData = d['failureData']        
+        failureData = d['failureData']
     else:
         '''
         Use augmented data? if nAugment is 0, then aug_successData = successData
         '''        
         d = dm.getDataLOPO(subject_names, task_name, raw_data_path, \
                            processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
-                           downSampleSize=data_dict['downSampleSize'], scale=1.0,\
+                           downSampleSize=data_dict['downSampleSize'], \
                            handFeatures=data_dict['handFeatures'], \
                            cut_data=data_dict['cut_data'], \
                            data_renew=data_renew, max_time=data_dict['max_time'])
@@ -135,7 +135,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
     # Training HMM, and getting classifier training and testing data
     dm.saveHMMinducedFeatures(kFold_list, successData, failureData,\
                               task_name, processed_data_path,\
-                              HMM_dict, data_renew, startIdx, nState, cov, scale, \
+                              HMM_dict, data_renew, startIdx, nState, cov, \
+                              success_files=d['success_files'], failure_files=d['failure_files'],\
                               noise_mag=0.03, diag=diag, \
                               verbose=verbose)
 
