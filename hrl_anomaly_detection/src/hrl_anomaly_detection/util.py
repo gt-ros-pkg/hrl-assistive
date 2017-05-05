@@ -1466,7 +1466,9 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
             acc_l.append( float(np.sum(tp_ll[i]+tn_ll[i])) / float(np.sum(tp_ll[i]+fn_ll[i]+fp_ll[i]+tn_ll[i])) * 100.0 )
 
         if len(fpr_l) < nPoints:
-            if verbose: print method + ' has NaN? and fitting error?'
+            if verbose:
+                print fpr_l
+                print method + ' has NaN? and fitting error?'
             continue
 
         # reordering
@@ -1584,11 +1586,13 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
             plt.legend(loc='upper right', prop={'size':24})
         else:
             hs,ls = ax.get_legend_handles_labels()
-            handles = [hs[-1], hs[-3], hs[1], hs[3], hs[0], hs[-2], hs[2]]
-            labels  = [ls[-1], ls[-3], ls[1], ls[3], ls[0], ls[-2], ls[2]]
+            if len(hs)>7:
+                handles = [hs[-1], hs[-3], hs[1], hs[3], hs[0], hs[-2], hs[2]]
+                labels  = [ls[-1], ls[-3], ls[1], ls[3], ls[0], ls[-2], ls[2]]
 
-            ax.legend(handles,labels,loc='lower right', prop={'size':16})
-            #plt.legend(loc='lower right', prop={'size':16})
+                ax.legend(handles,labels,loc='lower right', prop={'size':16})
+            else:
+                plt.legend(loc='lower right', prop={'size':16})
 
     for key in auc_rates.keys():
         print key, " : ", auc_rates[key]

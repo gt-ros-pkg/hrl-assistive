@@ -67,7 +67,7 @@ np.random.seed(3334)
 
 def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
                    data_renew=False, save_pdf=False, verbose=False, debug=False,\
-                   no_plot=False, delay_plot=True, find_param=False, data_gen=False):
+                   no_plot=False, delay_plot=True, find_param=False, data_gen=False, anomaly_ids=[]):
 
     ## Parameters
     # data
@@ -153,6 +153,9 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                                   window=SVM_dict['raw_window_size'],
                                   use_test=True, use_pca=False )
 
+    # temp
+    ## kFold_list = kFold_list[:1]
+    
     # parallelization
     if debug: n_jobs=1
     else: n_jobs=-1
@@ -162,7 +165,8 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
                                                                          ROC_dict, \
                                                                          SVM_dict, HMM_dict, \
                                                                          raw_data=(osvm_data,bpsvm_data),\
-                                                                         startIdx=startIdx, nState=nState) \
+                                                                         startIdx=startIdx, nState=nState,\
+                                                                         anomaly_ids=anomaly_ids) \
                                                                          for idx in xrange(len(kFold_list)) \
                                                                          for method in method_list )
 
@@ -691,6 +695,8 @@ if __name__ == '__main__':
 
     p.add_option('--anomaly_info', '--ai', action='store_true', dest='anomaly_info',
                  default=False, help='Get anomaly info.')
+    p.add_option('--evaluation_6', '--ea6', action='store_true', dest='bEvaluation6',
+                 default=False, help='Evaluation.')
     
     opt, args = p.parse_args()
     
@@ -798,11 +804,19 @@ if __name__ == '__main__':
                          find_param=False, data_gen=opt.bDataGen)
 
     elif opt.bEvaluationAll or opt.bDataGen:
-        if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
         evaluation_all(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
                        verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                        find_param=False, data_gen=opt.bDataGen)
 
+    elif opt.bEvaluation6:
+
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+        
+        evaluation_all(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
+                       verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
+                       find_param=False, anomaly_ids=[2,3,5,6,7,8])
 
         
 

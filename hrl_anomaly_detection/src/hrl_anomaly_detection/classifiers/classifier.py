@@ -1138,6 +1138,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                     ROC_data, ROC_dict, SVM_dict, HMM_dict,\
                     raw_data=None, startIdx=4, nState=25, \
                     modeling_pkl_prefix=None, failsafe=False, delay_estimation=False,\
+                    anomaly_ids=[],\
                     save_model=False, load_model=False, n_jobs=-1):
 
     #-----------------------------------------------------------------------------------------
@@ -1170,6 +1171,17 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
         ll_classifier_test_labels = None
         step_idx_l = raw_data[raw_data_idx][idx]['step_idx_l']
 
+        if len(anomaly_ids)>0:
+            # load data
+            print "get file names"
+            
+            # get ids
+
+            # filter indices
+
+            # save 
+
+
         # TODO: set automatically!
         if processed_data_path.find('feeding')>=0:
             nLength = 140
@@ -1188,6 +1200,20 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             exec '%s = v' % k        
         ## nState, ll_classifier_train_?, ll_classifier_test_?, nLength    
         ll_classifier_test_labels = d.get('ll_classifier_test_labels', None)
+
+        if len(anomaly_ids)>0:
+            # get ids
+            labels = []
+            for label in d['ll_classifier_test_labels']:
+                labels.append( label.split('/')[-1].split('_')[0] )
+
+            # filter indices
+            idx_list = [idx for idx, label in enumerate(labels) if int(label) in anomaly_ids+[0]]
+            
+            ll_classifier_test_X   = np.array(ll_classifier_test_X)[idx_list].tolist()
+            ll_classifier_test_Y   = np.array(ll_classifier_test_Y)[idx_list].tolist()
+            ll_classifier_test_idx = np.array(ll_classifier_test_idx)[idx_list].tolist()
+
 
         
         if 'diag' in method:
