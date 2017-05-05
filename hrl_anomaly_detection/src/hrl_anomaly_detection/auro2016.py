@@ -177,7 +177,7 @@ def evaluation_all(subject_names, task_name, raw_data_path, processed_data_path,
 
     
     # ---------------- ROC Visualization ----------------------
-    roc_info(method_list, ROC_data, nPoints, no_plot=True)
+    roc_info(method_list, ROC_data, nPoints, no_plot=no_plot, legend=True, save_pdf=save_pdf)
 
 
 def evaluation_unexp(subject_names, task_name, raw_data_path, processed_data_path, param_dict,\
@@ -801,6 +801,9 @@ if __name__ == '__main__':
         evaluation_all(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
                        verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                        find_param=False, data_gen=opt.bDataGen)
+
+
+        
 
     elif opt.bEvaluationAccParam or opt.bEvaluationWithNoise:
         ## param_dict['ROC']['methods'] = ['fixed', 'hmmgp', 'osvm', 'hmmosvm', 'progress', 'change']

@@ -1427,9 +1427,10 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
         else:
             fig = plt.figure()
 
-
     auc_rates = {}
-    for method in sorted(ROC_data.keys()):
+    ## for method in sorted(ROC_data.keys()):
+    for method in sorted(method_list):
+        if method not in ROC_data.keys(): continue
 
         tp_ll = ROC_data[method]['tp_l']
         fp_ll = ROC_data[method]['fp_l']
@@ -1468,9 +1469,22 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
             if verbose: print method + ' has NaN? and fitting error?'
             continue
 
+        # reordering
+        s_idx = np.argsort(fpr_l)
+        print s_idx
+        fpr_l = np.array(fpr_l)[s_idx].tolist()
+        tpr_l = np.array(tpr_l)[s_idx].tolist()
+
+
         # add edge
         ## fpr_l = [0] + fpr_l + [100]
         ## tpr_l = [0] + tpr_l + [100]
+        if method.find('osvm')>=0:
+            min_idx = np.argmin(fpr_l)
+            fpr_l = fpr_l[min_idx:]
+            tpr_l = tpr_l[min_idx:]
+            fpr_l = [0] + fpr_l
+            tpr_l = [0] + tpr_l
 
         from sklearn import metrics 
         if verbose:       
@@ -1494,17 +1508,19 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
         elif method == 'change': label='HMM-C'
         elif method == 'cssvm': label='HMM-CSSVM'
         elif method == 'sgd': label='SGD'
-        elif method == 'hmmosvm': label='HMM-OneClassSVM'
+        elif method == 'hmmosvm': label='HMM-OSVM'
         elif method == 'hmmsvm_diag': label='HMM-SVM with diag cov'
-        elif method == 'osvm': label='Kernel-SVM'
+        elif method == 'hmmgp': label='HMM-GP'
+        elif method == 'osvm': label='OSVM'
         elif method == 'bpsvm': label='BPSVM'
+        elif method == 'rnd': label='RANDOM'
         else: label = method
 
         if no_plot is False:
             # visualization
             color = colors.next()
             shape = shapes.next()
-            ax1 = fig.add_subplot(111)
+            ax = fig.add_subplot(111)
 
             if delay_plot:
                 if method not in ['fixed', 'progress', 'svm']: continue
@@ -1529,8 +1545,7 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
 
                 ## delay_mean_l = np.array(delay_mean_l)
                 delay_std_l  = np.array(delay_std_l) #*0.674
-                    
-                
+                                    
                 ## plt.plot(acc_l, delay_mean_l-delay_std_l, '--'+color)
                 ## plt.plot(acc_l, delay_mean_l+delay_std_l, '--'+color)
                 plt.fill_between(acc_l, delay_mean_l-delay_std_l, delay_mean_l+delay_std_l, \
@@ -1544,8 +1559,8 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
                 ## plt.yticks([0, 50, 100], fontsize=22)
             else:                
                 plt.plot(fpr_l, tpr_l, '-'+shape+color, label=label, mec=color, ms=6, mew=2)
-                plt.xlim([-1, 101])
-                plt.ylim([-1, 101])
+                plt.xlim([0, 100])
+                plt.ylim([0, 100])
                 plt.ylabel('True positive rate (percentage)', fontsize=22)
                 plt.xlabel('False positive rate (percentage)', fontsize=22)
 
@@ -1563,11 +1578,20 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
             ## ax1 = fig.add_subplot(122)
             ## plt.errorbar(x, delay_mean_l, yerr=delay_std_l, c=color, label=method)
 
+
     if no_plot is False and legend:
         if delay_plot:
             plt.legend(loc='upper right', prop={'size':24})
         else:
-            plt.legend(loc='lower right', prop={'size':24})
+            hs,ls = ax.get_legend_handles_labels()
+            handles = [hs[-1], hs[-3], hs[1], hs[3], hs[0], hs[-2], hs[2]]
+            labels  = [ls[-1], ls[-3], ls[1], ls[3], ls[0], ls[-2], ls[2]]
+
+            ax.legend(handles,labels,loc='lower right', prop={'size':16})
+            #plt.legend(loc='lower right', prop={'size':16})
+
+    for key in auc_rates.keys():
+        print key, " : ", auc_rates[key]
 
     if save_pdf:
         fig.savefig('test.pdf')
@@ -1575,9 +1599,6 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
         os.system('cp test.p* ~/Dropbox/HRL/')
     elif no_plot is False:
         plt.show()
-
-    ## for key in auc_rates.keys():
-    ##     print key, " : ", auc_rates[key]
 
     return auc_rates
     

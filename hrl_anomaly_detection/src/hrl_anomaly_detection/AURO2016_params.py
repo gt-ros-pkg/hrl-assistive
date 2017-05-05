@@ -30,8 +30,8 @@ def getParams(task, bDataRenew, bHMMRenew, bCFRenew, dim, rf_center='kinEEPos',\
         param_dict['ROC']['methods'] = [ 'hmmgp']
         param_dict['ROC']['update_list'] = [ 'hmmgp' ]
     elif dim == 4:
-        param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'osvm', 'hmmosvm', 'rnd', 'hmmosvm', 'hmmgp' ]
-        # 'fixed', 'change', 'progress', 'progress_diag', 'osvm', 'hmmosvm', 'rnd' 
+        param_dict['ROC']['methods'] = [ 'rnd', 'osvm', 'fixed', 'hmmosvm', 'change', 'progress', 'hmmgp' ]
+        ## param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'osvm', 'hmmosvm', 'rnd', 'hmmosvm', 'hmmgp' ]
         ## param_dict['ROC']['methods'] = [ 'fixed']
         param_dict['ROC']['update_list'] = ['fixed' ]
     else:
@@ -360,7 +360,7 @@ def getScooping(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos', loc
                       'add_noise_option': [], 'preTrainModel': None}
 
     data_param_dict= {'renew': data_renew, 'rf_center': rf_center, 'local_range': local_range,\
-                      'downSampleSize': 140, 'cut_data': None, \
+                      'downSampleSize': 200, 'cut_data': None, \
                       'nNormalFold':3, 'nAbnormalFold':3,\
                       'handFeatures': handFeatures, 'lowVarDataRemv': False,\
                       'handFeatures_noise': True, 'max_time': None}
