@@ -813,7 +813,13 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        
+
+        param_dict['ROC']['change_param_range'] = -np.logspace(0.5, 2.9, nPoints)
+        param_dict['ROC']['hmmgp_param_range']  = -np.logspace(0.1, 2.1, nPoints) 
+        param_dict['ROC']['hmmosvm_param_range']  = np.logspace(-4., -1., nPoints)
+        param_dict['ROC']['osvm_param_range']     = np.logspace(-7., -3., nPoints) 
+        param_dict['ROC']['progress_param_range'] = -np.logspace(0., 2.0, nPoints)
+          
         evaluation_all(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
                        verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                        find_param=False, anomaly_ids=[2,3,5,6,7,8])
