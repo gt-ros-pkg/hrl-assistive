@@ -1096,6 +1096,10 @@ if __name__ == '__main__':
     if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
     subjects = ['day7','day8', 'day10']
 
+    # For ICRA2018
+    raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/CORL2017/Britteney'
+    subjects = ['day2']
+
     save_data_path = os.path.expanduser('~')+\
       '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_test/'
     ## target_class = [11,4,13,10]
@@ -1122,27 +1126,32 @@ if __name__ == '__main__':
     elif opt.bFeaturePlot:
           
         success_viz = True
-        failure_viz = False
-        param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS', \
-                                                    ## 'unimodal_audioWristFrontRMS', \
-                                                    ## 'unimodal_audioWristAzimuth',\
-                                                    'unimodal_kinVel',\
-                                                    'unimodal_kinJntEff_1', \
-                                                    ## 'unimodal_kinJntEff', \
-                                                    'unimodal_ftForce_integ', \
-                                                    ## 'unimodal_ftForce_delta', \
-                                                    'unimodal_ftForce_zero', \
-                                                    ## 'unimodal_ftForce', \
-                                                    ## 'unimodal_ftForceX', \
-                                                    ## 'unimodal_ftForceY', \
-                                                    ## 'unimodal_ftForceZ', \
-                                                    'unimodal_kinEEChange', \
-                                                    'unimodal_kinDesEEChange', \
-                                                    'crossmodal_landmarkEEDist', \
-                                                    'crossmodal_landmarkEEAng',\
-                                                    'unimodal_fabricForce',\
-                                                    'unimodal_landmarkDist'
-                                                    ]
+        failure_viz = True
+        param_dict['data_param']['handFeatures'] = [
+            'unimodal_audioWristRMS', \
+            ## 'unimodal_audioWristFrontRMS', \
+            ## 'unimodal_audioWristAzimuth',\
+            'unimodal_kinVel',\
+            'unimodal_kinJntEff_1', \
+            ## 'unimodal_kinJntEff', \
+            'unimodal_ftForce_integ', \
+            ## 'unimodal_ftForce_delta', \
+            'unimodal_ftForce_zero', \
+            ## 'unimodal_ftForce', \
+            ## 'unimodal_ftForceX', \
+            ## 'unimodal_ftForceY', \
+            ## 'unimodal_ftForceZ', \
+            'unimodal_kinEEChange', \
+            'unimodal_kinDesEEChange', \
+            'crossmodal_landmarkEEDist', \
+            'crossmodal_landmarkEEAng',\
+            'unimodal_fabricForce',\
+            'unimodal_landmarkDist'
+            ]
+
+        ## param_dict['data_param']['handFeatures'] = [ 'unimodal_kinJntEff_1', ]
+
+        
         ## target_class = [13]
         ## param_dict['data_param']['handFeatures'] = ['unimodal_kinJntEff_1']
         

@@ -457,15 +457,11 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
         # Task-oriented hand-crafted features
         if init_param_dict is not None:
             param_dict=init_param_dict
-            max_time = max_time #all_data_dict['timesList'][0][-1]
+            #max_time = all_data_dict['timesList'][0][-1]
         else:
-            # loading and time-sync    
-            ## all_data_pkl     = os.path.join(processed_data_path, pkl_prefix+task_name+'_all_'+rf_center+\
-            ##                                 '_'+str(local_range))
             _, all_data_dict = util.loadData(file_list, isTrainingData=False,
                                              downSampleSize=downSampleSize,\
                                              renew=data_renew,\
-                                             #save_pkl=all_data_pkl,\
                                              max_time=max_time)
             
             max_time = all_data_dict['timesList'][0][-1]
@@ -594,8 +590,8 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
                 for i in xrange(n):
                     if n>9: ax = fig.add_subplot(round(float(n)/2),2,i+1)
                     else:   ax = fig.add_subplot(n*100+10+i+1)
-                    if solid_color: ax.plot(successData[i].T, c='b')
-                    else: ax.plot(successData[i].T, c=color)
+                    if solid_color: ax.plot(successData[i].T*scale[i]+param_dict['feature_min'][i], c='b')
+                    else: ax.plot(successData[i].T*scale[i]+param_dict['feature_min'][i], c=color)
 
                     ## if AddFeature_names[i].find('EEChange')>=0:
                     ##     for j in xrange(m):
@@ -612,7 +608,6 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
             target_class = 12
             for lidx, l in enumerate(failureFileList[fidx]):
                 if int(l.split('/')[-1].split('_')[0]) == target_class:
-                    print l
                     for i in xrange(n): # per feature                
                         if n>9: ax = fig.add_subplot(n/2,2,i+1)
                         else:   ax = fig.add_subplot(n*100+10+i+1)
@@ -638,9 +633,8 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
                     failure_data = failureData
                   
                 for lidx in xrange(len(failure_data[0])):
-                    
-                    for i in xrange(n): # per feature                    
-                        if n>9: ax = fig.add_subplot(n/2,2,i+1)
+                    for i in xrange(n): # per feature
+                        if n>9: ax = fig.add_subplot(round(float(n)/2),2,i+1)
                         else:   ax = fig.add_subplot(n*100+10+i+1)
                         if solid_color: ax.plot(failure_data[i][lidx].T*scale[i] +
                                                 param_dict['feature_min'][i], c='r')
@@ -1594,8 +1588,10 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
 
         param_dict['timeList'] = timeList = d['timesList'][idx]
         dataSample = None
+        
         if len(timeList) < 2: offset_flag=False
         else: offset_flag=True
+        ## print "Offset flag: ", offset_flag, len(timeList)
 
         # Unimoda feature - Audio --------------------------------------------
         if 'unimodal_audioPower' in feature_list:
@@ -3014,6 +3010,7 @@ def saveHMMinducedFeatures(kFold_list, successData, failureData,\
         nLength      = len(normalTrainData[0][0]) - startIdx
         cov_mult     = [cov]*(nEmissionDim**2)
 
+        # noise
         if type(noise_mag) is list:
             noise_arr = None
             for i in xrange(nEmissionDim):
