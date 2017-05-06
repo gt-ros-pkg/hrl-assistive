@@ -1206,7 +1206,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             labels = []
             for label in d['ll_classifier_test_labels']:
                 labels.append( label.split('/')[-1].split('_')[0] )
-
+            
             # filter indices
             idx_list = [idx for idx, label in enumerate(labels) if int(label) in anomaly_ids+[0]]
             

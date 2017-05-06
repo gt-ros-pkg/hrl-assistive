@@ -970,8 +970,12 @@ def getPCAData(nFiles, data_pkl=None, window=1, gamma=1., pos_dict=None, use_tes
         kFold_list  = d['kFoldList']
         successData = d['successData']
         failureData = d['failureData']
+        successFiles = d['success_files']
+        failureFiles = d['failure_files']
     else:
         (normal_folds, successData, failureData) = normalFoldData
+        successFiles = None
+        failureFiles = None
 
     if window == 0:
         print "wrong window size"
@@ -990,6 +994,9 @@ def getPCAData(nFiles, data_pkl=None, window=1, gamma=1., pos_dict=None, use_tes
             abnormalTrainData = failureData[:, abnormalTrainIdx, :] 
             normalTestData    = successData[:, normalTestIdx, :] 
             abnormalTestData  = failureData[:, abnormalTestIdx, :]
+            
+            abnormalTrainFiles = failureFiles[abnormalTrainIdx]
+            abnormalTestFiles = failureFiles[abnormalTestIdx]
         else:
             (train_fold, test_fold) = normal_folds[file_idx]
              
@@ -999,6 +1006,8 @@ def getPCAData(nFiles, data_pkl=None, window=1, gamma=1., pos_dict=None, use_tes
             normalTestData    = successData[:, test_fold] 
             abnormalTestData  = failureData
 
+            abnormalTrainFiles = None
+            abnormalTestFiles  = None
             
 
         # dim x sample x length => sample x dim x length
@@ -1085,6 +1094,12 @@ def getPCAData(nFiles, data_pkl=None, window=1, gamma=1., pos_dict=None, use_tes
             ll_classifier_test_idx = [range(len(normalTestData[0]))]*len(normalTestData) + \
               [range(len(abnormalTestData[0]))]*len(abnormalTestData)
             ll_classifier_test_idx = np.array(ll_classifier_test_idx)
+
+            if abnormalTrainFiles is not None:
+                ll_classifier_test_labels = abnormalTrainFiles + abnormalTestFiles
+            else:
+                ll_classifier_test_labels = None
+        else
                 
         else:
             ll_classifier_train_X = np.vstack([normalTrainData, abnormalTrainData])
@@ -1255,6 +1270,7 @@ def getPCAData(nFiles, data_pkl=None, window=1, gamma=1., pos_dict=None, use_tes
         data[file_idx]['idx_test']      = ll_classifier_test_idx
         data[file_idx]['nLength']       = len(normalTrainData[0][0])
         data[file_idx]['step_idx_l']    = step_idx_l
+        data[file_idx]['label_test']    = ll_classifier_test_labels
     return data 
     
 
