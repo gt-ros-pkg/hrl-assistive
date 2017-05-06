@@ -995,8 +995,8 @@ def getPCAData(nFiles, data_pkl=None, window=1, gamma=1., pos_dict=None, use_tes
             normalTestData    = successData[:, normalTestIdx, :] 
             abnormalTestData  = failureData[:, abnormalTestIdx, :]
             
-            abnormalTrainFiles = failureFiles[abnormalTrainIdx]
-            abnormalTestFiles = failureFiles[abnormalTestIdx]
+            abnormalTrainFiles = [ failureFiles[idx] for idx in abnormalTrainIdx ]
+            abnormalTestFiles = [ failureFiles[idx] for idx in abnormalTestIdx ]
         else:
             (train_fold, test_fold) = normal_folds[file_idx]
              
@@ -1099,8 +1099,6 @@ def getPCAData(nFiles, data_pkl=None, window=1, gamma=1., pos_dict=None, use_tes
                 ll_classifier_test_labels = abnormalTrainFiles + abnormalTestFiles
             else:
                 ll_classifier_test_labels = None
-        else
-                
         else:
             ll_classifier_train_X = np.vstack([normalTrainData, abnormalTrainData])
             ll_classifier_train_Y = [[-1]*len(normalTrainData[0])]*len(normalTrainData)+\
@@ -1225,6 +1223,7 @@ def getPCAData(nFiles, data_pkl=None, window=1, gamma=1., pos_dict=None, use_tes
         # test data preparation
         X_test = []
         Y_test = []
+        label_test = []
         if window==1:
             for ii in xrange(len(ll_classifier_test_X)):
                 if np.nan in ll_classifier_test_X[ii] or len(ll_classifier_test_X[ii]) == 0 \
@@ -1234,7 +1233,8 @@ def getPCAData(nFiles, data_pkl=None, window=1, gamma=1., pos_dict=None, use_tes
                 X = scaler.transform(ll_classifier_test_X[ii])
                 if use_pca: X = ml.transform(X)
                 X_test.append(X)
-                Y_test.append(ll_classifier_test_Y[ii])            
+                Y_test.append(ll_classifier_test_Y[ii])
+                label_test.append(ll_classifier_test_labels[ii])
         else:
             ll_classifier_test_X = sampleWithWindow(ll_classifier_test_X, window=window)
             for ii in xrange(len(ll_classifier_test_X)):
@@ -1247,6 +1247,7 @@ def getPCAData(nFiles, data_pkl=None, window=1, gamma=1., pos_dict=None, use_tes
                 if use_pca: X = ml.transform(X)
                 X_test.append(X)
                 Y_test.append(ll_classifier_test_Y[ii])
+                label_test.append(ll_classifier_test_labels[ii])
 
         
         ## fig = plt.figure(1)
@@ -1270,7 +1271,7 @@ def getPCAData(nFiles, data_pkl=None, window=1, gamma=1., pos_dict=None, use_tes
         data[file_idx]['idx_test']      = ll_classifier_test_idx
         data[file_idx]['nLength']       = len(normalTrainData[0][0])
         data[file_idx]['step_idx_l']    = step_idx_l
-        data[file_idx]['label_test']    = ll_classifier_test_labels
+        data[file_idx]['label_test']    = label_test #ll_classifier_test_labels
     return data 
     
 

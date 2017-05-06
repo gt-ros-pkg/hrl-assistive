@@ -1172,14 +1172,17 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
         step_idx_l = raw_data[raw_data_idx][idx]['step_idx_l']
 
         if len(anomaly_ids)>0:
-            # load data
-            print "get file names"
-            
-            # get ids
+            # load data, get ids
+            labels = []
+            for label in raw_data[raw_data_idx][idx]['label_test']:
+                labels.append( label.split('/')[-1].split('_')[0] )
 
             # filter indices
-
-            # save 
+            idx_list = [ii for ii, label in enumerate(labels) if int(label) in anomaly_ids+[0]]
+            ll_classifier_test_X   = np.array(ll_classifier_test_X)[idx_list].tolist()
+            ll_classifier_test_Y   = np.array(ll_classifier_test_Y)[idx_list].tolist()
+            ll_classifier_test_idx = np.array(ll_classifier_test_idx)[idx_list].tolist()
+            ll_classifier_test_labels = [raw_data[raw_data_idx][idx]['label_test'][ii] for ii in idx_list]
 
 
         # TODO: set automatically!
@@ -1208,7 +1211,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
                 labels.append( label.split('/')[-1].split('_')[0] )
             
             # filter indices
-            idx_list = [idx for idx, label in enumerate(labels) if int(label) in anomaly_ids+[0]]
+            idx_list = [ii for ii, label in enumerate(labels) if int(label) in anomaly_ids+[0]]
             
             ll_classifier_test_X   = np.array(ll_classifier_test_X)[idx_list].tolist()
             ll_classifier_test_Y   = np.array(ll_classifier_test_Y)[idx_list].tolist()
