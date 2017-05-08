@@ -708,7 +708,7 @@ if __name__ == '__main__':
     rf_center     = 'kinEEPos'        
     scale         = 1.0
     local_range   = 10.0
-    nPoints = 40 #None
+    nPoints = 3 #40 #None #temp
 
     raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
                                                           opt.bHMMRenew, opt.bClassifierRenew, opt.dim,\
@@ -820,7 +820,7 @@ if __name__ == '__main__':
             param_dict['ROC']['hmmgp_param_range']  = -np.logspace(0.1, 2.5, nPoints) 
             param_dict['ROC']['hmmosvm_param_range']  = np.logspace(-4., -3.8, nPoints)
             param_dict['ROC']['osvm_param_range']     = np.logspace(-7., -6.6, nPoints) 
-            param_dict['ROC']['progress_param_range'] = -np.logspace(0.5, 5.0, nPoints)
+            param_dict['ROC']['progress_param_range'] = -np.logspace(0.5, 10.0, nPoints)
           
         evaluation_all(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
                        verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
