@@ -1,0 +1,62 @@
+.startButton {
+    display: block;
+    position: relative;
+    left: 38%;
+    width:24%;
+    height:8%;
+    bottom:0;
+}
+
+.red {
+    color: red;
+}
+
+.target {
+    background-color: red;
+}
+
+#intro {
+    position: absolute;
+    width: 50%;
+    left: 25%;
+}
+
+h2, form {
+    text-align: center;
+}
+
+.center {
+    text-align: center;
+}
+
+h3, h4, p {
+    text-align: left;
+}
+
+li {
+    text-align: left;
+    margin-bottom: 5px;
+}
+
+ul {
+    list-style-position: inside;
+}
+
+.sphere {
+    border-radius:50%;
+}
+
+#testArea{
+    height: 100%;
+    width: 100%;
+    background-color:LightGray;
+}
+
+#roundCount{
+    text-align: center;
+    position: absolute;
+    top: 20%;
+    left: 0;
+    font-size: 2em;
+    width: 100%;
+}
