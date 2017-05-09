@@ -816,8 +816,8 @@ if __name__ == '__main__':
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
         if opt.task == 'feeding': 
-            param_dict['ROC']['change_param_range'] = -np.logspace(-1.0, 4.0, nPoints)+5.0
-            param_dict['ROC']['hmmgp_param_range']  = -np.logspace(0.1, 2.5, nPoints) 
+            param_dict['ROC']['change_param_range'] = -np.logspace(0.3, 2.5, nPoints)
+            param_dict['ROC']['hmmgp_param_range']  = -np.logspace(0.0, 2.3, nPoints) 
             param_dict['ROC']['hmmosvm_param_range']  = np.logspace(-4., -3.8, nPoints)
             param_dict['ROC']['osvm_param_range']     = np.logspace(-7., -6.6, nPoints) 
             param_dict['ROC']['progress_param_range'] = -np.logspace(-1.0, 1.6, nPoints)+0.5
