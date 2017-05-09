@@ -708,7 +708,7 @@ if __name__ == '__main__':
     rf_center     = 'kinEEPos'        
     scale         = 1.0
     local_range   = 10.0
-    nPoints = 3 #40 #None #temp
+    nPoints = 40 #None #temp
 
     raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
                                                           opt.bHMMRenew, opt.bClassifierRenew, opt.dim,\
@@ -815,11 +815,14 @@ if __name__ == '__main__':
           '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
-        if opt.task == 'feeding': 
+        if opt.task == 'feeding':
+            param_dict['SVM']['hmmosvm_nu'] = 0.003
+            param_dict['SVM']['osvm_nu']    = 0.003
+            
             param_dict['ROC']['change_param_range'] = -np.logspace(0.3, 2.5, nPoints)
             param_dict['ROC']['hmmgp_param_range']  = -np.logspace(0.0, 2.3, nPoints) 
-            param_dict['ROC']['hmmosvm_param_range']  = np.logspace(-4., -3.8, nPoints)
-            param_dict['ROC']['osvm_param_range']     = np.logspace(-7., -6.6, nPoints) 
+            param_dict['ROC']['hmmosvm_param_range']  = np.logspace(-8., 0.5, nPoints)
+            param_dict['ROC']['osvm_param_range']     = np.logspace(-3., 0., nPoints) 
             param_dict['ROC']['progress_param_range'] = -np.logspace(-1.0, 1.6, nPoints)+0.5
           
         evaluation_all(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \

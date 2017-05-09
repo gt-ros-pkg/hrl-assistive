@@ -1471,9 +1471,12 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
                 print method + ' has NaN? and fitting error?'
             continue
 
+
+        print fpr_l
+        print tpr_l
+
         # reordering
         s_idx = np.argsort(fpr_l)
-        print s_idx
         fpr_l = np.array(fpr_l)[s_idx].tolist()
         tpr_l = np.array(tpr_l)[s_idx].tolist()
 
