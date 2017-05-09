@@ -147,7 +147,7 @@ var RFH = (function (module) {
             palmMesh.material = goalMaterial;
             goalGripper.add(palmMesh.clone());
 
-            tfClient.subscribe(side+'_gripper_palm_link', updateCurrentGripperTF);
+            //tfClient.subscribe(side+'_gripper_palm_link', updateCurrentGripperTF);
         };
 
         var fingerOnLoad = function (collada) {

@@ -54,7 +54,7 @@ var RFH = (function (module) {
             var srcStr = self.server + "/stream?";
             for (var param in self.activeParams)
             {
-                srcStr += param + '=' + self.activeParams[param] + '&';
+                srcStr += param + '=' + self.activeParams[param] + '?';
             }
             self.$imageDiv.attr("src", srcStr);
             console.log("Video Request: ", srcStr);

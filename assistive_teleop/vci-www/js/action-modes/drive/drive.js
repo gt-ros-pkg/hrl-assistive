@@ -36,20 +36,19 @@ var RFH = (function (module) {
                                                           edgeMarkers: $('#bumper-contact-display > .edge-contact')
         });
 
-        $('#zero-skin-base').button().on('click.skin', function (event) {RFH.skins.base.zeroSensor();});
+        $('#zero-skin-base').button().on('click.skin', function (event) {RFH.skins.base.zeroSensor();}).prop('title',"Clear errors from the bumper tactile sensor");
 
-        self.goalDisplay = new RFH.DriveGoalDisplay({
-            ros: ros,
-            tfClient: tfClient,
-            viewer: $viewer
-        });
+//        self.goalDisplay = new RFH.DriveGoalDisplay({
+//            ros: ros,
+//            tfClient: tfClient,
+//            viewer: $viewer
+//        });
+//        self.showGoal = self.goalDisplay.show;
+//        self.hideGoal = self.goalDisplay.hide;
 
         var clamp = function (x,a,b) {
             return ( x < a ) ? a : ( ( x > b ) ? b : x );
         };
-
-        self.showGoal = self.goalDisplay.show;
-        self.hideGoal = self.goalDisplay.hide;
 
         var zeroArmSkins = function () {
             RFH.skins.left.upperarm.zeroSensor();
@@ -88,7 +87,7 @@ var RFH = (function (module) {
             r_arm.disableMPC(sendGoalOnceDisabled);
 
         };
-        $('#controls > div.tuck-driving.drive-ctrl').button().on('click.rfh', tuckArms);
+        $('#controls > div.tuck-driving.drive-ctrl').button().on('click.rfh', tuckArms).prop('title','Fold both arms in front of the robot, above the base of the robot.');
 
         var initPathMarkers = function (nDots, d) {
             var opacity = numeric.linspace(1, 0.05, nDots);
@@ -555,7 +554,7 @@ var RFH = (function (module) {
             self.$div.on('mouseleave.rfh mouseout.rfh mouseup.rfh blur.rfh', self.setUnsafe);
             self.$div.on('mousedown.rfh', self.driveGo);
             $('.drive-ctrl').show();
-            self.showGoal();
+//            self.showGoal();
             $viewer.show();
             self.baseContactDisplay.show();
             moveToStop(getNearestStop());
@@ -570,7 +569,7 @@ var RFH = (function (module) {
             clearTimeout(self.timeoutTimer);
 //            self.$div.removeClass('drive-safe');
             //   self.$div'.turn-signal').off('mouseleave.rfh mouseout.rfh mousedown.rfh mouseup.rfh hover');
-            self.hideGoal();
+//            self.hideGoal();
             $('.drive-ctrl').hide();
             $viewer.hide();
             self.baseContactDisplay.hide();

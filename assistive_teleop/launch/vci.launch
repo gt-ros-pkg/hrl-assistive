@@ -5,19 +5,13 @@
   <arg name="kinect_points" default="/$(arg kinect_ns)/hd/points" />
   <arg name="run_ft_sensor" default="false" />
   <arg name="use_cart_ctrl" default="true" />
-  <arg name="test" default="true"/>
-
-  <arg if="$(arg test)" name="ws_port" default="9091"/>
-  <arg unless="$(arg test)" name="ws_port" value="9091"/>
-
-  <arg if="$(arg test)" name="mjpeg_port" default="8080"/>
-  <arg unless="$(arg test)" name="mjpeg_port" value="8080"/>
-
-  <arg if="$(arg test)" name="html_port" default="8008"/>
-  <arg unless="$(arg test)" name="html_port" value="8000"/>
+  <arg name="ws_port" default="9091"/>
+  <arg name="mjpeg_port" default="8080"/>
+  <arg name="html_port" default="8008"/>
+  <arg name="log" default="true"/>
 
   <!-- Data Logging -->
-  <include file="$(find assistive_teleop)/launch/data_bagging.launch" />
+  <include if="$(arg log)" file="$(find assistive_teleop)/launch/data_bagging.launch" />
 
   <!-- Rosbridge, Rosapi, Roswww, and web_video_server -->
   <node name="rosbridge" pkg="rosbridge_server" type="rosbridge_websocket" output="screen">
@@ -57,7 +51,8 @@
         <param name="unreliable" value="true"/>
         <param name="lazy" value="true"/>
   </node>
-  <!--<node name="web_ping_check" pkg="assistive_teleop" type="ping_check"/>-->
+
+  <node name="web_ping_check" pkg="assistive_teleop" type="ping_check"/>
 
   <!-- Gripper Grasping State Monitors -->
   <node name="r_grasp_state_monitor" pkg="hrl_task_planning" type="gripper_sensor_grasp_monitor" args="right" output="screen"/>

@@ -1,33 +1,29 @@
 #!/usr/bin/env python
 
 import rospy
-from assistive_teleop.msg import Ping
+from std_msgs.msg import Duration, Time
 
 
 class CheckPingServer(object):
-    def __init__(self, outTopic, inTopic):
-        self.ping_pub = rospy.Publisher(outTopic, Ping, queue_size=0)
-        self.ping_sub = rospy.Subscriber(inTopic, Ping, self.ping_cb)
+    def __init__(self, outTopic, inTopic, rtTopic):
+        self.ping_pub = rospy.Publisher(outTopic, Time, queue_size=0)
+        self.ping_sub = rospy.Subscriber(inTopic, Time, self.ping_cb)
+        self.roundtrip_pub = rospy.Publisher(rtTopic, Duration, queue_size=0)
+        rospy.loginfo("[%s] Ping Check Ready.", rospy.get_name())
 
-    def ping_cb(self, return_msg):
-        print return_msg
-        now = rospy.Time.now()
-        sent_time = return_msg.send_time
-        client_time = return_msg.recv_time
-        s_to_c = (client_time - sent_time).to_sec()
-        c_to_s = (now - client_time).to_sec()
-        rt = (now - sent_time).to_sec()
-        rospy.loginfo("[%s] S->C: %f, C->S: %f, RT: %f", rospy.get_name(), s_to_c, c_to_s, rt)
+    def ping_cb(self, msg):
+        print msg
+        roundtrip_time = rospy.Time.now() - msg.data
+        rospy.loginfo("[%s] RoundTrip Time: %f", rospy.get_name(), roundtrip_time.to_sec())
+        self.roundtrip_pub.publish(roundtrip_time)
 
     def send_ping(self):
-        msg = Ping()
-        msg.send_time = rospy.Time.now()
-        self.ping_pub.publish(msg)
+        self.ping_pub.publish(rospy.Time.now())
 
 
 def main():
     rospy.init_node('web_ping_check')
-    cps = CheckPingServer('/ping_relay_out', '/ping_relay_return')
+    cps = CheckPingServer('/ping_relay_out', '/ping_relay_return', '/ping_relay_roundtrip')
     rate = rospy.Rate(0.5)
     while not rospy.is_shutdown():
         cps.send_ping()
