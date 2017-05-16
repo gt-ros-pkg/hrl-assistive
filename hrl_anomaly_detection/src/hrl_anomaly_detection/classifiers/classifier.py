@@ -1209,7 +1209,7 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             labels = []
             for label in d['ll_classifier_test_labels']:
                 labels.append( label.split('/')[-1].split('_')[0] )
-            
+
             # filter indices
             idx_list = [ii for ii, label in enumerate(labels) if int(label) in anomaly_ids+[0]]
             
@@ -1217,8 +1217,6 @@ def run_classifiers(idx, processed_data_path, task_name, method,\
             ll_classifier_test_Y   = np.array(ll_classifier_test_Y)[idx_list].tolist()
             ll_classifier_test_idx = np.array(ll_classifier_test_idx)[idx_list].tolist()
 
-
-        
         if 'diag' in method:
             ll_classifier_train_X   = ll_classifier_diag_train_X
             ll_classifier_train_Y   = ll_classifier_diag_train_Y
