@@ -58,8 +58,8 @@ def getParams(task, bDataRenew, bHMMRenew, bCFRenew, dim, rf_center='kinEEPos',\
                                          # 'progress_diag', 
         ## param_dict['ROC']['update_list'] = [ 'progress_osvm', 'progress_svm']
         ## param_dict['ROC']['update_list'] = [ 'svm_fixed' ]
-        param_dict['ROC']['methods'] = [ 'hmmgp']
-        param_dict['ROC']['update_list'] = [ 'hmmgp' ]
+        param_dict['ROC']['methods'] = [ 'change' ]
+        param_dict['ROC']['update_list'] = [ ]
     else:
         param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'osvm', 'hmmosvm', 'hmmgp',\
                                          ]
@@ -193,7 +193,7 @@ def getScooping(task, data_renew, HMM_renew, CF_renew, rf_center,local_range, pr
                       'handFeatures_noise': True}
 
     save_data_path = os.path.expanduser('~')+\
-      '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/'+\
+      '/hrl_file_server/dpark_data/anomaly/AURO2016/'+task+'_data/'+\
       str(data_param_dict['downSampleSize'])+'_'+str(dim)
       
     param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
@@ -339,7 +339,7 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center,local_range, ae_
                       'handFeatures_noise': True, 'max_time': 7.0}
 
     save_data_path = os.path.expanduser('~')+\
-      '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/'+\
+      '/hrl_file_server/dpark_data/anomaly/AURO2016/'+task+'_data/'+\
       str(data_param_dict['downSampleSize'])+'_'+str(dim)
 
     param_dict = {'data_param': data_param_dict, 'AE': AE_param_dict, 'HMM': HMM_param_dict, \
@@ -502,7 +502,7 @@ def getPushingMicroWhite(task, data_renew, HMM_renew, CF_renew, rf_center,local_
 
     data_param_dict['downSampleSize'] = 200
     save_data_path = os.path.expanduser('~')+\
-      '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/'+\
+      '/hrl_file_server/dpark_data/anomaly/AURO2016/'+task+'_data/'+\
       str(data_param_dict['downSampleSize'])+'_'+str(dim)
     AE_param_dict['layer_sizes'] = [64,dim]
     AE_param_dict['add_option'] = None
@@ -679,14 +679,14 @@ def getPushingMicroBlack(task, data_renew, HMM_renew, CF_renew, rf_center,local_
 
     if AE_param_dict['method']=='pca':
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE200_'+str(dim)
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+task+'_data/AE200_'+str(dim)
         data_param_dict['downSampleSize'] = 200
         AE_param_dict['layer_sizes']      = [64,dim]
         AE_param_dict['nAugment']         = 0
         
     elif AE_param_dict['method']=='ae' and pre_train:
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE200_'+str(dim)
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+task+'_data/AE200_'+str(dim)
         data_param_dict['downSampleSize'] = 200
         AE_param_dict['layer_sizes']      = [64,dim]
         AE_param_dict['add_option']       = None
@@ -694,7 +694,7 @@ def getPushingMicroBlack(task, data_renew, HMM_renew, CF_renew, rf_center,local_
     else:
         data_param_dict['downSampleSize'] = 200
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/'+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+task+'_data/'+\
           str(data_param_dict['downSampleSize'])+'_'+str(dim)
         AE_param_dict['layer_sizes'] = [64,dim]
         AE_param_dict['add_option']  = None
@@ -855,7 +855,7 @@ def getPushingToolCase(task, data_renew, HMM_renew, CF_renew, rf_center,local_ra
     if AE_param_dict['method']=='pca':
         # filtered dim 5
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/AE150'
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+task+'_data/AE150'
         data_param_dict['downSampleSize'] = 150
         AE_param_dict['layer_sizes']      = [64,dim]
         AE_param_dict['nAugment']         = 0
@@ -863,7 +863,7 @@ def getPushingToolCase(task, data_renew, HMM_renew, CF_renew, rf_center,local_ra
     elif AE_param_dict['method']=='ae' and pre_train:
         # filtered dim 5
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/'
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+task+'_data/'
         data_param_dict['downSampleSize'] = 200
         AE_param_dict['layer_sizes'] = [64,dim]
         AE_param_dict['add_option']  = None
@@ -871,7 +871,7 @@ def getPushingToolCase(task, data_renew, HMM_renew, CF_renew, rf_center,local_ra
     else:
         data_param_dict['downSampleSize'] = 200
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/RSS2016/'+task+'_data/'+\
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+task+'_data/'+\
           str(data_param_dict['downSampleSize'])+'_'+str(dim)
         AE_param_dict['layer_sizes']      = [64,dim]
         AE_param_dict['add_option']       = None

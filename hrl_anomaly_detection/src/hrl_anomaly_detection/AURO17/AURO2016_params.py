@@ -30,15 +30,15 @@ def getParams(task, bDataRenew, bHMMRenew, bCFRenew, dim, rf_center='kinEEPos',\
         param_dict['ROC']['methods'] = [ 'hmmgp']
         param_dict['ROC']['update_list'] = [ 'hmmgp' ]
     elif dim == 4:
-        param_dict['ROC']['methods'] = [ 'rnd', 'osvm', 'fixed', 'hmmosvm', 'change', 'progress', 'hmmgp' ]
+        param_dict['ROC']['methods'] = [ 'rnd', 'osvm', 'fixed', 'hmmosvm', 'change', 'progress', 'hmmgp', 'progress_state' ]
         ## param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'osvm', 'hmmosvm', 'rnd', 'hmmosvm', 'hmmgp' ]
-        param_dict['ROC']['update_list'] = [ 'rnd', 'osvm', 'fixed', 'hmmosvm', 'change', 'progress', 'hmmgp']
+        #param_dict['ROC']['update_list'] = [ 'rnd', 'osvm', 'fixed', 'hmmosvm', 'change', 'progress', 'hmmgp', 'progress_state']
         
         #param_dict['ROC']['methods'] = [ 'hmmosvm']
-        param_dict['ROC']['update_list'] = [ 'osvm', 'hmmosvm', 'change', 'progress', 'hmmgp']
-        #param_dict['ROC']['update_list'] = [ 'hmmosvm' ]
+        ## param_dict['ROC']['update_list'] = [ 'osvm', 'hmmosvm', 'change', 'progress', 'hmmgp']
+        ## param_dict['ROC']['update_list'] = [ 'hmmosvm' ]
         ## param_dict['ROC']['methods'] = [ 'osvm']
-        ## param_dict['ROC']['update_list'] = [ 'osvm']
+        param_dict['ROC']['update_list'] = [ 'progress_state']
     else:
         param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'osvm', 'hmmosvm', 'hmmgp']
         param_dict['ROC']['update_list'] = [ 'hmmgp', 'progress', 'fixed', 'hmmosvm']
@@ -137,6 +137,7 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                           'o2o': {'gp_nSubsample': 40, 'alpha_coeff': 0.05, 'hmm_scale': 3.0, 'hmm_cov': 1.0,\
                                   'noise_max': 0.05 },\
                           'progress_param_range': -np.logspace(0.6, 0.9, nPoints)+1.0,\
+                          'progress_state_param_range': -np.logspace(0, 1.7, nPoints)+0.5,\
                           'progress_diag_param_range': -np.logspace(-0.7, 1.4, nPoints),\
                           'svm_param_range': np.logspace(-2.4, 0.5, nPoints),\
                           'hmmgp_param_range':np.logspace(0.3, 1.9, nPoints)*-1.0, \

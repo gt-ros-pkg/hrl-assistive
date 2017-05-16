@@ -1805,7 +1805,7 @@ if __name__ == '__main__':
 
     if opt.bTest:
         ## from hrl_anomaly_detection.AURO2016_params import *
-        from hrl_anomaly_detection.params import *
+        from hrl_anomaly_detection.AURO17.params import *
         raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
                                                               opt.bHMMRenew, opt.bClassifierRenew, opt.dim,\
                                                               rf_center, local_range)
@@ -1819,7 +1819,7 @@ if __name__ == '__main__':
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
                                                               
     else:
-        from hrl_anomaly_detection.params import *
+        from hrl_anomaly_detection.AURO17.params import *
         raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
                                                               opt.bHMMRenew, opt.bClassifierRenew, opt.dim,\
                                                               rf_center, local_range)
@@ -1903,7 +1903,7 @@ if __name__ == '__main__':
     elif opt.bLikelihoodPlot:
         dv.vizLikelihoods(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
                           decision_boundary_viz=False, method='hmmgp', \
-                          useTrain=True, useNormalTest=False, useAbnormalTest=True,\
+                          useTrain=False, useNormalTest=True, useAbnormalTest=True,\
                           useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                           hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf,\
                           verbose=opt.bVerbose)
@@ -1913,7 +1913,7 @@ if __name__ == '__main__':
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
         if opt.bFindROCparamRange:
             param_dict['ROC']['methods']     = [ 'progress', 'progress_diag', 'progress_svm'] 
-                    
+
         evaluation_all(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
                        verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                        find_param=opt.bFindROCparamRange, data_gen=opt.bDataGen)

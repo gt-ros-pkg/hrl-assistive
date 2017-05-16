@@ -1472,15 +1472,11 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
             continue
 
 
-        print fpr_l
-        print tpr_l
-
         # reordering
-        s_idx = np.argsort(fpr_l)
-        fpr_l = np.array(fpr_l)[s_idx].tolist()
-        tpr_l = np.array(tpr_l)[s_idx].tolist()
-
-
+        ## s_idx = np.argsort(fpr_l)
+        ## fpr_l = np.array(fpr_l)[s_idx].tolist()
+        ## tpr_l = np.array(tpr_l)[s_idx].tolist()
+           
         # add edge
         ## fpr_l = [0] + fpr_l + [100]
         ## tpr_l = [0] + tpr_l + [100]
@@ -1488,8 +1484,13 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
             min_idx = np.argmin(fpr_l)
             fpr_l = fpr_l[min_idx:]
             tpr_l = tpr_l[min_idx:]
-            fpr_l = [0] + fpr_l
-            tpr_l = [0] + tpr_l
+            ## fpr_l = [0] + fpr_l
+            ## tpr_l = [0] + tpr_l
+
+        # if same value exists, order it by small tpr
+        fpr_l, tpr_l, acc_l, delay_mean_l, delay_std_l = \
+          (list(x) for x in zip(*sorted(zip(fpr_l, tpr_l, acc_l, delay_mean_l, delay_std_l))))
+
 
         from sklearn import metrics 
         if verbose:       
@@ -1499,6 +1500,7 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
             print method
             print tpr_l
             print fpr_l
+            
         if only_tpr is False:
             auc = metrics.auc(fpr_l, tpr_l, True)
             ## auc = metrics.auc(fpr_l + [100], tpr_l + [100], True)
@@ -1564,8 +1566,8 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
                 ## plt.yticks([0, 50, 100], fontsize=22)
             else:                
                 plt.plot(fpr_l, tpr_l, '-'+shape+color, label=label, mec=color, ms=6, mew=2)
-                plt.xlim([0, 100])
-                plt.ylim([0, 100])
+                plt.xlim([-1, 101])
+                plt.ylim([-1, 101])
                 plt.ylabel('True positive rate (percentage)', fontsize=22)
                 plt.xlabel('False positive rate (percentage)', fontsize=22)
 
@@ -1589,7 +1591,7 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
             plt.legend(loc='upper right', prop={'size':24})
         else:
             hs,ls = ax.get_legend_handles_labels()
-            if len(hs)>7:
+            if len(hs)==7:
                 handles = [hs[-1], hs[-3], hs[1], hs[3], hs[0], hs[-2], hs[2]]
                 labels  = [ls[-1], ls[-3], ls[1], ls[3], ls[0], ls[-2], ls[2]]
 

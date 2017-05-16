@@ -113,7 +113,7 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
                                           len(failureData[0]),\
                                           data_dict['nNormalFold'], data_dict['nAbnormalFold'] )
     
-    normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx = kFold_list[-1]
+    normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx = kFold_list[0]
     normalTrainData   = successData[:, normalTrainIdx, :] 
     abnormalTrainData = failureData[:, abnormalTrainIdx, :] 
     normalTestData    = successData[:, normalTestIdx, :] 
@@ -189,14 +189,22 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
 
             l_logp = np.array(ll_X)[i,:,0]
             l_post = np.array(ll_X)[i,:,-nState]
-            
+
+            # plot 1 -------------------------------------------
+            ax = fig.add_subplot(2,1,1)            
             # disp
             if useTrain_color: ax.plot(l_logp, label=str(i))
             else: ax.plot(l_logp, 'b-', linewidth=4.0, alpha=0.6 )
 
+            # plot 2 (change) ----------------------------------
+            ax = fig.add_subplot(2,1,2)
+            l_logp2 = l_logp.tolist() + [l_logp[-1]]  
+            l_logp1 = [l_logp[0]]     + l_logp.tolist()  
+            ax.plot( np.array(l_logp2) - np.array(l_logp1), 'b-', linewidth=4.0, alpha=0.6 )
+            
             if min_logp > np.amin(l_logp): min_logp = np.amin(l_logp)
             if max_logp < np.amax(l_logp): max_logp = np.amax(l_logp)
-            
+                              
             if decision_boundary_viz:
                 l_exp_logp = dtc.predict(ll_X[i]) + l_logp
                 ax.plot(l_exp_logp, 'm-', lw=3.0)
@@ -213,6 +221,7 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
 
         log_ll = []
         ## exp_log_ll = []        
+        log_c_ll = []
         for i in xrange(len(normalTestData[0])):
 
             log_ll.append([])
@@ -229,11 +238,23 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
             if min_logp > np.amin(log_ll): min_logp = np.amin(log_ll)
             if max_logp < np.amax(log_ll): max_logp = np.amax(log_ll)
 
+            # plot 1 -------------------------------------------
+            ax = fig.add_subplot(2,1,1)            
             # disp 
             if useNormalTest_color: plt.plot(log_ll[i], label=str(i))
             else: plt.plot(log_ll[i], 'k-')
 
             ## plt.plot(exp_log_ll[i], 'r*-')
+
+            # plot 2 (change) ----------------------------------
+            ax = fig.add_subplot(2,1,2)
+            l_logp2 = log_ll[i] + [log_ll[i][-1]]  
+            l_logp1 = [log_ll[i][0]]     + log_ll[i]
+            ax.plot( np.array(l_logp2) - np.array(l_logp1), 'k-')
+            log_c_ll += (np.array(l_logp2) - np.array(l_logp1)).tolist()
+            
+        print np.mean(log_c_ll), np.std(log_c_ll)
+
 
         if useNormalTest_color: 
             plt.legend(loc=3,prop={'size':16})
@@ -242,6 +263,7 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
     if useAbnormalTest:
         log_ll = []
         exp_log_ll = []
+        log_c_ll = []
         for i in xrange(len(abnormalTestData[0])):
 
             log_ll.append([])
@@ -257,6 +279,7 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
 
                 log_ll[i].append(logp)
 
+            ax = fig.add_subplot(2,1,1)
             #temp
             if plot_feature is True:
                 ax = fig.add_subplot(1+len(normalTrainData),1,1)
@@ -276,6 +299,16 @@ def vizLikelihoods(subject_names, task_name, raw_data_path, processed_data_path,
             ax.plot(log_ll[i], 'r-')
             ## plt.plot(exp_log_ll[i], 'r*-')
 
+
+            # plot 2 (change) ----------------------------------
+            ax = fig.add_subplot(2,1,2)
+            l_logp2 = log_ll[i] + [log_ll[i][-1]]  
+            l_logp1 = [log_ll[i][0]]     + log_ll[i]
+            ax.plot( np.array(l_logp2) - np.array(l_logp1), 'r-')
+            log_c_ll += (np.array(l_logp2) - np.array(l_logp1)).tolist()
+
+        print np.mean(log_c_ll), np.std(log_c_ll)
+    sys.exit()
 
     ## plt.ylim([min_logp, max_logp])
     if max_logp >0: plt.ylim([0, max_logp])

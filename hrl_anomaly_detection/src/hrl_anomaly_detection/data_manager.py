@@ -387,7 +387,7 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
 
         for i in xrange(n):
             ## ax = fig.add_subplot((nPlot/2)*100+20+i)
-            ax = fig.add_subplot(n*100+10+i)
+            ax = fig.add_subplot(n*100+10+i+1)
             if solid_color: ax.plot(successData[i].T, c='b')
             else: ax.plot(successData[i].T)
 
@@ -416,7 +416,7 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
     if success_viz or failure_viz:
         plt.tight_layout(pad=3.0, w_pad=0.5, h_pad=0.5)
         for i in xrange(n):
-            ax = fig.add_subplot(n*100+10+i)
+            ax = fig.add_subplot(n*100+10+i+1)
             ## print np.amin(allData[i]), np.amax(allData[i]), np.shape(allData)
             ## ax.set_xlim([np.amin(allData[i]), np.amax(allData[i])])
 

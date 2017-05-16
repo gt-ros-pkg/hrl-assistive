@@ -39,7 +39,7 @@ import hrl_lib.util as ut
 from hrl_anomaly_detection.util import *
 from hrl_anomaly_detection.util_viz import *
 from hrl_anomaly_detection import data_manager as dm
-from hrl_anomaly_detection.AURO2016_params import *
+from hrl_anomaly_detection.AURO17.AURO2016_params import *
 ## from hrl_anomaly_detection.optimizeParam import *
 from hrl_anomaly_detection import util as util
 
@@ -765,8 +765,8 @@ if __name__ == '__main__':
 
         import hrl_anomaly_detection.data_viz as dv        
         dv.vizLikelihoods(subjects, opt.task, raw_data_path, save_data_path, param_dict,\
-                          decision_boundary_viz=True, method='hmmgp', \
-                          useTrain=True, useNormalTest=False, useAbnormalTest=True,\
+                          decision_boundary_viz=False, method='hmmgp', \
+                          useTrain=False, useNormalTest=True, useAbnormalTest=True,\
                           useTrain_color=False, useNormalTest_color=False, useAbnormalTest_color=False,\
                           hmm_renew=opt.bHMMRenew, data_renew=opt.bDataRenew, save_pdf=opt.bSavePdf,\
                           verbose=opt.bVerbose, lopo=True)
