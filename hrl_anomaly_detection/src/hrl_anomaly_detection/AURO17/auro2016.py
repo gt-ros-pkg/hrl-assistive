@@ -824,6 +824,7 @@ if __name__ == '__main__':
             param_dict['ROC']['hmmosvm_param_range']  = np.logspace(-8., 0.5, nPoints)
             param_dict['ROC']['osvm_param_range']     = np.logspace(-3., 0., nPoints) 
             param_dict['ROC']['progress_param_range'] = -np.logspace(-1.0, 1.6, nPoints)+0.5
+            param_dict['ROC']['progress_state_param_range'] = -np.logspace(0.0, 1.7, nPoints)+0.5
           
         evaluation_all(subjects, opt.task, raw_data_path, save_data_path, param_dict, save_pdf=opt.bSavePdf, \
                        verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
