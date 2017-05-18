@@ -812,7 +812,8 @@ if __name__ == '__main__':
     elif opt.bEvaluation6:
 
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_6_anomalies'
+          '/hrl_file_server/dpark_data/anomaly/AURO2016/'+opt.task+'_data_6_anomalies/'+\
+          str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
 
         if opt.task == 'feeding':
             param_dict['SVM']['hmmosvm_nu'] = 0.003
