@@ -1510,7 +1510,7 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
 
         if method == 'svm': label='HMM-BPSVM'
         elif method == 'progress': label='HMM-D'
-        elif method == 'progress_state': label='HMMs with a dynamic threshold + state_clsutering'
+        elif method == 'progress_state': label='HMM-KNN'
         elif method == 'fixed': label='HMM-F'
         elif method == 'change': label='HMM-C'
         elif method == 'cssvm': label='HMM-CSSVM'
@@ -1591,9 +1591,9 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
             plt.legend(loc='upper right', prop={'size':24})
         else:
             hs,ls = ax.get_legend_handles_labels()
-            if len(hs)==7:
-                handles = [hs[-1], hs[-3], hs[1], hs[3], hs[0], hs[-2], hs[2]]
-                labels  = [ls[-1], ls[-3], ls[1], ls[3], ls[0], ls[-2], ls[2]]
+            if len(hs)==8:
+                handles = [hs[-1], hs[4], hs[1], hs[3], hs[0], hs[-2], hs[-3], hs[2]]
+                labels  = [ls[-1], ls[4], ls[1], ls[3], ls[0], ls[-2], ls[-3], ls[2]]
 
                 ax.legend(handles,labels,loc='lower right', prop={'size':16})
             else:
