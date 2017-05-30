@@ -688,6 +688,93 @@ def plotModalityVSAnomaly(save_pdf=False):
     ## print np.mean(fsk)
 
 
+
+def gen_features(task_name, processed_data_path):
+
+    ## Parameters
+    ## # data
+    ## data_dict  = param_dict['data_param']
+    ## data_renew = data_dict['renew']
+    ## # HMM
+    ## HMM_dict   = param_dict['HMM']
+    ## nState     = HMM_dict['nState']
+    ## cov        = HMM_dict['cov']
+    ## # SVM
+    ## SVM_dict   = param_dict['SVM']
+
+    ## # ROC
+    ## ROC_dict = param_dict['ROC']
+
+    ## # parameters
+    ## startIdx    = 4
+    ## method_list = ROC_dict['methods'] 
+    ## nPoints     = ROC_dict['nPoints']
+    
+    #------------------------------------------
+    crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
+    
+    print "CV data exists and no renew"
+    dd = ut.load_pickle(crossVal_pkl)
+    kFold_list = dd['kFoldList'] 
+    successData = dd['successData']
+
+    param_dict = dd['param_dict']
+    scale = np.array(param_dict['feature_max'])-np.array(param_dict['feature_min'])
+
+
+    modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_6.pkl')
+    print "start to load hmm data, ", modeling_pkl
+    d            = ut.load_pickle(modeling_pkl)
+    nEmissionDim = d['nEmissionDim']
+    nLength      = d['nLength']
+    state        = d['nState']
+
+    from hrl_anomaly_detection.hmm import learning_hmm as hmm
+    ml  = hmm.learning_hmm(state, nEmissionDim)
+    A  = d['A']
+    B  = d['B']
+    pi = d['pi']
+    
+    ml.set_hmm_object(A, B, pi)
+
+    m       = 100
+    seqs = ml.ml.sample(m, nLength)
+
+    labels = ['Sound [RMS]', 'Joint\n Torque [Nm]', 'Force[N]', 'Approach\n Distance [m]']
+
+    # display
+    fig = plt.figure(figsize=(12,12))
+    
+    for i in xrange(nEmissionDim):
+        ax = fig.add_subplot((nEmissionDim+1)*100+10+1+i)
+                    
+        for j in xrange(len(successData[i])):
+            ax.plot( successData[i][j]*scale[i] + param_dict['feature_min'][i], 'b-', alpha=0.4 ) 
+
+        for j in xrange(len(seqs)):
+            x = np.array(seqs[j]).reshape((nLength,nEmissionDim)).T/d['scale'] *scale[i] + param_dict['feature_min'][i]
+            ax.plot( x[i], 'r-' )
+
+        if i == nEmissionDim-1:
+            ax.set_xlabel("Time [sec]", fontsize=18)
+        ax.set_ylabel(labels[i], fontsize=18)
+            
+
+    import matplotlib.patches as mpatches
+    red_patch = mpatches.Patch(color='red', label='Generated data')
+    blue_patch = mpatches.Patch(color='blue', label='Training data')
+    
+    
+    plt.legend([blue_patch, red_patch], ['Training data', 'Generated data'], \
+               bbox_to_anchor=(0.5, -0.7), loc=8,\
+               ncol=2, prop={'size':16}, fancybox=True, shadow=True)
+
+
+            
+    plt.show()
+
+
+
 if __name__ == '__main__':
 
     import optparse
@@ -986,5 +1073,9 @@ if __name__ == '__main__':
     elif opt.anomaly_info:
         dm.getAnomalyInfo(opt.task, save_data_path)
 
+    ## elif opt.gen:
+    ##     gen_features(opt.task, save_data_path)
+
     else:
-        plotModalityVSAnomaly(opt.bSavePdf)
+        gen_features(opt.task, save_data_path)
+        ## plotModalityVSAnomaly(opt.bSavePdf)

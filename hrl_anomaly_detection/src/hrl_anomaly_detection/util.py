@@ -1592,8 +1592,8 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
         else:
             hs,ls = ax.get_legend_handles_labels()
             if len(hs)==8:
-                handles = [hs[-1], hs[4], hs[1], hs[3], hs[0], hs[-2], hs[-3], hs[2]]
-                labels  = [ls[-1], ls[4], ls[1], ls[3], ls[0], ls[-2], ls[-3], ls[2]]
+                handles = [hs[-1], hs[4], hs[1], hs[3], hs[0], hs[-2], hs[-3], hs[2]][::-1]
+                labels  = [ls[-1], ls[4], ls[1], ls[3], ls[0], ls[-2], ls[-3], ls[2]][::-1]
 
                 ax.legend(handles,labels,loc='lower right', prop={'size':16})
             else:
@@ -1605,7 +1605,9 @@ def roc_info(method_list, ROC_data, nPoints, delay_plot=False, no_plot=False, sa
     if save_pdf:
         fig.savefig('test.pdf')
         fig.savefig('test.png')
+        fig.savefig('test.eps')
         os.system('cp test.p* ~/Dropbox/HRL/')
+        os.system('cp test.eps ~/Dropbox/HRL/')
     elif no_plot is False:
         plt.show()
 

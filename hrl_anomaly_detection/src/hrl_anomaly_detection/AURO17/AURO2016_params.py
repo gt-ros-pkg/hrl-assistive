@@ -30,7 +30,7 @@ def getParams(task, bDataRenew, bHMMRenew, bCFRenew, dim, rf_center='kinEEPos',\
         param_dict['ROC']['methods'] = [ 'hmmgp']
         param_dict['ROC']['update_list'] = [ 'hmmgp' ]
     elif dim == 4:
-        param_dict['ROC']['methods'] = [ 'rnd', 'osvm', 'fixed', 'hmmosvm', 'change', 'progress', 'hmmgp', 'progress_state']
+        param_dict['ROC']['methods'] = [ 'rnd', 'osvm', 'fixed', 'hmmosvm', 'change', 'progress', 'hmmgp','progress_state']
         ## param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'osvm', 'hmmosvm', 'rnd', 'hmmosvm', 'hmmgp' ]
         #param_dict['ROC']['update_list'] = [ 'rnd', 'osvm', 'fixed', 'hmmosvm', 'change', 'progress', 'hmmgp', 'progress_state']
         
@@ -38,7 +38,7 @@ def getParams(task, bDataRenew, bHMMRenew, bCFRenew, dim, rf_center='kinEEPos',\
         ## param_dict['ROC']['update_list'] = [ 'osvm', 'hmmosvm', 'change', 'progress', 'hmmgp']
         ## param_dict['ROC']['update_list'] = [ 'hmmosvm' ]
         ## param_dict['ROC']['methods'] = [ 'osvm']
-        param_dict['ROC']['update_list'] = ['progress_state']
+        param_dict['ROC']['update_list'] = [ 'hmmgp' ]
     else:
         param_dict['ROC']['methods'] = [ 'fixed', 'change', 'progress', 'osvm', 'hmmosvm', 'hmmgp']
         param_dict['ROC']['update_list'] = [ 'hmmgp', 'progress', 'fixed', 'hmmosvm']
@@ -145,7 +145,7 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                           'change_param_range': np.logspace(0.5, 2.1, nPoints)*-1.0,\
                           'osvm_param_range': np.logspace(-7., 0.5, nPoints),\
                           'fixed_param_range': np.linspace(0.1, 0.01, nPoints),\
-                          'rnd_param_range': 1.0-np.logspace(-1, -0.75, nPoints)+0.1,\
+                          'rnd_param_range': 1.0-np.logspace(-1, -0.83, nPoints)+0.1,\
                           'bpsvm_param_range': np.logspace(-2.2, 0.5, nPoints),\
                           'sgd_param_range': np.logspace(-1, 1., nPoints)}
 

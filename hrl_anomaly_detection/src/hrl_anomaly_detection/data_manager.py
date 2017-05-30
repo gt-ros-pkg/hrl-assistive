@@ -332,17 +332,17 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path, rf_
 
         # Task-oriented hand-crafted features
         if init_param_dict is not None:
-            allData, _ = extractHandFeature(all_data_dict, handFeatures, scale=scale,\
+            allData, _ = extractHandFeature(all_data_dict, handFeatures,\
                                             init_param_dict=init_param_dict, cut_data=cut_data)
             param_dict=init_param_dict                                            
         else:
-            allData, param_dict = extractHandFeature(all_data_dict, handFeatures, scale=scale,\
+            allData, param_dict = extractHandFeature(all_data_dict, handFeatures,\
                                                      cut_data=cut_data)
         print " --------------------- Success -----------------------------"  
-        successData, _      = extractHandFeature(success_data_dict, handFeatures, scale=scale, \
+        successData, _      = extractHandFeature(success_data_dict, handFeatures, \
                                                  init_param_dict=param_dict, cut_data=cut_data)
         print " --------------------- Failure -----------------------------"  
-        failureData, _      = extractHandFeature(failure_data_dict, handFeatures, scale=scale, \
+        failureData, _      = extractHandFeature(failure_data_dict, handFeatures, \
                                                  init_param_dict=param_dict, cut_data=cut_data)
 
         data_dict = {}
