@@ -1097,8 +1097,8 @@ if __name__ == '__main__':
     subjects = ['day7','day8', 'day10']
 
     # For ICRA2018
-    raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/CORL2017/Britteney'
-    subjects = ['day2']
+    raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/CORL2017/Lichard'
+    subjects = ['day3']
 
     save_data_path = os.path.expanduser('~')+\
       '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_test/'
@@ -1126,7 +1126,7 @@ if __name__ == '__main__':
     elif opt.bFeaturePlot:
           
         success_viz = True
-        failure_viz = True
+        failure_viz = False
         param_dict['data_param']['handFeatures'] = [
             'unimodal_audioWristRMS', \
             ## 'unimodal_audioWristFrontRMS', \

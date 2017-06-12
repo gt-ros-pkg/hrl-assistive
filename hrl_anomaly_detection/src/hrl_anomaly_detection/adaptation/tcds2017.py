@@ -1695,19 +1695,33 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation/'+\
           str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
-        param_dict['ROC']['methods'] = ['progress0', 'progress1']
+        param_dict['ROC']['methods'] = ['progress0', 'osvm1']
         param_dict['HMM']['scale']   = [9.0, 9.0]
         param_dict['HMM']['cov']     = 1.0
 
-        param_dict['data_param']['handFeatures'] = [['unimodal_audioWristRMS',  \
-                                                    'unimodal_kinJntEff_1',\
-                                                    'unimodal_ftForce_integ',\
-                                                    'unimodal_kinEEChange',\
-                                                    'crossmodal_landmarkEEDist', \
-                                                    ],
-                                                    ['unimodal_kinVel',\
+        ## param_dict['data_param']['handFeatures'] = [['unimodal_audioWristRMS',  \
+        ##                                             'unimodal_kinJntEff_1',\
+        ##                                             'unimodal_ftForce_integ',\
+        ##                                             'unimodal_kinEEChange',\
+        ##                                             'crossmodal_landmarkEEDist', \
+        ##                                             ],
+        ##                                             ['unimodal_kinVel',\
+        ##                                              'unimodal_ftForce_zero',\
+        ##                                              'crossmodal_landmarkEEDist', \
+        ##                                             ]]
+
+        param_dict['data_param']['handFeatures'] = [['unimodal_kinVel',\
+                                                     'unimodal_kinJntEff_1',\
                                                      'unimodal_ftForce_zero',\
+                                                     'unimodal_ftForce_integ',\
+                                                     'unimodal_kinEEChange',\
+                                                     'unimodal_kinDesEEChange',\
                                                      'crossmodal_landmarkEEDist', \
+                                                    ],
+                                                    ['unimodal_audioWristRMS',\
+                                                     'unimodal_fabricForce',\
+                                                     'unimodal_landmarkDist',\
+                                                     'crossmodal_landmarkEEAng',\
                                                     ]]
         param_dict['SVM']['hmmgp_logp_offset'] = 0 
         param_dict['ROC']['progress0_param_range'] = -np.logspace(-0.3, 1.3, nPoints)
@@ -1722,3 +1736,66 @@ if __name__ == '__main__':
                              verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
                              find_param=False)
 
+
+    elif opt.evaluation_osvm:
+        '''
+        evaluation with selected feature set 5,6
+        '''
+        nPoints = param_dict['ROC']['nPoints'] = 100
+        param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',\
+                                                    'unimodal_fabricForce',\
+                                                    'unimodal_landmarkDist',\
+                                                    'crossmodal_landmarkEEAng']
+
+        param_dict['ROC']['mlp_param_range'] = np.logspace(-0.8, 0.2, nPoints)-0.2
+        param_dict['ROC']['methods'] = ['osvm']
+
+        if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
+
+        param_dict['ADT'] = {}
+        param_dict['ADT']['data_renew'] = False
+
+        auc_complete = []
+        auc_list = []
+        auc_raw_list = []
+        for method in param_dict['ROC']['methods']:
+            auc_complete.append([])
+            auc_list.append([])
+            auc_raw_list.append([])
+
+            
+        for nrSteps in [20]:
+            for lr in [0.2]:
+                ## for n_pTrain in [10]:
+                for clf in ['renew']:
+                    param_dict['ADT']['lr']       = lr #0.1
+                    param_dict['ADT']['max_iter'] = 1
+                    param_dict['ADT']['n_pTrain'] = 10 #n_pTrain
+                    param_dict['ADT']['nrSteps']  = nrSteps
+                    param_dict['ADT']['HMM']      = 'old'
+                    param_dict['ADT']['CLF']      = clf
+                    param_dict['ADT']['HMM_renew'] = False
+                    param_dict['ADT']['WIN_renew'] = True
+                    param_dict['ADT']['CLF_renew'] = True
+
+                    ret = evaluation_single_ad(subjects, opt.task, raw_data_path, save_data_path, param_dict, \
+                                               save_pdf=opt.bSavePdf, \
+                                               verbose=opt.bVerbose, debug=opt.bDebug, no_plot=opt.bNoPlot, \
+                                               find_param=False)
+
+                    for i, method in enumerate(param_dict['ROC']['methods']):
+
+                        if ret is None:
+                            auc_list[i].append(None)
+                            auc_raw_list[i].append(None)
+                            auc_complete[i].append(None)                        
+                        else:
+                            auc_list[i].append(ret[method])
+                            auc_raw_list[i].append(ret[method+'_auc_raw'])
+                            auc_complete[i].append(ret[method+'_complete'])
+
+        print "-------------------------------"
+        for i, method in enumerate(param_dict['ROC']['methods']):
+            print auc_complete[i]
+            print auc_raw_list[i]
+            print auc_list[i]

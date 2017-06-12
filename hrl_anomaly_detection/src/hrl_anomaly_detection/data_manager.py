@@ -424,7 +424,8 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
                 save_pdf=False, solid_color=True, \
                 handFeatures=[], data_renew=False,\
                 time_sort=False, max_time=None, \
-                target_class=None, ros_bag_image=False, pkl_prefix=''):
+                target_class=None, ros_bag_image=False, pkl_prefix='',\
+                depth=False):
     """
     Get data per subject. It also returns leave-one-out cross-validataion indices.
     """
@@ -451,7 +452,7 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
 
     else:
         file_list = util.getSubjectFileList(raw_data_path, subject_names, task_name,\
-                                            time_sort=time_sort, no_split=True)
+                                            time_sort=time_sort, no_split=True, depth=depth)
 
         print "start to load data"
         # Task-oriented hand-crafted features
@@ -480,7 +481,7 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
 
             success_list, failure_list = util.getSubjectFileList(raw_data_path, [subject_names[i]], \
                                                                  task_name,\
-                                                                 time_sort=time_sort)
+                                                                 time_sort=time_sort, depth=depth)
 
             _, success_data_dict = util.loadData(success_list, isTrainingData=True,
                                                  downSampleSize=downSampleSize,\

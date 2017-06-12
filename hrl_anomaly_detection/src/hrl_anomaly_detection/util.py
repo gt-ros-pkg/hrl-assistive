@@ -608,15 +608,16 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=10
     
     
 def getSubjectFileList(root_path, subject_names, task_name, exact_name=True, time_sort=False, \
-                       no_split=False):
+                       no_split=False, depth=False):
     # List up recorded files
     folder_list  = [d for d in os.listdir(root_path) if os.path.isdir(os.path.join(root_path,d))]   
     success_list = []
     success_time_list = []
     failure_list = []
     failure_time_list = []
-    for d in folder_list:
 
+    for d in folder_list:
+        
         name_flag = False
         for name in subject_names:
             if d.find(name+'_') >= 0:
@@ -626,21 +627,44 @@ def getSubjectFileList(root_path, subject_names, task_name, exact_name=True, tim
                     name_flag = True                    
 
         if name_flag and d.find(task_name) >= 0:
-            files = os.listdir(os.path.join(root_path,d))
+
+            subject_dir = os.path.join(root_path,d)
             
-            for f in files:
-                # pickle file name with full path
-                target = os.path.join(root_path,d,f)
-                if os.path.isdir(target): continue
+            if depth is False:
+                for f in os.listdir(subject_dir):
+                    # pickle file name with full path
+                    target = os.path.join(subject_dir,f)
+                    if os.path.isdir(target): continue
+
+                    if f.find('success') >= 0:
+                        success_list.append(target)
+                        success_time_list.append( os.stat(target).st_mtime )
+                    elif f.find('failure') >= 0:
+                        failure_list.append(target)
+                        failure_time_list.append( os.stat(target).st_mtime )
+                    else:
+                        print "It's not success/failure file: ", f
+            else:
+                sub_folder_list = [d for d in os.listdir(subject_dir)
+                                   if os.path.isdir(os.path.join(subject_dir, d))]
+                for sub_folder in sub_folder_list:
                     
-                if f.find('success') >= 0:
-                    success_list.append(target)
-                    success_time_list.append( os.stat(target).st_mtime )
-                elif f.find('failure') >= 0:
-                    failure_list.append(target)
-                    failure_time_list.append( os.stat(target).st_mtime )
-                else:
-                    print "It's not success/failure file: ", f
+                    for sf in os.listdir(os.path.join(subject_dir, sub_folder)):
+
+                        # pickle file name with full path
+                        target = os.path.join(subject_dir,sub_folder,sf)
+                        if os.path.isdir(target): continue
+
+                        if sf.find('success') >= 0:
+                            success_list.append(target)
+                            success_time_list.append( os.stat(target).st_mtime )
+                        elif sf.find('failure') >= 0:
+                            failure_list.append(target)
+                            failure_time_list.append( os.stat(target).st_mtime )
+                        else:
+                            print "It's not success/failure file: ", sf
+                    
+                
 
     print "--------------------------------------------"
     print "# of Success files: ", len(success_list)

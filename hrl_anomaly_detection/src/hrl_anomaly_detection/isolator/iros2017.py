@@ -466,7 +466,7 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
     failureData = failureData[feature_list]
 
     # temp
-    kFold_list = kFold_list[:8]
+    #kFold_list = kFold_list[:8]
 
     #-----------------------------------------------------------------------------------------    
     # Training HMM, and getting classifier training and testing data
@@ -602,7 +602,7 @@ def evaluation_double_ad(subject_names, task_name, raw_data_path, processed_data
     ROC_data = util.reset_roc_data(ROC_data, [method_list[0][:-1]], ROC_dict['update_list'], nPoints)
 
     # temp
-    kFold_list = kFold_list[:8]
+    #kFold_list = kFold_list[:8]
 
     # parallelization
     if debug: n_jobs=1
