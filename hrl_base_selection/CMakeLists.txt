@@ -13,6 +13,7 @@ add_service_files(
     SetBaseModel.srv
     InitPhysxBodyModel.srv
     PhysxInput.srv
+    PhysxInputWaypoints.srv
     PhysxOutput.srv
     IKService.srv
 )

@@ -1,4 +1,5 @@
 string outcome
+string outcome_method2
 float64[] forces
 ---
 bool intialization_success

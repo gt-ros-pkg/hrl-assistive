@@ -70,7 +70,7 @@ class MyWorld(pydart.World):
 
         # Move bit lower (for camera)
         positions = self.robot.positions()
-        positions['rootJoint_pos_x'] = 2.8
+        positions['rootJoint_pos_x'] = 0.75
         positions['rootJoint_pos_y'] = 0.
         positions['rootJoint_pos_z'] = 0.1
         positions['rootJoint_rot_z'] = 3.14
@@ -81,6 +81,8 @@ class MyWorld(pydart.World):
         positions['j_pelvis1_y'] = 0.
         positions['j_pelvis1_z'] = 1.
         self.human.set_positions(positions)
+
+        print self.human.body
 
         # print 'human self collision check'
         # print self.human.self_collision_check()
@@ -98,11 +100,19 @@ class MyWorld(pydart.World):
         # q['j_forearm_right_1'] = 0.
         # q['j_forearm_right_2'] = 0.5
         # q['j_shin_left'] = -2.
-        q['j_bicep_right_x'] = m.radians(0.0)
-        q['j_bicep_right_y'] = m.radians(0.)
-        q['j_bicep_right_z'] = m.radians(90.00)
-        q['j_forearm_right_1'] = m.radians(90.)
+        q['j_bicep_right_x'] = -1*m.radians(25.0)
+        q['j_bicep_right_y'] = m.radians(10.)
+        q['j_bicep_right_z'] = m.radians(45.00)
+        # q['j_bicep_right_roll'] = m.radians(0.00)
+        q['j_forearm_right_1'] = m.radians(00.)
         q['j_forearm_right_2'] = 0.
+
+        q['j_bicep_left_x'] = m.radians(25.0)
+        q['j_bicep_left_y'] = -1*m.radians(10.)
+        q['j_bicep_left_z'] = m.radians(45.00)
+        # q['j_bicep_left_roll'] = -1*m.radians(0.00)
+        q['j_forearm_left_1'] = m.radians(0.)
+        q['j_forearm_left_2'] = 0.
 
         self.human.set_positions(q)
 
@@ -119,12 +129,32 @@ class MyWorld(pydart.World):
         print 'origin_B_upperarm_world'
         print origin_B_upperarm_world
 
+        v = self.robot.q
+        self.robot_arm = 'leftarm'
+        v['l_shoulder_pan_joint'] = 2.
+        v['r_shoulder_pan_joint'] = -2.
+        v[self.robot_arm[0] + '_shoulder_lift_joint'] = 0.
+        v[self.robot_arm[0] + '_upper_arm_roll_joint'] = 0.
+        v[self.robot_arm[0] + '_elbow_flex_joint'] = 0.
+        v[self.robot_arm[0] + '_forearm_roll_joint'] = 0.
+        v[self.robot_arm[0] + '_wrist_flex_joint'] = 0.
+        v[self.robot_arm[0] + '_wrist_roll_joint'] = 0.
+        v['torso_lift_joint'] = 0.3
+        self.robot.set_positions(v)
+
         print 'world collision list'
+        # print self.robot.set_self_collision_check(True)
         self.check_collision()
+
+        # print self.robot.self_collision_check()
         # print 'self.collision_result.contacts'
         # print self.collision_result.contacts
-        # for contact in self.collision_result.contacts:
-        #     print contact#.skel1, contact.skel2
+        for contact in self.collision_result.contacts:
+            if ((self.robot == contact.skel1 or self.robot == contact.skel2) and
+                    (self.robot.bodynode('base_link') == contact.bodynode1 or self.robot.bodynode('base_link') == contact.bodynode2)):
+                print contact.skel1
+                print contact.bodynode1
+                print contact#.skel1, contact.skel2
 
         # print 'number of contacts:'
         # print len(self.collision_result.contacts)

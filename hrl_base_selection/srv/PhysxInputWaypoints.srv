@@ -1,0 +1,14 @@
+float64[] sphere_x
+float64[] sphere_y
+float64[] sphere_z
+float64[] sphere_r
+uint32[] first_sphere_list
+uint32[] second_sphere_list
+float64[] traj_start
+float64[] traj_forearm_end
+float64[] traj_upper_end
+float64[] traj_final_end
+float64[] origin_B_forearm_pointed_down_arm
+float64[] origin_B_upperarm_pointed_down_shoulder
+---
+bool intialization_success
