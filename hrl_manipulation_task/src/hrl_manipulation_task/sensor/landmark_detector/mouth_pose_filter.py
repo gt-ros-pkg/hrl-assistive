@@ -117,7 +117,7 @@ class MouthPoseFilter():
     def pubVirtualMouthPose(self):
 
         f = PyKDL.Frame.Identity()
-        f.p = PyKDL.Vector(0.85, 0.4, 0.0)
+        f.p = PyKDL.Vector(0.8, 0.5, 0.15)
         f.M = PyKDL.Rotation.Quaternion(0,0,0,1)
         f.M.DoRotX(np.pi/2.0)
         f.M.DoRotZ(np.pi/2.0)

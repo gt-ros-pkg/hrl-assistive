@@ -230,13 +230,13 @@ class armReachAction(mpcBaseAction):
         self.motions['initStabbing2'] = {}
         self.motions['initStabbing2']['left'] = [
             #['MOVES', '[0.7, -0.15, -0., -3.1415, 0.0, 1.574]', 3.],
-            ['MOVES', '[-0.03+self.highBowlDiff[0], 0.0-self.highBowlDiff[1], -0.1, 0, -0.1, 0]', 5*1.5, 'self.bowl_frame']]
+            ['MOVES', '[-0.02+self.highBowlDiff[0], 0.01-self.highBowlDiff[1], -0.08, 0, -0.1, 0]', 5*1.5, 'self.bowl_frame']]
         self.motions['initStabbing2']['right'] = []
 
         self.motions['initStabbing12'] = {}
         self.motions['initStabbing12']['left'] = \
           [['PAUSE', 1.0],
-           ['MOVES', '[-0.03, 0.0, -0.1, 0, -0.1, 0]', 7, 'self.bowl_frame']]
+           ['MOVES', '[-0.02, 0.01, -0.08, 0, -0.1, 0]', 7, 'self.bowl_frame']]
         self.motions['initStabbing12']['right'] = \
           self.motions['initStabbing1']['right'][1:]
 
@@ -244,9 +244,12 @@ class armReachAction(mpcBaseAction):
         # roll?, pitch (tilt downwards), yaw?]
         self.motions['runStabbing'] = {}
         self.motions['runStabbing']['left'] = \
-          [['MOVES', '[-0.03+self.highBowlDiff[0], 0.015-self.highBowlDiff[1], 0.05, 0, -0.1, 0]', 5, 'self.bowl_frame'],
+          [['MOVES', '[-0.02+self.highBowlDiff[0], 0.01-self.highBowlDiff[1], 0.03, 0, -0.1, 0]', 5, 'self.bowl_frame'],
            ['STOP'],
-           ['MOVET', '[0.0,0,-0.15,0,0.0,0]',5]]
+           ['MOVET', '[0.0,0.0,-0.15,0,0.0,0]',5]]
+        
+           #['MOVES', '[-0.02+self.highBowlDiff[0], 0.0-self.highBowlDiff[1], -0.1, 0, -0.1, 0]', 5, 'self.bowl_frame']]
+           
         
            ##['MOVES', '[-0.03+self.highBowlDiff[0]+random.choice([-0.01, 0, 0.01]), 0.0-self.highBowlDiff[1]++random.choice([-0.015, 0, 0.015]), 0.04, 0, 0., 0]', 5, 'self.bowl_frame'],
            ## ['MOVES', '[-0.03+self.highBowlDiff[0], 0.0-self.highBowlDiff[1],  0.0, 0, 0., 0]', 2,
@@ -293,30 +296,32 @@ class armReachAction(mpcBaseAction):
         #  roll?, pitch (tilt downwards), yaw?]
         self.motions['runScooping'] = {}
         self.motions['runScooping']['left'] = \
-          [['MOVES', '[-0.04, 0.03-self.highBowlDiff[1],  0.04, -0.2, 0.8, 0]', 3, 'self.bowl_frame'],
+          [['MOVES', '[-0.04, 0.04-self.highBowlDiff[1],  0.04, -0.2, 0.8, 0]', 3, 'self.bowl_frame'],
            ['PAUSE', 0.0],
-           ['MOVEL', '[ 0.04, -0.02-self.highBowlDiff[1],  0.03, -0.1, 0.8, 0]', 3, 'self.bowl_frame'],
+           ['MOVEL', '[ 0.04, -0.01-self.highBowlDiff[1],  0.03, -0.1, 0.8, 0]', 3, 'self.bowl_frame'],
            ['PAUSE', 0.0],
-           ['MOVES', '[ 0.04-0.01, -0.02-self.highBowlDiff[1],  -0.1, 0, 1.5, 0]', 3, 'self.bowl_frame'],]
+           ['MOVES', '[ 0.04-0.005, -0.01-self.highBowlDiff[1],  -0.08, 0, 1.5, 0]', 3, 'self.bowl_frame'],]
 
         self.motions['runScooping_pspoon'] = {}
         self.motions['runScooping_pspoon']['left'] = \
-          [['MOVES', '[-0.04, 0.03-self.highBowlDiff[1],  0.04, -0.2, 0.5, 0]', 3, 'self.bowl_frame'],
+          [['MOVES', '[-0.04-0.01, 0.035-self.highBowlDiff[1],  0.04, -0.2, 0.5, 0]', 3, 'self.bowl_frame'],
            ['PAUSE', 0.0],
-           ['MOVEL', '[ 0.04, -0.0-self.highBowlDiff[1],  0.03, -0.1, 0.8, 0]', 3, 'self.bowl_frame'],
+           ['MOVEL', '[ 0.04-0.01, -0.01-self.highBowlDiff[1],  0.03, -0.1, 0.8, 0]', 3, 'self.bowl_frame'],
            ['PAUSE', 0.0],
-           ['MOVES', '[ 0.04-0.01, -0.0-self.highBowlDiff[1],  -0.1, 0, 1.5, 0]', 3, 'self.bowl_frame'],]
+           ['MOVES', '[ 0.04-0.01, -0.0-self.highBowlDiff[1],  -0.01, 0, 1.4, 0]', 3, 'self.bowl_frame'],
+           ['PAUSE', 0.0],
+           ['MOVES', '[ 0.04-0.04, -0.0-self.highBowlDiff[1],  -0.1, 0, 1.4, 0]', 3, 'self.bowl_frame'],]
 
         ## Clean spoon motoins --------------------------------------------------------
         self.motions['cleanSpoon1'] = {}
         self.motions['cleanSpoon1']['left'] = \
-          [['MOVEL', '[ 0.05+0.005, 0.05,  -0.09, 0, 1.5, 0]', 3, 'self.bowl_frame'],
+          [['MOVEL', '[ 0.06+0.01, 0.03,  -0.09, 0, 1.5, 0]', 3, 'self.bowl_frame'],
            ['PAUSE', 0.0],
-           ['MOVEL', '[ 0.05+0.005, 0.05,  -0.03, 0, 1.5, 0]', 3, 'self.bowl_frame'],
+           ['MOVEL', '[ 0.06+0.01, 0.03,  -0.02, 0, 1.5, 0]', 3, 'self.bowl_frame'],
            ['PAUSE', 0.0],
-           ['MOVEL', '[ 0.05-0.07, 0.02,  -0.03, 0, 1.5, 0]', 3, 'self.bowl_frame'],
+           ['MOVEL', '[ 0.06-0.05, 0.03,  -0.02, 0, 1.5, 0]', 3, 'self.bowl_frame'],
            ['PAUSE', 0.0],
-           ['MOVEL', '[ 0.05-0.01, 0.0,  -0.1, 0, 1.5, 0]', 3, 'self.bowl_frame'],]
+           ['MOVEL', '[ 0.06-0.01, 0.0,  -0.1, 0, 1.5, 0]', 3, 'self.bowl_frame'],]
         self.motions['cleanSpoon1']['right'] = []
                                                 
 
@@ -325,7 +330,7 @@ class armReachAction(mpcBaseAction):
 
         self.motions['initFeeding1'] = {}
         self.motions['initFeeding1']['left'] =\
-          [['MOVEJ', '[0.5447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 1.1291]', 5.0],]        
+          [['MOVEJ', '[0.5447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 1.0291]', 5.0],]        
         self.motions['initFeeding1']['right'] =\
           [['TOOL', 0],
            ['MOVES', '[0.22, 0., -0.55, 0., -1.85, 0.]', 5., 'self.mouth_frame'],
@@ -355,6 +360,17 @@ class armReachAction(mpcBaseAction):
         ['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], -0.15+self.mouthOffset[2], 0., 0., 0.]',
          4., 'self.mouth_frame']]
 
+
+        ## Feeding motoins for a metalic fork----------------------------------------------------
+        self.motions['initFeeding1_fork'] = {}
+        self.motions['initFeeding1_fork']['left'] =\
+          [['MOVEJ', '[0.2447, 0.1256, 0.721, -1.9, 1.374, -0.7956, 1.0291]', 7.0],]        
+
+        self.motions['initFeeding13_fork'] = {}
+        self.motions['initFeeding13_fork']['left'] = [self.motions['initFeeding1_fork']['left'][0],
+                                                      self.motions['initFeeding3']['left'][0]]        
+
+
         ## Feeding motoins for a plastic spoon----------------------------------------------------
 
         self.motions['initFeeding1_pspoon'] = {}
@@ -362,31 +378,35 @@ class armReachAction(mpcBaseAction):
           [['MOVEJ', '[0.7447, 0.1256, 0.721, -1.9, 1.374, -0.7956, 1.0291]', 7.0],]        
 
         self.motions['initFeeding13_pspoon'] = {}
-        self.motions['initFeeding13_pspoon']['left'] = [self.motions['initFeeding1_pspoon']['left'][0],
-                                                        self.motions['initFeeding3']['left'][0]]        
+        self.motions['initFeeding13_pspoon']['left'] = \
+          [self.motions['initFeeding1_pspoon']['left'][0],
+           ['MOVEL', '[-0.005+self.mouthOffset[0], self.mouthOffset[1], -0.15+self.mouthOffset[2], 0., -0.2, 0.]',
+            5., 'self.mouth_frame']]
           
-        ## self.motions['runFeeding_pspoon'] = {}
-        ## self.motions['runFeeding_pspoon']['left'] =\
-        ## [['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], self.mouthOffset[2], 0., -0.3, 0.]',
-        ##   3., 'self.mouth_frame'],\
-        ## ['PAUSE', 0.0],
-        ## ['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], -0.15+self.mouthOffset[2], 0., -0.5, 0.]',
-        ##  4., 'self.mouth_frame']]
-
         self.motions['runFeeding_pspoon'] = {}
         self.motions['runFeeding_pspoon']['left'] =\
-        [['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], self.mouthOffset[2], 0., -0.1, 0.]',
+        [['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], self.mouthOffset[2], 0., -0.2, 0.]',
           3., 'self.mouth_frame'],\
         ['PAUSE', 0.0],
-        ['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], -0.15+self.mouthOffset[2], 0., -0.15, 0.]',
+        ['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], -0.15+self.mouthOffset[2], 0., -0.4, 0.]',
          4., 'self.mouth_frame']]
+
+
+
+        ## Feeding motoins for a plastic spoon 2 (white)----------------------------------------------------
+        
+        self.motions['initFeeding3_pspoon2'] = {}
+        self.motions['initFeeding3_pspoon2']['left'] =\
+        [['MOVEL', '[-0.005+self.mouthOffset[0], self.mouthOffset[1], -0.15+self.mouthOffset[2], 0., -0.2, 0.]',
+          5., 'self.mouth_frame'],\
+        ['PAUSE', 0.0]]
 
         self.motions['runFeeding_pspoon2'] = {}
         self.motions['runFeeding_pspoon2']['left'] =\
-        [['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], self.mouthOffset[2], 0., -0.1, 0.]',
+        [['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], self.mouthOffset[2], 0., -0.2, 0.]',
           3., 'self.mouth_frame'],\
         ['PAUSE', 0.0],
-        ['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], -0.15+self.mouthOffset[2], 0., -0.1, 0.]',
+        ['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], -0.15+self.mouthOffset[2], 0., -0.2, 0.]',
          4., 'self.mouth_frame']]
 
 

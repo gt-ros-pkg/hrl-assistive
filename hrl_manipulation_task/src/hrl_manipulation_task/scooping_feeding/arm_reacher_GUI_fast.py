@@ -269,7 +269,7 @@ class armReacherGUI:
                                                         args=("initStabbing12",))
                     leftProc.start(); rightProc.start()
                     leftProc.join(); rightProc.join()                    
-                    self.ScoopNumber = 1
+                    self.ScoopNumber = 2
                 self.ServiceCallLeft("getBowlPos")            
                 
             if self.ScoopNumber < 2:        
@@ -297,8 +297,6 @@ class armReacherGUI:
                                                 args=("runStabbing",))
             leftProc.start(); rightProc.start()
             leftProc.join(); rightProc.join()                    
-            ## self.ServiceCallLeft("runStabbing")
-            ## self.ServiceCallRight("runStabbing")
             self.proceedPub.publish("Done")
             self.motion_complete = True
             if self.emergencyStatus:
@@ -388,6 +386,7 @@ class armReacherGUI:
                 self.proceedPub.publish("Set: , Feeding 1, Feeding 2")
                 if self.renew_mouth:
                     if self.cur_tool == 4 or self.cur_tool == 6 : self.ServiceCallLeft("initFeeding1_pspoon")
+                    elif self.cur_tool == 3 : self.ServiceCallLeft("initFeeding1_fork")
                     else:                  self.ServiceCallLeft("initFeeding1")
                     if self.emergencyStatus: break
                     self.ServiceCallRight("getHeadPos")
@@ -399,6 +398,9 @@ class armReacherGUI:
                     if self.cur_tool == 4 or self.cur_tool == 6: 
                         leftProc = multiprocessing.Process(target=self.ServiceCallLeft,
                                                            args=("initFeeding13_pspoon",))
+                    elif self.cur_tool == 3: 
+                        leftProc = multiprocessing.Process(target=self.ServiceCallLeft,
+                                                           args=("initFeeding13_fork",))
                     else:
                         leftProc = multiprocessing.Process(target=self.ServiceCallLeft,
                                                            args=("initFeeding13",))
@@ -424,7 +426,8 @@ class armReacherGUI:
     
             if self.FeedNumber < 3:
                 rospy.loginfo("Running init feeding2")
-                self.ServiceCallLeft("initFeeding3")
+                if self.cur_tool == 6 : self.ServiceCallLeft("initFeeding3_pspoon2")
+                else: self.ServiceCallLeft("initFeeding3")
                 if self.emergencyStatus: break
                 self.FeedNumber = 3
                 self.proceedPub.publish("Set: Feeding 3, Feeding 4, retrieving")

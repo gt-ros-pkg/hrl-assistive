@@ -76,29 +76,31 @@ class mouth_noise():
                 if val2 == 0:
                     print "Miss - transition (mainly side movement)"
                     ps.data = [np.random.normal(scale=0.02),
-                               random.choice([-1.,1.])*random.uniform(0.05,0.1),
+                               random.choice([-1.,1.])*random.uniform(0.06,0.12),
                                np.random.normal(scale=0.02)]
                 else:
                     print "Miss - transition (mainly not enough depth)"
                     ps.data = [np.random.normal(scale=0.04),
                                np.random.normal(scale=0.04),
                                random.uniform(-0.06,-0.1)]
-                ps.data = [0.004071983966012524, 0.0825662437306424, 0.02565390237887604]
+
+                # only for Henry
+                # ps.data = [0.004071983966012524, 0.0825662437306424, 0.02565390237887604]
                     
             # collision
             elif val == '2':
                 # side
                 val2 = random.choice([0,0,1])
-                if val2 == 0 or True:
+                if val2 == 0:
                     print "Collision - transition (mainly side movement)"
                     ps.data = [0.0,
-                               random.choice([0.04,0.04]),
+                               random.choice([-0.03,0.04]),
                                0.07]
                                ## abs(np.random.normal(scale=0.04))]
                 else:
                     print "Collision - transition (mainly lowering movement)"
                     ## ps.data = [-random.uniform(0.0,0.03),
-                    ps.data = [random.choice([-0.04,-0.03,-0.02]),
+                    ps.data = [random.choice([-0.05,-0.04,-0.03]),
                                0.0,
                                0.06]
                                ## abs(np.random.normal(scale=0.04))]

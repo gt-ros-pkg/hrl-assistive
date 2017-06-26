@@ -131,8 +131,11 @@ class realsense_vision():
             rate.sleep()
 
     def check_nodes(self):
-        ret = rosnode.rosnode_ping('/SR300/driver', max_count=1)
-        return ret
+        ret1 = rosnode.rosnode_ping('/SR300/driver', max_count=1)
+        ret2 = rosnode.rosnode_ping('/SR300/rgb_rectify_color', max_count=1)
+        if ret1 is False or ret2 is False: return False
+        else: return True
+        #return ret1 * ret2
 
     
     def reset(self, init_time):
