@@ -51,7 +51,14 @@ var MjpegClient = function (options) {
                                                     clickable: true,
                                                     rotated: false,
                                                     width: 960, //1280,
-                                                    height:540}//1024}
+                                                    height:540},//1024}
+                              'Gaze': {topic: '/hrl_manipulation_task/mouth_gaze_detector',
+                                            optgroup:'Special',
+                                            cameraInfo: '/SR300/rgb/camera_info',
+                                            clickable: false,
+                                            rotated: false,
+                                            width:640,
+                                            height:480},
     }
 
     self.cameraModels = {};

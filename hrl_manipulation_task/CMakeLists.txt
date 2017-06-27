@@ -33,12 +33,12 @@ find_package(cv_bridge REQUIRED)
 
 catkin_package(
     DEPENDS rospy
-    CATKIN_DEPENDS hrl_lib tf tf_conversions ar_track_alvar_msgs geometry_msgs pr2_msgs visualization_msgs pr2_controllers_msgs hrl_haptic_manipulation_in_clutter_msgs std_msgs sandbox_dpark_darpa_m3 hrl_anomaly_detection hrl_srvs sensor_msgs pcl_conversions
+    CATKIN_DEPENDS hrl_lib tf tf_conversions hark_msgs ar_track_alvar_msgs geometry_msgs pr2_msgs visualization_msgs pr2_controllers_msgs hrl_haptic_manipulation_in_clutter_msgs std_msgs sandbox_dpark_darpa_m3 hrl_anomaly_detection hrl_srvs sensor_msgs pcl_conversions
     INCLUDE_DIRS include
     LIBRARIES 
 )
 
-#hark_msgs 
+# 
 
 #add_library(robot src/robot.cpp)
 #target_link_libraries(robot ${orocos_kdl_LIBRARIES} ${catkin_LIBRARIES} ${Boost_LIBRARIES} )
