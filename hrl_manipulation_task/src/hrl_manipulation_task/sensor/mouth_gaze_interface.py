@@ -66,7 +66,7 @@ class DlibFaceLandmarkDetector:
         
         # Load detector.
         self.detector = dlib.get_frontal_face_detector()
-        self.predictor = dlib.shape_predictor('../tools/shape_predictor_68_face_landmarks.dat')
+        self.predictor = dlib.shape_predictor('./detector_tools/shape_predictor_68_face_landmarks.dat')
 
         # Use when detecting faces every 4 frames.
         self.count = 0
