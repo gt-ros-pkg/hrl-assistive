@@ -132,7 +132,7 @@ class DlibFaceLandmarkDetector:
         self.head_no_change_count = 0
 
         # Publisher/subscriber
-        self.imagePub = rospy.Publisher("/hrl_manipulation_task/mouth_gaze_detector", Image)
+        self.imagePub = rospy.Publisher("/hrl_manipulation_task/mouth_gaze_detector", Image, queue_size=10)
         self.statusPub = rospy.Publisher("/manipulation_task/status", String, queue_size=1)
         self.guiStatusPub = rospy.Publisher("/manipulation_task/gui_status", String, queue_size=1, latch=True)
         self.availablePub = rospy.Publisher("/manipulation_task/available", String, queue_size=QUEUE_SIZE)
