@@ -53,7 +53,7 @@ QUEUE_SIZE = 10
 
 class DlibFaceLandmarkDetector:
 
-    def __init__(self, img_topic='/camera/rgb/image_raw'):
+    def __init__(self, img_topic='/SR300/rgb/image_raw'):
         # Make window.
         self.win = dlib.image_window()
 
@@ -132,6 +132,7 @@ class DlibFaceLandmarkDetector:
         self.head_no_change_count = 0
 
         # Publisher/subscriber
+        self.imagePub = rospy.Publisher("/hrl_manipulation_task/mouth_gaze_detector", Image)
         self.statusPub = rospy.Publisher("/manipulation_task/status", String, queue_size=1)
         self.guiStatusPub = rospy.Publisher("/manipulation_task/gui_status", String, queue_size=1, latch=True)
         self.availablePub = rospy.Publisher("/manipulation_task/available", String, queue_size=QUEUE_SIZE)
@@ -197,6 +198,7 @@ class DlibFaceLandmarkDetector:
 
         if self.dets == None:
             self.win.set_image(img)
+            self.imagePub.publish(self.bridge.cv2_to_imgmsg(img, "rgb8"))
 
         # Detect landmarks.
         if not self.dets == None:
@@ -298,6 +300,7 @@ class DlibFaceLandmarkDetector:
                     self.win.set_image(img)
                     self.win.clear_overlay()
                     self.win.add_overlay(shape, green)
+                    self.imagePub.publish(self.bridge.cv2_to_imgmsg(img, "rgb8"))
                     #self.win.add_overlay(self.dets, green)
                 elif (self.conditions_met) and (self.timer_started):  # conditions_met: True -> True, >= 3 secs
                     if (time.time() - self.start_time) >= 3.0:
@@ -307,6 +310,7 @@ class DlibFaceLandmarkDetector:
                         self.win.set_image(img)
                         self.win.clear_overlay()
                         self.win.add_overlay(shape, green)
+                        self.imagePub.publish(self.bridge.cv2_to_imgmsg(img, "rgb8"))
                         if (self.gui_status == 'select task') or (self.gui_status == 'stopped'):
                             self.statusPub.publish('Feeding')
                             self.availablePub.publish('true')
@@ -318,6 +322,7 @@ class DlibFaceLandmarkDetector:
                         self.win.set_image(img)
                         self.win.clear_overlay()
                         self.win.add_overlay(shape, green)
+                        self.imagePub.publish(self.bridge.cv2_to_imgmsg(img, "rgb8"))
                         #self.win.add_overlay(self.dets, green)
                 else:  # conditions_met: False
                     cv2.rectangle(img, (left, top-15), (left+135, top), cv2_orange, -1)
@@ -326,6 +331,7 @@ class DlibFaceLandmarkDetector:
                     self.timer_started = False
                     self.win.clear_overlay()
                     self.win.add_overlay(shape, orange)
+                    self.imagePub.publish(self.bridge.cv2_to_imgmsg(img, "rgb8"))
                     #self.win.add_overlay(self.dets, orange)
                 
 
@@ -339,6 +345,7 @@ class DlibFaceLandmarkDetector:
    
             except TypeError:
                 self.win.set_image(img)
+                self.imagePub.publish(self.bridge.cv2_to_imgmsg(img, "rgb8"))
                 #print 'landmarks not detected'
                 pass
             # Uncomment to add rectangle around face.
@@ -529,9 +536,9 @@ def main(args):
     # Can specify to use kinect camera or wrist mounted (SR300) camera.
     if len(sys.argv) == 2:
         if sys.argv[1] == 'kinect':
-            thing = DlibFaceLandmarkDetector()
+            thing = DlibFaceLandmarkDetector(img_topic='/camera/rgb/image_raw')
         elif sys.argv[1] == 'wrist':
-            thing = DlibFaceLandmarkDetector(img_topic='/SR300/rgb/image_raw')
+            thing = DlibFaceLandmarkDetector()
         else:
             print 'Invalid arugment. Please specify "kinect" or "wrist". Default is kinect.'
             sys.exit()       
