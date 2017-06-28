@@ -34,6 +34,8 @@ from cv_bridge import CvBridge, CvBridgeError
 import time
 import math
 
+import argparse
+
 # dlib colors
 yellow = dlib.rgb_pixel(255, 255, 0)
 red = dlib.rgb_pixel(255, 0, 0)
@@ -131,6 +133,13 @@ class DlibFaceLandmarkDetector:
         self.shake_text_timer = None
         self.head_no_change_count = 0
 
+        self.stop_condition = False
+        self.stop_timer = None
+        self.stop_outliers = 0
+        self.scoop_condition = False
+        self.scoop_timer = None
+        self.scoop_outliers = 0
+
         # Publisher/subscriber
         self.imagePub = rospy.Publisher("/hrl_manipulation_task/mouth_gaze_detector", Image, queue_size=10)
         self.statusPub = rospy.Publisher("/manipulation_task/status", String, queue_size=1)
@@ -213,10 +222,9 @@ class DlibFaceLandmarkDetector:
 #-----do stuff to face from here-------------------------------------------------------------------------
             try:
                 # Landmarks for only largest face.
-                # TODO: changed img to gray_img
-                # TODO: added if statement
                 nodded = False
                 shape = self.predictor(gray_img, largest_box)
+                # Correction for when face is "squished"
                 if d.bottom() > shape.part(8).y-5:
                     largest_box = dlib.rectangle(largest_box.left(), largest_box.top()+10, largest_box.right(), largest_box.bottom()+10)
                     shape = self.predictor(gray_img, largest_box)
@@ -233,16 +241,42 @@ class DlibFaceLandmarkDetector:
                 # Head rotated check.
                 head_rotated, head_status, ratio = self.is_head_rotated(shape)
 
-                if (ratio > 0) and (ratio < 0.25):
-                    if (self.gui_status == "in motion") or (self.gui_status == 'wait start'):
-                        self.emergencyPub.publish('STOP')
-                        #self.guiStatusPub.publish("stopping")
-                        print 'stopping command published'
-                if ratio > 1.7 and mouth_open:
-                    if (self.gui_status == 'select task') or (self.gui_status == 'stopped'):
-                        self.statusPub.publish('Scooping')
-                        self.availablePub.publish('true')
-                        print 'scooping command published'
+                # Scoop condition check
+                if ratio < 0.4 and mouth_open:
+                    self.scoop_outliers = 0
+                    if self.scoop_condition:
+                        elapsed = time.time() - self.scoop_timer
+                        if elapsed > 3.0:
+                            if (self.gui_status == 'select task') or (self.gui_status == 'stopped'):
+                                self.statusPub.publish('Scooping')
+                                self.availablePub.publish('true')
+                                print 'scooping command published'
+                    else:
+                        print 'scoop timer started'
+                        self.scoop_timer = time.time()
+                        self.scoop_condition = True
+                elif self.scoop_outliers <= 5:
+                    self.scoop_outliers += 1
+                else:
+                    self.scoop_condition = False
+
+                # Stop condition check
+                if ratio > 2.5 and mouth_open:
+                    self.stop_outliers = 0
+                    if self.stop_condition:
+                        elapsed = time.time() - self.stop_timer
+                        if elapsed > 3.0:
+                            if (self.gui_status == 'in motion') or (self.gui_status == 'wait start'):
+                                self.emergencyPub.publish('STOP')
+                                print 'stopping command published'
+                    else:
+                        print 'stop timer started'
+                        self.stop_timer = time.time()
+                        self.stop_condition = True
+                elif self.stop_outliers <= 5:
+                    self.stop_outliers += 1
+                else:
+                    self.stop_condition = False
 
                 # Gaze detection only if head is not rotated.
                 if head_rotated:
@@ -268,7 +302,13 @@ class DlibFaceLandmarkDetector:
                         eye_string = 'failed'
                         console_status += ', gaze detection failed'
 
-
+                # TODO: for testing. if head straight, gaze straight.
+                if head_rotated:
+                    eyes_straight = False
+                    console_status += ', eyes not straight'
+                else:
+                    eyes_straight = True
+                    console_status += ', eyes straight'
                 
                 # -----------------------------------------------------------------
                 # Update conditions_met bool.
@@ -289,52 +329,43 @@ class DlibFaceLandmarkDetector:
                 right = largest_box.right()
                 bottom = largest_box.bottom()
 
-                
-
                 # Check if three seconds have passed while conditions were continuously met.
+                color = None
                 if (self.conditions_met) and (not self.timer_started):  # conditions_met: False -> True.
                     self.start_time = time.time()
                     self.timer_started = True
                     cv2.rectangle(img, (left, top-15), (left+135, top), cv2_green, -1)
                     cv2.putText(img, status, (left+2, top-2), cv2.FONT_HERSHEY_PLAIN, 1, cv2_black)
-                    self.win.set_image(img)
-                    self.win.clear_overlay()
-                    self.win.add_overlay(shape, green)
-                    self.imagePub.publish(self.bridge.cv2_to_imgmsg(img, "rgb8"))
-                    #self.win.add_overlay(self.dets, green)
+                    color = green
+                    #self.imagePub.publish(self.bridge.cv2_to_imgmsg(img, "rgb8"))
                 elif (self.conditions_met) and (self.timer_started):  # conditions_met: True -> True, >= 3 secs
                     if (time.time() - self.start_time) >= 3.0:
                         cv2.rectangle(img, (left, top-15), (left+135, top), cv2_green, -1)
                         cv2.putText(img, status, (left+2, top-2), cv2.FONT_HERSHEY_PLAIN, 1, cv2_black)
                         cv2.putText(img, '3 seconds passed!', (2, 230), cv2.FONT_HERSHEY_PLAIN, 2, cv2_green, 2)
-                        self.win.set_image(img)
-                        self.win.clear_overlay()
-                        self.win.add_overlay(shape, green)
-                        self.imagePub.publish(self.bridge.cv2_to_imgmsg(img, "rgb8"))
+                        color = green
+                        #self.imagePub.publish(self.bridge.cv2_to_imgmsg(img, "rgb8"))
                         if (self.gui_status == 'select task') or (self.gui_status == 'stopped'):
                             self.statusPub.publish('Feeding')
                             self.availablePub.publish('true')
                             print 'Feeding command published'
-                        #self.win.add_overlay(self.dets, green)
                     else:  # conditions_met: True -> True, < 3 secs
                         cv2.rectangle(img, (left, top-15), (left+135, top), cv2_green, -1)
                         cv2.putText(img, status, (left+2, top-2), cv2.FONT_HERSHEY_PLAIN, 1, cv2_black)
-                        self.win.set_image(img)
-                        self.win.clear_overlay()
-                        self.win.add_overlay(shape, green)
-                        self.imagePub.publish(self.bridge.cv2_to_imgmsg(img, "rgb8"))
+                        color = green
+                        #self.imagePub.publish(self.bridge.cv2_to_imgmsg(img, "rgb8"))
                         #self.win.add_overlay(self.dets, green)
                 else:  # conditions_met: False
                     cv2.rectangle(img, (left, top-15), (left+135, top), cv2_orange, -1)
                     cv2.putText(img, status, (left+2, top-2), cv2.FONT_HERSHEY_PLAIN, 1, cv2_black)
-                    self.win.set_image(img)
+                    color = orange
                     self.timer_started = False
-                    self.win.clear_overlay()
-                    self.win.add_overlay(shape, orange)
-                    self.imagePub.publish(self.bridge.cv2_to_imgmsg(img, "rgb8"))
+                    #self.imagePub.publish(self.bridge.cv2_to_imgmsg(img, "rgb8"))
                     #self.win.add_overlay(self.dets, orange)
-                
-
+                self.win.set_image(img)
+                self.win.clear_overlay()
+                #self.win.add_overlay(shape, color)
+                self.imagePub.publish(self.bridge.cv2_to_imgmsg(img, "rgb8"))
                 #if corrected:
                 #    self.win.add_overlay(shape, red)
 
@@ -540,12 +571,12 @@ def main(args):
         elif sys.argv[1] == 'wrist':
             thing = DlibFaceLandmarkDetector()
         else:
-            print 'Invalid arugment. Please specify "kinect" or "wrist". Default is kinect.'
+            print 'Invalid arugment. Please specify "kinect" or "wrist". Default is wrist.'
             sys.exit()       
     elif len(sys.argv) == 1:
         thing = DlibFaceLandmarkDetector()
     else:
-        print 'Invalid argument. Please specify "kinect" or "wrist. Default is kinect."'
+        print 'Invalid argument. Please specify "kinect" or "wrist". Default is wrist.'
         sys.exit()
 
     rospy.init_node('mouth_gaze_interface', anonymous=True)
