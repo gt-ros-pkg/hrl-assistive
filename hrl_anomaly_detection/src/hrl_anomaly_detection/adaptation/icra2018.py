@@ -41,6 +41,8 @@ from hrl_anomaly_detection.util_viz import *
 from hrl_anomaly_detection import data_manager as dm
 from hrl_anomaly_detection import util as util
 from hrl_execution_monitor import util as autil
+from hrl_anomaly_detection.adaptation import adt_utils as adutil
+
 
 # Private learners
 from hrl_anomaly_detection.hmm import learning_hmm as hmm
@@ -163,17 +165,26 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
     pkl_prefix = 'hmm_'+task_name
     for method in method_list:
         if method.find('ipca')>=0 or method.find('mlp')>=0:            
-            saveWindowFeatures(d, processed_data_path, pkl_prefix, win_size=SVM_dict['raw_window_size'], \
-                               WIN_renew=ADT_dict['data_renew'])
+            adutil.saveWindowFeatures(d, processed_data_path, pkl_prefix, \
+                                      win_size=SVM_dict['raw_window_size'], \
+                                      WIN_renew=ADT_dict['data_renew'])
             break
 
     #-------------------------------------------------------------------------------------
     if HMM_dict['renew'] or SVM_dict['renew'] or ADT_dict['data_renew']: ADT_dict['HMM_renew'] = True
+
+    # old, adapt, or renew hmm
     pkl_prefix = 'hmm_'+ADT_dict['HMM']+'_'+task_name
-    ret = saveAHMMFeatures(d, td, task_name, processed_data_path, HMM_dict, ADT_dict, noise_mag, pkl_prefix)
+    ret = adutil.saveAHMMFeatures(d, td, task_name, processed_data_path, HMM_dict, ADT_dict,
+                                  noise_mag, pkl_prefix)
     if ret is None: return ret
-    ret = saveWindowFeaturesForADP(td, processed_data_path, ADT_dict, pkl_prefix,
-                                   win_size=SVM_dict['raw_window_size'])
+
+    # do we need for HMM?
+    for method in method_list:
+        if method.find('ipca')>=0 or method.find('mlp')>=0:            
+            ret = adutil.saveWindowFeaturesForADP(td, processed_data_path, ADT_dict, pkl_prefix,
+                                                  win_size=SVM_dict['raw_window_size'])
+            break
     if ret is None: return ret
 
 
@@ -224,8 +235,7 @@ def evaluation_single_ad(subject_names, task_name, raw_data_path, processed_data
     from sklearn import metrics 
     for method in method_list:
         auc_raw_list=[]
-        for i in xrange(len(l_data)):
-            break
+        for i in xrange(len(l_data)):            
             tp_ll = l_data[i][method]['tp_l']
             fp_ll = l_data[i][method]['fp_l']
             tn_ll = l_data[i][method]['tn_l']
@@ -278,8 +288,7 @@ if __name__ == '__main__':
 
     subjects = ['s2', 's3','s4','s5', 's6','s7','s8', 's9']        
     save_data_path = os.path.expanduser('~')+\
-      '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation3/'+\
-      str(param_dict['data_param']['downSampleSize'])+'_'+str(opt.dim)
+      '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation3/'
 
     #---------------------------------------------------------------------------           
     if opt.bRawDataPlot or opt.bInterpDataPlot:
@@ -435,16 +444,17 @@ if __name__ == '__main__':
 
             
         for nrSteps in [20]:
-            for lr in [0.2]:
-                ## for n_pTrain in [10]:
-                for clf in ['renew']:
-                    param_dict['ADT']['lr']       = lr 
+            #for hmm in ['adapt']: #'old', 'renew'
+                #for lr in [0.05, 0.1, 0.6, 0.8]:
+            for n_pTrain in [2,4,8,10]:
+                for clf in ['adapt']: #'old', 'renew'
+                    param_dict['ADT']['lr']       = 0.2 #lr 
                     param_dict['ADT']['max_iter'] = 1
                     param_dict['ADT']['n_pTrain'] = 10 #n_pTrain
                     param_dict['ADT']['nrSteps']  = nrSteps
-                    param_dict['ADT']['HMM']      = 'old'
+                    param_dict['ADT']['HMM']      = 'adapt' #hmm #'old'
                     param_dict['ADT']['CLF']      = clf
-                    param_dict['ADT']['HMM_renew'] = False
+                    param_dict['ADT']['HMM_renew'] = True
                     param_dict['ADT']['WIN_renew'] = True
                     param_dict['ADT']['CLF_renew'] = True
 

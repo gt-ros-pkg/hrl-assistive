@@ -540,8 +540,8 @@ if __name__ == '__main__':
                  help='type the method name')
     p.add_option('--id', action='store', dest='id', type=int, default=0,
                  help='type the detector id')
-    p.add_option('--alarm', action='store_true', dest='en_alarm',
-                 default=False, help='Enable alarming.')
+    p.add_option('--alarm', action='store', dest='en_alarm',
+                 default=1, help='Enable alarming.')
     p.add_option('--debug', '--d', action='store_true', dest='bDebug',
                  default=False, help='Enable debugging mode.')
     
@@ -550,6 +550,9 @@ if __name__ == '__main__':
     
     opt, args = p.parse_args()
     rospy.init_node(opt.task+'_detector'+str(opt.id))
+
+    if opt.en_alarm == 1: en_alarm = True
+    else: en_alarm = False
 
     if True:
         from hrl_execution_monitor.params.IROS2017_params import *
@@ -563,7 +566,7 @@ if __name__ == '__main__':
 
 
     ad = anomaly_detector(opt.task, opt.method, opt.id, save_data_path, \
-                          param_dict, debug=opt.bDebug, en_alarm=opt.en_alarm,\
+                          param_dict, debug=opt.bDebug, en_alarm=en_alarm,\
                           viz=False)
     ad.run()
 
