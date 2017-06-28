@@ -179,6 +179,115 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
         return vae_autoencoder, vae_encoder_mean, vae_encoder_var, generator
 
 
+def lstm_vae2(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=500, patience=20,
+             fine_tuning=False, save_weights_file=None):
+    """
+    Variational Autoencoder with two LSTMs and one fully-connected layer
+    x_train is (sample x length x dim)
+    x_test is (sample x length x dim)
+
+    Note: it uses offline data.
+    This code based on "https://gist.github.com/tushuhei/e684c2a5382c324880532aded9faf4e6"
+    """
+    x_train = trainData[0]
+    y_train = trainData[1]
+    x_test = testData[0]
+    y_test = testData[1]
+
+    timesteps = len(x_train[0])
+    input_dim = len(x_train[0][0])
+
+    h1_dim = input_dim
+    z_dim  = 2
+
+    inputs = Input(shape=(timesteps, input_dim))
+    encoded = LSTM(h1_dim, return_sequences=False, recurrent_dropout=0.0,
+                   activation='tanh')(inputs)
+    z_mean  = Dense(z_dim)(encoded) #, activation='tanh'
+    z_log_var = Dense(z_dim)(encoded) #, activation='tanh'
+    
+    def sampling(args):
+        z_mean, z_log_var = args
+        epsilon = K.random_normal(shape=(z_dim, ), mean=0., stddev=1.0)
+        return z_mean + K.exp(z_log_var/2.0) * epsilon
+    
+    def vae_loss(inputs, x_decoded_mean):
+        xent_loss = K.mean(objectives.binary_crossentropy(inputs, x_decoded_mean), axis=-1)
+        kl_loss   = -0.5 * K.mean(1.0 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=-1) 
+        return xent_loss + kl_loss
+        
+    # we initiate these layers to reuse later.
+    decoded_h1 = Dense(h1_dim, name='h_1') #, activation='tanh'
+    decoded_h2 = RepeatVector(timesteps, name='h_2')
+    decoded_L2 = LSTM(input_dim, return_sequences=True, recurrent_dropout=0.0,
+                      activation='tanh', name='L_2')
+
+    z = Lambda(sampling)([z_mean, z_log_var])    
+    decoded = decoded_h1(z)
+    decoded = decoded_h2(decoded)
+    decoded = decoded_L2(decoded)
+    
+    vae_autoencoder = Model(inputs, decoded)
+    print(vae_autoencoder.summary())
+
+    # Encoder and decoder
+    vae_encoder_mean = Model(inputs, z_mean)
+    vae_encoder_var  = Model(inputs, z_log_var)
+
+    decoder_input = Input(shape=(z_dim,))
+    _decoded_H1 = decoded_h1(decoder_input)
+    _decoded_H2 = decoded_h2(_decoded_H1)
+    _decoded_L2 = decoded_L2(_decoded_H2)
+    generator = Model(decoder_input, _decoded_L2)
+
+    ## print vae_autoencoder.count_params()
+
+    if weights_file is not None and os.path.isfile(weights_file) and fine_tuning is False:
+        vae_autoencoder.load_weights(weights_file)
+        #generator.load_weights(weights_file, by_name=True)
+        return vae_autoencoder, vae_encoder_mean, vae_encoder_var, generator
+    else:
+        if fine_tuning:
+            vae_autoencoder.load_weights(weights_file)
+            lr = 0.001
+        else:
+            lr = 0.01
+        #optimizer = RMSprop(lr=lr, rho=0.9, epsilon=1e-08, decay=0.0001)
+        optimizer = Adam(lr=lr)                
+        vae_autoencoder.compile(optimizer=optimizer, loss=vae_loss)
+
+        ## vae_autoencoder.load_weights(weights_file)
+        from keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
+        callbacks = [EarlyStopping(monitor='val_loss', min_delta=0, patience=patience,
+                                   verbose=0, mode='auto'),
+                    ModelCheckpoint(weights_file,
+                                    save_best_only=True,
+                                    save_weights_only=True,
+                                    monitor='val_loss'),
+                    ReduceLROnPlateau(monitor='val_loss', factor=0.2,
+                                      patience=5, min_lr=0.0001)]
+
+        train_datagen = ku.sigGenerator(augmentation=True, noise_mag=0.05 )
+        test_datagen = ku.sigGenerator(augmentation=False)
+        train_generator = train_datagen.flow(x_train, x_train, batch_size=batch_size)
+        test_generator = test_datagen.flow(x_test, x_test, batch_size=batch_size, shuffle=False)
+
+        hist = vae_autoencoder.fit_generator(train_generator,
+                                             samples_per_epoch=len(x_train),
+                                             nb_epoch=nb_epoch,
+                                             validation_data=test_generator,
+                                             nb_val_samples=len(x_test),
+                                             callbacks=callbacks) #, class_weight=class_weight)
+        if save_weights_file is not None:
+            vae_autoencoder.save_weights(save_weights_file)
+        else:
+            vae_autoencoder.save_weights(weights_file)
+
+        gc.collect()
+        
+        return vae_autoencoder, vae_encoder_mean, vae_encoder_var, generator
+
+
 def lstm_ae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=500, patience=20,
              fine_tuning=False, save_weights_file=None):
     """

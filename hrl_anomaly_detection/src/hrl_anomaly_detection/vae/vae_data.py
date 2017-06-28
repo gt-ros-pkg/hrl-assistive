@@ -313,7 +313,9 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
          
         weights_path = os.path.join(save_data_path,'tmp_weights_'+str(idx)+'.h5')
         ## weights_path = os.path.join(save_data_path,'tmp_fine_weights_'+str(idx)+'.h5')
-        autoencoder, enc_z_mean, enc_z_std, generator = km.lstm_vae(trainData, testData, weights_path,
+        ## autoencoder, enc_z_mean, enc_z_std, generator = km.lstm_vae(trainData, testData, weights_path,
+        ##                                                             patience=5, batch_size=batch_size)
+        autoencoder, enc_z_mean, enc_z_std, generator = km.lstm_vae2(trainData, testData, weights_path,
                                                                     patience=5, batch_size=batch_size)
         ## autoencoder = km.lstm_ae(trainData, testData, weights_path,
         ##                          patience=5, batch_size=batch_size)
