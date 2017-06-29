@@ -267,7 +267,7 @@ def lstm_vae2(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
                     ReduceLROnPlateau(monitor='val_loss', factor=0.2,
                                       patience=5, min_lr=0.0001)]
 
-        train_datagen = ku.sigGenerator(augmentation=True, noise_mag=0.05 )
+        train_datagen = ku.sigGenerator(augmentation=True, noise_mag=0.1) #5 )
         test_datagen = ku.sigGenerator(augmentation=False)
         train_generator = train_datagen.flow(x_train, x_train, batch_size=batch_size)
         test_generator = test_datagen.flow(x_test, x_test, batch_size=batch_size, shuffle=False)
@@ -322,6 +322,12 @@ def lstm_ae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=50
     print(ae.summary())
 
 
+    def vae_loss(inputs, x_decoded_mean):
+        xent_loss = K.mean(objectives.binary_crossentropy(inputs, x_decoded_mean), axis=-1)
+        ## kl_loss   = -0.5 * K.mean(1.0 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=-1) 
+        return xent_loss # + kl_loss
+
+
     if weights_file is not None and os.path.isfile(weights_file) and fine_tuning is False:
         ae.load_weights(weights_file)
         #generator.load_weights(weights_file, by_name=True)
@@ -335,7 +341,8 @@ def lstm_ae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=50
         ## optimizer = RMSprop(lr=lr, rho=0.9, epsilon=1e-08, decay=0.0001)
         ## #optimizer = Adam(lr=lr)                
         ## ae.compile(optimizer=optimizer, loss='mse')
-        ae.compile(loss='mean_squared_error', optimizer='adam') #, metrics = ['accuracy'])
+        ## ae.compile(loss='mean_squared_error', optimizer='adam') #, metrics = ['accuracy'])
+        ae.compile(loss=vae_loss, optimizer='adam') #, metrics = ['accuracy'])
             
         ## vae_autoencoder.load_weights(weights_file)
         from keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
