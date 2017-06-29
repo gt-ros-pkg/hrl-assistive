@@ -1,9 +1,9 @@
 #! /usr/bin/env python
 
 # Will take in "kinect" or "wrist" as command line argument to specify camera.
-# No argument will default to kinect.
+# No argument will default to wrist.
 #
-# Face and boxes will be drawn with different colors depending on condition.
+# Text box will be different colors depending on condition.
 #   Orange: Conditions not met
 #   Green: Conditions met
 #
@@ -17,7 +17,6 @@
 #
 # Head rotation is detected by comparing the position of the
 # corners of mouth with the edge of the cheek.
-#
 
 
 import sys
@@ -36,6 +35,8 @@ import time
 import math
 
 import argparse
+
+from sound_play.libsoundplay import SoundClient
 
 # dlib colors
 yellow = dlib.rgb_pixel(255, 255, 0)
@@ -90,50 +91,7 @@ class DlibFaceLandmarkDetector:
         self.timer_started = False
         self.start_time = None
 
-        # Nose position counter
-        self.nose_counter = 0
-        self.nose_y_tot = 0
-        self.nose_x_tot = 0
-        self.nose_y_avg = 0
-        self.nose_x_avg = 0
-        self.nose_timer = None
-        self.nose_change_status = ''
-        self.nod_text_timer = None
-
-
-
-
-        self.up_count = 0
-        self.down_count = 0
-        self.no_change = 0
-
-        self.left_count = 0
-        self.right_count = 0
-        self.shake_timer = None
-        
-
-        self.mouth_width_tot = 0
-        self.mouth_width_avg = 0
-        self.mouth_ratio_avg = 0
-        self.mouth_ratio_tot = 0
-        self.mouth_timer = None
-        self.mouth_timer_started = False
-        self.mouth_ratio = 0.0
-
-        self.straight_count = 0
-        self.left_count = 0
-        self.right_count = 0
-
-        self.head_status_now = None
-        self.head_status_prev = None
-        self.head_timer = None
-        self.head_timer_started = False
-        self.head_left_count = 0
-        self.head_right_count = 0
-
-        self.shake_text_timer = None
-        self.head_no_change_count = 0
-
+        # Scoop/stop tools
         self.stop_condition = False
         self.stop_timer = None
         self.stop_outliers = 0
@@ -147,9 +105,20 @@ class DlibFaceLandmarkDetector:
         self.guiStatusPub = rospy.Publisher("/manipulation_task/gui_status", String, queue_size=1, latch=True)
         self.availablePub = rospy.Publisher("/manipulation_task/available", String, queue_size=QUEUE_SIZE)
         self.emergencyPub = rospy.Publisher("/manipulation_task/emergency", String, queue_size=QUEUE_SIZE)
+        self.userInputPub = rospy.Publisher("/manipulation_task/user_input", String, queue_size=QUEUE_SIZE)
         self.feed_message_published = False
         self.gui_status = ''
         rospy.Subscriber("/manipulation_task/gui_status", String, self.guiCallback, queue_size=1)
+
+        # Sound
+        self.sound_handle = SoundClient()
+
+        # TODO: testing when head becomes inavailable
+        # self.head_motion -> shows how the head is moving?
+        # still, to straight, to left, to right
+        self.head_motion = ''
+        self.prev_head_status = ''
+        self.prev_head_ratio = 0.0
 
 
     def guiCallback(self, msg):
@@ -197,6 +166,9 @@ class DlibFaceLandmarkDetector:
                     print '---------------DETECTED ' + str(len(self.dets)) + ' FACE(S)---------------'
                     self.prev = len(self.dets)
             else:
+                # TODO: added two lines below for testing cases when head is not detected but still in frame
+                head_status = self.prev_head_status
+                ratio = self.prev_head_ratio
                 if len(self.dets) != self.prev:
                     print '----------------NO FACE DETECTED----------------'
                     self.prev = len(self.dets)
@@ -204,6 +176,30 @@ class DlibFaceLandmarkDetector:
             self.count += 1
         else:
             self.count += 1
+        head_status = self.prev_head_status
+        ratio = self.prev_head_ratio
+
+        # Stop condition check
+        #if ratio > 2.5 and mouth_open:
+        if ratio > 2.5:
+            self.stop_outliers = 0
+            if self.stop_condition:
+                elapsed = time.time() - self.stop_timer
+                if elapsed > 3.0:
+                    if (self.gui_status == 'in motion') or (self.gui_status == 'wait start'):
+                        self.emergencyPub.publish('STOP')
+                        print 'stopping command published'
+                        self.sound_handle.say('Stop ing')
+                        print 'said stopping'
+            else:
+                print 'stop timer started'
+                self.stop_timer = time.time()
+                self.stop_condition = True
+        elif self.stop_outliers <= 5:
+            self.stop_outliers += 1
+        else:
+            self.stop_condition = False
+
         
 
         if self.dets == None:
@@ -242,6 +238,13 @@ class DlibFaceLandmarkDetector:
                 # Head rotated check.
                 head_rotated, head_status, ratio = self.is_head_rotated(shape)
 
+                # TODO:
+                if len(self.dets) < 1:
+                    head_status = self.prev_head_status
+                    ratio = self.prev_head_ratio
+
+                
+
                 # Scoop condition check
                 if ratio < 0.4 and mouth_open:
                     self.scoop_outliers = 0
@@ -251,7 +254,12 @@ class DlibFaceLandmarkDetector:
                             if (self.gui_status == 'select task') or (self.gui_status == 'stopped'):
                                 self.statusPub.publish('Scooping')
                                 self.availablePub.publish('true')
+                                self.userInputPub.publish('Start')
                                 print 'scooping command published'
+                                self.sound_handle.say('Scoop ing')
+                                print 'said scooping'
+                            elif self.gui_status == 'wait start':
+                                self.userInputPub.publish('Start')
                     else:
                         print 'scoop timer started'
                         self.scoop_timer = time.time()
@@ -261,25 +269,9 @@ class DlibFaceLandmarkDetector:
                 else:
                     self.scoop_condition = False
 
-                # Stop condition check
-                if ratio > 2.5 and mouth_open:
-                    self.stop_outliers = 0
-                    if self.stop_condition:
-                        elapsed = time.time() - self.stop_timer
-                        if elapsed > 3.0:
-                            if (self.gui_status == 'in motion') or (self.gui_status == 'wait start'):
-                                self.emergencyPub.publish('STOP')
-                                print 'stopping command published'
-                    else:
-                        print 'stop timer started'
-                        self.stop_timer = time.time()
-                        self.stop_condition = True
-                elif self.stop_outliers <= 5:
-                    self.stop_outliers += 1
-                else:
-                    self.stop_condition = False
 
                 # Gaze detection only if head is not rotated.
+                '''
                 if head_rotated:
                     eyes_straight = False
                     console_status += ', head {}'.format(head_status)
@@ -302,8 +294,9 @@ class DlibFaceLandmarkDetector:
                         eyes_straight = False
                         eye_string = 'failed'
                         console_status += ', gaze detection failed'
+                '''
 
-                # TODO: for testing. if head straight, gaze straight.
+                # If head straight, gaze straight.
                 if head_rotated:
                     eyes_straight = False
                     console_status += ', eyes not straight'
@@ -333,51 +326,55 @@ class DlibFaceLandmarkDetector:
                 # Check if three seconds have passed while conditions were continuously met.
                 color = None
                 if (self.conditions_met) and (not self.timer_started):  # conditions_met: False -> True.
+                    print 'feeding timer started'
                     self.start_time = time.time()
                     self.timer_started = True
                     cv2.rectangle(img, (left, top-15), (left+135, top), cv2_green, -1)
                     cv2.putText(img, status, (left+2, top-2), cv2.FONT_HERSHEY_PLAIN, 1, cv2_black)
                     color = green
-                    #self.imagePub.publish(self.bridge.cv2_to_imgmsg(img, "rgb8"))
                 elif (self.conditions_met) and (self.timer_started):  # conditions_met: True -> True, >= 3 secs
                     if (time.time() - self.start_time) >= 3.0:
                         cv2.rectangle(img, (left, top-15), (left+135, top), cv2_green, -1)
                         cv2.putText(img, status, (left+2, top-2), cv2.FONT_HERSHEY_PLAIN, 1, cv2_black)
                         cv2.putText(img, '3 seconds passed!', (2, 230), cv2.FONT_HERSHEY_PLAIN, 2, cv2_green, 2)
                         color = green
-                        #self.imagePub.publish(self.bridge.cv2_to_imgmsg(img, "rgb8"))
                         if (self.gui_status == 'select task') or (self.gui_status == 'stopped'):
                             self.statusPub.publish('Feeding')
                             self.availablePub.publish('true')
+                            self.userInputPub.publish('Start')
                             print 'Feeding command published'
+                            self.sound_handle.say('feed ing')
+                            print 'said feeding'
+                        elif self.gui_status == 'wait start':
+                            self.userInputPub.publish('Start')
                     else:  # conditions_met: True -> True, < 3 secs
                         cv2.rectangle(img, (left, top-15), (left+135, top), cv2_green, -1)
                         cv2.putText(img, status, (left+2, top-2), cv2.FONT_HERSHEY_PLAIN, 1, cv2_black)
                         color = green
-                        #self.imagePub.publish(self.bridge.cv2_to_imgmsg(img, "rgb8"))
-                        #self.win.add_overlay(self.dets, green)
                 else:  # conditions_met: False
                     cv2.rectangle(img, (left, top-15), (left+135, top), cv2_orange, -1)
                     cv2.putText(img, status, (left+2, top-2), cv2.FONT_HERSHEY_PLAIN, 1, cv2_black)
                     color = orange
                     self.timer_started = False
-                    #self.imagePub.publish(self.bridge.cv2_to_imgmsg(img, "rgb8"))
-                    #self.win.add_overlay(self.dets, orange)
                 self.win.set_image(img)
                 self.win.clear_overlay()
-                #self.win.add_overlay(shape, color)
                 self.imagePub.publish(self.bridge.cv2_to_imgmsg(img, "rgb8"))
-                #if corrected:
-                #    self.win.add_overlay(shape, red)
 
+                self.prev_head_status = head_status
+                self.prev_head_ratio = ratio
+                
+
+                # Uncomment to print head+mouth status to command line.
                 #print '{}'.format(console_status)
                 #print ''
+                #print head_status
 
-                self.eyes_prev = eye_string
+                #self.eyes_prev = eye_string
    
             except TypeError:
                 self.win.set_image(img)
                 self.imagePub.publish(self.bridge.cv2_to_imgmsg(img, "rgb8"))
+                print head_status
                 #print 'landmarks not detected'
                 pass
             # Uncomment to add rectangle around face.
