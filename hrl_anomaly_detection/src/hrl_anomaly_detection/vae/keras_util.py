@@ -66,11 +66,17 @@ class sigGenerator():
 
         # Ensure self.batch_index is 0.
         self.reset()
-        n = len(x)
-        x_new = x
+        x_new = x[:]
+
+        # TODO: Need to add random selection
+        if len(x_new) % batch_size > 0:
+            n_add = batch_size - len(x_new) % batch_size
+            x_new = np.vstack([x_new, x_new[:n_add] ])
+
+        n = len(x_new)
         idx_list = range(n)
-        n_dim = len(x[0,0])
-        
+        n_dim = len(x_new[0,0])
+
         while 1:
 
             if seed is not None:
@@ -80,7 +86,7 @@ class sigGenerator():
                 idx_list = range(n)
                 if shuffle:
                     random.shuffle(idx_list)
-                x_new = x[idx_list]
+                x_new = x_new[idx_list]
 
             current_index = (self.batch_index * batch_size) % n
             if n > current_index + batch_size:
@@ -124,7 +130,6 @@ class sigGenerator():
                         
                     
                 
-                                          
                 yield x_new[current_index:current_index+current_batch_size]+noise,\
                   x_new[current_index:current_index+current_batch_size]+noise
                                           
