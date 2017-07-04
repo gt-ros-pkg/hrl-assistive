@@ -30,6 +30,7 @@
 
 # system & utils
 import os, sys, copy, random
+import numpy
 import numpy as np
 import scipy
 
@@ -116,7 +117,6 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
     _decoded_L1 = decoded_L1(_decoded_H2)
     _decoded_L2 = decoded_L2(_decoded_L1)
     generator = Model(decoder_input, _decoded_L2)
-
     ## print vae_autoencoder.count_params()
 
     if weights_file is not None and os.path.isfile(weights_file) and fine_tuning is False:
@@ -189,6 +189,10 @@ def lstm_vae2(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
     Note: it uses offline data.
     This code based on "https://gist.github.com/tushuhei/e684c2a5382c324880532aded9faf4e6"
     """
+    import tensorflow as tf
+    sess = tf.Session()
+    K.set_session(sess)
+    
     x_train = trainData[0]
     y_train = trainData[1]
     x_test = testData[0]
@@ -199,7 +203,8 @@ def lstm_vae2(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
 
     h1_dim = input_dim
     h2_dim = 2 #input_dim
-    z_dim  = 2
+    z_dim  = 3
+    L      = 128
 
     inputs = Input(shape=(timesteps, input_dim))
     encoded = LSTM(h1_dim, return_sequences=True, activation='tanh')(inputs)
@@ -209,29 +214,8 @@ def lstm_vae2(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
     
     def sampling(args):
         z_mean, z_log_var = args
-        epsilon = K.random_normal(shape=(z_dim, ), mean=0., stddev=1.0)
-        return z_mean + K.exp(z_log_var/2.0) * epsilon
-
-    def vae_loss(inputs, outputs):
-
-        ## xent_loss = [scipy.stats.norm(mu[i],sig[i]).pdf(x[i]) for i in xrange(x) for x in inputs]
-        ## xent_loss = K.mean(objectives.poisson(inputs, x_decoded_mean), axis=-1)
-
-        ## xent_loss = K.mean(-np.log(scipy.stats.norm(outputs,1.0).pdf(inputs)), axis=-1)
-        ## xent_loss = K.mean(-np.log(  -(inputs-outputs)*(inputs-outputs)/2.0   ))
-        ## xent_loss = K.mean( K.square(inputs-outputs), axis=-1 )*0.5
-        ## xent_loss = K.mean(objectives.mean_squared_error(inputs, outputs)*0.5, axis=-1)
-        sigma = 0.3
-        xent_loss = K.mean(objectives.mean_squared_error(inputs, outputs)*0.5/sigma, axis=-1)
-
-        ## x_decoded_mean = outputs
-        ## xent_loss = K.mean(objectives.binary_crossentropy(inputs, x_decoded_mean), \
-        ##                    axis=-1)
-                               
-        kl_loss   = -0.5 * K.mean(1.0 + z_log_var - K.square(z_mean) \
-                                  - K.exp(z_log_var), axis=-1) 
-        return xent_loss + kl_loss
-    
+        epsilon = K.random_normal(shape=(batch_size, z_dim), mean=0., stddev=1.0)
+        return z_mean + K.exp(z_log_var/2.0) * epsilon    
         
     # we initiate these layers to reuse later.
     decoded_h1 = Dense(h2_dim, name='h_1') #, activation='tanh'
@@ -245,42 +229,81 @@ def lstm_vae2(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
     decoded = decoded_L1(decoded)
     decoded_mean = decoded_L2(decoded)
 
-    ## # Custom loss layer
-    ## class CustomVariationalLayer(Layer):
-    ##     def __init__(self, **kwargs):
-    ##         self.is_placeholder = True
-    ##         super(CustomVariationalLayer, self).__init__(**kwargs)
-            
-    ##     def vae_loss(self, x, x_decoded_mean, x_decoded_log_var):
-    ##         xent_loss = original_dim * metrics.binary_crossentropy(x, x_decoded_mean)
-    ##         kl_loss = - 0.5 * K.sum(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=-1)
-    ##         return K.mean(xent_loss + kl_loss)
-        
-    ##     def call(self, inputs):
-    ##         x = inputs[0]
-    ##         x_decoded_mean = inputs[1]
-    ##         x_decoded_log_var = inputs[2]
-    ##         loss = self.vae_loss(x, x_decoded_mean, x_decoded_log_var)
-    ##         self.add_loss(loss, inputs=inputs)
-    ##         # We won't actually use the output.
-    ##         return x
-        
-    ## y = CustomVariationalLayer()([inputs, decoded_mean, decoded_log_var])
-    print K.shape(inputs), K.shape(decoded_mean)
-    
     vae_autoencoder = Model(inputs, decoded_mean)
     print(vae_autoencoder.summary())
 
-    # Encoder and decoder
+    # Encoder --------------------------------------------------
     vae_encoder_mean = Model(inputs, z_mean)
     vae_encoder_var  = Model(inputs, z_log_var)
 
+    # Decoder (generator) --------------------------------------
     decoder_input = Input(shape=(z_dim,))
     _decoded_H1 = decoded_h1(decoder_input)
     _decoded_H2 = decoded_h2(_decoded_H1)
     _decoded_L1 = decoded_L1(_decoded_H2)
     _decoded_L2 = decoded_L2(_decoded_L1)
     generator = Model(decoder_input, _decoded_L2)
+
+    ## # Decoder2 (generator) --------------------------------------
+    ## def sampling2(args):
+    ##     z_m  = args[0,:,0]
+    ##     z_lv = args[0,:,1]
+
+    ##     z_s = []
+    ##     for j in range(z_dim):
+    ##         z_s.append( K.random_normal(shape=(L,), mean=z_m[j], stddev=K.exp(z_lv[j]/2.0) ) )
+    ##     return K.stack(z_s, axis=-1)
+
+    ## ## print np.shape(z_mean), np.shape(z_log_var)
+    
+    ## decoder_input2 = Input(shape=(z_dim,2))
+    ## _decoded_P1 = Lambda(sampling2)(decoder_input2)
+    ## _decoded_P2 = generator(_decoded_P1)
+    ## generator2  = Model(decoder_input2, _decoded_P2)
+
+    def sampling3(args):
+        z_mean, z_log_var = args
+        epsilon = K.random_normal(shape=(L, z_dim), mean=0., stddev=1.0)
+        return z_mean + K.exp(z_log_var/2.0) * epsilon
+
+    def multivariate_logpdf(x, loc=0, scale=1):
+        '''
+        It uses diagonal co-variance elements only.
+        '''
+        return -0.5 * K.sum(K.square((x-loc))*scale) \
+          - 0.5 * ( float(input_dim) * K.log(2.0*np.pi) + K.sum(K.log(scale)) )
+
+        
+
+    def vae_loss(inputs, outputs):
+
+        xent_loss = 0
+        for i in range(batch_size):
+
+            z = sampling3( (z_mean[i], z_log_var[i]) )            
+            x_sample = generator(z) # sample x length x dim
+            
+            x_mean = K.mean(x_sample, axis=0)
+            x_var  = K.var(x_sample, axis=0)
+            
+            # timesteps
+            loss = 0
+            for j in xrange(timesteps):
+                x_mean_t = x_mean[j]
+                x_cov_t  = x_var[j]
+
+                log_p_x_z = multivariate_logpdf(outputs[i][j], loc=x_mean_t, scale=x_cov_t)
+                loss += log_p_x_z
+            xent_loss += loss/float(batch_size)
+
+        ## x_decoded_mean = outputs
+        ## xent_loss = K.mean(objectives.binary_crossentropy(inputs, x_decoded_mean), \
+        ##                    axis=-1)
+                               
+        kl_loss   = -0.5 * K.mean(1.0 + z_log_var - K.square(z_mean) \
+                                  - K.exp(z_log_var), axis=-1) 
+        return xent_loss + kl_loss
+
 
     if weights_file is not None and os.path.isfile(weights_file) and fine_tuning is False:
         vae_autoencoder.load_weights(weights_file)
@@ -307,14 +330,14 @@ def lstm_vae2(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
                     ReduceLROnPlateau(monitor='val_loss', factor=0.2,
                                       patience=5, min_lr=0.0001)]
 
-        train_datagen = ku.sigGenerator(augmentation=True, noise_mag=0.15)
+        train_datagen = ku.sigGenerator(augmentation=True, noise_mag=0.01)
         test_datagen = ku.sigGenerator(augmentation=False)
         train_generator = train_datagen.flow(x_train, x_train, batch_size=batch_size, seed=3334)
         test_generator = test_datagen.flow(x_test, x_test, batch_size=len(x_test),
                                            shuffle=False)
 
         hist = vae_autoencoder.fit_generator(train_generator,
-                                             samples_per_epoch=512,
+                                             samples_per_epoch=64,
                                              nb_epoch=nb_epoch,
                                              validation_data=test_generator,
                                              nb_val_samples=len(x_test),
