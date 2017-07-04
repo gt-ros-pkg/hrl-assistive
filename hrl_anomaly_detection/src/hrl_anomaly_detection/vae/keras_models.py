@@ -36,7 +36,7 @@ import scipy
 # Keras
 import h5py 
 from keras.models import Sequential, Model
-from keras.layers import Merge, Input, TimeDistributed
+from keras.layers import Merge, Input, TimeDistributed, Layer
 from keras.layers import Activation, Dropout, Flatten, Dense, merge, Lambda, RepeatVector, LSTM
 from keras.layers.advanced_activations import PReLU
 from keras.utils.np_utils import to_categorical
@@ -179,8 +179,8 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
         return vae_autoencoder, vae_encoder_mean, vae_encoder_var, generator
 
 
-def lstm_vae2(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=500, patience=20,
-             fine_tuning=False, save_weights_file=None):
+def lstm_vae2(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=500, \
+              patience=20, fine_tuning=False, save_weights_file=None):
     """
     Variational Autoencoder with two LSTMs and one fully-connected layer
     x_train is (sample x length x dim)
@@ -198,36 +198,77 @@ def lstm_vae2(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
     input_dim = len(x_train[0][0])
 
     h1_dim = input_dim
+    h2_dim = 2 #input_dim
     z_dim  = 2
 
     inputs = Input(shape=(timesteps, input_dim))
-    encoded = LSTM(h1_dim, return_sequences=False, recurrent_dropout=0.0,
-                   activation='tanh')(inputs)
+    encoded = LSTM(h1_dim, return_sequences=True, activation='tanh')(inputs)
+    encoded = LSTM(h2_dim, return_sequences=False, activation='tanh')(encoded)
     z_mean  = Dense(z_dim)(encoded) #, activation='tanh'
-    z_log_var = Dense(z_dim)(encoded) #, activation='tanh'
+    z_log_var = Dense(z_dim)(encoded) #, activation='sigmoid')
     
     def sampling(args):
         z_mean, z_log_var = args
         epsilon = K.random_normal(shape=(z_dim, ), mean=0., stddev=1.0)
         return z_mean + K.exp(z_log_var/2.0) * epsilon
-    
-    def vae_loss(inputs, x_decoded_mean):
-        xent_loss = K.mean(objectives.binary_crossentropy(inputs, x_decoded_mean), axis=-1)
-        kl_loss   = -0.5 * K.mean(1.0 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=-1) 
+
+    def vae_loss(inputs, outputs):
+
+        ## xent_loss = [scipy.stats.norm(mu[i],sig[i]).pdf(x[i]) for i in xrange(x) for x in inputs]
+        ## xent_loss = K.mean(objectives.poisson(inputs, x_decoded_mean), axis=-1)
+
+        ## xent_loss = K.mean(-np.log(scipy.stats.norm(outputs,1.0).pdf(inputs)), axis=-1)
+        ## xent_loss = K.mean(-np.log(  -(inputs-outputs)*(inputs-outputs)/2.0   ))
+        ## xent_loss = K.mean( K.square(inputs-outputs), axis=-1 )*0.5
+        ## xent_loss = K.mean(objectives.mean_squared_error(inputs, outputs)*0.5, axis=-1)
+        sigma = 0.3
+        xent_loss = K.mean(objectives.mean_squared_error(inputs, outputs)*0.5/sigma, axis=-1)
+
+        ## x_decoded_mean = outputs
+        ## xent_loss = K.mean(objectives.binary_crossentropy(inputs, x_decoded_mean), \
+        ##                    axis=-1)
+                               
+        kl_loss   = -0.5 * K.mean(1.0 + z_log_var - K.square(z_mean) \
+                                  - K.exp(z_log_var), axis=-1) 
         return xent_loss + kl_loss
+    
         
     # we initiate these layers to reuse later.
-    decoded_h1 = Dense(h1_dim, name='h_1') #, activation='tanh'
+    decoded_h1 = Dense(h2_dim, name='h_1') #, activation='tanh'
     decoded_h2 = RepeatVector(timesteps, name='h_2')
-    decoded_L2 = LSTM(input_dim, return_sequences=True, recurrent_dropout=0.0,
-                      activation='tanh', name='L_2')
+    decoded_L1  = LSTM(h1_dim, return_sequences=True, activation='tanh', name='L_1')
+    decoded_L2 = LSTM(input_dim, return_sequences=True, activation='tanh', name='L_2')
 
     z = Lambda(sampling)([z_mean, z_log_var])    
     decoded = decoded_h1(z)
     decoded = decoded_h2(decoded)
-    decoded = decoded_L2(decoded)
+    decoded = decoded_L1(decoded)
+    decoded_mean = decoded_L2(decoded)
+
+    ## # Custom loss layer
+    ## class CustomVariationalLayer(Layer):
+    ##     def __init__(self, **kwargs):
+    ##         self.is_placeholder = True
+    ##         super(CustomVariationalLayer, self).__init__(**kwargs)
+            
+    ##     def vae_loss(self, x, x_decoded_mean, x_decoded_log_var):
+    ##         xent_loss = original_dim * metrics.binary_crossentropy(x, x_decoded_mean)
+    ##         kl_loss = - 0.5 * K.sum(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=-1)
+    ##         return K.mean(xent_loss + kl_loss)
+        
+    ##     def call(self, inputs):
+    ##         x = inputs[0]
+    ##         x_decoded_mean = inputs[1]
+    ##         x_decoded_log_var = inputs[2]
+    ##         loss = self.vae_loss(x, x_decoded_mean, x_decoded_log_var)
+    ##         self.add_loss(loss, inputs=inputs)
+    ##         # We won't actually use the output.
+    ##         return x
+        
+    ## y = CustomVariationalLayer()([inputs, decoded_mean, decoded_log_var])
+    print K.shape(inputs), K.shape(decoded_mean)
     
-    vae_autoencoder = Model(inputs, decoded)
+    vae_autoencoder = Model(inputs, decoded_mean)
     print(vae_autoencoder.summary())
 
     # Encoder and decoder
@@ -237,16 +278,15 @@ def lstm_vae2(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
     decoder_input = Input(shape=(z_dim,))
     _decoded_H1 = decoded_h1(decoder_input)
     _decoded_H2 = decoded_h2(_decoded_H1)
-    _decoded_L2 = decoded_L2(_decoded_H2)
+    _decoded_L1 = decoded_L1(_decoded_H2)
+    _decoded_L2 = decoded_L2(_decoded_L1)
     generator = Model(decoder_input, _decoded_L2)
-
-    ## print vae_autoencoder.count_params()
 
     if weights_file is not None and os.path.isfile(weights_file) and fine_tuning is False:
         vae_autoencoder.load_weights(weights_file)
-        #generator.load_weights(weights_file, by_name=True)
         return vae_autoencoder, vae_encoder_mean, vae_encoder_var, generator
     else:
+        ## vae_autoencoder.load_weights(weights_file)
         if fine_tuning:
             vae_autoencoder.load_weights(weights_file)
             lr = 0.001
@@ -267,17 +307,18 @@ def lstm_vae2(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
                     ReduceLROnPlateau(monitor='val_loss', factor=0.2,
                                       patience=5, min_lr=0.0001)]
 
-        train_datagen = ku.sigGenerator(augmentation=True, noise_mag=0.1) #5 )
+        train_datagen = ku.sigGenerator(augmentation=True, noise_mag=0.15)
         test_datagen = ku.sigGenerator(augmentation=False)
-        train_generator = train_datagen.flow(x_train, x_train, batch_size=batch_size)
-        test_generator = test_datagen.flow(x_test, x_test, batch_size=batch_size, shuffle=False)
+        train_generator = train_datagen.flow(x_train, x_train, batch_size=batch_size, seed=3334)
+        test_generator = test_datagen.flow(x_test, x_test, batch_size=len(x_test),
+                                           shuffle=False)
 
         hist = vae_autoencoder.fit_generator(train_generator,
-                                             samples_per_epoch=len(x_train),
+                                             samples_per_epoch=512,
                                              nb_epoch=nb_epoch,
                                              validation_data=test_generator,
                                              nb_val_samples=len(x_test),
-                                             callbacks=callbacks) #, class_weight=class_weight)
+                                             callbacks=callbacks)
         if save_weights_file is not None:
             vae_autoencoder.save_weights(save_weights_file)
         else:
@@ -306,27 +347,24 @@ def lstm_ae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=50
     timesteps = len(x_train[0])
     input_dim = len(x_train[0][0])
 
-    z_dim = 20
+    h1_dim = input_dim
+    z_dim  = 2
     
     inputs = Input(shape=(timesteps, input_dim))
-    encoded = LSTM(z_dim, return_sequences=False, activation='tanh')(inputs)
+    encoded = LSTM(h1_dim, return_sequences=True, activation='tanh')(inputs)
+    encoded = LSTM(z_dim, return_sequences=False, activation='tanh')(encoded)
         
     # we initiate these layers to reuse later.
     decoded_H2 = RepeatVector(timesteps, name='H_2')
+    decoded_L1 = LSTM(h1_dim, return_sequences=True, activation='tanh', name='L_1')
     decoded_L2 = LSTM(input_dim, return_sequences=True, activation='tanh', name='L_2')
 
     decoded = decoded_H2(encoded)
+    decoded = decoded_L1(decoded)
     decoded = decoded_L2(decoded)
     
     ae = Model(inputs, decoded)
     print(ae.summary())
-
-
-    def vae_loss(inputs, x_decoded_mean):
-        xent_loss = K.mean(objectives.binary_crossentropy(inputs, x_decoded_mean), axis=-1)
-        ## kl_loss   = -0.5 * K.mean(1.0 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=-1) 
-        return xent_loss # + kl_loss
-
 
     if weights_file is not None and os.path.isfile(weights_file) and fine_tuning is False:
         ae.load_weights(weights_file)
@@ -341,8 +379,8 @@ def lstm_ae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=50
         ## optimizer = RMSprop(lr=lr, rho=0.9, epsilon=1e-08, decay=0.0001)
         ## #optimizer = Adam(lr=lr)                
         ## ae.compile(optimizer=optimizer, loss='mse')
-        ## ae.compile(loss='mean_squared_error', optimizer='adam') #, metrics = ['accuracy'])
-        ae.compile(loss=vae_loss, optimizer='adam') #, metrics = ['accuracy'])
+        ae.compile(loss='mean_squared_error', optimizer='adam')
+        #ae.compile(loss=vae_loss, optimizer='adam')
             
         ## vae_autoencoder.load_weights(weights_file)
         from keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint

@@ -309,7 +309,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         trainData, testData, window_size, raw_data, raw_data_ft = get_batch_data(normalData, abnormalData)
         (normalTrainData, abnormalTrainData, normalTestData, abnormalTestData) = raw_data
         (normalTrainData_ft, abnormalTrainData_ft, normalTestData_ft, abnormalTestData_ft) = raw_data_ft
-        batch_size  = 1024 #len(trainData) #1024 #16
+        batch_size  = 32 #256 #len(trainData) #1024 #16
          
         weights_path = os.path.join(save_data_path,'tmp_weights_'+str(idx)+'.h5')
         ## weights_path = os.path.join(save_data_path,'tmp_fine_weights_'+str(idx)+'.h5')
@@ -334,8 +334,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         ##                                                             save_weights_file=save_weights_path)
 
 
-        if True and False:
-            if True:
+        if True:
+            if True and False:
                 # get optimized alpha
                 save_pkl = os.path.join(save_data_path, 'tmp_data.pkl')
                 alpha = get_optimal_alpha(enc_z_mean, enc_z_std, generator, normalTrainData, window_size,\
@@ -347,7 +347,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             
             save_pkl = os.path.join(save_data_path, 'tmp_test_scores.pkl')
             anomaly_detection(enc_z_mean, enc_z_std, generator, normalTestData, abnormalTestData, \
-                              window_size, alpha, nSample=100, save_pkl=save_pkl)
+                              window_size, alpha, nSample=10000, save_pkl=save_pkl)
 
         
         if plot:
@@ -377,7 +377,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                         ## fig.add_subplot(100*len(x[j][0])+10+k+1)
                         plt.plot(np.array(x)[j,:,k], '-b')
                         plt.plot(np.array(x_new)[j,:,k], '-r')
-                        plt.ylim([-1.1,1.1])
+                        plt.ylim([-0.1,1.1])
                     plt.show()
         
 
@@ -605,11 +605,12 @@ def anomaly_detection(enc_z_mean, enc_z_std, generator, normalTestData, abnormal
             scores = []
             for i in xrange(len(X)):
                 print "sample: ", i+1, " out of ", len(X)
+                np.random.seed(3334 + i)
 
                 if window_size>0: x = sampleWithWindow(X[i:i+1], window=window_size)
                 else:             x = X[i:i+1]
                 z_mean = enc_z_mean.predict(x) # 1 x 2 (or 1 x (nwindow x 2))
-                z_std  = enc_z_std.predict(x)
+                z_std  = enc_z_std.predict(x) *100.0
 
                 ## print z_mean
                 ## print z_std
@@ -634,10 +635,11 @@ def anomaly_detection(enc_z_mean, enc_z_std, generator, normalTestData, abnormal
                     # temp
                     fig = plt.figure()
                     for k in xrange(len(x_mean)): # per dim                    
+                        print x_std[k]
                         fig.add_subplot(len(x_mean),1,k+1)
                         plt.plot(x_mean[k], '-b')
-                        plt.plot(x_mean[k]+2*x_std[k], '--b')
-                        plt.plot(x_mean[k]-2*x_std[k], '--b')
+                        plt.plot(x_mean[k]+2*x_std[k]*1e+4, '--b')
+                        plt.plot(x_mean[k]-2*x_std[k]*1e+4, '--b')
                         plt.plot(x[j,:,k], '-r')
                     plt.show()
                     
