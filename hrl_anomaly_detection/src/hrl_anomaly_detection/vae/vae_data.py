@@ -309,14 +309,14 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         trainData, testData, window_size, raw_data, raw_data_ft = get_batch_data(normalData, abnormalData)
         (normalTrainData, abnormalTrainData, normalTestData, abnormalTestData) = raw_data
         (normalTrainData_ft, abnormalTrainData_ft, normalTestData_ft, abnormalTestData_ft) = raw_data_ft
-        batch_size  = 256 #len(trainData) #1024 #16
+        batch_size  = 128 #256 #len(trainData) #1024 #16
          
         weights_path = os.path.join(save_data_path,'tmp_weights_'+str(idx)+'.h5')
         ## weights_path = os.path.join(save_data_path,'tmp_fine_weights_'+str(idx)+'.h5')
         ## autoencoder, enc_z_mean, enc_z_std, generator = km.lstm_vae(trainData, testData, weights_path,
         ##                                                             patience=5, batch_size=batch_size)
         autoencoder, enc_z_mean, enc_z_std, generator = km.lstm_vae2(trainData, testData, weights_path,
-                                                                    patience=3, batch_size=batch_size)
+                                                                    patience=5, batch_size=batch_size)
         ## autoencoder = km.lstm_ae(trainData, testData, weights_path,
         ##                          patience=5, batch_size=batch_size)
         ## enc_z_mean = enc_z_std = None
@@ -361,7 +361,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 plt.plot(x_ab_encoded[:, 0], x_ab_encoded[:, 1], '.r', ms=5, mec='r', mew=0)
                 plt.show()
 
-            # display gnerated data
+            # display generated data
             for i in xrange(len(normalTrainData)):
                 if window_size is not None:
                     x = sampleWithWindow(normalTrainData[i:i+1], window=window_size)
@@ -830,8 +830,10 @@ if __name__ == '__main__':
     # s1 - kaci - before camera calibration
     subjects = ['s2', 's3','s4','s5', 's6','s7','s8', 's9']
 
+    ## save_data_path = os.path.expanduser('~')+\
+    ##   '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
     save_data_path = os.path.expanduser('~')+\
-      '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
+      '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm'
 
 
     ## param_dict['data_param']['handFeatures'] = ['unimodal_kinVel',\
