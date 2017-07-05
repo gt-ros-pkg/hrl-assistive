@@ -304,7 +304,7 @@ def lstm_vae2(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
 
 
 
-    if weights_file is not None and os.path.isfile(weights_file) and fine_tuning is False and False:
+    if weights_file is not None and os.path.isfile(weights_file) and fine_tuning is False:
         vae_autoencoder.load_weights(weights_file)
         return vae_autoencoder, vae_encoder_mean, vae_encoder_var, generator
     else:
