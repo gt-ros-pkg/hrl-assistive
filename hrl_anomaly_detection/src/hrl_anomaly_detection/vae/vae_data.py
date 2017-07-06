@@ -139,7 +139,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         trainData, testData, window_size, raw_data, raw_data_ft = get_batch_data(normalData, abnormalData)
         (normalTrainData, abnormalTrainData, normalTestData, abnormalTestData) = raw_data
         (normalTrainData_ft, abnormalTrainData_ft, normalTestData_ft, abnormalTestData_ft) = raw_data_ft
-        batch_size  = 256 #1024 #16
+        batch_size  = 512 #1024 #16
          
         weights_path = os.path.join(save_data_path,'tmp_weights_'+str(idx)+'.h5')
         ## weights_path = os.path.join(save_data_path,'tmp_fine_weights_'+str(idx)+'.h5')
