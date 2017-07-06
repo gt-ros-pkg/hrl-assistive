@@ -362,7 +362,6 @@ def lstm_vae3(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
     h1_dim = input_dim
     h2_dim = 2 #input_dim
     z_dim  = 2
-    L      = 50
 
     inputs = Input(shape=(timesteps, input_dim))
     encoded = LSTM(h1_dim, return_sequences=True, activation='tanh')(inputs)
@@ -378,7 +377,7 @@ def lstm_vae3(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
     # we initiate these layers to reuse later.
     decoded_h1 = Dense(h2_dim, name='h_1') #, activation='tanh'
     decoded_h2 = RepeatVector(timesteps, name='h_2')
-    decoded_L1  = LSTM(h1_dim, return_sequences=True, activation='tanh', name='L_1')
+    decoded_L1 = LSTM(h1_dim, return_sequences=True, activation='tanh', name='L_1')
     decoded_L2 = LSTM(input_dim*2, return_sequences=True, activation='tanh', name='L_2')
 
 
@@ -390,29 +389,31 @@ def lstm_vae3(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
 
         def vae_loss(self, x, x_decoded_mean, x_decoded_var):
 
-            log_p_x_z = -0.5 * ( K.sum(K.square((x-x_decoded_mean))*x_decoded_var, axis=-1) \
-                                 + float(input_dim) * K.log(2.0*np.pi) + K.sum(K.log(x_decoded_var), axis=-1) )
-            xent_loss = K.sum(-log_p_x_z, axis=-1)
+            #log_p_x_z = -0.5 * ( K.sum(K.square((x-x_decoded_mean))*x_decoded_var, axis=-1) \
+            #                     + float(input_dim) * K.log(2.0*np.pi) + K.sum(K.log(x_decoded_var), axis=-1) )
+            #xent_loss = K.sum(-log_p_x_z, axis=-1)
+
+            xent_loss = K.mean(K.sum(K.square(x_decoded_mean - x), axis=-1), axis=-1)
             kl_loss = - 0.5 * K.sum(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=-1)
             return K.mean(xent_loss + kl_loss)
 
-        def call(self, inputs):
-            x = inputs[0]
-            x_decoded_mean = inputs[1][:,:,:input_dim]
-            x_decoded_var  = inputs[1][:,:,input_dim:]
-            
-            loss = self.vae_loss(x, x_decoded_mean, x_decoded_var)
-            self.add_loss(loss, inputs=inputs)
+        def call(self, args):
+            x = args[0]
+            x_d_mean = args[1][:,:,:input_dim]
+            x_d_var  = args[1][:,:,input_dim:]
+
+            loss = self.vae_loss(x, x_d_mean, x_d_var)
+            self.add_loss(loss, inputs=args)
             # We won't actually use the output.
-            return x_decoded_mean
+            return x_d_mean
 
 
     z = Lambda(sampling)([z_mean, z_log_var])    
     decoded = decoded_h1(z)
     decoded = decoded_h2(decoded)
     decoded = decoded_L1(decoded)
-    decoded = decoded_L2(decoded)
-    decoded_mean = CustomVariationalLayer()([inputs, decoded])
+    decoded_output = decoded_L2(decoded)
+    decoded_mean = CustomVariationalLayer()([inputs, decoded_output])
 
     vae_autoencoder = Model(inputs, decoded_mean)
     print(vae_autoencoder.summary())
@@ -427,8 +428,7 @@ def lstm_vae3(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
     _decoded_H2 = decoded_h2(_decoded_H1)
     _decoded_L1 = decoded_L1(_decoded_H2)
     _decoded_L2 = decoded_L2(_decoded_L1)
-    _decoded_mean = CustomVariationalLayer()([decoder_input, _decoded_L2])
-    generator = Model(decoder_input, _decoded_mean)
+    generator = Model(decoder_input, _decoded_L2)
 
 
     if weights_file is not None and os.path.isfile(weights_file) and fine_tuning is False and False:
@@ -440,7 +440,7 @@ def lstm_vae3(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
             vae_autoencoder.load_weights(weights_file)
             lr = 0.001
         else:
-            lr = 0.01
+            lr = 0.1
         ## optimizer = RMSprop(lr=lr, rho=0.9, epsilon=1e-08, decay=0.0001)
         optimizer = Adam(lr=lr)                
         vae_autoencoder.compile(optimizer=optimizer, loss=None)
