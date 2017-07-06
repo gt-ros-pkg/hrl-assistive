@@ -227,7 +227,7 @@ class DlibFaceLandmarkDetector:
                 self.scoop_outliers = 0
                 if self.scoop_condition:
                     elapsed = time.time() - self.scoop_timer
-                    if elapsed > 3.0:
+                    if elapsed > 2.0:
                         if (self.gui_status == 'select task') or (self.gui_status == 'stopped'):
                             self.statusPub.publish('Scooping')
                             self.availablePub.publish('true')
@@ -274,7 +274,7 @@ class DlibFaceLandmarkDetector:
                 self.timer_started = True
                 color = cv2_green
             elif (self.conditions_met) and (self.timer_started):  # conditions_met: True -> True, >= 3 secs
-                if (time.time() - self.start_time) >= 3.0:
+                if (time.time() - self.start_time) >= 2.0:
                     cv2.putText(img, '3 seconds passed!', (2, 230), cv2.FONT_HERSHEY_PLAIN, 2, cv2_green, 2)
                     color = cv2_green
                     if (self.gui_status == 'select task') or (self.gui_status == 'stopped'):
@@ -303,7 +303,7 @@ class DlibFaceLandmarkDetector:
                 self.stop_outliers = 0
                 if self.stop_condition:
                     elapsed = time.time() - self.stop_timer
-                    if elapsed > 3.0:
+                    if elapsed > 2.0:
                         if (self.gui_status == 'in motion') or (self.gui_status == 'wait start'):
                             self.emergencyPub.publish('STOP')
                             print 'stopping command published'

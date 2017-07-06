@@ -388,7 +388,7 @@ def lstm_vae3(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
             super(CustomVariationalLayer, self).__init__(**kwargs)
 
         def vae_loss(self, x, x_d_mean, x_d_log_var):
-            log_p_x_z = -0.5 * ( K.sum(K.square((x-x_d_mean))/K.exp(x_d_log_var/2.0), axis=-1) \
+            log_p_x_z = -0.5 * ( K.sum(K.square((x-x_d_mean))/K.exp(x_d_log_var), axis=-1) \
                                  + float(input_dim) * K.log(2.0*np.pi) + K.sum(x_d_log_var, axis=-1) )
             xent_loss = K.sum(-log_p_x_z, axis=-1)
             ## xent_loss = K.mean(-log_p_x_z, axis=-1)

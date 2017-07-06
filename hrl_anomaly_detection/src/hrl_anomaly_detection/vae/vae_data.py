@@ -166,7 +166,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         ##                                                             save_weights_file=save_weights_path)
 
 
-        if True :
+        if True and False:
             if True and False:
                 # get optimized alpha
                 save_pkl = os.path.join(save_data_path, 'tmp_data.pkl')
@@ -638,10 +638,10 @@ def anomaly_detection(vae, enc_z_mean, enc_z_std, generator, normalTestData, abn
 
                     #---------------------------------------------------------------
                     # prediction based method
-                    y = vae.predict(x[j:j+1])
-                    x_mean    = y[:,:,:x_dim]
-                    x_log_var = y[:,:,x_dim:]
-                    x_std     = np.exp(x_log_var/2.0)
+                    ## y = vae.predict(x[j:j+1])
+                    ## x_mean    = y[:,:,:x_dim]
+                    ## x_log_var = y[:,:,x_dim:]
+                    ## x_std     = np.exp(x_log_var/2.0)
                     
                     
                     #---------------------------------------------------------------
