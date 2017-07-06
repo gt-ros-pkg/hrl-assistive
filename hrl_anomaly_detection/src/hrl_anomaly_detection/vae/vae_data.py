@@ -139,16 +139,28 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         trainData, testData, window_size, raw_data, raw_data_ft = get_batch_data(normalData, abnormalData)
         (normalTrainData, abnormalTrainData, normalTestData, abnormalTestData) = raw_data
         (normalTrainData_ft, abnormalTrainData_ft, normalTestData_ft, abnormalTestData_ft) = raw_data_ft
+<<<<<<< HEAD
         batch_size  = 1 #1024 #16
+=======
+        batch_size  = 1024 #16
+>>>>>>> 49cf69599b992c3ad47f9814b2a5e44821c8bd76
          
         weights_path = os.path.join(save_data_path,'tmp_weights_'+str(idx)+'.h5')
         ## weights_path = os.path.join(save_data_path,'tmp_fine_weights_'+str(idx)+'.h5')
         ## autoencoder, enc_z_mean, enc_z_std, generator = km.lstm_vae(trainData, testData, weights_path,
         ##                                                             patience=5, batch_size=batch_size)
+<<<<<<< HEAD
         autoencoder, enc_z_mean, enc_z_std, generator = km.lstm_vae2(trainData, testData, weights_path,
                                                                     patience=5, batch_size=batch_size)
         ## autoencoder, enc_z_mean, enc_z_std, generator = km.lstm_vae3(trainData, testData, weights_path,
         ##                                                             patience=5, batch_size=batch_size)
+=======
+        #autoencoder, enc_z_mean, enc_z_std, generator = km.lstm_vae2(trainData, testData, weights_path,
+        #                                                            patience=5, batch_size=batch_size)
+        autoencoder, enc_z_mean, enc_z_std, generator = km.lstm_vae3(trainData, testData, weights_path,
+                                                                     patience=20, batch_size=batch_size)
+
+>>>>>>> 49cf69599b992c3ad47f9814b2a5e44821c8bd76
         ## autoencoder = km.lstm_ae(trainData, testData, weights_path,
         ##                          patience=5, batch_size=batch_size)
         ## enc_z_mean = enc_z_std = None
