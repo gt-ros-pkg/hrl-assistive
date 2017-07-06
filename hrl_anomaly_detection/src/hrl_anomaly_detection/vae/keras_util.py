@@ -103,30 +103,30 @@ class sigGenerator():
                 # noise
                 noise = np.random.normal(0.0, self.noise_mag, \
                                           np.shape(x_new[current_index:current_index+current_batch_size]))
-                # shift? (left-right)
-                for i in range(current_batch_size):
-                    xx = x_new[current_index+i]
-                    idx_offset = int(np.round(np.random.normal(0,2, size=1))[0])
+                ## # shift? (left-right)
+                ## for i in range(current_batch_size):
+                ##     xx = x_new[current_index+i]
+                ##     idx_offset = int(np.round(np.random.normal(0,2, size=1))[0])
 
-                    if idx_offset>=0:
-                        xx = xx[idx_offset:]
-                        x_new[current_index+i] = np.pad(xx, ((0,idx_offset),
-                                                            (0,0)),
-                                                            mode='edge')
-                    else:
-                        xx = xx[:idx_offset]
-                        x_new[current_index+i] = np.pad(xx, ((abs(idx_offset),0),
-                                                            (0,0)),
-                                                            mode='edge')
+                ##     if idx_offset>=0:
+                ##         xx = xx[idx_offset:]
+                ##         x_new[current_index+i] = np.pad(xx, ((0,idx_offset),
+                ##                                             (0,0)),
+                ##                                             mode='edge')
+                ##     else:
+                ##         xx = xx[:idx_offset]
+                ##         x_new[current_index+i] = np.pad(xx, ((abs(idx_offset),0),
+                ##                                             (0,0)),
+                ##                                             mode='edge')
 
-                # scaling
+                ## # scaling
                 
 
-                # up-down
-                for i in range(current_batch_size):
-                    ud_offset = np.random.normal(0.0, 0.05, size=(n_dim)) 
-                    for j in range(n_dim):
-                        x_new[current_index+i,:,j] += ud_offset[j]
+                ## # up-down
+                ## for i in range(current_batch_size):
+                ##     ud_offset = np.random.normal(0.0, 0.05, size=(n_dim)) 
+                ##     for j in range(n_dim):
+                ##         x_new[current_index+i,:,j] += ud_offset[j]
                         
                     
                 

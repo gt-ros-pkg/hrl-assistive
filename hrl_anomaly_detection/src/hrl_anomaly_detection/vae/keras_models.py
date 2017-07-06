@@ -189,7 +189,7 @@ def lstm_vae2(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
     Note: it uses offline data.
     This code based on "https://gist.github.com/tushuhei/e684c2a5382c324880532aded9faf4e6"
     """
-    import tensorflow as tf
+    ## import tensorflow as tf
     ## sess = tf.Session()
     ## K.set_session(sess)
     
@@ -245,12 +245,6 @@ def lstm_vae2(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
     generator = Model(decoder_input, _decoded_L2)
 
 
-    def sampling3(args):
-        z_mean, z_log_var = args
-        epsilon = K.random_normal(shape=(L, z_dim), mean=0., stddev=1.0)
-        #epsilon = K.random_normal(shape=K.shape(z_mean), mean=0., stddev=1.0)
-        return z_mean + K.exp(z_log_var/2.0) * epsilon
-
     def loglikelihood(x, loc=0, scale=1):
         '''
         It uses diagonal co-variance elements only.
@@ -264,47 +258,35 @@ def lstm_vae2(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
         z_mean_s    = K.repeat(z_mean, L)
         z_log_var_s = K.repeat(z_log_var, L)
 
+        # Case 1: following sampling function
         epsilon  = K.random_normal(shape=K.shape(z_mean_s), mean=0., stddev=1.0)
         z_sample = z_mean_s + K.exp(z_log_var_s/2.0) * epsilon
+
+        # Case 2: using raw
+        #?
+        
         x_sample = K.map_fn(generator, z_sample)
 
         x_mean = K.mean(x_sample, axis=1) # length x dim
         x_var  = K.var(x_sample, axis=1)
 
-        log_p_x_z = loglikelihood(y_pred, loc=x_mean, scale=x_var)
+        log_p_x_z = loglikelihood(y_true, loc=x_mean, scale=x_var)
         xent_loss = K.mean(log_p_x_z, axis=-1)
-        
-        ## xent_loss = []
-        ## for i in range(batch_size):
-        ##     print i, batch_size
-
-
-        ##     ## z = sampling3( (z_mean, z_log_var) )            
-        ##     z = sampling3( (z_mean[i], z_log_var[i]) )            
-        ##     x_sample = generator(z) # sample x length x dim
-            
-        ##     x_mean = K.mean(x_sample, axis=0) # length x dim
-        ##     x_var  = K.var(x_sample, axis=0)
-            
-        ##     # timesteps
-        ##     log_p_x_z = multivariate_logpdf(y_pred[i], loc=x_mean, scale=x_var)
-        ##     xent_loss.append(K.mean(log_p_x_z))
-        ## xent_loss = K.stack(xent_loss)
+        ## xent_loss = K.sum(log_p_x_z, axis=-1)
         
         kl_loss   = -0.5 * K.mean(1.0 + z_log_var - K.square(z_mean) \
                                   - K.exp(z_log_var), axis=-1)
+
                                   
-        ## xent_loss = K.mean(K.sum(K.square(y_true - y_pred), axis=-1), axis=-1)
-        ## kl_loss = - 0.5 * K.mean(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var/2.0), axis=-1)
-        ## print xent_loss, kl_loss, xent_loss + kl_loss
-        loss = K.mean(xent_loss + kl_loss)
-        ## K.print_tensor(loss)
+        #loss = xent_loss + kl_loss
+        loss = -K.mean(xent_loss + kl_loss)
+        ## K.print_tensor(xent_loss)
         return loss
 
 
 
 
-    if weights_file is not None and os.path.isfile(weights_file) and fine_tuning is False:
+    if weights_file is not None and os.path.isfile(weights_file) and fine_tuning is False and False:
         vae_autoencoder.load_weights(weights_file)
         return vae_autoencoder, vae_encoder_mean, vae_encoder_var, generator
     else:
@@ -314,9 +296,10 @@ def lstm_vae2(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
             lr = 0.001
         else:
             lr = 0.01
-        #optimizer = RMSprop(lr=lr, rho=0.9, epsilon=1e-08, decay=0.0001)
-        optimizer = Adam(lr=lr)                
+        optimizer = RMSprop(lr=lr, rho=0.9, epsilon=1e-08, decay=0.0001)
+        ## optimizer = Adam(lr=lr)                
         vae_autoencoder.compile(optimizer=optimizer, loss=vae_loss)
+        ## vae_autoencoder.compile(optimizer='adam', loss=vae_loss)
 
         ## vae_autoencoder.load_weights(weights_file)
         from keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
@@ -329,22 +312,14 @@ def lstm_vae2(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
                     ReduceLROnPlateau(monitor='val_loss', factor=0.2,
                                       patience=5, min_lr=0.0001)]
 
-        train_datagen = ku.sigGenerator(augmentation=True, noise_mag=0.01)
+        train_datagen = ku.sigGenerator(augmentation=True, noise_mag=0.05)
         test_datagen = ku.sigGenerator(augmentation=False)
         train_generator = train_datagen.flow(x_train, x_train, batch_size=batch_size, seed=3334)
         test_generator = test_datagen.flow(x_test, x_test, batch_size=len(x_test),
                                            shuffle=False)
 
-        ## vae_autoencoder.fit(x_train, x_train,
-        ##                     shuffle=True,
-        ##                     steps_per_epoch=64,
-        ##                     epochs=nb_epoch,
-        ##                     batch_size=batch_size,
-        ##                     callbacks=callbacks,
-        ##                     validation_data=(x_test, x_test))
-
         hist = vae_autoencoder.fit_generator(train_generator,
-                                             steps_per_epoch=32,
+                                             steps_per_epoch=64, #1024,
                                              epochs=nb_epoch,
                                              validation_data=(x_test, x_test),
                                              ## validation_data=test_generator,
