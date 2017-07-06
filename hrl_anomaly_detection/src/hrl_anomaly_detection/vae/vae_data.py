@@ -63,6 +63,158 @@ random.seed(3334)
 np.random.seed(3334)
 
 
+def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, param_dict, plot=False):
+    ## Parameters
+    data_dict  = param_dict['data_param']
+    data_renew = data_dict['renew']
+    
+    #------------------------------------------
+    if os.path.isdir(processed_data_path) is False:
+        os.system('mkdir -p '+processed_data_path)
+
+    crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')    
+    if os.path.isfile(crossVal_pkl) and data_renew is False:
+        print "CV data exists and no renew"
+        d = ut.load_pickle(crossVal_pkl)         
+    else:
+        '''
+        Use augmented data? if nAugment is 0, then aug_successData = successData
+        '''        
+        d = dm.getDataLOPO(subject_names, task_name, raw_data_path, \
+                           processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
+                           downSampleSize=data_dict['downSampleSize'],\
+                           handFeatures=data_dict['isolationFeatures'], \
+                           cut_data=data_dict['cut_data'], \
+                           data_renew=data_renew, max_time=data_dict['max_time'])
+
+        d['successData'], d['failureData'], d['success_files'], d['failure_files'], d['kFoldList'] \
+          = dm.LOPO_data_index(d['successDataList'], d['failureDataList'],\
+                               d['successFileList'], d['failureFileList'])
+
+        ut.save_pickle(d, crossVal_pkl)
+
+
+    # select feature for detection
+    feature_list = []
+    for feature in param_dict['data_param']['handFeatures']:
+        idx = [ i for i, x in enumerate(param_dict['data_param']['isolationFeatures']) if feature == x][0]
+        feature_list.append(idx)
+    d['successData']    = d['successData'][feature_list]
+    d['failureData']    = d['failureData'][feature_list]
+
+    ## subjects = ['Andrew', 'Britteney', 'Joshua', 'Jun', 'Kihan', 'Lichard', 'Shingshing', 'Sid', 'Tao']
+    ## raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/CORL2017/'
+    ## td1 = get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
+    ##                   init_param_dict=d['param_dict'], id_num=0)
+
+    ## subjects = ['ari', 'park', 'jina', 'linda', 'sai', 'hyun']
+    ## raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/ICRA2017/'
+    ## td2 = get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
+    ##                   init_param_dict=d['param_dict'], id_num=1)
+
+    # Parameters
+    nDim = len(d['successData'])
+
+    # split data
+    # HMM-induced vector with LOPO
+    for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
+      in enumerate(d['kFoldList']):
+        if idx == 0: continue
+
+        # dim x sample x length
+        ## normalTrainData   = copy.deepcopy(d['successData'][:, normalTrainIdx, :])
+        ## abnormalTrainData = copy.deepcopy(d['failureData'][:, abnormalTrainIdx, :])
+        ## normalTestData    = copy.deepcopy(d['successData'][:, normalTestIdx, :]) 
+        ## abnormalTestData  = copy.deepcopy(d['failureData'][:, abnormalTestIdx, :])
+        ## normalTrainData   = np.hstack([normalTrainData, copy.deepcopy(td1['successData']), copy.deepcopy(td2['successData'])])
+        ## abnormalTrainData = np.hstack([abnormalTrainData, copy.deepcopy(td1['failureData']), copy.deepcopy(td2['failureData'])])
+
+
+        ## normalData   = np.hstack([copy.deepcopy(d['successData']), copy.deepcopy(td1['successData']), \
+        ##                           copy.deepcopy(td2['successData'])])
+        ## abnormalData = np.hstack([copy.deepcopy(d['failureData']), copy.deepcopy(td1['failureData']), \
+        ##                           copy.deepcopy(td2['failureData'])])
+        normalData   = copy.deepcopy(d['successData'])
+        abnormalData = copy.deepcopy(d['failureData']) 
+        trainData, testData, window_size, raw_data, raw_data_ft = get_batch_data(normalData, abnormalData)
+        (normalTrainData, abnormalTrainData, normalTestData, abnormalTestData) = raw_data
+        (normalTrainData_ft, abnormalTrainData_ft, normalTestData_ft, abnormalTestData_ft) = raw_data_ft
+        batch_size  = 256 #1024 #16
+         
+        weights_path = os.path.join(save_data_path,'tmp_weights_'+str(idx)+'.h5')
+        ## weights_path = os.path.join(save_data_path,'tmp_fine_weights_'+str(idx)+'.h5')
+        ## autoencoder, enc_z_mean, enc_z_std, generator = km.lstm_vae(trainData, testData, weights_path,
+        ##                                                             patience=5, batch_size=batch_size)
+        autoencoder, enc_z_mean, enc_z_std, generator = km.lstm_vae2(trainData, testData, weights_path,
+                                                                    patience=5, batch_size=batch_size)
+        ## autoencoder = km.lstm_ae(trainData, testData, weights_path,
+        ##                          patience=5, batch_size=batch_size)
+        ## enc_z_mean = enc_z_std = None
+
+        ## # Fine tuning
+        ## normalData   = copy.deepcopy(d['successData'])
+        ## abnormalData = copy.deepcopy(d['failureData']) 
+        ## trainData, testData, window_size, raw_data, raw_data_ft = get_batch_data(normalData, abnormalData)
+        ## (normalTrainData, abnormalTrainData, normalTestData, abnormalTestData) = raw_data
+        ## (normalTrainData_ft, abnormalTrainData_ft, normalTestData_ft, abnormalTestData_ft) = raw_data_ft
+       
+        ## save_weights_path = os.path.join(save_data_path,'tmp_fine_weights_'+str(idx)+'.h5')
+        ## autoencoder, enc_z_mean, enc_z_std, generator = km.lstm_vae(trainData, testData, weights_path,
+        ##                                                             fine_tuning=True, \
+        ##                                                             save_weights_file=save_weights_path)
+
+
+        if True and False:
+            if True and False:
+                # get optimized alpha
+                save_pkl = os.path.join(save_data_path, 'tmp_data.pkl')
+                alpha = get_optimal_alpha(enc_z_mean, enc_z_std, generator, normalTrainData, window_size,\
+                                          save_pkl=save_pkl)
+            else:
+                alpha = np.array([1.0]*nDim)/float(nDim)
+                ## alpha = np.array([0.0]*nDim)/float(nDim)
+                ## alpha[0] = 1.0
+            
+            save_pkl = os.path.join(save_data_path, 'tmp_test_scores.pkl')
+            anomaly_detection(enc_z_mean, enc_z_std, generator, normalTestData, abnormalTestData, \
+                              window_size, alpha, nSample=10000, save_pkl=save_pkl)
+
+        
+        if plot:
+            if enc_z_mean is not None:
+                # display a 2D plot of classes in the latent space
+                x_n_encoded  = enc_z_mean.predict(normalTrainData_ft)
+                x_ab_encoded = enc_z_mean.predict(abnormalTrainData_ft)
+
+                plt.figure(figsize=(6, 6))
+                plt.plot(x_n_encoded[:, 0], x_n_encoded[:, 1], '.b', ms=5, mec='b', mew=0)
+                plt.plot(x_ab_encoded[:, 0], x_ab_encoded[:, 1], '.r', ms=5, mec='r', mew=0)
+                plt.show()
+
+            # display generated data
+            for i in xrange(len(normalTrainData)):
+                if window_size is not None:
+                    x = sampleWithWindow(normalTrainData[i:i+1], window=window_size)
+                else:
+                    x = normalTrainData[i:i+1]
+                x_new = autoencoder.predict(x)
+                print np.shape(x), np.shape(x[0])
+
+                for j in xrange(len(x)):
+                    fig = plt.figure(figsize=(6, 6))
+                    for k in xrange(len(x[j][0])):
+                        fig.add_subplot(6,2,k+1)
+                        ## fig.add_subplot(100*len(x[j][0])+10+k+1)
+                        plt.plot(np.array(x)[j,:,k], '-b')
+                        plt.plot(np.array(x_new)[j,:,k], '-r')
+                        plt.ylim([-0.1,1.1])
+                    plt.show()
+        
+
+        return
+    
+    # flatten data window 1
+    #def train_vae_classifier() 
 
 def gen_data(subject_names, task_name, raw_data_path, processed_data_path, param_dict):
     ## Parameters
@@ -230,161 +382,6 @@ def get_ext_data(subjects, task_name, raw_data_path, processed_data_path, param_
     return td
 
 
-
-
-
-def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, param_dict, plot=False):
-    ## Parameters
-    data_dict  = param_dict['data_param']
-    data_renew = data_dict['renew']
-    
-    #------------------------------------------
-    if os.path.isdir(processed_data_path) is False:
-        os.system('mkdir -p '+processed_data_path)
-
-    crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')    
-    if os.path.isfile(crossVal_pkl) and data_renew is False:
-        print "CV data exists and no renew"
-        d = ut.load_pickle(crossVal_pkl)         
-    else:
-        '''
-        Use augmented data? if nAugment is 0, then aug_successData = successData
-        '''        
-        d = dm.getDataLOPO(subject_names, task_name, raw_data_path, \
-                           processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
-                           downSampleSize=data_dict['downSampleSize'],\
-                           handFeatures=data_dict['isolationFeatures'], \
-                           cut_data=data_dict['cut_data'], \
-                           data_renew=data_renew, max_time=data_dict['max_time'])
-
-        d['successData'], d['failureData'], d['success_files'], d['failure_files'], d['kFoldList'] \
-          = dm.LOPO_data_index(d['successDataList'], d['failureDataList'],\
-                               d['successFileList'], d['failureFileList'])
-
-        ut.save_pickle(d, crossVal_pkl)
-
-
-    # select feature for detection
-    feature_list = []
-    for feature in param_dict['data_param']['handFeatures']:
-        idx = [ i for i, x in enumerate(param_dict['data_param']['isolationFeatures']) if feature == x][0]
-        feature_list.append(idx)
-    d['successData']    = d['successData'][feature_list]
-    d['failureData']    = d['failureData'][feature_list]
-
-    ## subjects = ['Andrew', 'Britteney', 'Joshua', 'Jun', 'Kihan', 'Lichard', 'Shingshing', 'Sid', 'Tao']
-    ## raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/CORL2017/'
-    ## td1 = get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
-    ##                   init_param_dict=d['param_dict'], id_num=0)
-
-    ## subjects = ['ari', 'park', 'jina', 'linda', 'sai', 'hyun']
-    ## raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/ICRA2017/'
-    ## td2 = get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
-    ##                   init_param_dict=d['param_dict'], id_num=1)
-
-    # Parameters
-    nDim = len(d['successData'])
-
-    # split data
-    # HMM-induced vector with LOPO
-    for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
-      in enumerate(d['kFoldList']):
-        if idx == 0: continue
-
-        # dim x sample x length
-        ## normalTrainData   = copy.deepcopy(d['successData'][:, normalTrainIdx, :])
-        ## abnormalTrainData = copy.deepcopy(d['failureData'][:, abnormalTrainIdx, :])
-        ## normalTestData    = copy.deepcopy(d['successData'][:, normalTestIdx, :]) 
-        ## abnormalTestData  = copy.deepcopy(d['failureData'][:, abnormalTestIdx, :])
-        ## normalTrainData   = np.hstack([normalTrainData, copy.deepcopy(td1['successData']), copy.deepcopy(td2['successData'])])
-        ## abnormalTrainData = np.hstack([abnormalTrainData, copy.deepcopy(td1['failureData']), copy.deepcopy(td2['failureData'])])
-
-
-        ## normalData   = np.hstack([copy.deepcopy(d['successData']), copy.deepcopy(td1['successData']), \
-        ##                           copy.deepcopy(td2['successData'])])
-        ## abnormalData = np.hstack([copy.deepcopy(d['failureData']), copy.deepcopy(td1['failureData']), \
-        ##                           copy.deepcopy(td2['failureData'])])
-        normalData   = copy.deepcopy(d['successData'])
-        abnormalData = copy.deepcopy(d['failureData']) 
-        trainData, testData, window_size, raw_data, raw_data_ft = get_batch_data(normalData, abnormalData)
-        (normalTrainData, abnormalTrainData, normalTestData, abnormalTestData) = raw_data
-        (normalTrainData_ft, abnormalTrainData_ft, normalTestData_ft, abnormalTestData_ft) = raw_data_ft
-        batch_size  = 256 #1024 #16
-         
-        weights_path = os.path.join(save_data_path,'tmp_weights_'+str(idx)+'.h5')
-        ## weights_path = os.path.join(save_data_path,'tmp_fine_weights_'+str(idx)+'.h5')
-        ## autoencoder, enc_z_mean, enc_z_std, generator = km.lstm_vae(trainData, testData, weights_path,
-        ##                                                             patience=5, batch_size=batch_size)
-        autoencoder, enc_z_mean, enc_z_std, generator = km.lstm_vae2(trainData, testData, weights_path,
-                                                                    patience=5, batch_size=batch_size)
-        ## autoencoder = km.lstm_ae(trainData, testData, weights_path,
-        ##                          patience=5, batch_size=batch_size)
-        ## enc_z_mean = enc_z_std = None
-
-        ## # Fine tuning
-        ## normalData   = copy.deepcopy(d['successData'])
-        ## abnormalData = copy.deepcopy(d['failureData']) 
-        ## trainData, testData, window_size, raw_data, raw_data_ft = get_batch_data(normalData, abnormalData)
-        ## (normalTrainData, abnormalTrainData, normalTestData, abnormalTestData) = raw_data
-        ## (normalTrainData_ft, abnormalTrainData_ft, normalTestData_ft, abnormalTestData_ft) = raw_data_ft
-       
-        ## save_weights_path = os.path.join(save_data_path,'tmp_fine_weights_'+str(idx)+'.h5')
-        ## autoencoder, enc_z_mean, enc_z_std, generator = km.lstm_vae(trainData, testData, weights_path,
-        ##                                                             fine_tuning=True, \
-        ##                                                             save_weights_file=save_weights_path)
-
-
-        if True and False:
-            if True and False:
-                # get optimized alpha
-                save_pkl = os.path.join(save_data_path, 'tmp_data.pkl')
-                alpha = get_optimal_alpha(enc_z_mean, enc_z_std, generator, normalTrainData, window_size,\
-                                          save_pkl=save_pkl)
-            else:
-                alpha = np.array([1.0]*nDim)/float(nDim)
-                ## alpha = np.array([0.0]*nDim)/float(nDim)
-                ## alpha[0] = 1.0
-            
-            save_pkl = os.path.join(save_data_path, 'tmp_test_scores.pkl')
-            anomaly_detection(enc_z_mean, enc_z_std, generator, normalTestData, abnormalTestData, \
-                              window_size, alpha, nSample=10000, save_pkl=save_pkl)
-
-        
-        if plot:
-            if enc_z_mean is not None:
-                # display a 2D plot of classes in the latent space
-                x_n_encoded  = enc_z_mean.predict(normalTrainData_ft)
-                x_ab_encoded = enc_z_mean.predict(abnormalTrainData_ft)
-
-                plt.figure(figsize=(6, 6))
-                plt.plot(x_n_encoded[:, 0], x_n_encoded[:, 1], '.b', ms=5, mec='b', mew=0)
-                plt.plot(x_ab_encoded[:, 0], x_ab_encoded[:, 1], '.r', ms=5, mec='r', mew=0)
-                plt.show()
-
-            # display generated data
-            for i in xrange(len(normalTrainData)):
-                if window_size is not None:
-                    x = sampleWithWindow(normalTrainData[i:i+1], window=window_size)
-                else:
-                    x = normalTrainData[i:i+1]
-                x_new = autoencoder.predict(x)
-                print np.shape(x), np.shape(x[0])
-
-                for j in xrange(len(x)):
-                    fig = plt.figure(figsize=(6, 6))
-                    for k in xrange(len(x[j][0])):
-                        fig.add_subplot(6,2,k+1)
-                        ## fig.add_subplot(100*len(x[j][0])+10+k+1)
-                        plt.plot(np.array(x)[j,:,k], '-b')
-                        plt.plot(np.array(x_new)[j,:,k], '-r')
-                        plt.ylim([-0.1,1.1])
-                    plt.show()
-        
-
-        return
-    
-    # flatten data window 1
-    #def train_vae_classifier() 
 
 
 def sampleWithWindow(X, window=5):

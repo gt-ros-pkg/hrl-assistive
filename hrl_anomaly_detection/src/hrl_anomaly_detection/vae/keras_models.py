@@ -271,15 +271,15 @@ def lstm_vae2(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
         x_var  = K.var(x_sample, axis=1)
 
         log_p_x_z = loglikelihood(y_true, loc=x_mean, scale=x_var)
-        xent_loss = K.mean(log_p_x_z, axis=-1)
+        xent_loss = K.mean(-log_p_x_z, axis=-1)
         ## xent_loss = K.sum(log_p_x_z, axis=-1)
         
         kl_loss   = -0.5 * K.mean(1.0 + z_log_var - K.square(z_mean) \
                                   - K.exp(z_log_var), axis=-1)
 
                                   
-        #loss = xent_loss + kl_loss
-        loss = -K.mean(xent_loss + kl_loss)
+        loss = xent_loss + kl_loss
+        #loss = -K.mean(xent_loss + kl_loss)
         ## K.print_tensor(xent_loss)
         return loss
 
@@ -296,8 +296,8 @@ def lstm_vae2(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
             lr = 0.001
         else:
             lr = 0.01
-        optimizer = RMSprop(lr=lr, rho=0.9, epsilon=1e-08, decay=0.0001)
-        ## optimizer = Adam(lr=lr)                
+        ## optimizer = RMSprop(lr=lr, rho=0.9, epsilon=1e-08, decay=0.0001)
+        optimizer = Adam(lr=lr)                
         vae_autoencoder.compile(optimizer=optimizer, loss=vae_loss)
         ## vae_autoencoder.compile(optimizer='adam', loss=vae_loss)
 
@@ -319,7 +319,7 @@ def lstm_vae2(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
                                            shuffle=False)
 
         hist = vae_autoencoder.fit_generator(train_generator,
-                                             steps_per_epoch=64, #1024,
+                                             steps_per_epoch=512, #1024,
                                              epochs=nb_epoch,
                                              validation_data=(x_test, x_test),
                                              ## validation_data=test_generator,
