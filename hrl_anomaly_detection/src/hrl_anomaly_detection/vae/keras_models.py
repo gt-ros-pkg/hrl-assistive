@@ -459,7 +459,7 @@ def lstm_vae3(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
                                     save_weights_only=True,
                                     monitor='val_loss'),
                     ReduceLROnPlateau(monitor='val_loss', factor=0.2,
-                                      patience=5, min_lr=0.0001)]
+                                      patience=3, min_lr=0.0001)]
 
         train_datagen = ku.sigGenerator(augmentation=True, noise_mag=0.05)
         train_generator = train_datagen.flow(x_train, x_train, batch_size=batch_size, seed=3334)
@@ -468,7 +468,7 @@ def lstm_vae3(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
                                            ## shuffle=False)
 
         hist = vae_autoencoder.fit_generator(train_generator,
-                                             steps_per_epoch=1024,
+                                             steps_per_epoch=512,
                                              epochs=nb_epoch,
                                              validation_data=(x_test, x_test),
                                              ## validation_data=test_generator,
