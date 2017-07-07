@@ -297,9 +297,9 @@ def lstm_vae2(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
         else:
             lr = 0.01
         ## optimizer = RMSprop(lr=lr, rho=0.9, epsilon=1e-08, decay=0.0001)
-        optimizer = Adam(lr=lr)                
-        vae_autoencoder.compile(optimizer=optimizer, loss=vae_loss)
-        ## vae_autoencoder.compile(optimizer='adam', loss=vae_loss)
+        #optimizer = Adam(lr=lr)                
+        #vae_autoencoder.compile(optimizer=optimizer, loss=vae_loss)
+        vae_autoencoder.compile(optimizer='adam', loss=vae_loss)
 
         ## vae_autoencoder.load_weights(weights_file)
         from keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
@@ -319,7 +319,7 @@ def lstm_vae2(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
                                            shuffle=False)
 
         hist = vae_autoencoder.fit_generator(train_generator,
-                                             steps_per_epoch=2048,
+                                             steps_per_epoch=512,
                                              epochs=nb_epoch,
                                              validation_data=(x_test, x_test),
                                              ## validation_data=test_generator,
