@@ -139,7 +139,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         trainData, testData, window_size, raw_data, raw_data_ft = get_batch_data(normalData, abnormalData)
         (normalTrainData, abnormalTrainData, normalTestData, abnormalTestData) = raw_data
         (normalTrainData_ft, abnormalTrainData_ft, normalTestData_ft, abnormalTestData_ft) = raw_data_ft
-        batch_size  = 1 #1024 #16
+        batch_size  = 1 #16
          
         weights_path = os.path.join(save_data_path,'tmp_weights_'+str(idx)+'.h5')
         ## weights_path = os.path.join(save_data_path,'tmp_fine_weights_'+str(idx)+'.h5')
@@ -147,8 +147,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         ##                                                             patience=5, batch_size=batch_size)
         ## autoencoder, enc_z_mean, enc_z_std, generator = km.lstm_vae2(trainData, testData, weights_path,
         ##                                                             patience=5, batch_size=batch_size)
-        autoencoder, enc_z_mean, enc_z_std, generator = km.lstm_vae3(trainData, testData, weights_path,
-                                                                    patience=5, batch_size=batch_size)
+        autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generator = km.lstm_vae3(trainData, testData, weights_path, patience=3, batch_size=batch_size)
         ## autoencoder = km.lstm_ae(trainData, testData, weights_path,
         ##                          patience=5, batch_size=batch_size)
         ## enc_z_mean = enc_z_std = None
@@ -166,7 +165,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         ##                                                             save_weights_file=save_weights_path)
 
 
-        if True and False:
+        if True :
             if True and False:
                 # get optimized alpha
                 save_pkl = os.path.join(save_data_path, 'tmp_data.pkl')
@@ -178,7 +177,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 ## alpha[0] = 1.0
             
             save_pkl = os.path.join(save_data_path, 'tmp_test_scores.pkl')
-            anomaly_detection(autoencoder, enc_z_mean, enc_z_std, generator, normalTestData, abnormalTestData, \
+            anomaly_detection(autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generator,
+                              normalTestData, abnormalTestData, \
                               window_size, alpha, nSample=10000, save_pkl=save_pkl)
 
         
@@ -589,7 +589,8 @@ def get_optimal_alpha(enc_z_mean, enc_z_std, generator, normalTrainData, window_
     
     return res.x
 
-def anomaly_detection(vae, enc_z_mean, enc_z_std, generator, normalTestData, abnormalTestData, window_size, \
+def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generator,
+                      normalTestData, abnormalTestData, window_size, \
                       alpha, nSample=1000, save_pkl=None):
 
     if os.path.isfile(save_pkl) and False:
@@ -611,39 +612,40 @@ def anomaly_detection(vae, enc_z_mean, enc_z_std, generator, normalTestData, abn
                 else:             x = X[i:i+1]
 
                 s = []
-                for j in xrange(len(len(x))): # per window
+                for j in xrange(len(x)): # per window
 
 
                     # sampling based method ----------------------------------------
-                    z_mean = enc_z_mean.predict(x[j:j+1]) # 1 x 2 (or 1 x (nwindow x 2))
-                    z_std  = enc_z_std.predict(x[j:j+1]) *100.0
+                    ## z_mean = enc_z_mean.predict(x[j:j+1]) # 1 x 2 (or 1 x (nwindow x 2))
+                    ## z_std  = enc_z_std.predict(x[j:j+1]) *100.0
 
-                    ## print z_mean
-                    ## print z_std
+                    ## ## print z_mean
+                    ## ## print z_std
                     
-                    std  = [val if val > 0 else 1e-5 for val in z_std]
-                    L = []
-                    for k in xrange(len(z_mean[j])): # per dim
-                        L.append(np.random.normal(z_mean[k], std[k],nSample))
-                    L = np.swapaxes(np.array(L),0,1) # nSample x z_dim
+                    ## std  = [val if val > 0 else 1e-5 for val in z_std]
+                    ## L = []
+                    ## for k in xrange(len(z_mean[j])): # per dim
+                    ##     L.append(np.random.normal(z_mean[k], std[k],nSample))
+                    ## L = np.swapaxes(np.array(L),0,1) # nSample x z_dim
 
-                    x_rnd = generator.predict(L) # sample x (window_)length x dim
-                    x_rnd = np.swapaxes(x_rnd, 0, 2) # dim x (window_)length x nSample
+                    ## x_rnd = generator.predict(L) # sample x (window_)length x dim
+                    ## x_rnd = np.swapaxes(x_rnd, 0, 2) # dim x (window_)length x nSample
 
-                    # time wise
-                    x_mean = []; x_std = []
-                    for k in xrange(len(x_rnd)): # per dim
-                        x_mean.append( np.mean(x_rnd[k], axis=1) )
-                        x_std.append( np.std(x_rnd[k], axis=1) )
+                    ## # time wise
+                    ## x_mean = []; x_std = []
+                    ## for k in xrange(len(x_rnd)): # per dim
+                    ##     x_mean.append( np.mean(x_rnd[k], axis=1) )
+                    ##     x_std.append( np.std(x_rnd[k], axis=1) )
 
                     #---------------------------------------------------------------
                     # prediction based method
-                    ## y = vae.predict(x[j:j+1])
-                    ## x_mean    = y[:,:,:x_dim]
-                    ## x_log_var = y[:,:,x_dim:]
-                    ## x_std     = np.exp(x_log_var/2.0)
-                    
-                    
+                    x_mean   = vae_mean.predict(x[j:j+1])
+                    x_logvar = vae_logvar.predict(x[j:j+1])
+                    x_std    = np.exp(x_logvar/2.0)
+
+                    x_mean = np.swapaxes(np.squeeze(x_mean), 0, 1)
+                    x_std  = np.swapaxes(np.squeeze(x_std), 0, 1)
+
                     #---------------------------------------------------------------
 
                     # temp
@@ -652,8 +654,8 @@ def anomaly_detection(vae, enc_z_mean, enc_z_std, generator, normalTestData, abn
                         print x_std[k]
                         fig.add_subplot(len(x_mean),1,k+1)
                         plt.plot(x_mean[k], '-b')
-                        plt.plot(x_mean[k]+2*x_std[k], '--b')
-                        plt.plot(x_mean[k]-2*x_std[k], '--b')
+                        plt.plot(x_mean[k]+0.2*x_std[k], '--b')
+                        plt.plot(x_mean[k]-0.2*x_std[k], '--b')
                         plt.plot(x[j,:,k], '-r')
                     plt.show()
                     
