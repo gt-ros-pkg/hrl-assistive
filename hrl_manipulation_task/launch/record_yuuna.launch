@@ -1,0 +1,49 @@
+<launch>
+
+  <arg name="fname" default="test"/>
+
+  <!--node pkg="topic_tools" type="throttle" name="kinect_throttle"
+        args="messages /head_mount_kinect/hd/points 0.05" /-->
+  <node pkg="topic_tools" type="throttle" name="tf_throttle"
+        args="messages /tf 50" />
+  <node pkg="topic_tools" type="throttle" name="joint_states_throttle"
+        args="messages /joint_states 50" />
+  <node pkg="topic_tools" type="throttle" name="netft_data_throttle"
+        args="messages /netft_data 50" />
+
+  
+  <node pkg="rosbag" type="record" name="rosbag" args="record -o
+                                                       /home/dpark/$(arg fname) 
+                                                       /tf_throttle
+                                                       /joint_states_throttle
+                                                       /haptic_mpc/goal_pose_array
+                                                       /haptic_mpc/robot_state
+                                                       /right/haptic_mpc/robot_state
+                                                       /right/haptic_mpc/gripper_pose
+                                                       /hrl_manipulation_task/raw_data
+                                                       /haptic_mpc/traj_pose
+                                                       /SR300/depth_registered/sw_registered/image_rect
+                                                       /SR300/depth_registered/sw_registered/camera_info
+                                                       /SR300/rgb/image_raw
+                                                       /SR300/rgb/camera_info
+                                                       /SR300/depth/points
+                                                       /SR300/depth/camera_info
+                                                       /head_mount_kinect/hd/points
+                                                       /head_mount_kinect/hd/camera_info
+                                                       " output="screen"/>
+</launch>
+
+
+<!--  /manipulation_task/user_feedback 
+     /feeding/manipulation_task/feeding_dist_request
+     /feeding/manipulation_task/feeding_dist_state
+-->
+
+<!--                                                       /pressure/r_gripper_motor
+                                                       /head_traj_controller/state
+                                                       /l_arm_controller
+                                                       /r_arm_controller
+                                                     /ar_pose_marker
+                                                     HarkSrcFFT/all
+                                                       julius_recog_cmd
+    -->
