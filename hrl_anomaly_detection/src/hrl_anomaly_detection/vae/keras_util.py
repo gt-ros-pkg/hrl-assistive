@@ -121,7 +121,7 @@ class sigGenerator():
                                                             (0,0)),
                                                             mode='edge')
                 '''
-                
+
                 # scaling                
 
                 
@@ -131,8 +131,6 @@ class sigGenerator():
                 ##     for j in range(n_dim):
                 ##         x_new[current_index+i,:,j] += ud_offset[j]
                      
-                    
-                
                 yield x_new[current_index:current_index+current_batch_size]+noise,\
                   x_new[current_index:current_index+current_batch_size]+noise
                                           
