@@ -104,7 +104,7 @@ class sigGenerator():
                 noise = np.random.normal(0.0, self.noise_mag, \
                                           np.shape(x_new[current_index:current_index+current_batch_size]))
 
-                                                          
+                '''                                          
                 # shift? (left-right)
                 for i in range(current_batch_size):
                     xx = x_new[current_index+i]
@@ -120,16 +120,17 @@ class sigGenerator():
                         x_new[current_index+i] = np.pad(xx, ((abs(idx_offset),0),
                                                             (0,0)),
                                                             mode='edge')
-
+                '''
+                
                 # scaling                
 
-                '''
+                
                 # up-down
-                for i in range(current_batch_size):
-                    ud_offset = np.random.normal(0.0, 0.02, size=(n_dim)) 
-                    for j in range(n_dim):
-                        x_new[current_index+i,:,j] += ud_offset[j]
-                '''     
+                ## for i in range(current_batch_size):
+                ##     ud_offset = np.random.normal(0.0, 0.02, size=(n_dim)) 
+                ##     for j in range(n_dim):
+                ##         x_new[current_index+i,:,j] += ud_offset[j]
+                     
                     
                 
                 yield x_new[current_index:current_index+current_batch_size]+noise,\
