@@ -174,7 +174,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         ##                                                             save_weights_file=save_weights_path)
 
 
-        if True :
+        if True and False:
             if True:
                 # get optimized alpha
                 save_pkl = os.path.join(save_data_path, 'tmp_data.pkl')
@@ -207,22 +207,37 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             for i in xrange(len(normalTrainData)):
                 if window_size is not None:
                     x = sampleWithWindow(normalTrainData[i:i+1], window=window_size)
-                else:
-                    x = normalTrainData[i:i+1]
-                x_new = autoencoder.predict(x)
-                print np.shape(x), np.shape(x[0])
 
-                for j in xrange(len(x)):
+                    x_true = []
+                    x_pred = []
+                    for j in xrange(len(x)):
+                        x_new = autoencoder.predict(x[j:j+1])
+                        x_true.append(x[j])
+                        x_pred.append(x_new[-1])
+
                     fig = plt.figure(figsize=(6, 6))
-                    for k in xrange(len(x[j][0])):
+                    for k in xrange(len(x[0])):
                         fig.add_subplot(6,2,k+1)
-                        ## fig.add_subplot(100*len(x[j][0])+10+k+1)
-                        plt.plot(np.array(x)[j,:,k], '-b')
-                        plt.plot(np.array(x_new)[j,:,k], '-r')
+                        plt.plot(np.array(x_true)[:,k], '-b')
+                        plt.plot(np.array(x_pred)[:,k], '-r')
                         plt.ylim([-0.1,1.1])
                     plt.show()
-        
+                        
+                else:
+                    x = normalTrainData[i:i+1]
+                    x_new = autoencoder.predict(x)
+                    print np.shape(x), np.shape(x[0])
 
+                    for j in xrange(len(x)):
+                        fig = plt.figure(figsize=(6, 6))
+                        for k in xrange(len(x[j][0])):
+                            fig.add_subplot(6,2,k+1)
+                            ## fig.add_subplot(100*len(x[j][0])+10+k+1)
+                            plt.plot(np.array(x)[j,:,k], '-b')
+                            plt.plot(np.array(x_new)[j,:,k], '-r')
+                            plt.ylim([-0.1,1.1])
+                        plt.show()
+        
         return
     
     # flatten data window 1
