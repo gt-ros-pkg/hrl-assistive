@@ -175,10 +175,11 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
 
 
         if True :
-            if True and False:
+            if True:
                 # get optimized alpha
                 save_pkl = os.path.join(save_data_path, 'tmp_data.pkl')
-                alpha = get_optimal_alpha(enc_z_mean, enc_z_std, generator, normalTrainData, window_size,\
+                alpha = get_optimal_alpha(autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std,
+                                          generator, normalTrainData, window_size,\
                                           save_pkl=save_pkl)
             else:
                 alpha = np.array([1.0]*nDim)/float(nDim)
@@ -188,7 +189,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             save_pkl = os.path.join(save_data_path, 'tmp_test_scores.pkl')
             anomaly_detection(autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generator,
                               normalTestData, abnormalTestData, \
-                              window_size, alpha, nSample=10000, save_pkl=save_pkl)
+                              window_size, alpha, save_pkl=save_pkl)
 
         
         if plot:
@@ -510,8 +511,8 @@ def get_batch_data(normalData, abnormalData, win=False):
     return trainData_win, testData_win, window_size, raw_data, raw_data_ft
 
 
-def get_optimal_alpha(enc_z_mean, enc_z_std, generator, normalTrainData, window_size, nSample=100,\
-                      save_pkl=None):
+def get_optimal_alpha(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generator,
+                      normalTrainData, window_size, save_pkl=None):
 
     
     nDim    = len(normalTrainData[0,0])
@@ -528,47 +529,66 @@ def get_optimal_alpha(enc_z_mean, enc_z_std, generator, normalTrainData, window_
         for i in xrange(len(normalTrainData)):
             print "sample: ", i+1, " out of ", len(normalTrainData), np.shape(p_ll)
 
-            if window_size>0:
-                x = sampleWithWindow(normalTrainData[i:i+1], window=window_size)
-            else:
-                x = normalTrainData[i:i+1]
-            z_mean = enc_z_mean.predict(x) # 1 x 2 (nwindow x 2)
-            z_std  = enc_z_std.predict(x)
-            nSubSample = len(z_mean)
+            if window_size>0: x = sampleWithWindow(normalTrainData[i:i+1], window=window_size)
+            else:             x = normalTrainData[i:i+1]
+                
+            #nSubSample = len(z_mean)
 
-            #x_new = autoencoder.predict(x, batch_size=1024)
-            for j in xrange(len(z_mean)): # per window
-                # (2, 100)
-                std  = [val if val > 0 else 1e-5 for val in z_std[j]]
-                L = []
-                for k in xrange(len(z_mean[j])):
-                    L.append(np.random.normal(z_mean[j][k], std[k],nSample))
-                L = np.array(L)
-                L = np.swapaxes(L,0,1) # sample x z_dim
+            p_ll = None
+            for j in xrange(len(x)): # per window
 
-                x_rnd = generator.predict(L) # sample x (window_)length x dim
-                x_rnd = np.swapaxes(x_rnd, 0, 2)
+                # sampling based method ----------------------------------------
+                ## z_mean = enc_z_mean.predict(x[j:j+1]) # 1 x 2 (or 1 x (nwindow x 2))
+                ## z_std  = enc_z_std.predict(x[j:j+1]) *100.0
+                
+                ## std  = [val if val > 0 else 1e-5 for val in z_std[j]]
+                ## L = []
+                ## for k in xrange(len(z_mean[j])):
+                ##     L.append(np.random.normal(z_mean[j][k], std[k],nSample))
+                ## L = np.array(L)
+                ## L = np.swapaxes(L,0,1) # sample x z_dim
 
-                x_mean = np.mean(x_rnd.reshape(len(x_rnd),-1), axis=1 )
-                x_std  = np.std(x_rnd.reshape(len(x_rnd),-1), axis=1 )
+                ## x_rnd = generator.predict(L) # sample x (window_)length x dim
+                ## x_rnd = np.swapaxes(x_rnd, 0, 2)
 
+                ## x_mean = np.mean(x_rnd.reshape(len(x_rnd),-1), axis=1 )
+                ## x_std  = np.std(x_rnd.reshape(len(x_rnd),-1), axis=1 )
+
+
+                #---------------------------------------------------------------
+                # prediction based method
+                x_mean   = vae_mean.predict(x[j:j+1])
+                x_logvar = vae_logvar.predict(x[j:j+1])
+                x_std    = np.exp(x_logvar/2.0)
+
+                x_mean = np.swapaxes(np.squeeze(x_mean), 0, 1)
+                x_std  = np.swapaxes(np.squeeze(x_std), 0, 1)
+
+
+                #---------------------------------------------------------------
                 # anomaly score
-                p_l = []
+                p_l     = []
                 for k in xrange(len(x_mean)): # per dim
-                    p = scipy.stats.norm(x_mean[k], x_std[k]).pdf(x[j,:,k]) # length
+                    p = []
+                    for l in xrange(len(x_mean[0])): # per length
+                        p.append(scipy.stats.norm(x_mean[k][l], x_std[k][l]).pdf(x[j,l,k])) # length
+
                     p = [val if not np.isinf(val).any() and not np.isnan(val).any() and val > 0
                          else 1e-50 for val in p]
+                    p_l.append(p) # dim x length
 
-                    p_l.append(p)
-                    ## if type(p) is list:
-                    ##     p_ll[k] += np.log(p).tolist()
-                    ## else:
-                    ##     p_ll[k].append( np.log(p) )
+                if p_ll is None:
+                    p_ll = np.log(np.array(p_l))
+                else:
+                    p_ll = np.hstack([p_ll, np.log(np.array(p_l)+1e-10)])
+                ## p_ll.append(np.log(np.array(p_l)+1e-10))                    
+
+                print np.shape(p_ll)
 
                 # find min idx
-                idx = np.argmin(p_l)%len(x[0])            
-                for k in xrange(len(x_mean)): # per dim
-                    p_ll[k].append( np.log(p_l[k][idx]) )
+                ## idx = np.argmin(p_l)%len(x[0])            
+                ## for k in xrange(len(x_mean)): # per dim
+                ##     p_ll[k].append( np.log(p_l[k][idx]) )
                                 
         d = {'p_ll': p_ll, 'nSample': nSample, 'nSubSample': nSubSample }
         ut.save_pickle(d, save_pkl)
@@ -581,7 +601,8 @@ def get_optimal_alpha(enc_z_mean, enc_z_std, generator, normalTrainData, window_
         X      : dim
         args[0]: dim
         '''
-        return -np.sum(X*args) +10.0*np.sum( X**2 )
+        return -np.sum(X.dot(args)) +10.0*np.sum( X**2 )
+    
 
     def const(X):
         return np.sum(X)-1.0
@@ -589,7 +610,7 @@ def get_optimal_alpha(enc_z_mean, enc_z_std, generator, normalTrainData, window_
 
     from scipy.optimize import minimize
     x0   = np.array([1]*nDim)/float(nDim)
-    d    = np.sum(p_ll, axis=1)/float(nSample)/float(nSubSample)
+    d    = p_ll #np.sum(p_ll, axis=1)/float(nSample)/float(nSubSample) # sample x dim x length
     bnds = [[0.01,0.99] for i in xrange(nDim) ]
     res  = minimize(score_func, x0, args=(d), method='SLSQP', tol=1e-6, bounds=bnds,
                     constraints={'type':'eq', 'fun': const}, options={'disp': False})
@@ -599,7 +620,7 @@ def get_optimal_alpha(enc_z_mean, enc_z_std, generator, normalTrainData, window_
 
 def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generator,
                       normalTestData, abnormalTestData, window_size, \
-                      alpha, nSample=1000, save_pkl=None):
+                      alpha, save_pkl=None):
 
     if os.path.isfile(save_pkl) and False:
         d = ut.load_pickle(save_pkl)
@@ -608,8 +629,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generato
     else:
         x_dim = len(normalTestData[0][0])
 
-        def get_anomaly_score(X, enc_z_mean, enc_z_std, generator, window_size, \
-                              alpha, nSample=1000):
+        def get_anomaly_score(X, window_size, alpha, nSample=1000):
 
             scores = []
             for i in xrange(len(X)):
@@ -627,6 +647,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generato
                     ## z_mean = enc_z_mean.predict(x[j:j+1]) # 1 x 2 (or 1 x (nwindow x 2))
                     ## z_std  = enc_z_std.predict(x[j:j+1]) *100.0
 
+                    ## nSample=1000
                     ## ## print z_mean
                     ## ## print z_std
                     
@@ -657,15 +678,15 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generato
                     #---------------------------------------------------------------
 
                     # temp
-                    fig = plt.figure()
-                    for k in xrange(len(x_mean)): # per dim                    
-                        print x_std[k]
-                        fig.add_subplot(len(x_mean),1,k+1)
-                        plt.plot(x_mean[k], '-b')
-                        plt.plot(x_mean[k]+0.2*x_std[k], '--b')
-                        plt.plot(x_mean[k]-0.2*x_std[k], '--b')
-                        plt.plot(x[j,:,k], '-r')
-                    plt.show()
+                    ## fig = plt.figure()
+                    ## for k in xrange(len(x_mean)): # per dim                    
+                    ##     print x_std[k]
+                    ##     fig.add_subplot(len(x_mean),1,k+1)
+                    ##     plt.plot(x_mean[k], '-b')
+                    ##     plt.plot(x_mean[k]+0.2*x_std[k], '--b')
+                    ##     plt.plot(x_mean[k]-0.2*x_std[k], '--b')
+                    ##     plt.plot(x[j,:,k], '-r')
+                    ## plt.show()
                     
 
                     # anomaly score
@@ -686,10 +707,8 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generato
                 scores.append(s)
             return scores
 
-        scores_n = get_anomaly_score(normalTestData, enc_z_mean, enc_z_std, generator, window_size, \
-                                     alpha, nSample=nSample )
-        scores_a = get_anomaly_score(abnormalTestData, enc_z_mean, enc_z_std, generator, window_size, \
-                                     alpha, nSample=nSample )
+        scores_n = get_anomaly_score(normalTestData, window_size, alpha )
+        scores_a = get_anomaly_score(abnormalTestData, window_size, alpha )
         
 
         d = {}

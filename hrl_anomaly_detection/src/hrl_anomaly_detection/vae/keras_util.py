@@ -121,17 +121,16 @@ class sigGenerator():
                                                             (0,0)),
                                                             mode='edge')
                 '''
+
                 # scaling                
 
-                '''
-                # up-down
-                for i in range(current_batch_size):
-                    ud_offset = np.random.normal(0.0, 0.02, size=(n_dim)) 
-                    for j in range(n_dim):
-                        x_new[current_index+i,:,j] += ud_offset[j]
-                '''
-                    
                 
+                # up-down
+                ## for i in range(current_batch_size):
+                ##     ud_offset = np.random.normal(0.0, 0.02, size=(n_dim)) 
+                ##     for j in range(n_dim):
+                ##         x_new[current_index+i,:,j] += ud_offset[j]
+                     
                 yield x_new[current_index:current_index+current_batch_size]+noise,\
                   x_new[current_index:current_index+current_batch_size]+noise
                                           
