@@ -142,18 +142,21 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
           get_batch_data(normalData, abnormalData, win=True)
         (normalTrainData, abnormalTrainData, normalTestData, abnormalTestData) = raw_data
         (normalTrainData_ft, abnormalTrainData_ft, normalTestData_ft, abnormalTestData_ft) = raw_data_ft
-        batch_size  = 16
+        batch_size  = 1
          
         weights_path = os.path.join(save_data_path,'tmp_weights_'+str(idx)+'.h5')
         ## weights_path = os.path.join(save_data_path,'tmp_fine_weights_'+str(idx)+'.h5')
+        vae_mean   = None
+        vae_logvar = None
 
         # ------------------------------------------------------------------------------------------
-        ## autoencoder, enc_z_mean, enc_z_std, generator = km.lstm_vae(trainData, testData, weights_path,
-        ##                                                             patience=5, batch_size=batch_size)
+        autoencoder, enc_z_mean, enc_z_std, generator = km.lstm_vae(trainData, testData, weights_path,
+                                                                    patience=5, batch_size=batch_size)
         ## autoencoder, enc_z_mean, enc_z_std, generator = km.lstm_vae2(trainData, testData, weights_path,
         ##                                                             patience=5, batch_size=batch_size)
-        autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generator = \
-          km.lstm_vae3(trainData, testData, weights_path, patience=3, batch_size=batch_size)
+        ## autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generator = \
+        ##   km.lstm_vae3(trainData, testData, weights_path, patience=3, batch_size=batch_size,
+        ##                steps_per_epoch=512)
         #autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generator = \
         #  km.lstm_vae4(trainData, testData, weights_path, patience=3, batch_size=batch_size)
         ## autoencoder = km.lstm_ae(trainData, testData, weights_path,
@@ -202,21 +205,27 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 plt.plot(x_n_encoded[:, 0], x_n_encoded[:, 1], '.b', ms=5, mec='b', mew=0)
                 plt.plot(x_ab_encoded[:, 0], x_ab_encoded[:, 1], '.r', ms=5, mec='r', mew=0)
                 plt.show()
+                
+            if vae_mean is None: vae_mean = autoencoder
+
 
             # display generated data
             for i in xrange(len(normalTrainData)):
                 if window_size is not None:
                     x = sampleWithWindow(normalTrainData[i:i+1], window=window_size)
+                    x = np.array(x)
+
 
                     x_true = []
                     x_pred = []
                     for j in xrange(len(x)):
-                        x_new = autoencoder.predict(x[j:j+1])
-                        x_true.append(x[j])
-                        x_pred.append(x_new[-1])
+                        x_new = vae_mean.predict(x[j:j+1])
+                        x_true.append(x[j][-1])
+                        x_pred.append(x_new[0,-1])
+
 
                     fig = plt.figure(figsize=(6, 6))
-                    for k in xrange(len(x[0])):
+                    for k in xrange(len(x_true[0])):
                         fig.add_subplot(6,2,k+1)
                         plt.plot(np.array(x_true)[:,k], '-b')
                         plt.plot(np.array(x_pred)[:,k], '-r')

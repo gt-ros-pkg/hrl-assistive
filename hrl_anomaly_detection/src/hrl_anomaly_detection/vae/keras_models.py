@@ -88,7 +88,8 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
     def vae_loss(inputs, x_decoded_mean):
         xent_loss = K.mean(objectives.binary_crossentropy(inputs, x_decoded_mean), axis=-1)
         kl_loss   = -0.5 * K.mean(1.0 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=-1) 
-        return xent_loss + kl_loss
+        ## return xent_loss + kl_loss
+        return K.mean(xent_loss + kl_loss)
         
     # we initiate these layers to reuse later.
     decoded_h1 = Dense(h2_dim, name='h_1') #, activation='tanh'
@@ -338,7 +339,7 @@ def lstm_vae2(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
 
 
 def lstm_vae3(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=500, \
-              patience=20, fine_tuning=False, save_weights_file=None):
+              patience=20, fine_tuning=False, save_weights_file=None, steps_per_epoch=512):
     """
     Variational Autoencoder with two LSTMs and one fully-connected layer
     x_train is (sample x length x dim)
@@ -396,7 +397,8 @@ def lstm_vae3(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
             ## xent_loss = K.mean(K.sum(K.square(x_d_mean - x), axis=-1), axis=-1)
             kl_loss = - 0.5 * K.sum(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=-1)
             var_loss = K.mean(K.sum(K.exp(x_d_log_var), axis=-1))
-            return K.mean(xent_loss + kl_loss + var_loss*10.0)
+            return xent_loss + kl_loss # + var_loss*10.0)
+            ## return K.mean(xent_loss + kl_loss + var_loss*10.0)
 
         def call(self, args):
             x = args[0]
@@ -446,7 +448,7 @@ def lstm_vae3(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
             vae_autoencoder.load_weights(weights_file)
             lr = 0.001
         else:
-            lr = 0.01
+            lr = 0.1
         optimizer = RMSprop(lr=lr, rho=0.9, epsilon=1e-08, decay=0.0001)
         #optimizer = Adam(lr=lr)                
         vae_autoencoder.compile(optimizer=optimizer, loss=None)
@@ -458,25 +460,34 @@ def lstm_vae3(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
                     ModelCheckpoint(weights_file,
                                     save_best_only=True,
                                     save_weights_only=True,
-                                    monitor='val_loss'),
-                    ReduceLROnPlateau(monitor='val_loss', factor=0.2,
-                                      patience=3, min_lr=0.0001)]
+                                    monitor='val_loss')]
+            ## ,
+            ##         ReduceLROnPlateau(monitor='val_loss', factor=0.2,
+            ##                           patience=3, min_lr=0.0001)]
 
-        train_datagen = ku.sigGenerator(augmentation=True, noise_mag=0.03)
+        train_datagen = ku.sigGenerator(augmentation=False, noise_mag=0.03)
         train_generator = train_datagen.flow(x_train, x_train, batch_size=batch_size, seed=3334)
         ## test_datagen = ku.sigGenerator(augmentation=False)
         ## test_generator = test_datagen.flow(x_test, x_test, batch_size=len(x_test),
                                            ## shuffle=False)
 
-        hist = vae_autoencoder.fit_generator(train_generator,
-                                             steps_per_epoch=512,
-                                             epochs=nb_epoch,
-                                             validation_data=(x_test, x_test),
-                                             ## validation_data=test_generator,
-                                             ## validation_steps=1,
-                                             workers=1,
-                                             verbose=1,
-                                             callbacks=callbacks)
+        vae_autoencoder.fit(x_train, x_train,
+                            shuffle=True,
+                            epochs=nb_epoch,
+                            batch_size=batch_size,
+                            callbacks=callbacks,
+                            validation_data=(x_test, x_test))
+
+
+        ## hist = vae_autoencoder.fit_generator(train_generator,
+        ##                                      steps_per_epoch=steps_per_epoch,
+        ##                                      epochs=nb_epoch,
+        ##                                      validation_data=(x_test, x_test),
+        ##                                      ## validation_data=test_generator,
+        ##                                      ## validation_steps=1,
+        ##                                      workers=1,
+        ##                                      verbose=1,
+        ##                                      callbacks=callbacks)
         if save_weights_file is not None:
             vae_autoencoder.save_weights(save_weights_file)
         else:
