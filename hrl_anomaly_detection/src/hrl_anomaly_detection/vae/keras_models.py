@@ -380,8 +380,7 @@ def lstm_vae3(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
     decoded_h2 = RepeatVector(timesteps, name='h_2')
     decoded_L1 = LSTM(h1_dim, return_sequences=True, activation='tanh', name='L_1')
     decoded_L21 = LSTM(input_dim, return_sequences=True, activation='tanh', name='L_21')
-    decoded_L22 = LSTM(input_dim, return_sequences=True, activation='tanh', name='L_22')
-
+    decoded_L22 = LSTM(input_dim, return_sequences=True, activation='linear', name='L_22')
 
     # Custom loss layer
     class CustomVariationalLayer(Layer):
@@ -396,8 +395,8 @@ def lstm_vae3(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
             xent_loss = K.mean(-log_p_x_z, axis=-1)
             ## xent_loss = K.mean(K.sum(K.square(x_d_mean - x), axis=-1), axis=-1)
             kl_loss = - 0.5 * K.sum(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=-1)
-            var_loss = K.mean(K.sum(K.exp(x_d_log_var), axis=-1))
-            return xent_loss + kl_loss # + var_loss*10.0)
+            ## var_loss = K.mean(K.sum(K.exp(x_d_log_var), axis=-1))
+            return K.mean(xent_loss + kl_loss) # + var_loss*10.0)
             ## return K.mean(xent_loss + kl_loss + var_loss*10.0)
 
         def call(self, args):
@@ -708,15 +707,16 @@ def lstm_ae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=50
                                       patience=5, min_lr=0.0001)]
 
         train_datagen = ku.sigGenerator(augmentation=True, noise_mag=0.05 )
-        test_datagen = ku.sigGenerator(augmentation=False)
+        #test_datagen = ku.sigGenerator(augmentation=False)
         train_generator = train_datagen.flow(x_train, x_train, batch_size=batch_size)
-        test_generator = test_datagen.flow(x_test, x_test, batch_size=batch_size, shuffle=False)
+        #test_generator = test_datagen.flow(x_test, x_test, batch_size=batch_size, shuffle=False)
 
         hist = ae.fit_generator(train_generator,
-                                samples_per_epoch=len(x_train),
-                                nb_epoch=nb_epoch,
-                                validation_data=test_generator,
-                                nb_val_samples=len(x_test),
+                                samples_per_epoch=512,
+                                epochs=nb_epoch,
+                                validation_data=(x_test, x_test),
+                                #validation_data=test_generator,
+                                #nb_val_samples=len(x_test),
                                 callbacks=callbacks) #, class_weight=class_weight)
 
         ## ae.fit(x_train, x_train,
