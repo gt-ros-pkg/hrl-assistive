@@ -151,13 +151,11 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         enc_z_mean = enc_z_std = None
 
         # ------------------------------------------------------------------------------------------
-        ## autoencoder, enc_z_mean, enc_z_std, generator = km.lstm_vae(trainData, testData, weights_path,
-        ##                                                             patience=5, batch_size=batch_size)
         ## autoencoder, enc_z_mean, enc_z_std, generator = km.lstm_vae2(trainData, testData, weights_path,
         ##                                                             patience=5, batch_size=batch_size)
         autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generator = \
           km.lstm_vae3(trainData, testData, weights_path, patience=3, batch_size=batch_size,
-                       steps_per_epoch=512)
+                       steps_per_epoch=2048)
         #autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generator = \
         #  km.lstm_vae4(trainData, testData, weights_path, patience=3, batch_size=batch_size)
         ## autoencoder = km.lstm_ae(trainData, testData, weights_path,
