@@ -175,8 +175,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         ##                                                             save_weights_file=save_weights_path)
 
 
-        if True and False:
-            if True:
+        if True:
+            if True and False:
                 # get optimized alpha
                 save_pkl = os.path.join(save_data_path, 'tmp_data.pkl')
                 alpha = get_optimal_alpha(autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std,
@@ -654,12 +654,17 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generato
         def get_anomaly_score(X, window_size, alpha, nSample=1000):
 
             scores = []
-            for i in xrange(len(X)):
+            for i in xrange(len(X)): # per sample
                 print "sample: ", i+1, " out of ", len(X)
                 np.random.seed(3334 + i)
 
                 if window_size>0: x = sampleWithWindow(X[i:i+1], window=window_size)
                 else:             x = X[i:i+1]
+                if type(x) is list: x = np.array(x)
+
+                x_mean_l = []
+                x_std_l  = []
+                x_l      = []
 
                 s = []
                 for j in xrange(len(x)): # per window
@@ -691,7 +696,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generato
                     #---------------------------------------------------------------
                     # prediction based method
                     x_mean   = vae_mean.predict(x[j:j+1])
-                    x_logvar = vae_logvar.predict(x[j:j+1])
+                    x_logvar = -vae_logvar.predict(x[j:j+1])
                     x_std    = np.exp(x_logvar/2.0)
 
                     x_mean = np.swapaxes(np.squeeze(x_mean), 0, 1)
@@ -699,19 +704,11 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generato
 
                     #---------------------------------------------------------------
 
-                    # temp
-                    ## fig = plt.figure()
-                    ## for k in xrange(len(x_mean)): # per dim                    
-                    ##     print x_std[k]
-                    ##     fig.add_subplot(len(x_mean),1,k+1)
-                    ##     plt.plot(x_mean[k], '-b')
-                    ##     plt.plot(x_mean[k]+0.2*x_std[k], '--b')
-                    ##     plt.plot(x_mean[k]-0.2*x_std[k], '--b')
-                    ##     plt.plot(x[j,:,k], '-r')
-                    ## plt.show()
+                    x_mean_l.append(x_mean[:,-1].tolist())
+                    x_std_l.append(x_std[:,-1].tolist())
                     
 
-                    # anomaly score
+                    # anomaly score per timesteps in an window
                     p_l     = []
                     for k in xrange(len(x_mean)): # per dim
                         p = []
@@ -726,7 +723,23 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generato
                     s.append( np.amin(alpha.dot( np.log(np.array(p_l)) )) )
                     #s.append( np.mean(alpha.dot( np.log(np.array(p_l)) )) )
 
-                scores.append(s)
+                if True:
+                    x_mean_l = np.array(x_mean_l)
+                    x_std_l  = np.array(x_std_l)
+                    fig = plt.figure()
+                    # temp
+                    for k in xrange(len(x_mean)): # per dim                    
+                        fig.add_subplot(len(x_mean),1,k+1)
+                        plt.plot(x_mean_l[:,k], '-b')
+                        plt.plot(x_mean_l[:,k]+x_std_l[:,k], '--b')
+                        plt.plot(x_mean_l[:,k]-x_std_l[:,k], '--b')
+                        plt.plot(X[i,:,k], '-r')                
+                    plt.show()
+
+                #if len(s)>1:
+                #    scores.append(np.amin(s))
+                #else:
+                scores.append(s) # s is scalers
             return scores
 
         scores_n = get_anomaly_score(normalTestData, window_size, alpha )
@@ -768,8 +781,11 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generato
         fpr_l.append( float(np.sum(fp_l))/float(np.sum(fp_l)+np.sum(tn_l))*100.0 )
     
 
-    e_n_l  = [val[-1] for val in scores_n if val != np.log(1e-50) ]
-    e_ab_l = [val[-1] for val in scores_a if val != np.log(1e-50) ]
+    print np.shape(scores_n)
+    #sys.exit()
+
+    e_n_l  = np.amin(scores_n, axis=-1) #[val[-1] for val in scores_n if val != np.log(1e-50) ]
+    e_ab_l = np.amin(scores_a, axis=-1) #[val[-1] for val in scores_a if val != np.log(1e-50) ]
     print np.mean(e_n_l), np.std(e_n_l)
     print np.mean(e_ab_l), np.std(e_ab_l)
     print "acc ", float(np.sum(tp_l)+np.sum(tn_l))/float(np.sum(tp_l+fp_l+tn_l+fn_l))
