@@ -72,7 +72,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
     h2_dim = int(h1_dim)
     z_dim  = 2
 
-    inputs = Input(shape=(timesteps, input_dim))
+    inputs  = Input(shape=(timesteps, input_dim))
     encoded = LSTM(h1_dim, return_sequences=True, recurrent_dropout=0.0,
                    activation='tanh')(inputs)
     encoded = LSTM(h2_dim, return_sequences=False, recurrent_dropout=0.0,

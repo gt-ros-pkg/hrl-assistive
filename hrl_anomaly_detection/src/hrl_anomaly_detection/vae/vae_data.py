@@ -148,10 +148,11 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         ## weights_path = os.path.join(save_data_path,'tmp_fine_weights_'+str(idx)+'.h5')
         vae_mean   = None
         vae_logvar = None
+        enc_z_mean = enc_z_std = None
 
         # ------------------------------------------------------------------------------------------
-        autoencoder, enc_z_mean, enc_z_std, generator = km.lstm_vae(trainData, testData, weights_path,
-                                                                    patience=5, batch_size=batch_size)
+        ## autoencoder, enc_z_mean, enc_z_std, generator = km.lstm_vae(trainData, testData, weights_path,
+        ##                                                             patience=5, batch_size=batch_size)
         ## autoencoder, enc_z_mean, enc_z_std, generator = km.lstm_vae2(trainData, testData, weights_path,
         ##                                                             patience=5, batch_size=batch_size)
         ## autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generator = \
@@ -159,9 +160,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         ##                steps_per_epoch=512)
         #autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generator = \
         #  km.lstm_vae4(trainData, testData, weights_path, patience=3, batch_size=batch_size)
-        ## autoencoder = km.lstm_ae(trainData, testData, weights_path,
-        ##                          patience=5, batch_size=batch_size)
-        ## enc_z_mean = enc_z_std = None
+        autoencoder = km.lstm_ae(trainData, testData, weights_path,
+                                 patience=5, batch_size=batch_size)
 
         # ------------------------------------------------------------------------------------------
         ## # Fine tuning
