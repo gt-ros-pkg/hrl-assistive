@@ -325,8 +325,8 @@ def lstm_vae3(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
             ##         ReduceLROnPlateau(monitor='val_loss', factor=0.2,
             ##                           patience=3, min_lr=0.0001)]
 
-        ## train_datagen = ku.sigGenerator(augmentation=False, noise_mag=0.03)
-        ## train_generator = train_datagen.flow(x_train, x_train, batch_size=batch_size, seed=3334)
+        train_datagen = ku.sigGenerator(augmentation=False, noise_mag=0.03)
+        train_generator = train_datagen.flow(x_train, x_train, batch_size=batch_size, seed=3334)
         ## test_datagen = ku.sigGenerator(augmentation=False)
         ## test_generator = test_datagen.flow(x_test, x_test, batch_size=len(x_test),
                                            ## shuffle=False)
