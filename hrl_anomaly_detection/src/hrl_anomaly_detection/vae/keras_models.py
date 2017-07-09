@@ -365,8 +365,8 @@ def lstm_vae3(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
     z_dim  = 2
 
     inputs = Input(shape=(timesteps, input_dim))
-    encoded = LSTM(h1_dim, return_sequences=True, activation='tanh')(inputs)
-    encoded = LSTM(h2_dim, return_sequences=False, activation='tanh')(encoded)
+    encoded = LSTM(h1_dim, return_sequences=True)(inputs)
+    encoded = LSTM(h2_dim, return_sequences=False)(encoded)
     z_mean  = Dense(z_dim)(encoded) #, activation='tanh'
     z_log_var = Dense(z_dim)(encoded) #, activation='sigmoid')
     
@@ -378,9 +378,9 @@ def lstm_vae3(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
     # we initiate these layers to reuse later.
     decoded_h1 = Dense(h2_dim, name='h_1') #, activation='tanh'
     decoded_h2 = RepeatVector(timesteps, name='h_2')
-    decoded_L1 = LSTM(h1_dim, return_sequences=True, activation='tanh', name='L_1')
-    decoded_L21 = LSTM(input_dim, return_sequences=True, activation='tanh', name='L_21')
-    decoded_L22 = LSTM(input_dim, return_sequences=True, activation='tanh', name='L_22')
+    decoded_L1 = LSTM(h1_dim, return_sequences=True, name='L_1')
+    decoded_L21 = LSTM(input_dim, return_sequences=True, name='L_21')
+    decoded_L22 = LSTM(input_dim, return_sequences=True, name='L_22')
 
 
     # Custom loss layer
@@ -396,9 +396,9 @@ def lstm_vae3(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
             xent_loss = K.mean(-log_p_x_z, axis=-1)
             ## xent_loss = K.mean(K.sum(K.square(x_d_mean - x), axis=-1), axis=-1)
             kl_loss = - 0.5 * K.sum(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=-1)
-            var_loss = K.mean(K.sum(K.exp(x_d_log_var), axis=-1))
-            return xent_loss + kl_loss # + var_loss*10.0)
-            ## return K.mean(xent_loss + kl_loss + var_loss*10.0)
+            ## var_loss = K.mean(K.sum(K.exp(x_d_log_var), axis=-1))
+            ## return xent_loss + kl_loss # + var_loss*10.0)
+            return K.mean(xent_loss + kl_loss) # + var_loss*10.0)
 
         def call(self, args):
             x = args[0]
@@ -448,7 +448,7 @@ def lstm_vae3(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
             vae_autoencoder.load_weights(weights_file)
             lr = 0.001
         else:
-            lr = 0.1
+            lr = 0.01
         optimizer = RMSprop(lr=lr, rho=0.9, epsilon=1e-08, decay=0.0001)
         #optimizer = Adam(lr=lr)                
         vae_autoencoder.compile(optimizer=optimizer, loss=None)
@@ -465,8 +465,8 @@ def lstm_vae3(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
             ##         ReduceLROnPlateau(monitor='val_loss', factor=0.2,
             ##                           patience=3, min_lr=0.0001)]
 
-        train_datagen = ku.sigGenerator(augmentation=False, noise_mag=0.03)
-        train_generator = train_datagen.flow(x_train, x_train, batch_size=batch_size, seed=3334)
+        ## train_datagen = ku.sigGenerator(augmentation=False, noise_mag=0.03)
+        ## train_generator = train_datagen.flow(x_train, x_train, batch_size=batch_size, seed=3334)
         ## test_datagen = ku.sigGenerator(augmentation=False)
         ## test_generator = test_datagen.flow(x_test, x_test, batch_size=len(x_test),
                                            ## shuffle=False)
