@@ -240,7 +240,7 @@ def lstm_vae3(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
     decoded_h2 = RepeatVector(timesteps, name='h_2')
     decoded_L1 = LSTM(h1_dim, return_sequences=True, name='L_1')
     decoded_L21 = LSTM(input_dim, return_sequences=True, name='L_21')
-    decoded_L22 = LSTM(input_dim, return_sequences=True, activation='softplus', name='L_22')
+    decoded_L22 = LSTM(input_dim, return_sequences=True, activation='sigmoid', name='L_22')
 
     # Custom loss layer
     class CustomVariationalLayer(Layer):
@@ -310,8 +310,9 @@ def lstm_vae3(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
         else:
             lr = 0.01
         #optimizer = RMSprop(lr=lr, rho=0.9, epsilon=1e-08, decay=0.0001)
-        optimizer = Adam(lr=lr)                
-        vae_autoencoder.compile(optimizer=optimizer, loss=None)
+        ## optimizer = Adam(lr=lr)                
+        ## vae_autoencoder.compile(optimizer=optimizer, loss=None)
+        vae_autoencoder.compile(optimizer='sgd', loss=None)
 
         ## vae_autoencoder.load_weights(weights_file)
         from keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
@@ -320,10 +321,9 @@ def lstm_vae3(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
                     ModelCheckpoint(weights_file,
                                     save_best_only=True,
                                     save_weights_only=True,
-                                    monitor='val_loss')]
-            ## ,
-            ##         ReduceLROnPlateau(monitor='val_loss', factor=0.2,
-            ##                           patience=3, min_lr=0.0001)]
+                                    monitor='val_loss'),
+                    ReduceLROnPlateau(monitor='val_loss', factor=0.5,
+                                      patience=3, min_lr=0.0)]
 
         train_datagen = ku.sigGenerator(augmentation=True, noise_mag=0.03)
         train_generator = train_datagen.flow(x_train, x_train, batch_size=batch_size, seed=3334)

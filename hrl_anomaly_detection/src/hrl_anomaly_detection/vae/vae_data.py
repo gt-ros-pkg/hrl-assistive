@@ -155,7 +155,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         ##                                                             patience=5, batch_size=batch_size)
         autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generator = \
           km.lstm_vae3(trainData, testData, weights_path, patience=3, batch_size=batch_size,
-                       steps_per_epoch=2048)
+                       steps_per_epoch=1024)
         #autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generator = \
         #  km.lstm_vae4(trainData, testData, weights_path, patience=3, batch_size=batch_size)
         ## autoencoder = km.lstm_ae(trainData, testData, weights_path,
@@ -447,7 +447,7 @@ def get_batch_data(normalData, abnormalData, win=False):
     np.random.shuffle(abnormalData)
     print np.shape(normalData), np.shape(abnormalData)
 
-    ratio=0.8
+    ratio=0.7 #8
     normalTrainData, normalTestData\
     = normalData[:int(len(normalData)*ratio)],normalData[int(len(normalData)*ratio):]
     abnormalTrainData, abnormalTestData\
