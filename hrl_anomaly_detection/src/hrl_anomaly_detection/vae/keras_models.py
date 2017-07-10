@@ -240,7 +240,7 @@ def lstm_vae3(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
     decoded_h2 = RepeatVector(timesteps, name='h_2')
     decoded_L1 = LSTM(h1_dim, return_sequences=True, name='L_1')
     decoded_L21 = LSTM(input_dim, return_sequences=True, name='L_21')
-    decoded_L22 = LSTM(input_dim, return_sequences=True, activation='softplus', name='L_22')
+    decoded_L22 = LSTM(input_dim, return_sequences=True, activation='tanh', name='L_22')
 
     # Custom loss layer
     class CustomVariationalLayer(Layer):
@@ -263,7 +263,7 @@ def lstm_vae3(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
         def call(self, args):
             x = args[0]
             x_d_mean    = args[1]
-            x_d_log_var = -args[2] # relu outputs positives only. So multiply -1
+            x_d_log_var = args[2] # relu outputs positives only. So multiply -1
             
             loss = self.vae_loss(x, x_d_mean, x_d_log_var)
             self.add_loss(loss, inputs=args)
