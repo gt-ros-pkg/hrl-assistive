@@ -159,10 +159,14 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
 
         ## from hrl_anomaly_detection.vae import lstm_vae as km
         ## autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
-        ##   km.lstm_vae3(trainData, testData, weights_path, patience=3, batch_size=batch_size,
+        ##   km.lstm_vae3(trainData, testData, weights_path, patience=7, batch_size=batch_size,
         ##                steps_per_epoch=256)
 
-
+        ## from hrl_anomaly_detection.vae import lstm_vae as km
+        ## autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generator = \
+        ##   km.lstm_vae(trainData, testData, weights_path, patience=3, batch_size=batch_size,
+        ##               steps_per_epoch=256)
+        
         ## from hrl_anomaly_detection.vae import lstm_vae_sampling as km
         ## autoencoder, enc_z_mean, enc_z_std, generator = km.lstm_vae(trainData, testData, weights_path,
         ##                                                             patience=5, batch_size=batch_size)
@@ -230,17 +234,18 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                         x_new = vae_mean.predict(x[j:j+1])
                         x_true.append(x[j][-1])
                         x_pred_mean.append(x_new[0,-1][:nDim])
-                        
-                        x_pred_std.append(x_new[0,-1][nDim:])
 
-                        
-
+                        if len(x_new[0,-1])>nDim:                        
+                            x_pred_std.append(np.sqrt(x_new[0,-1][nDim:]+1e-10))
 
                     fig = plt.figure(figsize=(6, 6))
                     for k in xrange(len(x_true[0])):
                         fig.add_subplot(6,2,k+1)
                         plt.plot(np.array(x_true)[:,k], '-b')
-                        plt.plot(np.array(x_pred)[:,k], '-r')
+                        plt.plot(np.array(x_pred_mean)[:,k], '-r')
+                        if len(x_pred_std)>0:
+                            plt.plot(np.array(x_pred_mean)[:,k]+np.array(x_pred_std)[:,k], '--r')
+                            plt.plot(np.array(x_pred_mean)[:,k]-np.array(x_pred_std)[:,k], '--r')
                         plt.ylim([-0.1,1.1])
                     plt.show()
                         

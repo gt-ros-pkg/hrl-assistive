@@ -86,7 +86,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
     decoded_h1 = Dense(h2_dim, name='h_1') #, activation='tanh'
     decoded_h2 = RepeatVector(timesteps, name='h_2')
     decoded_L1 = LSTM(h1_dim, return_sequences=True, activation='tanh', name='L_1')
-    decoded_L21 = LSTM(input_dim, return_sequences=True, activation='sigmoid', name='L_21')
+    decoded_L21 = LSTM(input_dim*2, return_sequences=True, activation='sigmoid', name='L_21')
 
     # Custom loss layer
     class CustomVariationalLayer(Layer):
