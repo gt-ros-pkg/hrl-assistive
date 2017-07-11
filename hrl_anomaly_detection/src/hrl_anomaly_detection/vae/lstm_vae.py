@@ -95,11 +95,11 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
             super(CustomVariationalLayer, self).__init__(**kwargs)
 
         def vae_loss(self, x, x_d_mean, x_d_var):
-            log_p_x_z = -0.5 * ( K.sum(K.square((x-x_d_mean))/(x_d_var+1e-10), axis=-1) \
-                                 + float(input_dim) * K.log(2.0*np.pi) + K.sum(K.log(x_d_var+1e-10), axis=-1) )
+            log_p_x_z = -0.5 * ( K.sum(K.square((x-x_d_mean))/(x_d_var+1e-6), axis=-1) \
+                                 + float(input_dim) * K.log(2.0*np.pi) + K.sum(K.log(x_d_var+1e-6), axis=-1) )
             ## ## xent_loss = K.sum(-log_p_x_z, axis=-1)
-            xent_loss = K.sum(-log_p_x_z, axis=-1)
-            #xent_loss = K.mean(-log_p_x_z, axis=-1)
+            ## xent_loss = K.sum(-log_p_x_z, axis=-1)
+            xent_loss = K.mean(-log_p_x_z, axis=-1)
             ## xent_loss = K.mean(K.sum(K.square(x_d_mean - x), axis=-1), axis=-1)+K.sum(x_d_log_var)*1e-50
             ## return K.mean(xent_loss)
             
@@ -153,7 +153,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
             vae_autoencoder.load_weights(weights_file)
             lr = 0.001
         else:
-            lr = 0.001
+            lr = 0.01
         #optimizer = RMSprop(lr=lr, rho=0.9, epsilon=1e-08, decay=0.0001)
         optimizer = Adam(lr=lr)                
         vae_autoencoder.compile(optimizer=optimizer, loss=None)
@@ -168,7 +168,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
                                     save_weights_only=True,
                                     monitor='val_loss'),
                     ReduceLROnPlateau(monitor='val_loss', factor=0.5,
-                                      patience=2, min_lr=0.0)]
+                                      patience=3, min_lr=0.0)]
 
         train_datagen = ku.sigGenerator(augmentation=True, noise_mag=0.03)
         train_generator = train_datagen.flow(x_train, x_train, batch_size=batch_size, seed=3334)
