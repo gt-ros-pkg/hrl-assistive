@@ -114,8 +114,6 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
 
     # Parameters
     nDim = len(d['successData'])
-    print nDim
-    sys.exit()
 
     # split data
     # HMM-induced vector with LOPO
