@@ -228,10 +228,14 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                     x_true = []
                     x_pred_mean = []
                     x_pred_std  = []
-                    for j in xrange(len(x)):
+                    for j in xrange(len(x)): # per window
                         x_new = vae_mean.predict(x[j:j+1])
                         x_true.append(x[j][-1])
                         x_pred_mean.append(x_new[0,-1][:nDim])
+                        
+                        x_pred_std.append(x_new[0,-1][nDim:])
+
+                        
 
 
                     fig = plt.figure(figsize=(6, 6))

@@ -85,9 +85,9 @@ def lstm_vae3(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
     # we initiate these layers to reuse later.
     decoded_h1 = Dense(h2_dim, name='h_1') #, activation='tanh'
     decoded_h2 = RepeatVector(timesteps, name='h_2')
-    decoded_L1 = LSTM(h1_dim, return_sequences=True, activation='tanh', name='L_1')
-    decoded_L21 = LSTM(input_dim, return_sequences=True, activation='tanh', name='L_21')
-    decoded_L22 = LSTM(input_dim, return_sequences=True, activation='linear', name='L_22')
+    decoded_L1 = LSTM(h1_dim, return_sequences=True, name='L_1')
+    decoded_L21 = LSTM(input_dim, return_sequences=True, name='L_21')
+    decoded_L22 = LSTM(input_dim, return_sequences=True, activation='sigmoid', name='L_22')
 
     # Custom loss layer
     class CustomVariationalLayer(Layer):
@@ -96,13 +96,12 @@ def lstm_vae3(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=
             super(CustomVariationalLayer, self).__init__(**kwargs)
 
         def vae_loss(self, x, x_d_mean, x_d_log_var):
-            ## log_p_x_z = -0.5 * ( K.sum(K.square((x-x_d_mean))/K.exp(x_d_log_var-1e-10), axis=-1) \
-            ##                      + float(input_dim) * K.log(2.0*np.pi) + K.sum(x_d_log_var-1e-10, axis=-1) )
-            ## ## xent_loss = K.sum(-log_p_x_z, axis=-1)
-            #xent_loss = K.sum(-log_p_x_z, axis=-1)
-            #xent_loss = K.mean(-log_p_x_z, axis=-1)
-            xent_loss = K.mean(K.sum(K.square(x_d_mean - x), axis=-1), axis=-1)+K.sum(x_d_log_var)*1e-50
-            return K.mean(xent_loss)
+            log_p_x_z = -0.5 * ( K.sum(K.square((x-x_d_mean))/K.exp(x_d_log_var-1e-10), axis=-1) \
+                                 + float(input_dim) * K.log(2.0*np.pi) + K.sum(x_d_log_var-1e-10, axis=-1) )
+            ## xent_loss = K.sum(-log_p_x_z, axis=-1)
+            ## xent_loss = K.mean(-log_p_x_z, axis=-1)
+            xent_loss = K.mean(-log_p_x_z, axis=-1)
+            ## xent_loss = K.mean(K.sum(K.square(x_d_mean - x), axis=-1), axis=-1)
             
             kl_loss = - 0.5 * K.sum(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=-1)
             ## var_loss = K.mean(K.sum(K.exp(x_d_log_var), axis=-1))
