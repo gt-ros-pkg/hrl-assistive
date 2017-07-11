@@ -157,16 +157,15 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         #autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generator = \
         #  km.lstm_vae4(trainData, testData, weights_path, patience=3, batch_size=batch_size)
 
-        from hrl_anomaly_detection.vae import lstm_vae_one as km
+        ## from hrl_anomaly_detection.vae import lstm_vae_one as km
+        ## autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
+        ##   km.lstm_vae(trainData, testData, weights_path, patience=7, batch_size=batch_size,
+        ##               steps_per_epoch=100)
+
+        from hrl_anomaly_detection.vae import lstm_vae as km
         autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
           km.lstm_vae(trainData, testData, weights_path, patience=7, batch_size=batch_size,
                       steps_per_epoch=100)
-
-
-        ## from hrl_anomaly_detection.vae import lstm_vae as km
-        ## autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
-        ##   km.lstm_vae(trainData, testData, weights_path, patience=7, batch_size=batch_size,
-        ##               steps_per_epoch=1024)
 
         #
         ## from hrl_anomaly_detection.vae import lstm_vae_sampling as km
