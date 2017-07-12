@@ -52,7 +52,8 @@ import gc
 
 
 def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=500, \
-             patience=20, fine_tuning=False, save_weights_file=None, steps_per_epoch=512):
+             patience=20, fine_tuning=False, save_weights_file=None, steps_per_epoch=512,\
+             re_load=False):
     """
     Variational Autoencoder with two LSTMs and one fully-connected layer
     x_train is (sample x length x dim)
@@ -157,11 +158,12 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
     # VAE --------------------------------------
     vae_mean_var = Model(inputs, decoded)
 
-    if weights_file is not None and os.path.isfile(weights_file) and fine_tuning is False:
+    if weights_file is not None and os.path.isfile(weights_file) and fine_tuning is False and re_load is False:
         vae_autoencoder.load_weights(weights_file)
         return vae_autoencoder, vae_mean_var, vae_mean_var, vae_encoder_mean, vae_encoder_var, generator
     else:
-        vae_autoencoder.load_weights(weights_file)
+        if re_load and os.path.isfile(weights_file):
+            vae_autoencoder.load_weights(weights_file)
         if fine_tuning:
             vae_autoencoder.load_weights(weights_file)
             lr = 0.001

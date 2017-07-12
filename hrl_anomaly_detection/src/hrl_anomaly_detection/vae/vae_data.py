@@ -63,7 +63,8 @@ random.seed(3334)
 np.random.seed(3334)
 
 
-def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, param_dict, plot=False):
+def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, param_dict, plot=False,
+              re_load=False):
     ## Parameters
     data_dict  = param_dict['data_param']
     data_renew = data_dict['renew']
@@ -157,11 +158,6 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         #autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generator = \
         #  km.lstm_vae4(trainData, testData, weights_path, patience=3, batch_size=batch_size)
 
-        from hrl_anomaly_detection.vae import lstm_vae as km
-        autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
-          km.lstm_vae(trainData, testData, weights_path, patience=10, batch_size=batch_size,
-                      steps_per_epoch=1024)
-
         ## from hrl_anomaly_detection.vae import lstm_vae_one as km
         ## autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
         ##   km.lstm_vae(trainData, testData, weights_path, patience=7, batch_size=batch_size,
@@ -170,7 +166,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         from hrl_anomaly_detection.vae import lstm_vae as km
         autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
           km.lstm_vae(trainData, testData, weights_path, patience=7, batch_size=batch_size,
-                      steps_per_epoch=100)
+                      steps_per_epoch=100, re_load=re_load)
 
         #
         ## from hrl_anomaly_detection.vae import lstm_vae_sampling as km
@@ -924,7 +920,9 @@ if __name__ == '__main__':
                  default=False, help='Preprocess')
     p.add_option('--lstm_test', '--lt', action='store_true', dest='lstm_test',
                  default=False, help='Generate data.')
-    
+    p.add_option('--reload', '--rl', action='store_true', dest='bReLoad',
+                 default=False, help='Reload previous parameters.')
+
     opt, args = p.parse_args()
 
     #---------------------------------------------------------------------------           
@@ -987,7 +985,8 @@ if __name__ == '__main__':
                             img_feature_type='vgg', nFold=nFold)
 
     elif opt.lstm_test:
-        lstm_test(subjects, opt.task, raw_data_path, save_data_path, param_dict, plot=not opt.bNoPlot)
+        lstm_test(subjects, opt.task, raw_data_path, save_data_path, param_dict, plot=not opt.bNoPlot,
+                  re_load=opt.bReLoad)
 
     elif opt.bFeaturePlot:
         
