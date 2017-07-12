@@ -107,7 +107,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
             ##                      + K.sum(K.log(x_d_var), axis=-1) )
             ## xent_loss = K.mean(log_p_x_z, axis=-1)
 
-            xent_loss = K.mean( 0.5*( K.sum(K.square(x_d_mean - x), axis=-1) + K.sum(K.log(x_d_var), axis=-1)*1e-5), axis=-1)
+            #xent_loss = K.mean( 0.5*( K.sum(K.square(x_d_mean - x), axis=-1) + K.sum(K.log(x_d_var), axis=-1)*1e-5), axis=-1 )
             #return K.mean(xent_loss)
 
             ## log_p_x_z = -0.5 * ( K.sum(K.square((x-x_d_mean))/(x_d_var+1e-6), axis=-1)  \
@@ -186,7 +186,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
                     ReduceLROnPlateau(monitor='val_loss', factor=0.5,
                                       patience=3, min_lr=0.0)]
 
-        train_datagen = ku.sigGenerator(augmentation=True, noise_mag=0.03)
+        train_datagen = ku.sigGenerator(augmentation=True, noise_mag=0.1)
         train_generator = train_datagen.flow(x_train, x_train, batch_size=batch_size, seed=3334,
                                              shuffle=True)
 
