@@ -96,8 +96,6 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
             super(CustomVariationalLayer, self).__init__(**kwargs)
 
         def vae_loss(self, x, x_d_mean, x_d_var):
-            #xent_loss = K.mean(K.sum(K.square(x_d_mean - x), axis=-1)+K.sum(K.log(x_d_var), axis=-1)*1e-10, axis=-1)
-            #return K.mean(xent_loss)
 
             # default 1
             ## log_p_x_z = -0.5 * ( K.sum(K.square((x-x_d_mean))/(x_d_var+1e-6), axis=-1) \
@@ -105,9 +103,12 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
             ## xent_loss = K.mean(-log_p_x_z, axis=-1)
 
 
-            log_p_x_z = 0.5 * ( K.sum(K.square(x-x_d_mean)/(x_d_var), axis=-1) \
-                                 + K.sum(K.log(x_d_var), axis=-1) )
-            xent_loss = K.mean(log_p_x_z, axis=-1)
+            ## log_p_x_z = 0.5 * ( K.sum(K.square(x-x_d_mean)/(x_d_var), axis=-1) \
+            ##                      + K.sum(K.log(x_d_var), axis=-1) )
+            ## xent_loss = K.mean(log_p_x_z, axis=-1)
+
+            xent_loss = K.mean( 0.5*( K.sum(K.square(x_d_mean - x), axis=-1) + K.sum(K.log(x_d_var), axis=-1)*1e-5), axis=-1)
+            #return K.mean(xent_loss)
 
             ## log_p_x_z = -0.5 * ( K.sum(K.square((x-x_d_mean))/(x_d_var+1e-6), axis=-1)  \
             ##                      + float(input_dim) * K.log(2.0*np.pi)  )
