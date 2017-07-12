@@ -189,6 +189,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
         train_generator = train_datagen.flow(x_train, x_train, batch_size=batch_size, seed=3334,
                                              shuffle=True)
 
+        '''
         vae_autoencoder.fit(x_train, x_train, shuffle=True, epochs=nb_epoch,\
                             batch_size=batch_size, callbacks=callbacks,
                             validation_data=(x_test,x_test))
@@ -198,7 +199,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
                                              epochs=nb_epoch,
                                              validation_data=(x_test, x_test),
                                              callbacks=callbacks)
-        '''
+        
         if save_weights_file is not None:
             vae_autoencoder.save_weights(save_weights_file)
         else:
