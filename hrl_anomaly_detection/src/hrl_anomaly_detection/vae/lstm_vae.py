@@ -103,9 +103,9 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
             ## xent_loss = K.mean(-log_p_x_z, axis=-1)
 
 
-            ## log_p_x_z = 0.5 * ( K.sum(K.square(x-x_d_mean)/(x_d_var), axis=-1) \
-            ##                      + K.sum(K.log(x_d_var), axis=-1) )
-            ## xent_loss = K.mean(log_p_x_z, axis=-1)
+            log_p_x_z = 0.5 * ( K.sum(K.square(x-x_d_mean)/(x_d_var), axis=-1) \
+                                 + K.sum(K.log(x_d_var), axis=-1) )
+            xent_loss = K.mean(log_p_x_z, axis=-1)
 
             #xent_loss = K.mean( 0.5*( K.sum(K.square(x_d_mean - x), axis=-1) + K.sum(K.log(x_d_var), axis=-1)*1e-5), axis=-1 )
             #return K.mean(xent_loss)
@@ -126,7 +126,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
         def call(self, args):
             x = args[0]
             x_d_mean = args[1][:,:,:input_dim]
-            x_d_var  = args[1][:,:,input_dim:] + 0.001
+            x_d_var  = args[1][:,:,input_dim:] + 0.01
             
             loss = self.vae_loss(x, x_d_mean, x_d_var)
             self.add_loss(loss, inputs=args)
