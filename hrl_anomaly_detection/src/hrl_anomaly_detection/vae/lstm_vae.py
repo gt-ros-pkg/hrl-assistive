@@ -95,15 +95,16 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
             super(CustomVariationalLayer, self).__init__(**kwargs)
 
         def vae_loss(self, x, x_d_mean, x_d_var):
-            log_p_x_z = -0.5 * ( K.sum(K.square((x-x_d_mean))/(x_d_var+1e-10), axis=-1) \
-                                 + float(input_dim) * K.log(2.0*np.pi) + K.sum(K.log(x_d_var+1e-10), axis=-1) )
+            #log_p_x_z = -0.5 * ( K.sum(K.square((x-x_d_mean))/(x_d_var+1e-8), axis=-1) \
+            #                     + float(input_dim) * K.log(2.0*np.pi) + K.sum(K.log(x_d_var+1e-8), axis=-1) )
             ## ## xent_loss = K.sum(-log_p_x_z, axis=-1)
-            xent_loss = K.sum(-log_p_x_z, axis=-1)
+            #xent_loss = K.sum(-log_p_x_z, axis=-1)
+            #return K.mean(xent_loss)
             #xent_loss = K.mean(-log_p_x_z, axis=-1)
-            ## xent_loss = K.mean(K.sum(K.square(x_d_mean - x), axis=-1), axis=-1)+K.sum(x_d_log_var)*1e-50
-            ## return K.mean(xent_loss)
+            xent_loss = K.mean(K.sum(K.square(x_d_mean - x), axis=-1)+K.sum(K.log(x_d_var), axis=-1)*1e-10, axis=-1)
+            return K.mean(xent_loss)
             
-            kl_loss = - 0.5 * K.sum(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=-1)
+            kl_loss = - 0.5 * K.sum(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=-1) * float(timesteps)
             ## var_loss = K.mean(K.sum(K.exp(x_d_log_var), axis=-1))
             ## return xent_loss + kl_loss # + var_loss*10.0)
             return K.mean(xent_loss + kl_loss) # + var_loss*10.0)
@@ -148,7 +149,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
         vae_autoencoder.load_weights(weights_file)
         return vae_autoencoder, vae_mean_var, vae_mean_var, vae_encoder_mean, vae_encoder_var, generator
     else:
-        #vae_autoencoder.load_weights(weights_file)
+        vae_autoencoder.load_weights(weights_file)
         if fine_tuning:
             vae_autoencoder.load_weights(weights_file)
             lr = 0.001
@@ -168,16 +169,22 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
                                     save_weights_only=True,
                                     monitor='val_loss'),
                     ReduceLROnPlateau(monitor='val_loss', factor=0.5,
-                                      patience=2, min_lr=0.0)]
+                                      patience=3, min_lr=0.0)]
 
         train_datagen = ku.sigGenerator(augmentation=True, noise_mag=0.03)
-        train_generator = train_datagen.flow(x_train, x_train, batch_size=batch_size, seed=3334)
-        
+        train_generator = train_datagen.flow(x_train, x_train, batch_size=batch_size, seed=3334,
+                                             shuffle=True)
+
+        vae_autoencoder.fit(x_train, x_train, shuffle=True, epochs=nb_epoch,\
+                            batch_size=batch_size, callbacks=callbacks,
+                            validation_data=(x_test,x_test))
+        '''
         hist = vae_autoencoder.fit_generator(train_generator,
                                              steps_per_epoch=steps_per_epoch,
                                              epochs=nb_epoch,
                                              validation_data=(x_test, x_test),
                                              callbacks=callbacks)
+        '''
         if save_weights_file is not None:
             vae_autoencoder.save_weights(save_weights_file)
         else:

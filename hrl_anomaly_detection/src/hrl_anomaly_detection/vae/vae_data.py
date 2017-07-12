@@ -139,10 +139,10 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         # ------------------------------------------------------------------------------------------
         
         trainData, testData, window_size, raw_data, raw_data_ft = \
-          get_batch_data(normalData, abnormalData, win=True)
+          get_batch_data(normalData, abnormalData, win=False)
         (normalTrainData, abnormalTrainData, normalTestData, abnormalTestData) = raw_data
         (normalTrainData_ft, abnormalTrainData_ft, normalTestData_ft, abnormalTestData_ft) = raw_data_ft
-        batch_size  = 16
+        batch_size  = 1
          
         weights_path = os.path.join(save_data_path,'tmp_weights_'+str(idx)+'.h5')
         ## weights_path = os.path.join(save_data_path,'tmp_fine_weights_'+str(idx)+'.h5')
@@ -157,16 +157,16 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         #autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generator = \
         #  km.lstm_vae4(trainData, testData, weights_path, patience=3, batch_size=batch_size)
 
-        from hrl_anomaly_detection.vae import lstm_vae_one as km
+        #from hrl_anomaly_detection.vae import lstm_vae_one as km
+        #autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
+        #  km.lstm_vae(trainData, testData, weights_path, patience=7, batch_size=batch_size,
+        #              steps_per_epoch=1024)
+
+
+        from hrl_anomaly_detection.vae import lstm_vae as km
         autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
-          km.lstm_vae(trainData, testData, weights_path, patience=7, batch_size=batch_size,
+          km.lstm_vae(trainData, testData, weights_path, patience=10, batch_size=batch_size,
                       steps_per_epoch=1024)
-
-
-        ## from hrl_anomaly_detection.vae import lstm_vae as km
-        ## autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
-        ##   km.lstm_vae(trainData, testData, weights_path, patience=7, batch_size=batch_size,
-        ##               steps_per_epoch=1024)
 
         #
         ## from hrl_anomaly_detection.vae import lstm_vae_sampling as km
@@ -225,6 +225,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
 
             # display generated data
             for i in xrange(len(normalTrainData)):
+                print i
                 if window_size is not None:
                     x = sampleWithWindow(normalTrainData[i:i+1], window=window_size)
                     x = np.array(x)
@@ -243,7 +244,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
 
                     fig = plt.figure(figsize=(6, 6))
                     for k in xrange(len(x_true[0])):
-                        fig.add_subplot(6,2,k+1)
+                        fig.add_subplot(nDim,1,k+1)
                         plt.plot(np.array(x_true)[:,k], '-b')
                         plt.plot(np.array(x_pred_mean)[:,k], '-r')
                         if len(x_pred_std)>0:
@@ -254,18 +255,24 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                         
                 else:
                     x = normalTrainData[i:i+1]
-                    x_new = autoencoder.predict(x)
-                    print np.shape(x), np.shape(x[0])
-
-                    for j in xrange(len(x)):
-                        fig = plt.figure(figsize=(6, 6))
-                        for k in xrange(len(x[j][0])):
-                            fig.add_subplot(6,2,k+1)
-                            ## fig.add_subplot(100*len(x[j][0])+10+k+1)
-                            plt.plot(np.array(x)[j,:,k], '-b')
-                            plt.plot(np.array(x_new)[j,:,k], '-r')
-                            plt.ylim([-0.1,1.1])
-                        plt.show()
+                    x_new = vae_mean.predict(x)[0]
+                    x_pred_mean = x_new[:,:nDim]
+                    if len(x_new[0])>nDim:
+                        x_pred_std = np.sqrt(x_new[:,nDim:]+1e-10)
+                    else:
+                        x_pred_std = []
+                    
+                    fig = plt.figure(figsize=(6, 6))
+                    for k in xrange(nDim):
+                        fig.add_subplot(nDim,1,k+1)
+                        ## fig.add_subplot(100*len(x[j][0])+10+k+1)
+                        plt.plot(np.array(x)[0,:,k], '-b')
+                        plt.plot(np.array(x_pred_mean)[:,k], '-r')
+                        if len(x_pred_std)>0:
+                            plt.plot(np.array(x_pred_mean)[:,k]+np.array(x_pred_std)[:,k], '--r')
+                            plt.plot(np.array(x_pred_mean)[:,k]-np.array(x_pred_std)[:,k], '--r')
+                        plt.ylim([-0.1,1.1])
+                    plt.show()
         
         return
     

@@ -127,7 +127,7 @@ class sigGenerator():
                 
                 # up-down
                 ## for i in range(current_batch_size):
-                ##     ud_offset = np.random.normal(0.0, 0.02, size=(n_dim)) 
+                ##     ud_offset = np.random.normal(0.0, 0.01, size=(n_dim)) 
                 ##     for j in range(n_dim):
                 ##         x_new[current_index+i,:,j] += ud_offset[j]
                      
