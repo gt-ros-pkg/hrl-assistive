@@ -98,15 +98,15 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
         def vae_loss(self, x, x_d_mean, x_d_var):
 
             # default 1
-            ## log_p_x_z = -0.5 * ( K.sum(K.square((x-x_d_mean))/(x_d_var+1e-6), axis=-1) \
-            ##                      + float(input_dim) * K.log(2.0*np.pi) + K.sum(K.log(x_d_var+1e-6), axis=-1) )
-            ## xent_loss = K.mean(-log_p_x_z, axis=-1)
+            log_p_x_z = -0.5 * ( K.sum(K.square((x-x_d_mean))/(x_d_var), axis=-1) \
+                                 + float(input_dim) * K.log(2.0*np.pi) + K.sum(K.log(x_d_var), axis=-1) )
+            xent_loss = K.mean(-log_p_x_z, axis=-1)
 
+            ## log_p_x_z = 0.5 * ( K.sum(K.square(x-x_d_mean)/(x_d_var), axis=-1) \
+            ##                      + K.sum(K.log(x_d_var), axis=-1) )
+            ## xent_loss = K.mean(log_p_x_z, axis=-1)
 
-            log_p_x_z = 0.5 * ( K.sum(K.square(x-x_d_mean)/(x_d_var), axis=-1) \
-                                 + K.sum(K.log(x_d_var), axis=-1) )
-            xent_loss = K.mean(log_p_x_z, axis=-1)
-
+            # Work
             #xent_loss = K.mean( 0.5*( K.sum(K.square(x_d_mean - x), axis=-1) + K.sum(K.log(x_d_var), axis=-1)*1e-5), axis=-1 )
             #return K.mean(xent_loss)
 
@@ -170,8 +170,8 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
             lr = 0.001
         else:
             lr = 0.01
-        #optimizer = RMSprop(lr=lr, rho=0.9, epsilon=1e-08, decay=0.0001)
-        optimizer = Adam(lr=lr)                
+        optimizer = RMSprop(lr=lr, rho=0.9, epsilon=1e-08, decay=0.0001, clipvalue=10)
+        #optimizer = Adam(lr=lr, clipvalue=10)                
         vae_autoencoder.compile(optimizer=optimizer, loss=None)
         #vae_autoencoder.compile(optimizer='sgd', loss=None)
 
