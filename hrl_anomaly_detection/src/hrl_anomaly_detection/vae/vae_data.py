@@ -142,7 +142,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
           get_batch_data(normalData, abnormalData, win=False)
         (normalTrainData, abnormalTrainData, normalTestData, abnormalTestData) = raw_data
         (normalTrainData_ft, abnormalTrainData_ft, normalTestData_ft, abnormalTestData_ft) = raw_data_ft
-        batch_size  = 1
+        batch_size  = 1024*10
          
         weights_path = os.path.join(save_data_path,'tmp_weights_'+str(idx)+'.h5')
         ## weights_path = os.path.join(save_data_path,'tmp_fine_weights_'+str(idx)+'.h5')
@@ -157,16 +157,21 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         #autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generator = \
         #  km.lstm_vae4(trainData, testData, weights_path, patience=3, batch_size=batch_size)
 
-        #from hrl_anomaly_detection.vae import lstm_vae_one as km
-        #autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
-        #  km.lstm_vae(trainData, testData, weights_path, patience=7, batch_size=batch_size,
-        #              steps_per_epoch=1024)
-
-
         from hrl_anomaly_detection.vae import lstm_vae as km
         autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
           km.lstm_vae(trainData, testData, weights_path, patience=10, batch_size=batch_size,
                       steps_per_epoch=1024)
+
+        ## from hrl_anomaly_detection.vae import lstm_vae_one as km
+        ## autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
+        ##   km.lstm_vae(trainData, testData, weights_path, patience=7, batch_size=batch_size,
+        ##               steps_per_epoch=100)
+
+        from hrl_anomaly_detection.vae import lstm_vae as km
+        autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
+          km.lstm_vae(trainData, testData, weights_path, patience=7, batch_size=batch_size,
+                      steps_per_epoch=100)
+>>>>>>> 62efbbf74e66e30e04ae1de40976b170dc275271
 
         #
         ## from hrl_anomaly_detection.vae import lstm_vae_sampling as km

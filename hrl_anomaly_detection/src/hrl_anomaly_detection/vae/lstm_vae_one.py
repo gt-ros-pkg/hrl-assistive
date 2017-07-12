@@ -67,10 +67,10 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
     input_dim = len(x_train[0][0])
 
     h1_dim = input_dim
-    z_dim  = 2
+    z_dim  = 20
 
     inputs = Input(shape=(timesteps, input_dim))
-    encoded = LSTM(h1_dim, return_sequences=False, activation='tanh')(inputs)
+    encoded = LSTM(h1_dim, return_sequences=False, activation='sigmoid')(inputs)
     z_mean  = Dense(z_dim)(encoded) #, activation='tanh'
     z_log_var = Dense(z_dim)(encoded) #, activation='sigmoid')
     
@@ -92,15 +92,16 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
             super(CustomVariationalLayer, self).__init__(**kwargs)
 
         def vae_loss(self, x, x_d_mean, x_d_var):
-            log_p_x_z = -0.5 * ( K.sum(K.square((x-x_d_mean))/(x_d_var+1e-4), axis=-1) \
-                                 + float(input_dim) * K.log(2.0*np.pi) + K.sum(K.log(x_d_var+1e-4), axis=-1) )
+            log_p_x_z = -0.5 * ( K.sum(K.square((x-x_d_mean))/(x_d_var+1e-6), axis=-1) \
+                                 + float(input_dim) * K.log(2.0*np.pi) + K.sum(K.log(x_d_var+1e-6), axis=-1) )
+            ## log_p_x_z = -0.5 * ( K.sum(K.square((x-x_d_mean))) + K.sum(K.log(x_d_var+1e-4), axis=-1)*1e-20 )
             ## ## xent_loss = K.sum(-log_p_x_z, axis=-1)
             xent_loss = K.sum(-log_p_x_z, axis=-1)
             #xent_loss = K.mean(-log_p_x_z, axis=-1)
             ## xent_loss = K.mean(K.sum(K.square(x_d_mean - x), axis=-1), axis=-1)+K.sum(x_d_log_var)*1e-50
             ## return K.mean(xent_loss)
             
-            kl_loss = - 0.5 * K.sum(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=-1)
+            kl_loss = - 0.5 * K.sum(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=-1) *float(timesteps)
             ## var_loss = K.mean(K.sum(K.exp(x_d_log_var), axis=-1))
             ## return xent_loss + kl_loss # + var_loss*10.0)
             return K.mean(xent_loss + kl_loss) # + var_loss*10.0)
@@ -114,7 +115,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
             self.add_loss(loss, inputs=args)
             # We won't actually use the output.
             return x_d_mean
-
+ 
 
     z = Lambda(sampling)([z_mean, z_log_var])    
     decoded = decoded_h1(z)
@@ -139,11 +140,11 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
     # VAE --------------------------------------
     vae_mean_var = Model(inputs, decoded)
 
-    if weights_file is not None and os.path.isfile(weights_file) and fine_tuning is False:
+    if weights_file is not None and os.path.isfile(weights_file) and fine_tuning is False and False:
         vae_autoencoder.load_weights(weights_file)
         return vae_autoencoder, vae_mean_var, vae_mean_var, vae_encoder_mean, vae_encoder_var, generator
     else:
-        #vae_autoencoder.load_weights(weights_file)
+        ## vae_autoencoder.load_weights(weights_file)
         if fine_tuning:
             vae_autoencoder.load_weights(weights_file)
             lr = 0.001
@@ -163,10 +164,11 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
                                     save_weights_only=True,
                                     monitor='val_loss'),
                     ReduceLROnPlateau(monitor='val_loss', factor=0.5,
-                                      patience=2, min_lr=0.0)]
+                                      patience=3, min_lr=0.0)]
 
         train_datagen = ku.sigGenerator(augmentation=True, noise_mag=0.03)
-        train_generator = train_datagen.flow(x_train, x_train, batch_size=batch_size, seed=3334)
+        train_generator = train_datagen.flow(x_train, x_train, batch_size=batch_size, seed=3334,
+                                             shuffle=True)
         
         hist = vae_autoencoder.fit_generator(train_generator,
                                              steps_per_epoch=steps_per_epoch,
