@@ -140,7 +140,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         # ------------------------------------------------------------------------------------------
         
         trainData, testData, window_size, raw_data, raw_data_ft = \
-          get_batch_data(normalData, abnormalData, win=False)
+          get_batch_data(normalData, abnormalData, win=True)
         (normalTrainData, abnormalTrainData, normalTestData, abnormalTestData) = raw_data
         (normalTrainData_ft, abnormalTrainData_ft, normalTestData_ft, abnormalTestData_ft) = raw_data_ft
         batch_size  = 1024
