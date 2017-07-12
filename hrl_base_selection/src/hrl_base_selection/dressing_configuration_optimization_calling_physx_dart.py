@@ -26,7 +26,7 @@ roslib.load_manifest('hrl_base_selection')
 from hrl_base_selection.helper_functions import createBMatrix, Bmat_to_pos_quat, calc_axis_angle
 from hrl_base_selection.dart_setup import DartDressingWorld
 from hrl_base_selection.msg import PhysxOutcome
-from hrl_base_selection.srv import InitPhysxBodyModel, PhysxInput, IKService, PhysxOutput
+from hrl_base_selection.srv import InitPhysxBodyModel, PhysxInput, IKService, PhysxOutput, PhysxInputWaypoints
 
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from hrl_msgs.msg import FloatArrayBare
@@ -47,7 +47,7 @@ import cma
 
 class ScoreGeneratorDressingwithPhysx(object):
 
-    def __init__(self, robot_arm='rightarm', human_arm='rightarm', visualize=False):
+    def __init__(self, robot_arm='rightarm', human_arm='rightarm', visualize=False, standard_mode=True):
 
         self.visualize = visualize
         self.frame_lock = threading.RLock()
@@ -58,10 +58,7 @@ class ScoreGeneratorDressingwithPhysx(object):
         self.human_arm = None
         self.human_opposite_arm = None
 
-        self.setup_openrave()
 
-        self.set_robot_arm(robot_arm)
-        self.set_human_arm(human_arm)
 
         self.start_traj = []
         self.end_traj = []
@@ -116,13 +113,19 @@ class ScoreGeneratorDressingwithPhysx(object):
         self.optimal_z_offset = 0.05
         self.physx_output = False
         self.physx_outcome = None
-        self.setup_dart()
 
-        # self.setup_ik_service()
-        self.setup_physx()
-        self.update_physx_from_dart(initialization=True)
-        # self.setup_physx_calls()
+        if standard_mode:
+            self.setup_openrave()
 
+            self.set_robot_arm(robot_arm)
+            self.set_human_arm(human_arm)
+
+            self.setup_dart()
+
+            # self.setup_ik_service()
+            self.setup_physx()
+            self.update_physx_from_dart(initialization=True)
+            # self.setup_physx_calls()
 
     def output_results_for_use(self):
         traj_and_arm_config_results = load_pickle(self.pkg_path+'/data/saved_results/large_search_space/best_trajectory_and_arm_config.pkl')
@@ -344,8 +347,8 @@ class ScoreGeneratorDressingwithPhysx(object):
 
         # maxiter = 30/
         # popsize = m.pow(5, 2)*100
-        maxiter = 10
-        popsize = 10
+        maxiter = 8
+        popsize = 40
 
         ### Current: Two positions, first with respect to the fist, second with respect to the upper arm, centered at
         # the shoulder and pointing X down the upper arm
@@ -354,24 +357,16 @@ class ScoreGeneratorDressingwithPhysx(object):
         #                  human_arm_elbow_angle,
         #                  human_upper_arm_quaternion(euler:xzy): r, y, p ]
 
-        parameters_min = np.array([0.1, -0.07, 0.06,
-                                   -0.15, -0.07, 0.08,
-                                   m.radians(-5.), m.radians(-10.), m.radians(-10.),
+        parameters_min = np.array([m.radians(-5.), m.radians(-10.), m.radians(-10.),
                                    0.])
-        parameters_max = np.array([0.2, 0.07, 0.2,
-                                   0.05, 0.07, 0.2,
-                                   m.radians(100.), m.radians(100.), m.radians(100),
+        parameters_max = np.array([m.radians(100.), m.radians(100.), m.radians(100),
                                    m.radians(135.)])
-        parameters_scaling = (parameters_max-parameters_min)/2.
-        parameters_initialization = (parameters_max+parameters_min)/2.
-        parameters_initialization[6] = m.radians(0.)
-        parameters_initialization[7] = m.radians(70.)
-        parameters_initialization[8] = m.radians(0.)
-        parameters_initialization[9] = m.radians(0.)
-        # parameters_scaling[6] = m.radians(90)
-        # parameters_scaling[7] = m.radians(90)
-        # parameters_scaling[8] = m.radians(90)
-        # parameters_scaling[9] = m.radians(40)
+        parameters_scaling = (parameters_max - parameters_min) / 2.
+        parameters_initialization = (parameters_max + parameters_min) / 2.
+        parameters_initialization[0] = m.radians(0.)
+        parameters_initialization[1] = m.radians(70.)
+        parameters_initialization[2] = m.radians(0.)
+        parameters_initialization[3] = m.radians(0.)
         opts1 = {'seed': 1234, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter, 'maxfevals': 1e8,
                  'CMA_cmean': 0.25,
                  'verb_filenameprefix': 'outcma_arm_and_trajectory',
@@ -396,288 +391,230 @@ class ScoreGeneratorDressingwithPhysx(object):
         save_pickle(optimized_traj_arm_output, self.pkg_path+'/data/best_trajectory_and_arm_config.pkl')
         save_pickle(optimized_pr2_output, self.pkg_path+'/data/best_pr2_config.pkl')
 
+    def find_reference_coordinate_frames_and_goals(self, arm):
+        skeleton_frame_B_worldframe = np.matrix([[1., 0., 0., 0.],
+                                                 [0., 0., 1., 0.],
+                                                 [0., -1., 0., 0.],
+                                                 [0., 0., 0., 1.]])
+
+        origin_B_pelvis = np.matrix(self.human.bodynode('h_pelvis').world_transform())
+        origin_B_upperarmbase = np.matrix(self.human.bodynode('h_bicep_' + arm).world_transform())
+        origin_B_upperarmbase[0:3, 0:3] = origin_B_pelvis[0:3, 0:3]
+        origin_B_upperarm = np.matrix(self.human.bodynode('h_bicep_' + arm).world_transform())
+        origin_B_forearm = np.matrix(self.human.bodynode('h_forearm_' + arm).world_transform())
+        origin_B_hand = np.matrix(self.human.bodynode('h_hand_' + arm+'2').world_transform())
+        print 'origin_B_upperarm\n', origin_B_upperarm
+        z_origin = np.array([0., 0., 1.])
+        x_vector = (-1 * np.array(origin_B_hand)[0:3, 1])
+        x_vector /= np.linalg.norm(x_vector)
+        y_orth = np.cross(z_origin, x_vector)
+        y_orth /= np.linalg.norm(y_orth)
+        z_orth = np.cross(x_vector, y_orth)
+        z_orth /= np.linalg.norm(z_orth)
+        origin_B_hand_rotated = np.eye(4)
+
+        origin_B_hand_rotated[0:3, 0] = copy.copy(x_vector)
+        origin_B_hand_rotated[0:3, 1] = copy.copy(y_orth)
+        origin_B_hand_rotated[0:3, 2] = copy.copy(z_orth)
+        origin_B_hand_rotated[0:3, 3] = copy.copy(np.array(origin_B_hand)[0:3, 3])
+        origin_B_hand_rotated = np.matrix(origin_B_hand_rotated)
+
+        rev = m.radians(180.)
+
+        traj_y_offset, traj_z_offset = self.get_best_traj_offset()
+
+        hand_rotated_B_traj_start_pos = np.matrix([[m.cos(rev), -m.sin(rev), 0., 0.3],
+                                                   [m.sin(rev), m.cos(rev), 0., traj_y_offset],
+                                                   [0., 0., 1., traj_z_offset],
+                                                   [0., 0., 0., 1.]])
+
+        origin_B_traj_start_pos = origin_B_hand_rotated * hand_rotated_B_traj_start_pos
+
+        origin_B_upperarm_world = origin_B_upperarm * skeleton_frame_B_worldframe
+        origin_B_forearm_world = origin_B_forearm * skeleton_frame_B_worldframe
+
+        origin_B_forearm_pointed_down_arm = np.eye(4)
+        z_origin = np.array([0., 0., 1.])
+        x_vector = -1 * np.array(origin_B_forearm_world)[0:3, 2]
+        x_vector /= np.linalg.norm(x_vector)
+        if np.abs(x_vector[2]) > 0.99:
+            x_vector = np.array([0., 0., np.sign(x_vector[2]) * 1.])
+            y_orth = np.array([np.sign(x_vector[2]) * -1., 0., 0.])
+            z_orth = np.array([0., np.sign(x_vector[2]) * 1., 0.])
+        else:
+            y_orth = np.cross(z_origin, x_vector)
+            y_orth = y_orth / np.linalg.norm(y_orth)
+            z_orth = np.cross(x_vector, y_orth)
+            z_orth = z_orth / np.linalg.norm(z_orth)
+        origin_B_forearm_pointed_down_arm[0:3, 0] = x_vector
+        origin_B_forearm_pointed_down_arm[0:3, 1] = y_orth
+        origin_B_forearm_pointed_down_arm[0:3, 2] = z_orth
+        origin_B_forearm_pointed_down_arm[0:3, 3] = np.array(origin_B_forearm_world)[0:3, 3]
+        origin_B_forearm_pointed_down_arm = np.matrix(origin_B_forearm_pointed_down_arm)
+
+        origin_B_reference_coordinates = np.eye(4)
+        x_horizontal = np.cross(y_orth, z_origin)
+        x_horizontal /= np.linalg.norm(x_horizontal)
+        origin_B_reference_coordinates[0:3, 0] = x_horizontal
+        origin_B_reference_coordinates[0:3, 1] = y_orth
+        origin_B_reference_coordinates[0:3, 2] = z_origin
+        origin_B_reference_coordinates[0:3, 3] = np.array(origin_B_forearm_world)[0:3, 3]
+        origin_B_reference_coordinates = np.matrix(origin_B_reference_coordinates)
+        horizontal_B_forearm_pointed_down = origin_B_reference_coordinates.I * origin_B_forearm_pointed_down_arm
+        angle_from_horizontal = m.degrees(m.acos(horizontal_B_forearm_pointed_down[0, 0]))
+
+        forearm_pointed_down_arm_B_traj_end_pos = np.eye(4)
+        forearm_pointed_down_arm_B_traj_end_pos[0:3, 3] = [-0.05, traj_y_offset, traj_z_offset]
+        forearm_pointed_down_arm_B_traj_end_pos = np.matrix(forearm_pointed_down_arm_B_traj_end_pos)
+        forearm_pointed_down_arm_B_elbow_reference = np.matrix([[m.cos(rev), -m.sin(rev), 0., 0.0],
+                                                                [m.sin(rev), m.cos(rev), 0., traj_y_offset],
+                                                                [0., 0., 1., traj_z_offset],
+                                                                [0., 0., 0., 1.]])
+        origin_B_elbow_reference = origin_B_forearm_pointed_down_arm * forearm_pointed_down_arm_B_elbow_reference
+        rev = m.radians(180.)
+        forearm_pointed_down_arm_B_traj_end = np.matrix([[m.cos(rev), -m.sin(rev), 0., -0.09],
+                                                         [m.sin(rev), m.cos(rev), 0., traj_y_offset],
+                                                         [0., 0., 1., traj_z_offset],
+                                                         [0., 0., 0., 1.]])
+        origin_B_traj_forearm_end = origin_B_forearm_pointed_down_arm * forearm_pointed_down_arm_B_traj_end
+
+        origin_B_upperarm_pointed_down_shoulder = np.eye(4)
+        z_origin = np.array([0., 0., 1.])
+        x_vector = -1 * np.array(origin_B_upperarm_world)[0:3, 2]
+        x_vector /= np.linalg.norm(x_vector)
+        if np.abs(x_vector[2]) > 0.99:
+            x_vector = np.array([0., 0., np.sign(x_vector[2]) * 1.])
+            y_orth = np.array([np.sign(x_vector[2]) * -1., 0., 0.])
+            z_orth = np.array([0., np.sign(x_vector[2]) * 1., 0.])
+        else:
+            y_orth = np.cross(z_origin, x_vector)
+            y_orth = y_orth / np.linalg.norm(y_orth)
+            z_orth = np.cross(x_vector, y_orth)
+            z_orth = z_orth / np.linalg.norm(z_orth)
+        origin_B_upperarm_pointed_down_shoulder[0:3, 0] = x_vector
+        origin_B_upperarm_pointed_down_shoulder[0:3, 1] = y_orth
+        origin_B_upperarm_pointed_down_shoulder[0:3, 2] = z_orth
+        origin_B_upperarm_pointed_down_shoulder[0:3, 3] = np.array(origin_B_upperarm_world)[0:3, 3]
+        origin_B_rotated_pointed_down_shoulder = np.matrix(origin_B_upperarm_pointed_down_shoulder)
+
+
+
+        upperarm_pointed_down_shoulder_B_traj_end_pos = np.eye(4)
+        upperarm_pointed_down_shoulder_B_traj_end_pos[0:3, 3] = [-0.05, traj_y_offset, traj_z_offset]
+        upperarm_pointed_down_shoulder_B_traj_end_pos = np.matrix(upperarm_pointed_down_shoulder_B_traj_end_pos)
+        rev = m.radians(180.)
+        upperarm_pointed_down_shoulder_B_traj_upper_end = np.matrix([[m.cos(rev), -m.sin(rev), 0., -0.05],
+                                                                     [m.sin(rev), m.cos(rev), 0., -0.05],
+                                                                     [0., 0., 1., traj_z_offset],
+                                                                     [0., 0., 0., 1.]])
+
+        origin_B_traj_upper_end = origin_B_upperarm_pointed_down_shoulder * upperarm_pointed_down_shoulder_B_traj_upper_end
+
+        origin_B_traj_upper_start = copy.copy(origin_B_elbow_reference)
+        origin_B_traj_upper_start[0:3, 0:3] = origin_B_traj_upper_end[0:3, 0:3]
+
+        forearm_B_upper_arm = origin_B_elbow_reference.I*origin_B_traj_upper_start
+
+        rev = m.radians(180.)
+        shoulder_position_B_traj_final_end = np.matrix([[m.cos(rev), -m.sin(rev), 0., -0.03],
+                                                        [m.sin(rev), m.cos(rev), 0., -0.02],
+                                                        [0., 0., 1., 0.12],
+                                                        [0., 0., 0., 1.]])
+        origin_B_shoulder_position = np.eye(4)
+        origin_B_shoulder_position[0:3, 3] = np.array(origin_B_upperarm)[0:3, 3]
+        origin_B_traj_final_end = np.matrix(origin_B_shoulder_position) * shoulder_position_B_traj_final_end
+
+        origin_B_traj_start = origin_B_traj_start_pos
+
+        # Find the transforms from the origin to the goal poses.
+        goals = []
+        # Goals along forearm
+        path_distance = np.linalg.norm(np.array(origin_B_traj_start)[0:3, 3] -
+                                       np.array(origin_B_traj_forearm_end)[0:3, 3])
+        path_waypoints = np.arange(0.15, path_distance + path_distance * 0.01, (path_distance - 0.15) / 2.)
+        for goal in path_waypoints:
+            traj_start_B_traj_waypoint = np.matrix(np.eye(4))
+            traj_start_B_traj_waypoint[0, 3] = goal
+            origin_B_traj_waypoint = copy.copy(np.matrix(origin_B_traj_start) *
+                                               np.matrix(traj_start_B_traj_waypoint))
+            goals.append(copy.copy(origin_B_traj_waypoint))
+
+        # Goals along upper arm
+        path_distance = np.linalg.norm(np.array(origin_B_traj_forearm_end)[0:3, 3] -
+                                       np.array(origin_B_traj_upper_end)[0:3, 3])
+        path_waypoints = np.arange(path_distance, 0.0 - path_distance *0.01, -path_distance / 2.)
+        for goal in path_waypoints:
+            traj_start_B_traj_waypoint = np.matrix(np.eye(4))
+            traj_start_B_traj_waypoint[0, 3] = -goal
+            origin_B_traj_waypoint = copy.copy(np.matrix(origin_B_traj_upper_end) *
+                                               np.matrix(traj_start_B_traj_waypoint))
+            goals.append(copy.copy(origin_B_traj_waypoint))
+
+        # Goals at the top of the shoulder
+        origin_B_traj_waypoint[0:3, 0:3] = origin_B_traj_final_end[0:3, 0:3]
+        goals.append(copy.copy(origin_B_traj_waypoint))
+        goals.append(copy.copy(origin_B_traj_final_end))
+
+        # path_distance = np.linalg.norm(np.array(origin_B_traj_upper_end)[0:3, 3] -
+        #                                np.array(origin_B_traj_final_end)[0:3, 3])
+        # path_waypoints = np.arange(path_distance,  0.0 - path_distance * 0.01, -path_distance / 1.)
+        # for goal in path_waypoints:
+        #     traj_start_B_traj_waypoint = np.matrix(np.eye(4))
+        #     traj_start_B_traj_waypoint[0, 3] = -goal
+        #     origin_B_traj_waypoint = copy.copy(np.matrix(origin_B_traj_final_end) *
+        #                                        np.matrix(traj_start_B_traj_waypoint))
+        #     goals.append(copy.copy(origin_B_traj_waypoint))
+
+        return goals, origin_B_forearm_pointed_down_arm, origin_B_upperarm_pointed_down_shoulder, \
+               origin_B_traj_start, origin_B_traj_forearm_end, origin_B_traj_upper_end, \
+               origin_B_traj_final_end, angle_from_horizontal, \
+               forearm_B_upper_arm
+
     def objective_function_traj_and_arm_config(self, params):
         # params[7:] = [0., 0., 1.]
         # params = [0.1, 0.,  0.1,
         #           -0.1,  0.0, 0.1,
         #           0.,
-        #           0.0,  m.radians(0.), m.radians(70)]
-        # params = [0.17374768,  0.0647019,   0.09521618,  0.01036762, -0.05860782,  0.10786874,
-        #           0.01046108, -0.92726507, -0.69534598,  0.72062966]
+        # params = [m.radians(90.0),  m.radians(0.), m.radians(0.), m.radians(0.)]
+
+        params = [1.41876758,  0.13962405,  1.47350044,  0.95524629]
 
         arm = self.human_arm.split('a')[0]
 
         testing = False
-        if testing:
-            th = m.radians(0.)
-            test_world_should_B_sleeve_start_trans = np.matrix([[  m.cos(th), 0.,  m.sin(th),     0.38],
-                                                                 [         0., 1.,         0.,    -0.32],
-                                                                 [ -m.sin(th), 0.,  m.cos(th),     0.1],
-                                                                 [         0., 0.,         0.,     1.]])
 
-            th = m.radians(180.)
-            test_world_shoulder_B_sleeve_start_rotz = np.matrix([[ m.cos(th), -m.sin(th),     0.,      0.],
-                                                                 [ m.sin(th),  m.cos(th),     0.,      0.],
-                                                                 [               0.,         0.,     1.,      0.],
-                                                                 [        0.,         0.,     0.,        1.]])
-            th = m.radians(0.)
-            test_world_shoulder_B_sleeve_start_roty = np.matrix([[  m.cos(th), 0.,  m.sin(th),     0.],
-                                                                 [         0., 1.,         0.,    0.],
-                                                                 [ -m.sin(th), 0.,  m.cos(th),     0.],
-                                                                 [         0., 0.,         0.,     1.]])
-            th = m.radians(0.)
-            test_world_shoulder_B_sleeve_start_rotx = np.matrix([[1.,          0.,          0., 0.],
-                                                                 [0.,   m.cos(th),  -m.sin(th), 0.],
-                                                                 [0.,   m.sin(th),   m.cos(th), 0.],
-                                                                 [0.,          0.,          0., 1.]])
-            th = m.radians(-90)
-            shoulder_origin_B_rotated_shoulder_rotx = np.matrix([[1.,          0.,          0., 0.],
-                                                                 [0.,   m.cos(th),  -m.sin(th), 0.],
-                                                                 [0.,   m.sin(th),   m.cos(th), 0.],
-                                                                 [0.,          0.,          0., 1.]])
-            pos, rot = Bmat_to_pos_quat(test_world_should_B_sleeve_start_trans*test_world_shoulder_B_sleeve_start_rotz*test_world_shoulder_B_sleeve_start_roty)
-            pos_r, rot_r = Bmat_to_pos_quat(shoulder_origin_B_rotated_shoulder_rotx)
-            # self.set_simulation([0., 0., 0.], [.15, 0., 0.], 0, [0., 0., 0., 0.])
-            params = list(flatten([0.7, 0., 0.1, m.radians(180.), 0., 0., 0.85, m.radians(0), m.radians(0.), m.radians(0), m.radians(-90)]))
-        else:  # Based on two 3-D positions
-            # path_distance = np.linalg.norm(np.array(params[0:3])-np.array(params[3:6]))
-            print 'params'
-            print params
-            self.set_human_model_dof_dart([params[6], params[7], params[8], params[9]], self.human_arm)
+        # path_distance = np.linalg.norm(np.array(params[0:3])-np.array(params[3:6]))
+        print 'params'
+        print params
+        self.set_human_model_dof_dart([params[0], params[1], params[2], params[3]], self.human_arm)
+        # self.set_human_model_dof_dart([params[0], params[1], params[2], params[3]], 'leftarm')
 
-            skeleton_frame_B_worldframe = np.matrix([[1.,  0., 0., 0.],
-                                                     [0.,  0., 1., 0.],
-                                                     [0., -1., 0., 0.],
-                                                     [0.,  0., 0., 1.]])
+        self.goals, \
+        origin_B_forearm_pointed_down_arm, \
+        origin_B_upperarm_pointed_down_shoulder, \
+        origin_B_traj_start, \
+        origin_B_traj_forearm_end, \
+        origin_B_traj_upper_end, \
+        origin_B_traj_final_end, \
+        angle_from_horizontal, \
+        forearm_B_upper_arm= self.find_reference_coordinate_frames_and_goals(arm)
 
-            origin_B_pelvis = np.matrix(self.human.bodynode('h_pelvis').world_transform())
-            origin_B_upperarmbase = np.matrix(self.human.bodynode('h_bicep_'+arm).world_transform())
-            origin_B_upperarmbase[0:3, 0:3] = origin_B_pelvis[0:3, 0:3]
-            # origin_B_uabr = np.matrix(self.human.bodynode('h_bicep_'+arm).world_transform())
-            # origin_B_uabr[0:3, 0:3] = np.eye(3)
-            origin_B_upperarm = np.matrix(self.human.bodynode('h_bicep_'+arm).world_transform())
-            # origin_B_uar = np.matrix(self.human.bodynode('h_bicep_'+arm).world_transform())
-            origin_B_forearm = np.matrix(self.human.bodynode('h_forearm_'+arm).world_transform())
-            # origin_B_far = np.matrix(self.human.bodynode('h_forearm_'+arm).world_transform())
-            origin_B_hand = np.matrix(self.human.bodynode('h_hand_'+arm).world_transform())
-            # origin_B_hr = np.matrix(self.human.bodynode('h_hand_right').world_transform())
+        print 'angle from horizontal = ', angle_from_horizontal
+        if abs(angle_from_horizontal) > 30.:
+            print 'Angle of forearm is too high for success'
+            return 10. + 10. * (abs(angle_from_horizontal) - 30.)
 
-            z_origin = np.array([0., 0., 1.])
-            x_vector = (-1*np.array(origin_B_hand)[0:3, 1])
-            x_vector /= np.linalg.norm(x_vector)
-            y_orth = np.cross(z_origin, x_vector)
-            y_orth /= np.linalg.norm(y_orth)
-            z_orth = np.cross(x_vector, y_orth)
-            z_orth /= np.linalg.norm(z_orth)
-            origin_B_hand_rotated = np.matrix(np.eye(4))
-            # print 'x_vector'
-            # print x_vector
-            # print 'origin_B_hr_rotated'
-            # print origin_B_hr_rotated
-            # print 'np.reshape(x_vector, [3, 1])'
-            # print np.reshape(x_vector, [3, 1])
-            # print 'origin_B_hr_rotated[0:3, 0]'
-            # print origin_B_hr_rotated[0:3, 0]
-            origin_B_hand_rotated[0:3, 0] = copy.copy(np.reshape(x_vector, [3, 1]))
-            origin_B_hand_rotated[0:3, 1] = copy.copy(np.reshape(y_orth, [3, 1]))
-            origin_B_hand_rotated[0:3, 2] = copy.copy(np.reshape(z_orth, [3, 1]))
-            origin_B_hand_rotated[0:3, 3] = copy.copy(origin_B_hand[0:3, 3])
-            origin_B_hand_rotated = np.matrix(origin_B_hand_rotated)
-
-            hand_rotated_B_traj_start_pos = np.eye(4)
-            hand_rotated_B_traj_start_pos[0:3, 3] = copy.copy(params[0:3])
-            hand_rotated_B_traj_start_pos[0, 3] += 0.07
-            hand_rotated_B_traj_start_pos = np.matrix(hand_rotated_B_traj_start_pos)
-
-            origin_B_traj_start_pos = origin_B_hand_rotated*hand_rotated_B_traj_start_pos
-
-            origin_B_upperarm_world = origin_B_upperarm * skeleton_frame_B_worldframe
-
-            # print 'origin_B_traj_start_pos'
-            # print origin_B_traj_start_pos
-
-            # origin_B_world_rotated_shoulder = createBMatrix(np.reshape(np.array(origin_B_uabr[0:3, 3]), [1, 3])[0], list(tft.quaternion_from_euler(params[7], -params[8], params[9], 'rzxy')))
-
-            # Because green kevin has the upper with a bend in it, I shift the shoulder location by that bend offset.
-            # shoulder_origin_B_should_origin_shifted_green_kevin = np.matrix(np.eye(4))
-            # shoulder_origin_B_should_origin_shifted_green_kevin[1, 3] = -0.04953
-            # origin_B_world_rotated_shoulder = origin_B_world_rotated_shoulder*shoulder_origin_B_should_origin_shifted_green_kevin
-
-            # origin_B_uabr[0:3, 3] = origin_B_world_rotated_shoulder[0:3, 3]
-            # origin_B_uar[0:3, 3] = origin_B_world_rotated_shoulder[0:3, 3]
-
-            origin_B_upperarm_pointed_down_shoulder = np.eye(4)
-            z_origin = np.array([0., 0., 1.])
-            x_vector = -1*np.array(origin_B_upperarm_world)[0:3, 2]
-            x_vector /= np.linalg.norm(x_vector)
-            if np.abs(x_vector[2]) > 0.99:
-                x_vector = np.array([0., 0., np.sign(x_vector[2])*1.])
-                y_orth = np.array([np.sign(x_vector[2])*-1., 0., 0.])
-                z_orth = np.array([0., np.sign(x_vector[2])*1., 0.])
-                # origin_B_upperarm_pointed_down_shoulder[0:3, 0] = np.array([0., 0., np.sign(x_vector[2])*1.])
-                # origin_B_upperarm_pointed_down_shoulder[0:3, 1] = y_orth
-                # origin_B_upperarm_pointed_down_shoulder[0:3, 2] = z_orth
-                # origin_B_upperarm_pointed_down_shoulder[0:3, 3] = np.array(origin_B_uabr)[0:3, 3]
-            else:
-                y_orth = np.cross(z_origin, x_vector)
-                y_orth = y_orth/np.linalg.norm(y_orth)
-                z_orth = np.cross(x_vector, y_orth)
-                z_orth = z_orth/np.linalg.norm(z_orth)
-            origin_B_upperarm_pointed_down_shoulder[0:3, 0] = x_vector
-            origin_B_upperarm_pointed_down_shoulder[0:3, 1] = y_orth
-            origin_B_upperarm_pointed_down_shoulder[0:3, 2] = z_orth
-            origin_B_upperarm_pointed_down_shoulder[0:3, 3] = np.array(origin_B_upperarm_world)[0:3, 3]
-            origin_B_rotated_pointed_down_shoulder = np.matrix(origin_B_upperarm_pointed_down_shoulder)
-            # origin_B_rotated_pointed_down_shoulder = origin_B_uabr*uabr_B_uabr_corrected*np.matrix(shoulder_origin_B_rotated_pointed_down_shoulder)
-            # print 'origin_B_rotated_pointed_down_shoulder'
-            # print origin_B_rotated_pointed_down_shoulder
-
-            # origin_B_rotated_pointed_down_shoulder[0:3, 3] = origin_B_world_rotated_shoulder[0:3, 3]
-
-            upperarm_pointed_down_shoulder_B_traj_end_pos = np.eye(4)
-            upperarm_pointed_down_shoulder_B_traj_end_pos[0:3, 3] = copy.copy(params[3:6])
-            upperarm_pointed_down_shoulder_B_traj_end_pos = np.matrix(upperarm_pointed_down_shoulder_B_traj_end_pos)
-
-            # print 'rotated_pointed_down_shoulder_B_traj_end_pos'
-            # print rotated_pointed_down_shoulder_B_traj_end_pos
-            # print 'origin_B_traj_start_pos'
-            # print origin_B_traj_start_pos
-            origin_B_traj_end_pos = origin_B_upperarm_pointed_down_shoulder*upperarm_pointed_down_shoulder_B_traj_end_pos
-            # print 'origin_B_traj_end_pos'
-            # print origin_B_traj_end_pos
-
-            # print 'origin_B_uabr_corrected'
-            # print origin_B_uabr*uabr_B_uabr_corrected
-
-            th = m.radians(180.)
-            #
-            # x_vector = np.array(params[0:3])-np.array(params[3:6])
-            # x_vector /= np.linalg.norm(x_vector)
-            # y_orth = np.cross(z_origin, x_vector)
-            # y_orth = y_orth/np.linalg.norm(y_orth)
-            # z_orth = np.cross(x_vector, y_orth)
-            # z_orth = z_orth/np.linalg.norm(z_orth)
-            # origin_B_traj_start = np.eye(4)
-            # origin_B_traj_start[0:3, 0] = np.reshape(x_vector, [3, 1])
-            # origin_B_traj_start[0:3, 1] = np.reshape(y_orth, [3, 1])
-            # origin_B_traj_start[0:3, 2] = np.reshape(z_orth, [3, 1])
-            # origin_B_traj_start[0:3, 3] = np.reshape(params[0:3], [3, 1])
-            # origin_B_traj_start = np.matrix(origin_B_traj_start)
-
-            z_origin = np.array([0., 0., 1.])
-            x_vector = np.array(origin_B_traj_end_pos)[0:3, 3] - np.array(origin_B_traj_start_pos)[0:3, 3]
-            x_vector /= np.linalg.norm(x_vector)
-            y_orth = np.cross(z_origin, x_vector)
-            y_orth /= np.linalg.norm(y_orth)
-            z_orth = np.cross(x_vector, y_orth)
-            z_orth /= np.linalg.norm(z_orth)
-            origin_B_traj_start = np.eye(4)
-            origin_B_traj_start[0:3, 0] = x_vector
-            origin_B_traj_start[0:3, 1] = y_orth
-            origin_B_traj_start[0:3, 2] = z_orth
-            origin_B_traj_start[0:3, 3] = np.array(origin_B_traj_start_pos)[0:3, 3]
-            origin_B_traj_start = np.matrix(origin_B_traj_start)
-
-            # print 'origin_B_upperarm_pointed_down_shoulder'
-            # print origin_B_upperarm_pointed_down_shoulder
-
-            # print 'origin_B_traj_start'
-            # print origin_B_traj_start
-
-            path_distance = np.linalg.norm(np.array(origin_B_traj_end_pos)[0:3, 3] - np.array(origin_B_traj_start_pos)[0:3, 3])
-            # print 'path_distance'
-            # print path_distance
-            # uabr_corrected_B_traj_start = uabr_B_uabr_corrected.I*origin_B_uabr.I*origin_B_traj_start
-            # test_world_shoulder_B_sleeve_start_rotz = np.matrix([[ m.cos(th), -m.sin(th),     0.],
-            #                                                      [ m.sin(th),  m.cos(th),     0.],
-            #                                                       [        0.,         0.,     1.]])
-            # hr_rotated_B_traj_start = createBMatrix([params[0], params[1], params[2]],
-            #                                   tft.quaternion_from_euler(params[3], params[4], params[5], 'rzyx'))
-            pos_t, quat_t = Bmat_to_pos_quat(origin_B_traj_start)
-            # if np.linalg.norm([params[0]-pos_t[0], params[1]-pos_t[1], params[2]-pos_t[2]]) > 0.01:
-            #     print 'Somehow I have mysteriously gotten error in my trajectory start position in openrave. Abort!'
-            #     return 100.
-            # uar_base_B_uar = createBMatrix([0, 0, 0], tft.quaternion_from_euler(params[10], params[11], params[12], 'rzxy'))
-            # hr_B_traj_start = origin_B_hr_rotated.I*origin_B_uabr*uabr_B_uabr_corrected*uabr_corrected_B_traj_start
-            # traj_start_B_traj_end = np.matrix(np.eye(4))
-            # traj_start_B_traj_end[0, 3] = params[6]
-            # uabr_B_traj_end = uabr_B_uabr_corrected*uabr_corrected_B_traj_start*traj_start_B_traj_end
-            # uar_B_traj_end = origin_B_uar.I*origin_B_uabr*uabr_B_traj_end
-
-            # print 'origin_B_hr'
-            # print origin_B_hr
-            # print 'origin_B_uabr'
-            # print origin_B_uabr
-            # print 'uabr_corrected_B_traj_start'
-            # print uabr_corrected_B_traj_start
-            testing = True
-            if not testing:
-                if np.linalg.norm(hand_rotated_B_traj_start_pos[0:3, 3]) > 0.3:
-                    print 'traj start too far away'
-                    return 10. + np.linalg.norm(hand_rotated_B_traj_start_pos[0:3, 3])
-                if np.linalg.norm(upperarm_pointed_down_shoulder_B_traj_end_pos[0:3, 3]) > 0.3:
-                    print 'traj end too far away'
-                    return 10. + np.linalg.norm(upperarm_pointed_down_shoulder_B_traj_end_pos[0:3, 3])
-                if hand_rotated_B_traj_start_pos[0, 3] > 0.3 or hand_rotated_B_traj_start_pos[0, 3] < 0.:
-                    print 'traj start relation to hand is too close or too far'
-                    return 10. + np.abs(hand_rotated_B_traj_start_pos[0, 3])
-                if upperarm_pointed_down_shoulder_B_traj_end_pos[0, 3] > 0.05:
-                    print 'traj ends too far from upper arm'
-                    return 10. + upperarm_pointed_down_shoulder_B_traj_end_pos[0, 3]
-                if upperarm_pointed_down_shoulder_B_traj_end_pos[0, 3] < -0.15:
-                    print 'traj ends too far behind upper arm'
-                    return 10. - upperarm_pointed_down_shoulder_B_traj_end_pos[0, 3]
-            testing = False
-            path_waypoints = np.arange(0., path_distance+path_distance*0.01, path_distance/5.)
-            # print 'path_distance'
-            # print path_distance
-            # print 'number of path waypoints'
-            # print len(path_waypoints)
-            # print 'path_waypoints'
-            # print path_waypoints
-            self.goals = []
-            for goal in path_waypoints:
-                traj_start_B_traj_waypoint = np.matrix(np.eye(4))
-                traj_start_B_traj_waypoint[0, 3] = goal
-                origin_B_traj_waypoint = copy.copy(np.matrix(origin_B_traj_start)*np.matrix(traj_start_B_traj_waypoint))
-                # print 'origin_B_traj_start'
-                # print origin_B_traj_start
-                # print 'traj_start_B_traj_waypoint'
-                # print traj_start_B_traj_waypoint
-                # print 'origin_B_traj_waypoint'
-                # print origin_B_traj_waypoint
-                # print 'origin_B_uabr'
-                # print origin_B_uabr
-                # print 'uabr_B_uabr_corrected'
-                # print uabr_B_uabr_corrected
-                # print 'uabr_corrected_B_traj_start'
-                # print uabr_corrected_B_traj_start
-                # print 'traj_start_B_traj_waypoint'
-                # print traj_start_B_traj_waypoint
-                # print 'origin_B_traj_waypoint'
-                # print origin_B_traj_waypoint
-                self.goals.append(copy.copy(origin_B_traj_waypoint))
-                upperarm_vector = np.array((origin_B_upperarm.I*origin_B_traj_waypoint))[0:3, 3]
-                forearm_vector = np.array((origin_B_forearm.I*origin_B_traj_waypoint))[0:3, 3]
-                hand_vector = np.array((origin_B_hand.I*origin_B_traj_waypoint))[0:3, 3]
-                min_distance = np.min([np.linalg.norm([upperarm_vector[0], upperarm_vector[2]]),
-                                       np.linalg.norm([forearm_vector[0], forearm_vector[2]]),
-                                       np.linalg.norm([hand_vector[0], hand_vector[2]])])
-                if not testing:
-                    if min_distance > 0.28:  # goals too far from any arm segment. The gown sleeve opening is 28 cm long
-                        print 'goals too far from arm segments'
-                        return 10 + min_distance  # distance from arm segment
-
+        print 'Number of goals: ', len(self.goals)
         start_time = rospy.Time.now()
         self.set_goals()
         # print self.origin_B_grasps
-        maxiter = 20
-        popsize = 4*20*2
+        maxiter = 5
+        popsize = 200#4*20
         # cma parameters: [pr2_base_x, pr2_base_y, pr2_base_theta, pr2_base_height,
         # human_arm_dof_1, human_arm_dof_2, human_arm_dof_3, human_arm_dof_4, human_arm_dof_5,
         # human_arm_dof_6, human_arm_dof_7]
-        parameters_min = np.array([-2., -2., -2.5/3.*m.pi-.001, 0.])
-        parameters_max = np.array([2., 2., 2.5/3.*m.pi+.001, 0.3])
+        parameters_min = np.array([-2.2, -2.2, -2.5/3.*m.pi-.001, 0.25])
+        parameters_max = np.array([2.2, 2.2, 2.5/3.*m.pi+.001, 0.3])
         # parameters_min = np.array([-0.1, -1.0, m.pi/2. - .001, 0.2])
         # parameters_max = np.array([0.8, -0.3, 2.5*m.pi/2. + .001, 0.3])
         parameters_scaling = (parameters_max-parameters_min)/2.
@@ -703,10 +640,13 @@ class ScoreGeneratorDressingwithPhysx(object):
         if self.kinematics_optimization_results[1] < 0.:
             self.physx_output = False
             self.physx_outcome = None
-            traj_start = np.array(origin_B_traj_start_pos)[0:3, 3]
-            traj_end = np.array(origin_B_traj_end_pos)[0:3, 3]
+            # traj_start = np.array(origin_B_traj_start_pos)[0:3, 3]
+            # traj_end = np.array(origin_B_traj_end_pos)[0:3, 3]
 
-            self.update_physx_from_dart(origin_B_upperarm_pointed_down_shoulder=origin_B_upperarm_pointed_down_shoulder, start_traj=traj_start, end_traj=traj_end)
+            self.update_physx_from_dart(origin_B_forearm_pointed_down_arm=origin_B_forearm_pointed_down_arm,
+                                        origin_B_upperarm_pointed_down_shoulder=origin_B_upperarm_pointed_down_shoulder,
+                                        traj_start=origin_B_traj_start, traj_forearm_end=origin_B_traj_forearm_end,
+                                        traj_upper_end=origin_B_traj_upper_end, traj_final_end=origin_B_traj_final_end)
 
             # pos_a, quat_a = Bmat_to_pos_quat(origin_B_upperarm_world)
 
@@ -909,7 +849,8 @@ class ScoreGeneratorDressingwithPhysx(object):
     def objective_function_one_config(self, current_parameters):
         # start_time = rospy.Time.now()
         # current_parameters = [0.3, -0.9, 2.5*m.pi/3., 0.3]
-        # current_parameters = [-0.34303706, -0.7381042,   1.2557902,   0.29065268]
+        current_parameters = [0.2743685, -0.71015745, 0.20439603, 0.29904425]
+        current_parameters = [0.2743685, -0.71015745, 2.2043960252256807, 0.29904425]
         x = current_parameters[0]
         y = current_parameters[1]
         th = current_parameters[2]
@@ -919,12 +860,13 @@ class ScoreGeneratorDressingwithPhysx(object):
                                   [ m.sin(th),  m.cos(th),     0.,         y],
                                   [        0.,         0.,     1.,        0.],
                                   [        0.,         0.,     0.,        1.]])
+        # print 'pr2_B_origin\n', origin_B_pr2.I
         v = self.robot.positions()
         v['rootJoint_pos_x'] = x
         v['rootJoint_pos_y'] = y
         v['rootJoint_pos_z'] = 0.
         v['rootJoint_rot_z'] = th
-
+        self.dart_world.displace_gown()
         # sign_flip = 1.
         # if 'right' in self.robot_arm:
         #     sign_flip = -1.
@@ -951,7 +893,7 @@ class ScoreGeneratorDressingwithPhysx(object):
         v['torso_lift_joint'] = z
 
         self.robot.set_positions(v)
-        self.dart_world.set_gown(self.robot_arm)
+        # self.dart_world.set_gown()
 
         # PR2 is too close to the person (who is at the origin). PR2 base is 0.668m x 0.668m
         distance_from_origin = np.linalg.norm(origin_B_pr2[:2, 3])
@@ -994,7 +936,8 @@ class ScoreGeneratorDressingwithPhysx(object):
         # v[self.robot_opposite_arm[0] + '_wrist_roll_joint'] = 0.
         # self.robot.set_positions(v)
 
-        in_collision = self.is_dart_in_collision()
+        # in_collision = self.is_dart_in_collision()
+        base_in_collision = self.is_dart_base_in_collision()
 
         close_to_collision = False
         check_if_PR2_is_near_collision = False
@@ -1005,7 +948,7 @@ class ScoreGeneratorDressingwithPhysx(object):
             positions['rootJoint_pos_z'] = 0.
             positions['rootJoint_rot_z'] = th
             self.robot.set_positions(positions)
-            self.dart_world.set_gown(self.robot_arm)
+            self.dart_world.set_gown([self.robot_arm])
             close_to_collision = np.max([self.is_dart_in_collision(), close_to_collision])
 
             positions['rootJoint_pos_x'] = x - 0.04
@@ -1013,7 +956,7 @@ class ScoreGeneratorDressingwithPhysx(object):
             positions['rootJoint_pos_z'] = 0.
             positions['rootJoint_rot_z'] = th
             self.robot.set_positions(positions)
-            self.dart_world.set_gown(self.robot_arm)
+            self.dart_world.set_gown([self.robot_arm])
             close_to_collision = np.max([self.is_dart_in_collision(), close_to_collision])
 
             positions['rootJoint_pos_x'] = x - 0.04
@@ -1021,7 +964,7 @@ class ScoreGeneratorDressingwithPhysx(object):
             positions['rootJoint_pos_z'] = 0.
             positions['rootJoint_rot_z'] = th
             self.robot.set_positions(positions)
-            self.dart_world.set_gown(self.robot_arm)
+            self.dart_world.set_gown([self.robot_arm])
             close_to_collision = np.max([self.is_dart_in_collision(), close_to_collision])
 
             positions['rootJoint_pos_x'] = x + 0.04
@@ -1029,7 +972,7 @@ class ScoreGeneratorDressingwithPhysx(object):
             positions['rootJoint_pos_z'] = 0.
             positions['rootJoint_rot_z'] = th
             self.robot.set_positions(positions)
-            self.dart_world.set_gown(self.robot_arm)
+            self.dart_world.set_gown([self.robot_arm])
             close_to_collision = np.max([self.is_dart_in_collision(), close_to_collision])
 
             positions['rootJoint_pos_x'] = x
@@ -1037,13 +980,14 @@ class ScoreGeneratorDressingwithPhysx(object):
             positions['rootJoint_pos_z'] = 0.
             positions['rootJoint_rot_z'] = th
             self.robot.set_positions(positions)
-            self.dart_world.set_gown(self.robot_arm)
-
-        if not close_to_collision:# and not in_collision:
+            self.dart_world.set_gown([self.robot_arm])
+        best_ik = None
+        if not close_to_collision and not base_in_collision:
             reached = np.zeros(len(self.origin_B_grasps))
             manip = np.zeros(len(self.origin_B_grasps))
             for num, origin_B_grasp in enumerate(self.origin_B_grasps):
                 pr2_B_grasp = origin_B_pr2.I * origin_B_grasp
+
                 # resp = self.call_ik_service(pr2_B_grasp, z)
                 # sols = resp.ik_sols.data
                 # print 'sols'
@@ -1060,6 +1004,7 @@ class ScoreGeneratorDressingwithPhysx(object):
                 #     jacobians = []
                 # sols = self.manip.FindIKSolutions(pr2_B_grasp, filteroptions=op.IkFilterOptions.CheckEnvCollisions)
                 sols, jacobians = self.ik_request(pr2_B_grasp, z)
+                print sols
                 if list(sols):  # not None:
                     # print 'final sols'
                     # print sols
@@ -1073,23 +1018,28 @@ class ScoreGeneratorDressingwithPhysx(object):
                         v[self.robot_arm[0] + '_wrist_flex_joint'] = sols[i][5]
                         v[self.robot_arm[0] + '_wrist_roll_joint'] = sols[i][6]
                         self.robot.set_positions(v)
-                        self.dart_world.set_gown(self.robot_arm)
+                        self.dart_world.set_gown([self.robot_arm])
                         if not self.is_dart_in_collision():
                             reached[num] = 1.
                             J = np.matrix(jacobians[i])
                             try:
                                 joint_limit_weight = self.gen_joint_limit_weight(sols[i], self.robot_arm)
+                                new_manip = (m.pow(np.linalg.det(J * joint_limit_weight * J.T), (1. / 6.))) / (np.trace(J * joint_limit_weight * J.T) / 6.)
+                                if num == 0 and new_manip > manip[num]:
+                                    best_ik = copy.copy(sols[i])
                                 manip[num] = np.max([copy.copy((m.pow(np.linalg.det(J*joint_limit_weight*J.T), (1./6.)))/(np.trace(J*joint_limit_weight*J.T)/6.)), manip[num]])
                             except ValueError:
                                 print 'WARNING!!'
                                 print 'Jacobian may be singular or close to singular'
                                 print 'Determinant of J*JT is: ', np.linalg.det(J*J.T)
+
                                 manip[num] = np.max([0., manip[num]])
                 if self.visualize:
                     rospy.sleep(0.5)
             for num in xrange(len(reached)):
                 manip_score += copy.copy(reached[num] * manip[num])
                 reach_score += copy.copy(reached[num])
+            print 'Best IK:\n', best_ik
         else:
             # print 'In base collision! single config distance: ', distance
             if distance < 2.0:
@@ -1129,6 +1079,15 @@ class ScoreGeneratorDressingwithPhysx(object):
                     rospy.sleep(2.0)
             return 10.-beta*reach_score-gamma*manip_score #+ zeta*angle_cost
 
+    def is_dart_base_in_collision(self):
+        self.dart_world.check_collision()
+        for contact in self.dart_world.collision_result.contacts:
+            if ((self.robot == contact.skel1 or self.robot == contact.skel2) and
+                    (self.robot.bodynode('base_link') == contact.bodynode1
+                     or self.robot.bodynode('base_link') == contact.bodynode2)):
+                return True
+        return False
+
     def is_dart_in_collision(self):
         self.dart_world.check_collision()
         # collided_bodies = self.dart_world.collision_result.contacted_bodies
@@ -1136,7 +1095,9 @@ class ScoreGeneratorDressingwithPhysx(object):
             if ((self.robot == contact.skel1 or self.robot == contact.skel2) and
                     (self.human == contact.skel1 or self.human == contact.skel2)) or \
                     ((self.robot == contact.skel1 or self.robot == contact.skel2) and
-                     (self.gown == contact.skel1 or self.gown == contact.skel2)):
+                         (self.gown_leftarm == contact.skel1 or self.gown_leftarm == contact.skel2)) or \
+                    ((self.robot == contact.skel1 or self.robot == contact.skel2) and
+                         (self.gown_rightarm == contact.skel1 or self.gown_rightarm == contact.skel2)):
                 return True
         return False
 
@@ -1160,13 +1121,14 @@ class ScoreGeneratorDressingwithPhysx(object):
 
         self.robot = self.dart_world.robot
         self.human = self.dart_world.human
-        self.gown = self.dart_world.gown_box
+        self.gown_leftarm = self.dart_world.gown_box_leftarm
+        self.gown_rightarm = self.dart_world.gown_box_rightarm
 
         sign_flip = 1.
         if 'right' in self.robot_arm:
             sign_flip = -1.
         v = self.robot.q
-        v['l_shoulder_pan_joint'] = -sign_flip*3.14/2
+        v['l_shoulder_pan_joint'] = 1.*3.14/2
         v['l_shoulder_lift_joint'] = -0.52
         v['l_upper_arm_roll_joint'] = 0.
         v['l_elbow_flex_joint'] = -3.14 * 2 / 3
@@ -1174,7 +1136,7 @@ class ScoreGeneratorDressingwithPhysx(object):
         v['l_wrist_flex_joint'] = 0.
         v['l_wrist_roll_joint'] = 0.
         v['l_gripper_l_finger_joint'] = .54
-        v['r_shoulder_pan_joint'] = sign_flip*3.14/2
+        v['r_shoulder_pan_joint'] = -1.*3.14/2
         v['r_shoulder_lift_joint'] = -0.52
         v['r_upper_arm_roll_joint'] = 0.
         v['r_elbow_flex_joint'] = -3.14*2/3
@@ -1184,7 +1146,7 @@ class ScoreGeneratorDressingwithPhysx(object):
         v['r_gripper_l_finger_joint'] = .54
         v['torso_lift_joint'] = 0.3
         self.robot.set_positions(v)
-        self.dart_world.set_gown(self.robot_arm)
+        self.dart_world.displace_gown()
 
         # robot_start = np.matrix([[1., 0., 0., 0.],
         #                          [0., 1., 0., 0.],
@@ -1207,7 +1169,7 @@ class ScoreGeneratorDressingwithPhysx(object):
         positions['rootJoint_pos_z'] = 0.
         positions['rootJoint_rot_z'] = 3.14
         self.robot.set_positions(positions)
-        self.dart_world.set_gown(self.robot_arm)
+        # self.dart_world.set_gown()
         print 'Dart is ready!'
 
     def setup_openrave(self):
@@ -1315,7 +1277,7 @@ class ScoreGeneratorDressingwithPhysx(object):
         rospy.wait_for_service('init_physx_body_model')
         self.init_physx_service = rospy.ServiceProxy('init_physx_body_model', InitPhysxBodyModel)
         rospy.wait_for_service('body_config_input_to_physx')
-        self.update_physx_config_service = rospy.ServiceProxy('body_config_input_to_physx', PhysxInput)
+        self.update_physx_config_service = rospy.ServiceProxy('body_config_input_to_physx', PhysxInputWaypoints)
 
         self.traj_to_simulator_pub = rospy.Publisher('physx_simulator_input', FloatArrayBare, queue_size=1)
         # self.simulator_result_sub = rospy.Subscriber('physx_simulator_result', PhysxOutcome, self.simulator_result_cb)
@@ -1338,14 +1300,14 @@ class ScoreGeneratorDressingwithPhysx(object):
             q['j_bicep_left_x'] = dof[0]
             q['j_bicep_left_y'] = -1*dof[1]
             q['j_bicep_left_z'] = dof[2]
-            q['j_bicep_left_roll'] = -1*0.
+            # q['j_bicep_left_roll'] = -1*0.
             q['j_forearm_left_1'] = dof[3]
             q['j_forearm_left_2'] = 0.
         elif human_arm == 'rightarm':
             q['j_bicep_right_x'] = -1*dof[0]
             q['j_bicep_right_y'] = dof[1]
             q['j_bicep_right_z'] = dof[2]
-            q['j_bicep_right_roll'] = 0.
+            # q['j_bicep_right_roll'] = 0.
             q['j_forearm_right_1'] = dof[3]
             q['j_forearm_right_2'] = 0.
         else:
@@ -1353,7 +1315,12 @@ class ScoreGeneratorDressingwithPhysx(object):
             return False
         self.human.set_positions(q)
 
-    def update_physx_from_dart(self, origin_B_upperarm_pointed_down_shoulder=[], start_traj=[], end_traj=[], initialization=False):
+    def update_physx_from_dart(self,
+                               origin_B_forearm_pointed_down_arm=[],
+                               origin_B_upperarm_pointed_down_shoulder=[],
+                               traj_start=[], traj_forearm_end=[],
+                               traj_upper_end=[], traj_final_end=[],
+                               initialization=False):
         links = []
         spheres = []
         for bodypart in self.dart_world.skel_bodies:
@@ -1403,19 +1370,25 @@ class ScoreGeneratorDressingwithPhysx(object):
                                            first_sphere_list, second_sphere_list)
             print 'Is physx initialized with the person model?', resp
         else:
-
-            if start_traj == []:
-                start_traj = self.start_traj
-            if end_traj == []:
-                end_traj = self.end_traj
-            if end_traj == [] or start_traj == [] or origin_B_upperarm_pointed_down_shoulder == []:
+            if traj_start == []:
+                traj_start = self.traj_start
+            if traj_forearm_end == []:
+                traj_forearm_end = self.traj_forearm_end
+            if traj_forearm_end == [] or traj_start == [] or origin_B_upperarm_pointed_down_shoulder == []:
                 print 'I am missing a start trajectory, an end trajectory, or the transform from origin to pointing ' \
                       'down shoulder'
                 return False
+            origin_B_forearm_pointed_down_arm = list(flatten(np.array(origin_B_forearm_pointed_down_arm)))
             origin_B_upperarm_pointed_down_shoulder = list(flatten(np.array(origin_B_upperarm_pointed_down_shoulder)))
+            traj_start = list(flatten(np.array(traj_start)))
+            traj_forearm_end = list(flatten(np.array(traj_forearm_end)))
+            traj_upper_end = list(flatten(np.array(traj_upper_end)))
+            traj_final_end = list(flatten(np.array(traj_final_end)))
+            print 'right here'
             resp = self.update_physx_config_service(spheres_x, spheres_y, spheres_z, spheres_r, first_sphere_list,
-                                                    second_sphere_list, start_traj, end_traj, origin_B_upperarm_pointed_down_shoulder)
-        print 'Physx update was successful? ', resp
+                                                    second_sphere_list, traj_start, traj_forearm_end, traj_upper_end,
+                                                    traj_final_end, origin_B_forearm_pointed_down_arm,
+                                                    origin_B_upperarm_pointed_down_shoulder)
         return resp
 
     def visualize_many_configurations(self):
@@ -1645,6 +1618,9 @@ class ScoreGeneratorDressingwithPhysx(object):
                             self.env.UpdatePublishedBodies()
                             rospy.sleep(1.5)
 
+    def get_best_traj_offset(self):
+        return 0.0, 0.1
+
     def gen_joint_limit_weight(self, q, side):
         # define the total range limit for each joint
         if 'left' in side:
@@ -1686,7 +1662,7 @@ if __name__ == "__main__":
     rospy.init_node('score_generator')
     # start_time = time.time()
     outer_start_time = rospy.Time.now()
-    selector = ScoreGeneratorDressingwithPhysx(human_arm='leftarm', visualize=False)
+    selector = ScoreGeneratorDressingwithPhysx(human_arm='rightarm', visualize=True)
     # selector.visualize_many_configurations()
     # selector.output_results_for_use()
     selector.run_interleaving_optimization_outer_level()

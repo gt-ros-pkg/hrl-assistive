@@ -231,7 +231,7 @@ class ScoreGeneratorDressingwithPhysx(object):
         y_orth /= np.linalg.norm(y_orth)
         z_orth = np.cross(x_vector, y_orth)
         z_orth /= np.linalg.norm(z_orth)
-        origin_B_hand_rotated = np.matrix(np.eye(4))
+        origin_B_hand_rotated = np.eye(4)
         # print 'x_vector'
         # print x_vector
         # print 'origin_B_hr_rotated'
@@ -240,10 +240,10 @@ class ScoreGeneratorDressingwithPhysx(object):
         # print np.reshape(x_vector, [3, 1])
         # print 'origin_B_hr_rotated[0:3, 0]'
         # print origin_B_hr_rotated[0:3, 0]
-        origin_B_hand_rotated[0:3, 0] = copy.copy(np.reshape(x_vector, [3, 1]))
-        origin_B_hand_rotated[0:3, 1] = copy.copy(np.reshape(y_orth, [3, 1]))
-        origin_B_hand_rotated[0:3, 2] = copy.copy(np.reshape(z_orth, [3, 1]))
-        origin_B_hand_rotated[0:3, 3] = copy.copy(origin_B_hand[0:3, 3])
+        origin_B_hand_rotated[0:3, 0] = copy.copy(x_vector)
+        origin_B_hand_rotated[0:3, 1] = copy.copy(y_orth)
+        origin_B_hand_rotated[0:3, 2] = copy.copy(z_orth)
+        origin_B_hand_rotated[0:3, 3] = copy.copy(np.array(origin_B_hand)[0:3, 3])
         origin_B_hand_rotated = np.matrix(origin_B_hand_rotated)
 
         rev = m.radians(180.)
@@ -295,10 +295,10 @@ class ScoreGeneratorDressingwithPhysx(object):
             y_orth = y_orth / np.linalg.norm(y_orth)
             z_orth = np.cross(x_vector, y_orth)
             z_orth = z_orth / np.linalg.norm(z_orth)
-            origin_B_forearm_pointed_down_arm[0:3, 0] = x_vector
-            origin_B_forearm_pointed_down_arm[0:3, 1] = y_orth
-            origin_B_forearm_pointed_down_arm[0:3, 2] = z_orth
-            origin_B_forearm_pointed_down_arm[0:3, 3] = np.array(origin_B_forearm_world)[0:3, 3]
+        origin_B_forearm_pointed_down_arm[0:3, 0] = x_vector
+        origin_B_forearm_pointed_down_arm[0:3, 1] = y_orth
+        origin_B_forearm_pointed_down_arm[0:3, 2] = z_orth
+        origin_B_forearm_pointed_down_arm[0:3, 3] = np.array(origin_B_forearm_world)[0:3, 3]
         origin_B_forearm_pointed_down_arm = np.matrix(origin_B_forearm_pointed_down_arm)
 
         forearm_pointed_down_arm_B_traj_end_pos = np.eye(4)
@@ -370,7 +370,7 @@ class ScoreGeneratorDressingwithPhysx(object):
         # print 'origin_B_uabr_corrected'
         # print origin_B_uabr*uabr_B_uabr_corrected
 
-        th = m.radians(180.)
+        # th = m.radians(180.)
         #
         # x_vector = np.array(params[0:3])-np.array(params[3:6])
         # x_vector /= np.linalg.norm(x_vector)

@@ -2,110 +2,32 @@
 
 import roslib
 import rospy, rospkg, rosparam
-from geometry_msgs.msg import WrenchStamped
-from std_msgs.msg import Bool
 import numpy as np
 import math as m
 import os.path
-import ghmm
 import copy
 
 roslib.load_manifest('hrl_dressing')
-roslib.load_manifest('zenither')
-import zenither.zenither as zenither
 import tf
-import threading
-import hrl_lib.util as utils
 
 roslib.load_manifest('hrl_lib')
-from hrl_lib.util import save_pickle, load_pickle
-from hrl_msgs.msg import FloatArray
-from pr2_controllers_msgs.msg import SingleJointPositionActionGoal
-from mpl_toolkits.mplot3d import Axes3D
-from matplotlib import cm
-from matplotlib.ticker import LinearLocator, FormatStrFormatter
-import matplotlib.mlab as mlab
-import matplotlib.pyplot as plt
-from matplotlib.path import Path
-import matplotlib.patches as patches
-
-from hrl_haptic_manipulation_in_clutter_srvs.srv import EnableHapticMPC
-
-from helper_functions import createBMatrix, Bmat_to_pos_quat
-
-from geometry_msgs.msg import PoseArray, Pose, PoseStamped, Point, Quaternion, PoseWithCovarianceStamped, Twist
-from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
-
-from hrl_base_selection.dressing_configuration_optimization_calling_physx_dart import ScoreGeneratorDressingwithPhysx
 
 
 class PR2_FT_Data_Acquisition(object):
     def __init__(self, plot=False, trial_number=None, realtime_HMM=False):
-        # print 'Initializing Sleeve Rig'
-        self.total_start_time = rospy.Time.now()
-        rospy.loginfo('Initializing PR2 F/T Data Acquisition')
-
-        self.zeroed_netft_pub = rospy.Publisher('/netft_gravity_zeroing/wrench_zeroed', WrenchStamped, queue_size=10)
+        rospy.loginfo('Starting PR2 Right Gown F/T sensor TF broadcaster')
 
         self.listener = tf.TransformListener()
         self.broadcaster = tf.TransformBroadcaster()
 
-        self.categories = ['missed/', 'good/', 'caught/']
-
-        self.reference_frame = 'base_footprint'
-
-        if not trial_number:
-            self.trial_number = 0
-        else:
-            self.trial_number = trial_number
-        self.plot = plot
 
         rospack = rospkg.RosPack()
         self.pkg_path = rospack.get_path('hrl_dressing')
         self.base_selection_pkg_path = rospack.get_path('hrl_base_selection')
 
-        self.data_path = '/home/ari/svn/robot1_data/usr/ari/data/hrl_dressing'
-
-        self.realtime_HMM = realtime_HMM
-        if self.realtime_HMM:
-            self.HMM_last_run_time = rospy.Time.now()
-            self.myHmms = []
-            self.F = ghmm.Float()
-            self.initialize_HMM()
-
-        self.recording = False
-
-        self.sleeve_file = None
-
-        self.start_record_time = 0.
-
-        self.array_to_save = np.zeros([20000, 4])
-        self.array_line = 0
-
-        self.continue_collecting = True
-
-        self.ft_sleeve_bias_x = 0.
-        self.ft_sleeve_bias_y = 0.
-        self.ft_sleeve_bias_z = 0.
-        self.ft_sleeve_bias_t_x = 0.
-        self.ft_sleeve_bias_t_y = 0.
-        self.ft_sleeve_bias_t_z = 0.
-        self.ft_arm_bias_x = 0.
-        self.ft_arm_bias_y = 0.
-        self.ft_arm_bias_z = 0.
-        self.ft_arm_bias_t_x = 0.
-        self.ft_arm_bias_t_y = 0.
-        self.ft_arm_bias_t_z = 0.
-
-        self.ft_sleeve_biased = False
-        self.calibrate_now = False
-        self.ft_arm_biased = False
-
-        self.initialize_ft_sensor()
-        print 'starting thread'
-        t = threading.Thread(target=self.run_tf_broadcaster)
+        self.run_tf_broadcaster()
         t.start()
-        print 'after thread'
+        # print 'after thread'
         pr2_config = load_pickle(self.base_selection_pkg_path+'/data/dressing_rightarm_best_pr2_config.pkl')[0]
         human_arm_config =  load_pickle(self.base_selection_pkg_path+'/data/dressing_rightarm_best_trajectory_and_arm_config.pkl')[0]
 
@@ -117,45 +39,23 @@ class PR2_FT_Data_Acquisition(object):
         arm = sc.human_arm.split('a')[0]
         sc.set_human_model_dof_dart(human_arm_config, 'rightarm')
 
-        self.gripper_B_tool = np.matrix([[0., -1., 0., 0.03],
-                                         [1., 0., 0., 0.0],
-                                         [0., 0., 1., -0.05],
-                                         [0., 0., 0., 1.]])
-
         sc.goals, \
         origin_B_forearm_pointed_down_arm, \
         origin_B_upperarm_pointed_down_shoulder, \
-        self.origin_B_traj_start, \
+        origin_B_traj_start, \
         origin_B_traj_forearm_end, \
         origin_B_traj_upper_end, \
         origin_B_traj_final_end, \
-        angle_from_horizontal, \
-        self.forearm_B_upper_arm = sc.find_reference_coordinate_frames_and_goals(arm)
+        angle_from_horizontal = sc.find_reference_coordinate_frames_and_goals(arm)
         sc.set_goals()
 
-        self.origin_B_pr2 = np.matrix([[m.cos(pr2_config[2]), -m.sin(pr2_config[2]), 0., pr2_config[0]],
+        origin_B_pr2 = np.matrix([[m.cos(pr2_config[2]), -m.sin(pr2_config[2]), 0., pr2_config[0]],
                                   [m.sin(pr2_config[2]), m.cos(pr2_config[2]), 0., pr2_config[1]],
                                   [0., 0., 1., 0.],
                                   [0., 0., 0., 1.]])
-        print 'origin_B_pr2 = \n', self.origin_B_pr2
-        print 'pr2_B_origin = \n', self.origin_B_pr2.I
-        print 'pr2_B_shoulder = \n', self.origin_B_pr2.I * origin_B_upperarm_pointed_down_shoulder
-        self.traj_data = [[], []]
-        path_distance = 1.
-        path_waypoints = np.arange(0.15, path_distance + path_distance * 0.01, (path_distance - 0.15) / 2.)
-        for goal in path_waypoints:
-            traj_start_B_traj_waypoint = np.matrix(np.eye(4))
-            traj_start_B_traj_waypoint[0, 3] = goal
-            self.traj_data[0].append(self.origin_B_pr2.I * self.origin_B_traj_start * traj_start_B_traj_waypoint*self.gripper_B_tool.I)
-        # for i in xrange(len(sc.origin_B_grasps)):
-        #     if i < 3:
-        #         j = 0
-        #     elif i < 6:
-        #         j = 1
-        #     else:
-        #         j = 2
-            # origin_B_grasp in sc.origin_B_grasps:
-            # self.traj_data[j].append(self.origin_B_pr2.I * np.matrix(sc.origin_B_grasps[i]))
+        self.traj_data = []
+        for origin_B_grasp in sc.origin_B_grasps:
+            self.traj_data.append(origin_B_pr2.I * np.matrix(origin_B_grasp))
 
         # self.traj_data = load_pickle(self.base_selection_pkg_path+'/data/saved_results/large_search_space/pr2_grasps.pkl')
         # self.pr2_config = load_pickle(self.base_selection_pkg_path+'/data/saved_results/large_search_space/best_pr2_config.pkl')
@@ -168,45 +68,20 @@ class PR2_FT_Data_Acquisition(object):
         self.rviz_trajectory_pub = rospy.Publisher('dressing_trajectory_visualization', PoseArray, queue_size=1, latch=True)
         self.pr2_lift_pub = rospy.Publisher('torso_controller/position_joint_action/goal',
                                             SingleJointPositionActionGoal, queue_size=10)
+        self.zeroed_netft_pub = rospy.Publisher('/netft_gravity_zeroing/wrench_zeroed', WrenchStamped, queue_size=10)
         print 'Publishers are ready! Now checking for mpc service'
         rospy.wait_for_service('/right_arm/haptic_mpc/enable_mpc')
         self.mpc_enabled_service = rospy.ServiceProxy("/right_arm/haptic_mpc/enable_mpc", EnableHapticMPC)
         print 'Found MPC service. Now defining start pose'
         # self.start_pose = None
-        self.define_start_posture()
         self.start_pose = self.define_start_pose()
         print 'Now setting trajectory in MPC'
-        self.r_pose_trajectory = self.define_pose_trajectory(0)
+        self.r_pose_trajectory = self.define_pose_trajectory()
         print 'Now ready for movement!'
         self.ready_for_movements()
 
-    def define_pose_trajectory(self, task_part):
-        print 'Defining trajectory for subtask ', task_part
-        if task_part == 0:
-            basefootprint_B_poses = self.traj_data[task_part]
-        elif task_part == 1:
-            self.traj_data[task_part] = []
-            path_distance = 0.4
-            path_waypoints = np.arange(0, path_distance + path_distance * 0.01, (path_distance) / 2.)
-            current_pose_B_traj_upper_start = np.matrix(np.eye(4))
-            current_pose_B_traj_upper_start[0, 3] = -0.05
-            current_pose_B_traj_upper_start[2, 3] = -0.05
-            current_reference_pose = copy.copy(self.origin_B_pr2.I * self.origin_B_traj_start)
-            current_position, current_orientation = self.listener.lookupTransform(self.reference_frame,
-                                                                            '/r_gripper_tool_frame',
-                                                                            rospy.Time(0))
-            current_reference_pose[0:3, 3] = np.reshape(current_position, [3, 1])
-            pr2_B_forearm_traj_end = current_reference_pose * current_pose_B_traj_upper_start
-            for goal in path_waypoints:
-                traj_start_B_traj_waypoint = np.matrix(np.eye(4))
-                traj_start_B_traj_waypoint[0, 3] = goal
-                self.traj_data[task_part].append(pr2_B_forearm_traj_end *
-                                                 self.forearm_B_upper_arm *
-                                                 traj_start_B_traj_waypoint *
-                                                 self.gripper_B_tool.I)
-            basefootprint_B_poses = self.traj_data[task_part]
-
-        basefootprint_B_poses = self.traj_data[task_part]
+    def define_pose_trajectory(self):
+        basefootprint_B_poses = self.traj_data
         poseArray = PoseArray()
 
         poseArray.header.frame_id = 'base_footprint'
@@ -231,44 +106,9 @@ class PR2_FT_Data_Acquisition(object):
         print 'Trajectory is ready'
         return poseArray
 
-    def define_start_posture(self):
-        # basefootprint_B_start_pose = self.traj_data[0]
-        # pos_out, ori_out = Bmat_to_pos_quat(basefootprint_B_start_pose)
-        #
-        # startpose = PoseStamped()
-        # # startpose.header.stamp = rospy.Time.now()
-        # startpose.header.stamp = rospy.Time(0)
-        # startpose.header.frame_id = 'base_footprint'
-        #
-        # startpose.pose.position.x = pos_out[0]
-        # startpose.pose.position.y = pos_out[1]
-        # startpose.pose.position.z = pos_out[2]
-        # startpose.pose.orientation.x = ori_out[0]
-        # startpose.pose.orientation.y = ori_out[1]
-        # startpose.pose.orientation.z = ori_out[2]
-        # startpose.pose.orientation.w = ori_out[3]
-        r_reset_traj_point = JointTrajectoryPoint()
-        r_reset_traj_point.positions = [-0.88242068, -0.25032293,  0.5, - 0.67920343, -2.31494573, -1.56943708,
-                                        2.35989478]
-
-        r_reset_traj_point.velocities = [0.0] * 7
-        r_reset_traj_point.accelerations = [0.0] * 7
-        r_reset_traj_point.effort = [100.0] * 7
-        r_reset_traj_point.time_from_start = rospy.Duration(5)
-        self.r_reset_traj = JointTrajectory()
-        self.r_reset_traj.joint_names = ['r_shoulder_pan_joint',
-                                         'r_shoulder_lift_joint',
-                                         'r_upper_arm_roll_joint',
-                                         'r_elbow_flex_joint',
-                                         'r_forearm_roll_joint',
-                                         'r_wrist_flex_joint',
-                                         'r_wrist_roll_joint']
-        self.r_reset_traj.points.append(r_reset_traj_point)
-        # [-0.88242068, - 0.25032293,  0.5 - 0.67920343, - 2.31494573, - 1.56943708,  2.35989478]
-        # return startpose
-
     def define_start_pose(self):
-        basefootprint_B_start_pose = self.traj_data[0][0]
+
+        basefootprint_B_start_pose = self.traj_data[0]
         pos_out, ori_out = Bmat_to_pos_quat(basefootprint_B_start_pose)
 
         startpose = PoseStamped()
@@ -283,33 +123,11 @@ class PR2_FT_Data_Acquisition(object):
         startpose.pose.orientation.y = ori_out[1]
         startpose.pose.orientation.z = ori_out[2]
         startpose.pose.orientation.w = ori_out[3]
-        # r_reset_traj_point = JointTrajectoryPoint()
-        # r_reset_traj_point.positions = [-0.88242068, -0.25032293, 0.5, - 0.67920343, -2.31494573, -1.56943708,
-        #                                 2.35989478 - m.pi]
-        #
-        # r_reset_traj_point.velocities = [0.0] * 7
-        # r_reset_traj_point.accelerations = [0.0] * 7
-        # r_reset_traj_point.effort = [100.0] * 7
-        # r_reset_traj_point.time_from_start = rospy.Duration(5)
-        # self.r_reset_traj = JointTrajectory()
-        # self.r_reset_traj.joint_names = ['r_shoulder_pan_joint',
-        #                                  'r_shoulder_lift_joint',
-        #                                  'r_upper_arm_roll_joint',
-        #                                  'r_elbow_flex_joint',
-        #                                  'r_forearm_roll_joint',
-        #                                  'r_wrist_flex_joint',
-        #                                  'r_wrist_roll_joint']
-        # self.r_reset_traj.points.append(r_reset_traj_point)
-        # # [-0.88242068, - 0.25032293,  0.5 - 0.67920343, - 2.31494573, - 1.56943708,  2.35989478]
         return startpose
 
     def initialize_pr2_config(self):
         resp = self.mpc_enabled_service('enabled')
         self.pr2_lift_pub.publish(self.pr2_torso_lift_msg)
-        self.r_arm_pub.publish(self.r_reset_traj)
-
-    def initialize_pr2_pose(self):
-        resp = self.mpc_enabled_service('enabled')
         self.r_arm_pose_pub.publish(self.start_pose)
 
     def initialize_HMM(self):
@@ -345,7 +163,7 @@ class PR2_FT_Data_Acquisition(object):
             self.ft_sleeve_bias_t_z = msg.wrench.torque.z
             self.ft_sleeve_biased = True
             self.calibrate_now = False
-        if rospy.Time.now().to_sec() - self.time_since_last_cb.to_sec() > 0.1:
+        if rospy.Time.now().to_sec() - self.time_since_last_cb.to_sec() > 0.05:
             print 'The force-torque sensor callback is too slow. That is potentially very bad. Aborting everything!!!'
         self.time_since_last_cb = rospy.Time.now()
         x_force = msg.wrench.force.x-self.ft_sleeve_bias_x
@@ -365,19 +183,17 @@ class PR2_FT_Data_Acquisition(object):
                                              y_torque,
                                              z_torque)]))
             # self.array_to_save[self.array_line] = [t.to_sec(), -x_force, -y_force, -z_force]
-            # print 'Forces: ', x_force, ', ', y_force, ', ', z_force
-            self.wrench_zeroed = WrenchStamped()
-            self.wrench_zeroed.wrench.force.x = x_force*0.5
-            self.wrench_zeroed.wrench.force.y = y_force*0.8
-            self.wrench_zeroed.wrench.force.z = z_force*1.0
-            self.wrench_zeroed.wrench.torque.x = 0.
-            self.wrench_zeroed.wrench.torque.y = 0.
-            self.wrench_zeroed.wrench.torque.z = 0.
-            self.wrench_zeroed.header.stamp = msg.header.stamp
-            self.wrench_zeroed.header.frame_id = "right_sleeve_ft_frame"
-            self.zeroed_netft_pub.publish(self.wrench_zeroed)
-            # print 'Force magnitude: ', np.linalg.norm([x_force, y_force, z_force])
-            if np.linalg.norm([x_force, y_force, z_force]) >= 1000.:
+            wrench_zeroed = WrenchStamped()
+            wrench_zeroed.wrench.force.x = x_force
+            wrench_zeroed.wrench.force.y = y_force
+            wrench_zeroed.wrench.force.z = z_force
+            wrench_zeroed.wrench.torque.x = x_torque
+            wrench_zeroed.wrench.torque.y = y_torque
+            wrench_zeroed.wrench.torque.z = z_torque
+            wrench_zeroed.header.stamp = msg.header.stamp
+            wrench_zeroed.header.frame_id = "right_sleeve_ft_frame"
+            self.zeroed_netft_pub.publish(wrench_zeroed)
+            if np.linalg.norm([x_force, y_force, z_force]) >= 10.:
                 print 'Force exceeded 10 Newtons!! Stopping the arm!'
                 stopPose = PoseStamped()
                 self.r_arm_pose_pub.publish(stopPose)
@@ -398,29 +214,15 @@ class PR2_FT_Data_Acquisition(object):
                         self.run_HMM_realtime(np.dstack([self.array_to_save[:self.array_line+1, 0],
                                                          self.array_to_save[:self.array_line+1, 3]*1,
                                                          self.array_to_save[:self.array_line+1, 1]*1])[0])
-                if self.array_line < len(self.array_to_save):
-                    self.array_line += 1
-                else:
-                    print 'The array has reached max length (3000 entries which is around 30 seconds). Start a new trial'
-        else:
-            self.wrench_zeroed = WrenchStamped()
-            self.wrench_zeroed.wrench.force.x = 0.
-            self.wrench_zeroed.wrench.force.y = 0.
-            self.wrench_zeroed.wrench.force.z = 0.
-            self.wrench_zeroed.wrench.torque.x = 0.
-            self.wrench_zeroed.wrench.torque.y = 0.
-            self.wrench_zeroed.wrench.torque.z = 0.
-            self.wrench_zeroed.header.stamp = msg.header.stamp
-            self.wrench_zeroed.header.frame_id = "right_sleeve_ft_frame"
-            self.zeroed_netft_pub.publish(self.wrench_zeroed)
+            if self.array_line < len(self.array_to_save):
+                self.array_line += 1
+            else:
+                print 'The array has reached max length (3000 entries which is around 30 seconds). Start a new trial'
 
     def ready_for_movements(self):
-
         # self.position_file = open(''.join([self.pkg_path, '/data/position_combined_0_15mps', '.log']), 'w')
         # self.position_file.write('Time(s) Pos(m) \n')
         start_move_time = rospy.Time.now()
-        # print self.traj_data
-        print 'len traj data: ', len(self.traj_data)
 
         while self.continue_collecting and not rospy.is_shutdown():
             user_feedback = raw_input('Hit enter intialize pr2 config. Enter n to exit ')
@@ -428,139 +230,19 @@ class PR2_FT_Data_Acquisition(object):
                 self.continue_collecting = False
             else:
                 self.initialize_pr2_config()
-                user_feedback = raw_input('Hit enter to switch to pose control. Enter n to exit ')
+
+                user_feedback = raw_input('Hit enter to re-zero ft sensor and continue collecting data. Enter n to exit ')
                 if user_feedback == 'n':
                     self.continue_collecting = False
                 else:
-                    # self.r_reset_traj = JointTrajectory()
-                    # self.initialize_pr2_config()
-                    # user_feedback = raw_input('Hit enter to switch to pose control')
-                    self.initialize_pr2_pose()
-                    user_feedback = raw_input('Hit to re-zero ft sensor.')
                     self.calibrate_now = True
                     self.ft_sleeve_biased = False
                     rospy.sleep(0.5)
-                    raw_input('Hit enter to start data collection. Will start after 5 seconds.')
-                    rospy.sleep(5.0)
+                    raw_input('Hit enter to start data collection')
                     self.start_recording_data(self.trial_number)
-                    subtask = 0
-                    full_task_complete = False
-                    task_check_rate = rospy.Rate(10.)
-                    while not rospy.is_shutdown() and not full_task_complete:
-                        self.r_pose_trajectory = self.define_pose_trajectory(subtask)
-                        subtask_complete = False
-                        # self.r_arm_pose_array_pub.publish(self.r_pose_trajectory)
-
-                        prev_position, prev_orientation = self.listener.lookupTransform(self.reference_frame,
-                                                                                              '/r_gripper_tool_frame',
-                                                                                              rospy.Time(0))
-                        print '\n\nStarting a new subtask!!!! \n \n '
-                        while not rospy.is_shutdown() and not subtask_complete:
-                            progress_timer = rospy.Time.now()
-                            pose_i = 0
-                            while not rospy.is_shutdown() and pose_i < len(self.r_pose_trajectory.poses):
-                                # print pose_i
-                                pose_msg = PoseStamped()
-                                pose_msg.pose = self.r_pose_trajectory.poses[pose_i]
-                                pose_msg.header.stamp = rospy.Time.now()
-                                pose_msg.header.frame_id = self.reference_frame
-                                self.r_arm_pose_pub.publish(pose_msg)
-                                current_position, current_orientation = self.listener.lookupTransform(self.reference_frame, '/r_gripper_tool_frame', rospy.Time(0))
-
-                                current_subtask_goal_position = np.array([self.r_pose_trajectory.poses[pose_i].position.x,
-                                                                          self.r_pose_trajectory.poses[pose_i].position.y,
-                                                                          self.r_pose_trajectory.poses[pose_i].position.z])
-                                current_subtask_goal_orientation = np.array([self.r_pose_trajectory.poses[pose_i].orientation.x,
-                                                                             self.r_pose_trajectory.poses[pose_i].orientation.y,
-                                                                             self.r_pose_trajectory.poses[pose_i].orientation.z,
-                                                                             self.r_pose_trajectory.poses[pose_i].orientation.w])
-                                # current_subtask_goal_position = np.array([self.r_pose_trajectory.poses[-1].position.x,
-                                #                                           self.r_pose_trajectory.poses[-1].position.y,
-                                #                                           self.r_pose_trajectory.poses[-1].position.z])
-                                # current_subtask_goal_orientation = np.array([self.r_pose_trajectory.poses[-1].orientation.x,
-                                #                                              self.r_pose_trajectory.poses[-1].orientation.y,
-                                #                                              self.r_pose_trajectory.poses[-1].orientation.z,
-                                #                                              self.r_pose_trajectory.poses[-1].orientation.w])
-                                # print 'distance to goal', np.linalg.norm(np.array(current_position) - current_subtask_goal_position)
-                                # print 'angle to goal', utils.quat_angle(current_orientation, current_subtask_goal_orientation)
-                                progress_elapsed_time = rospy.Time.now() - progress_timer
-                                if np.linalg.norm(np.array(current_position) - current_subtask_goal_position) < 0.02 and\
-                                                utils.quat_angle(current_orientation, current_subtask_goal_orientation) < 5.0:
-                                    print 'Close enough to this goal ', pose_i
-                                    if pose_i < len(self.r_pose_trajectory.poses) - 1:
-                                        pose_i += 1
-                                        progress_timer = rospy.Time.now()
-                                        continue
-                                    else:
-                                        pose_i += 1
-                                        subtask_complete = True
-                                        subtask += 1
-                                        break
-                                elif progress_elapsed_time.to_sec() > 3.0:
-
-                                    if np.linalg.norm(np.array(current_position) - prev_position) < 0.02 and \
-                                                    utils.quat_angle(current_orientation, prev_orientation) < 10.0:
-                                        print 'Timed out for this goal ', pose_i
-                                        if pose_i < len(self.r_pose_trajectory.poses) - 1:
-                                            pose_i += 1
-                                            progress_timer = rospy.Time.now()
-                                            force_adjusted_movement = np.array([self.wrench_zeroed.wrench.force.x,
-                                                                                self.wrench_zeroed.wrench.force.y,
-                                                                                self.wrench_zeroed.wrench.force.z])
-                                            if np.linalg.norm(force_adjusted_movement) > 2.0:
-                                                force_adjusted_movement = np.min(np.linalg.norm(force_adjusted_movement)*0.01, 0.05) * \
-                                                                          force_adjusted_movement / np.linalg.norm(force_adjusted_movement)
-                                                # pose_msg = PoseStamped()
-                                                # pose_msg.pose = self.r_pose_trajectory.poses[pose_i]
-                                                pose_msg.header.stamp = rospy.Time.now()
-                                                # pose_msg.header.frame_id = self.reference_frame
-                                                pose_msg.pose.position.x = force_adjusted_movement[0]
-                                                pose_msg.pose.position.y = force_adjusted_movement[1]
-                                                pose_msg.pose.position.z = force_adjusted_movement[2]
-                                                print 'Making a movement to decrease forces before continuing'
-                                                self.r_arm_pose_pub.publish(pose_msg)
-                                                rospy.sleep(1.5)
-                                            continue
-                                        else:
-                                            pose_i += 1
-                                            subtask_complete = True
-                                            subtask += 1
-                                            force_adjusted_movement = np.array([self.wrench_zeroed.wrench.force.x,
-                                                                                self.wrench_zeroed.wrench.force.y,
-                                                                                self.wrench_zeroed.wrench.force.z])
-                                            if np.linalg.norm(force_adjusted_movement) > 2.0:
-                                                force_adjusted_movement = np.min(
-                                                    np.linalg.norm(force_adjusted_movement) * 0.01, 0.05) * \
-                                                                          force_adjusted_movement / np.linalg.norm(
-                                                    force_adjusted_movement)
-                                                # pose_msg = PoseStamped()
-                                                # pose_msg.pose = self.r_pose_trajectory.poses[pose_i]
-                                                pose_msg.header.stamp = rospy.Time.now()
-                                                # pose_msg.header.frame_id = self.reference_frame
-                                                pose_msg.pose.position.x = force_adjusted_movement[0]
-                                                pose_msg.pose.position.y = force_adjusted_movement[1]
-                                                pose_msg.pose.position.z = force_adjusted_movement[2]
-                                                print 'Making a movement to decrease forces before continuing'
-                                                self.r_arm_pose_pub.publish(pose_msg)
-                                                rospy.sleep(1.5)
-                                            break
-                                    else:
-                                        progress_timer = rospy.Time.now()
-                                        prev_position = current_position
-                                        prev_orientation = current_orientation
-                                task_check_rate.sleep()
-                        if subtask >= len(self.traj_data):
-                            full_task_complete = True
-                            print 'Task is entirely complete!'
-                    stopPose = PoseStamped()
-                    self.r_arm_pose_pub.publish(stopPose)
-                    resp = self.mpc_enabled_service('disabled')
-                    self.recording = False
-
+                    self.r_arm_pose_array_pub.publish(self.r_pose_trajectory)
                     raw_input('Hit enter to stop recording data')
                     self.stop_recording_data(self.trial_number)
-                    continue
-                    return
                     fig = plt.figure(1)
                     ax1 = fig.add_subplot(111)
                     # ax1.set_title('Data for caught trial on PR2: Classified Correctly!', fontsize=20)
@@ -621,8 +303,8 @@ class PR2_FT_Data_Acquisition(object):
                 hmm_prediction = 'caught'
             else:
                 print 'The categories do not match expected namings. Look into this!'
-            # print 'The HMMs are currently estimating/predicting that the task outcome is/will be '
-            # print hmm_prediction
+            print 'The HMMs are currently estimating/predicting that the task outcome is/will be '
+            print hmm_prediction
 
     def load_and_plot(self, file_path, label):
         loaded_data = load_pickle(file_path)
@@ -851,7 +533,7 @@ class PR2_FT_Data_Acquisition(object):
         rate = rospy.Rate(10.)
         while not rospy.is_shutdown():
             self.broadcaster.sendTransform((0.05, 0., -0.065),
-                                           tf.transformations.quaternion_from_euler(m.radians(180.), 0, m.radians(90.),'rxyz'),
+                                           tf.transformations.quaternion_from_euler(m.radians(180.), 0, m.radians(90.)),
                                            rospy.Time.now(),
                                            "right_sleeve_ft_frame",
                                            "r_gripper_tool_frame")
