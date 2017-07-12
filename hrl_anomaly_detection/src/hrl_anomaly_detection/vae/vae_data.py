@@ -41,6 +41,8 @@ from hrl_anomaly_detection.util_viz import *
 from hrl_anomaly_detection import data_manager as dm
 from hrl_anomaly_detection import util as util
 from hrl_execution_monitor import util as autil
+from hrl_anomaly_detection.vae import util as vutil
+
 
 # Private learners
 from hrl_anomaly_detection.hmm import learning_hmm as hmm
@@ -202,11 +204,12 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 alpha = np.array([1.0]*nDim)/float(nDim)
                 ## alpha = np.array([0.0]*nDim)/float(nDim)
                 ## alpha[0] = 1.0
-            
-            save_pkl = os.path.join(save_data_path, 'tmp_test_scores.pkl')
-            anomaly_detection(autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generator,
-                              normalTestData, abnormalTestData, \
-                              window_size, alpha, save_pkl=save_pkl)
+
+            from hrl_anomaly_detection.vae import detector as dt
+            save_pkl = os.path.join(save_data_path, 'tmp_test_scores.pkl')            
+            dt.anomaly_detection(autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generator,
+                                 normalTestData, abnormalTestData, \
+                                 window_size, alpha, save_pkl=save_pkl)
 
         
         if plot:
@@ -227,7 +230,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             for i in xrange(len(normalTrainData)):
                 print i
                 if window_size is not None:
-                    x = sampleWithWindow(normalTrainData[i:i+1], window=window_size)
+                    x = vutil.sampleWithWindow(normalTrainData[i:i+1], window=window_size)
                     x = np.array(x)
 
 
@@ -447,23 +450,6 @@ def get_ext_data(subjects, task_name, raw_data_path, processed_data_path, param_
 
 
 
-def sampleWithWindow(X, window=5):
-    '''
-    X : sample x length x features
-    return: (sample x length-window+1) x features
-    '''
-    if window < 2:
-        print "Wrong window size"
-        sys.exit()
-
-    X_new = []
-    for i in xrange(len(X)): # per sample
-        for j in xrange(len(X[i])-window+1): # per time
-            X_new.append( X[i][j:j+window].tolist() ) # per sample
-    
-    return X_new
-
-
 def get_batch_data(normalData, abnormalData, win=False):
     
     # dim x sample x length => sample x length x dim
@@ -536,10 +522,10 @@ def get_batch_data(normalData, abnormalData, win=False):
         
         # get window data
         # sample x length x dim => (sample x length) x dim
-        normalTrainData_ft   = sampleWithWindow(normalTrainData, window=window_size)
-        abnormalTrainData_ft = sampleWithWindow(abnormalTrainData, window=window_size)
-        normalTestData_ft    = sampleWithWindow(normalTestData, window=window_size)
-        abnormalTestData_ft  = sampleWithWindow(abnormalTestData, window=window_size)
+        normalTrainData_ft   = vutil.sampleWithWindow(normalTrainData, window=window_size)
+        abnormalTrainData_ft = vutil.sampleWithWindow(abnormalTrainData, window=window_size)
+        normalTestData_ft    = vutil.sampleWithWindow(normalTestData, window=window_size)
+        abnormalTestData_ft  = vutil.sampleWithWindow(abnormalTestData, window=window_size)
 
         # flatten the data (sample, length, dim)
         ## trainData = [np.vstack([normalTrainData, abnormalTrainData]),
@@ -580,7 +566,7 @@ def get_optimal_alpha(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generato
         for i in xrange(len(normalTrainData)):
             print "sample: ", i+1, " out of ", len(normalTrainData), np.shape(p_ll)
 
-            if window_size>0: x = sampleWithWindow(normalTrainData[i:i+1], window=window_size)
+            if window_size>0: x = vutil.sampleWithWindow(normalTrainData[i:i+1], window=window_size)
             else:             x = normalTrainData[i:i+1]
                 
             #nSubSample = len(z_mean)
@@ -668,174 +654,6 @@ def get_optimal_alpha(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generato
     print res
     
     return res.x
-
-def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generator,
-                      normalTestData, abnormalTestData, window_size, \
-                      alpha, save_pkl=None):
-
-    if os.path.isfile(save_pkl) and False:
-        d = ut.load_pickle(save_pkl)
-        scores_n = d['scores_n']
-        scores_a = d['scores_a']
-    else:
-        x_dim = len(normalTestData[0][0])
-
-        def get_anomaly_score(X, window_size, alpha, nSample=1000):
-
-            scores = []
-            for i in xrange(len(X)): # per sample
-                print "sample: ", i+1, " out of ", len(X)
-                np.random.seed(3334 + i)
-
-                if window_size>0: x = sampleWithWindow(X[i:i+1], window=window_size)
-                else:             x = X[i:i+1]
-                if type(x) is list: x = np.array(x)
-
-                x_mean_l = []
-                x_std_l  = []
-                x_l      = []
-
-                s = []
-                for j in xrange(len(x)): # per window
-
-
-                    # sampling based method ----------------------------------------
-                    ## z_mean = enc_z_mean.predict(x[j:j+1]) # 1 x 2 (or 1 x (nwindow x 2))
-                    ## z_std  = enc_z_std.predict(x[j:j+1]) *100.0
-
-                    ## nSample=1000
-                    ## ## print z_mean
-                    ## ## print z_std
-                    
-                    ## std  = [val if val > 0 else 1e-5 for val in z_std]
-                    ## L = []
-                    ## for k in xrange(len(z_mean[j])): # per dim
-                    ##     L.append(np.random.normal(z_mean[k], std[k],nSample))
-                    ## L = np.swapaxes(np.array(L),0,1) # nSample x z_dim
-
-                    ## x_rnd = generator.predict(L) # sample x (window_)length x dim
-                    ## x_rnd = np.swapaxes(x_rnd, 0, 2) # dim x (window_)length x nSample
-
-                    ## # time wise
-                    ## x_mean = []; x_std = []
-                    ## for k in xrange(len(x_rnd)): # per dim
-                    ##     x_mean.append( np.mean(x_rnd[k], axis=1) )
-                    ##     x_std.append( np.std(x_rnd[k], axis=1) )
-
-                    #---------------------------------------------------------------
-                    # prediction based method
-                    x_mean   = vae_mean.predict(x[j:j+1])
-                    x_logvar = -vae_logvar.predict(x[j:j+1])
-                    x_std    = np.exp(x_logvar/2.0)
-
-                    x_mean = np.swapaxes(np.squeeze(x_mean), 0, 1)
-                    x_std  = np.swapaxes(np.squeeze(x_std), 0, 1)
-
-                    #---------------------------------------------------------------
-
-                    x_mean_l.append(x_mean[:,-1].tolist())
-                    x_std_l.append(x_std[:,-1].tolist())
-                    
-
-                    # anomaly score per timesteps in an window
-                    p_l     = []
-                    for k in xrange(len(x_mean)): # per dim
-                        p = []
-                        for l in xrange(len(x_mean[0])): # per length
-                            p.append(scipy.stats.norm(x_mean[k][l], x_std[k][l]).pdf(x[j,l,k])) # length
-
-                        p = [val if not np.isinf(val).any() and not np.isnan(val).any() and val > 0
-                             else 1e-50 for val in p]
-                        p_l.append(p) # dim x length
-
-                    # find min 
-                    s.append( np.amin(alpha.dot( np.log(np.array(p_l)) )) )
-                    #s.append( np.mean(alpha.dot( np.log(np.array(p_l)) )) )
-
-                if True:
-                    x_mean_l = np.array(x_mean_l)
-                    x_std_l  = np.array(x_std_l)
-                    fig = plt.figure()
-                    # temp
-                    for k in xrange(len(x_mean)): # per dim                    
-                        fig.add_subplot(len(x_mean),1,k+1)
-                        plt.plot(x_mean_l[:,k], '-b')
-                        plt.plot(x_mean_l[:,k]+x_std_l[:,k], '--b')
-                        plt.plot(x_mean_l[:,k]-x_std_l[:,k], '--b')
-                        plt.plot(X[i,window_size:,k], '-r')                
-                    plt.show()
-
-                #if len(s)>1:
-                #    scores.append(np.amin(s))
-                #else:
-                scores.append(s) # s is scalers
-            return scores
-
-        scores_n = get_anomaly_score(normalTestData, window_size, alpha )
-        scores_a = get_anomaly_score(abnormalTestData, window_size, alpha )
-        
-
-        d = {}
-        d['scores_n'] = scores_n
-        d['scores_a'] = scores_a
-        ut.save_pickle(d, save_pkl)
-
-
-    ths_l = -np.logspace(-1,2.9,40)
-    tpr_l = []
-    fpr_l = []
-
-    for ths in ths_l:
-        tp_l = []
-        fp_l = []
-        tn_l = []
-        fn_l = []
-        for s in scores_n:
-            for i in xrange(len(s)):
-                if s[i]<ths:
-                    fp_l.append(1)
-                    break
-                elif i == len(s)-1:
-                    tn_l.append(1)
-
-        for s in scores_a:
-            for i in xrange(len(s)):
-                if s[i]<ths:
-                    tp_l.append(1)
-                    break
-                elif i == len(s)-1:
-                    fn_l.append(1)
-
-        tpr_l.append( float(np.sum(tp_l))/float(np.sum(tp_l)+np.sum(fn_l))*100.0 )
-        fpr_l.append( float(np.sum(fp_l))/float(np.sum(fp_l)+np.sum(tn_l))*100.0 )
-    
-
-    print np.shape(scores_n)
-    #sys.exit()
-
-    e_n_l  = np.amin(scores_n, axis=-1) #[val[-1] for val in scores_n if val != np.log(1e-50) ]
-    e_ab_l = np.amin(scores_a, axis=-1) #[val[-1] for val in scores_a if val != np.log(1e-50) ]
-    print np.mean(e_n_l), np.std(e_n_l)
-    print np.mean(e_ab_l), np.std(e_ab_l)
-    print "acc ", float(np.sum(tp_l)+np.sum(tn_l))/float(np.sum(tp_l+fp_l+tn_l+fn_l))
-
-    print ths_l
-    print tpr_l
-    print fpr_l
-
-    from sklearn import metrics 
-    print "roc: ", metrics.auc(fpr_l, tpr_l, True)
-
-    fig = plt.figure(figsize=(12,6))
-    fig.add_subplot(1,2,1)    
-    plt.plot(fpr_l, tpr_l, '-*b', ms=5, mec='b')
-    
-    fig.add_subplot(1,2,2)    
-    plt.plot(e_n_l, '*b', ms=5, mec='b')
-    plt.plot(e_ab_l, '*r', ms=5, mec='r')
-    plt.show()
-
-    return 
 
 
 
