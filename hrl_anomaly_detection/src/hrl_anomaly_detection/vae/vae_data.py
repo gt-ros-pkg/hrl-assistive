@@ -171,7 +171,6 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
           km.lstm_vae(trainData, testData, weights_path, patience=7, batch_size=batch_size,
                       steps_per_epoch=100)
->>>>>>> 62efbbf74e66e30e04ae1de40976b170dc275271
 
         #
         ## from hrl_anomaly_detection.vae import lstm_vae_sampling as km
