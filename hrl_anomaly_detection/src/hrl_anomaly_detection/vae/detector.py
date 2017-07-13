@@ -69,7 +69,10 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         ut.save_pickle(d, save_pkl)
 
 
-    ths_l = -np.logspace(-1,1.0,40)+0.5
+    #ths_l = -np.logspace(-1,0.8,40)+2.0
+    ths_l = -np.logspace(-1,0.5,40)+1.5
+    ths_l = np.linspace(125,131,40)
+    
     tpr_l = []
     fpr_l = []
 
@@ -97,9 +100,6 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         tpr_l.append( float(np.sum(tp_l))/float(np.sum(tp_l)+np.sum(fn_l))*100.0 )
         fpr_l.append( float(np.sum(fp_l))/float(np.sum(fp_l)+np.sum(tn_l))*100.0 )
     
-
-    print np.shape(scores_n)
-    #sys.exit()
 
     e_n_l  = np.amin(scores_n, axis=-1) #[val[-1] for val in scores_n if val != np.log(1e-50) ]
     e_ab_l = np.amin(scores_a, axis=-1) #[val[-1] for val in scores_a if val != np.log(1e-50) ]
@@ -152,10 +152,10 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, nSam
 
             #---------------------------------------------------------------
             # Method 1: Reconstruction probability
-            ## s.append( get_reconstruction_prob(x[j], x_mean, x_std, alpha=1.) )
+            #s.append( get_reconstruction_err_prob(x[j], x_mean, x_std, alpha=alpha) )
 
             # Method 2: Lower bound
-            s.append( get_lower_bound(x[j], x_mean, x_std, enc_z_mean, enc_z_logvar) )
+            s.append( get_lower_bound(x[j:j+1], x_mean, x_std, enc_z_mean, enc_z_logvar) )
             
 
         scores.append(s) # s is scalers
@@ -188,8 +188,8 @@ def get_lower_bound(x, x_mean, x_std, enc_z_mean, enc_z_logvar):
     '''
     nDim = len(x[0])
 
-    z_mean    = enc_z_mean.predict([x])[0]
-    z_log_var = enc_z_logvar.predict([x])[0]
+    z_mean    = enc_z_mean.predict(x)[0]
+    z_log_var = enc_z_logvar.predict(x)[0]
         
     p_l     = []
     log_p_x_z = -0.5 * ( np.sum( ((x-x_mean)/x_std)**2, axis=-1) \
