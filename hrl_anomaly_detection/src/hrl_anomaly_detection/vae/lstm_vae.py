@@ -72,7 +72,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
     z_dim  = 2
 
     inputs = Input(shape=(timesteps, input_dim))
-    encoded = LSTM(h1_dim, return_sequences=True, activation='tanh')(inputs)
+    encoded = LSTM(h1_dim, return_sequences=True, activation='sigmoid')(inputs)
     encoded = LSTM(h2_dim, return_sequences=False, activation='tanh')(encoded)
     z_mean  = Dense(z_dim)(encoded) #, activation='tanh'
     z_log_var = Dense(z_dim)(encoded) #, activation='sigmoid')
@@ -126,7 +126,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
         def call(self, args):
             x = args[0]
             x_d_mean = args[1][:,:,:input_dim]
-            x_d_var  = args[1][:,:,input_dim:] + 0.01
+            x_d_var  = args[1][:,:,input_dim:] + 0.00001
             
             loss = self.vae_loss(x, x_d_mean, x_d_var)
             self.add_loss(loss, inputs=args)
@@ -186,7 +186,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
                     ReduceLROnPlateau(monitor='val_loss', factor=0.5,
                                       patience=3, min_lr=0.0)]
 
-        train_datagen = ku.sigGenerator(augmentation=True, noise_mag=0.2)
+        train_datagen = ku.sigGenerator(augmentation=True, noise_mag=0.05)
         train_generator = train_datagen.flow(x_train, x_train, batch_size=batch_size, seed=3334,
                                              shuffle=True)
 
