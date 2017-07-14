@@ -154,21 +154,10 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         enc_z_mean = enc_z_std = None
 
         # ------------------------------------------------------------------------------------------
-        ## autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generator = \
-        ##   km.lstm_vae3(trainData, testData, weights_path, patience=3, batch_size=batch_size,
-        ##                steps_per_epoch=256)
-        #autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generator = \
-        #  km.lstm_vae4(trainData, testData, weights_path, patience=3, batch_size=batch_size)
-
-        ## from hrl_anomaly_detection.vae import lstm_vae_one as km
+        ## from hrl_anomaly_detection.vae import lstm_vae as km
         ## autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
         ##   km.lstm_vae(trainData, testData, weights_path, patience=7, batch_size=batch_size,
-        ##               steps_per_epoch=100)
-
-        from hrl_anomaly_detection.vae import lstm_vae as km
-        autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
-          km.lstm_vae(trainData, testData, weights_path, patience=7, batch_size=batch_size,
-                      steps_per_epoch=100, re_load=re_load)
+        ##               steps_per_epoch=100, re_load=re_load)
 
         #
         ## from hrl_anomaly_detection.vae import lstm_vae_sampling as km
@@ -176,8 +165,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         ##                                                             patience=5, batch_size=batch_size)
 
         # LSTM-AE (Confirmed)
-        ## from hrl_anomaly_detection.vae import lstm_ae as km
-        ## autoencoder = km.lstm_ae(trainData, testData, weights_path, patience=5, batch_size=batch_size)
+        from hrl_anomaly_detection.vae import lstm_ae as km
+        autoencoder = km.lstm_ae(trainData, testData, weights_path, patience=5, batch_size=batch_size)
 
         # ------------------------------------------------------------------------------------------
         ## # Fine tuning
@@ -193,7 +182,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         ##                                                             save_weights_file=save_weights_path)
 
 
-        if True:
+        if True and False:
             if True and False:
                 # get optimized alpha
                 save_pkl = os.path.join(save_data_path, 'tmp_data.pkl')
