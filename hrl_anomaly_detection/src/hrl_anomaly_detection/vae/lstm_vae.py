@@ -53,7 +53,7 @@ import gc
 
 def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=500, \
              patience=20, fine_tuning=False, save_weights_file=None, steps_per_epoch=512,\
-             re_load=False):
+             noise_mag=0.0, re_load=False):
     """
     Variational Autoencoder with two LSTMs and one fully-connected layer
     x_train is (sample x length x dim)
@@ -101,10 +101,6 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
             log_p_x_z = -0.5 * ( K.sum(K.square((x-x_d_mean))/(x_d_var), axis=-1) \
                                  + float(input_dim) * K.log(2.0*np.pi) + K.sum(K.log(x_d_var), axis=-1) )
             xent_loss = K.mean(-log_p_x_z, axis=-1)
-
-            ## log_p_x_z = 0.5 * ( K.sum(K.square(x-x_d_mean)/(x_d_var), axis=-1) \
-            ##                      + K.sum(K.log(x_d_var), axis=-1) )
-            ## xent_loss = K.mean(log_p_x_z, axis=-1)
 
             # Work
             #xent_loss = K.mean( 0.5*( K.sum(K.square(x_d_mean - x), axis=-1) + K.sum(K.log(x_d_var), axis=-1)*1e-5), axis=-1 )
@@ -176,7 +172,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
                     ReduceLROnPlateau(monitor='val_loss', factor=0.5,
                                       patience=3, min_lr=0.0)]
 
-        train_datagen = ku.sigGenerator(augmentation=True, noise_mag=0.05)
+        train_datagen = ku.sigGenerator(augmentation=True, noise_mag=noise_mag)
         train_generator = train_datagen.flow(x_train, x_train, batch_size=batch_size, seed=3334,
                                              shuffle=True)
 
