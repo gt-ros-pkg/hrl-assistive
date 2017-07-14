@@ -159,14 +159,25 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         ##   km.lstm_vae(trainData, testData, weights_path, patience=7, batch_size=batch_size,
         ##               steps_per_epoch=100, re_load=re_load)
 
+
+        ## from hrl_anomaly_detection.vae import lstm_vae_one as km
+        ## autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
+        ##   km.lstm_vae(trainData, testData, weights_path, patience=7, batch_size=batch_size,
+        ##               steps_per_epoch=100)
+        
+        from hrl_anomaly_detection.vae import lstm_vae as km
+        autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
+         km.lstm_vae(trainData, testData, weights_path, patience=10, batch_size=batch_size,
+                     steps_per_epoch=500, re_load=re_load) 
+        
         #
         ## from hrl_anomaly_detection.vae import lstm_vae_sampling as km
         ## autoencoder, enc_z_mean, enc_z_std, generator = km.lstm_vae(trainData, testData, weights_path,
         ##                                                             patience=5, batch_size=batch_size)
 
-        # LSTM-AE (Confirmed)
-        from hrl_anomaly_detection.vae import lstm_ae as km
-        autoencoder = km.lstm_ae(trainData, testData, weights_path, patience=5, batch_size=batch_size)
+        ## # LSTM-AE (Confirmed)
+        ## from hrl_anomaly_detection.vae import lstm_ae as km
+        ## autoencoder = km.lstm_ae(trainData, testData, weights_path, patience=5, batch_size=batch_size)
 
         # ------------------------------------------------------------------------------------------
         ## # Fine tuning
@@ -473,11 +484,27 @@ def get_batch_data(normalData, abnormalData, win=False):
     # normalization => (sample x dim) ----------------------------------
     from sklearn import preprocessing
     scaler = preprocessing.MinMaxScaler(feature_range=(0, 1))
+    scaler = preprocessing.StandardScaler() 
+
 
     normalTrainData_scaled   = scaler.fit_transform(normalTrainData.reshape(-1,len(normalTrainData[0][0])))
     abnormalTrainData_scaled = scaler.transform(abnormalTrainData.reshape(-1,len(abnormalTrainData[0][0])))
     normalTestData_scaled    = scaler.transform(normalTestData.reshape(-1,len(normalTestData[0][0])))
     abnormalTestData_scaled  = scaler.transform(abnormalTestData.reshape(-1,len(abnormalTestData[0][0])))
+
+    # rescale 95%of values into 0-1
+    def rescaler(x, mean, var):
+        
+        max_val = 0.99 #mean+2.0*np.sqrt(var)
+        min_val = -0.99 #mean-2.0*np.sqrt(var)
+        return (x-min_val)/( max_val-min_val)
+    
+    normalTrainData_scaled   = rescaler(normalTrainData_scaled, scaler.mean_, scaler.var_)
+    abnormalTrainData_scaled = rescaler(abnormalTrainData_scaled, scaler.mean_, scaler.var_)
+    normalTestData_scaled    = rescaler(normalTestData_scaled, scaler.mean_, scaler.var_)
+    abnormalTestData_scaled  = rescaler(abnormalTestData_scaled, scaler.mean_, scaler.var_)
+
+
 
     # reshape
     normalTrainData   = normalTrainData_scaled.reshape(np.shape(normalTrainData))
