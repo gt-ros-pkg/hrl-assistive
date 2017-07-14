@@ -168,7 +168,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         from hrl_anomaly_detection.vae import lstm_vae as km
         autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
          km.lstm_vae(trainData, testData, weights_path, patience=10, batch_size=batch_size,
-                     steps_per_epoch=500, re_load=re_load) 
+                     steps_per_epoch=100, re_load=re_load) 
         
         #
         ## from hrl_anomaly_detection.vae import lstm_vae_sampling as km
@@ -462,7 +462,7 @@ def get_batch_data(normalData, abnormalData, win=False):
     np.random.shuffle(abnormalData)
     print np.shape(normalData), np.shape(abnormalData)
 
-    ratio=0.8
+    ratio=0.7
     normalTrainData, normalTestData\
     = normalData[:int(len(normalData)*ratio)],normalData[int(len(normalData)*ratio):]
     abnormalTrainData, abnormalTestData\
@@ -495,9 +495,9 @@ def get_batch_data(normalData, abnormalData, win=False):
     # rescale 95%of values into 0-1
     def rescaler(x, mean, var):
         
-        max_val = 0.99 #mean+2.0*np.sqrt(var)
-        min_val = -0.99 #mean-2.0*np.sqrt(var)
-        return (x-min_val)/( max_val-min_val)
+        max_val = 1.5 #mean+3.0*np.sqrt(var)
+        min_val = -1.5 #mean-3.0*np.sqrt(var)
+        return (x-min_val)/( max_val-min_val )
     
     normalTrainData_scaled   = rescaler(normalTrainData_scaled, scaler.mean_, scaler.var_)
     abnormalTrainData_scaled = rescaler(abnormalTrainData_scaled, scaler.mean_, scaler.var_)
