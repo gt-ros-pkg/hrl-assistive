@@ -484,8 +484,8 @@ def get_batch_data(normalData, abnormalData, win=False):
     # rescale 95%of values into 0-1
     def rescaler(x, mean, var):
         
-        max_val = 1.7 #mean+3.0*np.sqrt(var)
-        min_val = -1.7 #mean-3.0*np.sqrt(var)
+        max_val = 1.9 #mean+3.0*np.sqrt(var)
+        min_val = -1.9 #mean-3.0*np.sqrt(var)
         return (x-min_val)/( max_val-min_val )
     
     normalTrainData_scaled   = rescaler(normalTrainData_scaled, scaler.mean_, scaler.var_)
