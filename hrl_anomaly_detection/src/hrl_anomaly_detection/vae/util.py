@@ -28,6 +28,8 @@
 
 #  \author Daehyung Park (Healthcare Robotics Lab, Georgia Tech.)
 
+import numpy as np
+
 def sampleWithWindow(X, window=5):
     '''
     X : sample x length x features
@@ -43,3 +45,35 @@ def sampleWithWindow(X, window=5):
             X_new.append( X[i][j:j+window].tolist() ) # per sample
     
     return X_new
+
+
+def graph_variations(x_true, x_pred_mean, x_pred_std):
+    '''
+    x_true: timesteps x dim
+    '''
+
+    # visualization
+    import matplotlib
+    import matplotlib.pyplot as plt
+    from mpl_toolkits.mplot3d import Axes3D
+    from matplotlib import gridspec
+    import itertools
+    colors = itertools.cycle(['g', 'm', 'c', 'k', 'y','r', 'b', ])
+    shapes = itertools.cycle(['x','v', 'o', '+'])
+
+    matplotlib.rcParams['pdf.fonttype'] = 42
+    matplotlib.rcParams['ps.fonttype'] = 42 
+
+    
+    nDim = len(x_true[0])
+    
+    fig = plt.figure(figsize=(6, 6))
+    for k in xrange(nDim):
+        fig.add_subplot(nDim,1,k+1)
+        plt.plot(np.array(x_true)[:,k], '-b')
+        plt.plot(np.array(x_pred_mean)[:,k], '-r')
+        if len(x_pred_std)>0:
+            plt.plot(np.array(x_pred_mean)[:,k]+np.array(x_pred_std)[:,k], '--r')
+            plt.plot(np.array(x_pred_mean)[:,k]-np.array(x_pred_std)[:,k], '--r')
+        plt.ylim([-0.1,1.1])
+    plt.show()

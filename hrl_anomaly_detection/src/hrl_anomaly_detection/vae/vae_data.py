@@ -152,6 +152,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         vae_mean   = None
         vae_logvar = None
         enc_z_mean = enc_z_std = None
+        stateful = True
 
         # ------------------------------------------------------------------------------------------
         ## from hrl_anomaly_detection.vae import lstm_vae as km
@@ -214,7 +215,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
 
         
         if plot:
-            if enc_z_mean is not None:
+            if enc_z_mean is not None and False:
                 # display a 2D plot of classes in the latent space
                 x_n_encoded  = enc_z_mean.predict(normalTrainData_ft)
                 x_ab_encoded = enc_z_mean.predict(abnormalTrainData_ft)
@@ -246,16 +247,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                         if len(x_new[0,-1])>nDim:                        
                             x_pred_std.append(np.sqrt(x_new[0,-1][nDim:]+1e-10))
 
-                    fig = plt.figure(figsize=(6, 6))
-                    for k in xrange(len(x_true[0])):
-                        fig.add_subplot(nDim,1,k+1)
-                        plt.plot(np.array(x_true)[:,k], '-b')
-                        plt.plot(np.array(x_pred_mean)[:,k], '-r')
-                        if len(x_pred_std)>0:
-                            plt.plot(np.array(x_pred_mean)[:,k]+np.array(x_pred_std)[:,k], '--r')
-                            plt.plot(np.array(x_pred_mean)[:,k]-np.array(x_pred_std)[:,k], '--r')
-                        plt.ylim([-0.1,1.1])
-                    plt.show()
+
+                    vutil.graph_variations(x_true, x_pred_mean, x_pred_std)
                         
                 else:
                     x = normalTrainData[i:i+1]
@@ -265,18 +258,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                         x_pred_std = np.sqrt(x_new[:,nDim:]+1e-10)
                     else:
                         x_pred_std = []
-                    
-                    fig = plt.figure(figsize=(6, 6))
-                    for k in xrange(nDim):
-                        fig.add_subplot(nDim,1,k+1)
-                        ## fig.add_subplot(100*len(x[j][0])+10+k+1)
-                        plt.plot(np.array(x)[0,:,k], '-b')
-                        plt.plot(np.array(x_pred_mean)[:,k], '-r')
-                        if len(x_pred_std)>0:
-                            plt.plot(np.array(x_pred_mean)[:,k]+np.array(x_pred_std)[:,k], '--r')
-                            plt.plot(np.array(x_pred_mean)[:,k]-np.array(x_pred_std)[:,k], '--r')
-                        plt.ylim([-0.1,1.1])
-                    plt.show()
+
+                    vutil.graph_variations(x_true, x_pred_mean, x_pred_std)
         
         return
     
