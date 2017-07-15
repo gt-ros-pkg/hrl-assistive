@@ -76,6 +76,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
     h2_dim = 2 #input_dim
     z_dim  = 2
     timesteps = 1
+    min_std = 0.01
 
     inputs = Input(batch_shape=(1, timesteps, input_dim))
     encoded = LSTM(h1_dim, return_sequences=True, activation='sigmoid', stateful=True)(inputs)
@@ -114,7 +115,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
         def call(self, args):
             x = args[0]
             x_d_mean = args[1][:,:,:input_dim]
-            x_d_std  = args[1][:,:,input_dim:] + 0.001
+            x_d_std  = args[1][:,:,input_dim:] + min_std
             
             loss = self.vae_loss(x, x_d_mean, x_d_std)
             self.add_loss(loss, inputs=args)
@@ -224,7 +225,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
                     plateau_wait += 1
 
             #ReduceLROnPlateau
-            if plateau_wait > 3:
+            if plateau_wait > 2:
                 old_lr = float(K.get_value(vae_autoencoder.optimizer.lr))
                 new_lr = old_lr * 0.2
                 K.set_value(vae_autoencoder.optimizer.lr, new_lr)
@@ -249,7 +250,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
             for j in xrange(len(x_test[i])):
                 x_pred = vae_mean_std.predict(x_test[i:i+1,j:j+1])
                 x_pred_mean.append(x_pred[0,0,:nDim])
-                x_pred_std.append(np.sqrt(x_pred[0,0,nDim:]))
+                x_pred_std.append(np.sqrt(x_pred[0,0,nDim:])+min_std)
 
             vutil.graph_variations(x_test[i], x_pred_mean, x_pred_std)
         
