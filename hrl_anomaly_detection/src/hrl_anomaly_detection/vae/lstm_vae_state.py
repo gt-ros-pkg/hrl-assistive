@@ -53,8 +53,8 @@ import gc
 
 
 def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=500, \
-             patience=20, fine_tuning=False, save_weights_file=None, steps_per_epoch=512,\
-             noise_mag=0.0, re_load=False):
+             patience=20, fine_tuning=False, save_weights_file=None, \
+             noise_mag=0.0, re_load=False, plot=True):
     """
     Variational Autoencoder with two LSTMs and one fully-connected layer
     x_train is (sample x length x dim)
@@ -102,15 +102,10 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
             super(CustomVariationalLayer, self).__init__(**kwargs)
 
         def vae_loss(self, x, x_d_mean, x_d_var):
-
             # default 1
             log_p_x_z = -0.5 * ( K.sum(K.square((x-x_d_mean))/(x_d_var), axis=-1) \
                                  + float(input_dim) * K.log(2.0*np.pi) + K.sum(K.log(x_d_var), axis=-1) )
             xent_loss = K.mean(-log_p_x_z, axis=-1)
-
-            # Work
-            #xent_loss = K.mean( 0.5*( K.sum(K.square(x_d_mean - x), axis=-1) + K.sum(K.log(x_d_var), axis=-1)*1e-5), axis=-1 )
-            #return K.mean(xent_loss)
 
             kl_loss = - 0.5 * K.sum(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=-1)
             return K.mean(xent_loss + kl_loss) 
@@ -164,10 +159,11 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
             lr = 0.01
         optimizer = RMSprop(lr=lr, rho=0.9, epsilon=1e-08, decay=0.0001, clipvalue=10)
         #optimizer = Adam(lr=lr, clipvalue=10)                
-        vae_autoencoder.compile(optimizer=optimizer, loss=None) #, metrics=['loss'])
+        vae_autoencoder.compile(optimizer=optimizer, loss=None)
         #vae_autoencoder.compile(optimizer='sgd', loss=None)
 
         # ---------------------------------------------------------------------------------
+        nDim         = len(x_train[0][0])
         wait         = 0
         plateau_wait = 0
         min_loss = 1e+15
@@ -176,25 +172,27 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
 
             mean_tr_loss = []
             for i in xrange(len(x_train)):
+                seq_tr_loss = []
                 for j in xrange(len(x_train[i])):
+                    np.random.seed(3334 + i*len(x_train[i]) + j)
+                    noise = np.random.normal(0, noise_mag, np.shape((nDim,)))
+                    
                     tr_loss = vae_autoencoder.train_on_batch(
-                        np.expand_dims(np.expand_dims(x_train[i,j], axis=0), axis=0),
-                        np.expand_dims(np.expand_dims(x_train[i,j], axis=0), axis=0))
-                    mean_tr_loss.append(tr_loss)
+                        np.expand_dims(np.expand_dims(x_train[i,j]+noise, axis=0), axis=0),
+                        np.expand_dims(np.expand_dims(x_train[i,j]+noise, axis=0), axis=0))
+                    seq_tr_loss.append(tr_loss)
+                mean_tr_loss.append( np.mean(seq_tr_loss) )
                 vae_autoencoder.reset_states()
-
-            ## print(' loss training = {}'.format(np.mean(mean_tr_loss))),
-            ## print('___________________________________')
-
 
             mean_te_loss = []
             for i in xrange(len(x_test)):
+                seq_te_loss = []
                 for j in xrange(len(x_test[i])):
                     te_loss = vae_autoencoder.test_on_batch(
                         np.expand_dims(np.expand_dims(x_test[i,j], axis=0), axis=0),
                         np.expand_dims(np.expand_dims(x_test[i,j], axis=0), axis=0))
-
-                    mean_te_loss.append(te_loss)
+                    seq_te_loss.append(te_loss)
+                mean_te_loss.append( np.mean(seq_te_loss) )
                 vae_autoencoder.reset_states()
 
             val_loss = np.mean(mean_te_loss)
@@ -215,6 +213,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
                 
             else:
                 if wait > patience:
+                    print "Over patience!"
                     break
                 else:
                     wait += 1
@@ -226,6 +225,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
                 new_lr = old_lr * 0.2
                 K.set_value(vae_autoencoder.optimizer.lr, new_lr)
                 plateau_wait = 0
+                print 'Reduced learning rate {} to {}'.format(old_lr, new_lr)
 
         gc.collect()
 
@@ -234,7 +234,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
     if False:
         print "latent variable visualization"
 
-    if True:
+    if plot:
         print "variance visualization"
         nDim = len(x_test[0,0])
         
