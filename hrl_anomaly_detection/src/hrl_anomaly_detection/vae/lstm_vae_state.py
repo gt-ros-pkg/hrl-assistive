@@ -74,12 +74,13 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
     h1_dim = input_dim
     h2_dim = 2 #input_dim
     z_dim  = 2
+    timesteps = 1
 
-    inputs = Input(shape=(timesteps, input_dim))
-    encoded = LSTM(h1_dim, return_sequences=True, activation='sigmoid', stateful=True, batch_size=batch_size)(inputs)
+    inputs = Input(batch_shape=(1, timesteps, input_dim))
+    encoded = LSTM(h1_dim, return_sequences=True, activation='sigmoid', stateful=True)(inputs)
     encoded = LSTM(h2_dim, return_sequences=False, activation='tanh', stateful=True)(encoded)
-    z_mean  = Dense(z_dim)(encoded) #, activation='tanh'
-    z_log_var = Dense(z_dim)(encoded) #, activation='sigmoid')
+    z_mean  = Dense(z_dim)(encoded) 
+    z_log_var = Dense(z_dim)(encoded) 
     
     def sampling(args):
         z_mean, z_log_var = args
@@ -165,50 +166,83 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
         vae_autoencoder.compile(optimizer=optimizer, loss=None)
         #vae_autoencoder.compile(optimizer='sgd', loss=None)
 
-        ## vae_autoencoder.load_weights(weights_file)
-        from keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
-        callbacks = [EarlyStopping(monitor='val_loss', min_delta=0, patience=patience,
-                                   verbose=0, mode='auto'),
-                    ModelCheckpoint(weights_file,
-                                    save_best_only=True,
-                                    save_weights_only=True,
-                                    monitor='val_loss'),
-                    ReduceLROnPlateau(monitor='val_loss', factor=0.5,
-                                      patience=3, min_lr=0.0)]
+        x_train = x_train[:3]
+        x_test  = x_test[:3]
+
+        wait         = 0
+        plateau_wait = 0
+        min_loss = 1e+15
+        for epoch in xrange(nb_epoch):
+            print('Epoch', epoch, '/', nb_epoch)
+
+            mean_tr_loss = []
+            for i in xrange(len(x_train)):
+                for j in xrange(len(x_train[i])):
+                    tr_loss = vae_autoencoder.train_on_batch(
+                        np.expand_dims(np.expand_dims(x_train[i,j], axis=0), axis=0),
+                        np.expand_dims(np.expand_dims(x_train[i,j], axis=0), axis=0))
+
+                    mean_tr_loss.append(tr_loss)
+                vae_autoencoder.reset_states()
 
 
-        for i in xrange(nb_epoch):
-            print('Epoch', i, '/', nb_epoch)
-
-            vae_autoencoder.fit(x_train, x_train, shuffle=False, epochs=1,\
-                                batch_size=batch_size, callbacks=callbacks,
-                                validation_data=(x_test,x_test))
-            vae_autoencoder.reset_states()
-
-
-
-
-        ## train_datagen = ku.sigGenerator(augmentation=True, noise_mag=noise_mag)
-        ## train_generator = train_datagen.flow(x_train, x_train, batch_size=batch_size, seed=3334,
-        ##                                      shuffle=True)
-
-        ## '''
-        ## vae_autoencoder.fit(x_train, x_train, shuffle=True, epochs=nb_epoch,\
-        ##                     batch_size=batch_size, callbacks=callbacks,
-        ##                     validation_data=(x_test,x_test))
-        ## '''
-        ## hist = vae_autoencoder.fit_generator(train_generator,
-        ##                                      steps_per_epoch=steps_per_epoch,
-        ##                                      epochs=nb_epoch,
-        ##                                      validation_data=(x_test, x_test),
-        ##                                      callbacks=callbacks)
-        
-        if save_weights_file is not None:
-            vae_autoencoder.save_weights(save_weights_file)
-        else:
+            print('loss training = {}'.format(np.mean(mean_tr_loss)))
+            print('___________________________________')
             vae_autoencoder.save_weights(weights_file)
+            
 
+            mean_te_loss = []
+            for i in xrange(len(x_test)):
+                for j in xrange(len(x_test[i])):
+                    te_loss = vae_autoencoder.test_on_batch(
+                        np.expand_dims(np.expand_dims(x_test[i,j], axis=0), axis=0),
+                        np.expand_dims(np.expand_dims(x_test[i,j], axis=0), axis=0))
+
+                    mean_te_loss.append(te_loss)
+                vae_autoencoder.reset_states()
+
+            val_loss = np.mean(mean_te_loss)
+            print('loss validating = {}'.format(val_loss))
+            print('___________________________________')
+
+
+            # Early Stopping
+            if val_loss <= min_loss:
+                min_loss = val_loss
+                wait         = 0
+                plateau_wait = 0
+
+                if save_weights_file is not None:
+                    vae_autoencoder.save_weights(save_weights_file)
+                else:
+                    vae_autoencoder.save_weights(weights_file)
+                
+            else:
+                if wait > patience:
+                    break
+                else:
+                    wait += 1
+                    plateau_wait += 1
+
+            #ReduceLROnPlateau
+            if plateau_wait > 3:
+                old_lr = float(K.get_value(vae_autoencoder.optimizer.lr))
+                new_lr = old_lr * 0.2
+                K.set_value(vae_autoencoder.optimizer.lr, new_lr)
+                plateau_wait = 0
+            
         gc.collect()
         
         return vae_autoencoder, vae_mean_var, vae_mean_var, vae_encoder_mean, vae_encoder_var, generator
+
+
+## class ResetStatesCallback(Callback):
+##     def __init__(self, max_len):
+##         self.counter = 0
+##         self.max_len = max_len
+        
+##     def on_batch_begin(self, batch, logs={}):
+##         if self.counter % self.max_len == 0:
+##             self.model.reset_states()
+##         self.counter += 1
 

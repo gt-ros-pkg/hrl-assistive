@@ -187,10 +187,10 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
                                              validation_data=(x_test, x_test),
                                              callbacks=callbacks)
         
-        if save_weights_file is not None:
-            vae_autoencoder.save_weights(save_weights_file)
-        else:
-            vae_autoencoder.save_weights(weights_file)
+        ## if save_weights_file is not None:
+        ##     vae_autoencoder.save_weights(save_weights_file)
+        ## else:
+        ##     vae_autoencoder.save_weights(weights_file)
 
         gc.collect()
         
