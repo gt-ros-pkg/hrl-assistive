@@ -101,10 +101,11 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
             self.is_placeholder = False #True
             super(CustomVariationalLayer, self).__init__(**kwargs)
 
-        def vae_loss(self, x, x_d_mean, x_d_var):
+        def vae_loss(self, x, x_d_mean, x_d_std):
             # default 1
-            log_p_x_z = -0.5 * ( K.sum(K.square((x-x_d_mean))/(x_d_var), axis=-1) \
-                                 + float(input_dim) * K.log(2.0*np.pi) + K.sum(K.log(x_d_var), axis=-1) )
+            log_p_x_z = -0.5 * ( K.sum(K.square((x-x_d_mean)/x_d_std), axis=-1) \
+                                 + float(input_dim) * K.log(2.0*np.pi) + K.sum(K.log(K.square(x_d_std)),
+                                                                               axis=-1) )
             xent_loss = K.mean(-log_p_x_z, axis=-1)
 
             kl_loss = - 0.5 * K.sum(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=-1)
@@ -113,9 +114,9 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
         def call(self, args):
             x = args[0]
             x_d_mean = args[1][:,:,:input_dim]
-            x_d_var  = args[1][:,:,input_dim:] + 0.00001
+            x_d_std  = args[1][:,:,input_dim:] + 0.00001
             
-            loss = self.vae_loss(x, x_d_mean, x_d_var)
+            loss = self.vae_loss(x, x_d_mean, x_d_std)
             self.add_loss(loss, inputs=args)
             # We won't actually use the output.
             return x_d_mean
@@ -145,7 +146,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
     generator = None
 
     # VAE --------------------------------------
-    vae_mean_var = Model(inputs, decoded)
+    vae_mean_std = Model(inputs, decoded)
 
     if weights_file is not None and os.path.isfile(weights_file) and fine_tuning is False and re_load is False:
         vae_autoencoder.load_weights(weights_file)
@@ -243,7 +244,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
             x_pred_mean = []
             x_pred_std  = []
             for j in xrange(len(x_test[i])):
-                x_pred = vae_mean_var.predict(x_test[i:i+1,j:j+1])
+                x_pred = vae_mean_std.predict(x_test[i:i+1,j:j+1])
                 x_pred_mean.append(x_pred[0,0,:nDim])
                 x_pred_std.append(np.sqrt(x_pred[0,0,nDim:]))
 
@@ -251,7 +252,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
         
 
 
-    return vae_autoencoder, vae_mean_var, vae_mean_var, vae_encoder_mean, vae_encoder_var, generator
+    return vae_autoencoder, vae_mean_std, vae_mean_std, vae_encoder_mean, vae_encoder_var, generator
 
 
 ## class ResetStatesCallback(Callback):
