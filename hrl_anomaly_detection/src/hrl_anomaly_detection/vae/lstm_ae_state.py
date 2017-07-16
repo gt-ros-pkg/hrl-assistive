@@ -46,6 +46,7 @@ from keras import backend as K
 from keras import objectives
 
 from hrl_anomaly_detection.vae import keras_util as ku
+from hrl_anomaly_detection.vae import util as vutil
 
 def lstm_ae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=500, patience=20,
             fine_tuning=False, save_weights_file=None,
@@ -161,6 +162,9 @@ def lstm_ae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=50
             if plateau_wait > 2:
                 old_lr = float(K.get_value(ae.optimizer.lr))
                 new_lr = old_lr * 0.2
+                if new_lr < 1e-4:
+                    print 'Reduced learning rate {} to {} is too low, so break!'.format(old_lr, new_lr)
+                    break
                 K.set_value(ae.optimizer.lr, new_lr)
                 plateau_wait = 0
                 print 'Reduced learning rate {} to {}'.format(old_lr, new_lr)
