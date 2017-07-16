@@ -72,12 +72,12 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
     input_dim = len(x_train[0][0])
 
     h1_dim = input_dim
-    h2_dim = 2 #input_dim
+    #h2_dim = 2 #input_dim
     z_dim  = 2
 
     inputs = Input(batch_shape=(1, timesteps, input_dim))
-    encoded = LSTM(h1_dim, return_sequences=True, activation='tanh', stateful=True)(inputs)
-    encoded = LSTM(h2_dim, return_sequences=False, activation='tanh', stateful=True)(encoded)
+    encoded = LSTM(h1_dim, return_sequences=False, activation='tanh', stateful=True)(inputs)
+    #encoded = LSTM(h2_dim, return_sequences=False, activation='tanh', stateful=True)(encoded)
     z_mean  = Dense(z_dim)(encoded) 
     z_log_var = Dense(z_dim)(encoded) 
     
@@ -90,7 +90,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
     # we initiate these layers to reuse later.
     decoded_h1 = Dense(h2_dim, name='h_1') #, activation='tanh'
     decoded_h2 = RepeatVector(timesteps, name='h_2')
-    decoded_L1 = LSTM(h1_dim, return_sequences=True, activation='tanh', stateful=True, name='L_1')
+    #decoded_L1 = LSTM(h1_dim, return_sequences=True, activation='tanh', stateful=True, name='L_1')
     decoded_L21 = LSTM(input_dim*2, return_sequences=True, activation='sigmoid', stateful=True, name='L_21')
 
     # Custom loss layer
@@ -157,9 +157,9 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
         else:
             lr = 0.01
         #optimizer = RMSprop(lr=lr, rho=0.9, epsilon=1e-08, decay=0.0001, clipvalue=10)
-        optimizer = Adam(lr=lr, clipvalue=10)                
-        vae_autoencoder.compile(optimizer=optimizer, loss=None)
-        #vae_autoencoder.compile(optimizer='sgd', loss=None)
+        #optimizer = Adam(lr=lr, clipvalue=10)                
+        #vae_autoencoder.compile(optimizer=optimizer, loss=None)
+        vae_autoencoder.compile(optimizer='adam', loss=None)
 
         # ---------------------------------------------------------------------------------
         nDim         = len(x_train[0][0])
@@ -167,21 +167,26 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
         plateau_wait = 0
         min_loss = 1e+15
         for epoch in xrange(nb_epoch):
-            print('Epoch', epoch, '/', nb_epoch),
+            print 
 
             mean_tr_loss = []
-            for i in xrange(len(x_train)):
-                seq_tr_loss = []
-                for j in xrange(len(x_train[i])-timesteps+1):
-                    np.random.seed(3334 + i*len(x_train[i]) + j)
-                    noise = np.random.normal(0, noise_mag, (timesteps, nDim))
-                    
-                    tr_loss = vae_autoencoder.train_on_batch(
-                        np.expand_dims(x_train[i,j:j+timesteps]+noise, axis=0),
-                        np.expand_dims(x_train[i,j:j+timesteps]+noise, axis=0))
-                    seq_tr_loss.append(tr_loss)
-                mean_tr_loss.append( np.mean(seq_tr_loss) )
-                vae_autoencoder.reset_states()
+            for sample in xrange(sam_epoch):
+                for i in xrange(len(x_train)):
+                    seq_tr_loss = []
+                    for j in xrange(len(x_train[i])-timesteps+1):
+                        np.random.seed(3334 + i*len(x_train[i]) + j)
+                        noise = np.random.normal(0, noise_mag, (timesteps, nDim))
+
+                        tr_loss = vae_autoencoder.train_on_batch(
+                            np.expand_dims(x_train[i,j:j+timesteps]+noise, axis=0),
+                            np.expand_dims(x_train[i,j:j+timesteps]+noise, axis=0))
+                        seq_tr_loss.append(tr_loss)
+                    mean_tr_loss.append( np.mean(seq_tr_loss) )
+                    vae_autoencoder.reset_states()
+
+                sys.stdout.write('Epoch {} / {} : loss training = {} , loss validating = {}\r'.format(epoch, nb_epoch, np.mean(mean_tr_loss), 0))
+                sys.stdout.flush()   
+
 
             mean_te_loss = []
             for i in xrange(len(x_test)):
@@ -196,9 +201,10 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
                 mean_te_loss.append( np.mean(seq_te_loss) )
                 vae_autoencoder.reset_states()
 
+
             val_loss = np.mean(mean_te_loss)
-            print('loss training = {} , loss validating = {}'.format(np.mean(mean_tr_loss), val_loss))
-            print('___________________________________')
+            sys.stdout.write('Epoch {} / {} : loss training = {} , loss validating = {}\r'.format(epoch, nb_epoch, np.mean(mean_tr_loss), val_loss))
+            sys.stdout.flush()   
 
 
             # Early Stopping
