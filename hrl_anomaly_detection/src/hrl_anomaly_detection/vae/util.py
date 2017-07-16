@@ -47,7 +47,7 @@ def sampleWithWindow(X, window=5):
     return X_new
 
 
-def graph_variations(x_true, x_pred_mean, x_pred_std):
+def graph_variations(x_true, x_pred_mean, x_pred_std=None):
     '''
     x_true: timesteps x dim
     '''
@@ -72,7 +72,7 @@ def graph_variations(x_true, x_pred_mean, x_pred_std):
         fig.add_subplot(nDim,1,k+1)
         plt.plot(np.array(x_true)[:,k], '-b')
         plt.plot(np.array(x_pred_mean)[:,k], '-r')
-        if len(x_pred_std)>0:
+        if x_pred_std is not None and len(x_pred_std)>0:
             plt.plot(np.array(x_pred_mean)[:,k]+np.array(x_pred_std)[:,k], '--r')
             plt.plot(np.array(x_pred_mean)[:,k]-np.array(x_pred_std)[:,k], '--r')
         plt.ylim([-0.1,1.1])

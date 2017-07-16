@@ -48,22 +48,17 @@ from keras import objectives
 from hrl_anomaly_detection.vae import keras_util as ku
 from hrl_anomaly_detection.vae import util as vutil
 
-import gc
-
-
-
-def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=500, \
-             patience=20, fine_tuning=False, save_weights_file=None, \
-             noise_mag=0.0, min_std=0.01, sam_epoch=1, re_load=False, plot=True):
+def lstm_ae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=500, patience=20,
+            fine_tuning=False, save_weights_file=None,
+            noise_mag=0.0, sam_epoch=1, re_load=False, plot=True):
     """
     Variational Autoencoder with two LSTMs and one fully-connected layer
     x_train is (sample x length x dim)
     x_test is (sample x length x dim)
-    """
 
-    # stateful mode uses single batch and no subsample like windows.
-    #batch_size = 1
-    
+    Note: it uses offline data.
+    This code based on "https://gist.github.com/tushuhei/e684c2a5382c324880532aded9faf4e6"
+    """
     x_train = trainData[0]
     y_train = trainData[1]
     x_test = testData[0]
@@ -72,101 +67,38 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
     input_dim = len(x_train[0][0])
 
     h1_dim = input_dim
-    h2_dim = 2 #input_dim
     z_dim  = 2
     timesteps = 1
-
+    
     inputs = Input(batch_shape=(1, timesteps, input_dim))
     encoded = LSTM(h1_dim, return_sequences=True, activation='tanh', stateful=True)(inputs)
-    encoded = LSTM(h2_dim, return_sequences=False, activation='tanh', stateful=True)(encoded)
-    z_mean  = Dense(z_dim)(encoded) 
-    z_log_var = Dense(z_dim)(encoded) 
-    
-    def sampling(args):
-        z_mean, z_log_var = args
-        epsilon = K.random_normal(shape=K.shape(z_mean), mean=0., stddev=1.0)
-        #epsilon = K.random_normal(shape=(z_dim,), mean=0., stddev=1.0)
-        return z_mean + K.exp(z_log_var/2.0) * epsilon    
+    encoded = LSTM(z_dim, return_sequences=False, activation='tanh', stateful=True)(encoded)
         
     # we initiate these layers to reuse later.
-    decoded_h1  = Dense(h2_dim, name='h_1') #, activation='tanh'
-    decoded_h2  = RepeatVector(timesteps, name='h_2')
-    decoded_L1  = LSTM(h1_dim, return_sequences=True, activation='tanh', stateful=True, name='L_1')
-    decoded_L21 = LSTM(input_dim*2, return_sequences=True, activation='sigmoid', stateful=True, name='L_21')
+    decoded_H2 = RepeatVector(timesteps, name='H_2')
+    decoded_L1 = LSTM(h1_dim, return_sequences=True, activation='tanh', stateful=True, name='L_1')
+    decoded_L2 = LSTM(input_dim, return_sequences=True, activation='sigmoid', stateful=True, name='L_2')
 
-    # Custom loss layer
-    class CustomVariationalLayer(Layer):
-        def __init__(self, **kwargs):
-            self.is_placeholder = True
-            super(CustomVariationalLayer, self).__init__(**kwargs)
-
-        def vae_loss(self, x, x_d_mean, x_d_std):
-            # default 
-            log_p_x_z = -0.5 * ( K.sum(K.square((x-x_d_mean)/x_d_std), axis=-1) \
-                                 + float(input_dim) * K.log(2.0*np.pi) + K.sum(K.log(K.square(x_d_std)),
-                                                                               axis=-1) )
-
-            ## log_p_x_z = -0.5 * ( K.sum(K.square((x-x_d_mean)*100), axis=-1) \
-            ##                      + float(input_dim) * K.log(2.0*np.pi) + K.sum(K.log(K.square(x_d_std)),
-            ##                                                                    axis=-1)*1e-10 )
-            
-            xent_loss = K.mean(-log_p_x_z, axis=-1)
-
-            kl_loss = - 0.5 * K.sum(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=-1)
-            return K.mean(xent_loss + kl_loss) 
-
-        def call(self, args):
-            x = args[0]
-            x_d_mean = args[1][:,:,:input_dim]
-            x_d_std  = args[1][:,:,input_dim:] + min_std
-            
-            loss = self.vae_loss(x, x_d_mean, x_d_std)
-            self.add_loss(loss, inputs=args)
-            # We won't actually use the output.
-            return x_d_mean
-
-
-    z = Lambda(sampling)([z_mean, z_log_var])    
-    decoded = decoded_h1(z)
-    decoded = decoded_h2(decoded)
+    decoded = decoded_H2(encoded)
     decoded = decoded_L1(decoded)
-    decoded = decoded_L21(decoded)
-    outputs = CustomVariationalLayer()([inputs, decoded])
+    decoded = decoded_L2(decoded)
+    
+    ae = Model(inputs, decoded)
+    print(ae.summary())
 
-    vae_autoencoder = Model(inputs, outputs)
-    print(vae_autoencoder.summary())
-
-    # Encoder --------------------------------------------------
-    vae_encoder_mean = Model(inputs, z_mean)
-    vae_encoder_var  = Model(inputs, z_log_var)
-
-    # Decoder (generator) --------------------------------------
-    ## decoder_input = Input(batch_shape=(1,z_dim))
-    ## _decoded = decoded_h1(decoder_input)
-    ## _decoded = decoded_h2(_decoded)
-    ## _decoded = decoded_L1(_decoded)
-    ## _decoded = decoded_L21(_decoded)
-    ## generator = Model(decoder_input, _decoded)
-    generator = None
-
-    # VAE --------------------------------------
-    vae_mean_std = Model(inputs, decoded)
-
-    if weights_file is not None and os.path.isfile(weights_file) and fine_tuning is False and re_load is False:
-        vae_autoencoder.load_weights(weights_file)
+    if weights_file is not None and os.path.isfile(weights_file) and fine_tuning is False:
+        ae.load_weights(weights_file)
     else:
-        if re_load and os.path.isfile(weights_file):
-            vae_autoencoder.load_weights(weights_file)
         if fine_tuning:
-            vae_autoencoder.load_weights(weights_file)
+            ae.load_weights(weights_file)
             lr = 0.001
         else:
-            lr = 0.01
-        ## optimizer = RMSprop(lr=lr, rho=0.9, epsilon=1e-08, decay=0.0001, clipvalue=10)
-        #optimizer = Adam(lr=lr, clipvalue=10)                
-        ## vae_autoencoder.compile(optimizer=optimizer, loss=None)
-        vae_autoencoder.compile(optimizer='adam', loss=None)
-        #vae_autoencoder.compile(optimizer='sgd', loss=None)
+            lr = 0.1
+        ## optimizer = RMSprop(lr=lr, rho=0.9, epsilon=1e-08, decay=0.0001)
+        ## #optimizer = Adam(lr=lr)                
+        ## ae.compile(optimizer=optimizer, loss='mse')
+        ae.compile(loss='mean_squared_error', optimizer='adam')
+        #ae.compile(loss=vae_loss, optimizer='adam')
 
         # ---------------------------------------------------------------------------------
         nDim         = len(x_train[0][0])
@@ -184,26 +116,23 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
                         np.random.seed(3334 + i*len(x_train[i]) + j)
                         noise = np.random.normal(0, noise_mag, (nDim,))
 
-                        tr_loss = vae_autoencoder.train_on_batch(
+                        tr_loss = ae.train_on_batch(
                             np.expand_dims(np.expand_dims(x_train[i,j]+noise, axis=0), axis=0),
                             np.expand_dims(np.expand_dims(x_train[i,j]+noise, axis=0), axis=0))
                         seq_tr_loss.append(tr_loss)
                     mean_tr_loss.append( np.mean(seq_tr_loss) )
-                    vae_autoencoder.reset_states()
+                    ae.reset_states()
 
             mean_te_loss = []
             for i in xrange(len(x_test)):
                 seq_te_loss = []
                 for j in xrange(len(x_test[i])):
-                    ## np.random.seed(3334 + i*len(x_test[i]) + j)
-                    ## noise = np.random.normal(0, noise_mag, np.shape((nDim,)))
-                    
-                    te_loss = vae_autoencoder.test_on_batch(
+                    te_loss = ae.test_on_batch(
                         np.expand_dims(np.expand_dims(x_test[i,j], axis=0), axis=0),
                         np.expand_dims(np.expand_dims(x_test[i,j], axis=0), axis=0))
                     seq_te_loss.append(te_loss)
                 mean_te_loss.append( np.mean(seq_te_loss) )
-                vae_autoencoder.reset_states()
+                ae.reset_states()
 
             val_loss = np.mean(mean_te_loss)
             print('loss training = {} , loss validating = {}'.format(np.mean(mean_tr_loss), val_loss))
@@ -217,9 +146,9 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
                 plateau_wait = 0
 
                 if save_weights_file is not None:
-                    vae_autoencoder.save_weights(save_weights_file)
+                    ae.save_weights(save_weights_file)
                 else:
-                    vae_autoencoder.save_weights(weights_file)
+                    ae.save_weights(weights_file)
                 
             else:
                 if wait > patience:
@@ -231,9 +160,12 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
 
             #ReduceLROnPlateau
             if plateau_wait > 2:
-                old_lr = float(K.get_value(vae_autoencoder.optimizer.lr))
+                old_lr = float(K.get_value(ae.optimizer.lr))
                 new_lr = old_lr * 0.2
-                K.set_value(vae_autoencoder.optimizer.lr, new_lr)
+                if new_lr < 1e-4:
+                    print 'Reduced learning rate {} to {} is too low, so break!'.format(old_lr, new_lr)
+                    break
+                K.set_value(ae.optimizer.lr, new_lr)
                 plateau_wait = 0
                 print 'Reduced learning rate {} to {}'.format(old_lr, new_lr)
 
@@ -251,26 +183,19 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
         for i in xrange(len(x_test)):
 
             x_pred_mean = []
-            x_pred_std  = []
             for j in xrange(len(x_test[i])):
-                x_pred = vae_mean_std.predict(x_test[i:i+1,j:j+1])
+                x_pred = ae.predict(x_test[i:i+1,j:j+1])
                 x_pred_mean.append(x_pred[0,0,:nDim])
-                x_pred_std.append(np.sqrt(x_pred[0,0,nDim:])+min_std)
 
-            vutil.graph_variations(x_test[i], x_pred_mean, x_pred_std)
+            vutil.graph_variations(x_test[i], x_pred_mean)
         
+    return ae
 
 
-    return vae_autoencoder, vae_mean_std, vae_mean_std, vae_encoder_mean, vae_encoder_var, generator
+if __name__ == '__main__':
+
+    print "N/A"
+    
 
 
-## class ResetStatesCallback(Callback):
-##     def __init__(self, max_len):
-##         self.counter = 0
-##         self.max_len = max_len
-        
-##     def on_batch_begin(self, batch, logs={}):
-##         if self.counter % self.max_len == 0:
-##             self.model.reset_states()
-##         self.counter += 1
-
+    

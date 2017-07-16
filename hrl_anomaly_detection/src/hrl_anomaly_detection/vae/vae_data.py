@@ -175,8 +175,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         from hrl_anomaly_detection.vae import lstm_vae_state_mstep as km
         autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
          km.lstm_vae(trainData, testData, weights_path, patience=4, batch_size=batch_size,
-                     noise_mag=0.2, re_load=re_load) 
-
+                     noise_mag=0.05, min_std=0.0001, sam_epoch=1,
+                     re_load=re_load) 
         
         #
         ## from hrl_anomaly_detection.vae import lstm_vae_sampling as km
@@ -186,6 +186,12 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         ## # LSTM-AE (Confirmed)
         ## from hrl_anomaly_detection.vae import lstm_ae as km
         ## autoencoder = km.lstm_ae(trainData, testData, weights_path, patience=5, batch_size=batch_size)
+
+        ## # LSTM-AE (Confirmed)
+        ## from hrl_anomaly_detection.vae import lstm_ae_state as km
+        ## autoencoder = km.lstm_ae(trainData, testData, weights_path, patience=5, batch_size=batch_size,
+        ##                          noise_mag=0.05, sam_epoch=1, re_load=re_load)
+
 
         # ------------------------------------------------------------------------------------------
         ## # Fine tuning
