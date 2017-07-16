@@ -118,7 +118,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
         def call(self, args):
             x = args[0]
             x_d_mean = args[1][:,:,:input_dim]
-            x_d_std  = args[1][:,:,input_dim:] + min_std
+            x_d_std  = args[1][:,:,input_dim:]/2.0 + min_std
             
             loss = self.vae_loss(x, x_d_mean, x_d_std)
             self.add_loss(loss, inputs=args)

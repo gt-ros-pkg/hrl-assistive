@@ -171,17 +171,17 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         ##  km.lstm_vae(trainData, testData, weights_path, patience=10, batch_size=batch_size,
         ##              steps_per_epoch=10, noise_mag=0.01, re_load=re_load) 
 
-        ## from hrl_anomaly_detection.vae import lstm_vae_state as km
-        ## autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
-        ##  km.lstm_vae(trainData, testData, weights_path, patience=4, batch_size=batch_size,
-        ##              noise_mag=0.05, min_std=0.0001, sam_epoch=1,
-        ##              re_load=re_load) 
-
-        from hrl_anomaly_detection.vae import lstm_vae_state_mstep as km
+        from hrl_anomaly_detection.vae import lstm_vae_state as km
         autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
          km.lstm_vae(trainData, testData, weights_path, patience=4, batch_size=batch_size,
-                     noise_mag=0.05, min_std=0.0001, timesteps=4, sam_epoch=10,
+                     noise_mag=0.05, min_std=0.0001, sam_epoch=10,
                      re_load=re_load) 
+
+        ## from hrl_anomaly_detection.vae import lstm_vae_state_mstep as km
+        ## autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
+        ##  km.lstm_vae(trainData, testData, weights_path, patience=4, batch_size=batch_size,
+        ##              noise_mag=0.05, min_std=0.0001, timesteps=4, sam_epoch=10,
+        ##              re_load=re_load) 
 
         
         #
