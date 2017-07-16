@@ -69,7 +69,6 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
     x_test = testData[0]
     y_test = testData[1]
 
-    timesteps = len(x_train[0])
     input_dim = len(x_train[0][0])
 
     h1_dim = input_dim
@@ -90,9 +89,9 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
         return z_mean + K.exp(z_log_var/2.0) * epsilon    
         
     # we initiate these layers to reuse later.
-    decoded_h1 = Dense(h2_dim, name='h_1') #, activation='tanh'
-    decoded_h2 = RepeatVector(timesteps, name='h_2')
-    decoded_L1 = LSTM(h1_dim, return_sequences=True, activation='tanh', stateful=True, name='L_1')
+    decoded_h1  = Dense(h2_dim, name='h_1') #, activation='tanh'
+    decoded_h2  = RepeatVector(timesteps, name='h_2')
+    decoded_L1  = LSTM(h1_dim, return_sequences=True, activation='tanh', stateful=True, name='L_1')
     decoded_L21 = LSTM(input_dim*2, return_sequences=True, activation='sigmoid', stateful=True, name='L_21')
 
     # Custom loss layer
@@ -167,7 +166,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
         nDim         = len(x_train[0][0])
         wait         = 0
         plateau_wait = 0
-        min_loss = 1e+15
+        min_loss     = 1e+15
         for epoch in xrange(nb_epoch):
             print('Epoch', epoch, '/', nb_epoch),
 

@@ -63,14 +63,13 @@ def lstm_ae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=50
     x_test = testData[0]
     y_test = testData[1]
 
-    timesteps = len(x_train[0])
     input_dim = len(x_train[0][0])
 
     h1_dim = input_dim
     z_dim  = 2
     timesteps = 1
     
-    inputs = Input(shape=(1, timesteps, input_dim))
+    inputs = Input(batch_shape=(1, timesteps, input_dim))
     encoded = LSTM(h1_dim, return_sequences=True, activation='tanh', stateful=True)(inputs)
     encoded = LSTM(z_dim, return_sequences=False, activation='tanh', stateful=True)(encoded)
         
