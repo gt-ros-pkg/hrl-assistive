@@ -177,7 +177,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
                 seq_tr_loss = []
                 for j in xrange(len(x_train[i])-timesteps+1):
                     np.random.seed(3334 + i*len(x_train[i]) + j)
-                    noise = np.random.normal(0, noise_mag, np.shape((timesteps, nDim)))
+                    noise = np.random.normal(0, noise_mag, (timesteps, nDim))
                     
                     tr_loss = vae_autoencoder.train_on_batch(
                         np.expand_dims(x_train[i,j:j+timesteps]+noise, axis=0),
@@ -190,9 +190,8 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
             for i in xrange(len(x_test)):
                 seq_te_loss = []
                 for j in xrange(len(x_test[i])-timesteps+1):
-                    np.random.seed(3334 + i*len(x_test[i]) + j)
-                    #noise = np.random.normal(0, noise_mag, np.shape((timesteps,nDim)))
-                    
+                    ## np.random.seed(3334 + i*len(x_test[i]) + j)
+                    #noise = np.random.normal(0, noise_mag, np.shape((timesteps,nDim)))                    
                     te_loss = vae_autoencoder.test_on_batch(
                         np.expand_dims(x_test[i,j:j+timesteps], axis=0),
                         np.expand_dims(x_test[i,j:j+timesteps], axis=0))
