@@ -46,6 +46,7 @@ from keras import backend as K
 from keras import objectives
 
 from hrl_anomaly_detection.vae import keras_util as ku
+from hrl_anomaly_detection.vae import util as vutil
 
 def lstm_ae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=500, patience=20,
             fine_tuning=False, save_weights_file=None,
