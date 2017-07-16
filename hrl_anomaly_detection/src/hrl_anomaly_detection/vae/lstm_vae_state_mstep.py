@@ -54,7 +54,7 @@ import gc
 
 def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=500, \
              patience=20, fine_tuning=False, save_weights_file=None, \
-             noise_mag=0.0, min_std=0.001, timesteps=4, re_load=False, plot=True):
+             noise_mag=0.0, min_std=0.001, timesteps=4, sam_epoch=1, re_load=False, plot=True):
     """
     Variational Autoencoder with two LSTMs and one fully-connected layer
     x_train is (sample x length x dim)
