@@ -129,7 +129,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
     z = Lambda(sampling)([z_mean, z_log_var])    
     decoded = decoded_h1(z)
     decoded = decoded_h2(decoded)
-    decoded = decoded_L1(decoded)
+    #decoded = decoded_L1(decoded)
     decoded = decoded_L21(decoded)
     outputs = CustomVariationalLayer()([inputs, decoded])
 
