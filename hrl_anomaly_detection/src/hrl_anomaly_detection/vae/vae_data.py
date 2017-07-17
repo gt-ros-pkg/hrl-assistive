@@ -105,15 +105,15 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     d['successData']    = d['successData'][feature_list]
     d['failureData']    = d['failureData'][feature_list]
 
-    subjects = ['Andrew', 'Britteney', 'Joshua', 'Jun', 'Kihan', 'Lichard', 'Shingshing', 'Sid', 'Tao']
-    raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/CORL2017/'
-    td1 = get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
-                      init_param_dict=d['param_dict'], id_num=0)
+    ## subjects = ['Andrew', 'Britteney', 'Joshua', 'Jun', 'Kihan', 'Lichard', 'Shingshing', 'Sid', 'Tao']
+    ## raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/CORL2017/'
+    ## td1 = get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
+    ##                   init_param_dict=d['param_dict'], id_num=0)
 
-    subjects = ['ari', 'park', 'jina', 'linda', 'sai', 'hyun']
-    raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/ICRA2017/'
-    td2 = get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
-                      init_param_dict=d['param_dict'], id_num=1)
+    ## subjects = ['ari', 'park', 'jina', 'linda', 'sai', 'hyun']
+    ## raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/ICRA2017/'
+    ## td2 = get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
+    ##                   init_param_dict=d['param_dict'], id_num=1)
 
     # Parameters
     nDim = len(d['successData'])
@@ -133,12 +133,12 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         ## abnormalTrainData = np.hstack([abnormalTrainData, copy.deepcopy(td1['failureData']), copy.deepcopy(td2['failureData'])])
 
 
-        normalData   = np.hstack([copy.deepcopy(d['successData']), copy.deepcopy(td1['successData']), \
-                                  copy.deepcopy(td2['successData'])])
-        abnormalData = np.hstack([copy.deepcopy(d['failureData']), copy.deepcopy(td1['failureData']), \
-                                  copy.deepcopy(td2['failureData'])])
-        ## normalData   = copy.deepcopy(d['successData'])
-        ## abnormalData = copy.deepcopy(d['failureData'])
+        ## normalData   = np.hstack([copy.deepcopy(d['successData']), copy.deepcopy(td1['successData']), \
+        ##                           copy.deepcopy(td2['successData'])])
+        ## abnormalData = np.hstack([copy.deepcopy(d['failureData']), copy.deepcopy(td1['failureData']), \
+        ##                           copy.deepcopy(td2['failureData'])])
+        normalData   = copy.deepcopy(d['successData'])
+        abnormalData = copy.deepcopy(d['failureData'])
         # ------------------------------------------------------------------------------------------
         
         trainData, testData, window_size, raw_data, raw_data_ft = \
@@ -174,7 +174,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         from hrl_anomaly_detection.vae import lstm_vae_state as km
         autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
          km.lstm_vae(trainData, testData, weights_path, patience=4, batch_size=batch_size,
-                     noise_mag=0.05, min_std=0.0001, sam_epoch=10,
+                     noise_mag=0.2, min_std=0.05, sam_epoch=10,
                      re_load=re_load) 
 
         ## from hrl_anomaly_detection.vae import lstm_vae_state_mstep as km
