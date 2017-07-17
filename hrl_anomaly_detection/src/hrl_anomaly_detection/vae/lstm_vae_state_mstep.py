@@ -71,13 +71,13 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
 
     input_dim = len(x_train[0][0])
 
-    h1_dim = input_dim*2
-    #h2_dim = 2 #input_dim
+    h1_dim = input_dim
+    h2_dim = 2 #input_dim
     z_dim  = 2
 
     inputs = Input(batch_shape=(1, timesteps, input_dim))
-    encoded = LSTM(h1_dim, return_sequences=False, activation='tanh', stateful=True)(inputs)
-    #encoded = LSTM(h2_dim, return_sequences=False, activation='tanh', stateful=True)(encoded)
+    encoded = LSTM(h1_dim, return_sequences=True, activation='tanh', stateful=True)(inputs)
+    encoded = LSTM(h2_dim, return_sequences=False, activation='tanh', stateful=True)(encoded)
     z_mean  = Dense(z_dim)(encoded) 
     z_log_var = Dense(z_dim)(encoded) 
     
@@ -88,9 +88,9 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
         return z_mean + K.exp(z_log_var/2.0) * epsilon    
         
     # we initiate these layers to reuse later.
-    decoded_h1 = Dense(h1_dim, name='h_1') #, activation='tanh'
+    decoded_h1 = Dense(h2_dim, name='h_1') #, activation='tanh'
     decoded_h2 = RepeatVector(timesteps, name='h_2')
-    #decoded_L1 = LSTM(h1_dim, return_sequences=True, activation='tanh', stateful=True, name='L_1')
+    decoded_L1 = LSTM(h1_dim, return_sequences=True, activation='tanh', stateful=True, name='L_1')
     decoded_L21 = LSTM(input_dim*2, return_sequences=True, activation='sigmoid', stateful=True, name='L_21')
 
     # Custom loss layer
@@ -112,7 +112,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
         def call(self, args):
             x = args[0]
             x_d_mean = args[1][:,:,:input_dim]
-            x_d_std  = args[1][:,:,input_dim:]/10.0 + min_std
+            x_d_std  = args[1][:,:,input_dim:]/2.0 + min_std
             
             loss = self.vae_loss(x, x_d_mean, x_d_std)
             self.add_loss(loss, inputs=args)
@@ -123,7 +123,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
     z = Lambda(sampling)([z_mean, z_log_var])    
     decoded = decoded_h1(z)
     decoded = decoded_h2(decoded)
-    #decoded = decoded_L1(decoded)
+    decoded = decoded_L1(decoded)
     decoded = decoded_L21(decoded)
     outputs = CustomVariationalLayer()([inputs, decoded])
 
