@@ -74,6 +74,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
     #ths_l = -np.logspace(-1,0.8,40)+2.0
     ths_l = -np.logspace(-1,0.5,40)+1.5
     ths_l = np.linspace(127,133,40)
+    ths_l = np.logspace(-1,2,40)-2.0  
     
     tpr_l = []
     fpr_l = []
@@ -103,8 +104,8 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         fpr_l.append( float(np.sum(fp_l))/float(np.sum(fp_l)+np.sum(tn_l))*100.0 )
     
 
-    e_n_l  = np.amin(scores_n, axis=-1) #[val[-1] for val in scores_n if val != np.log(1e-50) ]
-    e_ab_l = np.amin(scores_a, axis=-1) #[val[-1] for val in scores_a if val != np.log(1e-50) ]
+    e_n_l  = np.amax(scores_n, axis=-1) #[val[-1] for val in scores_n if val != np.log(1e-50) ]
+    e_ab_l = np.amax(scores_a, axis=-1) #[val[-1] for val in scores_a if val != np.log(1e-50) ]
     print np.mean(e_n_l), np.std(e_n_l)
     print np.mean(e_ab_l), np.std(e_ab_l)
     print "acc ", float(np.sum(tp_l)+np.sum(tn_l))/float(np.sum(tp_l+fp_l+tn_l+fn_l))
@@ -208,5 +209,5 @@ def get_lower_bound(x, x_mean, x_std, enc_z_mean, enc_z_logvar):
     kl_loss = - 0.5 * np.sum(1 + z_log_var - z_mean**2 - np.exp(z_log_var), axis=-1)
     
     #return xent_loss + kl_loss
-    return np.mean(xent_loss + kl_loss) 
+    return float(np.mean(xent_loss + kl_loss) )
 
