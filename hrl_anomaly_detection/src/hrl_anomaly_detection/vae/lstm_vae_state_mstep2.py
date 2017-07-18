@@ -259,7 +259,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
             for j in xrange(len(x_test[i])-timesteps+1):
                 x_pred = vae_mean_std.predict(x_test[i:i+1,j:j+timesteps])
                 x_pred_mean.append(x_pred[0,-1,:nDim])
-                x_pred_std.append(np.sqrt(x_pred[0,-1,nDim:])+min_std)
+                x_pred_std.append(x_pred[0,-1,nDim:]/x_std_div+x_std_offset)
 
             vutil.graph_variations(x_test[i], x_pred_mean, x_pred_std)
         
