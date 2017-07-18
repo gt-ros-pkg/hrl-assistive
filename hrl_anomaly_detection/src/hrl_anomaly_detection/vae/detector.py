@@ -118,8 +118,8 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
     fig = plt.figure(figsize=(12,6))
     fig.add_subplot(1,2,1)    
     plt.plot(fpr_l, tpr_l, '-*b', ms=5, mec='b')
-    plt.xlim([0,1])
-    plt.ylim([0,1])
+    plt.xlim([0,100])
+    plt.ylim([0,100])
     
     fig.add_subplot(1,2,2)    
     plt.plot(e_n_l, '*b', ms=5, mec='b')
