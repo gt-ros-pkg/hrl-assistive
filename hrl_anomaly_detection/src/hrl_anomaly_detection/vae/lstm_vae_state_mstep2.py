@@ -250,6 +250,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
         nDim = len(x_test[0,0])
         
         for i in xrange(len(x_test)):
+            print i
 
             vae_autoencoder.reset_states()
             vae_mean_std.reset_states()

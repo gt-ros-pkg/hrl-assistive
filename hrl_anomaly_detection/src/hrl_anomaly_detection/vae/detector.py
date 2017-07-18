@@ -74,7 +74,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
     #ths_l = -np.logspace(-1,0.8,40)+2.0
     ths_l = -np.logspace(-1,0.5,40)+1.5
     ths_l = np.linspace(127,133,40)
-    ths_l = np.logspace(-1,2,40)-2.0  
+    ths_l = np.logspace(-1,1.8,40)-1.0  
     
     tpr_l = []
     fpr_l = []
