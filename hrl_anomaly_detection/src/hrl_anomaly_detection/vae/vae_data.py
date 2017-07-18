@@ -66,7 +66,7 @@ np.random.seed(3334)
 
 
 def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, param_dict, plot=False,
-              re_load=False):
+              re_load=False, fine_tuning=False):
     ## Parameters
     data_dict  = param_dict['data_param']
     data_renew = data_dict['renew']
@@ -177,11 +177,13 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         ##              noise_mag=0.2, min_std=0.05, sam_epoch=10,
         ##              re_load=re_load) 
 
-        from hrl_anomaly_detection.vae import lstm_vae_state_mstep as km
+        ## from hrl_anomaly_detection.vae import lstm_vae_state_mstep as km
+        from hrl_anomaly_detection.vae import lstm_vae_state_mstep2 as km
+        window_size = 20
         autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
          km.lstm_vae(trainData, testData, weights_path, patience=4, batch_size=batch_size,
-                     noise_mag=0.2, min_std=0.05, timesteps=4, sam_epoch=10,
-                     re_load=re_load) 
+                     noise_mag=0.1, min_std=0.05, timesteps=window_size, sam_epoch=10,
+                     re_load=re_load, fine_tuning=fine_tuning, plot=plot) 
 
         
         #
@@ -229,7 +231,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             save_pkl = os.path.join(save_data_path, 'tmp_test_scores.pkl')            
             dt.anomaly_detection(autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generator,
                                  normalTestData, abnormalTestData, \
-                                 window_size, alpha, save_pkl=save_pkl)
+                                 window_size, alpha, save_pkl=save_pkl, stateful=stateful)
 
         
         if plot:
@@ -249,6 +251,11 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             # display generated data
             for i in xrange(len(normalTrainData)):
                 print i
+
+                if stateful:
+                    vae_mean.reset_states()
+
+                
                 if window_size is not None:
                     x = vutil.sampleWithWindow(normalTrainData[i:i+1], window=window_size)
                     x = np.array(x)
@@ -758,6 +765,8 @@ if __name__ == '__main__':
                  default=False, help='Generate data.')
     p.add_option('--reload', '--rl', action='store_true', dest='bReLoad',
                  default=False, help='Reload previous parameters.')
+    p.add_option('--fint_tuning', '--ftn', action='store_true', dest='bFineTune',
+                 default=False, help='Run fine tuning.')
 
     opt, args = p.parse_args()
 
@@ -822,7 +831,7 @@ if __name__ == '__main__':
 
     elif opt.lstm_test:
         lstm_test(subjects, opt.task, raw_data_path, save_data_path, param_dict, plot=not opt.bNoPlot,
-                  re_load=opt.bReLoad)
+                  re_load=opt.bReLoad, fine_tuning=opt.bFineTune)
 
     elif opt.bFeaturePlot:
         

@@ -51,7 +51,7 @@ matplotlib.rcParams['ps.fonttype'] = 42
 
 def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, generator,
                       normalTestData, abnormalTestData, window_size, \
-                      alpha, save_pkl=None):
+                      alpha, save_pkl=None, stateful=False):
 
     if os.path.isfile(save_pkl) and False:
         d = ut.load_pickle(save_pkl)
@@ -59,9 +59,9 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         scores_a = d['scores_a']
     else:
         scores_n = get_anomaly_score(normalTestData, vae_mean, enc_z_mean, enc_z_logvar,
-                                     window_size, alpha )
+                                     window_size, alpha, stateful=stateful )
         scores_a = get_anomaly_score(abnormalTestData, vae_mean, enc_z_mean, enc_z_logvar,
-                                     window_size, alpha )
+                                     window_size, alpha, stateful=stateful )
         
         d = {}
         d['scores_n'] = scores_n
@@ -117,6 +117,8 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
     fig = plt.figure(figsize=(12,6))
     fig.add_subplot(1,2,1)    
     plt.plot(fpr_l, tpr_l, '-*b', ms=5, mec='b')
+    plt.xlim([0,1])
+    plt.ylim([0,1])
     
     fig.add_subplot(1,2,2)    
     plt.plot(e_n_l, '*b', ms=5, mec='b')
@@ -127,7 +129,8 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
 
 
 
-def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, nSample=1000):
+def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, nSample=1000,
+                      stateful=False):
 
     x_dim = len(X[0][0])
 
@@ -139,6 +142,12 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, nSam
         if window_size>0: x = vutil.sampleWithWindow(X[i:i+1], window=window_size)
         else:             x = X[i:i+1]
         if type(x) is list: x = np.array(x)
+
+        if stateful:
+            vae.reset_states()
+            enc_z_mean.reset_states()
+            enc_z_logvar.reset_states()
+            
 
         s = []
         for j in xrange(len(x)): # per window
