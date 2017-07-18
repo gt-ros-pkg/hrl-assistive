@@ -179,10 +179,13 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
 
         ## from hrl_anomaly_detection.vae import lstm_vae_state_mstep as km
         from hrl_anomaly_detection.vae import lstm_vae_state_mstep2 as km
-        window_size = 20
+        window_size = 1
+        x_std_div   = 2
+        x_std_offset= 0.05
         autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
          km.lstm_vae(trainData, testData, weights_path, patience=4, batch_size=batch_size,
-                     noise_mag=0.1, min_std=0.05, timesteps=window_size, sam_epoch=10,
+                     noise_mag=0.1, timesteps=window_size, sam_epoch=10,
+                     x_std_div = x_std_div, x_std_offset=x_std_offset,
                      re_load=re_load, fine_tuning=fine_tuning, plot=plot) 
 
         
@@ -231,7 +234,9 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             save_pkl = os.path.join(save_data_path, 'tmp_test_scores.pkl')            
             dt.anomaly_detection(autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generator,
                                  normalTestData, abnormalTestData, \
-                                 window_size, alpha, save_pkl=save_pkl, stateful=stateful)
+                                 window_size, alpha, save_pkl=save_pkl, stateful=stateful,
+                                 x_std_div = x_std_div, x_std_offset=x_std_offset)
+
 
         
         if plot:

@@ -35,7 +35,7 @@ def sampleWithWindow(X, window=5):
     X : sample x length x features
     return: (sample x length-window+1) x features
     '''
-    if window < 2:
+    if window < 1:
         print "Wrong window size"
         sys.exit()
 

@@ -51,7 +51,7 @@ matplotlib.rcParams['ps.fonttype'] = 42
 
 def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, generator,
                       normalTestData, abnormalTestData, window_size, \
-                      alpha, save_pkl=None, stateful=False):
+                      alpha, save_pkl=None, stateful=False, x_std_div=1.0, x_std_offset=1e-10):
 
     if os.path.isfile(save_pkl) and False:
         d = ut.load_pickle(save_pkl)
@@ -59,9 +59,11 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         scores_a = d['scores_a']
     else:
         scores_n = get_anomaly_score(normalTestData, vae_mean, enc_z_mean, enc_z_logvar,
-                                     window_size, alpha, stateful=stateful )
+                                     window_size, alpha, stateful=stateful,
+                                     x_std_div=x_std_div, x_std_offset=x_std_offset)
         scores_a = get_anomaly_score(abnormalTestData, vae_mean, enc_z_mean, enc_z_logvar,
-                                     window_size, alpha, stateful=stateful )
+                                     window_size, alpha, stateful=stateful,
+                                     x_std_div=x_std_div, x_std_offset=x_std_offset)
         
         d = {}
         d['scores_n'] = scores_n
@@ -107,7 +109,6 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
     print np.mean(e_ab_l), np.std(e_ab_l)
     print "acc ", float(np.sum(tp_l)+np.sum(tn_l))/float(np.sum(tp_l+fp_l+tn_l+fn_l))
 
-    print ths_l
     print tpr_l
     print fpr_l
 
@@ -130,7 +131,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
 
 
 def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, nSample=1000,
-                      stateful=False):
+                      stateful=False, x_std_div=1, x_std_offset=1e-10):
 
     x_dim = len(X[0][0])
 
@@ -157,7 +158,7 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, nSam
 
             # length x dim
             x_mean = x_new[:,:x_dim]
-            x_std  = np.sqrt(x_new[:,x_dim:]+1e-10)
+            x_std  = np.sqrt(x_new[:,x_dim:]/x_std_div+x_std_offset)
 
             #---------------------------------------------------------------
             # Method 1: Reconstruction probability
@@ -202,10 +203,10 @@ def get_lower_bound(x, x_mean, x_std, enc_z_mean, enc_z_logvar):
         
     p_l     = []
     log_p_x_z = -0.5 * ( np.sum( ((x-x_mean)/x_std)**2, axis=-1) \
-                         + float(nDim) * np.log(2.0*np.pi) + np.sum(x_std**2, axis=-1) )
+                         + float(nDim) * np.log(2.0*np.pi) + np.sum(np.log(x_std**2), axis=-1) )
     xent_loss = np.mean(-log_p_x_z, axis=-1)
     kl_loss = - 0.5 * np.sum(1 + z_log_var - z_mean**2 - np.exp(z_log_var), axis=-1)
     
-    return xent_loss + kl_loss
-    ## return np.mean(xent_loss + kl_loss) 
+    #return xent_loss + kl_loss
+    return np.mean(xent_loss + kl_loss) 
 

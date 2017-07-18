@@ -54,7 +54,9 @@ import gc
 
 def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=500, \
              patience=20, fine_tuning=False, save_weights_file=None, \
-             noise_mag=0.0, min_std=0.001, timesteps=4, sam_epoch=1, re_load=False, plot=True):
+             noise_mag=0.0, timesteps=4, sam_epoch=1, \
+             x_std_div=1, x_std_offset=0.001,             
+             re_load=False, plot=True):
     """
     Variational Autoencoder with two LSTMs and one fully-connected layer
     x_train is (sample x length x dim)
@@ -112,7 +114,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
         def call(self, args):
             x = args[0]
             x_d_mean = args[1][:,:,:input_dim]
-            x_d_std  = args[1][:,:,input_dim:]/2.0 + min_std
+            x_d_std  = args[1][:,:,input_dim:]/x_std_div + x_std_offset
             
             loss = self.vae_loss(x, x_d_mean, x_d_std)
             self.add_loss(loss, inputs=args)
@@ -123,7 +125,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
     z = Lambda(sampling)([z_mean, z_log_var])    
     decoded = decoded_h1(z)
     decoded = decoded_h2(decoded)
-    decoded = decoded_L1(decoded)
+    #decoded = decoded_L1(decoded)
     decoded = decoded_L21(decoded)
     outputs = CustomVariationalLayer()([inputs, decoded])
 
