@@ -178,7 +178,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
                 for i in xrange(len(x_train)):
                     seq_tr_loss = []
 
-                    shift_offset = np.random.normal(0,2,size=1)
+                    shift_offset = int(np.random.normal(0,2,size=1))
                     if shift_offset>0:
                         x = np.pad(x_train[i],((0,shift_offset),(0,0)), 'edge')
                     else:
