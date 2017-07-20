@@ -233,6 +233,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             from hrl_anomaly_detection.vae import detector as dt
             save_pkl = os.path.join(save_data_path, 'tmp_test_scores.pkl')            
             dt.anomaly_detection(autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generator,
+                                 normalTrainData, abnormalTrainData,\
                                  normalTestData, abnormalTestData, \
                                  window_size, alpha, save_pkl=save_pkl, stateful=stateful,
                                  x_std_div = x_std_div, x_std_offset=x_std_offset)

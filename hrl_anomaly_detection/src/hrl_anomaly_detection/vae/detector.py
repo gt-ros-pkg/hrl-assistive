@@ -50,31 +50,64 @@ matplotlib.rcParams['ps.fonttype'] = 42
 
 
 def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, generator,
+                      normalTrainData, abnormalTrainData,\
                       normalTestData, abnormalTestData, window_size, \
                       alpha, save_pkl=None, stateful=False, x_std_div=1.0, x_std_offset=1e-10):
 
     if os.path.isfile(save_pkl) and False:
         d = ut.load_pickle(save_pkl)
-        scores_n = d['scores_n']
-        scores_a = d['scores_a']
+        ## scores_tr_n = d['scores_tr_n']
+        ## zs_tr_n = d['zs_tr_n']
+        scores_te_n = d['scores_te_n']
+        scores_te_a = d['scores_te_a']
+        zs_te_n = d['zs_te_n']
+        zs_te_a = d['zs_te_a']
     else:
-        scores_n = get_anomaly_score(normalTestData, vae_mean, enc_z_mean, enc_z_logvar,
+        ## scores_tr_n, zs_tr_n = get_anomaly_score(normalTrainData, vae_mean, enc_z_mean, enc_z_logvar,
+        ##                                          window_size, alpha, stateful=stateful,
+        ##                                          x_std_div=x_std_div, x_std_offset=x_std_offset)
+        
+        scores_te_n, zs_te_n = get_anomaly_score(normalTestData, vae_mean, enc_z_mean, enc_z_logvar,
                                      window_size, alpha, stateful=stateful,
                                      x_std_div=x_std_div, x_std_offset=x_std_offset)
-        scores_a = get_anomaly_score(abnormalTestData, vae_mean, enc_z_mean, enc_z_logvar,
+        scores_te_a, zs_te_a = get_anomaly_score(abnormalTestData, vae_mean, enc_z_mean, enc_z_logvar,
                                      window_size, alpha, stateful=stateful,
                                      x_std_div=x_std_div, x_std_offset=x_std_offset)
         
         d = {}
-        d['scores_n'] = scores_n
-        d['scores_a'] = scores_a
+        ## d['scores_tr_n'] = scores_tr_n
+        ## d['zs_tr_n']     = zs_tr_n
+        d['scores_te_n'] = scores_te_n
+        d['zs_te_n']     = zs_te_n
+        d['scores_te_a'] = scores_te_a
+        d['zs_te_a']     = zs_te_a
         ut.save_pickle(d, save_pkl)
 
+
+
+    ## from sklearn.svm import SVR
+    ## clf = SVR(C=1.0, epsilon=0.2, kernel='rbf')
+
+    ## x = np.array(zs_tr_n).reshape(-1,np.shape(zs_tr_n)[-1])
+    ## y = np.array(scores_tr_n).reshape(-1,np.shape(scores_tr_n)[-1])
+    ## clf.fit(x, y)
+
+    ## for i, s_true in enumerate(scores_n):
+    ##     s_pred = clf.predict(zs_n[i])        
+    ##     fig = plt.figure()  
+    ##     plt.plot(s_true, '-b')
+    ##     plt.plot(s_pred, '-r') 
+    ##     plt.show()
+        
+    #for s in scores_a:
+    #    fig = plt.figure()
+    #    plt.plot(s, '-r')
+    #    plt.show()
 
     #ths_l = -np.logspace(-1,0.8,40)+2.0
     ths_l = -np.logspace(-1,0.5,40)+1.5
     ths_l = np.linspace(127,133,40)
-    ths_l = np.logspace(-1,2,40)-2.0  
+    ths_l = np.logspace(-1,2,40)-4 #2.0  
     
     tpr_l = []
     fpr_l = []
@@ -84,28 +117,32 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         fp_l = []
         tn_l = []
         fn_l = []
-        for s in scores_n:
-            for i in xrange(len(s)):
-                if s[i]>ths:
+        for i, s in enumerate(scores_te_n):
+            for j in xrange(len(s)):
+                ## s_pred = clf.predict(zs_te_n[i][j])
+                
+                if s[j]>ths: #s_pred+ths:
                     fp_l.append(1)
                     break
-                elif i == len(s)-1:
+                elif j == len(s)-1:
                     tn_l.append(1)
 
-        for s in scores_a:
-            for i in xrange(len(s)):
-                if s[i]>ths:
+        for i, s in enumerate(scores_te_a):
+            for j in xrange(len(s)):
+                ## s_pred = clf.predict(zs_te_a[i][j])
+                
+                if s[j]>ths: #s_pred+ths:
                     tp_l.append(1)
                     break
-                elif i == len(s)-1:
+                elif j == len(s)-1:
                     fn_l.append(1)
 
         tpr_l.append( float(np.sum(tp_l))/float(np.sum(tp_l)+np.sum(fn_l))*100.0 )
         fpr_l.append( float(np.sum(fp_l))/float(np.sum(fp_l)+np.sum(tn_l))*100.0 )
     
 
-    e_n_l  = np.amax(scores_n, axis=-1) #[val[-1] for val in scores_n if val != np.log(1e-50) ]
-    e_ab_l = np.amax(scores_a, axis=-1) #[val[-1] for val in scores_a if val != np.log(1e-50) ]
+    e_n_l  = np.amax(scores_te_n, axis=-1) #[val[-1] for val in scores_n if val != np.log(1e-50) ]
+    e_ab_l = np.amax(scores_te_a, axis=-1) #[val[-1] for val in scores_a if val != np.log(1e-50) ]
     print np.mean(e_n_l), np.std(e_n_l)
     print np.mean(e_ab_l), np.std(e_ab_l)
     print "acc ", float(np.sum(tp_l)+np.sum(tn_l))/float(np.sum(tp_l+fp_l+tn_l+fn_l))
@@ -137,6 +174,7 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, nSam
     x_dim = len(X[0][0])
 
     scores = []
+    zs = []
     for i in xrange(len(X)): # per sample
         print "sample: ", i+1, " out of ", len(X)
         np.random.seed(3334 + i)
@@ -150,7 +188,7 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, nSam
             enc_z_mean.reset_states()
             enc_z_logvar.reset_states()
             
-
+        z = []
         s = []
         for j in xrange(len(x)): # per window
             # anomaly score per timesteps in an window            
@@ -166,11 +204,15 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, nSam
             #s.append( get_reconstruction_err_prob(x[j], x_mean, x_std, alpha=alpha) )
 
             # Method 2: Lower bound
-            s.append( get_lower_bound(x[j:j+1], x_mean, x_std, enc_z_mean, enc_z_logvar) )
+            l, z_mean, z_log_var = get_lower_bound(x[j:j+1], x_mean, x_std, enc_z_mean, enc_z_logvar)
+            s.append(l)
+            z.append(z_mean.tolist() + z_log_var.tolist())
+            ## s.append( get_lower_bound(x[j:j+1], x_mean, x_std, enc_z_mean, enc_z_logvar) )
             
 
         scores.append(s) # s is scalers
-    return scores
+        zs.append(z)
+    return scores, zs
 
 
 def get_reconstruction_err_prob(x, x_mean, x_std, alpha=1.0):
@@ -208,6 +250,6 @@ def get_lower_bound(x, x_mean, x_std, enc_z_mean, enc_z_logvar):
     xent_loss = np.mean(-log_p_x_z, axis=-1)
     kl_loss = - 0.5 * np.sum(1 + z_log_var - z_mean**2 - np.exp(z_log_var), axis=-1)
     
-    #return xent_loss + kl_loss
-    return float(np.mean(xent_loss + kl_loss) )
+    return xent_loss + kl_loss, z_mean, z_log_var
+    #return float(np.mean(xent_loss + kl_loss) )
 

@@ -164,6 +164,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
             #optimizer = Adam(lr=lr, clipvalue=10)                
             #vae_autoencoder.compile(optimizer=optimizer, loss=None)
             vae_autoencoder.compile(optimizer='adam', loss=None)
+            #vae_autoencoder.compile(optimizer='adagrad', loss=None)
 
         # ---------------------------------------------------------------------------------
         nDim         = len(x_train[0][0])
