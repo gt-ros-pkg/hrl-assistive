@@ -54,7 +54,9 @@ import gc
 
 def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=500, \
              patience=20, fine_tuning=False, save_weights_file=None, \
-             noise_mag=0.0, min_std=0.001, timesteps=4, sam_epoch=1, re_load=False, plot=True):
+             noise_mag=0.0, timesteps=4, sam_epoch=1, \
+             x_std_div=1, x_std_offset=0.001,             
+             re_load=False, plot=True):
     """
     Variational Autoencoder with two LSTMs and one fully-connected layer
     x_train is (sample x length x dim)
@@ -112,7 +114,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
         def call(self, args):
             x = args[0]
             x_d_mean = args[1][:,:,:input_dim]
-            x_d_std  = args[1][:,:,input_dim:]/2.0 + min_std
+            x_d_std  = args[1][:,:,input_dim:]/x_std_div + x_std_offset
             
             loss = self.vae_loss(x, x_d_mean, x_d_std)
             self.add_loss(loss, inputs=args)
@@ -248,30 +250,21 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
         nDim = len(x_test[0,0])
         
         for i in xrange(len(x_test)):
+            print i
 
             vae_autoencoder.reset_states()
             vae_mean_std.reset_states()
+            
             x_pred_mean = []
             x_pred_std  = []
             for j in xrange(len(x_test[i])-timesteps+1):
                 x_pred = vae_mean_std.predict(x_test[i:i+1,j:j+timesteps])
                 x_pred_mean.append(x_pred[0,-1,:nDim])
-                x_pred_std.append(np.sqrt(x_pred[0,-1,nDim:])+min_std)
+                x_pred_std.append(x_pred[0,-1,nDim:]/x_std_div+x_std_offset)
 
             vutil.graph_variations(x_test[i], x_pred_mean, x_pred_std)
         
 
 
     return vae_autoencoder, vae_mean_std, vae_mean_std, vae_encoder_mean, vae_encoder_var, generator
-
-
-## class ResetStatesCallback(Callback):
-##     def __init__(self, max_len):
-##         self.counter = 0
-##         self.max_len = max_len
-        
-##     def on_batch_begin(self, batch, logs={}):
-##         if self.counter % self.max_len == 0:
-##             self.model.reset_states()
-##         self.counter += 1
 

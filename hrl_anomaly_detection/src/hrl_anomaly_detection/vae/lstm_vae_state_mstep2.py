@@ -178,13 +178,25 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
             for sample in xrange(sam_epoch):
                 for i in xrange(len(x_train)):
                     seq_tr_loss = []
-                    for j in xrange(len(x_train[i])-timesteps+1):
+
+                    shift_offset = int(np.random.normal(0,2,size=1))
+                    if shift_offset>0:
+                        x = np.pad(x_train[i],((0,shift_offset),(0,0)), 'edge')
+                    else:
+                        x = np.pad(x_train[i],((abs(shift_offset),0),(0,0)), 'edge')
+                        shift_offset = 0
+                    
+                    for j in xrange(len(x_train[i])-timesteps+1): # per window
                         np.random.seed(3334 + i*len(x_train[i]) + j)
                         noise = np.random.normal(0, noise_mag, (timesteps, nDim))
 
                         tr_loss = vae_autoencoder.train_on_batch(
-                            np.expand_dims(x_train[i,j:j+timesteps]+noise, axis=0),
-                            np.expand_dims(x_train[i,j:j+timesteps]+noise, axis=0))
+                            np.expand_dims(x[j+shift_offset:j+shift_offset+timesteps]+noise, axis=0),
+                            np.expand_dims(x[j+shift_offset:j+shift_offset+timesteps]+noise, axis=0))
+
+                        ## tr_loss = vae_autoencoder.train_on_batch(
+                        ##     np.expand_dims(x_train[i,j:j+timesteps]+noise, axis=0),
+                        ##     np.expand_dims(x_train[i,j:j+timesteps]+noise, axis=0))
                         seq_tr_loss.append(tr_loss)
                     mean_tr_loss.append( np.mean(seq_tr_loss) )
                     vae_autoencoder.reset_states()
@@ -251,6 +263,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
         nDim = len(x_test[0,0])
         
         for i in xrange(len(x_test)):
+            print i
 
             vae_autoencoder.reset_states()
             vae_mean_std.reset_states()
