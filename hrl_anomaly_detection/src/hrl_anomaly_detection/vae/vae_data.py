@@ -135,6 +135,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
 
         normalTrainData, abnormalTrainData, normalTestData, abnormalTestData =\
           get_scaled_data(normalTrainData, abnormalTrainData, normalTestData, abnormalTestData, aligned=False)
+        trainData = [normalTrainData, [0]*len(normalTrainData)]
+        testData  = [normalTestData, [0]*len(normalTestData)]
 
 
         # ------------------------------------------------------------------------------------------
