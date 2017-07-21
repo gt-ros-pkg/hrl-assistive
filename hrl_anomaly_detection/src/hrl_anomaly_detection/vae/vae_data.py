@@ -117,37 +117,43 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
 
     # Parameters
     nDim = len(d['successData'])
+    batch_size  = 1 #64
 
     # split data
     # HMM-induced vector with LOPO
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(d['kFoldList']):
-        if idx == 0: continue
+        ## if idx == 0: continue
 
         # dim x sample x length
-        ## normalTrainData   = copy.deepcopy(d['successData'][:, normalTrainIdx, :])
-        ## abnormalTrainData = copy.deepcopy(d['failureData'][:, abnormalTrainIdx, :])
-        ## normalTestData    = copy.deepcopy(d['successData'][:, normalTestIdx, :]) 
-        ## abnormalTestData  = copy.deepcopy(d['failureData'][:, abnormalTestIdx, :])
+        normalTrainData   = d['successData'][:, normalTrainIdx, :]
+        abnormalTrainData = d['failureData'][:, abnormalTrainIdx, :]
+        normalTestData    = d['successData'][:, normalTestIdx, :]
+        abnormalTestData  = d['failureData'][:, abnormalTestIdx, :]
         ## normalTrainData   = np.hstack([normalTrainData, copy.deepcopy(td1['successData']), copy.deepcopy(td2['successData'])])
         ## abnormalTrainData = np.hstack([abnormalTrainData, copy.deepcopy(td1['failureData']), copy.deepcopy(td2['failureData'])])
 
+        normalTrainData, abnormalTrainData, normalTestData, abnormalTestData =\
+          get_scaled_data(normalTrainData, abnormalTrainData, normalTestData, abnormalTestData, aligned=False)
 
+
+        # ------------------------------------------------------------------------------------------
+        # TEST Code
+        # ------------------------------------------------------------------------------------------
         ## normalData   = np.hstack([copy.deepcopy(d['successData']), copy.deepcopy(td1['successData']), \
         ##                           copy.deepcopy(td2['successData'])])
         ## abnormalData = np.hstack([copy.deepcopy(d['failureData']), copy.deepcopy(td1['failureData']), \
         ##                           copy.deepcopy(td2['failureData'])])
-        normalData   = copy.deepcopy(d['successData'])
-        abnormalData = copy.deepcopy(d['failureData'])
-        # ------------------------------------------------------------------------------------------
+        ## normalData   = copy.deepcopy(d['successData'])
+        ## abnormalData = copy.deepcopy(d['failureData'])
         
-        trainData, testData, window_size, raw_data, raw_data_ft = \
-          get_batch_data(normalData, abnormalData, win=False)
-        (normalTrainData, abnormalTrainData, normalTestData, abnormalTestData) = raw_data
-        (normalTrainData_ft, abnormalTrainData_ft, normalTestData_ft, abnormalTestData_ft) = raw_data_ft
-        batch_size  = 1 #64
+        ## trainData, testData, window_size, raw_data, raw_data_ft = \
+        ##   get_batch_data(normalData, abnormalData, win=False)
+        ## (normalTrainData, abnormalTrainData, normalTestData, abnormalTestData) = raw_data
+        ## (normalTrainData_ft, abnormalTrainData_ft, normalTestData_ft, abnormalTestData_ft) = raw_data_ft
+        # ------------------------------------------------------------------------------------------        
          
-        weights_path = os.path.join(save_data_path,'tmp_weights_'+str(idx)+'.h5')
+        weights_path = os.path.join(save_data_path,'model_weights_'+str(idx)+'.h5')
         ## weights_path = os.path.join(save_data_path,'tmp_fine_weights_'+str(idx)+'.h5')
         vae_mean   = None
         vae_logvar = None
@@ -192,10 +198,10 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         from hrl_anomaly_detection.vae import lstm_vae_state_mstep2 as km
         window_size = 10
         x_std_div   = 2
-        x_std_offset= 0.0001
+        x_std_offset= 0.05
         autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
          km.lstm_vae(trainData, testData, weights_path, patience=4, batch_size=batch_size,
-                     noise_mag=0.05, timesteps=window_size, sam_epoch=10,
+                     noise_mag=0.1, timesteps=window_size, sam_epoch=10,
                      x_std_div = x_std_div, x_std_offset=x_std_offset,
                      re_load=re_load, fine_tuning=fine_tuning, plot=plot) 
         
@@ -228,7 +234,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         ##                                                             save_weights_file=save_weights_path)
 
 
-        if True :
+        if True and False:
             if True and False:
                 # get optimized alpha
                 save_pkl = os.path.join(save_data_path, 'tmp_data.pkl')
@@ -249,63 +255,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                                  x_std_div = x_std_div, x_std_offset=x_std_offset)
 
 
-        
-        if plot:
-            if enc_z_mean is not None and False:
-                # display a 2D plot of classes in the latent space
-                x_n_encoded  = enc_z_mean.predict(normalTrainData_ft)
-                x_ab_encoded = enc_z_mean.predict(abnormalTrainData_ft)
 
-                plt.figure(figsize=(6, 6))
-                plt.plot(x_n_encoded[:, 0], x_n_encoded[:, 1], '.b', ms=5, mec='b', mew=0)
-                plt.plot(x_ab_encoded[:, 0], x_ab_encoded[:, 1], '.r', ms=5, mec='r', mew=0)
-                plt.show()
-                
-            if vae_mean is None: vae_mean = autoencoder
-
-
-            # display generated data
-            for i in xrange(len(normalTrainData)):
-                print i
-
-                if stateful:
-                    vae_mean.reset_states()
-
-                
-                if window_size is not None:
-                    x = vutil.sampleWithWindow(normalTrainData[i:i+1], window=window_size)
-                    x = np.array(x)
-
-
-                    x_true = []
-                    x_pred_mean = []
-                    x_pred_std  = []
-                    for j in xrange(len(x)): # per window
-                        x_new = vae_mean.predict(x[j:j+1])
-                        x_true.append(x[j][-1])
-                        x_pred_mean.append(x_new[0,-1][:nDim])
-
-                        if len(x_new[0,-1])>nDim:                        
-                            x_pred_std.append(np.sqrt(x_new[0,-1][nDim:]+1e-10))
-
-
-                    vutil.graph_variations(x_true, x_pred_mean, x_pred_std)
-                        
-                else:
-                    x = normalTrainData[i:i+1]
-                    x_new = vae_mean.predict(x)[0]
-                    x_pred_mean = x_new[:,:nDim]
-                    if len(x_new[0])>nDim:
-                        x_pred_std = np.sqrt(x_new[:,nDim:]+1e-10)
-                    else:
-                        x_pred_std = []
-
-                    vutil.graph_variations(x_true, x_pred_mean, x_pred_std)
-        
-        return
-    
-    # flatten data window 1
-    #def train_vae_classifier() 
 
 def gen_data(subject_names, task_name, raw_data_path, processed_data_path, param_dict):
     ## Parameters
@@ -493,70 +443,9 @@ def get_batch_data(normalData, abnormalData, win=False):
     abnormalTrainData, abnormalTestData\
     = abnormalData[:int(len(abnormalData)*ratio)],abnormalData[int(len(abnormalData)*ratio):]
 
-
-    ## # dim x sample x length => sample x length x dim
-    ## normalTrainData   = np.swapaxes(normalTrainData, 0,1 )
-    ## normalTrainData   = np.swapaxes(normalTrainData, 1,2 )
-    ## abnormalTrainData = np.swapaxes(abnormalTrainData, 0,1 )
-    ## abnormalTrainData = np.swapaxes(abnormalTrainData, 1,2 )
-
-    ## # dim x sample x length => sample x length x dim
-    ## normalTestData   = np.swapaxes(normalTestData, 0,1 )
-    ## normalTestData   = np.swapaxes(normalTestData, 1,2 )
-    ## abnormalTestData = np.swapaxes(abnormalTestData, 0,1 )
-    ## abnormalTestData = np.swapaxes(abnormalTestData, 1,2 )
-
-    # normalization => (sample x dim) ----------------------------------
-    from sklearn import preprocessing
-    scaler = preprocessing.MinMaxScaler(feature_range=(0, 1))
-    scaler = preprocessing.StandardScaler() 
-
-
-    normalTrainData_scaled   = scaler.fit_transform(normalTrainData.reshape(-1,len(normalTrainData[0][0])))
-    abnormalTrainData_scaled = scaler.transform(abnormalTrainData.reshape(-1,len(abnormalTrainData[0][0])))
-    normalTestData_scaled    = scaler.transform(normalTestData.reshape(-1,len(normalTestData[0][0])))
-    abnormalTestData_scaled  = scaler.transform(abnormalTestData.reshape(-1,len(abnormalTestData[0][0])))
-
-    # rescale 95%of values into 0-1
-    def rescaler(x, mean, var):
-        
-        max_val = 1.7 #1.9#mean+3.0*np.sqrt(var)
-        min_val = -1.7 #mean-3.0*np.sqrt(var)
-        return (x-min_val)/( max_val-min_val )
+    normalTrainData, abnormalTrainData, normalTestData, abnormalTestData =\
+      get_scaled_data(normalTrainData, abnormalTrainData, normalTestData, abnormalTestData, aligned=True)
     
-    normalTrainData_scaled   = rescaler(normalTrainData_scaled, scaler.mean_, scaler.var_)
-    abnormalTrainData_scaled = rescaler(abnormalTrainData_scaled, scaler.mean_, scaler.var_)
-    normalTestData_scaled    = rescaler(normalTestData_scaled, scaler.mean_, scaler.var_)
-    abnormalTestData_scaled  = rescaler(abnormalTestData_scaled, scaler.mean_, scaler.var_)
-
-
-
-    # reshape
-    normalTrainData   = normalTrainData_scaled.reshape(np.shape(normalTrainData))
-    abnormalTrainData = abnormalTrainData_scaled.reshape(np.shape(abnormalTrainData))
-    normalTestData   = normalTestData_scaled.reshape(np.shape(normalTestData))
-    abnormalTestData  = abnormalTestData_scaled.reshape(np.shape(abnormalTestData))
-    #----------------------------------------------------------------------
-
-    ## for i in xrange(len(normalTrainData[0][0])):
-    ##     print np.amin(normalTrainData[:,:,i]), np.amax(normalTrainData[:,:,i]), np.amin(normalTestData[:,:,i]), np.amax(normalTestData[:,:,i])
-
-    ## fig = plt.figure(figsize=(6, 6))
-    ## normalData   = normalTrainData
-    ## for i in xrange(len(normalData[0][0])):
-    ##     fig.add_subplot(6,2,i+1)
-    ##     for j in xrange(len(normalData)):
-    ##         if j>20: break
-    ##         plt.plot(np.array(normalData)[j][:,i], '-b')
-    ## normalData   = normalTestData
-    ## for i in xrange(len(normalData[0][0])):
-    ##     fig.add_subplot(6,2,i+1)
-    ##     for j in xrange(len(normalData)):
-    ##         if j>20: break
-    ##         plt.plot(np.array(normalData)[j][:,i], '-r')
-    ## plt.show()
-    ## sys.exit()
-
 
     if win:
         window_size = 20
@@ -588,6 +477,57 @@ def get_batch_data(normalData, abnormalData, win=False):
     raw_data_ft = (normalTrainData_ft, abnormalTrainData_ft, normalTestData_ft, abnormalTestData_ft)
     return trainData_win, testData_win, window_size, raw_data, raw_data_ft
 
+
+def get_scaled_data(normalTrainData, abnormalTrainData, normalTestData, abnormalTestData, aligned=True):
+    '''
+    Remove outlier and scale into 0-1 range
+    '''
+
+    if aligned is False:
+        # dim x sample x length => sample x length x dim
+        normalTrainData   = np.swapaxes(normalTrainData, 0,1 )
+        normalTrainData   = np.swapaxes(normalTrainData, 1,2 )
+        abnormalTrainData = np.swapaxes(abnormalTrainData, 0,1 )
+        abnormalTrainData = np.swapaxes(abnormalTrainData, 1,2 )
+
+        # dim x sample x length => sample x length x dim
+        normalTestData   = np.swapaxes(normalTestData, 0,1 )
+        normalTestData   = np.swapaxes(normalTestData, 1,2 )
+        abnormalTestData = np.swapaxes(abnormalTestData, 0,1 )
+        abnormalTestData = np.swapaxes(abnormalTestData, 1,2 )
+        
+
+    # normalization => (sample x dim) ----------------------------------
+    from sklearn import preprocessing
+    scaler = preprocessing.MinMaxScaler(feature_range=(0, 1))
+    scaler = preprocessing.StandardScaler() 
+
+
+    normalTrainData_scaled   = scaler.fit_transform(normalTrainData.reshape(-1,len(normalTrainData[0][0])))
+    abnormalTrainData_scaled = scaler.transform(abnormalTrainData.reshape(-1,len(abnormalTrainData[0][0])))
+    normalTestData_scaled    = scaler.transform(normalTestData.reshape(-1,len(normalTestData[0][0])))
+    abnormalTestData_scaled  = scaler.transform(abnormalTestData.reshape(-1,len(abnormalTestData[0][0])))
+
+    # rescale 95%of values into 0-1
+    def rescaler(x, mean, var):
+        
+        max_val = 1.7 #1.9#mean+3.0*np.sqrt(var)
+        min_val = -1.7 #mean-3.0*np.sqrt(var)
+        return (x-min_val)/( max_val-min_val )
+    
+    normalTrainData_scaled   = rescaler(normalTrainData_scaled, scaler.mean_, scaler.var_)
+    abnormalTrainData_scaled = rescaler(abnormalTrainData_scaled, scaler.mean_, scaler.var_)
+    normalTestData_scaled    = rescaler(normalTestData_scaled, scaler.mean_, scaler.var_)
+    abnormalTestData_scaled  = rescaler(abnormalTestData_scaled, scaler.mean_, scaler.var_)
+
+    # reshape
+    normalTrainData   = normalTrainData_scaled.reshape(np.shape(normalTrainData))
+    abnormalTrainData = abnormalTrainData_scaled.reshape(np.shape(abnormalTrainData))
+    normalTestData   = normalTestData_scaled.reshape(np.shape(normalTestData))
+    abnormalTestData  = abnormalTestData_scaled.reshape(np.shape(abnormalTestData))
+
+    return normalTrainData, abnormalTrainData, normalTestData, abnormalTestData
+    
 
 def get_optimal_alpha(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generator,
                       normalTrainData, window_size, save_pkl=None):
