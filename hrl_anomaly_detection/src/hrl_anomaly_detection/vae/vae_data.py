@@ -66,7 +66,7 @@ np.random.seed(3334)
 
 
 def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, param_dict, plot=False,
-              re_load=False, fine_tuning=False):
+              re_load=False, fine_tuning=False, dyn_ths=False):
     ## Parameters
     data_dict  = param_dict['data_param']
     data_renew = data_dict['renew']
@@ -255,7 +255,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                                  normalTrainData, abnormalTrainData,\
                                  normalTestData, abnormalTestData, \
                                  window_size, alpha, save_pkl=save_pkl, stateful=stateful,
-                                 x_std_div = x_std_div, x_std_offset=x_std_offset)
+                                 x_std_div = x_std_div, x_std_offset=x_std_offset, dyn_ths=opt.bDynThs)
 
 
 
@@ -726,6 +726,8 @@ if __name__ == '__main__':
                  default=False, help='Reload previous parameters.')
     p.add_option('--fint_tuning', '--ftn', action='store_true', dest='bFineTune',
                  default=False, help='Run fine tuning.')
+    p.add_option('--dyn_ths', '--dt', action='store_true', dest='bDynThs',
+                 default=False, help='Run dynamic threshold.')
 
     opt, args = p.parse_args()
 
@@ -790,7 +792,7 @@ if __name__ == '__main__':
 
     elif opt.lstm_test:
         lstm_test(subjects, opt.task, raw_data_path, save_data_path, param_dict, plot=not opt.bNoPlot,
-                  re_load=opt.bReLoad, fine_tuning=opt.bFineTune)
+                  re_load=opt.bReLoad, fine_tuning=opt.bFineTune, dyn_ths=opt.bDynThs)
 
     elif opt.bFeaturePlot:
         

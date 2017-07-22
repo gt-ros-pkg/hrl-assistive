@@ -52,20 +52,21 @@ matplotlib.rcParams['ps.fonttype'] = 42
 def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, generator,
                       normalTrainData, abnormalTrainData,\
                       normalTestData, abnormalTestData, window_size, \
-                      alpha, save_pkl=None, stateful=False, x_std_div=1.0, x_std_offset=1e-10):
+                      alpha, save_pkl=None, stateful=False, x_std_div=1.0, x_std_offset=1e-10,\
+                      dyn_ths=False):
 
     if os.path.isfile(save_pkl) and False:
         d = ut.load_pickle(save_pkl)
-        ## scores_tr_n = d['scores_tr_n']
-        ## zs_tr_n = d['zs_tr_n']
+        scores_tr_n = d['scores_tr_n']
+        zs_tr_n = d['zs_tr_n']
         scores_te_n = d['scores_te_n']
         scores_te_a = d['scores_te_a']
         zs_te_n = d['zs_te_n']
         zs_te_a = d['zs_te_a']
     else:
-        ## scores_tr_n, zs_tr_n = get_anomaly_score(normalTrainData, vae_mean, enc_z_mean, enc_z_logvar,
-        ##                                          window_size, alpha, stateful=stateful,
-        ##                                          x_std_div=x_std_div, x_std_offset=x_std_offset)
+        scores_tr_n, zs_tr_n = get_anomaly_score(normalTrainData, vae_mean, enc_z_mean, enc_z_logvar,
+                                                 window_size, alpha, stateful=stateful,
+                                                 x_std_div=x_std_div, x_std_offset=x_std_offset)
         
         scores_te_n, zs_te_n = get_anomaly_score(normalTestData, vae_mean, enc_z_mean, enc_z_logvar,
                                      window_size, alpha, stateful=stateful,
@@ -75,8 +76,8 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
                                      x_std_div=x_std_div, x_std_offset=x_std_offset)
         
         d = {}
-        ## d['scores_tr_n'] = scores_tr_n
-        ## d['zs_tr_n']     = zs_tr_n
+        d['scores_tr_n'] = scores_tr_n
+        d['zs_tr_n']     = zs_tr_n
         d['scores_te_n'] = scores_te_n
         d['zs_te_n']     = zs_te_n
         d['scores_te_a'] = scores_te_a
@@ -84,13 +85,13 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         ut.save_pickle(d, save_pkl)
 
 
+    if dyn_ths:
+        from sklearn.svm import SVR
+        clf = SVR(C=1.0, epsilon=0.2, kernel='rbf')
 
-    ## from sklearn.svm import SVR
-    ## clf = SVR(C=1.0, epsilon=0.2, kernel='rbf')
-
-    ## x = np.array(zs_tr_n).reshape(-1,np.shape(zs_tr_n)[-1])
-    ## y = np.array(scores_tr_n).reshape(-1,np.shape(scores_tr_n)[-1])
-    ## clf.fit(x, y)
+        x = np.array(zs_tr_n).reshape(-1,np.shape(zs_tr_n)[-1])
+        y = np.array(scores_tr_n).reshape(-1,np.shape(scores_tr_n)[-1])
+        clf.fit(x, y)
 
     ## for i, s_true in enumerate(scores_n):
     ##     s_pred = clf.predict(zs_n[i])        
@@ -119,9 +120,10 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         fn_l = []
         for i, s in enumerate(scores_te_n):
             for j in xrange(len(s)):
-                ## s_pred = clf.predict(zs_te_n[i][j])
+                if dyn_ths: s_pred = clf.predict(zs_te_n[i][j])
+                else: s_pred = 0
                 
-                if s[j]>ths: #s_pred+ths:
+                if s[j]>s_pred+ths:
                     fp_l.append(1)
                     break
                 elif j == len(s)-1:
@@ -129,9 +131,10 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
 
         for i, s in enumerate(scores_te_a):
             for j in xrange(len(s)):
-                ## s_pred = clf.predict(zs_te_a[i][j])
+                if dyn_ths: s_pred = clf.predict(zs_te_a[i][j])
+                else: s_pred = 0
                 
-                if s[j]>ths: #s_pred+ths:
+                if s[j]>s_pred+ths:
                     tp_l.append(1)
                     break
                 elif j == len(s)-1:
