@@ -3,7 +3,7 @@ import numpy as np
 
 
 def getParams(task, bDataRenew, bHMMRenew, bCFRenew, dim=0, rf_center='kinEEPos',\
-              local_range=10.0, bAESwitch=False, nPoints=None ):
+              local_range=10.0, bAESwitch=False, nPoints=None):
 
     #---------------------------------------------------------------------------
     if task == 'scooping':

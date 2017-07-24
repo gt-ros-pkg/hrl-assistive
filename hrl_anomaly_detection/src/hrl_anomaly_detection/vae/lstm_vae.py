@@ -46,6 +46,7 @@ from keras import backend as K
 from keras import objectives
 
 from hrl_anomaly_detection.vae import keras_util as ku
+from hrl_anomaly_detection.vae import util as vutil
 
 import gc
 
@@ -53,7 +54,7 @@ import gc
 
 def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=500, \
              patience=20, fine_tuning=False, save_weights_file=None, steps_per_epoch=512,\
-             noise_mag=0.0, re_load=False):
+             noise_mag=0.0, re_load=False, plot=True):
     """
     Variational Autoencoder with two LSTMs and one fully-connected layer
     x_train is (sample x length x dim)
@@ -147,7 +148,6 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
 
     if weights_file is not None and os.path.isfile(weights_file) and fine_tuning is False and re_load is False:
         vae_autoencoder.load_weights(weights_file)
-        return vae_autoencoder, vae_mean_var, vae_mean_var, vae_encoder_mean, vae_encoder_var, generator
     else:
         if re_load and os.path.isfile(weights_file):
             vae_autoencoder.load_weights(weights_file)
@@ -187,12 +187,33 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
                                              validation_data=(x_test, x_test),
                                              callbacks=callbacks)
         
-        if save_weights_file is not None:
-            vae_autoencoder.save_weights(save_weights_file)
-        else:
-            vae_autoencoder.save_weights(weights_file)
+        ## if save_weights_file is not None:
+        ##     vae_autoencoder.save_weights(save_weights_file)
+        ## else:
+        ##     vae_autoencoder.save_weights(weights_file)
 
         gc.collect()
+
+    # ---------------------------------------------------------------------------------
+    # visualize outputs
+    if False:
+        print "latent variable visualization"
+
+    if True:
+        print "variance visualization"
+        nDim = len(x_test[0,0])
         
-        return vae_autoencoder, vae_mean_var, vae_mean_var, vae_encoder_mean, vae_encoder_var, generator
+        for i in xrange(len(x_test)):
+
+            x_pred_mean = []
+            x_pred_std  = []
+            for j in xrange(len(x_test[i])):
+                x_pred = vae_mean_var.predict(x_test[i:i+1,j:j+1])
+                x_pred_mean.append(x_pred[0,0,:nDim])
+                x_pred_std.append(np.sqrt(x_pred[0,0,nDim:]))
+
+            vutil.graph_variations(x_test[i], x_pred_mean, x_pred_std)
+        
+        
+    return vae_autoencoder, vae_mean_var, vae_mean_var, vae_encoder_mean, vae_encoder_var, generator
 
