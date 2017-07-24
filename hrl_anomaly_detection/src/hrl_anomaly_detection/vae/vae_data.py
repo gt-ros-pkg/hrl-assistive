@@ -127,7 +127,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     ths_l = -np.logspace(-1,0.5,40)+1.5
     ths_l = np.linspace(127,133,40)
     #ths_l = np.logspace(0.2,1.8,40) #2.0  
-    ths_l = np.logspace(-1,1.8,40)-2.0 
+    ths_l = np.logspace(-1,2.,40)-0.5 
 
 
     tp_ll = [[] for i in xrange(len(ths_l))]
