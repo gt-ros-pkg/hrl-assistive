@@ -66,7 +66,7 @@ np.random.seed(3334)
 
 
 def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, param_dict, plot=False,
-              re_load=False, fine_tuning=False):
+              re_load=False, fine_tuning=False, dyn_ths=False):
     ## Parameters
     data_dict  = param_dict['data_param']
     data_renew = data_dict['renew']
@@ -140,6 +140,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(d['kFoldList']):
         ## if idx == 0: continue
+        np.random.shuffle(normalTrainIdx)  
 
         np.random.shuffle(normalTrainIdx)
 
@@ -152,6 +153,10 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         ##                                copy.deepcopy(td2['successData'])])
         ## abnormalTrainData = np.hstack([abnormalTrainData, copy.deepcopy(td1['failureData']),
         ##                                copy.deepcopy(td2['failureData'])])
+        #normalTrainData   = np.hstack([normalTrainData, copy.deepcopy(td1['successData']),
+        #                               copy.deepcopy(td2['successData'])])
+        #abnormalTrainData = np.hstack([abnormalTrainData, copy.deepcopy(td1['failureData']),
+        #                               copy.deepcopy(td2['failureData'])])
 
         normalTrainData, abnormalTrainData, normalTestData, abnormalTestData =\
           get_scaled_data(normalTrainData, abnormalTrainData, normalTestData, abnormalTestData, aligned=False)
@@ -296,7 +301,6 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     plt.xlim([0,100])
     plt.ylim([0,100])
     plt.show()
-
 
 
 
@@ -767,6 +771,8 @@ if __name__ == '__main__':
                  default=False, help='Reload previous parameters.')
     p.add_option('--fint_tuning', '--ftn', action='store_true', dest='bFineTune',
                  default=False, help='Run fine tuning.')
+    p.add_option('--dyn_ths', '--dt', action='store_true', dest='bDynThs',
+                 default=False, help='Run dynamic threshold.')
 
     opt, args = p.parse_args()
 
@@ -832,7 +838,7 @@ if __name__ == '__main__':
 
     elif opt.lstm_test:
         lstm_test(subjects, opt.task, raw_data_path, save_data_path, param_dict, plot=not opt.bNoPlot,
-                  re_load=opt.bReLoad, fine_tuning=opt.bFineTune)
+                  re_load=opt.bReLoad, fine_tuning=opt.bFineTune, dyn_ths=opt.bDynThs)
 
     elif opt.bFeaturePlot:
         

@@ -87,7 +87,6 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
     if dyn_ths:
         from sklearn.svm import SVR
         clf = SVR(C=1.0, epsilon=0.2, kernel='rbf', gamma=0.5)
-
         x = np.array(zs_tr_n).reshape(-1,np.shape(zs_tr_n)[-1])
         y = np.array(scores_tr_n).reshape(-1,np.shape(scores_tr_n)[-1])
         clf.fit(x, y)
