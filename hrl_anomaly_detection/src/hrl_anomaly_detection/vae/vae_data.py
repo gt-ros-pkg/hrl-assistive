@@ -105,15 +105,16 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     d['successData']    = d['successData'][feature_list]
     d['failureData']    = d['failureData'][feature_list]
 
-    subjects = ['Andrew', 'Britteney', 'Joshua', 'Jun', 'Kihan', 'Lichard', 'Shingshing', 'Sid', 'Tao']
-    raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/CORL2017/'
-    td1 = get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
-                      init_param_dict=d['param_dict'], id_num=0)
+    if fine_tuning is False:
+        subjects = ['Andrew', 'Britteney', 'Joshua', 'Jun', 'Kihan', 'Lichard', 'Shingshing', 'Sid', 'Tao']
+        raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/CORL2017/'
+        td1 = get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
+                          init_param_dict=d['param_dict'], id_num=0)
 
-    subjects = ['ari', 'park', 'jina', 'linda', 'sai', 'hyun']
-    raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/ICRA2017/'
-    td2 = get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
-                      init_param_dict=d['param_dict'], id_num=1)
+        subjects = ['ari', 'park', 'jina', 'linda', 'sai', 'hyun']
+        raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/ICRA2017/'
+        td2 = get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
+                          init_param_dict=d['param_dict'], id_num=1)
 
     # Parameters
     nDim = len(d['successData'])
@@ -131,8 +132,10 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         abnormalTrainData = d['failureData'][:, abnormalTrainIdx, :]
         normalTestData    = d['successData'][:, normalTestIdx, :]
         abnormalTestData  = d['failureData'][:, abnormalTestIdx, :]
-        normalTrainData   = np.hstack([normalTrainData, copy.deepcopy(td1['successData']), copy.deepcopy(td2['successData'])])
-        abnormalTrainData = np.hstack([abnormalTrainData, copy.deepcopy(td1['failureData']), copy.deepcopy(td2['failureData'])])
+
+        if fine_tuning is False:
+            normalTrainData   = np.hstack([normalTrainData, copy.deepcopy(td1['successData']), copy.deepcopy(td2['successData'])])
+            abnormalTrainData = np.hstack([abnormalTrainData, copy.deepcopy(td1['failureData']), copy.deepcopy(td2['failureData'])])
 
         normalTrainData, abnormalTrainData, normalTestData, abnormalTestData =\
           get_scaled_data(normalTrainData, abnormalTrainData, normalTestData, abnormalTestData, aligned=False)
@@ -206,7 +209,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
          km.lstm_vae(trainData, testData, weights_path, patience=4, batch_size=batch_size,
                      noise_mag=0.1, timesteps=window_size, sam_epoch=10,
                      x_std_div = x_std_div, x_std_offset=x_std_offset,
-                     re_load=re_load, fine_tuning=fine_tuning, plot=plot) 
+                     re_load=re_load, fine_tuning=fine_tuning, plot=False) 
         
         #------------------------------------------------------------------------------------
         ## from hrl_anomaly_detection.vae import lstm_vae_sampling as km
