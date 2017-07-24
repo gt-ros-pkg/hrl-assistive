@@ -70,6 +70,10 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     ## Parameters
     data_dict  = param_dict['data_param']
     data_renew = data_dict['renew']
+    ae_renew   = param_dict['HMM']['renew']
+    
+    if ae_renew: clf_renew = True
+    else: clf_renew  = param_dict['SVM']['renew']
     
     #------------------------------------------
     if os.path.isdir(processed_data_path) is False:
@@ -105,19 +109,29 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     d['successData']    = d['successData'][feature_list]
     d['failureData']    = d['failureData'][feature_list]
 
-    ## subjects = ['Andrew', 'Britteney', 'Joshua', 'Jun', 'Kihan', 'Lichard', 'Shingshing', 'Sid', 'Tao']
-    ## raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/CORL2017/'
-    ## td1 = get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
-    ##                   init_param_dict=d['param_dict'], id_num=0)
+    subjects = ['Andrew', 'Britteney', 'Joshua', 'Jun', 'Kihan', 'Lichard', 'Shingshing', 'Sid', 'Tao']
+    raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/CORL2017/'
+    td1 = get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
+                      init_param_dict=d['param_dict'], id_num=0)
 
-    ## subjects = ['ari', 'park', 'jina', 'linda', 'sai', 'hyun']
-    ## raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/ICRA2017/'
-    ## td2 = get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
-    ##                   init_param_dict=d['param_dict'], id_num=1)
+    subjects = ['ari', 'park', 'jina', 'linda', 'sai', 'hyun']
+    raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/ICRA2017/'
+    td2 = get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
+                      init_param_dict=d['param_dict'], id_num=1)
 
     # Parameters
     nDim = len(d['successData'])
     batch_size  = 1 #64
+
+    #ths_l = -np.logspace(-1,0.8,40)+2.0
+    ths_l = -np.logspace(-1,0.5,40)+1.5
+    ths_l = np.linspace(127,133,40)
+    ths_l = np.logspace(0.2,1.8,40) #2.0  
+
+    tp_ll = [[] for i in xrange(len(ths_l))]
+    fp_ll = [[] for i in xrange(len(ths_l))]
+    tn_ll = [[] for i in xrange(len(ths_l))]
+    fn_ll = [[] for i in xrange(len(ths_l))]
 
     # split data
     # HMM-induced vector with LOPO
@@ -125,13 +139,17 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
       in enumerate(d['kFoldList']):
         ## if idx == 0: continue
 
+        np.random.shuffle(normalTrainIdx)
+
         # dim x sample x length
         normalTrainData   = d['successData'][:, normalTrainIdx, :]
         abnormalTrainData = d['failureData'][:, abnormalTrainIdx, :]
         normalTestData    = d['successData'][:, normalTestIdx, :]
         abnormalTestData  = d['failureData'][:, abnormalTestIdx, :]
-        ## normalTrainData   = np.hstack([normalTrainData, copy.deepcopy(td1['successData']), copy.deepcopy(td2['successData'])])
-        ## abnormalTrainData = np.hstack([abnormalTrainData, copy.deepcopy(td1['failureData']), copy.deepcopy(td2['failureData'])])
+        ## normalTrainData   = np.hstack([normalTrainData, copy.deepcopy(td1['successData']),
+        ##                                copy.deepcopy(td2['successData'])])
+        ## abnormalTrainData = np.hstack([abnormalTrainData, copy.deepcopy(td1['failureData']),
+        ##                                copy.deepcopy(td2['failureData'])])
 
         normalTrainData, abnormalTrainData, normalTestData, abnormalTestData =\
           get_scaled_data(normalTrainData, abnormalTrainData, normalTestData, abnormalTestData, aligned=False)
@@ -198,14 +216,14 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
 
 
         from hrl_anomaly_detection.vae import lstm_vae_state_mstep2 as km
-        window_size = 10
+        window_size = 5
         x_std_div   = 2
         x_std_offset= 0.05
         autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
          km.lstm_vae(trainData, testData, weights_path, patience=4, batch_size=batch_size,
                      noise_mag=0.1, timesteps=window_size, sam_epoch=10,
                      x_std_div = x_std_div, x_std_offset=x_std_offset,
-                     re_load=re_load, fine_tuning=fine_tuning, plot=plot) 
+                     re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot) 
         
         #------------------------------------------------------------------------------------
         ## from hrl_anomaly_detection.vae import lstm_vae_sampling as km
@@ -221,40 +239,62 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         ## autoencoder = km.lstm_ae(trainData, testData, weights_path, patience=5, batch_size=batch_size,
         ##                          noise_mag=0.05, sam_epoch=1, re_load=re_load)
 
-
-        # ------------------------------------------------------------------------------------------
-        ## # Fine tuning
-        ## normalData   = copy.deepcopy(d['successData'])
-        ## abnormalData = copy.deepcopy(d['failureData']) 
-        ## trainData, testData, window_size, raw_data, raw_data_ft = get_batch_data(normalData, abnormalData)
-        ## (normalTrainData, abnormalTrainData, normalTestData, abnormalTestData) = raw_data
-        ## (normalTrainData_ft, abnormalTrainData_ft, normalTestData_ft, abnormalTestData_ft) = raw_data_ft
-       
-        ## save_weights_path = os.path.join(save_data_path,'tmp_fine_weights_'+str(idx)+'.h5')
-        ## autoencoder, enc_z_mean, enc_z_std, generator = km.lstm_vae(trainData, testData, weights_path,
-        ##                                                             fine_tuning=True, \
-        ##                                                             save_weights_file=save_weights_path)
-
-
         if True and False:
-            if True and False:
-                # get optimized alpha
-                save_pkl = os.path.join(save_data_path, 'tmp_data.pkl')
-                alpha = get_optimal_alpha(autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std,
-                                          generator, normalTrainData, window_size,\
-                                          save_pkl=save_pkl)
-            else:
-                alpha = np.array([1.0]*nDim)/float(nDim)
-                ## alpha = np.array([0.0]*nDim)/float(nDim)
-                ## alpha[0] = 1.0
+            # get optimized alpha
+            save_pkl = os.path.join(save_data_path, 'tmp_data.pkl')
+            alpha = get_optimal_alpha(autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std,
+                                      generator, normalTrainData, window_size,\
+                                      save_pkl=save_pkl)
+        else:
+            alpha = np.array([1.0]*nDim)/float(nDim)
+            ## alpha = np.array([0.0]*nDim)/float(nDim)
+            ## alpha[0] = 1.0
 
-            from hrl_anomaly_detection.vae import detector as dt
-            save_pkl = os.path.join(save_data_path, 'tmp_test_scores.pkl')            
-            dt.anomaly_detection(autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generator,
-                                 normalTrainData, abnormalTrainData,\
-                                 normalTestData, abnormalTestData, \
-                                 window_size, alpha, save_pkl=save_pkl, stateful=stateful,
-                                 x_std_div = x_std_div, x_std_offset=x_std_offset)
+        from hrl_anomaly_detection.vae import detector as dt
+        save_pkl = os.path.join(save_data_path, 'model_ad_scores_'+str(idx)+'.pkl')
+        tp_l, tn_l, fp_l, fn_l = \
+          dt.anomaly_detection(autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generator,
+                               normalTrainData, abnormalTrainData,\
+                               normalTestData, abnormalTestData, \
+                               window_size, alpha, ths_l=ths_l, save_pkl=save_pkl, stateful=stateful,
+                               x_std_div = x_std_div, x_std_offset=x_std_offset, plot=plot,
+                               renew=clf_renew, dyn_ths=True)
+
+
+        for i in xrange(len(ths_l)):
+            tp_ll[i] += tp_l[i]
+            fp_ll[i] += fp_l[i]
+            tn_ll[i] += tn_l[i]
+            fn_ll[i] += fn_l[i]
+
+    d = {}
+    d['tp_ll'] = tp_ll
+    d['fp_ll'] = fp_ll
+    d['tn_ll'] = tn_ll
+    d['fn_ll'] = fn_ll
+    roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
+    ut.save_pickle(d, roc_pkl)
+
+    tpr_l = []
+    fpr_l = []
+    for i in xrange(len(ths_l)):
+        tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
+        fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 ) 
+
+    print "------------------------------------------------------"
+    print tpr_l
+    print fpr_l
+
+
+    from sklearn import metrics
+    print "roc: ", metrics.auc(fpr_l, tpr_l, True)  
+    fig = plt.figure(figsize=(6,6))
+    fig.add_subplot(1,1,1)
+    plt.plot(fpr_l, tpr_l, '-*b', ms=5, mec='b')
+    plt.xlim([0,100])
+    plt.ylim([0,100])
+    plt.show()
+
 
 
 
@@ -735,6 +775,7 @@ if __name__ == '__main__':
     scale       = 1.0
     local_range = 10.0
     nPoints     = 40 #None
+    opt.bHMMRenew = opt.bAERenew
 
     from hrl_anomaly_detection.vae.vae_params import *
     raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \

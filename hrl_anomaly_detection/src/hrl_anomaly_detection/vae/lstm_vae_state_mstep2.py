@@ -56,7 +56,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
              patience=20, fine_tuning=False, save_weights_file=None, \
              noise_mag=0.0, timesteps=4, sam_epoch=1, \
              x_std_div=1, x_std_offset=0.001,             
-             re_load=False, plot=True):
+             re_load=False, renew=False, plot=True):
     """
     Variational Autoencoder with two LSTMs and one fully-connected layer
     x_train is (sample x length x dim)
@@ -85,7 +85,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
     
     def sampling(args):
         z_mean, z_log_var = args
-        epsilon = K.random_normal(shape=K.shape(z_mean), mean=0., stddev=1.0)
+        epsilon = K.random_normal(shape=K.shape(z_mean), mean=0., stddev=0.5)
         #epsilon = K.random_normal(shape=(z_dim,), mean=0., stddev=1.0)
         return z_mean + K.exp(z_log_var/2.0) * epsilon    
         
@@ -148,7 +148,8 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
     # VAE --------------------------------------
     vae_mean_std = Model(inputs, decoded)
 
-    if weights_file is not None and os.path.isfile(weights_file) and fine_tuning is False and re_load is False:
+    if weights_file is not None and os.path.isfile(weights_file) and fine_tuning is False and\
+        re_load is False and renew is False:
         vae_autoencoder.load_weights(weights_file)
     else:
         if fine_tuning:
