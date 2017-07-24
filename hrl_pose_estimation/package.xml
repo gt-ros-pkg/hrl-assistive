@@ -1,7 +1,7 @@
 <package>
   <name>hrl_pose_estimation</name>
   <version>0.0.1</version>
-  <description>hrl_pose_estimation/description>
+  <description>hrl_pose_estimation</description>
   <maintainer email="henryclever@gatech.edu">Henry M. Clever</maintainer>
 
   <license>BSD</license>

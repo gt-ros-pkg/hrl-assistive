@@ -5,15 +5,6 @@ find_package(catkin REQUIRED COMPONENTS rospy roscpp std_msgs geometry_msgs tf t
 
 catkin_python_setup()
 
-add_service_files(
-    DIRECTORY srv  
-    FILES
-)
-
-add_message_files(DIRECTORY msg
-  FILES
-)
-
 generate_messages(
     DEPENDENCIES geometry_msgs std_msgs sensor_msgs
 )
