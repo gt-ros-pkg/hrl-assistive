@@ -23,7 +23,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/base_link_v2.STL" />
+          filename="package://hrl_pose_estimation/urdf/bed_and_environment_henry_tray/meshes/base_link_v2.STL" />
       </geometry>
     </visual>
     <collision>
@@ -32,7 +32,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/base_link_v2.STL" />
+          filename="package://hrl_pose_estimation/urdf/bed_and_environment_henry_tray/meshes/base_link_v2.STL" />
       </geometry>
     </collision>
   </link>
@@ -58,7 +58,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/wall_link_v2.STL" />
+          filename="package://hrl_pose_estimation/urdf/bed_and_environment_henry_tray/meshes/wall_link_v2.STL" />
       </geometry>
     </visual>
     <collision>
@@ -67,7 +67,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/wall_link_v2.STL" />
+          filename="package://hrl_pose_estimation/urdf/bed_and_environment_henry_tray/meshes/wall_link_v2.STL" />
       </geometry>
     </collision>
   </link>
@@ -106,7 +106,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/bed_frame_link_v2.STL" />
+          filename="package://hrl_pose_estimation/urdf/bed_and_environment_henry_tray/meshes/bed_frame_link_v2.STL" />
       </geometry>
     </visual>
     <collision>
@@ -115,7 +115,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/bed_frame_link_v2.STL" />
+          filename="package://hrl_pose_estimation/urdf/bed_and_environment_henry_tray/meshes/bed_frame_link_v2.STL" />
       </geometry>
     </collision>
   </link>
@@ -159,7 +159,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/leg_rest_upper_v2.STL" />
+          filename="package://hrl_pose_estimation/urdf/bed_and_environment_henry_tray/meshes/leg_rest_upper_v2.STL" />
       </geometry>
     </visual>
     <collision>
@@ -168,7 +168,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/leg_rest_upper_v2.STL" />
+          filename="package://hrl_pose_estimation/urdf/bed_and_environment_henry_tray/meshes/leg_rest_upper_v2.STL" />
       </geometry>
     </collision>
   </link>
@@ -212,7 +212,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/leg_rest_lower_v2.STL" />
+          filename="package://hrl_pose_estimation/urdf/bed_and_environment_henry_tray/meshes/leg_rest_lower_v2.STL" />
       </geometry>
     </visual>
     <collision>
@@ -221,7 +221,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/leg_rest_lower_v2.STL" />
+          filename="package://hrl_pose_estimation/urdf/bed_and_environment_henry_tray/meshes/leg_rest_lower_v2.STL" />
       </geometry>
     </collision>
   </link>
@@ -265,7 +265,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/head_rest_link_v2.STL" />
+          filename="package://hrl_pose_estimation/urdf/bed_and_environment_henry_tray/meshes/head_rest_link_v2.STL" />
       </geometry>
     </visual>
     <collision>
@@ -274,7 +274,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/head_rest_link_v2.STL" />
+          filename="package://hrl_pose_estimation/urdf/bed_and_environment_henry_tray/meshes/head_rest_link_v2.STL" />
       </geometry>
     </collision>
   </link>
@@ -454,7 +454,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/neck_link.STL" />
+          filename="package://hrl_pose_estimation/urdf/bed_and_environment_henry_tray/meshes/neck_link.STL" />
       </geometry>
       <material
         name="">
@@ -468,7 +468,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/neck_link.STL" />
+          filename="package://hrl_pose_estimation/urdf/bed_and_environment_henry_tray/meshes/neck_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -555,7 +555,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/head_link.STL" />
+          filename="package://hrl_pose_estimation/urdf/bed_and_environment_henry_tray/meshes/head_link.STL" />
       </geometry>
       <material
         name="">
@@ -569,7 +569,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/head_link.STL" />
+          filename="package://hrl_pose_estimation/urdf/bed_and_environment_henry_tray/meshes/head_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -599,7 +599,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/upper_body_link.STL" />
+          filename="package://hrl_pose_estimation/urdf/bed_and_environment_henry_tray/meshes/upper_body_link.STL" />
       </geometry>
       <material
         name="">
@@ -613,7 +613,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/upper_body_link.STL" />
+          filename="package://hrl_pose_estimation/urdf/bed_and_environment_henry_tray/meshes/upper_body_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -643,7 +643,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/mid_body_link.STL" />
+          filename="package://hrl_pose_estimation/urdf/bed_and_environment_henry_tray/meshes/mid_body_link.STL" />
       </geometry>
       <material
         name="">
@@ -657,7 +657,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/mid_body_link.STL" />
+          filename="package://hrl_pose_estimation/urdf/bed_and_environment_henry_tray/meshes/mid_body_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -687,7 +687,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/lower_body_link.STL" />
+          filename="package://hrl_pose_estimation/urdf/bed_and_environment_henry_tray/meshes/lower_body_link.STL" />
       </geometry>
       <material
         name="">
@@ -701,7 +701,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/lower_body_link.STL" />
+          filename="package://hrl_pose_estimation/urdf/bed_and_environment_henry_tray/meshes/lower_body_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -731,7 +731,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/quad_left_link.STL" />
+          filename="package://hrl_pose_estimation/urdf/bed_and_environment_henry_tray/meshes/quad_left_link.STL" />
       </geometry>
       <material
         name="">
@@ -745,7 +745,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/quad_left_link.STL" />
+          filename="package://hrl_pose_estimation/urdf/bed_and_environment_henry_tray/meshes/quad_left_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -775,7 +775,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/calf_left_link.STL" />
+          filename="package://hrl_pose_estimation/urdf/bed_and_environment_henry_tray/meshes/calf_left_link.STL" />
       </geometry>
       <material
         name="">
@@ -789,7 +789,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/calf_left_link.STL" />
+          filename="package://hrl_pose_estimation/urdf/bed_and_environment_henry_tray/meshes/calf_left_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -819,7 +819,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/foot_left_link.STL" />
+          filename="package://hrl_pose_estimation/urdf/bed_and_environment_henry_tray/meshes/foot_left_link.STL" />
       </geometry>
       <material
         name="">
@@ -833,7 +833,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/foot_left_link.STL" />
+          filename="package://hrl_pose_estimation/urdf/bed_and_environment_henry_tray/meshes/foot_left_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -863,7 +863,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/quad_right_link.STL" />
+          filename="package://hrl_pose_estimation/urdf/bed_and_environment_henry_tray/meshes/quad_right_link.STL" />
       </geometry>
       <material
         name="">
@@ -877,7 +877,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/quad_right_link.STL" />
+          filename="package://hrl_pose_estimation/urdf/bed_and_environment_henry_tray/meshes/quad_right_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -907,7 +907,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/calf_right_link.STL" />
+          filename="package://hrl_pose_estimation/urdf/bed_and_environment_henry_tray/meshes/calf_right_link.STL" />
       </geometry>
       <material
         name="">
@@ -921,7 +921,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/calf_right_link.STL" />
+          filename="package://hrl_pose_estimation/urdf/bed_and_environment_henry_tray/meshes/calf_right_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -951,7 +951,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/foot_right_link.STL" />
+          filename="package://hrl_pose_estimation/urdf/bed_and_environment_henry_tray/meshes/foot_right_link.STL" />
       </geometry>
       <material
         name="">
@@ -965,7 +965,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/foot_right_link.STL" />
+          filename="package://hrl_pose_estimation/urdf/bed_and_environment_henry_tray/meshes/foot_right_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -995,7 +995,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/arm_left_link.STL" />
+          filename="package://hrl_pose_estimation/urdf/bed_and_environment_henry_tray/meshes/arm_left_link.STL" />
       </geometry>
       <material
         name="">
@@ -1009,7 +1009,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/arm_left_link.STL" />
+          filename="package://hrl_pose_estimation/urdf/bed_and_environment_henry_tray/meshes/arm_left_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -1039,7 +1039,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/forearm_left_link.STL" />
+          filename="package://hrl_pose_estimation/urdf/bed_and_environment_henry_tray/meshes/forearm_left_link.STL" />
       </geometry>
       <material
         name="">
@@ -1053,7 +1053,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/forearm_left_link.STL" />
+          filename="package://hrl_pose_estimation/urdf/bed_and_environment_henry_tray/meshes/forearm_left_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -1083,7 +1083,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/hand_left_link.STL" />
+          filename="package://hrl_pose_estimation/urdf/bed_and_environment_henry_tray/meshes/hand_left_link.STL" />
       </geometry>
       <material
         name="">
@@ -1097,7 +1097,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/hand_left_link.STL" />
+          filename="package://hrl_pose_estimation/urdf/bed_and_environment_henry_tray/meshes/hand_left_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -1127,7 +1127,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/arm_right_link.STL" />
+          filename="package://hrl_pose_estimation/urdf/bed_and_environment_henry_tray/meshes/arm_right_link.STL" />
       </geometry>
       <material
         name="">
@@ -1141,7 +1141,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/arm_right_link.STL" />
+          filename="package://hrl_pose_estimation/urdf/bed_and_environment_henry_tray/meshes/arm_right_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -1171,7 +1171,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/forearm_right_link.STL" />
+          filename="package://hrl_pose_estimation/urdf/bed_and_environment_henry_tray/meshes/forearm_right_link.STL" />
       </geometry>
       <material
         name="">
@@ -1185,7 +1185,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/forearm_right_link.STL" />
+          filename="package://hrl_pose_estimation/urdf/bed_and_environment_henry_tray/meshes/forearm_right_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -1215,7 +1215,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/hand_right_link.STL" />
+          filename="package://hrl_pose_estimation/urdf/bed_and_environment_henry_tray/meshes/hand_right_link.STL" />
       </geometry>
       <material
         name="">
@@ -1229,7 +1229,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_henry_tray/meshes/hand_right_link.STL" />
+          filename="package://hrl_pose_estimation/urdf/bed_and_environment_henry_tray/meshes/hand_right_link.STL" />
       </geometry>
     </collision>
   </link>
