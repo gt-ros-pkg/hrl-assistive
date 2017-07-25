@@ -60,6 +60,11 @@ QUEUE_SIZE = 10
 class DlibFaceLandmarkDetector:
 
     def __init__(self, img_topic='/SR300/rgb/image_raw'):
+        # Constants
+        self.feed_seconds = 2.0
+        self.scoop_seconds = 2.0
+        self.stop_seconds = 2.0
+
         # Make window.
         self.win = dlib.image_window()
 
@@ -134,6 +139,9 @@ class DlibFaceLandmarkDetector:
         self.prev_covariance = init_covariance
         self.prev_vel = 0
 
+        # Wiping 
+        self.wiping_start = True
+        self.wiping_outlier = 0
 
     def guiCallback(self, msg):
         self.gui_status = msg.data
@@ -165,7 +173,7 @@ class DlibFaceLandmarkDetector:
         console_status = ''
 
         # Face detection ----------------------------------------------------------------------------------------------------------
-        # Detect face every 4 frames (speedup).
+        # Detect face every 4 (or 2) frames (speedup).
         if (self.count%self.frame_num) == 0:
             self.dets = self.detector(gray_img, 1)
             self.count += 1
@@ -227,7 +235,8 @@ class DlibFaceLandmarkDetector:
                 self.scoop_outliers = 0
                 if self.scoop_condition:
                     elapsed = time.time() - self.scoop_timer
-                    if elapsed > 2.0:
+                    if elapsed > self.scoop_seconds:
+                        print 'scooping condition met, gui status: {}'.format(self.gui_status)
                         if (self.gui_status == 'select task') or (self.gui_status == 'stopped'):
                             self.statusPub.publish('Scooping')
                             self.availablePub.publish('true')
@@ -243,9 +252,31 @@ class DlibFaceLandmarkDetector:
                     self.scoop_condition = True
             elif self.scoop_outliers <= 5:
                 status = 'OPEN, LEFT'
+                print 'scoop outlier #{}'.format(self.scoop_outliers)
                 self.scoop_outliers += 1
             else:
                 self.scoop_condition = False
+
+            # Wiping condition check
+            if not self.wiping_start:
+                if mouth_open and not head_rotated:
+                    self.wiping_start = True
+                    self.wiping_outlier = 0
+            else:
+                if (not mouth_open) or (next_state[1] > 0):
+                    if self.wiping_outlier < 3: self.wiping_outlier += 1
+                    else: self.wiping_start = False
+                elif ratio_kalman < 0.4:
+                    self.publish_wipe = True
+                    print 'wiping condition met, gui status: {}'.format(self.gui_status)
+                    if (self.gui_status == 'select task') or (self.gui_status == 'stopped'):
+                        self.statusPub.publish('Wiping')
+                        self.availablePub.publish('true')
+                        self.userInputPub.publish('Start')
+                        print 'wiping command published'
+                        self.sound_handle.say('Wipe ing')
+                    elif self.gui_status == 'wait start':
+                        self.userInputPub.publish('Start')
 
             # -----------------------------------------------------------------
             # Update conditions_met bool.
@@ -255,6 +286,7 @@ class DlibFaceLandmarkDetector:
                 self.outliers = 0
             elif self.conditions_met and mouth_open and (self.outliers < 5):
                 self.outliers += 1
+                print 'feeding outlier #{}'.format(self.outliers)
                 status = 'OPEN, STRAIGHT'
             else:
                 self.conditions_met = False
@@ -274,9 +306,10 @@ class DlibFaceLandmarkDetector:
                 self.timer_started = True
                 color = cv2_green
             elif (self.conditions_met) and (self.timer_started):  # conditions_met: True -> True, >= 3 secs
-                if (time.time() - self.start_time) >= 2.0:
+                if (time.time() - self.start_time) >= self.feed_seconds:
                     cv2.putText(img, '3 seconds passed!', (2, 230), cv2.FONT_HERSHEY_PLAIN, 2, cv2_green, 2)
                     color = cv2_green
+                    print 'feeding conditions met, gui status: {}'.format(self.gui_status)
                     if (self.gui_status == 'select task') or (self.gui_status == 'stopped'):
                         self.statusPub.publish('Feeding')
                         self.availablePub.publish('true')
@@ -296,6 +329,7 @@ class DlibFaceLandmarkDetector:
             cv2.putText(img, status, (left-18, top-17), cv2.FONT_HERSHEY_PLAIN, 1, cv2_black)
             self.win.set_image(img)
             self.win.clear_overlay()
+            self.win.add_overlay(shape, orange)
             self.imagePub.publish(self.bridge.cv2_to_imgmsg(img, "rgb8"))
 
             # Stop condition check
@@ -303,7 +337,8 @@ class DlibFaceLandmarkDetector:
                 self.stop_outliers = 0
                 if self.stop_condition:
                     elapsed = time.time() - self.stop_timer
-                    if elapsed > 2.0:
+                    if elapsed > self.stop_seconds:
+                        print 'stop condition met, gui status: {}'.format(self.gui_status)
                         if (self.gui_status == 'in motion') or (self.gui_status == 'wait start'):
                             self.emergencyPub.publish('STOP')
                             print 'stopping command published'
@@ -314,6 +349,7 @@ class DlibFaceLandmarkDetector:
                     self.stop_timer = time.time()
                     self.stop_condition = True
             elif self.stop_outliers <= 5:
+                print 'stop outlier #{}'.format(self.stop_outliers)
                 self.stop_outliers += 1
             else:
                 self.stop_condition = False     
@@ -330,7 +366,8 @@ class DlibFaceLandmarkDetector:
             (next_state, next_covariance) = self.kf2.filter_update(self.prev_state, self.prev_covariance, np.array([ratio_observed, velocity_observed]))
             ratio_kalman = next_state[0]
             self.prev_state = next_state
-            self.prev_covariance = next_covariance      
+            self.prev_covariance = next_covariance
+      
             # Stop condition check
             if ratio_kalman > 2.5:
                 self.stop_outliers = 0
@@ -351,7 +388,23 @@ class DlibFaceLandmarkDetector:
             else:
                 self.stop_condition = False  
             self.win.set_image(img)
-            self.imagePub.publish(self.bridge.cv2_to_imgmsg(img, "rgb8"))           
+            self.imagePub.publish(self.bridge.cv2_to_imgmsg(img, "rgb8"))
+
+            # Scoop condition check
+            if self.scoop_condition:
+                elapsed = time.time() - self.scoop_timer
+                if elapsed >= 2.0:
+                    print 'scooping condition met, gui status: {}'.format(self.gui_status)
+                    if (self.gui_status == 'select task') or (self.gui_status == 'stopped'):
+                        self.statusPub.publish('Scooping')
+                        self.availablePub.publish('true')
+                        self.userInputPub.publish('Start')
+                        print 'scooping command published'
+                        self.sound_handle.say('Scoop ing')
+                        print 'said scooping'
+                    elif self.gui_status == 'wait start':
+                        self.userInputPub.publish('Start')
+                               
 
             # Uncomment to add rectangle around face.
             #self.win.add_overlay(self.dets)
@@ -398,7 +451,7 @@ class DlibFaceLandmarkDetector:
     def mouth_area(self, shape):
         """Calculate area of the mouth between inner lips."""
         # Make two vectors for each triangle.
-        v1 = [shape.part(61).x-shape.part(60).x, shape.part(62).y-shape.part(60).y]
+        v1 = [shape.part(61).x-shape.part(60).x, shape.part(61).y-shape.part(60).y]
         v2 = [shape.part(67).x-shape.part(60).x, shape.part(67).y-shape.part(60).y]
 
         v3 = [shape.part(63).x-shape.part(61).x, shape.part(63).y-shape.part(61).y]
@@ -438,79 +491,6 @@ class DlibFaceLandmarkDetector:
             return True, 'LEFT', ratio
         else:
             return False, 'STRAIGHT', ratio
-
-
-    def detect_gaze(self, shape, gray_img, h=1, side='right'):
-        """Return True if person if looking straight."""
-
-        # Set landmark points for eye.
-        pt1 = 36
-        pt2 = 41
-        pt3 = 40
-        pt4 = 39
-        if side == 'left':
-            pt1 = 42
-            pt2 = 47
-            pt3 = 46
-            pt4 = 45
-        
-        # x1, y1 are top left coordinates, x2, y2 are bottom right coordinates.
-        x1 = shape.part(pt1).x
-        y1 = shape.part(pt1).y
-        x2 = shape.part(pt4).x
-        y2 = max(shape.part(pt2).y, shape.part(pt3).y)
-        
-        # Locate bottom half of eye.
-        temp = gray_img[y1:y2, x1:x2]
-
-        # Uncomment to increase contrast.
-        #temp = self.contrast(temp)
-
-        # Resize so that height for half eye will be 60 px.
-        k = 60.0/temp.shape[0]
-        new_h = int(round(temp.shape[0]*k))
-        new_w = int(round(temp.shape[1]*k))
-        sample = cv2.resize(temp, (new_w, new_h))
-
-        # Width for each of the three sections (right, center, left).
-        a = int(round((shape.part(pt2).x - shape.part(pt1).x) * k))
-        b = int(round((shape.part(pt3).x - shape.part(pt2).x) * k))
-        c = int(round((shape.part(pt4).x - shape.part(pt3).x) * k))
- 
-        tot_a = 0.0
-        tot_b = 0.0
-        tot_c = 0.0
-
-        # Find average pixel value for each region.
-        for y in range(0, h):    
-            for x in range(0, a):
-                tot_a = tot_a + sample[y, x]
-            for x in range(a, a+b):
-                tot_b = tot_b + sample[y, x]
-            for x in range(a+b, a+b+c):
-                tot_c = tot_c + sample[y, x]
-
-        avg_a = tot_a/(10*a)
-        avg_b = tot_b/(10*b)
-        avg_c = tot_c/(10*c)
-
-        # Determine if eye is looking straight.
-        # If unknown and eye was right eye, check left eye.
-        # If left eye is also unknown, return unknown. 
-        if (avg_a > avg_b) and (avg_c > avg_b):
-            #print 'straight'
-            return True, 'straight'
-        elif (avg_a < avg_b) and (avg_a < avg_c):
-            #print '<-'
-            return False, '<-'
-        elif (avg_c < avg_a) and (avg_a < avg_b):
-            #print '->'
-            return False, '->'
-        elif side=='right':
-            return self.detect_gaze(self, shape, gray_img, side='left')
-        else:
-            #print 'unknown'
-            return False, 'unknown'
 
 
 def main(args):
