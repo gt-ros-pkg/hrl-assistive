@@ -85,7 +85,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
     
     def sampling(args):
         z_mean, z_log_var = args
-        epsilon = K.random_normal(shape=K.shape(z_mean), mean=0., stddev=0.5)
+        epsilon = K.random_normal(shape=K.shape(z_mean), mean=0., stddev=0.3)
         #epsilon = K.random_normal(shape=(z_dim,), mean=0., stddev=1.0)
         return z_mean + K.exp(z_log_var/2.0) * epsilon    
         
@@ -160,7 +160,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
         else:
             if re_load and os.path.isfile(weights_file):
                 vae_autoencoder.load_weights(weights_file)
-            lr = 0.01
+            ## lr = 0.01
             #optimizer = RMSprop(lr=lr, rho=0.9, epsilon=1e-08, decay=0.0001, clipvalue=10)
             #optimizer = Adam(lr=lr, clipvalue=10)                
             #vae_autoencoder.compile(optimizer=optimizer, loss=None)
