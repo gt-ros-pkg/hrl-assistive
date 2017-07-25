@@ -2549,6 +2549,8 @@ def initialiseOptParser(p):
                  default=False, help='Renew HMM parameters.')
     p.add_option('--cfRenew', '--cr', action='store_true', dest='bCLFRenew',
                  default=False, help='Renew Classifiers.')
+    p.add_option('--aeRenew', '--ar', action='store_true', dest='bAERenew',
+                 default=False, help='Renew auto encoder.')
 
     p.add_option('--task', action='store', dest='task', type='string', default='feeding',
                  help='type the desired task name')

@@ -52,10 +52,10 @@ matplotlib.rcParams['ps.fonttype'] = 42
 def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, generator,
                       normalTrainData, abnormalTrainData,\
                       normalTestData, abnormalTestData, window_size, \
-                      alpha, save_pkl=None, stateful=False, x_std_div=1.0, x_std_offset=1e-10,\
-                      dyn_ths=False):
+                      alpha, ths_l=None, save_pkl=None, stateful=False, x_std_div=1.0, x_std_offset=1e-10,
+                      dyn_ths=False, plot=False, renew=False):
 
-    if os.path.isfile(save_pkl) and False:
+    if os.path.isfile(save_pkl) and renew is False:
         d = ut.load_pickle(save_pkl)
         scores_tr_n = d['scores_tr_n']
         zs_tr_n = d['zs_tr_n']
@@ -66,8 +66,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
     else:
         scores_tr_n, zs_tr_n = get_anomaly_score(normalTrainData, vae_mean, enc_z_mean, enc_z_logvar,
                                                  window_size, alpha, stateful=stateful,
-                                                 x_std_div=x_std_div, x_std_offset=x_std_offset)
-        
+                                                 x_std_div=x_std_div, x_std_offset=x_std_offset)        
         scores_te_n, zs_te_n = get_anomaly_score(normalTestData, vae_mean, enc_z_mean, enc_z_logvar,
                                      window_size, alpha, stateful=stateful,
                                      x_std_div=x_std_div, x_std_offset=x_std_offset)
@@ -87,8 +86,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
 
     if dyn_ths:
         from sklearn.svm import SVR
-        clf = SVR(C=1.0, epsilon=0.2, kernel='rbf')
-
+        clf = SVR(C=1.0, epsilon=0.2, kernel='rbf', gamma=0.5)
         x = np.array(zs_tr_n).reshape(-1,np.shape(zs_tr_n)[-1])
         y = np.array(scores_tr_n).reshape(-1,np.shape(scores_tr_n)[-1])
         clf.fit(x, y)
@@ -105,13 +103,14 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
     #    plt.plot(s, '-r')
     #    plt.show()
 
-    #ths_l = -np.logspace(-1,0.8,40)+2.0
-    ths_l = -np.logspace(-1,0.5,40)+1.5
-    ths_l = np.linspace(127,133,40)
-    ths_l = np.logspace(-1,2,40)-4 #2.0  
     
     tpr_l = []
     fpr_l = []
+
+    tp_ll = []
+    fp_ll = []
+    tn_ll = []
+    fn_ll = []
 
     for ths in ths_l:
         tp_l = []
@@ -142,6 +141,11 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
 
         tpr_l.append( float(np.sum(tp_l))/float(np.sum(tp_l)+np.sum(fn_l))*100.0 )
         fpr_l.append( float(np.sum(fp_l))/float(np.sum(fp_l)+np.sum(tn_l))*100.0 )
+
+        tp_ll.append(tp_l)
+        tn_ll.append(tn_l)
+        fp_ll.append(fp_l)
+        fn_ll.append(fn_l)
     
 
     e_n_l  = np.amax(scores_te_n, axis=-1) #[val[-1] for val in scores_n if val != np.log(1e-50) ]
@@ -156,18 +160,19 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
     from sklearn import metrics 
     print "roc: ", metrics.auc(fpr_l, tpr_l, True)
 
-    fig = plt.figure(figsize=(12,6))
-    fig.add_subplot(1,2,1)    
-    plt.plot(fpr_l, tpr_l, '-*b', ms=5, mec='b')
-    plt.xlim([0,100])
-    plt.ylim([0,100])
-    
-    fig.add_subplot(1,2,2)    
-    plt.plot(e_n_l, '*b', ms=5, mec='b')
-    plt.plot(e_ab_l, '*r', ms=5, mec='r')
-    plt.show()
+    if plot:
+        fig = plt.figure(figsize=(12,6))
+        fig.add_subplot(1,2,1)    
+        plt.plot(fpr_l, tpr_l, '-*b', ms=5, mec='b')
+        plt.xlim([0,100])
+        plt.ylim([0,100])
 
-    return 
+        fig.add_subplot(1,2,2)    
+        plt.plot(e_n_l, '*b', ms=5, mec='b')
+        plt.plot(e_ab_l, '*r', ms=5, mec='r')
+        plt.show()
+
+    return tp_ll, tn_ll, fp_ll, fn_ll
 
 
 

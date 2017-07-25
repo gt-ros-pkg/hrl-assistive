@@ -1,9 +1,9 @@
-initial_x: 0.116
-initial_y: 0.00
-initial_z: -0.058
+initial_x: 0.135
+initial_y: -0.0044
+initial_z: -0.06472
 initial_roll: 0.0
 initial_pitch: 0.0
-initial_yaw: 0.0
+initial_yaw: 3.141592
 from: r_gripper_palm_link
 to: SR300_link
 file_package: tf_keyboard_cal
