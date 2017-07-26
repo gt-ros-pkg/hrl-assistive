@@ -25,7 +25,7 @@ roslib.load_manifest('hrl_lib')
 from hrl_lib.util import load_pickle
 
 # Pose Estimation Libraries
-from pose_est_lib import world_to_mat
+from create_dataset_lib import CreateDatasetLib
  
 
 
@@ -51,11 +51,17 @@ class DatabaseCreator():
         self.final_database_path = (
         os.path.abspath(os.path.join(self.training_dump_path, os.pardir)))
 
+        self.verbose = verbose
+        self.world_to_mat = CreateDatasetLib().world_to_mat
+        self.mat_to_taxels = CreateDatasetLib().mat_to_taxels
 
         try:
             self.final_dataset = load_pickle(self.final_database_path+'/final_database.p') 
         except IOError:
             self.final_dataset = {}
+
+
+            
         [self.p_world_mat, self.R_world_mat] = load_pickle(self.training_dump_path+'/mat_axes.p')         
         self.mat_size = (NUMOFTAXELS_X, NUMOFTAXELS_Y)
         self.individual_dataset = {} 
@@ -160,27 +166,6 @@ class DatabaseCreator():
         return rotated_p_map
 
 
-    def mat_to_taxels(self, m_data):
-        ''' 
-        Input:  Nx2 array 
-        Output: Nx2 array
-        '''       
-        #Convert coordinates in 3D space in the mat frame into taxels
-        taxels = m_data / INTER_SENSOR_DISTANCE
-        
-        '''Typecast into int, so that we can highlight the right taxel 
-        in the pressure matrix, and threshold the resulting values'''
-        taxels = np.rint(taxels)
-
-        #Thresholding the taxels_* array
-        for i, taxel in enumerate(taxels):
-            if taxel[1] < LOW_TAXEL_THRESH_X: taxels[i,1] = LOW_TAXEL_THRESH_X
-            if taxel[0] < LOW_TAXEL_THRESH_Y: taxels[i,0] = LOW_TAXEL_THRESH_Y
-            if taxel[1] > HIGH_TAXEL_THRESH_X: taxels[i,1] = HIGH_TAXEL_THRESH_X
-            if taxel[0] > HIGH_TAXEL_THRESH_Y: taxels[i,0] = HIGH_TAXEL_THRESH_Y
-        return taxels
-
-
     def visualize_pressure_map(self, pressure_map_matrix, rotated_targets=None, fileNumber=0, plot_3d=False):
         '''Visualizing a plot of the pressure map'''        
         fig = plt.figure()
@@ -246,7 +231,7 @@ class DatabaseCreator():
         count = 0
 
         for [p_map_raw, target_raw] in home_sup:
-            target_mat = world_to_mat(target_raw, self.p_world_mat, self.R_world_mat)
+            target_mat = self.world_to_mat(target_raw, self.p_world_mat, self.R_world_mat)
             rot_p_map = self.rotate_taxel_space(p_map_raw)
             print rot_p_map
             rot_target_mat = self.rotate_3D_space(target_mat)
@@ -260,7 +245,7 @@ class DatabaseCreator():
         for p_map_raw in LH_sup.keys():
             target_raw = LH_sup[p_map_raw]
             target_raw = np.array(target_raw).reshape(len(target_raw)/3,3)
-            target_mat = self.world_to_mat(target_raw)
+            target_mat = self.world_to_mat(target_raw, self.p_world_mat, self.R_world_mat)
             rot_p_map = self.rotate_taxel_space(p_map_raw)
             rot_target_mat = self.rotate_3D_space(target_mat)
             self.final_dataset[tuple(rot_p_map.flatten())] = rot_target_mat.flatten()
@@ -280,7 +265,7 @@ class DatabaseCreator():
         for p_map_raw in LL_sup.keys():
             target_raw = LL_sup[p_map_raw]
             target_raw = np.array(target_raw).reshape(len(target_raw)/3,3)
-            target_mat = self.world_to_mat(target_raw)
+            target_mat = self.world_to_mat(target_raw, self.p_world_mat, self.R_world_mat)
             rot_p_map = self.rotate_taxel_space(p_map_raw)
             rot_target_mat = self.rotate_3D_space(target_mat)
             self.final_dataset[tuple(rot_p_map.flatten())] = rot_target_mat.flatten()
@@ -289,7 +274,7 @@ class DatabaseCreator():
         for p_map_raw in RH_sup.keys():
             target_raw = RH_sup[p_map_raw]
             target_raw = np.array(target_raw).reshape(len(target_raw)/3,3)
-            target_mat = self.world_to_mat(target_raw)
+            target_mat = self.world_to_mat(target_raw, self.p_world_mat, self.R_world_mat)
             rot_p_map = self.rotate_taxel_space(p_map_raw)
             rot_target_mat = self.rotate_3D_space(target_mat)
             self.final_dataset[tuple(rot_p_map.flatten())] = rot_target_mat.flatten()

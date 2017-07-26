@@ -6,7 +6,7 @@ import cPickle as pkl
 import random
 
 # ROS
-import roslib; roslib.load_manifest('autobed_physical_trainer')
+import roslib;
 
 # Graphics
 import matplotlib.pyplot as plt
@@ -25,7 +25,7 @@ roslib.load_manifest('hrl_lib')
 from hrl_lib.util import load_pickle
 
 # Pose Estimation Libraries
-from pose_est_lib import world_to_mat
+from create_dataset_lib import CreateDatasetLib
 
 
 MAT_WIDTH = 0.762 #metres
@@ -48,6 +48,8 @@ class DatabaseCreator():
         self.training_dump_path = training_database_pkl_directory.rstrip('/')
         self.save_pdf           = save_pdf
         self.verbose            = verbose
+        self.world_to_mat = CreateDatasetLib().world_to_mat
+        self.mat_to_taxels = CreateDatasetLib().mat_to_taxels
 
         home_sup_dat = load_pickle(self.training_dump_path+'/home_sup.p')
 
@@ -73,7 +75,7 @@ class DatabaseCreator():
         #Targets in the mat frame        
         home_sup_pressure_map = home_sup_dat[0][0]        
         home_sup_joint_pos_world = home_sup_dat[0][1]
-        home_sup_joint_pos = world_to_mat(home_sup_joint_pos_world,self.p_world_mat,self.R_world_mat) # N x 3
+        home_sup_joint_pos = self.world_to_mat(home_sup_joint_pos_world,self.p_world_mat,self.R_world_mat) # N x 3
      
         #print home_sup_joint_pos
         self.split_matrices, self.split_targets = self.preprocess_home_position(home_sup_pressure_map, home_sup_joint_pos)
@@ -88,7 +90,7 @@ class DatabaseCreator():
         #Reshape to create 2D pressure map
         orig_p_map = np.asarray(np.reshape(p_map_flat, self.mat_size))
         orig_targets = target
-        print 'p1'
+        if self.verbose: print 'checkpoint1'
 
         #Perform PCA on the pressure map to rotate and translate it to a known
         #value
@@ -104,12 +106,12 @@ class DatabaseCreator():
         #import util
         #util.generateWeightedData([[rotated_p_map, rotated_targets]], verbose=True)
         #sys.exit()
-        print 'p2'
+        if self.verbose: print 'checkpoint2'
         
         self.visualize_pressure_map_slice(p_map_flat, rotated_p_map,
                 rotated_p_map, targets_raw=orig_targets, rotated_targets=rotated_targets)
         
-        print 'p3'
+        if self.verbose: print 'checkpoint3'
         # mat to non-descrete taxel space
         rotated_targets_pixels = self.mat_to_taxels(rotated_targets)
         rotated_target_coord = np.hstack([-rotated_targets_pixels[:,1:2] + (NUMOFTAXELS_X - 1.0), 
@@ -309,28 +311,6 @@ class DatabaseCreator():
             output.append([targets[index], targets[index+1], targets[index+2]])
             index += 3
         return output
-
-
-
-    def mat_to_taxels(self, m_data):
-        ''' 
-        Input:  Nx2 array 
-        Output: Nx2 array
-        '''       
-        #Convert coordinates in 3D space in the mat frame into taxels
-        taxels = m_data / INTER_SENSOR_DISTANCE
-        
-        '''Typecast into int, so that we can highlight the right taxel 
-        in the pressure matrix, and threshold the resulting values'''
-        taxels = np.rint(taxels)
-
-        #Thresholding the taxels_* array
-        for i, taxel in enumerate(taxels):
-            if taxel[1] < LOW_TAXEL_THRESH_X: taxels[i,1] = LOW_TAXEL_THRESH_X
-            if taxel[0] < LOW_TAXEL_THRESH_Y: taxels[i,0] = LOW_TAXEL_THRESH_Y
-            if taxel[1] > HIGH_TAXEL_THRESH_X: taxels[i,1] = HIGH_TAXEL_THRESH_X
-            if taxel[0] > HIGH_TAXEL_THRESH_Y: taxels[i,0] = HIGH_TAXEL_THRESH_Y
-        return taxels
 
 
     def visualize_pressure_map(self, pressure_map_matrix, rotated_targets=None, fileNumber=0, plot_3d=False):
@@ -605,7 +585,7 @@ class DatabaseCreator():
         # target translation and rotation ---------------------------------------------
         #print target_raw
         #target_raw = np.array(target_raw).reshape(len(target_raw)/3,3)
-        target_mat = world_to_mat(target_raw, self.p_world_mat, self.R_world_mat)
+        target_mat = self.world_to_mat(target_raw, self.p_world_mat, self.R_world_mat)
 
         #We need only X,Y coordinates in the mat frame
         targets_mat = target_mat[:,:2]
@@ -664,26 +644,31 @@ class DatabaseCreator():
         sliced_target = np.multiply(rotated_target,
                 self.split_targets[0])
         head_sliced[tuple(sliced_p_map.flatten())] = sliced_target
+        
         sliced_p_map = np.multiply(rotated_p_map,
                 self.split_matrices[1])
         sliced_target = np.multiply(rotated_target,
                 self.split_targets[1])
         RH_sliced[tuple(sliced_p_map.flatten())] = sliced_target
+        
         sliced_p_map = np.multiply(rotated_p_map,
                 self.split_matrices[2])
         sliced_target = np.multiply(rotated_target,
                 self.split_targets[2])
         LH_sliced[tuple(sliced_p_map.flatten())] = sliced_target
+        
         sliced_p_map = np.multiply(rotated_p_map,
                 self.split_matrices[3])
         sliced_target = np.multiply(rotated_target,
                 self.split_targets[3])
         RL_sliced[tuple(sliced_p_map.flatten())] = sliced_target
+        
         sliced_p_map = np.multiply(rotated_p_map,
                 self.split_matrices[4])
         sliced_target = np.multiply(rotated_target,
                 self.split_targets[4])
         LL_sliced[tuple(sliced_p_map.flatten())] = sliced_target
+        
         print 'x'
 
         for [p_map_raw,target_raw] in home_sup: #home was previously head
