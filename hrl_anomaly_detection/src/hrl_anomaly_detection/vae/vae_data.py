@@ -100,7 +100,6 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
 
         ut.save_pickle(d, crossVal_pkl)
 
-
     # select feature for detection
     feature_list = []
     for feature in param_dict['data_param']['handFeatures']:
@@ -128,7 +127,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     ths_l = -np.logspace(-1,0.5,40)+1.5
     ths_l = np.linspace(127,133,40)
     #ths_l = np.logspace(0.2,1.8,40) #2.0  
-    ths_l = np.logspace(-1,1.8,40)-0.5 
+    ths_l = np.logspace(-0.5,1.8,40) #-0.5 
 
 
     tp_ll = [[] for i in xrange(len(ths_l))]
@@ -140,7 +139,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     # HMM-induced vector with LOPO
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(d['kFoldList']):
-        ## if idx == 0: continue
+        if idx != 0: continue
         np.random.shuffle(normalTrainIdx)  
 
         # dim x sample x length
@@ -209,7 +208,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         ##              re_load=re_load) 
 
         #------------------------------------------------------------------------------------
-        ## from hrl_anomaly_detection.vae import lstm_vae_state_mstep as km
+        ## from hrl_anomaly_detection.vae import lstm_vae_state_mstep2 as km
         ## window_size = 1
         ## x_std_div   = 2
         ## x_std_offset= 0.05
@@ -217,18 +216,20 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         ##  km.lstm_vae(trainData, testData, weights_path, patience=4, batch_size=batch_size,
         ##              noise_mag=0.1, timesteps=window_size, sam_epoch=10,
         ##              x_std_div = x_std_div, x_std_offset=x_std_offset,
-        ##              re_load=re_load, fine_tuning=fine_tuning, plot=plot) 
+        ##              re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot) 
 
-
-        from hrl_anomaly_detection.vae import lstm_vae_state_mstep2 as km
+        from hrl_anomaly_detection.vae import lstm_vae_state_batch as km
         window_size = 1
         x_std_div   = 2
         x_std_offset= 0.05
+        batch_size = 16
+        fixed_batch_size = True
         autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
          km.lstm_vae(trainData, testData, weights_path, patience=4, batch_size=batch_size,
                      noise_mag=0.1, timesteps=window_size, sam_epoch=10,
                      x_std_div = x_std_div, x_std_offset=x_std_offset,
                      re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot) 
+
         
         #------------------------------------------------------------------------------------
         ## from hrl_anomaly_detection.vae import lstm_vae_sampling as km
@@ -263,7 +264,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                                normalTestData, abnormalTestData, \
                                window_size, alpha, ths_l=ths_l, save_pkl=save_pkl, stateful=stateful,
                                x_std_div = x_std_div, x_std_offset=x_std_offset, plot=plot,
-                               renew=clf_renew, dyn_ths=True)
+                               renew=clf_renew, dyn_ths=True, batch_info=(fixed_batch_size,batch_size))
 
 
         for i in xrange(len(ths_l)):

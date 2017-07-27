@@ -53,7 +53,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
                       normalTrainData, abnormalTrainData,\
                       normalTestData, abnormalTestData, window_size, \
                       alpha, ths_l=None, save_pkl=None, stateful=False, x_std_div=1.0, x_std_offset=1e-10,
-                      dyn_ths=False, plot=False, renew=False):
+                      dyn_ths=False, plot=False, renew=False, batch_info=(False,None)):
 
     if os.path.isfile(save_pkl) and renew is False:
         d = ut.load_pickle(save_pkl)
@@ -66,13 +66,14 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
     else:
         scores_tr_n, zs_tr_n = get_anomaly_score(normalTrainData, vae_mean, enc_z_mean, enc_z_logvar,
                                                  window_size, alpha, stateful=stateful,
-                                                 x_std_div=x_std_div, x_std_offset=x_std_offset)        
+                                                 x_std_div=x_std_div, x_std_offset=x_std_offset,
+                                                 batch_info=batch_info)        
         scores_te_n, zs_te_n = get_anomaly_score(normalTestData, vae_mean, enc_z_mean, enc_z_logvar,
                                      window_size, alpha, stateful=stateful,
-                                     x_std_div=x_std_div, x_std_offset=x_std_offset)
+                                     x_std_div=x_std_div, x_std_offset=x_std_offset,batch_info=batch_info)
         scores_te_a, zs_te_a = get_anomaly_score(abnormalTestData, vae_mean, enc_z_mean, enc_z_logvar,
                                      window_size, alpha, stateful=stateful,
-                                     x_std_div=x_std_div, x_std_offset=x_std_offset)
+                                     x_std_div=x_std_div, x_std_offset=x_std_offset,batch_info=batch_info)
         
         d = {}
         d['scores_tr_n'] = scores_tr_n
@@ -89,6 +90,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         clf = SVR(C=1.0, epsilon=0.2, kernel='rbf', gamma=0.5)
         x = np.array(zs_tr_n).reshape(-1,np.shape(zs_tr_n)[-1])
         y = np.array(scores_tr_n).reshape(-1,np.shape(scores_tr_n)[-1])
+        print np.shape(x), np.shape(y), np.shape(zs_tr_n), np.shape(scores_tr_n)
         clf.fit(x, y)
 
     ## for i, s_true in enumerate(scores_n):
@@ -177,7 +179,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
 
 
 def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, nSample=1000,
-                      stateful=False, x_std_div=1, x_std_offset=1e-10):
+                      stateful=False, x_std_div=1, x_std_offset=1e-10,batch_info=(False,None)):
 
     x_dim = len(X[0][0])
 
@@ -186,7 +188,7 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, nSam
     for i in xrange(len(X)): # per sample
         print "sample: ", i+1, " out of ", len(X)
         np.random.seed(3334 + i)
-
+            
         if window_size>0: x = vutil.sampleWithWindow(X[i:i+1], window=window_size)
         else:             x = X[i:i+1]
         if type(x) is list: x = np.array(x)
@@ -194,14 +196,21 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, nSam
         if stateful:
             vae.reset_states()
             enc_z_mean.reset_states()
-            enc_z_logvar.reset_states()
+            enc_z_logvar.reset_states()                
             
         z = []
         s = []
         for j in xrange(len(x)): # per window
             # anomaly score per timesteps in an window            
             # pdf prediction
-            x_new  = vae.predict(x[j:j+1])[0]
+            if batch_info[0]:
+                xx = np.expand_dims(x[j:j+1,0], axis=0)
+                for j in xrange(batch_info[1]-1):
+                    xx = np.vstack([xx, np.expand_dims(x[j:j+1,0], axis=0) ])
+            else:
+                xx = x[j:j+1]
+            x_new  = vae.predict(xx)[0]
+            ## x_new  = vae.predict(x[j:j+1])[0]
 
             # length x dim
             x_mean = x_new[:,:x_dim]
@@ -212,7 +221,8 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, nSam
             #s.append( get_reconstruction_err_prob(x[j], x_mean, x_std, alpha=alpha) )
 
             # Method 2: Lower bound
-            l, z_mean, z_log_var = get_lower_bound(x[j:j+1], x_mean, x_std, enc_z_mean, enc_z_logvar)
+            l, z_mean, z_log_var = get_lower_bound(xx, x_mean, x_std, enc_z_mean, enc_z_logvar,\
+                                                   x_dim)
             s.append(l)
             z.append(z_mean.tolist() + z_log_var.tolist())
             ## s.append( get_lower_bound(x[j:j+1], x_mean, x_std, enc_z_mean, enc_z_logvar) )
@@ -243,21 +253,30 @@ def get_reconstruction_err_prob(x, x_mean, x_std, alpha=1.0):
     return -np.amin(alpha.dot( np.log(np.array(p_l)) ))
 
 
-def get_lower_bound(x, x_mean, x_std, enc_z_mean, enc_z_logvar):
+def get_lower_bound(x, x_mean, x_std, enc_z_mean, enc_z_logvar, nDim):
     '''
+    No fixed batch
     x: length x dim
     '''
-    nDim = len(x[0])
 
     z_mean    = enc_z_mean.predict(x)[0]
     z_log_var = enc_z_logvar.predict(x)[0]
-        
+
+    if len(np.shape(x))>2: x = x[0]
+
     p_l     = []
     log_p_x_z = -0.5 * ( np.sum( ((x-x_mean)/x_std)**2, axis=-1) \
                          + float(nDim) * np.log(2.0*np.pi) + np.sum(np.log(x_std**2), axis=-1) )
-    xent_loss = np.mean(-log_p_x_z, axis=-1)
-    kl_loss = - 0.5 * np.sum(1 + z_log_var - z_mean**2 - np.exp(z_log_var), axis=-1)
-    
+    if len(np.shape(log_p_x_z))>1:
+        xent_loss = np.mean(-log_p_x_z, axis=-1)
+    else:
+        xent_loss = -log_p_x_z
+
+    if len(np.shape(z_log_var))>1:
+        kl_loss = - 0.5 * np.sum(1 + z_log_var - z_mean**2 - np.exp(z_log_var), axis=-1)
+    else:
+        kl_loss = - 0.5 * np.sum(1 + z_log_var - z_mean**2 - np.exp(z_log_var))
+                                 
     return xent_loss + kl_loss, z_mean, z_log_var
     #return float(np.mean(xent_loss + kl_loss) )
 
