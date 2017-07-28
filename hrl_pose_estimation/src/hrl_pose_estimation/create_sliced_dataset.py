@@ -609,6 +609,7 @@ class DatabaseCreator():
         
         ## self.visualize_pressure_map(rotated_p_map)
         #plt.show()
+        #print transformed_target
         return rotated_p_map, transformed_target
         
     def run(self):
@@ -669,7 +670,7 @@ class DatabaseCreator():
                 self.split_targets[4])
         LL_sliced[tuple(sliced_p_map.flatten())] = sliced_target
         
-        print 'x'
+        if self.verbose: print 'created dictionaries entries for p_maps in slices'
 
         for [p_map_raw,target_raw] in home_sup: #home was previously head
                 [rotated_p_map, rotated_target] = self.pca_transformation_sup(
@@ -679,6 +680,10 @@ class DatabaseCreator():
                 sliced_target = np.multiply(rotated_target,
                         self.split_targets[0])
                 head_sliced[tuple(sliced_p_map.flatten())] = sliced_target
+        
+        print 'current image is home_sup'
+        self.visualize_pressure_map(sliced_p_map, rotated_targets=sliced_target)
+
                 
         for [p_map_raw, target_raw] in RH_sup:
                 [rotated_p_map, rotated_target] = self.pca_transformation_sup(
@@ -688,6 +693,9 @@ class DatabaseCreator():
                 sliced_target = np.multiply(rotated_target,
                         self.split_targets[1])
                 RH_sliced[tuple(sliced_p_map.flatten())] = sliced_target
+        
+        print 'current image is RH sliced'
+        self.visualize_pressure_map(sliced_p_map, rotated_targets=sliced_target)
 
                 ## self.visualize_pressure_map(rotated_p_map, rotated_targets=rotated_target)
                 ## self.visualize_pressure_map_slice(p_map_raw, rotated_p_map, sliced_p_map, \
@@ -703,10 +711,11 @@ class DatabaseCreator():
                 sliced_target = np.multiply(rotated_target,
                         self.split_targets[2])
                 LH_sliced[tuple(sliced_p_map.flatten())] = sliced_target
-                #self.visualize_pressure_map(rotated_p_map, rotated_targets=rotated_target)
+        print 'current image is LH sliced'
+        self.visualize_pressure_map(sliced_p_map, rotated_targets=sliced_target)
 
         for [p_map_raw, target_raw] in LL_sup:
-                target_raw = LL_sup[p_map_raw]
+                #target_raw = LL_sup[p_map_raw]
                 [rotated_p_map, rotated_target] = self.pca_transformation_sup(
                                             p_map_raw, target_raw)
                 sliced_p_map = np.multiply(rotated_p_map,
@@ -714,8 +723,11 @@ class DatabaseCreator():
                 sliced_target = np.multiply(rotated_target,
                         self.split_targets[4])
                 LL_sliced[tuple(sliced_p_map.flatten())] = sliced_target
-#                self.visualize_pressure_map(np.reshape(sliced_p_map, 
-                                                                #self.mat_size))
+        print 'current image is LL sliced'
+        self.visualize_pressure_map(sliced_p_map, rotated_targets=sliced_target)
+
+#               self.visualize_pressure_map(np.reshape(sliced_p_map, 
+                                                               # self.mat_size))
 
         ## count = 0
         for [p_map_raw, target_raw] in RL_sup:
@@ -726,6 +738,10 @@ class DatabaseCreator():
                 sliced_target = np.multiply(rotated_target,
                         self.split_targets[3])
                 RL_sliced[tuple(sliced_p_map.flatten())] = sliced_target
+
+        print 'current image is RL sliced'
+        self.visualize_pressure_map(sliced_p_map, rotated_targets=sliced_target)
+
 
                 ## self.visualize_pressure_map(rotated_p_map, \
                 ##                             rotated_targets=rotated_target,\
@@ -745,27 +761,38 @@ class DatabaseCreator():
                                            np.asarray(LH_p_map) + 
                                            np.asarray(RL_p_map) + 
                                            np.asarray(LL_p_map))
+                            
                             final_target = (np.asarray(head_sliced[head_p_map])+
                                             np.asarray(RH_sliced[RH_p_map]) + 
                                             np.asarray(LH_sliced[LH_p_map]) + 
                                             np.asarray(RL_sliced[RL_p_map]) +
                                             np.asarray(LL_sliced[LL_p_map]))
+                            print 'X' # np.asarray(RH_sliced[RH_p_map]), 'head sliced'
+                            print 'Y'
+                            print #np.asarray(RH_p_map)
+                            
 
-                            final_p_map = np.zeros(self.mat_size)                                
-                            gaussian_filter(np.reshape(stitched_p_map, self.mat_size),\
-                                            sigma=0.5, order=0, output=final_p_map,\
-                                            mode='constant')
-                            final_database.append([list(final_p_map.flatten()),
+                            #final_p_map = np.zeros(self.mat_size)                                
+                            #gaussian_filter(np.reshape(stitched_p_map, self.mat_size),\
+                            #                sigma=0.5, order=0, output=final_p_map,\
+                            #                mode='constant')
+                            #final_database.append([list(final_p_map.flatten()),
+                            #                            final_target.flatten()])
+                            print list(stitched_p_map.flatten())
+                            print final_target.flatten()
+
+                            final_database.append([list(stitched_p_map.flatten()),
                                                         final_target.flatten()])
+ 
+
 
                             ## self.visualize_pressure_map(final_p_map, rotated_targets=final_target,\
                             ##   fileNumber=count, plot_3d=True)
                             ## if count > 20: sys.exit()
                             ## else: count += 1
                             
-        ## print "Saving final_database"
-        ## pkl.dump(final_database, 
-        ##          open(os.path.join(self.training_dump_path,'final_database.p'), 'wb'))
+        print "Saving final_database"
+        #pkl.dump(final_database,open(os.path.join(self.training_dump_path,'final_database.p'), 'wb'))
         return
 
 if __name__ == "__main__":
@@ -775,7 +802,7 @@ if __name__ == "__main__":
 
     p.add_option('--training_data_path', '--path',  action='store', type='string', 
                  dest='trainingPath',\
-                 default='/home/henryclever/hrl_file_server/Autobed/pose_estimation_data/subject_15', \
+                 default='/home/henryclever/hrl_file_server/Autobed/pose_estimation_data/subject_9', \
                  help='Set path to the training database.')
     p.add_option('--save_pdf', '--sp',  action='store_true', dest='save_pdf',
                  default=False, help='Save plot as a pdf.')

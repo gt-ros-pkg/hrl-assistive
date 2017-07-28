@@ -55,10 +55,13 @@ class DatabaseCreator():
         self.world_to_mat = CreateDatasetLib().world_to_mat
         self.mat_to_taxels = CreateDatasetLib().mat_to_taxels
 
+        if self.verbose: print 'The final database path is: ',self.final_database_path
         try:
-            self.final_dataset = load_pickle(self.final_database_path+'/final_database.p') 
+            self.final_dataset = load_pickle(self.final_database_path+'/basic_train_database.p') 
         except IOError:
-            self.final_dataset = {}
+            print 'x'
+
+        self.final_dataset = []
 
 
             
@@ -71,6 +74,7 @@ class DatabaseCreator():
     def rotate_3D_space(self, target):
         ''' Rotate the 3D target values (the 3D position of the markers
         attached to subject) using PCA'''
+        #This isn't really PCA, it's more of a method to normalize to some home position through translation and rotation
         
         #We need only X,Y coordinates in the mat frame
         targets_mat = target[:,:2]
@@ -233,59 +237,68 @@ class DatabaseCreator():
         for [p_map_raw, target_raw] in home_sup:
             target_mat = self.world_to_mat(target_raw, self.p_world_mat, self.R_world_mat)
             rot_p_map = self.rotate_taxel_space(p_map_raw)
-            print rot_p_map
+            #print rot_p_map
             rot_target_mat = self.rotate_3D_space(target_mat)
-            print rot_target_mat
-            print rot_target_mat.flatten()
-            self.final_dataset[tuple(rot_p_map.flatten())] = rot_target_mat.flatten()
-            self.individual_dataset[tuple(rot_p_map.flatten())] = rot_target_mat.flatten()
+            #print rot_target_mat
+            #print rot_target_mat.flatten()
+            #print rot_p_map.flatten()
+            #print tuple(rot_p_map.flatten())
+
+
+            #print list(rot_p_map.flatten())
+            #print rot_target_mat.flatten()
+            
+            #self.final_dataset[tuple(rot_p_map.flatten())] = rot_target_mat.flatten()
+            self.final_dataset.append([list(rot_p_map.flatten()), rot_target_mat.flatten()])
+            #self.individual_dataset[tuple(rot_p_map.flatten())] = rot_target_mat.flatten()
             count += 1
-        #print LH_sup[0]
-        #print LH_sup[1]
-        for p_map_raw in LH_sup.keys():
-            target_raw = LH_sup[p_map_raw]
-            target_raw = np.array(target_raw).reshape(len(target_raw)/3,3)
-            target_mat = self.world_to_mat(target_raw, self.p_world_mat, self.R_world_mat)
-            rot_p_map = self.rotate_taxel_space(p_map_raw)
-            rot_target_mat = self.rotate_3D_space(target_mat)
-            self.final_dataset[tuple(rot_p_map.flatten())] = rot_target_mat.flatten()
-            self.individual_dataset[tuple(rot_p_map.flatten())] = rot_target_mat.flatten()
-            count += 1
-        print x
-        for p_map_raw in RH_sup.keys():
-            target_raw = RH_sup[p_map_raw]
-            target_raw = np.array(target_raw).reshape(len(target_raw)/3,3)
-            target_mat = self.world_to_mat(target_raw)
-            rot_p_map = self.rotate_taxel_space(p_map_raw)
-            rot_target_mat = self.rotate_3D_space(target_mat)
-            self.final_dataset[tuple(rot_p_map.flatten())] = rot_target_mat.flatten()
-            self.individual_dataset[tuple(rot_p_map.flatten())] = rot_target_mat.flatten()
-            count += 1
+        print 'working on LH sup'
         
-        for p_map_raw in LL_sup.keys():
-            target_raw = LL_sup[p_map_raw]
-            target_raw = np.array(target_raw).reshape(len(target_raw)/3,3)
+        for [p_map_raw, target_raw] in LH_sup:
             target_mat = self.world_to_mat(target_raw, self.p_world_mat, self.R_world_mat)
             rot_p_map = self.rotate_taxel_space(p_map_raw)
             rot_target_mat = self.rotate_3D_space(target_mat)
-            self.final_dataset[tuple(rot_p_map.flatten())] = rot_target_mat.flatten()
-            self.individual_dataset[tuple(rot_p_map.flatten())] = rot_target_mat.flatten()
+            #self.final_dataset[tuple(rot_p_map.flatten())] = rot_target_mat.flatten()
+            self.final_dataset.append([list(rot_p_map.flatten()), rot_target_mat.flatten()])
+           
+            #self.individual_dataset[tuple(rot_p_map.flatten())] = rot_target_mat.flatten()
             count += 1
-        for p_map_raw in RH_sup.keys():
-            target_raw = RH_sup[p_map_raw]
-            target_raw = np.array(target_raw).reshape(len(target_raw)/3,3)
+        print 'working on RH_sup'
+            
+        for [p_map_raw, target_raw] in RH_sup:
             target_mat = self.world_to_mat(target_raw, self.p_world_mat, self.R_world_mat)
             rot_p_map = self.rotate_taxel_space(p_map_raw)
             rot_target_mat = self.rotate_3D_space(target_mat)
-            self.final_dataset[tuple(rot_p_map.flatten())] = rot_target_mat.flatten()
-            self.individual_dataset[tuple(rot_p_map.flatten())] = rot_target_mat.flatten()
+            #self.final_dataset[tuple(rot_p_map.flatten())] = rot_target_mat.flatten()
+            self.final_dataset.append([list(rot_p_map.flatten()), rot_target_mat.flatten()])
+           
+            #self.individual_dataset[tuple(rot_p_map.flatten())] = rot_target_mat.flatten()
+            count += 1
+        print 'working on LL_sup'
+        
+        for [p_map_raw, target_raw] in LL_sup:
+            target_mat = self.world_to_mat(target_raw, self.p_world_mat, self.R_world_mat)
+            rot_p_map = self.rotate_taxel_space(p_map_raw)
+            rot_target_mat = self.rotate_3D_space(target_mat)
+            #self.final_dataset[tuple(rot_p_map.flatten())] = rot_target_mat.flatten()
+            self.final_dataset.append([list(rot_p_map.flatten()), rot_target_mat.flatten()])
+           
+            #self.individual_dataset[tuple(rot_p_map.flatten())] = rot_target_mat.flatten()
+            count += 1
+        print 'working on RH_sup'
+
+        for [p_map_raw, target_raw] in RL_sup:
+            target_mat = self.world_to_mat(target_raw, self.p_world_mat, self.R_world_mat)
+            rot_p_map = self.rotate_taxel_space(p_map_raw)
+            rot_target_mat = self.rotate_3D_space(target_mat)
+            self.final_dataset.append([list(rot_p_map.flatten()), rot_target_mat.flatten()])
             count += 1
 
         print "Saving final_dataset"
-        pkl.dump(self.final_dataset, 
-                  open(os.path.join(self.final_database_path,'final_database.p'), 'wb'))
-        pkl.dump(self.individual_dataset,
-                open(os.path.join(self.training_dump_path, 'individual_database.p'), 'wb'))
+        pkl.dump(self.final_dataset, open(os.path.join(self.training_dump_path,'basic_train_dataset.p'), 'wb'))
+        #pkl.dump(self.individual_dataset, open(os.path.join(self.training_dump_path, 'individual_database.p'), 'wb'))
+        
+        print 'Done.'
         return
 
 
@@ -305,11 +318,13 @@ if __name__ == "__main__":
                  dest='trainingPath',\
                  default='/home/henryclever/hrl_file_server/Autobed/pose_estimation_data/subject_4', \
                  help='Set path to the training database.')
+    p.add_option('--verbose', '--v',  action='store_true', dest='verbose',
+                 default=False, help='Printout everything (under construction).')
     
     opt, args = p.parse_args()
     
     
     #Initialize trainer with a training database file
-    p = DatabaseCreator(training_database_pkl_directory=opt.trainingPath)
+    p = DatabaseCreator(training_database_pkl_directory=opt.trainingPath,verbose = opt.verbose)
     p.run()
     sys.exit()
