@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python
 #
 # Copyright (c) 2014, Georgia Tech Research Corporation
@@ -127,7 +128,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     ths_l = -np.logspace(-1,0.5,40)+1.5
     ths_l = np.linspace(127,133,40)
     #ths_l = np.logspace(0.2,1.8,40) #2.0  
-    ths_l = np.logspace(-0.5,1.8,40) #-0.5 
+    ths_l = np.logspace(-1.0,2.2,40) -0.1 
 
 
     tp_ll = [[] for i in xrange(len(ths_l))]
@@ -139,7 +140,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     # HMM-induced vector with LOPO
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(d['kFoldList']):
-        if idx != 0: continue
+        #if idx != 1: continue
         np.random.shuffle(normalTrainIdx)  
 
         # dim x sample x length
@@ -222,7 +223,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         window_size = 1
         x_std_div   = 2
         x_std_offset= 0.05
-        batch_size = 16
+        batch_size = 32
         fixed_batch_size = True
         autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
          km.lstm_vae(trainData, testData, weights_path, patience=4, batch_size=batch_size,

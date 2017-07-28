@@ -300,7 +300,8 @@ class armReachAction(mpcBaseAction):
            ['PAUSE', 0.0],
            ['MOVEL', '[ 0.04, -0.01-self.highBowlDiff[1],  0.03, -0.1, 0.8, 0]', 3, 'self.bowl_frame'],
            ['PAUSE', 0.0],
-           ['MOVES', '[ 0.04-0.005, -0.01-self.highBowlDiff[1],  -0.08, 0, 1.5, 0]', 3, 'self.bowl_frame'],]
+           ['MOVES', '[ 0.04-0.02, -0.01-self.highBowlDiff[1],  -0.035, 0, 1.5, 0]', 3, 'self.bowl_frame'],]
+           ## ['MOVES', '[ 0.04-0.005, -0.01-self.highBowlDiff[1],  -0.08, 0, 1.5, 0]', 3, 'self.bowl_frame'],]
 
         self.motions['runScooping_pspoon'] = {}
         self.motions['runScooping_pspoon']['left'] = \
@@ -315,13 +316,21 @@ class armReachAction(mpcBaseAction):
         ## Clean spoon motoins --------------------------------------------------------
         self.motions['cleanSpoon1'] = {}
         self.motions['cleanSpoon1']['left'] = \
-          [['MOVEL', '[ 0.06+0.01, 0.03,  -0.09, 0, 1.5, 0]', 3, 'self.bowl_frame'],
+          [['MOVEL', '[ 0.06+0.01, 0.04,  -0.04, 0, 1.5, 0]', 3, 'self.bowl_frame'],
            ['PAUSE', 0.0],
-           ['MOVEL', '[ 0.06+0.01, 0.03,  -0.02, 0, 1.5, 0]', 3, 'self.bowl_frame'],
+           ['MOVEL', '[ 0.06+0.01, 0.04,  -0.02, 0, 1.5, 0]', 3, 'self.bowl_frame'],
            ['PAUSE', 0.0],
-           ['MOVEL', '[ 0.06-0.05, 0.03,  -0.02, 0, 1.5, 0]', 3, 'self.bowl_frame'],
+           ['MOVEL', '[ 0.06-0.05, 0.04,  -0.01, 0, 1.5, 0]', 3, 'self.bowl_frame'],
            ['PAUSE', 0.0],
-           ['MOVEL', '[ 0.06-0.01, 0.0,  -0.1, 0, 1.5, 0]', 3, 'self.bowl_frame'],]
+           ['MOVEL', '[ 0.06-0.05, 0.0,  -0.04, 0, 1.5, 0]', 3, 'self.bowl_frame'],]
+        ## self.motions['cleanSpoon1']['left'] = \
+        ##   [['MOVEL', '[ 0.06+0.01, 0.03,  -0.09, 0, 1.5, 0]', 3, 'self.bowl_frame'],
+        ##    ['PAUSE', 0.0],
+        ##    ['MOVEL', '[ 0.06+0.01, 0.03,  -0.02, 0, 1.5, 0]', 3, 'self.bowl_frame'],
+        ##    ['PAUSE', 0.0],
+        ##    ['MOVEL', '[ 0.06-0.05, 0.03,  -0.02, 0, 1.5, 0]', 3, 'self.bowl_frame'],
+        ##    ['PAUSE', 0.0],
+        ##    ['MOVEL', '[ 0.06-0.01, 0.0,  -0.1, 0, 1.5, 0]', 3, 'self.bowl_frame'],]
         self.motions['cleanSpoon1']['right'] = []
                                                 
 

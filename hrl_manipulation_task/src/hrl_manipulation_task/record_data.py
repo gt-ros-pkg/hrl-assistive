@@ -422,7 +422,8 @@ class logger:
 
             if self.audio_wrist is not None: 
                 msg.audio_wrist_rms       = self.audio_wrist.audio_rms
-                msg.audio_wrist_azimuth   = self.audio_wrist.audio_azimuth
+                msg.audio_wrist_azimuth   = -self.audio_wrist.audio_azimuth # because
+                ## msg.audio_wrist_azimuth   = self.audio_wrist.audio_azimuth
                 msg.audio_wrist_mfcc      = self.audio_wrist.audio_mfcc
                 
             if self.kinematics is not None:

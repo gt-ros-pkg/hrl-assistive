@@ -163,8 +163,8 @@ class ArmReacherClient:
 
         # TODO: what is this? 
         points3D = [x for x in points3D]
-        if self.verbose: self.publishPoints('allDepthPoints', points3D, r=0.5, g=0.5,
-                                            frame='head_mount_kinect_ir_optical_frame')
+        ## if self.verbose: self.publishPoints('allDepthPoints', points3D, r=0.5, g=0.5,
+        ##                                     frame='head_mount_kinect_ir_optical_frame')
 
         t = time.time()
 

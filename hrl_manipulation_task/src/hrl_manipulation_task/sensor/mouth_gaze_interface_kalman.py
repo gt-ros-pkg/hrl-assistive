@@ -270,11 +270,11 @@ class DlibFaceLandmarkDetector:
                     self.publish_wipe = True
                     print 'wiping condition met, gui status: {}'.format(self.gui_status)
                     if (self.gui_status == 'select task') or (self.gui_status == 'stopped'):
-                        self.statusPub.publish('Wiping')
+                        self.statusPub.publish('Clean')
                         self.availablePub.publish('true')
                         self.userInputPub.publish('Start')
                         print 'wiping command published'
-                        self.sound_handle.say('Wipe ing')
+                        self.sound_handle.say('Cleaning spoon')
                     elif self.gui_status == 'wait start':
                         self.userInputPub.publish('Start')
 

@@ -47,6 +47,8 @@ import hrl_lib.util as ut
 from hrl_manipulation_task.record_data import logger
 QUEUE_SIZE = 10
 
+import warnings
+warnings.simplefilter("always", DeprecationWarning)
 
 class armReacherGUI:
 

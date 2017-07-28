@@ -146,8 +146,9 @@ class armReacherGUI:
             if self.left_mtx is False and self.right_mtx is False: break
             emergency_wait_rate.sleep()
         self.safetyMotion(self.armReachActionLeft, self.armReachActionRight)
-        
+
         if temp_gui_status != "request feedback": temp_gui_status = self.gui_status
+
         self.availablePub.publish("true")
         if self.gui_status == "stopping": self.guiStatusPub.publish("stopped")
         else:                             print self.gui_status
