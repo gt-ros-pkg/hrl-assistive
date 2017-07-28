@@ -205,11 +205,11 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, nSam
             # pdf prediction
             if batch_info[0]:
                 xx = np.expand_dims(x[j:j+1,0], axis=0)
-                for j in xrange(batch_info[1]-1):
+                for k in xrange(batch_info[1]-1):
                     xx = np.vstack([xx, np.expand_dims(x[j:j+1,0], axis=0) ])
             else:
                 xx = x[j:j+1]
-            x_new  = vae.predict(xx)[0]
+            x_new  = vae.predict(xx, batch_size=batch_info[1])[0]
             ## x_new  = vae.predict(x[j:j+1])[0]
 
             # length x dim
@@ -258,11 +258,14 @@ def get_lower_bound(x, x_mean, x_std, enc_z_mean, enc_z_logvar, nDim):
     No fixed batch
     x: length x dim
     '''
-
-    z_mean    = enc_z_mean.predict(x)[0]
-    z_log_var = enc_z_logvar.predict(x)[0]
-
-    if len(np.shape(x))>2: x = x[0]
+    if len(np.shape(x))>2:
+        batch_size = len(x)
+        z_mean    = enc_z_mean.predict(x, batch_size=batch_size)[0]
+        z_log_var = enc_z_logvar.predict(x, batch_size=batch_size)[0]
+        x = x[0]
+    else:
+        z_mean    = enc_z_mean.predict(x)[0]
+        z_log_var = enc_z_logvar.predict(x)[0]
 
     p_l     = []
     log_p_x_z = -0.5 * ( np.sum( ((x-x_mean)/x_std)**2, axis=-1) \

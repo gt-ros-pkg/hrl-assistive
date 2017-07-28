@@ -52,7 +52,7 @@ import gc
 
 
 
-def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=500, \
+def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500, \
              patience=20, fine_tuning=False, save_weights_file=None, \
              noise_mag=0.0, timesteps=4, sam_epoch=1, \
              x_std_div=1, x_std_offset=0.001,             
@@ -63,9 +63,6 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
     x_test is (sample x length x dim)
     """
 
-    # stateful mode uses single batch and no subsample like windows.
-    #batch_size = 1
-    
     x_train = trainData[0]
     y_train = trainData[1]
     x_test = testData[0]
@@ -220,12 +217,19 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
             for i in xrange(0,len(x_test),batch_size):
                 seq_te_loss = []
 
+                # batch augmentation
                 if i+batch_size > len(x_test):
+                    x = x_test[i:]
                     r = i+batch_size-len(x_test)
-                    idx_list = range(len(x_test))
-                    random.shuffle(idx_list)
-                    x = np.vstack([x_test[i:],
-                                   x_test[idx_list[:r]]])
+
+                    for k in xrange(r/len(x_test)):
+                        x = np.vstack([x, x_test])
+                    
+                    if (r%len(x_test)>0):
+                        idx_list = range(len(x_test))
+                        random.shuffle(idx_list)
+                        x = np.vstack([x,
+                                       x_test[idx_list[:r%len(x_test)]]])
                 else:
                     x = x_test[i:i+batch_size]
                 

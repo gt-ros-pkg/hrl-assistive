@@ -223,7 +223,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         window_size = 1
         x_std_div   = 2
         x_std_offset= 0.05
-        batch_size = 40
+        batch_size = 128
         fixed_batch_size = True
         autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
          km.lstm_vae(trainData, testData, weights_path, patience=4, batch_size=batch_size,
