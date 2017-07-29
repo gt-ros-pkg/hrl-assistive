@@ -141,7 +141,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     # HMM-induced vector with LOPO
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(d['kFoldList']):
-        #if idx != 1: continue
+        if idx != 1: continue
         np.random.shuffle(normalTrainIdx)  
 
         # dim x sample x length
@@ -185,7 +185,6 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         vae_logvar = None
         enc_z_mean = enc_z_std = None
         generator  = None
-        stateful = True
         x_std_div   = None
         x_std_offset= None
 
@@ -233,6 +232,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             from hrl_anomaly_detection.vae import lstm_vae_state_batch as km
             x_std_div   = 2
             x_std_offset= 0.05
+            stateful = True
             ad_method   = 'lower_bound'
             ths_l = np.logspace(-1.0,2.2,40) -0.1 
             autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
@@ -243,6 +243,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         elif method == 'lstm_ae':
             # LSTM-AE (Confirmed) %74.99
             from hrl_anomaly_detection.vae import lstm_ae_state_batch as km
+            stateful = True
             ad_method   = 'recon_err'
             ths_l = np.logspace(-1.0,1.8,40) -0.5 
             autoencoder,_,_, enc_z_mean = \
@@ -254,6 +255,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             # EncDec-AD from Malhortra
             from hrl_anomaly_detection.vae import lstm_ae_state_batch as km
             window_size = 10
+            stateful = True
             ad_method   = 'recon_err_likelihood'
             ths_l = np.logspace(-1.0,1.8,40) -0.5 
             autoencoder,_,_, enc_z_mean = \
@@ -261,6 +263,22 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                          noise_mag=noise_mag, timesteps=window_size, sam_epoch=sam_epoch,
                          re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot)
             vae_mean = autoencoder
+        elif method == 'lstm_vae_offline':
+            from hrl_anomaly_detection.vae import lstm_vae_offline as km
+            window_size = 0
+            batch_size  = 1024
+            sam_epoch   = 1
+            x_std_div   = 2
+            x_std_offset= 0.05
+            fixed_batch_size = False
+            stateful    = False
+            ad_method   = 'lower_bound'
+            ths_l = np.logspace(-1.0,1.5,40) -2. 
+            autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
+              km.lstm_vae(trainData, testData, weights_path, patience=4, batch_size=batch_size,
+                          noise_mag=noise_mag, sam_epoch=sam_epoch,
+                          x_std_div=x_std_div, x_std_offset=x_std_offset,                          
+                          re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot) 
 
         
         #------------------------------------------------------------------------------------

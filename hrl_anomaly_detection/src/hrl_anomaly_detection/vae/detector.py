@@ -56,7 +56,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
                       x_std_div=1.0, x_std_offset=1e-10,
                       dyn_ths=False, plot=False, renew=False, batch_info=(False,None), **kwargs):
 
-    if os.path.isfile(save_pkl) and renew is False:
+    if os.path.isfile(save_pkl) and renew is False :
         d = ut.load_pickle(save_pkl)
         scores_tr_n = d['scores_tr_n']
         zs_tr_n = d['zs_tr_n']
