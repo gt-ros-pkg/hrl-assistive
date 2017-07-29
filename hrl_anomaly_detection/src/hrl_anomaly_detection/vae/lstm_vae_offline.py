@@ -46,6 +46,7 @@ from keras import backend as K
 from keras import objectives
 
 from hrl_anomaly_detection.vae import keras_util as ku
+from hrl_anomaly_detection.vae import util as vutil
 
 import gc
 
@@ -78,7 +79,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
     
     def sampling(args):
         z_mean, z_log_var = args
-        epsilon = K.random_normal(shape=K.shape(z_mean), mean=0., stddev=1.0)
+        epsilon = K.random_normal(shape=K.shape(z_mean), mean=0., stddev=0.3)
         ## epsilon = K.random_normal(shape=(z_dim,), mean=0., stddev=1.0)
         return z_mean + K.exp(z_log_var/2.0) * epsilon    
         
@@ -135,9 +136,10 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
     generator = None
 
     # VAE --------------------------------------
-    vae_mean_var = Model(inputs, decoded)
+    vae_mean_std = Model(inputs, decoded)
 
-    if weights_file is not None and os.path.isfile(weights_file) and fine_tuning is False and False:
+    if weights_file is not None and os.path.isfile(weights_file) and fine_tuning is False and\
+        re_load is False and renew is False:
         vae_autoencoder.load_weights(weights_file)
     else:
         if fine_tuning:
@@ -160,7 +162,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
                                     save_weights_only=True,
                                     monitor='val_loss'),
                     ReduceLROnPlateau(monitor='val_loss', factor=0.2,
-                                      patience=2, min_lr=0.0)]
+                                      patience=3, min_lr=0.0)]
 
         train_datagen = ku.sigGenerator(augmentation=True, noise_mag=noise_mag)
         train_generator = train_datagen.flow(x_train, x_train, batch_size=batch_size, seed=3334,
@@ -192,21 +194,19 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
         for i in xrange(len(x_test)):
 
             x = x_test[i:i+1]
-            for j in xrange(batch_size-1):
-                x = np.vstack([x,x_test[i:i+1]])
 
             vae_autoencoder.reset_states()
             vae_mean_std.reset_states()
             
             x_pred_mean = []
             x_pred_std  = []
-            for j in xrange(len(x[0])-timesteps+1):
-                x_pred = vae_mean_std.predict(x[:,j:j+timesteps])
-                x_pred_mean.append(x_pred[0,-1,:nDim])
-                x_pred_std.append(x_pred[0,-1,nDim:]/x_std_div+x_std_offset)
+            
+            x_pred = vae_mean_std.predict(x)
+            x_pred_mean = x_pred[0,:,:nDim]
+            x_pred_std  = x_pred[0,:,nDim:]/x_std_div+x_std_offset
 
             vutil.graph_variations(x_test[i], x_pred_mean, x_pred_std)
 
         
-    return vae_autoencoder, vae_mean_var, vae_mean_var, vae_encoder_mean, vae_encoder_var, generator
+    return vae_autoencoder, vae_mean_std, vae_mean_std, vae_encoder_mean, vae_encoder_var, generator
     

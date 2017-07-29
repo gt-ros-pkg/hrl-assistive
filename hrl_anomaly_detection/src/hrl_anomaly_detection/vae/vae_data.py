@@ -267,15 +267,15 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             from hrl_anomaly_detection.vae import lstm_vae_offline as km
             window_size = 0
             batch_size  = 1024
-            sam_epoch   = 1
-            x_std_div   = 2
+            sam_epoch   = 100
+            x_std_div   = 1
             x_std_offset= 0.05
             fixed_batch_size = False
             stateful    = False
             ad_method   = 'lower_bound'
-            ths_l = np.logspace(-1.0,1.5,40) -2. 
+            ths_l = np.logspace(-1.0,0.6,40)-1.0  
             autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
-              km.lstm_vae(trainData, testData, weights_path, patience=4, batch_size=batch_size,
+              km.lstm_vae(trainData, testData, weights_path, patience=5, batch_size=batch_size,
                           noise_mag=noise_mag, sam_epoch=sam_epoch,
                           x_std_div=x_std_div, x_std_offset=x_std_offset,                          
                           re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot) 

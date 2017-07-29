@@ -88,10 +88,12 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
 
     if dyn_ths:
         print "Start to fit SVR with gamma=", 0.5
+        print np.shape(zs_tr_n), np.shape(scores_tr_n)
         from sklearn.svm import SVR
         clf = SVR(C=1.0, epsilon=0.2, kernel='rbf', gamma=0.5)
         x = np.array(zs_tr_n).reshape(-1,np.shape(zs_tr_n)[-1])
         y = np.array(scores_tr_n).reshape(-1,np.shape(scores_tr_n)[-1])
+        print np.shape(x), np.shape(y)
         clf.fit(x, y)
 
     ## for i, s_true in enumerate(scores_n):
@@ -335,7 +337,9 @@ def get_lower_bound(x, x_mean, x_std, enc_z_mean, enc_z_logvar, nDim):
         kl_loss = - 0.5 * np.sum(1 + z_log_var - z_mean**2 - np.exp(z_log_var), axis=-1)
     else:
         kl_loss = - 0.5 * np.sum(1 + z_log_var - z_mean**2 - np.exp(z_log_var))
-                                 
-    return xent_loss + kl_loss, z_mean, z_log_var
-    #return float(np.mean(xent_loss + kl_loss) )
+
+    if len(xent_loss + kl_loss)>1:
+        return [np.mean(xent_loss + kl_loss)], z_mean, z_log_var
+    else:
+        return xent_loss + kl_loss, z_mean, z_log_var
 
