@@ -216,8 +216,6 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
             # length x dim
             x_mean = x_new[:,:x_dim]
             if enc_z_logvar is not None:
-                x_std_div    = kwargs['x_std_div']
-                x_std_offset = kwargs['x_std_offset']
                 x_std  = np.sqrt(x_new[:,x_dim:]/x_std_div+x_std_offset)
             else:
                 x_std = None
@@ -268,6 +266,29 @@ def get_reconstruction_err_prob(x, x_mean, x_std, alpha=1.0):
 
 def get_reconstruction_err(x, x_mean, alpha=1.0):
     '''
+    Return minimum value for alpha \sum alpha * |x(i)-x_mean(i)|^2 over time 
+    '''
+
+    if len(np.shape(x))>2:
+        x = x[0]
+        
+    p_l     = []
+    for k in xrange(len(x_mean[0])): # per dim
+        p = []
+        for l in xrange(len(x_mean)): # per length
+            
+            p.append( alpha * (x_mean[l,k] - x[l,k])**2 ) # length
+
+        p_l.append(p) # dim x length
+    p_l = np.sum(p_l, axis=0)
+
+    # find min 
+    return [np.amin(p_l)]
+
+
+def get_reconstruction_err_lld(x, x_mean, alpha=1.0):
+    '''
+    Return reconstruction error likelihood
     Return minimum value for alpha \sum alpha * |x(i)-x_mean(i)|^2 over time 
     '''
 
