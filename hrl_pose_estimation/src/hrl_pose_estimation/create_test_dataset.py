@@ -41,7 +41,7 @@ LOW_TAXEL_THRESH_X = 0
 LOW_TAXEL_THRESH_Y = 0
 HIGH_TAXEL_THRESH_X = (NUMOFTAXELS_X - 1) 
 HIGH_TAXEL_THRESH_Y = (NUMOFTAXELS_Y - 1) 
-x
+
  
 class DatabaseCreator():
     '''Gets the directory of pkl database and iteratively go through each file,
@@ -59,10 +59,13 @@ class DatabaseCreator():
         self.mat_to_taxels = CreateDatasetLib().mat_to_taxels
 
         
-        [self.p_world_mat, self.R_world_mat] = pkl.load(
-                open(os.path.join(self.training_dump_path,'mat_axes.p'), "r"))         
+
+        
+        [self.p_world_mat, self.R_world_mat] = load_pickle(self.training_dump_path+'/mat_axes.p')
+         
         self.mat_size = (NUMOFTAXELS_X, NUMOFTAXELS_Y)
-        self.individual_dataset = {} 
+        self.individual_dataset = {}
+        self.test_dataset = []
 
 
 
@@ -153,7 +156,7 @@ class DatabaseCreator():
         #Creating rotated p_map
         rotated_p_map = np.zeros([NUMOFTAXELS_X, NUMOFTAXELS_Y])
         for i in range(len(pca_y_pixels)):
-            rotated_p_map[rotated_p_map_coord[i]] = pca_y_pixels[i]
+            rotated_p_map[int(rotated_p_map_coord[i][0])][int(rotated_p_map_coord[i][1])]=pca_y_pixels[i]
         return rotated_p_map
 
 
@@ -211,24 +214,21 @@ class DatabaseCreator():
     def create_raw_database(self):
         '''Creates a database using the raw pressure values(full_body) and only
         transforms world frame coordinates to mat coordinates'''
-        test_dat = pkl.load(
-                open(os.path.join(self.training_dump_path,'test.p'), "rb")) 
-        try:
-            del test_dat['mat_o']
-        except KeyError:
-            pass
+        test_dat = load_pickle(self.training_dump_path+'/LH_sup.p') 
+
+
         count = 0
-        for p_map_raw in test_dat.keys():
-            target_raw = test_dat[p_map_raw]
-            target_raw = np.array(target_raw).reshape(len(target_raw)/3,3)
+        for [p_map_raw, target_raw] in test_dat:
             target_mat = self.world_to_mat(target_raw, self.p_world_mat, self.R_world_mat)
             rot_p_map = self.rotate_taxel_space(p_map_raw)
             rot_target_mat = self.rotate_3D_space(target_mat)
-            self.individual_dataset[tuple(rot_p_map.flatten())] = rot_target_mat.flatten()
+            #self.individual_dataset[tuple(rot_p_map.flatten())] = rot_target_mat.flatten()
+            self.test_dataset.append([list(rot_p_map.flatten()), rot_target_mat.flatten()])
             count += 1
-        print "Saving final_dataset"
-        pkl.dump(self.individual_dataset,
-                open(os.path.join(self.training_dump_path, 'test_rot.p'), 'wb'))
+        print "Saving test_dataset"
+        pkl.dump(self.test_dataset,
+                open(os.path.join(self.training_dump_path, 'basic_test_dataset.p'), 'wb'))
+        print 'Done.'
         return
 
 
@@ -246,7 +246,9 @@ if __name__ == "__main__":
 
     p.add_option('--training_data_path', '--path',  action='store', type='string', \
                  dest='trainingPath',\
+                 default='/home/henryclever/hrl_file_server/Autobed/pose_estimation_data/subject_4', \
                  help='Set path to the training database.')
+    p.add_option('--verbose', '--v',  action='store_true', dest='verbose', default=False, help='Printout everything (under construction).')
     
     opt, args = p.parse_args()
     
