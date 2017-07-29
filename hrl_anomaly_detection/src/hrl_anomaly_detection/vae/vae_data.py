@@ -72,6 +72,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     data_dict  = param_dict['data_param']
     data_renew = data_dict['renew']
     ae_renew   = param_dict['HMM']['renew']
+    method     = param_dict['ROC']['methods'][0]
     
     if ae_renew: clf_renew = True
     else: clf_renew  = param_dict['SVM']['renew']
@@ -178,12 +179,15 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         ## (normalTrainData_ft, abnormalTrainData_ft, normalTestData_ft, abnormalTestData_ft) = raw_data_ft
         # ------------------------------------------------------------------------------------------        
          
-        weights_path = os.path.join(save_data_path,'model_weights_'+str(idx)+'.h5')
+        weights_path = os.path.join(save_data_path,'model_weights_'+method+'_'+str(idx)+'.h5')
         ## weights_path = os.path.join(save_data_path,'tmp_fine_weights_'+str(idx)+'.h5')
         vae_mean   = None
         vae_logvar = None
         enc_z_mean = enc_z_std = None
+        generator  = None
         stateful = True
+        x_std_div   = None
+        x_std_offset= None
 
         # ------------------------------------------------------------------------------------------
         ## from hrl_anomaly_detection.vae import lstm_vae as km
@@ -217,19 +221,46 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         ##  km.lstm_vae(trainData, testData, weights_path, patience=4, batch_size=batch_size,
         ##              noise_mag=0.1, timesteps=window_size, sam_epoch=10,
         ##              x_std_div = x_std_div, x_std_offset=x_std_offset,
-        ##              re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot) 
-
-        from hrl_anomaly_detection.vae import lstm_vae_state_batch as km
+        ##              re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot)
+        
         window_size = 1
-        x_std_div   = 2
-        x_std_offset= 0.05
-        batch_size = 128
+        batch_size  = 32
         fixed_batch_size = True
-        autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
-         km.lstm_vae(trainData, testData, weights_path, patience=4, batch_size=batch_size,
-                     noise_mag=0.1, timesteps=window_size, sam_epoch=10,
-                     x_std_div = x_std_div, x_std_offset=x_std_offset,
-                     re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot) 
+        noise_mag   = 0.1
+        sam_epoch   = 10        
+
+        if method == 'lstm_vae':
+            from hrl_anomaly_detection.vae import lstm_vae_state_batch as km
+            x_std_div   = 2
+            x_std_offset= 0.05
+            ad_method   = 'lower_bound'
+            ths_l = np.logspace(-1.0,2.2,40) -0.1 
+            autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
+              km.lstm_vae(trainData, testData, weights_path, patience=4, batch_size=batch_size,
+                          noise_mag=noise_mag, timesteps=window_size, sam_epoch=sam_epoch,
+                          x_std_div=x_std_div, x_std_offset=x_std_offset,                          
+                          re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot) 
+        elif method == 'lstm_ae':
+            # LSTM-AE (Confirmed) %74.99
+            from hrl_anomaly_detection.vae import lstm_ae_state_batch as km
+            ad_method   = 'recon_err'
+            ths_l = np.logspace(-1.0,1.8,40) -0.5 
+            autoencoder,_,_, enc_z_mean = \
+              km.lstm_ae(trainData, testData, weights_path, patience=4, batch_size=batch_size,
+                         noise_mag=noise_mag, timesteps=window_size, sam_epoch=sam_epoch,
+                         re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot)
+            vae_mean = autoencoder
+        elif method == 'encdec_ad':
+            # EncDec-AD from Malhortra
+            from hrl_anomaly_detection.vae import lstm_ae_state_batch as km
+            window_size = 10
+            ad_method   = 'recon_err_likelihood'
+            ths_l = np.logspace(-1.0,1.8,40) -0.5 
+            autoencoder,_,_, enc_z_mean = \
+              km.lstm_ae(trainData, testData, weights_path, patience=4, batch_size=batch_size,
+                         noise_mag=noise_mag, timesteps=window_size, sam_epoch=sam_epoch,
+                         re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot)
+            vae_mean = autoencoder
 
         
         #------------------------------------------------------------------------------------
@@ -241,10 +272,6 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         ## from hrl_anomaly_detection.vae import lstm_ae as km
         ## autoencoder = km.lstm_ae(trainData, testData, weights_path, patience=5, batch_size=batch_size)
 
-        ## # LSTM-AE (Confirmed)
-        ## from hrl_anomaly_detection.vae import lstm_ae_state as km
-        ## autoencoder = km.lstm_ae(trainData, testData, weights_path, patience=5, batch_size=batch_size,
-        ##                          noise_mag=0.05, sam_epoch=1, re_load=re_load)
 
         if True and False:
             # get optimized alpha
@@ -263,6 +290,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
           dt.anomaly_detection(autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generator,
                                normalTrainData, abnormalTrainData,\
                                normalTestData, abnormalTestData, \
+                               ad_method,
                                window_size, alpha, ths_l=ths_l, save_pkl=save_pkl, stateful=stateful,
                                x_std_div = x_std_div, x_std_offset=x_std_offset, plot=plot,
                                renew=clf_renew, dyn_ths=True, batch_info=(fixed_batch_size,batch_size))

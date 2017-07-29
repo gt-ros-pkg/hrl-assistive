@@ -51,9 +51,10 @@ matplotlib.rcParams['ps.fonttype'] = 42
 
 def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, generator,
                       normalTrainData, abnormalTrainData,\
-                      normalTestData, abnormalTestData, window_size, \
-                      alpha, ths_l=None, save_pkl=None, stateful=False, x_std_div=1.0, x_std_offset=1e-10,
-                      dyn_ths=False, plot=False, renew=False, batch_info=(False,None)):
+                      normalTestData, abnormalTestData, ad_method, window_size, \
+                      alpha, ths_l=None, save_pkl=None, stateful=False, \
+                      x_std_div=1.0, x_std_offset=1e-10,
+                      dyn_ths=False, plot=False, renew=False, batch_info=(False,None), **kwargs):
 
     if os.path.isfile(save_pkl) and renew is False:
         d = ut.load_pickle(save_pkl)
@@ -65,16 +66,16 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         zs_te_a = d['zs_te_a']
     else:
         scores_tr_n, zs_tr_n = get_anomaly_score(normalTrainData, vae_mean, enc_z_mean, enc_z_logvar,
-                                                 window_size, alpha, stateful=stateful,
+                                                 window_size, alpha, ad_method, stateful=stateful,
                                                  x_std_div=x_std_div, x_std_offset=x_std_offset,
                                                  batch_info=batch_info)        
         scores_te_n, zs_te_n = get_anomaly_score(normalTestData, vae_mean, enc_z_mean, enc_z_logvar,
-                                     window_size, alpha, stateful=stateful,
+                                     window_size, alpha, ad_method, stateful=stateful,
                                      x_std_div=x_std_div, x_std_offset=x_std_offset,batch_info=batch_info)
         scores_te_a, zs_te_a = get_anomaly_score(abnormalTestData, vae_mean, enc_z_mean, enc_z_logvar,
-                                     window_size, alpha, stateful=stateful,
+                                     window_size, alpha, ad_method, stateful=stateful,
                                      x_std_div=x_std_div, x_std_offset=x_std_offset,batch_info=batch_info)
-        
+
         d = {}
         d['scores_tr_n'] = scores_tr_n
         d['zs_tr_n']     = zs_tr_n
@@ -86,11 +87,11 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
 
 
     if dyn_ths:
+        print "Start to fit SVR with gamma=", 0.5
         from sklearn.svm import SVR
         clf = SVR(C=1.0, epsilon=0.2, kernel='rbf', gamma=0.5)
         x = np.array(zs_tr_n).reshape(-1,np.shape(zs_tr_n)[-1])
         y = np.array(scores_tr_n).reshape(-1,np.shape(scores_tr_n)[-1])
-        print np.shape(x), np.shape(y), np.shape(zs_tr_n), np.shape(scores_tr_n)
         clf.fit(x, y)
 
     ## for i, s_true in enumerate(scores_n):
@@ -178,15 +179,15 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
 
 
 
-def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, nSample=1000,
-                      stateful=False, x_std_div=1, x_std_offset=1e-10,batch_info=(False,None)):
+def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_method, nSample=1000,
+                      stateful=False, x_std_div=1, x_std_offset=1e-10,batch_info=(False,None), **kwargs):
 
     x_dim = len(X[0][0])
 
     scores = []
     zs = []
     for i in xrange(len(X)): # per sample
-        print "sample: ", i+1, " out of ", len(X)
+        #print "sample: ", i+1, " out of ", len(X)
         np.random.seed(3334 + i)
             
         if window_size>0: x = vutil.sampleWithWindow(X[i:i+1], window=window_size)
@@ -196,7 +197,7 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, nSam
         if stateful:
             vae.reset_states()
             enc_z_mean.reset_states()
-            enc_z_logvar.reset_states()                
+            if enc_z_logvar is not None: enc_z_logvar.reset_states()                
             
         z = []
         s = []
@@ -214,22 +215,34 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, nSam
 
             # length x dim
             x_mean = x_new[:,:x_dim]
-            x_std  = np.sqrt(x_new[:,x_dim:]/x_std_div+x_std_offset)
+            if enc_z_logvar is not None:
+                x_std_div    = kwargs['x_std_div']
+                x_std_offset = kwargs['x_std_offset']
+                x_std  = np.sqrt(x_new[:,x_dim:]/x_std_div+x_std_offset)
+            else:
+                x_std = None
 
             #---------------------------------------------------------------
-            # Method 1: Reconstruction probability
-            #s.append( get_reconstruction_err_prob(x[j], x_mean, x_std, alpha=alpha) )
-
-            # Method 2: Lower bound
-            l, z_mean, z_log_var = get_lower_bound(xx, x_mean, x_std, enc_z_mean, enc_z_logvar,\
-                                                   x_dim)
-            s.append(l)
-            z.append(z_mean.tolist() + z_log_var.tolist())
-            ## s.append( get_lower_bound(x[j:j+1], x_mean, x_std, enc_z_mean, enc_z_logvar) )
-            
+            if ad_method == 'recon_prob':
+                # Method 1: Reconstruction probability
+                l,z = get_reconstruction_err_prob(xx, x_mean, x_std, alpha=alpha)
+                s.append(l)
+                z.append( z.tolist() )                
+            elif ad_method == 'recon_err':
+                # Method 1: Reconstruction probability
+                l = get_reconstruction_err(xx, x_mean, alpha=alpha)
+                s.append( l )
+                z.append( enc_z_mean.predict(xx, batch_size=batch_info[1])[0].tolist() )                
+            elif ad_method == 'lower_bound':
+                # Method 2: Lower bound
+                l, z_mean, z_log_var = get_lower_bound(xx, x_mean, x_std, enc_z_mean, enc_z_logvar,\
+                                                       x_dim)
+                s.append(l)
+                z.append(z_mean.tolist() + z_log_var.tolist())
 
         scores.append(s) # s is scalers
         zs.append(z)
+
     return scores, zs
 
 
@@ -251,6 +264,28 @@ def get_reconstruction_err_prob(x, x_mean, x_std, alpha=1.0):
     # find min 
     ## return np.mean(alpha.dot( np.log(np.array(p_l)) )) 
     return -np.amin(alpha.dot( np.log(np.array(p_l)) ))
+
+
+def get_reconstruction_err(x, x_mean, alpha=1.0):
+    '''
+    Return minimum value for alpha \sum alpha * |x(i)-x_mean(i)|^2 over time 
+    '''
+
+    if len(np.shape(x))>2:
+        x = x[0]
+        
+    p_l     = []
+    for k in xrange(len(x_mean[0])): # per dim
+        p = []
+        for l in xrange(len(x_mean)): # per length
+            
+            p.append( alpha * (x_mean[l,k] - x[l,k])**2 ) # length
+
+        p_l.append(p) # dim x length
+    p_l = np.sum(p_l, axis=0)
+
+    # find min 
+    return [np.amin(p_l)]
 
 
 def get_lower_bound(x, x_mean, x_std, enc_z_mean, enc_z_logvar, nDim):
