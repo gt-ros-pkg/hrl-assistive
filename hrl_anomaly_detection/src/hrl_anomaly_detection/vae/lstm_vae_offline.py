@@ -54,7 +54,7 @@ import gc
 
 def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=500, \
              patience=20, fine_tuning=False, save_weights_file=None, noise_mag=0.0, sam_epoch=512,\
-             x_std_div=1, x_std_offset=0.001,
+             x_std_div=1, x_std_offset=0.001, z_std=0.5,
              re_load=False, renew=False, plot=True, **kwargs):
     """
     Variational Autoencoder with two LSTMs and one fully-connected layer
@@ -79,7 +79,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
     
     def sampling(args):
         z_mean, z_log_var = args
-        epsilon = K.random_normal(shape=K.shape(z_mean), mean=0., stddev=0.3)
+        epsilon = K.random_normal(shape=K.shape(z_mean), mean=0., stddev=z_std)
         ## epsilon = K.random_normal(shape=(z_dim,), mean=0., stddev=1.0)
         return z_mean + K.exp(z_log_var/2.0) * epsilon    
         
