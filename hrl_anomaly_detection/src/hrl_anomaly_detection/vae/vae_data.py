@@ -159,7 +159,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
 
         normalTrainData, abnormalTrainData, normalTestData, abnormalTestData =\
           get_scaled_data(normalTrainData, abnormalTrainData, normalTestData, abnormalTestData, aligned=False)
-        trainData = [normalTrainData, [0]*len(normalTrainData)]
+        trainData = [normalTrainData[:int(len(normalTrainData)*0.7)], [0]*len(normalTrainData[:int(len(normalTrainData)*0.7)])]
+        valData   = [normalTrainData[int(len(normalTrainData)*0.7):], [0]*len(normalTrainData[int(len(normalTrainData)*0.7):])]
         testData  = [normalTestData, [0]*len(normalTestData)]
 
 
@@ -227,7 +228,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         fixed_batch_size = True
         noise_mag   = 0.1
         sam_epoch   = 10
-        method      = 'lstm_vae2'
+        method      = 'lstm_vae'
 
         if method == 'lstm_vae' or method == 'lstm_vae2' or method == 'lstm_dvae':
             if method == 'lstm_vae':
@@ -245,7 +246,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             stateful = True
             ad_method   = 'lower_bound'
             autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
-              km.lstm_vae(trainData, testData, weights_path, patience=4, batch_size=batch_size,
+              km.lstm_vae(trainData, valData, weights_path, patience=4, batch_size=batch_size,
                           noise_mag=noise_mag, timesteps=window_size, sam_epoch=sam_epoch,
                           x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,                          
                           re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot) 
@@ -256,7 +257,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             ad_method   = 'recon_err'
             ths_l = np.logspace(-1.0,1.8,40) -0.5 
             autoencoder,_,_, enc_z_mean = \
-              km.lstm_ae(trainData, testData, weights_path, patience=4, batch_size=batch_size,
+              km.lstm_ae(trainData, valData, weights_path, patience=4, batch_size=batch_size,
                          noise_mag=noise_mag, timesteps=window_size, sam_epoch=sam_epoch,
                          re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot)
             vae_mean = autoencoder
@@ -268,7 +269,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             ad_method   = 'recon_err_likelihood'
             ths_l = np.logspace(-1.0,1.8,40) -0.5 
             autoencoder,_,_, enc_z_mean = \
-              km.lstm_ae(trainData, testData, weights_path, patience=4, batch_size=batch_size,
+              km.lstm_ae(trainData, valData, weights_path, patience=4, batch_size=batch_size,
                          noise_mag=noise_mag, timesteps=window_size, sam_epoch=sam_epoch,
                          re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot)
             vae_mean = autoencoder
@@ -285,7 +286,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             ad_method    = 'lower_bound'
             ths_l = np.logspace(-1.0,0.6,40)-1.0  
             autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
-              km.lstm_vae(trainData, testData, weights_path, patience=5, batch_size=batch_size,
+              km.lstm_vae(trainData, valData, weights_path, patience=5, batch_size=batch_size,
                           noise_mag=noise_mag, sam_epoch=sam_epoch,
                           x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,\
                           re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot) 
