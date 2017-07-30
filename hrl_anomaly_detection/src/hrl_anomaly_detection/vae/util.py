@@ -57,25 +57,29 @@ def graph_variations(x_true, x_pred_mean, x_pred_std=None):
     import matplotlib.pyplot as plt
     from mpl_toolkits.mplot3d import Axes3D
     from matplotlib import gridspec
+    from matplotlib import rc
     import itertools
     colors = itertools.cycle(['g', 'm', 'c', 'k', 'y','r', 'b', ])
     shapes = itertools.cycle(['x','v', 'o', '+'])
 
     matplotlib.rcParams['pdf.fonttype'] = 42
-    matplotlib.rcParams['ps.fonttype'] = 42 
-
+    matplotlib.rcParams['ps.fonttype'] = 42
+    #rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
+    #rc('text', usetex=True)
+    ## matplotlib.rcParams['text.usetex'] = True
     
     nDim = len(x_true[0])
     
     fig = plt.figure(figsize=(6, 6))
     for k in xrange(nDim):
         fig.add_subplot(nDim,1,k+1)
-        plt.plot(np.array(x_true)[:,k], '-b')
-        plt.plot(np.array(x_pred_mean)[:,k], '-r')
+        plt.rc('text', usetex=True) 
+        plt.plot(np.array(x_true)[:,k], '-b', label='Inputs')
+        plt.plot(np.array(x_pred_mean)[:,k], '-r', label=r'$\mu$')
         if x_pred_std is not None and len(x_pred_std)>0:
-            plt.plot(np.array(x_pred_mean)[:,k]+np.array(x_pred_std)[:,k], '--r')
+            plt.plot(np.array(x_pred_mean)[:,k]+np.array(x_pred_std)[:,k], '--r', label=r'$\mu\pm\sigma$')
             plt.plot(np.array(x_pred_mean)[:,k]-np.array(x_pred_std)[:,k], '--r')
-        plt.ylim([-0.1,1.1])
+        #plt.ylim([-0.1,1.1])
     plt.show()
 
 def graph_latent_space(z_n, z_a=None):

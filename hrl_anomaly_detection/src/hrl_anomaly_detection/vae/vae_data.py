@@ -266,14 +266,14 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             vae_mean = autoencoder
         elif method == 'lstm_vae_offline':
             from hrl_anomaly_detection.vae import lstm_vae_offline as km
-            window_size = 0
-            batch_size  = 1024
-            sam_epoch   = 100
-            x_std_div   = 1
-            x_std_offset= 0.05
+            window_size  = 0
+            batch_size   = 1024
+            sam_epoch    = 100
+            x_std_div    = 1
+            x_std_offset = 0.05
             fixed_batch_size = False
-            stateful    = False
-            ad_method   = 'lower_bound'
+            stateful     = False
+            ad_method    = 'lower_bound'
             ths_l = np.logspace(-1.0,0.6,40)-1.0  
             autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
               km.lstm_vae(trainData, testData, weights_path, patience=5, batch_size=batch_size,
@@ -291,7 +291,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         ## from hrl_anomaly_detection.vae import lstm_ae as km
         ## autoencoder = km.lstm_ae(trainData, testData, weights_path, patience=5, batch_size=batch_size)
 
-        if  True: 
+        if  True and False: 
             print "latent variable visualization"
             if method == 'lstm_vae_offline':
                 z_mean_n = enc_z_mean.predict(normalTestData)
@@ -887,10 +887,10 @@ if __name__ == '__main__':
                                                 'crossmodal_landmarkEEDist', \
                                                 'unimodal_audioWristRMS']
 
-    ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
-    ##                                             'unimodal_kinJntEff_1',\
-    ##                                             'unimodal_ftForce_integ',\
-    ##                                             'crossmodal_landmarkEEDist']
+    param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
+                                                'unimodal_kinJntEff_1',\
+                                                'unimodal_ftForce_integ',\
+                                                'crossmodal_landmarkEEDist']
 
 
     if opt.gen_data:
