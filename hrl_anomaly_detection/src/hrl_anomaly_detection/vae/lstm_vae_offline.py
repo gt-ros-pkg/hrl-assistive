@@ -38,7 +38,7 @@ import scipy
 import h5py 
 from keras.models import Sequential, Model
 from keras.layers import Merge, Input, TimeDistributed, Layer
-from keras.layers import Activation, Dropout, Flatten, Dense, merge, Lambda, RepeatVector, LSTM
+from keras.layers import Activation, Dropout, Flatten, Dense, merge, Lambda, RepeatVector, LSTM, GaussianNoise
 from keras.layers.advanced_activations import PReLU, LeakyReLU
 from keras.utils.np_utils import to_categorical
 from keras.optimizers import SGD, Adagrad, Adadelta, RMSprop, Adam
@@ -73,6 +73,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
     z_dim  = 2
 
     inputs = Input(shape=(timesteps, input_dim)) #1.99
+    ## encoded = GaussianNoise(noise_mag)(inputs)
     encoded = LSTM(h1_dim, return_sequences=False, activation='tanh')(inputs)
     z_mean  = Dense(z_dim)(encoded) 
     z_log_var = Dense(z_dim)(encoded) 
