@@ -232,13 +232,14 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             from hrl_anomaly_detection.vae import lstm_vae_state_batch as km
             x_std_div   = 2
             x_std_offset= 0.05
+            z_std       = 0.5
             stateful = True
             ad_method   = 'lower_bound'
             ths_l = np.logspace(-1.0,2.2,40) -0.1 
             autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
               km.lstm_vae(trainData, testData, weights_path, patience=4, batch_size=batch_size,
                           noise_mag=noise_mag, timesteps=window_size, sam_epoch=sam_epoch,
-                          x_std_div=x_std_div, x_std_offset=x_std_offset,                          
+                          x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,                          
                           re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot) 
         elif method == 'lstm_ae':
             # LSTM-AE (Confirmed) %74.99
@@ -877,10 +878,19 @@ if __name__ == '__main__':
     ##                                             'unimodal_landmarkDist',\
     ##                                             'crossmodal_landmarkEEAng']
 
-    param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
+    param_dict['data_param']['handFeatures'] = ['unimodal_kinVel',\
                                                 'unimodal_kinJntEff_1',\
+                                                'unimodal_ftForce_zero',\
                                                 'unimodal_ftForce_integ',\
-                                                'crossmodal_landmarkEEDist']
+                                                'unimodal_kinEEChange',\
+                                                'unimodal_kinDesEEChange',\
+                                                'crossmodal_landmarkEEDist', \
+                                                'unimodal_audioWristRMS']
+
+    ## param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
+    ##                                             'unimodal_kinJntEff_1',\
+    ##                                             'unimodal_ftForce_integ',\
+    ##                                             'crossmodal_landmarkEEDist']
 
 
     if opt.gen_data:
