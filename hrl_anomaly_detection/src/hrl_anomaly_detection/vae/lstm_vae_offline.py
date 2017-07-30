@@ -55,7 +55,7 @@ import gc
 def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=500, \
              patience=20, fine_tuning=False, save_weights_file=None, noise_mag=0.0, sam_epoch=512,\
              x_std_div=1, x_std_offset=0.001,
-             re_load=False, renew=False, plot=True):
+             re_load=False, renew=False, plot=True, **kwargs):
     """
     Variational Autoencoder with two LSTMs and one fully-connected layer
     x_train is (sample x length x dim)
@@ -72,7 +72,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
     h1_dim = input_dim
     z_dim  = 2
 
-    inputs = Input(shape=(timesteps, input_dim))
+    inputs = Input(shape=(timesteps, input_dim)) #1.99
     encoded = LSTM(h1_dim, return_sequences=False, activation='tanh')(inputs)
     z_mean  = Dense(z_dim)(encoded) 
     z_log_var = Dense(z_dim)(encoded) 
@@ -183,10 +183,6 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=5
 
     # ---------------------------------------------------------------------------------
     # visualize outputs
-    if False:
-        print "latent variable visualization"
-        
-
     if plot:
         print "variance visualization"
         nDim = len(x_test[0,0])

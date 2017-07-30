@@ -77,3 +77,23 @@ def graph_variations(x_true, x_pred_mean, x_pred_std=None):
             plt.plot(np.array(x_pred_mean)[:,k]-np.array(x_pred_std)[:,k], '--r')
         plt.ylim([-0.1,1.1])
     plt.show()
+
+def graph_latent_space(z_n, z_a=None):
+    '''
+    z_n: latent variable from normal data
+    z_n: latent variable from abnormal data
+    '''
+    import matplotlib
+    import matplotlib.pyplot as plt
+
+    matplotlib.rcParams['pdf.fonttype'] = 42
+    matplotlib.rcParams['ps.fonttype'] = 42 
+    fig = plt.figure(figsize=(6, 6))
+
+    s = 121
+    plt.scatter(z_n[:,0], z_n[:,1], color='b', s=2*s, alpha=.4, label='Non-anomalous')
+    if z_a is not None:
+        plt.scatter(z_a[:,0], z_a[:,1], color='r', s=2*s, marker='^', alpha=.4, label='Anomalous')
+
+    plt.legend(loc=3, ncol=2)
+    plt.show()

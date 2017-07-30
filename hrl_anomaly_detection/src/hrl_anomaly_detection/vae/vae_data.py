@@ -290,7 +290,16 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         ## from hrl_anomaly_detection.vae import lstm_ae as km
         ## autoencoder = km.lstm_ae(trainData, testData, weights_path, patience=5, batch_size=batch_size)
 
+        if  True: 
+            print "latent variable visualization"
+            if method == 'lstm_vae_offline':
+                z_mean_n = enc_z_mean.predict(normalTestData)
+                z_mean_a = enc_z_mean.predict(abnormalTestData)
+                vutil.graph_latent_space(z_mean_n, z_mean_a)
+            else:
+                print "NA"
 
+        # -----------------------------------------------------------------------------------
         if True and False:
             # get optimized alpha
             save_pkl = os.path.join(save_data_path, 'tmp_data.pkl')
@@ -320,6 +329,11 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             tn_ll[i] += tn_l[i]
             fn_ll[i] += fn_l[i]
 
+                
+
+
+            
+
     d = {}
     d['tp_ll'] = tp_ll
     d['fp_ll'] = fp_ll
@@ -347,6 +361,9 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     plt.xlim([0,100])
     plt.ylim([0,100])
     plt.show()
+
+
+
 
 
 
