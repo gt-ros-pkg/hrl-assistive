@@ -141,7 +141,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     # HMM-induced vector with LOPO
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(d['kFoldList']):
-        ## if idx != 1: continue
+        #if idx != 1: continue
         np.random.shuffle(normalTrainIdx)  
 
         # dim x sample x length
@@ -226,7 +226,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         batch_size  = 32
         fixed_batch_size = True
         noise_mag   = 0.1
-        sam_epoch   = 10        
+        sam_epoch   = 10
+        method      = 'lstm_vae'
 
         if method == 'lstm_vae' or method == 'lstm_vae2' or method == 'lstm_dvae':
             if method == 'lstm_vae':
@@ -237,7 +238,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 from hrl_anomaly_detection.vae import lstm_dvae_state_batch as km                
             x_std_div   = 2
             x_std_offset= 0.05
-            z_std       = 0.7
+            z_std       = 0.3 #0.7
             stateful = True
             ad_method   = 'lower_bound'
             ths_l = np.logspace(-1.0,2.2,40) -0.1 
@@ -298,14 +299,9 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         ## autoencoder = km.lstm_ae(trainData, testData, weights_path, patience=5, batch_size=batch_size)
 
         if  True and False: 
-            print "latent variable visualization"
-            if method == 'lstm_vae_offline':
-                z_mean_n = enc_z_mean.predict(normalTestData)
-                z_mean_a = enc_z_mean.predict(abnormalTestData)
-                vutil.graph_latent_space(z_mean_n, z_mean_a)
-            else:
-                print "NA"
-
+            graph_latent_space(normalTestData, abnormalTestData, enc_z_mean, batch_size=batch_size,
+                               method=method)
+            
         # -----------------------------------------------------------------------------------
         if True and False:
             # get optimized alpha
@@ -371,7 +367,40 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
 
 
 
+def graph_latent_space(normalTestData, abnormalTestData, enc_z, timesteps=1, batch_size=None,
+                       method='lstm_vae'):
 
+    print "latent variable visualization"
+    if method == 'lstm_vae_offline':
+        z_mean_n = enc_z_mean.predict(normalTestData)
+        z_mean_a = enc_z_mean.predict(abnormalTestData)
+        vutil.graph_latent_space(z_mean_n, z_mean_a)
+    else:
+        #if batch_size is not None:
+        z_mean_n = []
+        for i in xrange(len(normalTestData)):
+
+            x = normalTestData[i:i+1]
+            for j in xrange(batch_size-1):
+                x = np.vstack([x,normalTestData[i:i+1]])            
+
+            for j in xrange(len(x[0])-timesteps+1):
+                z = enc_z.predict(x[:,j:j+timesteps])
+                z_mean_n.append( z[0] )
+
+        z_mean_a = []
+        for i in xrange(len(abnormalTestData)):
+
+            x = abnormalTestData[i:i+1]
+            for j in xrange(batch_size-1):
+                x = np.vstack([x,abnormalTestData[i:i+1]])            
+
+            for j in xrange(len(x[0])-timesteps+1):
+                z = enc_z.predict(x[:,j:j+timesteps])
+                z_mean_a.append( z[0] )
+
+        vutil.graph_latent_space(z_mean_n, z_mean_a)
+    
 
 
 

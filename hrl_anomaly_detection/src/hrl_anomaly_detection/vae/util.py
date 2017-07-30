@@ -89,15 +89,17 @@ def graph_latent_space(z_n, z_a=None):
     '''
     import matplotlib
     import matplotlib.pyplot as plt
+    if type(z_n) is list: z_n = np.array(z_n)
+    if type(z_a) is list: z_a = np.array(z_a)
 
     matplotlib.rcParams['pdf.fonttype'] = 42
     matplotlib.rcParams['ps.fonttype'] = 42 
     fig = plt.figure(figsize=(6, 6))
 
     s = 121
-    plt.scatter(z_n[:,0], z_n[:,1], color='b', s=2*s, alpha=.4, label='Non-anomalous')
+    plt.scatter(z_n[:,0], z_n[:,1], color='b', s=0.5*s, alpha=.4, label='Non-anomalous')
     if z_a is not None:
-        plt.scatter(z_a[:,0], z_a[:,1], color='r', s=2*s, marker='^', alpha=.4, label='Anomalous')
+        plt.scatter(z_a[:,0], z_a[:,1], color='r', s=0.5*s, marker='^', alpha=.4, label='Anomalous')
 
     plt.legend(loc=3, ncol=2)
     plt.show()
