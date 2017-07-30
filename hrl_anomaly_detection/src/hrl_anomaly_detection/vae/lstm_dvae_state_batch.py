@@ -199,11 +199,11 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                     
                     for j in xrange(len(x[0])-timesteps+1): # per window
                         np.random.seed(3334 + i*len(x[0]) + j)                        
-                        noise = np.random.normal(0, noise_mag, (batch_size, timesteps, nDim))
+                        #noise = np.random.normal(0, noise_mag, (batch_size, timesteps, nDim))
 
                         tr_loss = vae_autoencoder.train_on_batch(
-                            x[:,j+shift_offset:j+shift_offset+timesteps]+noise,
-                            x[:,j+shift_offset:j+shift_offset+timesteps]+noise )
+                            x[:,j+shift_offset:j+shift_offset+timesteps],
+                            x[:,j+shift_offset:j+shift_offset+timesteps] )
 
                         ## tr_loss = vae_autoencoder.train_on_batch(
                         ##     np.expand_dims(x_train[i,j:j+timesteps]+noise, axis=0),
