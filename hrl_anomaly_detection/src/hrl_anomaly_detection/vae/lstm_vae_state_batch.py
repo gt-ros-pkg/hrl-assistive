@@ -55,7 +55,7 @@ import gc
 def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500, \
              patience=20, fine_tuning=False, save_weights_file=None, \
              noise_mag=0.0, timesteps=4, sam_epoch=1, \
-             x_std_div=1, x_std_offset=0.001,             
+             x_std_div=1, x_std_offset=0.001, z_std=0.5,\            
              re_load=False, renew=False, plot=True):
     """
     Variational Autoencoder with two LSTMs and one fully-connected layer
@@ -76,19 +76,20 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
 
     ## inputs = Input(batch_shape=(batch_size, timesteps, input_dim))
     inputs = Input(batch_shape=(batch_size, timesteps, input_dim))
-    encoded = LSTM(h1_dim, return_sequences=False, activation='tanh', stateful=True)(inputs)
+    encoded = LSTM(h1_dim, return_sequences=False, activation='tanh', stateful=True,
+                   trainable=not fine_tuning)(inputs)
     ## encoded = LSTM(h2_dim, return_sequences=False, activation='tanh', stateful=True)(encoded)
-    z_mean  = Dense(z_dim)(encoded) 
-    z_log_var = Dense(z_dim)(encoded) 
+    z_mean  = Dense(z_dim, trainable=not fine_tuning)(encoded) 
+    z_log_var = Dense(z_dim, trainable=not fine_tuning)(encoded) 
     
     def sampling(args):
         z_mean, z_log_var = args
-        epsilon = K.random_normal(shape=K.shape(z_mean), mean=0., stddev=0.5)
+        epsilon = K.random_normal(shape=K.shape(z_mean), mean=0., stddev=z_std)
         #epsilon = K.random_normal(shape=(z_dim,), mean=0., stddev=1.0)
         return z_mean + K.exp(z_log_var/2.0) * epsilon    
         
     # we initiate these layers to reuse later.
-    decoded_h1 = Dense(h1_dim, name='h_1') #, activation='tanh'
+    decoded_h1 = Dense(h1_dim, trainable=not fine_tuning, name='h_1') #, activation='tanh'
     decoded_h2 = RepeatVector(timesteps, name='h_2')
     ## decoded_L1 = LSTM(h1_dim, return_sequences=True, activation='tanh', stateful=True, name='L_1')
     decoded_L21 = LSTM(input_dim*2, return_sequences=True, activation='sigmoid', stateful=True, name='L_21')
