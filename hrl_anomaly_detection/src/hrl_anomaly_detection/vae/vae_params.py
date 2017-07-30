@@ -26,7 +26,7 @@ def getParams(task, bDataRenew, bHMMRenew, bCFRenew, dim=0, rf_center='kinEEPos'
         sys.exit()
 
     # common params
-    param_dict['ROC']['methods'] = [ 'lstm_dvae']
+    param_dict['ROC']['methods'] = [ 'lstm_vae2']
     param_dict['ROC']['update_list'] = [ ]
     param_dict['SVM']['raw_window_size'] = 10
 

@@ -228,9 +228,11 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         noise_mag   = 0.1
         sam_epoch   = 10        
 
-        if method == 'lstm_vae' or method == 'lstm_dvae':
+        if method == 'lstm_vae' or method == 'lstm_vae2' or method == 'lstm_dvae':
             if method == 'lstm_vae':
                 from hrl_anomaly_detection.vae import lstm_vae_state_batch as km
+            elif method == 'lstm_vae2':
+                from hrl_anomaly_detection.vae import lstm_vae_state_batch2 as km
             else:
                 from hrl_anomaly_detection.vae import lstm_dvae_state_batch as km                
             x_std_div   = 2
