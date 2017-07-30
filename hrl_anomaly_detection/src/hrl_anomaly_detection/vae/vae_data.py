@@ -864,11 +864,10 @@ if __name__ == '__main__':
 
     if os.uname()[1] == 'monty1':
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
+          '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm'
     else:
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm'
-
+          '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
 
     ## param_dict['data_param']['handFeatures'] = ['unimodal_kinVel',\
     ##                                             'unimodal_kinJntEff_1',\
