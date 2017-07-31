@@ -141,7 +141,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     # HMM-induced vector with LOPO
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(d['kFoldList']):
-        if idx != 1: continue
+        #if idx != 1: continue
         np.random.shuffle(normalTrainIdx)  
 
         # dim x sample x length
@@ -189,39 +189,6 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         x_std_div   = None
         x_std_offset= None
 
-        # ------------------------------------------------------------------------------------------
-        ## from hrl_anomaly_detection.vae import lstm_vae as km
-        ## autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
-        ##   km.lstm_vae(trainData, testData, weights_path, patience=7, batch_size=batch_size,
-        ##               steps_per_epoch=100, re_load=re_load)
-
-
-        ## from hrl_anomaly_detection.vae import lstm_vae_one as km
-        ## autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
-        ##   km.lstm_vae(trainData, testData, weights_path, patience=7, batch_size=batch_size,
-        ##               steps_per_epoch=100)
-        
-        ## from hrl_anomaly_detection.vae import lstm_vae as km
-        ## autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
-        ##  km.lstm_vae(trainData, testData, weights_path, patience=10, batch_size=batch_size,
-        ##              steps_per_epoch=10, noise_mag=0.01, re_load=re_load) 
-
-        ## from hrl_anomaly_detection.vae import lstm_vae_state as km
-        ## autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
-        ##  km.lstm_vae(trainData, testData, weights_path, patience=4, batch_size=batch_size,
-        ##              noise_mag=0.2, min_std=0.05, sam_epoch=10,
-        ##              re_load=re_load) 
-
-        #------------------------------------------------------------------------------------
-        ## from hrl_anomaly_detection.vae import lstm_vae_state_mstep2 as km
-        ## window_size = 1
-        ## x_std_div   = 2
-        ## x_std_offset= 0.05
-        ## autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
-        ##  km.lstm_vae(trainData, testData, weights_path, patience=4, batch_size=batch_size,
-        ##              noise_mag=0.1, timesteps=window_size, sam_epoch=10,
-        ##              x_std_div = x_std_div, x_std_offset=x_std_offset,
-        ##              re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot)
         
         window_size = 1
         batch_size  = 32
