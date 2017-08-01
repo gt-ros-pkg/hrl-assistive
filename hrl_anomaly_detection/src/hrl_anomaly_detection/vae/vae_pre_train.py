@@ -127,7 +127,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     # HMM-induced vector with LOPO
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(d['kFoldList']):
-        #if idx != 3: continue
+        if idx != 1: continue
         ## np.random.shuffle(normalTrainIdx)  
 
         # dim x sample x length
@@ -196,7 +196,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                   km.lstm_vae(trainData, valData, weights_path, patience=4, batch_size=batch_size,
                               noise_mag=noise_mag, timesteps=window_size, sam_epoch=sam_epoch,
                               x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,
-                              re_load=True, plot=False,)# trainable=i)
+                              re_load=True, plot=False, trainable=i)
                 
         elif method == 'lstm_ae':
             # LSTM-AE (Confirmed) %74.99
@@ -392,8 +392,10 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_pretrain'
     else:
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_pretrain'
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_pretrain'
+          '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
 
     ## param_dict['data_param']['handFeatures'] = ['unimodal_kinVel',\
     ##                                             'unimodal_kinJntEff_1',\
