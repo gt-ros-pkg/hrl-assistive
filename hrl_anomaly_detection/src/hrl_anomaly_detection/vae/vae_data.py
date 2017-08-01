@@ -110,7 +110,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     d['successData']    = d['successData'][feature_list]
     d['failureData']    = d['failureData'][feature_list]
 
-    if fine_tuning is False:
+    if fine_tuning is False and False:
         subjects = ['Andrew', 'Britteney', 'Joshua', 'Jun', 'Kihan', 'Lichard', 'Shingshing', 'Sid', 'Tao']
         raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/CORL2017/'
         td1 = get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
@@ -150,8 +150,12 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         normalTestData    = d['successData'][:, normalTestIdx, :]
         abnormalTestData  = d['failureData'][:, abnormalTestIdx, :]
         if fine_tuning is False and False:
-            normalTrainData   = np.hstack([normalTrainData, copy.deepcopy(td1['successData']), copy.deepcopy(td2['successData'])])
-            abnormalTrainData = np.hstack([abnormalTrainData, copy.deepcopy(td1['failureData']), copy.deepcopy(td2['failureData'])])
+            normalTrainData   = np.hstack([normalTrainData,
+                                           copy.deepcopy(td1['successData']),
+                                           copy.deepcopy(td2['successData'])])
+            abnormalTrainData = np.hstack([abnormalTrainData,
+                                           copy.deepcopy(td1['failureData']),
+                                           copy.deepcopy(td2['failureData'])])
             #normalTrainData   = np.hstack([normalTrainData, copy.deepcopy(td1['successData']),
             #                               copy.deepcopy(td2['successData'])])
             #abnormalTrainData = np.hstack([abnormalTrainData, copy.deepcopy(td1['failureData']),
@@ -159,8 +163,11 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
 
         normalTrainData, abnormalTrainData, normalTestData, abnormalTestData =\
           get_scaled_data(normalTrainData, abnormalTrainData, normalTestData, abnormalTestData, aligned=False)
-        trainData = [normalTrainData[:int(len(normalTrainData)*0.7)], [0]*len(normalTrainData[:int(len(normalTrainData)*0.7)])]
-        valData   = [normalTrainData[int(len(normalTrainData)*0.7):], [0]*len(normalTrainData[int(len(normalTrainData)*0.7):])]
+
+        trainData = [normalTrainData[:int(len(normalTrainData)*0.7)],
+                     [0]*len(normalTrainData[:int(len(normalTrainData)*0.7)])]
+        valData   = [normalTrainData[int(len(normalTrainData)*0.7):],
+                     [0]*len(normalTrainData[int(len(normalTrainData)*0.7):])]
         testData  = [normalTestData, [0]*len(normalTestData)]
 
 
@@ -179,6 +186,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         ## (normalTrainData, abnormalTrainData, normalTestData, abnormalTestData) = raw_data
         ## (normalTrainData_ft, abnormalTrainData_ft, normalTestData_ft, abnormalTestData_ft) = raw_data_ft
         # ------------------------------------------------------------------------------------------        
+        method      = 'lstm_vae'
          
         weights_path = os.path.join(save_data_path,'model_weights_'+method+'_'+str(idx)+'.h5')
         ## weights_path = os.path.join(save_data_path,'tmp_fine_weights_'+str(idx)+'.h5')
@@ -188,47 +196,12 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         generator  = None
         x_std_div   = None
         x_std_offset= None
-
-        # ------------------------------------------------------------------------------------------
-        ## from hrl_anomaly_detection.vae import lstm_vae as km
-        ## autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
-        ##   km.lstm_vae(trainData, testData, weights_path, patience=7, batch_size=batch_size,
-        ##               steps_per_epoch=100, re_load=re_load)
-
-
-        ## from hrl_anomaly_detection.vae import lstm_vae_one as km
-        ## autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
-        ##   km.lstm_vae(trainData, testData, weights_path, patience=7, batch_size=batch_size,
-        ##               steps_per_epoch=100)
-        
-        ## from hrl_anomaly_detection.vae import lstm_vae as km
-        ## autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
-        ##  km.lstm_vae(trainData, testData, weights_path, patience=10, batch_size=batch_size,
-        ##              steps_per_epoch=10, noise_mag=0.01, re_load=re_load) 
-
-        ## from hrl_anomaly_detection.vae import lstm_vae_state as km
-        ## autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
-        ##  km.lstm_vae(trainData, testData, weights_path, patience=4, batch_size=batch_size,
-        ##              noise_mag=0.2, min_std=0.05, sam_epoch=10,
-        ##              re_load=re_load) 
-
-        #------------------------------------------------------------------------------------
-        ## from hrl_anomaly_detection.vae import lstm_vae_state_mstep2 as km
-        ## window_size = 1
-        ## x_std_div   = 2
-        ## x_std_offset= 0.05
-        ## autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
-        ##  km.lstm_vae(trainData, testData, weights_path, patience=4, batch_size=batch_size,
-        ##              noise_mag=0.1, timesteps=window_size, sam_epoch=10,
-        ##              x_std_div = x_std_div, x_std_offset=x_std_offset,
-        ##              re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot)
         
         window_size = 1
         batch_size  = 32
         fixed_batch_size = True
         noise_mag   = 0.1
-        sam_epoch   = 10
-        method      = 'lstm_vae'
+        sam_epoch   = 20
 
         if method == 'lstm_vae' or method == 'lstm_vae2' or method == 'lstm_dvae':
             if method == 'lstm_vae':
@@ -236,13 +209,13 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 ths_l = np.logspace(-1.0,2.2,40) -0.1  
             elif method == 'lstm_vae2':
                 from hrl_anomaly_detection.vae import lstm_vae_state_batch2 as km
-                ths_l = np.logspace(-1.0,1.6,40) -0.5  
+                ths_l = np.logspace(-1.0,2.2,40) -0.5  
             else:
                 from hrl_anomaly_detection.vae import lstm_dvae_state_batch as km
                 ths_l = np.logspace(-1.0,2.2,40) -0.1  
             x_std_div   = 2
             x_std_offset= 0.05
-            z_std       = 0.3 #0.7
+            z_std       = 0.7
             stateful = True
             ad_method   = 'lower_bound'
             autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
@@ -290,7 +263,6 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                           noise_mag=noise_mag, sam_epoch=sam_epoch,
                           x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,\
                           re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot) 
-
         
         #------------------------------------------------------------------------------------
         ## from hrl_anomaly_detection.vae import lstm_vae_sampling as km
@@ -518,13 +490,11 @@ def gen_data(subject_names, task_name, raw_data_path, processed_data_path, param
 
 def get_ext_data(subjects, task_name, raw_data_path, processed_data_path, param_dict,
                  init_param_dict=None, id_num=0):
-    ## Parameters
-    # data
+    ## Parameters # data
     data_dict  = param_dict['data_param']
     data_renew = data_dict['renew']
     
     #------------------------------------------
-
     if os.path.isdir(processed_data_path) is False:
         os.system('mkdir -p '+processed_data_path)
 
@@ -533,10 +503,8 @@ def get_ext_data(subjects, task_name, raw_data_path, processed_data_path, param_
         print "CV data exists and no renew"
         d = ut.load_pickle(crossVal_pkl)
         init_param_dict = d['param_dict']
-        
 
     #------------------------------------------
-    
     crossVal_pkl = os.path.join(processed_data_path, 'cv_td_'+task_name+'_'+str(id_num)+'.pkl')
     if os.path.isfile(crossVal_pkl) and data_renew is False and False:
         print "CV data exists and no renew"
@@ -897,8 +865,10 @@ if __name__ == '__main__':
     subjects = ['s2', 's3','s4','s5', 's6','s7','s8', 's9']
 
     if os.uname()[1] == 'monty1':
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm'
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm'
+          '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_pretrain'
     else:
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'

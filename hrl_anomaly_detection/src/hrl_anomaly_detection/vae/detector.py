@@ -85,28 +85,49 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         d['zs_te_a']     = zs_te_a
         ut.save_pickle(d, save_pkl)
 
-
     if dyn_ths:
-        print "Start to fit SVR with gamma=", 0.5
-        print np.shape(zs_tr_n), np.shape(scores_tr_n)
-        from sklearn.svm import SVR
-        clf = SVR(C=1.0, epsilon=0.2, kernel='rbf', gamma=0.5)
         x = np.array(zs_tr_n).reshape(-1,np.shape(zs_tr_n)[-1])
         y = np.array(scores_tr_n).reshape(-1,np.shape(scores_tr_n)[-1])
-        print np.shape(x), np.shape(y)
-        clf.fit(x, y)
+        method = 'SVR'
+        if method=='SVR':
+            print "Start to fit SVR with gamma="
+            from sklearn.svm import SVR
+            clf = SVR(C=1.0, epsilon=0.2, kernel='rbf', gamma=1.0)
+            clf.fit(x, y)
+        elif method=='RF':
+            print "Start to fit RF : ", np.shape(x), np.shape(y)
+            from sklearn.ensemble import RandomForestRegressor
+            clf = RandomForestRegressor(n_estimators=1000, min_samples_leaf=1, n_jobs=4)
+            clf.fit(x, y)
+        print "-----------------------------------------"
 
-    ## for i, s_true in enumerate(scores_n):
-    ##     s_pred = clf.predict(zs_n[i])        
-    ##     fig = plt.figure()  
-    ##     plt.plot(s_true, '-b')
-    ##     plt.plot(s_pred, '-r') 
-    ##     plt.show()
+    if True and False:
+        for i, s in enumerate(scores_te_n):
+            fig = plt.figure()
+            plt.plot(s, '-b')
+            ths = 1
+
+            s_pred_mu = []
+            s_pred_bnd = []
+            for j in xrange(len(s)):
+                if dyn_ths:
+                    s_pred = clf.predict(zs_te_n[i][j])
+                    s_pred_mu.append(s_pred)
+                    if method == 'SVR':
+                        s_pred = s_pred + ths
+                    else:
+                        err_down, err_up = pred_rf(clf, zs_te_n[i][j], 68)
+                        s_pred = s_pred + ths*err_up
+                else:
+                    s_pred = 0+ths
+                    s_pred_mu.append(s_pred)
+                    
+                s_pred_bnd.append(s_pred)
+            plt.plot(s_pred_mu, '-r')
+            if len(s_pred_bnd)>0:
+                plt.plot(s_pred_bnd, '--r') 
+            plt.show()
         
-    #for s in scores_a:
-    #    fig = plt.figure()
-    #    plt.plot(s, '-r')
-    #    plt.show()
 
     
     tpr_l = []
@@ -124,10 +145,16 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         fn_l = []
         for i, s in enumerate(scores_te_n):
             for j in xrange(len(s)):
-                if dyn_ths: s_pred = clf.predict(zs_te_n[i][j])
-                else: s_pred = 0
-                
-                if s[j]>s_pred+ths:
+                if dyn_ths:
+                    if method == 'SVR':
+                        s_pred = clf.predict(zs_te_n[i][j])[0]+ths
+                    else:
+                        s_pred = clf.predict(zs_te_n[i][j])[0]
+                        err_down, err_up = pred_rf(clf, zs_te_n[i][j], 68)
+                        s_pred = s_pred + ths*err_up
+                else: s_pred = 0+ths
+
+                if s[j]>s_pred:
                     fp_l.append(1)
                     break
                 elif j == len(s)-1:
@@ -135,10 +162,16 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
 
         for i, s in enumerate(scores_te_a):
             for j in xrange(len(s)):
-                if dyn_ths: s_pred = clf.predict(zs_te_a[i][j])
-                else: s_pred = 0
+                if dyn_ths:
+                    if method == 'SVR':
+                        s_pred = clf.predict(zs_te_a[i][j])[0]+ths
+                    else:
+                        s_pred = clf.predict(zs_te_a[i][j])
+                        err_down, err_up = pred_rf(clf, zs_te_a[i][j], 95)
+                        s_pred = s_pred + ths*err_up
+                else: s_pred = 0+ths
                 
-                if s[j]>s_pred+ths:
+                if s[j]>s_pred:
                     tp_l.append(1)
                     break
                 elif j == len(s)-1:
@@ -151,8 +184,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         tn_ll.append(tn_l)
         fp_ll.append(fp_l)
         fn_ll.append(fn_l)
-    
-
+        
     e_n_l  = np.amax(scores_te_n, axis=-1) #[val[-1] for val in scores_n if val != np.log(1e-50) ]
     e_ab_l = np.amax(scores_te_a, axis=-1) #[val[-1] for val in scores_a if val != np.log(1e-50) ]
     print np.mean(e_n_l), np.std(e_n_l)
@@ -342,4 +374,15 @@ def get_lower_bound(x, x_mean, x_std, enc_z_mean, enc_z_logvar, nDim):
         return [np.mean(xent_loss + kl_loss)], z_mean, z_log_var
     else:
         return xent_loss + kl_loss, z_mean, z_log_var
+
+
+def pred_rf(model, x, percentile=95):
+
+    preds = []
+    for pred in model.estimators_:
+        preds.append(pred.predict(x)[0])
+    err_down = np.percentile(preds, (100 - percentile) / 2. )
+    err_up   = np.percentile(preds, 100 - (100 - percentile) / 2.)
+
+    return err_down, err_up
 
