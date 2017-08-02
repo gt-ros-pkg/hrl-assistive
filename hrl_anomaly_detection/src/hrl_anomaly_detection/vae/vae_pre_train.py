@@ -141,13 +141,12 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         abnormalTrainData = np.hstack([copy.deepcopy(td1['failureData']),
                                        copy.deepcopy(td2['failureData'])])
 
-        idx_list = range(len(normalTrainData))
+        idx_list = range(len(normalTrainData[0]))
         np.random.shuffle(idx_list)
         normalTrainData = normalTrainData[:,idx_list]
 
-
         normalTrainData, abnormalTrainData, normalTestData, abnormalTestData =\
-          vutil.get_scaled_data(normalTrainData, abnormalTrainData, aligned=False)
+          get_scaled_data(normalTrainData, abnormalTrainData, aligned=False)
 
         ## trainData = [normalTrainData, [0]*len(normalTrainData)]
         ## valData   = [normalTestData, [0]*len(normalTestData)]
@@ -168,8 +167,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         x_std_offset= None
 
         # ------------------------------------------------------------------------------------------
-        window_size = 5
-        batch_size  = 64
+        window_size = 1
+        batch_size  = 128
         fixed_batch_size = True
         noise_mag   = 0.1
         sam_epoch   = 20
@@ -184,9 +183,9 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             else:
                 from hrl_anomaly_detection.vae import lstm_dvae_state_batch as km
                 ths_l = np.logspace(-1.0,2.2,40) -0.1  
-            x_std_div   = 2
+            x_std_div   = 4
             x_std_offset= 0.05
-            z_std       = 0.4
+            z_std       = 0.7
             stateful = True
             ad_method   = 'lower_bound'
             for i in xrange(1):
@@ -244,7 +243,65 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
 
 
 
+
+def get_scaled_data(normalTrainData, abnormalTrainData, normalTestData=None, abnormalTestData=None, aligned=True):
+    '''
+    Remove outlier and scale into 0-1 range
+    '''
+
+    if aligned is False:
+        # dim x sample x length => sample x length x dim
+        normalTrainData   = np.swapaxes(normalTrainData, 0,1 )
+        normalTrainData   = np.swapaxes(normalTrainData, 1,2 )
+        abnormalTrainData = np.swapaxes(abnormalTrainData, 0,1 )
+        abnormalTrainData = np.swapaxes(abnormalTrainData, 1,2 )
+        
+        if normalTestData is not None:
+            # dim x sample x length => sample x length x dim
+            normalTestData   = np.swapaxes(normalTestData, 0,1 )
+            normalTestData   = np.swapaxes(normalTestData, 1,2 )
+            abnormalTestData = np.swapaxes(abnormalTestData, 0,1 )
+            abnormalTestData = np.swapaxes(abnormalTestData, 1,2 )
             
+            
+    # normalization => (sample x dim) ----------------------------------
+    from sklearn import preprocessing
+    scaler = preprocessing.MinMaxScaler(feature_range=(0, 1))
+    scaler = preprocessing.StandardScaler()
+    
+    
+    normalTrainData_scaled   = scaler.fit_transform(normalTrainData.reshape(-1,len(normalTrainData[0][0])))
+    abnormalTrainData_scaled = scaler.transform(abnormalTrainData.reshape(-1,len(abnormalTrainData[0][0])))
+    if normalTestData is not None:
+        normalTestData_scaled    = scaler.transform(normalTestData.reshape(-1,len(normalTestData[0][0])))
+        abnormalTestData_scaled  = scaler.transform(abnormalTestData.reshape(-1,len(abnormalTestData[0][0])))
+        
+    # rescale 95%of values into 0-1
+    def rescaler(x, mean, var):
+            
+        max_val = 1.8 #1.9#mean+3.0*np.sqrt(var)
+        min_val = -1.8 #mean-3.0*np.sqrt(var)
+        return (x-min_val)/( max_val-min_val )
+        
+    normalTrainData_scaled   = rescaler(normalTrainData_scaled, scaler.mean_, scaler.var_)
+    abnormalTrainData_scaled = rescaler(abnormalTrainData_scaled, scaler.mean_, scaler.var_)
+    if normalTestData is not None:
+        normalTestData_scaled    = rescaler(normalTestData_scaled, scaler.mean_, scaler.var_)
+        abnormalTestData_scaled  = rescaler(abnormalTestData_scaled, scaler.mean_, scaler.var_)
+    
+    # reshape
+    normalTrainData   = normalTrainData_scaled.reshape(np.shape(normalTrainData))
+    abnormalTrainData = abnormalTrainData_scaled.reshape(np.shape(abnormalTrainData))
+    if normalTestData is not None:
+        normalTestData   = normalTestData_scaled.reshape(np.shape(normalTestData))
+        abnormalTestData  = abnormalTestData_scaled.reshape(np.shape(abnormalTestData))
+    else:
+        normalTestData = None
+        abnormalTestData = None
+
+    return normalTrainData, abnormalTrainData, normalTestData, abnormalTestData
+    
+    
 if __name__ == '__main__':
 
     import optparse
