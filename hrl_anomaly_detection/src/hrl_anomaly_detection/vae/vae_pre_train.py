@@ -127,7 +127,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     # HMM-induced vector with LOPO
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(d['kFoldList']):
-        if idx != 1: continue
+        #if idx != 4: continue
         ## np.random.shuffle(normalTrainIdx)  
 
         # dim x sample x length
@@ -158,7 +158,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         valData   = [normalTrainData[int(len(normalTrainData)*0.7):],
                      [0]*len(normalTrainData[int(len(normalTrainData)*0.7):])]
 
-        method      = 'lstm_vae'
+        method      = 'lstm_dvae'
 
         # ------------------------------------------------------------------------------------------        
         weights_path = os.path.join(save_data_path,'model_weights_'+method+'_'+str(idx)+'.h5')
@@ -171,10 +171,10 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
 
         # ------------------------------------------------------------------------------------------
         window_size = 1
-        batch_size  = 32
+        batch_size  = 128
         fixed_batch_size = True
         noise_mag   = 0.1
-        sam_epoch   = 2
+        sam_epoch   = 20
 
         if method == 'lstm_vae' or method == 'lstm_vae2' or method == 'lstm_dvae':
             if method == 'lstm_vae':
@@ -191,12 +191,12 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             z_std       = 0.7
             stateful = True
             ad_method   = 'lower_bound'
-            for i in xrange(3):
+            for i in xrange(1):
                 autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
                   km.lstm_vae(trainData, valData, weights_path, patience=4, batch_size=batch_size,
                               noise_mag=noise_mag, timesteps=window_size, sam_epoch=sam_epoch,
                               x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,
-                              re_load=True, plot=False, trainable=i)
+                              re_load=True, plot=False)#, trainable=i)
                 
         elif method == 'lstm_ae':
             # LSTM-AE (Confirmed) %74.99

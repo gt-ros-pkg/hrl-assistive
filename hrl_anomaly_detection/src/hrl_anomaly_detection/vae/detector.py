@@ -97,7 +97,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         elif method=='RF':
             print "Start to fit RF : ", np.shape(x), np.shape(y)
             from sklearn.ensemble import RandomForestRegressor
-            clf = RandomForestRegressor(n_estimators=1000, min_samples_leaf=1, n_jobs=4)
+            clf = RandomForestRegressor(n_estimators=100, min_samples_leaf=1, n_jobs=1)
             clf.fit(x, y)
         print "-----------------------------------------"
 
@@ -150,7 +150,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
                         s_pred = clf.predict(zs_te_n[i][j])[0]+ths
                     else:
                         s_pred = clf.predict(zs_te_n[i][j])[0]
-                        err_down, err_up = pred_rf(clf, zs_te_n[i][j], 68)
+                        err_down, err_up = pred_rf(clf, zs_te_n[i][j], 95)
                         s_pred = s_pred + ths*err_up
                 else: s_pred = 0+ths
 
@@ -232,16 +232,22 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
             vae.reset_states()
             enc_z_mean.reset_states()
             if enc_z_logvar is not None: enc_z_logvar.reset_states()                
-            
+
         z = []
         s = []
         for j in xrange(len(x)): # per window
             # anomaly score per timesteps in an window            
             # pdf prediction
             if batch_info[0]:
-                xx = np.expand_dims(x[j:j+1,0], axis=0)
-                for k in xrange(batch_info[1]-1):
-                    xx = np.vstack([xx, np.expand_dims(x[j:j+1,0], axis=0) ])
+                if window_size>1:
+                    xx = x[j:j+1]
+                    for k in xrange(batch_info[1]-1):
+                        xx = np.vstack([xx, x[j:j+1] ])
+                else:
+                    xx = np.expand_dims(x[j:j+1,0], axis=0)
+                    for k in xrange(batch_info[1]-1):
+                        xx = np.vstack([xx, np.expand_dims(x[j:j+1,0], axis=0) ])
+                    
             else:
                 xx = x[j:j+1]
             x_new  = vae.predict(xx, batch_size=batch_info[1])[0]
