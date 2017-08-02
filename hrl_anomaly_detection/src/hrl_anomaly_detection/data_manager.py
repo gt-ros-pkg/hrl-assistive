@@ -468,6 +468,7 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
             max_time = all_data_dict['timesList'][0][-1]
             _, param_dict = extractHandFeature(all_data_dict, handFeatures,\
                                                      cut_data=cut_data)
+
         print "max time is ", max_time
 
         # leave-one-person-out
@@ -714,6 +715,134 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
     print "s/f data: ", np.shape(successDataList), np.shape(failureDataList)
     print "---------------------------------------------------"
     return data_dict
+
+
+def getRawDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
+                   rf_center='kinEEPos', local_range=10.0, downSampleSize=200, \
+                   cut_data=None, init_param_dict=None, \
+                   success_viz=False, failure_viz=False, \
+                   save_pdf=False, solid_color=True, \
+                   handFeatures=[], data_renew=False,\
+                   time_sort=False, max_time=None, \
+                   target_class=None, ros_bag_image=False, pkl_prefix='',\
+                   depth=False):
+    """
+    Get data per subject. It also returns leave-one-out cross-validataion indices.
+    """
+
+    if os.path.isdir(processed_data_path) is False:
+        os.system('mkdir -p '+processed_data_path)
+
+    save_pkl = os.path.join(processed_data_path, pkl_prefix+'feature_extraction_'+rf_center+'_'+\
+                            str(local_range) )
+            
+    if os.path.isfile(save_pkl) and data_renew is False:
+        print "--------------------------------------"
+        print "Load saved data"
+        print "--------------------------------------"
+        data_dict = ut.load_pickle(save_pkl)
+        # Task-oriented hand-crafted features
+        successDataList = data_dict['successDataList']
+        failureDataList = data_dict['failureDataList']
+        param_dict      = data_dict['param_dict']
+        successFileList     = data_dict.get('successFileList',[])
+        failureFileList     = data_dict.get('failureFileList',[])
+        success_image_list  = data_dict.get('success_image_list',[])
+        failure_image_list  = data_dict.get('failure_image_list',[])
+
+    else:
+        file_list = util.getSubjectFileList(raw_data_path, subject_names, task_name,\
+                                            time_sort=time_sort, no_split=True, depth=depth)
+
+        print "start to load data"
+        # Task-oriented hand-crafted features
+        if init_param_dict is not None:
+            param_dict=init_param_dict
+            #max_time = all_data_dict['timesList'][0][-1]
+        else:
+            _, all_data_dict = util.loadData(file_list, isTrainingData=False,
+                                             downSampleSize=downSampleSize,\
+                                             renew=data_renew,\
+                                             max_time=max_time)
+            
+            max_time = all_data_dict['timesList'][0][-1]
+            _, param_dict = extractHandFeature(all_data_dict, handFeatures,\
+                                                     cut_data=cut_data)
+
+            _, raw_param_dict = extractRawFeature(all_data_dict, param_dict['AE']['rawFeatures'], \
+                                                  cut_data=cut_data)
+                                                     
+
+        print "max time is ", max_time
+
+        # leave-one-person-out
+        successDataList = []
+        failureDataList = []
+        successFileList = []
+        failureFileList = []
+        success_image_list = []
+        failure_image_list = []
+        for i in xrange(len(subject_names)):
+
+            success_list, failure_list = util.getSubjectFileList(raw_data_path, [subject_names[i]], \
+                                                                 task_name,\
+                                                                 time_sort=time_sort, depth=depth)
+
+            _, success_data_dict = util.loadData(success_list, isTrainingData=True,
+                                                 downSampleSize=downSampleSize,\
+                                                 renew=data_renew,\
+                                                 max_time=max_time)
+
+            _, failure_data_dict = util.loadData(failure_list, isTrainingData=False,
+                                                 downSampleSize=downSampleSize,\
+                                                 renew=data_renew,\
+                                                 max_time=max_time)
+
+            # Get data
+            if len(handFeatures) > 0:
+
+                print " --------------------- Success -----------------------------"  
+                successData, _      = extractHandFeature(success_data_dict, handFeatures, \
+                                                         init_param_dict=param_dict, cut_data=cut_data)
+                print " --------------------- Failure -----------------------------"  
+                failureData, _      = extractHandFeature(failure_data_dict, handFeatures, \
+                                                         init_param_dict=param_dict, cut_data=cut_data)
+                successDataList.append(successData)
+                failureDataList.append(failureData)
+
+            
+            successFileList.append(success_list)
+            failureFileList.append(failure_list)
+
+            if ros_bag_image:
+                new_success_list = []
+                for f in success_list:
+                    root_dir = os.path.split(f)[0]+'_rosbag'
+                    sub_dir  = os.path.split(f)[1].split('.pkl')[0]
+                    new_success_list.append( os.path.join(root_dir, sub_dir) )
+                new_failure_list = []
+                for f in failure_list:
+                    root_dir = os.path.split(f)[0]+'_rosbag'
+                    sub_dir  = os.path.split(f)[1].split('.pkl')[0]
+                    new_failure_list.append( os.path.join(root_dir, sub_dir) )
+                    
+                success_image_list.append(export_images(new_success_list, success_data_dict, \
+                                                        downSampleSize) )
+                failure_image_list.append(export_images(new_failure_list, failure_data_dict, \
+                                                        downSampleSize) )
+            
+
+        data_dict = {}        
+        data_dict['successDataList'] = successDataList
+        data_dict['failureDataList'] = failureDataList
+        data_dict['param_dict']      = param_dict
+        data_dict['successFileList'] = successFileList
+        data_dict['failureFileList'] = failureFileList        
+        data_dict['success_image_list'] = success_image_list
+        data_dict['failure_image_list'] = failure_image_list
+        
+        ut.save_pickle(data_dict, save_pkl)
+
 
 
 def getAEdataSet(idx, rawSuccessData, rawFailureData, handSuccessData, handFailureData, handParam, \
@@ -2219,29 +2348,140 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
     return scaled_features, param_dict
 
 
-def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, param_dict=None, \
+def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, init_param_dict=None, \
                       cut_data=None, verbose=False, scaling=True):
 
     from sandbox_dpark_darpa_m3.lib import hrl_dh_lib as dh
-    from hrl_lib import quaternion as qt
     
-    if param_dict is None:
+    if init_param_dict is None:
         isTrainingData=True
         param_dict = {}
+        param_dict['timeList'] = d['timesList'][0]
+        param_dict['feature_names'] = []        
     else:
+        param_dict = copy.deepcopy(init_param_dict)
         isTrainingData=False
             
     # -------------------------------------------------------------        
     # extract modality data
-    dataList = []
-    dataDim  = []
-    nSample  = len(d['timesList'])
+    ## dataDim  = []
+    ## nSample  = len(d['timesList'])
     startOffsetSize = 4
-    for idx in xrange(nSample): # each sample
+    dataList = []
+    for idx in xrange(len(d['timesList'])): # each sample
 
-        timeList     = d['timesList'][idx]
+        param_dict['timeList'] = timeList = d['timesList'][idx]
         dataSample = None
 
+        if len(timeList) < 2: offset_flag=False
+        else: offset_flag=True
+
+        # Audio --------------------------------------------
+        if 'kinectAudio' in raw_feature_list:
+            audioPower   = d['audioPowerList'][idx]                        
+            if dataSample is None: dataSample = copy.deepcopy(np.array(audioPower))
+            else: dataSample = np.vstack([dataSample, copy.deepcopy(audioPower)])
+            if 'audioPower' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('audioPower')
+
+        # AudioWrist ---------------------------------------
+        if 'wristAudio' in raw_feature_list:
+            audioWristRMS  = d['audioWristRMSList'][idx]
+            ## audioWristMFCC = d['audioWristMFCCList'][idx]            
+
+            if offset_flag:
+                audioWristRMS -= np.amin(audioWristRMS)
+
+            if dataSample is None: dataSample = copy.deepcopy(np.array(audioWristRMS))
+            else: dataSample = np.vstack([dataSample, copy.deepcopy(audioWristRMS)])
+
+            if 'audioWristRMS' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('audioWristRMS')
+
+        # AudioWristAzimuth------------------------------------
+        if 'audioWristAzimuth' in feature_list:
+            audioWristAzimuth = d['audioWristAzimuthList'][idx]
+            audioWristAzimuth = np.abs(audioWristAzimuth)
+            
+            if dataSample is None: dataSample = copy.deepcopy(np.array(audioWristAzimuth))
+            else: dataSample = np.vstack([dataSample, copy.deepcopy(audioWristAzimuth)])
+            if 'audioWristAzimuth' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('audioWristAzimuth')
+
+        # Current EE pos (Kinematics) --------------------------------------
+        if 'kinEEPos' in feature_list:
+            kinEEPos        = d['kinEEPosList'][idx]            
+            
+            if offset_flag:
+                kinEEPos -= np.mean(kinEEPos[:,:startOffsetSize], axis=1)
+                
+            if dataSample is None: dataSample = kinEEPos
+            else: dataSample = np.vstack([dataSample, kinEEPos])
+            if 'kinEEPosX' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('kinEEPosX')
+                param_dict['feature_names'].append('kinEEPosY')
+                param_dict['feature_names'].append('kinEEPosZ')
+
+        # Desired EE (Kinematics) --------------------------
+        if 'kinDesEEPos' in feature_list:
+            kinDesEEPos  = d['kinDesEEPosList'][idx]
+            
+            if offset_flag:
+                kinDesEEPos -= np.mean(kinDesEEPos[:,:startOffsetSize], axis=1)
+
+            if dataSample is None: dataSample = kinDesEEPos
+            else: dataSample = np.vstack([dataSample, kinDesEEPos])
+            if 'DesEEPosX' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('DesEEPosX')
+                param_dict['feature_names'].append('DesEEPosY')
+                param_dict['feature_names'].append('DesEEPosZ')
+
+
+        # Current Effort (Kinematics) --------------------------------------
+        if 'kinJntEff' in feature_list:
+            kinJntEff = d['kinJntEffList'][idx]
+
+            if offset_flag:
+                kinJntEff -= np.mean(kinJntEff[:,:startOffsetSize], axis=-1)
+
+            if dataSample is None: dataSample = np.array( kinJntEff )
+            else: dataSample = np.vstack([ dataSample, kinJntEff])
+            if 'kinJntEff_'+str(jnt_idx+1) not in param_dict['feature_names']:           
+                for jnt_idx in xrange(7):
+                    param_dict['feature_names'].append( 'kinJntEff_'+str(jnt_idx+1) )
+
+        # Force feature -------------------------------------------
+        if 'ftForce' in feature_list:
+            ftForce = d['ftForceList'][idx]
+            
+            if offset_flag: 
+                ftForce -= np.mean(ftForce[:,:startOffsetSize], axis=-1)
+
+            if dataSample is None: dataSample = np.array(ftForce)
+            else: dataSample = np.vstack([dataSample, ftForce])
+
+            if 'ftForceX' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('ftForceX')
+                param_dict['feature_names'].append('ftForceY')
+                param_dict['feature_names'].append('ftForceZ')
+                    
+
+        # Current Target Pos --------------------------
+        if 'targetPos' in feature_list:
+            kinTargetPos  = d['kinTargetPosList'][idx]
+
+            if offset_flag:
+                kinTargetPos -= np.mean(kinTargetPos[:,:startOffsetSize])
+            
+            if dataSample is None: dataSample = np.array(kinTargetPos)
+            else: dataSample = np.vstack([dataSample, kinTargetPos])
+            if 'targetEEDist' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('targetEEDist')
+
+
+        
+
+        
         # rightEE-leftEE - relative dist ----
         if 'relativePose_target_EE' in raw_feature_list:
             kinEEPos      = d['kinEEPosList'][idx]
@@ -2319,25 +2559,6 @@ def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, param_dict=None, 
             else: dataSample = np.vstack([dataSample, relativePose])
             if idx == 0: dataDim.append(['relativePos_artag_artag', 3])
             if idx == 0: dataDim.append(['relativeAng_artag_artag', 4])
-
-        # Audio --------------------------------------------
-        if 'kinectAudio' in raw_feature_list:
-            audioPower   = d['audioPowerList'][idx]                        
-            if dataSample is None: dataSample = copy.deepcopy(np.array(audioPower))
-            else: dataSample = np.vstack([dataSample, copy.deepcopy(audioPower)])
-            if idx == 0: dataDim.append(['kinectAudio', len(audioPower)])
-
-        # AudioWrist ---------------------------------------
-        if 'wristAudio' in raw_feature_list:
-            audioWristRMS  = d['audioWristRMSList'][idx]
-            ## audioWristMFCC = d['audioWristMFCCList'][idx]            
-
-            if dataSample is None: dataSample = copy.deepcopy(np.array(audioWristRMS))
-            else: dataSample = np.vstack([dataSample, copy.deepcopy(audioWristRMS)])
-            ## dataSample = np.vstack([dataSample, copy.copy(audioWristMFCC)])
-            
-            if idx == 0: dataDim.append(['wristAudio_RMS', 1])                
-            ## if idx == 0: dataDim.append(['wristAudio_MFCC', len(audioWristMFCC)])                
 
         # FT -------------------------------------------
         if 'ft' in raw_feature_list:

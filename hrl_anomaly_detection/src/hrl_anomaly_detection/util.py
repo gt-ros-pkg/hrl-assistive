@@ -368,7 +368,6 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=10
             data_dict['kinJntEffList'].append(interpolationData(kin_time, kin_jnt_eff, new_times, spline=False))
             data_dict['kinPosList'].append(interpolationData(kin_time, local_kin_pos, new_times, spline=False))
             data_dict['kinVelList'].append(interpolationData(kin_time, local_kin_vel, new_times))
-
             data_dict['kinDesEEPosList'].append(interpolationData(kin_time, local_kin_des_ee_pos, new_times, \
                                                                   spline=False))
             data_dict['kinDesEEQuatList'].append(interpolationData(kin_time, local_kin_des_ee_quat, new_times,\
