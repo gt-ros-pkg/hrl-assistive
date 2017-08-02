@@ -722,7 +722,7 @@ def getRawDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
                    cut_data=None, init_param_dict=None, \
                    success_viz=False, failure_viz=False, \
                    save_pdf=False, solid_color=True, \
-                   handFeatures=[], data_renew=False,\
+                   handFeatures=[], rawFeatures=[], data_renew=False,\
                    time_sort=False, max_time=None, \
                    target_class=None, ros_bag_image=False, pkl_prefix='',\
                    depth=False):
@@ -744,6 +744,8 @@ def getRawDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
         # Task-oriented hand-crafted features
         successDataList = data_dict['successDataList']
         failureDataList = data_dict['failureDataList']
+        successRawDataList = data_dict['successRawDataList']
+        failureRawDataList = data_dict['failureRawDataList']
         param_dict      = data_dict['param_dict']
         successFileList     = data_dict.get('successFileList',[])
         failureFileList     = data_dict.get('failureFileList',[])
@@ -767,9 +769,9 @@ def getRawDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
             
             max_time = all_data_dict['timesList'][0][-1]
             _, param_dict = extractHandFeature(all_data_dict, handFeatures,\
-                                                     cut_data=cut_data)
+                                               cut_data=cut_data)
 
-            _, raw_param_dict = extractRawFeature(all_data_dict, param_dict['AE']['rawFeatures'], \
+            _, raw_param_dict = extractRawFeature(all_data_dict, rawFeatures, \
                                                   cut_data=cut_data)
                                                      
 
@@ -778,6 +780,8 @@ def getRawDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
         # leave-one-person-out
         successDataList = []
         failureDataList = []
+        successRawDataList = []
+        failureRawDataList = []
         successFileList = []
         failureFileList = []
         success_image_list = []
@@ -802,13 +806,20 @@ def getRawDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
             if len(handFeatures) > 0:
 
                 print " --------------------- Success -----------------------------"  
-                successData, _      = extractHandFeature(success_data_dict, handFeatures, \
-                                                         init_param_dict=param_dict, cut_data=cut_data)
+                successData, _    = extractHandFeature(success_data_dict, handFeatures, \
+                                                       init_param_dict=param_dict, cut_data=cut_data)
+                successRawData, _ = extractRawFeature(success_raw_data_dict, rawFeatures, \
+                                                      init_param_dict=raw_param_dict, cut_data=cut_data)
                 print " --------------------- Failure -----------------------------"  
-                failureData, _      = extractHandFeature(failure_data_dict, handFeatures, \
-                                                         init_param_dict=param_dict, cut_data=cut_data)
+                failureData, _    = extractHandFeature(failure_data_dict, handFeatures, \
+                                                       init_param_dict=param_dict, cut_data=cut_data)
+                failureRawData, _ = extractRawFeature(failure_raw_data_dict, rawFeatures, \
+                                                      init_param_dict=raw_param_dict, cut_data=cut_data)
+                                                         
                 successDataList.append(successData)
                 failureDataList.append(failureData)
+                successRawDataList.append(successRawData)
+                failureRawDataList.append(failureRawData)
 
             
             successFileList.append(success_list)
@@ -835,6 +846,8 @@ def getRawDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
         data_dict = {}        
         data_dict['successDataList'] = successDataList
         data_dict['failureDataList'] = failureDataList
+        data_dict['successRawDataList'] = successRawDataList
+        data_dict['failureRawDataList'] = failureRawDataList
         data_dict['param_dict']      = param_dict
         data_dict['successFileList'] = successFileList
         data_dict['failureFileList'] = failureFileList        
@@ -2348,8 +2361,8 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
     return scaled_features, param_dict
 
 
-def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, init_param_dict=None, \
-                      cut_data=None, verbose=False, scaling=True):
+def extractRawFeature(d, feature_list, init_param_dict=None, cut_data=None, verbose=False,
+                      renew_minmax=False):
 
     from sandbox_dpark_darpa_m3.lib import hrl_dh_lib as dh
     
@@ -2377,7 +2390,7 @@ def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, init_param_dict=N
         else: offset_flag=True
 
         # Audio --------------------------------------------
-        if 'kinectAudio' in raw_feature_list:
+        if 'kinectAudio' in feature_list:
             audioPower   = d['audioPowerList'][idx]                        
             if dataSample is None: dataSample = copy.deepcopy(np.array(audioPower))
             else: dataSample = np.vstack([dataSample, copy.deepcopy(audioPower)])
@@ -2385,7 +2398,7 @@ def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, init_param_dict=N
                 param_dict['feature_names'].append('audioPower')
 
         # AudioWrist ---------------------------------------
-        if 'wristAudio' in raw_feature_list:
+        if 'wristAudio' in feature_list:
             audioWristRMS  = d['audioWristRMSList'][idx]
             ## audioWristMFCC = d['audioWristMFCCList'][idx]            
 
@@ -2408,23 +2421,11 @@ def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, init_param_dict=N
             if 'audioWristAzimuth' not in param_dict['feature_names']:
                 param_dict['feature_names'].append('audioWristAzimuth')
 
-        # Current EE pos (Kinematics) --------------------------------------
-        if 'kinEEPos' in feature_list:
-            kinEEPos        = d['kinEEPosList'][idx]            
-            
-            if offset_flag:
-                kinEEPos -= np.mean(kinEEPos[:,:startOffsetSize], axis=1)
-                
-            if dataSample is None: dataSample = kinEEPos
-            else: dataSample = np.vstack([dataSample, kinEEPos])
-            if 'kinEEPosX' not in param_dict['feature_names']:
-                param_dict['feature_names'].append('kinEEPosX')
-                param_dict['feature_names'].append('kinEEPosY')
-                param_dict['feature_names'].append('kinEEPosZ')
-
         # Desired EE (Kinematics) --------------------------
         if 'kinDesEEPos' in feature_list:
             kinDesEEPos  = d['kinDesEEPosList'][idx]
+            print np.shape(kinDesEEPos)
+            sys.exit()
             
             if offset_flag:
                 kinDesEEPos -= np.mean(kinDesEEPos[:,:startOffsetSize], axis=1)
@@ -2436,19 +2437,19 @@ def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, init_param_dict=N
                 param_dict['feature_names'].append('DesEEPosY')
                 param_dict['feature_names'].append('DesEEPosZ')
 
-
-        # Current Effort (Kinematics) --------------------------------------
-        if 'kinJntEff' in feature_list:
-            kinJntEff = d['kinJntEffList'][idx]
+        # Current Target Pos --------------------------
+        if 'targetPos' in feature_list:
+            kinTargetPos  = d['kinTargetPosList'][idx]
 
             if offset_flag:
-                kinJntEff -= np.mean(kinJntEff[:,:startOffsetSize], axis=-1)
-
-            if dataSample is None: dataSample = np.array( kinJntEff )
-            else: dataSample = np.vstack([ dataSample, kinJntEff])
-            if 'kinJntEff_'+str(jnt_idx+1) not in param_dict['feature_names']:           
-                for jnt_idx in xrange(7):
-                    param_dict['feature_names'].append( 'kinJntEff_'+str(jnt_idx+1) )
+                kinTargetPos -= np.mean(kinTargetPos[:,:startOffsetSize], axis=-1)
+            
+            if dataSample is None: dataSample = np.array(kinTargetPos)
+            else: dataSample = np.vstack([dataSample, kinTargetPos])
+            if 'targetPos' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('targetPosX')
+                param_dict['feature_names'].append('targetPosY')
+                param_dict['feature_names'].append('targetPosZ')
 
         # Force feature -------------------------------------------
         if 'ftForce' in feature_list:
@@ -2465,119 +2466,24 @@ def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, init_param_dict=N
                 param_dict['feature_names'].append('ftForceY')
                 param_dict['feature_names'].append('ftForceZ')
                     
+        ## # FT -------------------------------------------
+        ## if 'ft' in feature_list:
+        ##     ftForce  = d['ftForceList'][idx]
+        ##     ftTorque = d['ftTorqueList'][idx]
 
-        # Current Target Pos --------------------------
-        if 'targetPos' in feature_list:
-            kinTargetPos  = d['kinTargetPosList'][idx]
+        ##     ftForce  -= np.array([np.mean(ftForce[:startOffsetSize,:], axis=1)]).T
+        ##     ftTorque -= np.array([np.mean(ftTorque[:startOffsetSize,:], axis=1)]).T
 
-            if offset_flag:
-                kinTargetPos -= np.mean(kinTargetPos[:,:startOffsetSize])
-            
-            if dataSample is None: dataSample = np.array(kinTargetPos)
-            else: dataSample = np.vstack([dataSample, kinTargetPos])
-            if 'targetEEDist' not in param_dict['feature_names']:
-                param_dict['feature_names'].append('targetEEDist')
+        ##     if dataSample is None: dataSample = np.array(ftForce)
+        ##     else: dataSample = np.vstack([dataSample, ftForce])
 
-
-        
-
-        
-        # rightEE-leftEE - relative dist ----
-        if 'relativePose_target_EE' in raw_feature_list:
-            kinEEPos      = d['kinEEPosList'][idx]
-            kinEEQuat     = d['kinEEQuatList'][idx]
-            kinTargetPos  = d['kinTargetPosList'][idx]
-            kinTargetQuat = d['kinTargetQuatList'][idx]
-
-            # pos and quat?
-            relativePose = []
-            for time_idx in xrange(len(timeList)):
-                startFrame = dh.array2KDLframe( kinTargetPos[:,time_idx].tolist() +\
-                                                kinTargetQuat[:,time_idx].tolist() )
-                endFrame   = dh.array2KDLframe( kinEEPos[:,time_idx].tolist()+\
-                                                kinEEQuat[:,time_idx].tolist() )
-                diffFrame  = endFrame*startFrame.Inverse()                                
-                relativePose.append( dh.KDLframe2List(diffFrame) )
-
-            relativePose = np.array(relativePose).T[:-1]
-            relativePose[:3,:] -= np.array([np.mean(relativePose[:,:startOffsetSize], axis=1)[:3]]).T
-            
-            if dataSample is None: dataSample = relativePose
-            else: dataSample = np.vstack([dataSample, relativePose])
-            if idx == 0: dataDim.append(['relativePos_target_EE', 3])
-            if idx == 0: dataDim.append(['relativeAng_target_EE', 4])
-                
-
-        # main-artag EE - vision relative dist with main(first) vision target----
-        if 'relativePose_artag_EE' in raw_feature_list:
-            kinEEPos        = d['kinEEPosList'][idx]
-            kinEEQuat       = d['kinEEQuatList'][idx]
-            visionArtagPos  = d['visionArtagPosList'][idx][:3] # originally length x 3*tags
-            visionArtagQuat = d['visionArtagQuatList'][idx][:4] # originally length x 3*tags
-
-            # pos and quat?
-            relativePose = []
-            for time_idx in xrange(len(timeList)):
-                startFrame = dh.array2KDLframe( visionArtagPos[:,time_idx].tolist() +\
-                                                visionArtagQuat[:,time_idx].tolist() )
-                endFrame   = dh.array2KDLframe( kinEEPos[:,time_idx].tolist()+\
-                                                kinEEQuat[:,time_idx].tolist() )
-                diffFrame  = endFrame*startFrame.Inverse()                                
-                relativePose.append( dh.KDLframe2List(diffFrame) )
-            
-            relativePose = np.array(relativePose).T[:-1]
-            relativePose[:3,:] -= np.array([np.mean(relativePose[:,:startOffsetSize], axis=1)[:3]]).T
-            
-            if dataSample is None: dataSample = relativePose
-            else: dataSample = np.vstack([dataSample, relativePose])
-            if idx == 0: dataDim.append(['relativePos_artag_EE', 3])
-            if idx == 0: dataDim.append(['relativeAng_artag_EE', 4])
-                
-
-        # main-artag sub-artag - vision relative dist with main(first) vision target----
-        if 'relativePose_artag_artag' in raw_feature_list:
-            visionArtagPos1 = d['visionArtagPosList'][idx][:3] # originally length x 3*tags
-            visionArtagQuat1 = d['visionArtagQuatList'][idx][:4] # originally length x 3*tags
-            visionArtagPos2 = d['visionArtagPosList'][idx][3:6] # originally length x 3*tags
-            visionArtagQuat2 = d['visionArtagQuatList'][idx][4:8] # originally length x 3*tags
-
-            # pos and quat?
-            relativePose = []
-            for time_idx in xrange(len(timeList)):
-
-                startFrame = dh.array2KDLframe( visionArtagPos1[:,time_idx].tolist() +\
-                                                visionArtagQuat1[:,time_idx].tolist() )
-                endFrame = dh.array2KDLframe( visionArtagPos2[:,time_idx].tolist() +\
-                                              visionArtagQuat2[:,time_idx].tolist() )                
-                diffFrame  = endFrame*startFrame.Inverse()                                
-                relativePose.append( dh.KDLframe2List(diffFrame) )
-
-            relativePose = np.array(relativePose).T[:-1]
-            relativePose[:3,:] -= np.mean(relativePose[:,:startOffsetSize], axis=1)[:3,:]
-
-            if dataSample is None: dataSample = relativePose
-            else: dataSample = np.vstack([dataSample, relativePose])
-            if idx == 0: dataDim.append(['relativePos_artag_artag', 3])
-            if idx == 0: dataDim.append(['relativeAng_artag_artag', 4])
-
-        # FT -------------------------------------------
-        if 'ft' in raw_feature_list:
-            ftForce  = d['ftForceList'][idx]
-            ftTorque = d['ftTorqueList'][idx]
-
-            ftForce  -= np.array([np.mean(ftForce[:startOffsetSize,:], axis=1)]).T
-            ftTorque -= np.array([np.mean(ftTorque[:startOffsetSize,:], axis=1)]).T
-
-            if dataSample is None: dataSample = np.array(ftForce)
-            else: dataSample = np.vstack([dataSample, ftForce])
-
-            if dataSample is None: dataSample = np.array(ftTorque)
-            else: dataSample = np.vstack([dataSample, ftTorque])
-            if idx == 0: dataDim.append(['ft_force', len(ftForce)])
-            if idx == 0: dataDim.append(['ft_torque', len(ftTorque)])
+        ##     if dataSample is None: dataSample = np.array(ftTorque)
+        ##     else: dataSample = np.vstack([dataSample, ftTorque])
+        ##     if idx == 0: dataDim.append(['ft_force', len(ftForce)])
+        ##     if idx == 0: dataDim.append(['ft_torque', len(ftTorque)])
 
         # pps -------------------------------------------
-        if 'pps' in raw_feature_list:
+        if 'pps' in feature_list:
             ppsLeft  = d['ppsLeftList'][idx]
             ppsRight = d['ppsRightList'][idx]
 
@@ -2591,13 +2497,49 @@ def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, init_param_dict=N
             else: dataSample = np.vstack([dataSample, ppsRight])
             if idx == 0: dataDim.append(['pps', len(ppsLeft)+len(ppsRight)])
 
+
+        ## # Current EE pos (Kinematics) --------------------------------------
+        ## if 'kinEEPos' in feature_list:
+        ##     kinEEPos        = d['kinEEPosList'][idx]            
+            
+        ##     if offset_flag:
+        ##         kinEEPos -= np.mean(kinEEPos[:,:startOffsetSize], axis=1)
+                
+        ##     if dataSample is None: dataSample = kinEEPos
+        ##     else: dataSample = np.vstack([dataSample, kinEEPos])
+        ##     if 'kinEEPosX' not in param_dict['feature_names']:
+        ##         param_dict['feature_names'].append('kinEEPosX')
+        ##         param_dict['feature_names'].append('kinEEPosY')
+        ##         param_dict['feature_names'].append('kinEEPosZ')
+
+        ## # Current Effort (Kinematics) --------------------------------------
+        ## if 'kinJntEff' in feature_list:
+        ##     kinJntEff = d['kinJntEffList'][idx]
+
+        ##     if offset_flag:
+        ##         kinJntEff -= np.mean(kinJntEff[:,:startOffsetSize], axis=-1)
+
+        ##     if dataSample is None: dataSample = np.array( kinJntEff )
+        ##     else: dataSample = np.vstack([ dataSample, kinJntEff])
+        ##     if 'kinJntEff_'+str(jnt_idx+1) not in param_dict['feature_names']:           
+        ##         for jnt_idx in xrange(7):
+        ##             param_dict['feature_names'].append( 'kinJntEff_'+str(jnt_idx+1) )
+
+
+
         # Kinematics --------------------------------------
-        if 'kinematics' in raw_feature_list:
+        if 'kinematics' in feature_list:
             kinEEPos   = d['kinEEPosList'][idx]
             kinEEQuat  = d['kinEEQuatList'][idx]
             kinJntPos  = d['kinJntPosList'][idx]
-            kinPos     = d['kinPosList'][idx]
-            kinVel     = d['kinVelList'][idx]
+            kinJntEff  = d['kinJntEffList'][idx]
+            ## kinPos     = d['kinPosList'][idx]
+            ## kinVel     = d['kinVelList'][idx]
+
+            if offset_flag:
+                kinEEPos  -= np.mean(kinEEPos[:,:startOffsetSize], axis=-1)
+                #kinJntEff -= np.mean(kinJntEff[:,:startOffsetSize], axis=-1)
+
 
             if dataSample is None: dataSample = np.array(kinEEPos)
             else: dataSample = np.vstack([dataSample, kinEEPos])
@@ -2625,23 +2567,135 @@ def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, init_param_dict=N
                 param_dict['feature_names'].append('kinJntPos_6')
                 param_dict['feature_names'].append('kinJntPos_7')
 
-            if dataSample is None: dataSample = np.array(kinPos)
-            else: dataSample = np.vstack([dataSample, kinPos])
-            if 'kinPos_x' not in param_dict['feature_names']:
-                param_dict['feature_names'].append('kinPos_x')
-                param_dict['feature_names'].append('kinPos_y')
-                param_dict['feature_names'].append('kinPos_z')
+            if dataSample is None: dataSample = np.array(kinJntEff)
+            else: dataSample = np.vstack([dataSample, kinJntEff])
+            if 'kinJntEff_1' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('kinJntEff_1')
+                param_dict['feature_names'].append('kinJntEff_2')
+                param_dict['feature_names'].append('kinJntEff_3')
+                param_dict['feature_names'].append('kinJntEff_4')
+                param_dict['feature_names'].append('kinJntEff_5')
+                param_dict['feature_names'].append('kinJntEff_6')
+                param_dict['feature_names'].append('kinJntEff_7')
 
-            if dataSample is None: dataSample = np.array(kinVel)
-            else: dataSample = np.vstack([dataSample, kinVel])
-            if 'kinVel_x' not in param_dict['feature_names']:
-                param_dict['feature_names'].append('kinVel_x')
-                param_dict['feature_names'].append('kinVel_y')
-                param_dict['feature_names'].append('kinVel_z')
+
+            ## if dataSample is None: dataSample = np.array(kinPos)
+            ## else: dataSample = np.vstack([dataSample, kinPos])
+            ## if 'kinPos_x' not in param_dict['feature_names']:
+            ##     param_dict['feature_names'].append('kinPos_x')
+            ##     param_dict['feature_names'].append('kinPos_y')
+            ##     param_dict['feature_names'].append('kinPos_z')
+
+            ## if dataSample is None: dataSample = np.array(kinVel)
+            ## else: dataSample = np.vstack([dataSample, kinVel])
+            ## if 'kinVel_x' not in param_dict['feature_names']:
+            ##     param_dict['feature_names'].append('kinVel_x')
+            ##     param_dict['feature_names'].append('kinVel_y')
+            ##     param_dict['feature_names'].append('kinVel_z')
                 
 
+        # landmark motion --------------------------
+        if 'landmarkPos' in feature_list:
+            visionLandmarkPos = d['visionLandmarkPosList'][idx] # originally length x 3*tags
+
+            if len(np.shape(visionLandmarkPos)) == 1:
+                visionLandmarkPos = np.reshape(visionLandmarkPos, (3,1))
+
+            if offset_flag:
+                visionLandmarkPos -= np.mean(visionLandmarkPos[:,:startOffsetSize], axis=-1)
+
+            if dataSample is None: dataSample = np.array(visionLandmarkPos)
+            else: dataSample = np.vstack([dataSample, visionLandmarkPos])
+            
+            if 'landmarkPosX' not in param_dict['feature_names']:
+                param_dict['feature_names'].append('landmarkPosX')
+                param_dict['feature_names'].append('landmarkPosY')
+                param_dict['feature_names'].append('landmarkPosZ')
+
+
+        print np.shape(dataSample)
+        sys.exit()
+
+                
+        ## # rightEE-leftEE - relative dist ----
+        ## if 'relativePose_target_EE' in feature_list:
+        ##     kinEEPos      = d['kinEEPosList'][idx]
+        ##     kinEEQuat     = d['kinEEQuatList'][idx]
+        ##     kinTargetPos  = d['kinTargetPosList'][idx]
+        ##     kinTargetQuat = d['kinTargetQuatList'][idx]
+
+        ##     # pos and quat?
+        ##     relativePose = []
+        ##     for time_idx in xrange(len(timeList)):
+        ##         startFrame = dh.array2KDLframe( kinTargetPos[:,time_idx].tolist() +\
+        ##                                         kinTargetQuat[:,time_idx].tolist() )
+        ##         endFrame   = dh.array2KDLframe( kinEEPos[:,time_idx].tolist()+\
+        ##                                         kinEEQuat[:,time_idx].tolist() )
+        ##         diffFrame  = endFrame*startFrame.Inverse()                                
+        ##         relativePose.append( dh.KDLframe2List(diffFrame) )
+
+        ##     relativePose = np.array(relativePose).T[:-1]
+        ##     relativePose[:3,:] -= np.array([np.mean(relativePose[:,:startOffsetSize], axis=1)[:3]]).T
+            
+        ##     if dataSample is None: dataSample = relativePose
+        ##     else: dataSample = np.vstack([dataSample, relativePose])
+        ##     if idx == 0: dataDim.append(['relativePos_target_EE', 3])
+        ##     if idx == 0: dataDim.append(['relativeAng_target_EE', 4])
+                
+        ## # main-artag EE - vision relative dist with main(first) vision target----
+        ## if 'relativePose_artag_EE' in feature_list:
+        ##     kinEEPos        = d['kinEEPosList'][idx]
+        ##     kinEEQuat       = d['kinEEQuatList'][idx]
+        ##     visionArtagPos  = d['visionArtagPosList'][idx][:3] # originally length x 3*tags
+        ##     visionArtagQuat = d['visionArtagQuatList'][idx][:4] # originally length x 3*tags
+
+        ##     # pos and quat?
+        ##     relativePose = []
+        ##     for time_idx in xrange(len(timeList)):
+        ##         startFrame = dh.array2KDLframe( visionArtagPos[:,time_idx].tolist() +\
+        ##                                         visionArtagQuat[:,time_idx].tolist() )
+        ##         endFrame   = dh.array2KDLframe( kinEEPos[:,time_idx].tolist()+\
+        ##                                         kinEEQuat[:,time_idx].tolist() )
+        ##         diffFrame  = endFrame*startFrame.Inverse()                                
+        ##         relativePose.append( dh.KDLframe2List(diffFrame) )
+            
+        ##     relativePose = np.array(relativePose).T[:-1]
+        ##     relativePose[:3,:] -= np.array([np.mean(relativePose[:,:startOffsetSize], axis=1)[:3]]).T
+            
+        ##     if dataSample is None: dataSample = relativePose
+        ##     else: dataSample = np.vstack([dataSample, relativePose])
+        ##     if idx == 0: dataDim.append(['relativePos_artag_EE', 3])
+        ##     if idx == 0: dataDim.append(['relativeAng_artag_EE', 4])
+                
+
+        ## # main-artag sub-artag - vision relative dist with main(first) vision target----
+        ## if 'relativePose_artag_artag' in feature_list:
+        ##     visionArtagPos1 = d['visionArtagPosList'][idx][:3] # originally length x 3*tags
+        ##     visionArtagQuat1 = d['visionArtagQuatList'][idx][:4] # originally length x 3*tags
+        ##     visionArtagPos2 = d['visionArtagPosList'][idx][3:6] # originally length x 3*tags
+        ##     visionArtagQuat2 = d['visionArtagQuatList'][idx][4:8] # originally length x 3*tags
+
+        ##     # pos and quat?
+        ##     relativePose = []
+        ##     for time_idx in xrange(len(timeList)):
+
+        ##         startFrame = dh.array2KDLframe( visionArtagPos1[:,time_idx].tolist() +\
+        ##                                         visionArtagQuat1[:,time_idx].tolist() )
+        ##         endFrame = dh.array2KDLframe( visionArtagPos2[:,time_idx].tolist() +\
+        ##                                       visionArtagQuat2[:,time_idx].tolist() )                
+        ##         diffFrame  = endFrame*startFrame.Inverse()                                
+        ##         relativePose.append( dh.KDLframe2List(diffFrame) )
+
+        ##     relativePose = np.array(relativePose).T[:-1]
+        ##     relativePose[:3,:] -= np.mean(relativePose[:,:startOffsetSize], axis=1)[:3,:]
+
+        ##     if dataSample is None: dataSample = relativePose
+        ##     else: dataSample = np.vstack([dataSample, relativePose])
+        ##     if idx == 0: dataDim.append(['relativePos_artag_artag', 3])
+        ##     if idx == 0: dataDim.append(['relativeAng_artag_artag', 4])
+
         ## # Unimodal feature - vision change ------------------------------------
-        ## if 'unimodal_visionChange' in raw_feature_list:
+        ## if 'unimodal_visionChange' in feature_list:
         ##     visionChangeMag = d['visionChangeMagList'][idx]
 
         ##     unimodal_visionChange = visionChangeMag
@@ -2652,7 +2706,7 @@ def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, init_param_dict=N
         ##         param_dict['feature_names'].append('visionChange')
                 
         ## # Unimodal feature - fabric skin ------------------------------------
-        ## if 'unimodal_fabricForce' in raw_feature_list:
+        ## if 'unimodal_fabricForce' in feature_list:
         ##     fabricMag = d['fabricMagList'][idx]
 
         ##     unimodal_fabricForce = fabricMag
@@ -2663,47 +2717,35 @@ def extractRawFeature(d, raw_feature_list, nSuccess, nFailure, init_param_dict=N
         ##         param_dict['feature_names'].append('fabricForce')
 
         # ----------------------------------------------------------------
+        if len(np.shape(dataSample)) < 2: dataSample = np.array([dataSample])
         dataList.append(dataSample)
 
-    # Augmentation -------------------------------------------------------
-    # assuming there is no currupted file    
-    assert len(dataList) == nSuccess+nFailure
-    successDataList = dataList[0:nSuccess]
-    failureDataList = dataList[nSuccess:]
-    allDataList     = successDataList + failureDataList
+    # Convert data structure 
+    # From nSample x dim x length
+    # To dim x nSample x length
+    nSample      = len(dataList)
+    nEmissionDim = len(dataList[0])
+    features     = np.swapaxes(dataList, 0, 1)    
 
-    # Converting data structure & cutting unnecessary part ---------------
-    features         = np.swapaxes(allDataList, 0, 1)
-    success_features = np.swapaxes(successDataList, 0, 1)
-    failure_features = np.swapaxes(failureDataList, 0, 1)
-
-    ## Cut data
+    # cut unnecessary part #temp
     if cut_data is not None:
-        features         = features[:,:,cut_data[0]:cut_data[1]]
-        success_features = success_features[:,:,cut_data[0]:cut_data[1]]
-        failure_features = failure_features[:,:,cut_data[0]:cut_data[1]]
-               
+        features = features[:,:,cut_data[0]:cut_data[1]]
+
     # Scaling ------------------------------------------------------------
-    if isTrainingData:
+    if isTrainingData or renew_minmax:
         param_dict['feature_max'] = [ np.max(np.array(feature).flatten()) for feature in features ]
         param_dict['feature_min'] = [ np.min(np.array(feature).flatten()) for feature in features ]
-        param_dict['feature_mu']  = [ np.mean(np.array(feature).flatten()) for feature in features ]
-        param_dict['feature_std'] = [ np.std(np.array(feature).flatten()) for feature in features ]
-        ## print "max: ", param_dict['feature_max']
-        ## print "min: ", param_dict['feature_min']
 
-    if scaling is True: 
-        success_features = scale( success_features, param_dict['feature_min'], param_dict['feature_max'] )
-        failure_features = scale( failure_features, param_dict['feature_min'], param_dict['feature_max'] )
-        ## success_features = normalization( success_features, param_dict['feature_mu'], \
-        ## param_dict['feature_std'] )
-        ## failure_features = normalization( failure_features, param_dict['feature_mu'], \
-        ## param_dict['feature_std'] )
+    scaled_features = []
+    for i, feature in enumerate(features):
+        if abs( param_dict['feature_max'][i] - param_dict['feature_min'][i]) < 1e-3:
+            scaled_features.append( np.array(feature) )
+        else:
+            scaled_features.append( ( np.array(feature) - param_dict['feature_min'][i] )\
+                                    /( param_dict['feature_max'][i] - param_dict['feature_min'][i]) )
 
-    param_dict['feature_names'] = raw_feature_list
-    param_dict['dataDim']       = dataDim
-   
-    return success_features, failure_features, param_dict
+    return scaled_features, param_dict
+
 
 
 def export_images(folder_list, data_dict, downSampleSize):

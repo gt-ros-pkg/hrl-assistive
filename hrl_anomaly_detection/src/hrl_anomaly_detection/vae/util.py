@@ -103,3 +103,123 @@ def graph_latent_space(z_n, z_a=None):
 
     plt.legend(loc=3, ncol=2)
     plt.show()
+
+
+def get_ext_data(subjects, task_name, raw_data_path, processed_data_path, param_dict,
+                 init_param_dict=None, id_num=0, raw_feature=False):
+    ## Parameters # data
+    data_dict  = param_dict['data_param']
+    data_renew = data_dict['renew']
+    if raw_feature:
+        AE_dict = param_dict['AE']
+    
+    #------------------------------------------
+    if os.path.isdir(processed_data_path) is False:
+        os.system('mkdir -p '+processed_data_path)
+
+    if init_param_dict is None:
+        crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
+        print "CV data exists and no renew"
+        d = ut.load_pickle(crossVal_pkl)
+        init_param_dict = d['param_dict']
+
+    #------------------------------------------
+    crossVal_pkl = os.path.join(processed_data_path, 'cv_td_'+task_name+'_'+str(id_num)+'.pkl')
+    if os.path.isfile(crossVal_pkl) and data_renew is False and False:
+        print "CV data exists and no renew"
+        td = ut.load_pickle(crossVal_pkl)
+    else:
+        if raw_feature is Flase:
+            # Extract data from designated location
+            td = dm.getDataLOPO(subjects, task_name, raw_data_path, save_data_path,\
+                                downSampleSize=data_dict['downSampleSize'],\
+                                init_param_dict=init_param_dict,\
+                                handFeatures=data_dict['isolationFeatures'], \
+                                cut_data=data_dict['cut_data'],\
+                                data_renew=data_renew, max_time=data_dict['max_time'],
+                                pkl_prefix='tgt_', depth=True)
+
+            td['successData'], td['failureData'], td['success_files'], td['failure_files'], td['kFoldList'] \
+              = dm.LOPO_data_index(td['successDataList'], td['failureDataList'],\
+                                   td['successFileList'], td['failureFileList'])
+        else:
+            # Extract data from designated location
+            td = dm.getRawDataLOPO(subjects, task_name, raw_data_path, save_data_path,\
+                                   downSampleSize=data_dict['downSampleSize'],\
+                                   init_param_dict=init_param_dict,\
+                                   handFeatures=data_dict['isolationFeatures'], \
+                                   rawFeatures=AE_dict['rawFeatures'],\
+                                   cut_data=data_dict['cut_data'],\
+                                   data_renew=data_renew, max_time=data_dict['max_time'],
+                                   pkl_prefix='tgt_', depth=True)
+
+            td['successData'], td['failureData'], td['success_files'], td['failure_files'], td['kFoldList'] \
+              = dm.LOPO_data_index(td['successRawDataList'], td['failureRawDataList'],\
+                                   td['successFileList'], td['failureFileList'])
+
+        ut.save_pickle(td, crossVal_pkl)
+
+    if raw_feature is False:
+        #------------------------------------------
+        # select feature for detection
+        feature_list = []
+        for feature in param_dict['data_param']['handFeatures']:
+            idx = [ i for i, x in enumerate(param_dict['data_param']['isolationFeatures']) if feature == x][0]
+            feature_list.append(idx)
+
+        td['successData']    = td['successData'][feature_list]
+        td['failureData']    = td['failureData'][feature_list]
+        print np.shape(td['successData'])
+
+    return td
+
+
+def get_scaled_data(normalTrainData, abnormalTrainData, normalTestData, abnormalTestData, aligned=True):
+    '''
+    Remove outlier and scale into 0-1 range
+    '''
+
+    if aligned is False:
+        # dim x sample x length => sample x length x dim
+        normalTrainData   = np.swapaxes(normalTrainData, 0,1 )
+        normalTrainData   = np.swapaxes(normalTrainData, 1,2 )
+        abnormalTrainData = np.swapaxes(abnormalTrainData, 0,1 )
+        abnormalTrainData = np.swapaxes(abnormalTrainData, 1,2 )
+
+        # dim x sample x length => sample x length x dim
+        normalTestData   = np.swapaxes(normalTestData, 0,1 )
+        normalTestData   = np.swapaxes(normalTestData, 1,2 )
+        abnormalTestData = np.swapaxes(abnormalTestData, 0,1 )
+        abnormalTestData = np.swapaxes(abnormalTestData, 1,2 )
+        
+
+    # normalization => (sample x dim) ----------------------------------
+    from sklearn import preprocessing
+    scaler = preprocessing.MinMaxScaler(feature_range=(0, 1))
+    scaler = preprocessing.StandardScaler() 
+
+
+    normalTrainData_scaled   = scaler.fit_transform(normalTrainData.reshape(-1,len(normalTrainData[0][0])))
+    abnormalTrainData_scaled = scaler.transform(abnormalTrainData.reshape(-1,len(abnormalTrainData[0][0])))
+    normalTestData_scaled    = scaler.transform(normalTestData.reshape(-1,len(normalTestData[0][0])))
+    abnormalTestData_scaled  = scaler.transform(abnormalTestData.reshape(-1,len(abnormalTestData[0][0])))
+
+    # rescale 95%of values into 0-1
+    def rescaler(x, mean, var):
+        
+        max_val = 1.8 #1.9#mean+3.0*np.sqrt(var)
+        min_val = -1.8 #mean-3.0*np.sqrt(var)
+        return (x-min_val)/( max_val-min_val )
+    
+    normalTrainData_scaled   = rescaler(normalTrainData_scaled, scaler.mean_, scaler.var_)
+    abnormalTrainData_scaled = rescaler(abnormalTrainData_scaled, scaler.mean_, scaler.var_)
+    normalTestData_scaled    = rescaler(normalTestData_scaled, scaler.mean_, scaler.var_)
+    abnormalTestData_scaled  = rescaler(abnormalTestData_scaled, scaler.mean_, scaler.var_)
+
+    # reshape
+    normalTrainData   = normalTrainData_scaled.reshape(np.shape(normalTrainData))
+    abnormalTrainData = abnormalTrainData_scaled.reshape(np.shape(abnormalTrainData))
+    normalTestData   = normalTestData_scaled.reshape(np.shape(normalTestData))
+    abnormalTestData  = abnormalTestData_scaled.reshape(np.shape(abnormalTestData))
+
+    return normalTrainData, abnormalTrainData, normalTestData, abnormalTestData

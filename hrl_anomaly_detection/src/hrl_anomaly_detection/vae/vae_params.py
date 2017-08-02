@@ -126,6 +126,16 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                          'crossmodal_landmarkEEAng',\
                          ] 
                    
+    rawFeatures = ['wristAudio',\
+                   'audioWristAzimuth',\
+                   'kinDesEEPos',\
+                   'targetPos',\
+                   'ftForce',\
+                   'kinematics',\
+                   'landmarkPos']
+                   
+    AE_param_dict = {'rawFeatures': rawFeatures}
+
 
     modality_list   = ['ft' ,'kinematics', 'audioWrist', 'vision_landmark']
     raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/AURO2016/'
@@ -144,7 +154,7 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
     ##   '/hrl_file_server/dpark_data/anomaly/AURO2016/'+task+'_data/'+\
     ##   str(data_param_dict['downSampleSize'])+'_'+str(dim)
 
-    param_dict = {'data_param': data_param_dict, 'HMM': HMM_param_dict, \
+    param_dict = {'data_param': data_param_dict, 'HMM': HMM_param_dict, 'AE': AE_param_dict,\
                   'SVM': SVM_param_dict, 'ROC': ROC_param_dict, 'AD': AD_param_dict}
 
     return raw_data_path, save_data_path, param_dict
