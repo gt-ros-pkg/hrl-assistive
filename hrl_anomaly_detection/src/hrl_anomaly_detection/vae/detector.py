@@ -92,17 +92,28 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         if method=='SVR':
             print "Start to fit SVR with gamma="
             from sklearn.svm import SVR
-            clf = SVR(C=1.0, epsilon=0.2, kernel='rbf', gamma=1.0)
-            clf.fit(x, y)
+            clf = SVR(C=1.0, epsilon=0.2, kernel='rbf', gamma=2.0)
         elif method=='RF':
             print "Start to fit RF : ", np.shape(x), np.shape(y)
             from sklearn.ensemble import RandomForestRegressor
             clf = RandomForestRegressor(n_estimators=100, min_samples_leaf=1, n_jobs=1)
-            clf.fit(x, y)
+        elif method=='GP':
+            from sklearn import gaussian_process
+            clf = gaussian_process.GaussianProcess(regr='linear', theta0=1.0, \
+                                                   corr='squared_exponential', \
+                                                   normalize=True, nugget=10)
+            # random sampling
+            idx_list = range(len(x))
+            np.random.shuffle(idx_list)
+            x = x[:8000]
+            y = y[:8000]
+            
+        print np.shape(x), np.shape(y)
+        clf.fit(x, y)
         print "-----------------------------------------"
 
     if True and False:
-        for i, s in enumerate(scores_te_n):
+        for i, s in enumerate(scores_te_a):
             fig = plt.figure()
             plt.plot(s, '-b')
             ths = 1
@@ -111,18 +122,30 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
             s_pred_bnd = []
             for j in xrange(len(s)):
                 if dyn_ths:
-                    s_pred = clf.predict(zs_te_n[i][j])
-                    s_pred_mu.append(s_pred)
                     if method == 'SVR':
+                        s_pred = clf.predict(zs_te_a[i][j])
+                        s_pred_mu.append(s_pred)
                         s_pred = s_pred + ths
-                    else:
-                        err_down, err_up = pred_rf(clf, zs_te_n[i][j], 68)
+                    elif method == 'RF':
+                        s_pred = clf.predict(zs_te_a[i][j])
+                        s_pred_mu.append(s_pred)
+                        err_down, err_up = pred_rf(clf, zs_te_a[i][j], 68)
                         s_pred = s_pred + ths*err_up
+                    else:
+                        s_pred, MSE = clf.predict(zs_te_a[i][j], eval_MSE=True)
+                        #s_pred = np.squeeze(s_pred)
+                        #MSE    = np.squeeze(MSE)
+                        s_pred = s_pred[0,0]
+                        s_pred_mu.append(s_pred)
+                        s_pred = s_pred + ths*np.sqrt(MSE[0])*10
+                        
                 else:
                     s_pred = 0+ths
                     s_pred_mu.append(s_pred)
-                    
+                
                 s_pred_bnd.append(s_pred)
+
+            print np.shape(s_pred_mu), np.shape(s_pred_bnd)
             plt.plot(s_pred_mu, '-r')
             if len(s_pred_bnd)>0:
                 plt.plot(s_pred_bnd, '--r') 
@@ -144,34 +167,45 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         tn_l = []
         fn_l = []
         for i, s in enumerate(scores_te_n):
-            for j in xrange(len(s)):
-                if dyn_ths:
-                    if method == 'SVR':
-                        s_pred = clf.predict(zs_te_n[i][j])[0]+ths
-                    else:
-                        s_pred = clf.predict(zs_te_n[i][j])[0]
-                        err_down, err_up = pred_rf(clf, zs_te_n[i][j], 95)
-                        s_pred = s_pred + ths*err_up
-                else: s_pred = 0+ths
+            #print i, " / ", len(scores_te_n)
+            if dyn_ths:
+                if method == 'SVR':
+                    s_preds = clf.predict(zs_te_n[i])+ths
+                elif method == 'RF':
+                    s_preds = clf.predict(zs_te_n[i])
+                    err_down, err_up = pred_rf(clf, zs_te_n[i], 95)
+                    s_pred = s_pred + ths*err_up
+                else:
+                    s_preds, MSE = clf.predict(zs_te_n[i], eval_MSE=True)
+                    s_preds = s_preds[:,0] + ths*np.sqrt(MSE)  
+            else: s_preds = [0+ths]*len(s)
 
-                if s[j]>s_pred:
+            for j in xrange(len(s)):
+
+                if s[j]>s_preds[j]:
                     fp_l.append(1)
                     break
                 elif j == len(s)-1:
                     tn_l.append(1)
 
         for i, s in enumerate(scores_te_a):
+
+            if dyn_ths:
+                if method == 'SVR':
+                    s_preds = clf.predict(zs_te_a[i])+ths
+                elif method == 'RF':
+                    s_preds = clf.predict(zs_te_a[i])
+                    err_down, err_up = pred_rf(clf, zs_te_a[i], 95)
+                    s_preds = s_preds + ths*err_up
+                else:
+                    s_preds, MSE = clf.predict(zs_te_a[i], eval_MSE=True)
+                    s_preds = s_preds[:,0] + ths*np.sqrt(MSE) 
+            else: s_preds = [0+ths]*len(s)
+
+            
             for j in xrange(len(s)):
-                if dyn_ths:
-                    if method == 'SVR':
-                        s_pred = clf.predict(zs_te_a[i][j])[0]+ths
-                    else:
-                        s_pred = clf.predict(zs_te_a[i][j])
-                        err_down, err_up = pred_rf(clf, zs_te_a[i][j], 95)
-                        s_pred = s_pred + ths*err_up
-                else: s_pred = 0+ths
                 
-                if s[j]>s_pred:
+                if s[j]>s_preds[j]:
                     tp_l.append(1)
                     break
                 elif j == len(s)-1:
