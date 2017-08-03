@@ -248,13 +248,22 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
 
 def get_roc(tp_l, tn_l, fp_l, fn_l):
 
-    tp_ll = np.sum(tp_l, axis=-1)
-    fp_ll = np.sum(fp_l, axis=-1)
-    tn_ll = np.sum(tn_l, axis=-1)
-    fn_ll = np.sum(fn_l, axis=-1)
+    tp_ll = []
+    fp_ll = []
+    tn_ll = []
+    fn_ll = []  
+    for i in xrange(len(tp_l)):
+        tp_ll.append( tp_l[i])
+        fp_ll.append( fp_l[i])
+        tn_ll.append( tn_l[i])
+        fn_ll.append( fn_l[i])
 
-    tpr_l = float(tp_ll)/float(tp_ll+fn_ll)*100.0
-    fpr_l = float(fp_ll)/float(fp_ll+tn_ll)*100.0
+
+
+    tpr_l = np.array(tp_ll).astype(float)/(np.array(tp_ll).astype(float)+
+                                           np.array(fn_ll).astype(float))*100.0
+    fpr_l = np.array(fp_ll).astype(float)/(np.array(fp_ll).astype(float)+
+                                           np.array(tn_ll).astype(float))*100.0
 
     from sklearn import metrics 
     return metrics.auc(fpr_l, tpr_l, True)
