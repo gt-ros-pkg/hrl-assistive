@@ -156,10 +156,10 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         valData   = [normalTrainData[int(len(normalTrainData)*0.7):],
                      [0]*len(normalTrainData[int(len(normalTrainData)*0.7):])]
         print "==============================="
-        print "Training with ", np.shape(trainData)
+        print "Training with ", np.shape(trainData[0])
         print "==============================="
 
-        method      = 'lstm_dvae'
+        method      = 'lstm_vae'
 
         # ------------------------------------------------------------------------------------------        
         weights_path = os.path.join(save_data_path,'model_weights_'+method+'_'+str(idx)+'.h5')
