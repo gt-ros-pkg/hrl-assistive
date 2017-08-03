@@ -768,8 +768,8 @@ def getRawDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
                                              max_time=max_time)
             
             max_time = all_data_dict['timesList'][0][-1]
-            _, param_dict = extractHandFeature(all_data_dict, handFeatures,\
-                                               cut_data=cut_data)
+            #_, param_dict = extractHandFeature(all_data_dict, handFeatures,\
+            #                                   cut_data=cut_data)
 
             _, raw_param_dict = extractRawFeature(all_data_dict, rawFeatures, \
                                                   cut_data=cut_data)
@@ -2421,9 +2421,13 @@ def extractRawFeature(d, feature_list, init_param_dict=None, cut_data=None, verb
             if 'audioWristAzimuth' not in param_dict['feature_names']:
                 param_dict['feature_names'].append('audioWristAzimuth')
 
+        print feature_list
+        print np.shape(d['kinDesEEPosList'][idx])
+        sys.exit()
+        
         # Desired EE (Kinematics) --------------------------
         if 'kinDesEEPos' in feature_list:
-            kinDesEEPos  = d['kinDesEEPosList'][idx]
+            kinDesEEPos  = d['kinDesEEPosList'][idx].T
             print np.shape(kinDesEEPos)
             sys.exit()
             
@@ -2612,7 +2616,7 @@ def extractRawFeature(d, feature_list, init_param_dict=None, cut_data=None, verb
                 param_dict['feature_names'].append('landmarkPosY')
                 param_dict['feature_names'].append('landmarkPosZ')
 
-
+        
         print np.shape(dataSample)
         sys.exit()
 

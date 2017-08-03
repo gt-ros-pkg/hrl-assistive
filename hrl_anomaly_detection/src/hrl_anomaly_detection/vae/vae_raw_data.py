@@ -49,11 +49,25 @@ from hrl_anomaly_detection.vae import util as vutil
 import hrl_anomaly_detection.data_viz as dv
 from hrl_anomaly_detection.vae import keras_models as km
 
+# visualization
+import matplotlib
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import gridspec
+import itertools
+colors = itertools.cycle(['g', 'm', 'c', 'k', 'y','r', 'b', ])
+shapes = itertools.cycle(['x','v', 'o', '+'])
+
+matplotlib.rcParams['pdf.fonttype'] = 42
+matplotlib.rcParams['ps.fonttype'] = 42 
+random.seed(3334)
+np.random.seed(3334)
 
 def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, param_dict, plot=False,
               re_load=False, fine_tuning=False, dyn_ths=False):
     ## Parameters
     data_dict  = param_dict['data_param']
+    AE_dict    = param_dict['AE']
     data_renew = data_dict['renew']
     ae_renew   = param_dict['HMM']['renew']
     method     = param_dict['ROC']['methods'][0]
@@ -73,37 +87,38 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         '''
         Use augmented data? if nAugment is 0, then aug_successData = successData
         '''        
-        d = dm.getDataLOPO(subject_names, task_name, raw_data_path, \
-                           processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
-                           downSampleSize=data_dict['downSampleSize'],\
-                           handFeatures=data_dict['isolationFeatures'], \
-                           cut_data=data_dict['cut_data'], \
-                           data_renew=data_renew, max_time=data_dict['max_time'])
+        d = dm.getRawDataLOPO(subject_names, task_name, raw_data_path, \
+                              processed_data_path, data_dict['rf_center'], data_dict['local_range'],\
+                              downSampleSize=data_dict['downSampleSize'],\
+                              handFeatures=data_dict['isolationFeatures'], \
+                              rawFeatures=AE_dict['rawFeatures'], \
+                              cut_data=data_dict['cut_data'], \
+                              data_renew=data_renew, max_time=data_dict['max_time'])
 
         d['successData'], d['failureData'], d['success_files'], d['failure_files'], d['kFoldList'] \
-          = dm.LOPO_data_index(d['successDataList'], d['failureDataList'],\
+          = dm.LOPO_data_index(d['successRawDataList'], d['failureRawDataList'],\
                                d['successFileList'], d['failureFileList'])
 
         ut.save_pickle(d, crossVal_pkl)
 
-    # select feature for detection
-    feature_list = []
-    for feature in param_dict['data_param']['handFeatures']:
-        idx = [ i for i, x in enumerate(param_dict['data_param']['isolationFeatures']) if feature == x][0]
-        feature_list.append(idx)
-    d['successData']    = d['successData'][feature_list]
-    d['failureData']    = d['failureData'][feature_list]
+    ## # select feature for detection
+    ## feature_list = []
+    ## for feature in param_dict['data_param']['handFeatures']:
+    ##     idx = [ i for i, x in enumerate(param_dict['data_param']['isolationFeatures']) if feature == x][0]
+    ##     feature_list.append(idx)
+    ## d['successData']    = d['successData'][feature_list]
+    ## d['failureData']    = d['failureData'][feature_list]
 
-    if fine_tuning is False :
+    if fine_tuning is False and False:
         subjects = ['Andrew', 'Britteney', 'Joshua', 'Jun', 'Kihan', 'Lichard', 'Shingshing', 'Sid', 'Tao']
         raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/CORL2017/'
         td1 = vutil.get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
-                          init_param_dict=d['param_dict'], id_num=0)
+                                 init_param_dict=d['param_dict'], id_num=0)
 
         subjects = ['ari', 'park', 'jina', 'linda', 'sai', 'hyun']
         raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/ICRA2017/'
         td2 = vutil.get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
-                          init_param_dict=d['param_dict'], id_num=1)
+                                 init_param_dict=d['param_dict'], id_num=1)
 
     # Parameters
     nDim = len(d['successData'])
@@ -125,54 +140,65 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     # HMM-induced vector with LOPO
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(d['kFoldList']):
-        if idx != 7: continue
-        ## np.random.shuffle(normalTrainIdx)  
+        if idx != 1: continue
+        np.random.shuffle(normalTrainIdx)  
 
         # dim x sample x length
-        ## normalTrainData   = d['successData'][:, normalTrainIdx, :]
-        ## abnormalTrainData = d['failureData'][:, abnormalTrainIdx, :]
-        ## normalTestData    = d['successData'][:, normalTestIdx, :]
-        ## abnormalTestData  = d['failureData'][:, abnormalTestIdx, :]
-        ## if fine_tuning is False and False:
-        ##     normalTrainData   = np.hstack([normalTrainData, copy.deepcopy(td1['successData']), copy.deepcopy(td2['successData'])])
-        ##     abnormalTrainData = np.hstack([abnormalTrainData, copy.deepcopy(td1['failureData']), copy.deepcopy(td2['failureData'])])
-        normalTrainData   = np.hstack([copy.deepcopy(td1['successData']),
-                                       copy.deepcopy(td2['successData'])])
-        abnormalTrainData = np.hstack([copy.deepcopy(td1['failureData']),
-                                       copy.deepcopy(td2['failureData'])])
-
-        # shuffle
-        idx_list = range(len(normalTrainData[0]))
-        np.random.shuffle(idx_list)
-        normalTrainData = normalTrainData[:,idx_list]
+        normalTrainData   = d['successData'][:, normalTrainIdx, :]
+        abnormalTrainData = d['failureData'][:, abnormalTrainIdx, :]
+        normalTestData    = d['successData'][:, normalTestIdx, :]
+        abnormalTestData  = d['failureData'][:, abnormalTestIdx, :]
+        if fine_tuning is False and False:
+            normalTrainData   = np.hstack([normalTrainData,
+                                           copy.deepcopy(td1['successData']),
+                                           copy.deepcopy(td2['successData'])])
+            abnormalTrainData = np.hstack([abnormalTrainData,
+                                           copy.deepcopy(td1['failureData']),
+                                           copy.deepcopy(td2['failureData'])])
+            #normalTrainData   = np.hstack([normalTrainData, copy.deepcopy(td1['successData']),
+            #                               copy.deepcopy(td2['successData'])])
+            #abnormalTrainData = np.hstack([abnormalTrainData, copy.deepcopy(td1['failureData']),
+            #                               copy.deepcopy(td2['failureData'])])
 
         normalTrainData, abnormalTrainData, normalTestData, abnormalTestData =\
-          get_scaled_data(normalTrainData, abnormalTrainData, aligned=False)
+          vutil.get_scaled_data(normalTrainData, abnormalTrainData,
+                                normalTestData, abnormalTestData, aligned=False)
 
-        ## trainData = [normalTrainData, [0]*len(normalTrainData)]
-        ## valData   = [normalTestData, [0]*len(normalTestData)]
         trainData = [normalTrainData[:int(len(normalTrainData)*0.7)],
                      [0]*len(normalTrainData[:int(len(normalTrainData)*0.7)])]
         valData   = [normalTrainData[int(len(normalTrainData)*0.7):],
                      [0]*len(normalTrainData[int(len(normalTrainData)*0.7):])]
-        print "==============================="
-        print "Training with ", np.shape(trainData)
-        print "==============================="
+        testData  = [normalTestData, [0]*len(normalTestData)]
 
-        method      = 'lstm_dvae'
 
+        # ------------------------------------------------------------------------------------------
+        # TEST Code
+        # ------------------------------------------------------------------------------------------
+        ## normalData   = np.hstack([copy.deepcopy(d['successData']), copy.deepcopy(td1['successData']), \
+        ##                           copy.deepcopy(td2['successData'])])
+        ## abnormalData = np.hstack([copy.deepcopy(d['failureData']), copy.deepcopy(td1['failureData']), \
+        ##                           copy.deepcopy(td2['failureData'])])
+        ## normalData   = copy.deepcopy(d['successData'])
+        ## abnormalData = copy.deepcopy(d['failureData'])
+        
+        ## trainData, testData, window_size, raw_data, raw_data_ft = \
+        ##   get_batch_data(normalData, abnormalData, win=False)
+        ## (normalTrainData, abnormalTrainData, normalTestData, abnormalTestData) = raw_data
+        ## (normalTrainData_ft, abnormalTrainData_ft, normalTestData_ft, abnormalTestData_ft) = raw_data_ft
         # ------------------------------------------------------------------------------------------        
+        method      = 'lstm_dvae'
+         
         weights_path = os.path.join(save_data_path,'model_weights_'+method+'_'+str(idx)+'.h5')
+        ## weights_path = os.path.join(save_data_path,'tmp_fine_weights_'+str(idx)+'.h5')
         vae_mean   = None
         vae_logvar = None
         enc_z_mean = enc_z_std = None
         generator  = None
         x_std_div   = None
         x_std_offset= None
-
-        # ------------------------------------------------------------------------------------------
+        
         window_size = 1
-        batch_size  = 128
+        batch_size  = 32
         fixed_batch_size = True
         noise_mag   = 0.1
         sam_epoch   = 10
@@ -187,18 +213,16 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             else:
                 from hrl_anomaly_detection.vae import lstm_dvae_state_batch as km
                 ths_l = np.logspace(-1.0,2.2,40) -0.1  
-            x_std_div   = 4
+            x_std_div   = 2
             x_std_offset= 0.05
-            z_std       = 0.7
+            z_std       = 0.4
             stateful = True
             ad_method   = 'lower_bound'
-            for i in xrange(1):
-                autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
-                  km.lstm_vae(trainData, valData, weights_path, patience=4, batch_size=batch_size,
-                              noise_mag=noise_mag, timesteps=window_size, sam_epoch=sam_epoch,
-                              x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,
-                              re_load=True, plot=False)#, trainable=i)
-                
+            autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
+              km.lstm_vae(trainData, valData, weights_path, patience=4, batch_size=batch_size,
+                          noise_mag=noise_mag, timesteps=window_size, sam_epoch=sam_epoch,
+                          x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,                          
+                          re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot) 
         elif method == 'lstm_ae':
             # LSTM-AE (Confirmed) %74.99
             from hrl_anomaly_detection.vae import lstm_ae_state_batch as km
@@ -241,79 +265,94 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                           re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot) 
         
         #------------------------------------------------------------------------------------
+        ## from hrl_anomaly_detection.vae import lstm_vae_sampling as km
+        ## autoencoder, enc_z_mean, enc_z_std, generator = km.lstm_vae(trainData, testData, weights_path,
+        ##                                                             patience=5, batch_size=batch_size)
+
+        ## # LSTM-AE (Confirmed)
+        ## from hrl_anomaly_detection.vae import lstm_ae as km
+        ## autoencoder = km.lstm_ae(trainData, testData, weights_path, patience=5, batch_size=batch_size)
+
         if  True and False: 
             graph_latent_space(normalTestData, abnormalTestData, enc_z_mean, batch_size=batch_size,
                                method=method)
-
-
-
-
-def get_scaled_data(normalTrainData, abnormalTrainData, normalTestData=None, abnormalTestData=None, aligned=True):
-    '''
-    Remove outlier and scale into 0-1 range
-    '''
-
-    if aligned is False:
-        # dim x sample x length => sample x length x dim
-        normalTrainData   = np.swapaxes(normalTrainData, 0,1 )
-        normalTrainData   = np.swapaxes(normalTrainData, 1,2 )
-        abnormalTrainData = np.swapaxes(abnormalTrainData, 0,1 )
-        abnormalTrainData = np.swapaxes(abnormalTrainData, 1,2 )
-        
-        if normalTestData is not None:
-            # dim x sample x length => sample x length x dim
-            normalTestData   = np.swapaxes(normalTestData, 0,1 )
-            normalTestData   = np.swapaxes(normalTestData, 1,2 )
-            abnormalTestData = np.swapaxes(abnormalTestData, 0,1 )
-            abnormalTestData = np.swapaxes(abnormalTestData, 1,2 )
             
-            
-    # normalization => (sample x dim) ----------------------------------
-    from sklearn import preprocessing
-    scaler = preprocessing.MinMaxScaler(feature_range=(0, 1))
-    scaler = preprocessing.StandardScaler()
-    
-    
-    normalTrainData_scaled   = scaler.fit_transform(normalTrainData.reshape(-1,len(normalTrainData[0][0])))
-    abnormalTrainData_scaled = scaler.transform(abnormalTrainData.reshape(-1,len(abnormalTrainData[0][0])))
-    if normalTestData is not None:
-        normalTestData_scaled    = scaler.transform(normalTestData.reshape(-1,len(normalTestData[0][0])))
-        abnormalTestData_scaled  = scaler.transform(abnormalTestData.reshape(-1,len(abnormalTestData[0][0])))
-        
-    # rescale 95%of values into 0-1
-    def rescaler(x, mean, var):
-            
-        max_val = 1.8 #1.9#mean+3.0*np.sqrt(var)
-        min_val = -1.8 #mean-3.0*np.sqrt(var)
-        return (x-min_val)/( max_val-min_val )
-        
-    normalTrainData_scaled   = rescaler(normalTrainData_scaled, scaler.mean_, scaler.var_)
-    abnormalTrainData_scaled = rescaler(abnormalTrainData_scaled, scaler.mean_, scaler.var_)
-    if normalTestData is not None:
-        normalTestData_scaled    = rescaler(normalTestData_scaled, scaler.mean_, scaler.var_)
-        abnormalTestData_scaled  = rescaler(abnormalTestData_scaled, scaler.mean_, scaler.var_)
-    
-    # reshape
-    normalTrainData   = normalTrainData_scaled.reshape(np.shape(normalTrainData))
-    abnormalTrainData = abnormalTrainData_scaled.reshape(np.shape(abnormalTrainData))
-    if normalTestData is not None:
-        normalTestData   = normalTestData_scaled.reshape(np.shape(normalTestData))
-        abnormalTestData  = abnormalTestData_scaled.reshape(np.shape(abnormalTestData))
-    else:
-        normalTestData = None
-        abnormalTestData = None
+        # -----------------------------------------------------------------------------------
+        if True and False:
+            # get optimized alpha
+            save_pkl = os.path.join(save_data_path, 'tmp_data.pkl')
+            alpha = get_optimal_alpha(autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std,
+                                      generator, normalTrainData, window_size,\
+                                      save_pkl=save_pkl)
+        else:
+            alpha = np.array([1.0]*nDim)/float(nDim)
+            ## alpha = np.array([0.0]*nDim)/float(nDim)
+            ## alpha[0] = 1.0
 
-    return normalTrainData, abnormalTrainData, normalTestData, abnormalTestData
-    
-    
+        from hrl_anomaly_detection.vae import detector as dt
+        save_pkl = os.path.join(save_data_path, 'model_ad_scores_'+str(idx)+'.pkl')
+        tp_l, tn_l, fp_l, fn_l = \
+          dt.anomaly_detection(autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generator,
+                               normalTrainData, abnormalTrainData,\
+                               normalTestData, abnormalTestData, \
+                               ad_method,
+                               window_size, alpha, ths_l=ths_l, save_pkl=save_pkl, stateful=stateful,
+                               x_std_div = x_std_div, x_std_offset=x_std_offset, plot=plot,
+                               renew=clf_renew, dyn_ths=True, batch_info=(fixed_batch_size,batch_size))
+
+
+        for i in xrange(len(ths_l)):
+            tp_ll[i] += tp_l[i]
+            fp_ll[i] += fp_l[i]
+            tn_ll[i] += tn_l[i]
+            fn_ll[i] += fn_l[i]
+
+                
+
+
+            
+
+    d = {}
+    d['tp_ll'] = tp_ll
+    d['fp_ll'] = fp_ll
+    d['tn_ll'] = tn_ll
+    d['fn_ll'] = fn_ll
+    roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
+    ut.save_pickle(d, roc_pkl)
+
+    tpr_l = []
+    fpr_l = []
+    for i in xrange(len(ths_l)):
+        tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
+        fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 ) 
+
+    print "------------------------------------------------------"
+    print tpr_l
+    print fpr_l
+
+
+    from sklearn import metrics
+    print "roc: ", metrics.auc(fpr_l, tpr_l, True)  
+    fig = plt.figure(figsize=(6,6))
+    fig.add_subplot(1,1,1)
+    plt.plot(fpr_l, tpr_l, '-*b', ms=5, mec='b')
+    plt.xlim([0,100])
+    plt.ylim([0,100])
+    plt.show()
+
+
 if __name__ == '__main__':
 
     import optparse
     p = optparse.OptionParser()
     util.initialiseOptParser(p)
-
-    p.add_option('--pre_train', '--pt', action='store_true', dest='lstm_pretrain',
-                 default=False, help='Pre-training.')
+    
+    p.add_option('--lstm_test', '--lt', action='store_true', dest='lstm_test',
+                 default=False, help='Generate data.')
+    p.add_option('--reload', '--rl', action='store_true', dest='bReLoad',
+                 default=False, help='Reload previous parameters.')
+    p.add_option('--fint_tuning', '--ftn', action='store_true', dest='bFineTune',
+                 default=False, help='Run fine tuning.')
     p.add_option('--dyn_ths', '--dt', action='store_true', dest='bDynThs',
                  default=False, help='Run dynamic threshold.')
 
@@ -333,47 +372,21 @@ if __name__ == '__main__':
                                                           opt.bHMMRenew, opt.bCLFRenew, opt.dim,\
                                                           rf_center, local_range, nPoints=nPoints)
     if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
-    # Mikako - bad camera
-    # s1 - kaci - before camera calibration
     subjects = ['s2', 's3','s4','s5', 's6','s7','s8', 's9']
 
     if os.uname()[1] == 'monty1':
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm'
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_pretrain'
+          '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_rawtrain'
     else:
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_pretrain'
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
+          '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_rawtrain'
 
-    ## param_dict['data_param']['handFeatures'] = ['unimodal_kinVel',\
-    ##                                             'unimodal_kinJntEff_1',\
-    ##                                             'unimodal_ftForce_zero',\
-    ##                                             'unimodal_ftForce_integ',\
-    ##                                             'unimodal_kinEEChange',\
-    ##                                             'unimodal_kinDesEEChange',\
-    ##                                             'crossmodal_landmarkEEDist', \
-    ##                                             'unimodal_audioWristRMS',\
-    ##                                             'unimodal_fabricForce',\
-    ##                                             'unimodal_landmarkDist',\
-    ##                                             'crossmodal_landmarkEEAng']
-
-    param_dict['data_param']['handFeatures'] = ['unimodal_kinVel',\
-                                                'unimodal_kinJntEff_1',\
-                                                'unimodal_ftForce_zero',\
-                                                'unimodal_ftForce_integ',\
-                                                'unimodal_kinEEChange',\
-                                                'unimodal_kinDesEEChange',\
-                                                'crossmodal_landmarkEEDist', \
-                                                'unimodal_audioWristRMS']
 
     param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
                                                 'unimodal_kinJntEff_1',\
                                                 'unimodal_ftForce_integ',\
                                                 'crossmodal_landmarkEEDist']
 
-    if opt.lstm_pretrain:
+    if opt.lstm_test:
         lstm_test(subjects, opt.task, raw_data_path, save_data_path, param_dict, plot=not opt.bNoPlot,
-                  dyn_ths=opt.bDynThs)
+                  re_load=opt.bReLoad, fine_tuning=opt.bFineTune, dyn_ths=opt.bDynThs)
