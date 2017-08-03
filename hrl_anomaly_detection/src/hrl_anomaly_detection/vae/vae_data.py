@@ -161,6 +161,12 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             #abnormalTrainData = np.hstack([abnormalTrainData, copy.deepcopy(td1['failureData']),
             #                               copy.deepcopy(td2['failureData'])])
 
+            # shuffle
+            idx_list = range(len(normalTrainData[0]))
+            np.random.shuffle(idx_list)
+            normalTrainData = normalTrainData[:,idx_list]
+            
+
         normalTrainData, abnormalTrainData, normalTestData, abnormalTestData =\
           vutil.get_scaled_data(normalTrainData, abnormalTrainData,
                                 normalTestData, abnormalTestData, aligned=False)
