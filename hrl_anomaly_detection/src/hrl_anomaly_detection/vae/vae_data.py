@@ -187,7 +187,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         ## (normalTrainData, abnormalTrainData, normalTestData, abnormalTestData) = raw_data
         ## (normalTrainData_ft, abnormalTrainData_ft, normalTestData_ft, abnormalTestData_ft) = raw_data_ft
         # ------------------------------------------------------------------------------------------        
-        method      = 'lstm_vae'
+        method      = 'lstm_dvae'
          
         weights_path = os.path.join(save_data_path,'model_weights_'+method+'_'+str(idx)+'.h5')
         ## weights_path = os.path.join(save_data_path,'tmp_fine_weights_'+str(idx)+'.h5')
@@ -199,10 +199,10 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         x_std_offset= None
         
         window_size = 1
-        batch_size  = 32
+        batch_size  = 64
         fixed_batch_size = True
         noise_mag   = 0.1
-        sam_epoch   = 15        
+        sam_epoch   = 10        
 
         if method == 'lstm_vae' or method == 'lstm_vae2' or method == 'lstm_dvae':
             if method == 'lstm_vae':
@@ -214,9 +214,9 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             else:
                 from hrl_anomaly_detection.vae import lstm_dvae_state_batch as km
                 ths_l = np.logspace(-1.0,2.2,40) -0.1  
-            x_std_div   = 4
+            x_std_div   = 2
             x_std_offset= 0.05
-            z_std       = 0.7
+            z_std       = 0.4
             stateful = True
             ad_method   = 'lower_bound'
             autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
