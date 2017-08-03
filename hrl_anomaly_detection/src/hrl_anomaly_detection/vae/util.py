@@ -108,7 +108,7 @@ def graph_latent_space(z_n, z_a=None):
 
 
 def get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
-                 init_param_dict=None, id_num=0, raw_feature=False):
+                 init_param_dict=None, init_raw_param_dict=None, id_num=0, raw_feature=False):
     from hrl_anomaly_detection import data_manager as dm
     
     ## Parameters # data

@@ -102,11 +102,12 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
             clf = gaussian_process.GaussianProcess(regr='linear', theta0=1.0, \
                                                    corr='squared_exponential', \
                                                    normalize=True, nugget=10)
+        if len(x)>10000:
             # random sampling
             idx_list = range(len(x))
             np.random.shuffle(idx_list)
-            x = x[:8000]
-            y = y[:8000]
+            x = x[:10000]
+            y = y[:10000]
             
         print np.shape(x), np.shape(y)
         clf.fit(x, y)
