@@ -110,26 +110,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     ## d['failureData']    = d['failureData'][feature_list]
 
     if fine_tuning is False:
-        subjects = ['Andrew', 'Britteney', 'Joshua', 'Jun', 'Kihan', 'Lichard', 'Shingshing', 'Sid', 'Tao']
-        raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/CORL2017/'
-        td1 = vutil.get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
-                                 init_param_dict=d['param_dict'], init_raw_param_dict=d['raw_param_dict'],
-                                 id_num=0, raw_feature=True)
-
-        subjects = ['ari', 'park', 'jina', 'linda', 'sai', 'hyun']
-        raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/ICRA2017/'
-        td2 = vutil.get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
-                                 init_param_dict=d['param_dict'], init_raw_param_dict=d['raw_param_dict'],
-                                 id_num=1, raw_feature=True)
-
-        subjects = []
-        for i in xrange(1,23):
-            subjects.append('day'+str(i))
-        raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/ICRA2018/'
-        td3 = vutil.get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
-                                 init_param_dict=d['param_dict'], init_raw_param_dict=d['raw_param_dict'],
-                                 id_num=2, raw_feature=True)
-
+        td1, td2, td3 = vutil.get_ext_feeding_data(task_name, save_data_path, param_dict, d,
+                                                   raw_feature=True)
 
         
 
@@ -154,7 +136,6 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(d['kFoldList']):
         if idx != 1: continue
-        np.random.shuffle(normalTrainIdx)  
 
         # dim x sample x length
         normalTrainData   = d['successData'][:, normalTrainIdx, :]
@@ -170,10 +151,6 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                                            copy.deepcopy(td1['failureData']),
                                            copy.deepcopy(td2['failureData']),
                                            copy.deepcopy(td3['failureData'])])
-            #normalTrainData   = np.hstack([normalTrainData, copy.deepcopy(td1['successData']),
-            #                               copy.deepcopy(td2['successData'])])
-            #abnormalTrainData = np.hstack([abnormalTrainData, copy.deepcopy(td1['failureData']),
-            #                               copy.deepcopy(td2['failureData'])])
 
         # shuffle
         idx_list = range(len(normalTrainData[0]))
