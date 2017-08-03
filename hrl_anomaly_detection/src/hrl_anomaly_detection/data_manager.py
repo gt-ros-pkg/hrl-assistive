@@ -2553,24 +2553,24 @@ def extractRawFeature(d, feature_list, init_param_dict=None, cut_data=None, verb
                 param_dict['feature_names'].append('kinEEPos_y')
                 param_dict['feature_names'].append('kinEEPos_z')
 
-            if dataSample is None: dataSample = np.array(kinEEQuat)
-            else: dataSample = np.vstack([dataSample, kinEEQuat])
-            if 'kinEEQuat_x' not in param_dict['feature_names']:
-                param_dict['feature_names'].append('kinEEQuat_x')
-                param_dict['feature_names'].append('kinEEQuat_y')
-                param_dict['feature_names'].append('kinEEQuat_z')
-                param_dict['feature_names'].append('kinEEQuat_w')
+            ## if dataSample is None: dataSample = np.array(kinEEQuat)
+            ## else: dataSample = np.vstack([dataSample, kinEEQuat])
+            ## if 'kinEEQuat_x' not in param_dict['feature_names']:
+            ##     param_dict['feature_names'].append('kinEEQuat_x')
+            ##     param_dict['feature_names'].append('kinEEQuat_y')
+            ##     param_dict['feature_names'].append('kinEEQuat_z')
+            ##     param_dict['feature_names'].append('kinEEQuat_w')
 
-            if dataSample is None: dataSample = np.array(kinJntPos)
-            else: dataSample = np.vstack([dataSample, kinJntPos])
-            if 'kinJntPos_1' not in param_dict['feature_names']:
-                param_dict['feature_names'].append('kinJntPos_1')
-                param_dict['feature_names'].append('kinJntPos_2')
-                param_dict['feature_names'].append('kinJntPos_3')
-                param_dict['feature_names'].append('kinJntPos_4')
-                param_dict['feature_names'].append('kinJntPos_5')
-                param_dict['feature_names'].append('kinJntPos_6')
-                param_dict['feature_names'].append('kinJntPos_7')
+            ## if dataSample is None: dataSample = np.array(kinJntPos)
+            ## else: dataSample = np.vstack([dataSample, kinJntPos])
+            ## if 'kinJntPos_1' not in param_dict['feature_names']:
+            ##     param_dict['feature_names'].append('kinJntPos_1')
+            ##     param_dict['feature_names'].append('kinJntPos_2')
+            ##     param_dict['feature_names'].append('kinJntPos_3')
+            ##     param_dict['feature_names'].append('kinJntPos_4')
+            ##     param_dict['feature_names'].append('kinJntPos_5')
+            ##     param_dict['feature_names'].append('kinJntPos_6')
+            ##     param_dict['feature_names'].append('kinJntPos_7')
 
             if dataSample is None: dataSample = np.array(kinJntEff)
             else: dataSample = np.vstack([dataSample, kinJntEff])

@@ -127,9 +127,9 @@ def getFeeding(task, data_renew, HMM_renew, CF_renew, rf_center='kinEEPos',local
                          ] 
                    
     rawFeatures = ['wristAudio',\
-                   'audioWristAzimuth',\
-                   'kinDesEEPos',\
-                   'targetPos',\
+                   #'audioWristAzimuth',\
+                   #'kinDesEEPos',\
+                   #'targetPos',\
                    'ftForce',\
                    'kinematics',\
                    'landmarkPos']

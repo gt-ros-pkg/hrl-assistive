@@ -71,6 +71,7 @@ def graph_variations(x_true, x_pred_mean, x_pred_std=None):
     ## matplotlib.rcParams['text.usetex'] = True
     
     nDim = len(x_true[0])
+    if nDim > 6: nDim = 6
     
     fig = plt.figure(figsize=(6, 6))
     for k in xrange(nDim):
