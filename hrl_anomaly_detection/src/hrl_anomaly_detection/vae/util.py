@@ -29,6 +29,7 @@
 #  \author Daehyung Park (Healthcare Robotics Lab, Georgia Tech.)
 
 import numpy as np
+import os
 
 def sampleWithWindow(X, window=5):
     '''
