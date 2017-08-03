@@ -126,6 +126,8 @@ def get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
         print "CV data exists and no renew"
         d = ut.load_pickle(crossVal_pkl)
         init_param_dict = d['param_dict']
+        if raw_feature:
+            init_raw_param_dict = d['raw_param_dict']
 
     #------------------------------------------
     crossVal_pkl = os.path.join(save_data_path, 'cv_td_'+task_name+'_'+str(id_num)+'.pkl')
@@ -151,6 +153,7 @@ def get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
             td = dm.getRawDataLOPO(subjects, task_name, raw_data_path, save_data_path,\
                                    downSampleSize=data_dict['downSampleSize'],\
                                    init_param_dict=init_param_dict,\
+                                   init_raw_param_dict=init_raw_param_dict,\
                                    handFeatures=data_dict['isolationFeatures'], \
                                    rawFeatures=AE_dict['rawFeatures'],\
                                    cut_data=data_dict['cut_data'],\

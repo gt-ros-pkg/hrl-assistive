@@ -719,7 +719,7 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
 
 def getRawDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
                    rf_center='kinEEPos', local_range=10.0, downSampleSize=200, \
-                   cut_data=None, init_param_dict=None, \
+                   cut_data=None, init_param_dict=None, init_raw_param_dict=None, \
                    success_viz=False, failure_viz=False, \
                    save_pdf=False, solid_color=True, \
                    handFeatures=[], rawFeatures=[], data_renew=False,\
@@ -747,6 +747,7 @@ def getRawDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
         successRawDataList = data_dict['successRawDataList']
         failureRawDataList = data_dict['failureRawDataList']
         param_dict      = data_dict['param_dict']
+        raw_param_dict  = data_dict['raw_param_dict']
         successFileList     = data_dict.get('successFileList',[])
         failureFileList     = data_dict.get('failureFileList',[])
         success_image_list  = data_dict.get('success_image_list',[])
@@ -760,6 +761,7 @@ def getRawDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
         # Task-oriented hand-crafted features
         if init_param_dict is not None:
             param_dict=init_param_dict
+            raw_param_dict = init_raw_param_dict
             #max_time = all_data_dict['timesList'][0][-1]
         else:
             _, all_data_dict = util.loadData(file_list, isTrainingData=False,
@@ -768,8 +770,8 @@ def getRawDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
                                              max_time=max_time)
             
             max_time = all_data_dict['timesList'][0][-1]
-            #_, param_dict = extractHandFeature(all_data_dict, handFeatures,\
-            #                                   cut_data=cut_data)
+            _, param_dict = extractHandFeature(all_data_dict, handFeatures,\
+                                               cut_data=cut_data)
 
             _, raw_param_dict = extractRawFeature(all_data_dict, rawFeatures, \
                                                   cut_data=cut_data)
@@ -808,12 +810,12 @@ def getRawDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
                 print " --------------------- Success -----------------------------"  
                 successData, _    = extractHandFeature(success_data_dict, handFeatures, \
                                                        init_param_dict=param_dict, cut_data=cut_data)
-                successRawData, _ = extractRawFeature(success_raw_data_dict, rawFeatures, \
+                successRawData, _ = extractRawFeature(success_data_dict, rawFeatures, \
                                                       init_param_dict=raw_param_dict, cut_data=cut_data)
                 print " --------------------- Failure -----------------------------"  
                 failureData, _    = extractHandFeature(failure_data_dict, handFeatures, \
                                                        init_param_dict=param_dict, cut_data=cut_data)
-                failureRawData, _ = extractRawFeature(failure_raw_data_dict, rawFeatures, \
+                failureRawData, _ = extractRawFeature(failure_data_dict, rawFeatures, \
                                                       init_param_dict=raw_param_dict, cut_data=cut_data)
                                                          
                 successDataList.append(successData)
@@ -849,6 +851,7 @@ def getRawDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
         data_dict['successRawDataList'] = successRawDataList
         data_dict['failureRawDataList'] = failureRawDataList
         data_dict['param_dict']      = param_dict
+        data_dict['raw_param_dict']  = raw_param_dict
         data_dict['successFileList'] = successFileList
         data_dict['failureFileList'] = failureFileList        
         data_dict['success_image_list'] = success_image_list
@@ -856,6 +859,10 @@ def getRawDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
         
         ut.save_pickle(data_dict, save_pkl)
 
+    print "---------------------------------------------------"
+    print "s/f data: ", np.shape(successRawDataList), np.shape(failureRawDataList)
+    print "---------------------------------------------------"
+    return data_dict
 
 
 def getAEdataSet(idx, rawSuccessData, rawFailureData, handSuccessData, handFailureData, handParam, \
@@ -2421,18 +2428,12 @@ def extractRawFeature(d, feature_list, init_param_dict=None, cut_data=None, verb
             if 'audioWristAzimuth' not in param_dict['feature_names']:
                 param_dict['feature_names'].append('audioWristAzimuth')
 
-        print feature_list
-        print np.shape(d['kinDesEEPosList'][idx])
-        sys.exit()
-        
         # Desired EE (Kinematics) --------------------------
         if 'kinDesEEPos' in feature_list:
-            kinDesEEPos  = d['kinDesEEPosList'][idx].T
-            print np.shape(kinDesEEPos)
-            sys.exit()
+            kinDesEEPos  = d['kinDesEEPosList'][idx]
             
             if offset_flag:
-                kinDesEEPos -= np.mean(kinDesEEPos[:,:startOffsetSize], axis=1)
+                kinDesEEPos -= np.mean(kinDesEEPos[:,:startOffsetSize], axis=1).reshape(3,1)
 
             if dataSample is None: dataSample = kinDesEEPos
             else: dataSample = np.vstack([dataSample, kinDesEEPos])
@@ -2446,7 +2447,7 @@ def extractRawFeature(d, feature_list, init_param_dict=None, cut_data=None, verb
             kinTargetPos  = d['kinTargetPosList'][idx]
 
             if offset_flag:
-                kinTargetPos -= np.mean(kinTargetPos[:,:startOffsetSize], axis=-1)
+                kinTargetPos -= np.mean(kinTargetPos[:,:startOffsetSize], axis=-1).reshape(3,1)
             
             if dataSample is None: dataSample = np.array(kinTargetPos)
             else: dataSample = np.vstack([dataSample, kinTargetPos])
@@ -2460,7 +2461,7 @@ def extractRawFeature(d, feature_list, init_param_dict=None, cut_data=None, verb
             ftForce = d['ftForceList'][idx]
             
             if offset_flag: 
-                ftForce -= np.mean(ftForce[:,:startOffsetSize], axis=-1)
+                ftForce -= np.mean(ftForce[:,:startOffsetSize], axis=-1).reshape(3,1)
 
             if dataSample is None: dataSample = np.array(ftForce)
             else: dataSample = np.vstack([dataSample, ftForce])
@@ -2541,7 +2542,7 @@ def extractRawFeature(d, feature_list, init_param_dict=None, cut_data=None, verb
             ## kinVel     = d['kinVelList'][idx]
 
             if offset_flag:
-                kinEEPos  -= np.mean(kinEEPos[:,:startOffsetSize], axis=-1)
+                kinEEPos  -= np.mean(kinEEPos[:,:startOffsetSize], axis=-1).reshape(3,1)
                 #kinJntEff -= np.mean(kinJntEff[:,:startOffsetSize], axis=-1)
 
 
@@ -2606,7 +2607,7 @@ def extractRawFeature(d, feature_list, init_param_dict=None, cut_data=None, verb
                 visionLandmarkPos = np.reshape(visionLandmarkPos, (3,1))
 
             if offset_flag:
-                visionLandmarkPos -= np.mean(visionLandmarkPos[:,:startOffsetSize], axis=-1)
+                visionLandmarkPos -= np.mean(visionLandmarkPos[:,:startOffsetSize], axis=-1).reshape(3,1)
 
             if dataSample is None: dataSample = np.array(visionLandmarkPos)
             else: dataSample = np.vstack([dataSample, visionLandmarkPos])
@@ -2615,10 +2616,6 @@ def extractRawFeature(d, feature_list, init_param_dict=None, cut_data=None, verb
                 param_dict['feature_names'].append('landmarkPosX')
                 param_dict['feature_names'].append('landmarkPosY')
                 param_dict['feature_names'].append('landmarkPosZ')
-
-        
-        print np.shape(dataSample)
-        sys.exit()
 
                 
         ## # rightEE-leftEE - relative dist ----
