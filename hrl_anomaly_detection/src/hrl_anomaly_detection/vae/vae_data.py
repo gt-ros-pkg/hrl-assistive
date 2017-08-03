@@ -198,11 +198,11 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         x_std_div   = None
         x_std_offset= None
         
-        window_size = 5
-        batch_size  = 64
+        window_size = 1
+        batch_size  = 32
         fixed_batch_size = True
         noise_mag   = 0.1
-        sam_epoch   = 10
+        sam_epoch   = 15        
 
         if method == 'lstm_vae' or method == 'lstm_vae2' or method == 'lstm_dvae':
             if method == 'lstm_vae':
@@ -214,9 +214,9 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             else:
                 from hrl_anomaly_detection.vae import lstm_dvae_state_batch as km
                 ths_l = np.logspace(-1.0,2.2,40) -0.1  
-            x_std_div   = 2
+            x_std_div   = 4
             x_std_offset= 0.05
-            z_std       = 0.4
+            z_std       = 0.7
             stateful = True
             ad_method   = 'lower_bound'
             autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \

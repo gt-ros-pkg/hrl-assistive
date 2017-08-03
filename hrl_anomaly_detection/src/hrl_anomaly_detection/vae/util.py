@@ -28,8 +28,9 @@
 
 #  \author Daehyung Park (Healthcare Robotics Lab, Georgia Tech.)
 
-import numpy as np
 import os
+import numpy as np
+import hrl_lib.util as ut
 
 def sampleWithWindow(X, window=5):
     '''
@@ -106,8 +107,10 @@ def graph_latent_space(z_n, z_a=None):
     plt.show()
 
 
-def get_ext_data(subjects, task_name, raw_data_path, processed_data_path, param_dict,
+def get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
                  init_param_dict=None, id_num=0, raw_feature=False):
+    from hrl_anomaly_detection import data_manager as dm
+    
     ## Parameters # data
     data_dict  = param_dict['data_param']
     data_renew = data_dict['renew']
@@ -115,22 +118,22 @@ def get_ext_data(subjects, task_name, raw_data_path, processed_data_path, param_
         AE_dict = param_dict['AE']
     
     #------------------------------------------
-    if os.path.isdir(processed_data_path) is False:
-        os.system('mkdir -p '+processed_data_path)
+    if os.path.isdir(save_data_path) is False:
+        os.system('mkdir -p '+save_data_path)
 
     if init_param_dict is None:
-        crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
+        crossVal_pkl = os.path.join(save_data_path, 'cv_'+task_name+'.pkl')
         print "CV data exists and no renew"
         d = ut.load_pickle(crossVal_pkl)
         init_param_dict = d['param_dict']
 
     #------------------------------------------
-    crossVal_pkl = os.path.join(processed_data_path, 'cv_td_'+task_name+'_'+str(id_num)+'.pkl')
+    crossVal_pkl = os.path.join(save_data_path, 'cv_td_'+task_name+'_'+str(id_num)+'.pkl')
     if os.path.isfile(crossVal_pkl) and data_renew is False and False:
         print "CV data exists and no renew"
         td = ut.load_pickle(crossVal_pkl)
     else:
-        if raw_feature is Flase:
+        if raw_feature is False:
             # Extract data from designated location
             td = dm.getDataLOPO(subjects, task_name, raw_data_path, save_data_path,\
                                 downSampleSize=data_dict['downSampleSize'],\
