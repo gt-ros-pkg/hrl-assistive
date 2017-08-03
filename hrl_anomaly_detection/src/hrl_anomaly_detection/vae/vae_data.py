@@ -109,17 +109,10 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         feature_list.append(idx)
     d['successData']    = d['successData'][feature_list]
     d['failureData']    = d['failureData'][feature_list]
-
-    if fine_tuning is False and False:
-        subjects = ['Andrew', 'Britteney', 'Joshua', 'Jun', 'Kihan', 'Lichard', 'Shingshing', 'Sid', 'Tao']
-        raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/CORL2017/'
-        td1 = vutil.get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
-                          init_param_dict=d['param_dict'], id_num=0)
-
-        subjects = ['ari', 'park', 'jina', 'linda', 'sai', 'hyun']
-        raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/ICRA2017/'
-        td2 = vutil.get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
-                          init_param_dict=d['param_dict'], id_num=1)
+    
+    if fine_tuning is False:
+        td1, td2, td3 = vutil.get_ext_feeding_data(task_name, save_data_path, param_dict, d,
+                                                   raw_feature=False)
 
     # Parameters
     nDim = len(d['successData'])
@@ -136,35 +129,33 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     fp_ll = [[] for i in xrange(len(ths_l))]
     tn_ll = [[] for i in xrange(len(ths_l))]
     fn_ll = [[] for i in xrange(len(ths_l))]
+    roc_l = []
 
     # split data
     # HMM-induced vector with LOPO
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(d['kFoldList']):
         if idx != 7: continue
-        np.random.shuffle(normalTrainIdx)  
 
         # dim x sample x length
         normalTrainData   = d['successData'][:, normalTrainIdx, :]
         abnormalTrainData = d['failureData'][:, abnormalTrainIdx, :]
         normalTestData    = d['successData'][:, normalTestIdx, :]
         abnormalTestData  = d['failureData'][:, abnormalTestIdx, :]
-        if fine_tuning is False and False:
+        if fine_tuning is False:
             normalTrainData   = np.hstack([normalTrainData,
                                            copy.deepcopy(td1['successData']),
-                                           copy.deepcopy(td2['successData'])])
+                                           copy.deepcopy(td2['successData']),
+                                           copy.deepcopy(td3['successData'])])
             abnormalTrainData = np.hstack([abnormalTrainData,
                                            copy.deepcopy(td1['failureData']),
-                                           copy.deepcopy(td2['failureData'])])
-            #normalTrainData   = np.hstack([normalTrainData, copy.deepcopy(td1['successData']),
-            #                               copy.deepcopy(td2['successData'])])
-            #abnormalTrainData = np.hstack([abnormalTrainData, copy.deepcopy(td1['failureData']),
-            #                               copy.deepcopy(td2['failureData'])])
+                                           copy.deepcopy(td2['failureData']),
+                                           copy.deepcopy(td3['failureData'])])
 
-            # shuffle
-            idx_list = range(len(normalTrainData[0]))
-            np.random.shuffle(idx_list)
-            normalTrainData = normalTrainData[:,idx_list]
+        # shuffle
+        idx_list = range(len(normalTrainData[0]))
+        np.random.shuffle(idx_list)
+        normalTrainData = normalTrainData[:,idx_list]
             
 
         normalTrainData, abnormalTrainData, normalTestData, abnormalTestData =\
@@ -307,11 +298,15 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                                x_std_div = x_std_div, x_std_offset=x_std_offset, plot=plot,
                                renew=clf_renew, dyn_ths=True, batch_info=(fixed_batch_size,batch_size))
 
+        roc_l.append(dt.get_roc(tp_l, tn_l, fp_l, fn_l))
+
         for i in xrange(len(ths_l)):
             tp_ll[i] += tp_l[i]
             fp_ll[i] += fp_l[i]
             tn_ll[i] += tn_l[i]
             fn_ll[i] += fn_l[i]
+
+    print "roc list ", roc_l
 
     d = {}
     d['tp_ll'] = tp_ll
@@ -321,11 +316,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
     ut.save_pickle(d, roc_pkl)
 
-    tpr_l = []
-    fpr_l = []
-    for i in xrange(len(ths_l)):
-        tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
-        fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 ) 
+    tpr_l = float(np.sum(tp_ll, axis=-1))/float(np.sum(tp_ll, axis=-1)+np.sum(fn_ll, axis=-1))*100.0
+    fpr_l = float(np.sum(fp_ll, axis=-1))/float(np.sum(fp_ll, axis=-1)+np.sum(tn_ll, axis=-1))*100.0
 
     print "------------------------------------------------------"
     print tpr_l
