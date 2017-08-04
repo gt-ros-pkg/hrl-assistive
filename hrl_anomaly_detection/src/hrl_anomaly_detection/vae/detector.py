@@ -55,7 +55,8 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
                       alpha, ths_l=None, save_pkl=None, stateful=False, \
                       x_std_div=1.0, x_std_offset=1e-10,
                       dyn_ths=False, plot=False, renew=False, batch_info=(False,None), **kwargs):
-
+    
+    print "Start to get anomaly scores"
     if os.path.isfile(save_pkl) and renew is False :
         d = ut.load_pickle(save_pkl)
         scores_tr_n = d['scores_tr_n']
@@ -153,7 +154,6 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
             plt.show()
         
 
-    
     tpr_l = []
     fpr_l = []
 
@@ -162,89 +162,119 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
     tn_ll = []
     fn_ll = []
 
+    #--------------------------------------------------------------------
+    s_preds = []
+    MSEs    = []
+    err_ups = []
+    for i, s in enumerate(scores_te_n):
+        if dyn_ths:
+            if method == 'SVR':
+                s_preds.append( clf.predict(zs_te_n[i]) )
+            elif method == 'RF':
+                s_preds.append( clf.predict(zs_te_n[i]) )
+                _, err_up = pred_rf(clf, zs_te_n[i], 95)
+                err_ups.append(err_up)
+            else:
+                s_pred, MSE = clf.predict(zs_te_n[i], eval_MSE=True)
+                s_preds.append(s_pred)
+                MSEs.append(MSE)
+        else:
+            s_preds.append([0]*len(s))
+
     for ths in ths_l:
-        tp_l = []
         fp_l = []
         tn_l = []
-        fn_l = []
+
         for i, s in enumerate(scores_te_n):
-            #print i, " / ", len(scores_te_n)
             if dyn_ths:
                 if method == 'SVR':
-                    s_preds = clf.predict(zs_te_n[i])+ths
+                    vals = s_preds[i]+ths
                 elif method == 'RF':
-                    s_preds = clf.predict(zs_te_n[i])
-                    err_down, err_up = pred_rf(clf, zs_te_n[i], 95)
-                    s_pred = s_pred + ths*err_up
+                    vals = s_preds[i] + ths*err_ups[i]
                 else:
-                    s_preds, MSE = clf.predict(zs_te_n[i], eval_MSE=True)
-                    s_preds = s_preds[:,0] + ths*np.sqrt(MSE)  
-            else: s_preds = [0+ths]*len(s)
+                    vals = s_preds[i][:,0] + ths*np.sqrt(MSEs[i])
+            else: vals = np.array(s_preds[i])+ths
 
             for j in xrange(len(s)):
-
-                if s[j]>s_preds[j]:
+                if s[j]>vals[j]:
                     fp_l.append(1)
                     break
                 elif j == len(s)-1:
                     tn_l.append(1)
 
-        for i, s in enumerate(scores_te_a):
+        tn_ll.append(tn_l)
+        fp_ll.append(fp_l)
+            
+    #--------------------------------------------------------------------
+    s_preds = []
+    MSEs    = []
+    err_ups = []
+    for i, s in enumerate(scores_te_a):
+        if dyn_ths:
+            if method == 'SVR':
+                s_preds.append( clf.predict(zs_te_a[i]) )
+            elif method == 'RF':
+                s_preds.append( clf.predict(zs_te_a[i]) )
+                _, err_up = pred_rf(clf, zs_te_a[i], 95)
+                err_ups.append(err_up)
+            else:
+                s_pred, MSE = clf.predict(zs_te_a[i], eval_MSE=True)
+                s_preds.append(s_pred)
+                MSEs.append(MSE)
+        else:
+            s_preds.append([0]*len(s))
 
+    for ths in ths_l:
+        tp_l = []
+        fn_l = []
+
+        for i, s in enumerate(scores_te_n):
             if dyn_ths:
                 if method == 'SVR':
-                    s_preds = clf.predict(zs_te_a[i])+ths
+                    vals = s_preds[i]+ths
                 elif method == 'RF':
-                    s_preds = clf.predict(zs_te_a[i])
-                    err_down, err_up = pred_rf(clf, zs_te_a[i], 95)
-                    s_preds = s_preds + ths*err_up
+                    vals = s_preds[i] + ths*err_ups[i]
                 else:
-                    s_preds, MSE = clf.predict(zs_te_a[i], eval_MSE=True)
-                    s_preds = s_preds[:,0] + ths*np.sqrt(MSE) 
-            else: s_preds = [0+ths]*len(s)
+                    vals = s_preds[i][:,0] + ths*np.sqrt(MSEs[i])
+            else: vals = np.array(s_preds[i])+ths
 
-            
             for j in xrange(len(s)):
-                
-                if s[j]>s_preds[j]:
+                if s[j]>vals[j]:
                     tp_l.append(1)
                     break
                 elif j == len(s)-1:
                     fn_l.append(1)
 
-        tpr_l.append( float(np.sum(tp_l))/float(np.sum(tp_l)+np.sum(fn_l))*100.0 )
-        fpr_l.append( float(np.sum(fp_l))/float(np.sum(fp_l)+np.sum(tn_l))*100.0 )
-
         tp_ll.append(tp_l)
-        tn_ll.append(tn_l)
-        fp_ll.append(fp_l)
         fn_ll.append(fn_l)
-        
-    e_n_l  = np.amax(scores_te_n, axis=-1) #[val[-1] for val in scores_n if val != np.log(1e-50) ]
-    e_ab_l = np.amax(scores_te_a, axis=-1) #[val[-1] for val in scores_a if val != np.log(1e-50) ]
-    print np.mean(e_n_l), np.std(e_n_l)
-    print np.mean(e_ab_l), np.std(e_ab_l)
-    print "acc ", float(np.sum(tp_l)+np.sum(tn_l))/float(np.sum(tp_l+fp_l+tn_l+fn_l))
 
-    print tpr_l
-    print fpr_l
+    #--------------------------------------------------------------------
+    ## e_n_l  = np.amax(scores_te_n, axis=-1) #[val[-1] for val in scores_n if val != np.log(1e-50) ]
+    ## e_ab_l = np.amax(scores_te_a, axis=-1) #[val[-1] for val in scores_a if val != np.log(1e-50) ]
+    ## print np.mean(e_n_l), np.std(e_n_l)
+    ## print np.mean(e_ab_l), np.std(e_ab_l)
+    ## print "acc ", float(np.sum(tp_l)+np.sum(tn_l))/float(np.sum(tp_l+fp_l+tn_l+fn_l))
 
-    from sklearn import metrics 
-    print "roc: ", metrics.auc(fpr_l, tpr_l, True)
+    ## print tpr_l
+    ## print fpr_l
 
-    if plot:
-        fig = plt.figure(figsize=(12,6))
-        fig.add_subplot(1,2,1)    
-        plt.plot(fpr_l, tpr_l, '-*b', ms=5, mec='b')
-        plt.xlim([0,100])
-        plt.ylim([0,100])
+    ## from sklearn import metrics 
+    ## print "roc: ", metrics.auc(fpr_l, tpr_l, True)
 
-        fig.add_subplot(1,2,2)    
-        plt.plot(e_n_l, '*b', ms=5, mec='b')
-        plt.plot(e_ab_l, '*r', ms=5, mec='r')
-        plt.show()
+    ## if plot:
+    ##     fig = plt.figure(figsize=(12,6))
+    ##     fig.add_subplot(1,2,1)    
+    ##     plt.plot(fpr_l, tpr_l, '-*b', ms=5, mec='b')
+    ##     plt.xlim([0,100])
+    ##     plt.ylim([0,100])
+
+    ##     fig.add_subplot(1,2,2)    
+    ##     plt.plot(e_n_l, '*b', ms=5, mec='b')
+    ##     plt.plot(e_ab_l, '*r', ms=5, mec='r')
+    ##     plt.show()
 
     return tp_ll, tn_ll, fp_ll, fn_ll
+
 
 def get_roc(tp_l, tn_l, fp_l, fn_l):
 

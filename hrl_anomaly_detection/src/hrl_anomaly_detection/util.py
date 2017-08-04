@@ -230,6 +230,11 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=10
                 # TODO: Without wrist azimuth, we can still calculate azimuth from wrist_data
                 # But, we do not try in this moment.
                 audio_front_rms = audio_rms
+                audio_azimuth   = np.zeros(np.shape(audio_rms))
+
+            if len(np.shape(audio_rms))==1: audio_rms = np.expand_dims(audio_rms, axis=0)
+            if len(np.shape(audio_front_rms))==1: audio_front_rms = np.expand_dims(audio_front_rms, axis=0)
+            if len(np.shape(audio_azimuth))==1: audio_azimuth = np.expand_dims(audio_azimuth, axis=0)
 
             # Save local raw and interpolated data
             raw_data_dict['audioWristTimesList'].append(audio_time)
@@ -254,7 +259,6 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=10
                     data_dict['audioWristAzimuthList'].append(interpolationData(audio_time, audio_azimuth, new_times))
                 ## data_dict['audioWristMFCCList'].append(interpolationData(audio_time, audio_mfcc, new_times))
 
-                
         # kinematics -----------------------------------------------------------
         if 'kinematics_time' in d.keys():
             kin_time        = (np.array(d['kinematics_time']) - init_time).tolist()
@@ -597,6 +601,10 @@ def loadData(fileNames, isTrainingData=False, downSampleSize=100, local_range=10
             if 'fabric' in key:
                 data_dict[key] = [x if len(x) >= max_size else x + []*(max_size-len(x)) for x in data_dict[key]]
             else:
+                if len(np.shape(data_dict[key]))<2:
+                    for i in xrange(len(data_dict[key])):
+                        print np.shape(data_dict[key][i]), key
+                        #print fileNames[i]
                 data_dict[key] = extrapolateData(data_dict[key], max_size)
 
     if save_pkl is not None:
@@ -754,6 +762,7 @@ def downSampleAudio(time_array, data_array, new_time_array):
         if new_data_array is None: new_data_array = interp_data
         else: new_data_array = np.vstack([new_data_array, interp_data])
 
+    if len(np.shape(new_data_array))==1: new_data_array = np.expand_dims(new_data_array,0)
     return new_data_array
 
 
