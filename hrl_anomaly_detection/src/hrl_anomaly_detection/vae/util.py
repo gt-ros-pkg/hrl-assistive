@@ -169,7 +169,7 @@ def get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
 
     #------------------------------------------
     crossVal_pkl = os.path.join(save_data_path, 'cv_td_'+task_name+'_'+str(id_num)+'.pkl')
-    if os.path.isfile(crossVal_pkl) and data_renew is False and False:
+    if os.path.isfile(crossVal_pkl) and data_renew is False:
         print "CV data exists and no renew"
         td = ut.load_pickle(crossVal_pkl)
     else:
