@@ -210,7 +210,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             else:
                 from hrl_anomaly_detection.vae import lstm_dvae_state_batch as km
                 ths_l = np.logspace(-1.0,2.2,40) -0.1  
-            x_std_div   = 2
+            x_std_div   = 1
             x_std_offset= 0.05
             z_std       = 1.0
             stateful = True
@@ -262,7 +262,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                           re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot) 
         
         #------------------------------------------------------------------------------------
-        if  True : 
+        if  True and False: 
             vutil.graph_latent_space(normalTestData, abnormalTestData, enc_z_mean, batch_size=batch_size,
                                      method=method)
             
