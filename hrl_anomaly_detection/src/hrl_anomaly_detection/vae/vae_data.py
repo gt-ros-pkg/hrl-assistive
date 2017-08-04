@@ -158,7 +158,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         normalTrainData = normalTrainData[:,idx_list]
             
 
-        normalTrainData, abnormalTrainData, normalTestData, abnormalTestData =\
+        normalTrainData, abnormalTrainData, normalTestData, abnormalTestData, scaler =\
           vutil.get_scaled_data(normalTrainData, abnormalTrainData,
                                 normalTestData, abnormalTestData, aligned=False)
 
@@ -199,7 +199,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         batch_size  = 256
         fixed_batch_size = True
         noise_mag   = 0.1
-        sam_epoch   = 10       
+        sam_epoch   = 5
 
         if method == 'lstm_vae' or method == 'lstm_vae2' or method == 'lstm_dvae':
             if method == 'lstm_vae':
@@ -288,8 +288,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             ## alpha[0] = 1.0
 
         if fine_tuning: clf_renew=True
-        normalTrainData   = d['successData'][:, normalTrainIdx, :]
-            
+        normalTrainData = vutil.get_scaled_data2(d['successData'][:, normalTrainIdx, :],
+                                                 scaler, aligned=False)
 
         from hrl_anomaly_detection.vae import detector as dt
         save_pkl = os.path.join(save_data_path, 'model_ad_scores_'+str(idx)+'.pkl')
