@@ -79,7 +79,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
 
         d = {}
         d['scores_tr_n'] = scores_tr_n
-        d['zs_tr_n']     = zs_tr_n
+        d['zs_tr_n']     = zs_tr_n #sample x length x dim
         d['scores_te_n'] = scores_te_n
         d['zs_te_n']     = zs_te_n
         d['scores_te_a'] = scores_te_a
@@ -87,8 +87,12 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         ut.save_pickle(d, save_pkl)
 
     if dyn_ths:
-        x = np.array(zs_tr_n).reshape(-1,np.shape(zs_tr_n)[-1])
-        y = np.array(scores_tr_n).reshape(-1,np.shape(scores_tr_n)[-1])
+        l = len(zs_tr_n[0])
+        x = np.array(zs_tr_n[:,l*0.05:l*0.95]).reshape(-1,np.shape(zs_tr_n[:,l*0.05:l*0.95])[-1])
+        y = np.array(scores_tr_n[:,l*0.05:l*0.95]).reshape(-1,np.shape(scores_tr_n[:,l*0.05:l*0.95])[-1])        
+        ## x = np.array(zs_tr_n).reshape(-1,np.shape(zs_tr_n)[-1])
+        ## y = np.array(scores_tr_n).reshape(-1,np.shape(scores_tr_n)[-1])
+        
         method = 'SVR'
         if method=='SVR':
             print "Start to fit SVR with gamma="
@@ -103,12 +107,13 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
             clf = gaussian_process.GaussianProcess(regr='linear', theta0=1.0, \
                                                    corr='squared_exponential', \
                                                    normalize=True, nugget=10)
-        if len(x)>70000:
+        if len(x)>40000:
             # random sampling
             idx_list = range(len(x))
             np.random.shuffle(idx_list)
-            x = x[:70000]
-            y = y[:70000]
+            x = x[idx_list]
+            x = x[:40000]
+            y = y[:40000]
             
         print np.shape(x), np.shape(y)
         clf.fit(x, y)

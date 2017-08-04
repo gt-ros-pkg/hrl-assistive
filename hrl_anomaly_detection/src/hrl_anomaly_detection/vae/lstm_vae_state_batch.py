@@ -179,6 +179,12 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
 
             mean_tr_loss = []
             for sample in xrange(sam_epoch):
+
+                # shuffle
+                idx_list = range(len(x_train))
+                np.random.shuffle(idx_list)
+                x_train = x_train[idx_list]
+                
                 for i in xrange(0,len(x_train),batch_size):
                     seq_tr_loss = []
 
