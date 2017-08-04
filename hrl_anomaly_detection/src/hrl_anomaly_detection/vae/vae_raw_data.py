@@ -135,7 +135,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     # HMM-induced vector with LOPO
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(d['kFoldList']):
-        if idx != 1: continue
+        if idx != 7: continue
 
         # dim x sample x length
         normalTrainData   = d['successData'][:, normalTrainIdx, :]
@@ -210,7 +210,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             else:
                 from hrl_anomaly_detection.vae import lstm_dvae_state_batch as km
                 ths_l = np.logspace(-1.0,2.2,40) -0.1  
-            x_std_div   = 1
+            x_std_div   = 2
             x_std_offset= 0.05
             z_std       = 1.0
             stateful = True
