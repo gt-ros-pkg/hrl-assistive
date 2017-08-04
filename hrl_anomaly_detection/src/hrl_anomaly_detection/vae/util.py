@@ -64,8 +64,8 @@ def graph_variations(x_true, x_pred_mean, x_pred_std=None):
     colors = itertools.cycle(['g', 'm', 'c', 'k', 'y','r', 'b', ])
     shapes = itertools.cycle(['x','v', 'o', '+'])
 
-    matplotlib.rcParams['pdf.fonttype'] = 42
-    matplotlib.rcParams['ps.fonttype'] = 42
+    #matplotlib.rcParams['pdf.fonttype'] = 42
+    #matplotlib.rcParams['ps.fonttype'] = 42
     #rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
     #rc('text', usetex=True)
     ## matplotlib.rcParams['text.usetex'] = True
@@ -76,11 +76,11 @@ def graph_variations(x_true, x_pred_mean, x_pred_std=None):
     fig = plt.figure(figsize=(6, 6))
     for k in xrange(nDim):
         fig.add_subplot(nDim,1,k+1)
-        plt.rc('text', usetex=True) 
+        #plt.rc('text', usetex=True) 
         plt.plot(np.array(x_true)[:,k], '-b', label='Inputs')
-        plt.plot(np.array(x_pred_mean)[:,k], '-r', label=r'$\mu$')
+        plt.plot(np.array(x_pred_mean)[:,k], '-r', )#label=r'$\mu$')
         if x_pred_std is not None and len(x_pred_std)>0:
-            plt.plot(np.array(x_pred_mean)[:,k]+np.array(x_pred_std)[:,k], '--r', label=r'$\mu\pm\sigma$')
+            plt.plot(np.array(x_pred_mean)[:,k]+np.array(x_pred_std)[:,k], '--r', )#label=r'$\mu\pm\sigma$')
             plt.plot(np.array(x_pred_mean)[:,k]-np.array(x_pred_std)[:,k], '--r')
         #plt.ylim([-0.1,1.1])
     plt.show()
@@ -103,7 +103,7 @@ def graph_latent_space(normalTestData, abnormalTestData, enc_z, timesteps=1, bat
                 x = np.vstack([x,normalTestData[i:i+1]])            
 
             for j in xrange(len(x[0])-timesteps+1):
-                z = enc_z.predict(x[:,j:j+timesteps])
+                z = enc_z.predict(x[:,j:j+timesteps], batch_size=batch_size)
                 z_mean_n.append( z[0] )
 
         z_mean_a = []
@@ -114,7 +114,7 @@ def graph_latent_space(normalTestData, abnormalTestData, enc_z, timesteps=1, bat
                 x = np.vstack([x,abnormalTestData[i:i+1]])            
 
             for j in xrange(len(x[0])-timesteps+1):
-                z = enc_z.predict(x[:,j:j+timesteps])
+                z = enc_z.predict(x[:,j:j+timesteps], batch_size=batch_size)
                 z_mean_a.append( z[0] )
 
         viz_latent_space(z_mean_n, z_mean_a)

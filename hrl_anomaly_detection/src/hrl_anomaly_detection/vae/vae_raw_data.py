@@ -278,6 +278,9 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             ## alpha = np.array([0.0]*nDim)/float(nDim)
             ## alpha[0] = 1.0
 
+        if fine_tuning: clf_renew=True
+        normalTrainData   = d['successData'][:, normalTrainIdx, :]
+
         from hrl_anomaly_detection.vae import detector as dt
         save_pkl = os.path.join(save_data_path, 'model_ad_scores_'+str(idx)+'.pkl')
         tp_l, tn_l, fp_l, fn_l = \

@@ -87,11 +87,16 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         ut.save_pickle(d, save_pkl)
 
     if dyn_ths:
+        zs_tr_n = np.array(zs_tr_n)
+        scores_tr_n = np.array(scores_tr_n)
+        
         l = len(zs_tr_n[0])
-        x = np.array(zs_tr_n[:,l*0.05:l*0.95]).reshape(-1,np.shape(zs_tr_n[:,l*0.05:l*0.95])[-1])
-        y = np.array(scores_tr_n[:,l*0.05:l*0.95]).reshape(-1,np.shape(scores_tr_n[:,l*0.05:l*0.95])[-1])        
-        ## x = np.array(zs_tr_n).reshape(-1,np.shape(zs_tr_n)[-1])
-        ## y = np.array(scores_tr_n).reshape(-1,np.shape(scores_tr_n)[-1])
+        #s = int(l*0.05)
+        #e = int(l*0.95)
+        #x = np.array(zs_tr_n[:,s:e]).reshape(-1,np.shape(zs_tr_n[:,s:e])[-1])
+        #y = np.array(scores_tr_n[:,s:e]).reshape(-1,np.shape(scores_tr_n[:,s:e])[-1])        
+        x = np.array(zs_tr_n).reshape(-1,np.shape(zs_tr_n)[-1])
+        y = np.array(scores_tr_n).reshape(-1,np.shape(scores_tr_n)[-1])
         
         method = 'SVR'
         if method=='SVR':

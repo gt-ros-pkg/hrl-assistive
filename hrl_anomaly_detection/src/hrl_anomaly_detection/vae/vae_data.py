@@ -110,7 +110,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     d['successData']    = d['successData'][feature_list]
     d['failureData']    = d['failureData'][feature_list]
     
-    if fine_tuning is False or True:
+    if fine_tuning is False :
         td1, td2, td3 = vutil.get_ext_feeding_data(task_name, save_data_path, param_dict, d,
                                                    raw_feature=False)
 
@@ -142,7 +142,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         abnormalTrainData = d['failureData'][:, abnormalTrainIdx, :]
         normalTestData    = d['successData'][:, normalTestIdx, :]
         abnormalTestData  = d['failureData'][:, abnormalTestIdx, :]
-        if fine_tuning is False or True:
+        if fine_tuning is False :
             normalTrainData   = np.hstack([normalTrainData,
                                            copy.deepcopy(td1['successData']),
                                            copy.deepcopy(td2['successData']),
@@ -286,6 +286,10 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             alpha = np.array([1.0]*nDim)/float(nDim)
             ## alpha = np.array([0.0]*nDim)/float(nDim)
             ## alpha[0] = 1.0
+
+        if fine_tuning: clf_renew=True
+        normalTrainData   = d['successData'][:, normalTrainIdx, :]
+            
 
         from hrl_anomaly_detection.vae import detector as dt
         save_pkl = os.path.join(save_data_path, 'model_ad_scores_'+str(idx)+'.pkl')

@@ -207,6 +207,10 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                         random.shuffle(idx_list)
                         x = np.vstack([x_train[i:],
                                        x_train[idx_list[:r]]])
+                        while True:
+                            if len(x)<batch_size:
+                                x = np.vstack([x, x_train])
+                        
                     else:
                         x = x_train[i:i+batch_size]
 
@@ -312,7 +316,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
             x_pred_mean = []
             x_pred_std  = []
             for j in xrange(len(x[0])-timesteps+1):
-                x_pred = vae_mean_std.predict(x[:,j:j+timesteps])
+                x_pred = vae_mean_std.predict(x[:,j:j+timesteps], batch_size=batch_size)
                 x_pred_mean.append(x_pred[0,-1,:nDim])
                 x_pred_std.append(x_pred[0,-1,nDim:]/x_std_div+x_std_offset)
 
