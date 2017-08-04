@@ -273,17 +273,17 @@ def get_ext_feeding_data(task_name, save_data_path, param_dict, d, raw_feature=F
     if raw_feature is False:
         d['raw_param_dict'] = None
     
-    subjects = ['Andrew', 'Britteney', 'Joshua', 'Jun', 'Kihan', 'Lichard', 'Shingshing', 'Sid', 'Tao']
-    raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/CORL2017/'
-    td1 = get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
-                       init_param_dict=d['param_dict'], init_raw_param_dict=d['raw_param_dict'],
-                       depth=True, id_num=1, raw_feature=raw_feature)
+    ## subjects = ['Andrew', 'Britteney', 'Joshua', 'Jun', 'Kihan', 'Lichard', 'Shingshing', 'Sid', 'Tao']
+    ## raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/CORL2017/'
+    ## td1 = get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
+    ##                    init_param_dict=d['param_dict'], init_raw_param_dict=d['raw_param_dict'],
+    ##                    depth=True, id_num=1, raw_feature=raw_feature)
 
-    subjects = ['ari', 'park', 'jina', 'linda', 'sai', 'hyun']
-    raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/ICRA2017/'
-    td2 = get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
-                       init_param_dict=d['param_dict'], init_raw_param_dict=d['raw_param_dict'],
-                       id_num=2, raw_feature=raw_feature)
+    ## subjects = ['ari', 'park', 'jina', 'linda', 'sai', 'hyun']
+    ## raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/ICRA2017/'
+    ## td2 = get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
+    ##                    init_param_dict=d['param_dict'], init_raw_param_dict=d['raw_param_dict'],
+    ##                    id_num=2, raw_feature=raw_feature)
 
     subjects = []
     #for i in xrange(13,14):
