@@ -85,7 +85,43 @@ def graph_variations(x_true, x_pred_mean, x_pred_std=None):
         #plt.ylim([-0.1,1.1])
     plt.show()
 
-def graph_latent_space(z_n, z_a=None):
+def graph_latent_space(normalTestData, abnormalTestData, enc_z, timesteps=1, batch_size=None,
+                       method='lstm_vae'):
+
+    print "latent variable visualization"
+    if method == 'lstm_vae_offline':
+        z_mean_n = enc_z_mean.predict(normalTestData)
+        z_mean_a = enc_z_mean.predict(abnormalTestData)
+        viz_latent_space(z_mean_n, z_mean_a)
+    else:
+        #if batch_size is not None:
+        z_mean_n = []
+        for i in xrange(len(normalTestData)):
+
+            x = normalTestData[i:i+1]
+            for j in xrange(batch_size-1):
+                x = np.vstack([x,normalTestData[i:i+1]])            
+
+            for j in xrange(len(x[0])-timesteps+1):
+                z = enc_z.predict(x[:,j:j+timesteps])
+                z_mean_n.append( z[0] )
+
+        z_mean_a = []
+        for i in xrange(len(abnormalTestData)):
+
+            x = abnormalTestData[i:i+1]
+            for j in xrange(batch_size-1):
+                x = np.vstack([x,abnormalTestData[i:i+1]])            
+
+            for j in xrange(len(x[0])-timesteps+1):
+                z = enc_z.predict(x[:,j:j+timesteps])
+                z_mean_a.append( z[0] )
+
+        viz_latent_space(z_mean_n, z_mean_a)
+    
+
+
+def viz_latent_space(z_n, z_a=None):
     '''
     z_n: latent variable from normal data
     z_n: latent variable from abnormal data

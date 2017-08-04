@@ -270,9 +270,9 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         ## from hrl_anomaly_detection.vae import lstm_ae as km
         ## autoencoder = km.lstm_ae(trainData, testData, weights_path, patience=5, batch_size=batch_size)
 
-        if  True and False: 
-            graph_latent_space(normalTestData, abnormalTestData, enc_z_mean, batch_size=batch_size,
-                               method=method)
+        if  True : 
+            vutil.graph_latent_space(normalTestData, abnormalTestData, enc_z_mean, batch_size=batch_size,
+                                     method=method)
             
         # -----------------------------------------------------------------------------------
         if True and False:
