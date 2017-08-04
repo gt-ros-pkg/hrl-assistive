@@ -98,27 +98,36 @@ def LOPO_data_index(success_data_list, failure_data_list, \
     failureIdx = []
     success_files = []
     failure_files = []
+    last_failure_idx = 0
     for i in xrange(nSubject):
 
         if i == 0:
+            assert len(failure_data_list[i]) > 0, "# of first failure data should be more than one"
             success_data = success_data_list[i]
-            failure_data = failure_data_list[i]
             successIdx.append( range(len(success_data_list[i][0])) )
+            failure_data = failure_data_list[i]
             failureIdx.append( range(len(failure_data_list[i][0])) )
+            last_failure_idx = failureIdx[-1][-1]
         else:
             success_data = np.vstack([ np.swapaxes(success_data,0,1), \
                                       np.swapaxes(success_data_list[i], 0,1)])
-            failure_data = np.vstack([ np.swapaxes(failure_data,0,1), \
-                                      np.swapaxes(failure_data_list[i], 0,1)])
             success_data = np.swapaxes(success_data, 0, 1)
-            failure_data = np.swapaxes(failure_data, 0, 1)
             successIdx.append( range(successIdx[-1][-1]+1, successIdx[-1][-1]+1+\
                                      len(success_data_list[i][0])) )
-            failureIdx.append( range(failureIdx[-1][-1]+1, failureIdx[-1][-1]+1+\
-                                     len(failure_data_list[i][0])) )
+            
+            if len(failure_data_list[i])>0:
+                failure_data = np.vstack([ np.swapaxes(failure_data,0,1), \
+                                      np.swapaxes(failure_data_list[i], 0,1)])
+                failure_data = np.swapaxes(failure_data, 0, 1)
+                failureIdx.append( range(last_failure_idx+1, last_failure_idx+1+\
+                                         len(failure_data_list[i][0])) )
+                last_failure_idx += len(failure_data_list[i][0])
+            else:
+                failureIdx.append([])
 
         success_files += success_file_list[i]
-        failure_files += failure_file_list[i]
+        if len(failure_data_list[i])>0:
+            failure_files += failure_file_list[i]
 
 
     # Select specific anomalies
@@ -146,7 +155,6 @@ def LOPO_data_index(success_data_list, failure_data_list, \
                                          len(target_idx)) )
 
 
-    # only for hmm tuning
     kFold_list = []
     # leave-one-person-out
     for idx in xrange(nSubject):
