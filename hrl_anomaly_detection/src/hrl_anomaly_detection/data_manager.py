@@ -821,7 +821,7 @@ def getRawDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
                                                        init_param_dict=param_dict, cut_data=cut_data)
                 failureRawData, _ = extractRawFeature(failure_data_dict, rawFeatures, \
                                                       init_param_dict=raw_param_dict, cut_data=cut_data)
-                                                         
+
                 successDataList.append(successData)
                 failureDataList.append(failureData)
                 successRawDataList.append(successRawData)
@@ -2380,6 +2380,8 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
 def extractRawFeature(d, feature_list, init_param_dict=None, cut_data=None, verbose=False,
                       renew_minmax=False):
 
+    if len(d['timesList']) == 0: return [], {}
+        
     from sandbox_dpark_darpa_m3.lib import hrl_dh_lib as dh
     
     if init_param_dict is None:

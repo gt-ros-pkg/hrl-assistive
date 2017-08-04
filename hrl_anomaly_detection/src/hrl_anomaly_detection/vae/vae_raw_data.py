@@ -165,7 +165,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                      [0]*len(normalTrainData[:int(len(normalTrainData)*0.7)])]
         valData   = [normalTrainData[int(len(normalTrainData)*0.7):],
                      [0]*len(normalTrainData[int(len(normalTrainData)*0.7):])]
-        #testData  = [normalTestData, [0]*len(normalTestData)]
+        testData  = [normalTestData, [0]*len(normalTestData)]
 
 
         # ------------------------------------------------------------------------------------------
@@ -195,7 +195,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         x_std_offset= None
         
         window_size = 1
-        batch_size  = 32
+        batch_size  = 256
         fixed_batch_size = True
         noise_mag   = 0.1
         sam_epoch   = 10
@@ -212,7 +212,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 ths_l = np.logspace(-1.0,2.2,40) -0.1  
             x_std_div   = 2
             x_std_offset= 0.05
-            z_std       = 0.4
+            z_std       = 1.0
             stateful = True
             ad_method   = 'lower_bound'
             autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
@@ -262,14 +262,6 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                           re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot) 
         
         #------------------------------------------------------------------------------------
-        ## from hrl_anomaly_detection.vae import lstm_vae_sampling as km
-        ## autoencoder, enc_z_mean, enc_z_std, generator = km.lstm_vae(trainData, testData, weights_path,
-        ##                                                             patience=5, batch_size=batch_size)
-
-        ## # LSTM-AE (Confirmed)
-        ## from hrl_anomaly_detection.vae import lstm_ae as km
-        ## autoencoder = km.lstm_ae(trainData, testData, weights_path, patience=5, batch_size=batch_size)
-
         if  True : 
             vutil.graph_latent_space(normalTestData, abnormalTestData, enc_z_mean, batch_size=batch_size,
                                      method=method)
