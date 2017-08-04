@@ -202,14 +202,14 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                     
                     shift_offset = 0
                     if i+batch_size > len(x_train):
-                        r = i+batch_size-len(x_train)
+                        r = (i+batch_size-len(x_train))%len(x_train)
                         idx_list = range(len(x_train))
                         random.shuffle(idx_list)
                         x = np.vstack([x_train[i:],
                                        x_train[idx_list[:r]]])
                         while True:
                             if len(x)<batch_size:
-                                x = np.vstack([x, x_train])
+                                x = nOAp.vstack([x, x_train])
                             else:
                                 break
                         
