@@ -110,7 +110,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     d['successData']    = d['successData'][feature_list]
     d['failureData']    = d['failureData'][feature_list]
     
-    if fine_tuning is False:
+    if fine_tuning is False or True:
         td1, td2, td3 = vutil.get_ext_feeding_data(task_name, save_data_path, param_dict, d,
                                                    raw_feature=False)
 
@@ -142,7 +142,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         abnormalTrainData = d['failureData'][:, abnormalTrainIdx, :]
         normalTestData    = d['successData'][:, normalTestIdx, :]
         abnormalTestData  = d['failureData'][:, abnormalTestIdx, :]
-        if fine_tuning is False:
+        if fine_tuning is False or True:
             normalTrainData   = np.hstack([normalTrainData,
                                            copy.deepcopy(td1['successData']),
                                            copy.deepcopy(td2['successData']),
@@ -211,9 +211,9 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             else:
                 from hrl_anomaly_detection.vae import lstm_dvae_state_batch as km
                 ths_l = np.logspace(-1.0,2.2,40) -0.1  
-            x_std_div   = 2
+            x_std_div   = 4
             x_std_offset= 0.05
-            z_std       = 0.7
+            z_std       = 0.4
             stateful = True
             ad_method   = 'lower_bound'
             autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \

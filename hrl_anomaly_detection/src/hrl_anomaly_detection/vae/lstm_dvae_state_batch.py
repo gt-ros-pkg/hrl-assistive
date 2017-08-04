@@ -160,18 +160,18 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
             vae_autoencoder.load_weights(weights_file)
             #print vae_autoencoder.layers[5].get_weights()
             #sys.exit()
-            ## lr = 0.0001
-            ## optimizer = Adam(lr=lr, clipvalue=10)                
-            ## vae_autoencoder.compile(optimizer=optimizer, loss=None)
-            vae_autoencoder.compile(optimizer='adam', loss=None)
+            lr = 0.0001
+            optimizer = Adam(lr=lr, clipvalue=10)                
+            vae_autoencoder.compile(optimizer=optimizer, loss=None)
+            #vae_autoencoder.compile(optimizer='adam', loss=None)
         else:
             if re_load and os.path.isfile(weights_file):
                 vae_autoencoder.load_weights(weights_file)
-            lr = 0.01
+            #lr = 0.01
             #optimizer = RMSprop(lr=lr, rho=0.9, epsilon=1e-08, decay=0.0001, clipvalue=10)
-            optimizer = Adam(lr=lr, clipvalue=1.0)                
-            vae_autoencoder.compile(optimizer=optimizer, loss=None)
-            #vae_autoencoder.compile(optimizer='adam', loss=None)
+            #optimizer = Adam(lr=lr, clipvalue=1.0)                
+            #vae_autoencoder.compile(optimizer=optimizer, loss=None)
+            vae_autoencoder.compile(optimizer='adam', loss=None)
             #vae_autoencoder.compile(optimizer='adagrad', loss=None)
 
         # ---------------------------------------------------------------------------------
@@ -184,6 +184,13 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
 
             mean_tr_loss = []
             for sample in xrange(sam_epoch):
+
+                # shuffle
+                idx_list = range(len(x_train))
+                np.random.shuffle(idx_list)
+                x_train = x_train[idx_list]
+
+                
                 for i in xrange(0,len(x_train),batch_size):
                     seq_tr_loss = []
 
@@ -203,7 +210,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                                        x_train[idx_list[:r]]])
                     else:
                         x = x_train[i:i+batch_size]
-                    
+
                     for j in xrange(len(x[0])-timesteps+1): # per window
                         #np.random.seed(3334 + i*len(x[0]) + j)                        
                         #noise = np.random.normal(0, noise_mag, (batch_size, timesteps, nDim))
