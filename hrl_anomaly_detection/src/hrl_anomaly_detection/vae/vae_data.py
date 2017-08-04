@@ -298,7 +298,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                                x_std_div = x_std_div, x_std_offset=x_std_offset, plot=plot,
                                renew=clf_renew, dyn_ths=True, batch_info=(fixed_batch_size,batch_size))
 
-        roc_l.append(dt.get_roc(tp_l, tn_l, fp_l, fn_l))
+        #roc_l.append(dt.get_roc(tp_l, tn_l, fp_l, fn_l))
 
         for i in xrange(len(ths_l)):
             tp_ll[i] += tp_l[i]
@@ -316,8 +316,11 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
     ut.save_pickle(d, roc_pkl)
 
-    tpr_l = float(np.sum(tp_ll, axis=-1))/float(np.sum(tp_ll, axis=-1)+np.sum(fn_ll, axis=-1))*100.0
-    fpr_l = float(np.sum(fp_ll, axis=-1))/float(np.sum(fp_ll, axis=-1)+np.sum(tn_ll, axis=-1))*100.0
+    tpr_l = []
+    fpr_l = []
+    for i in xrange(len(ths_l)):
+        tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
+        fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )  
 
     print "------------------------------------------------------"
     print tpr_l
