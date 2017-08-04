@@ -425,7 +425,7 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
                 handFeatures=[], data_renew=False,\
                 time_sort=False, max_time=None, \
                 target_class=None, ros_bag_image=False, pkl_prefix='',\
-                depth=False):
+                depth=False, id_num=0):
     """
     Get data per subject. It also returns leave-one-out cross-validataion indices.
     """
@@ -433,8 +433,7 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
     if os.path.isdir(processed_data_path) is False:
         os.system('mkdir -p '+processed_data_path)
 
-    save_pkl = os.path.join(processed_data_path, pkl_prefix+'feature_extraction_'+rf_center+'_'+\
-                            str(local_range) )
+    save_pkl = os.path.join(processed_data_path, pkl_prefix+'feature_extraction_'+str(id_num))            
             
     if os.path.isfile(save_pkl) and data_renew is False:
         print "--------------------------------------"
@@ -453,7 +452,6 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
     else:
         file_list = util.getSubjectFileList(raw_data_path, subject_names, task_name,\
                                             time_sort=time_sort, no_split=True, depth=depth)
-
         print "start to load data"
         # Task-oriented hand-crafted features
         if init_param_dict is not None:
@@ -464,7 +462,7 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
                                              downSampleSize=downSampleSize,\
                                              renew=data_renew,\
                                              max_time=max_time)
-            
+        
             max_time = all_data_dict['timesList'][0][-1]
             _, param_dict = extractHandFeature(all_data_dict, handFeatures,\
                                                      cut_data=cut_data)
@@ -479,7 +477,6 @@ def getDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
         success_image_list = []
         failure_image_list = []
         for i in xrange(len(subject_names)):
-
             success_list, failure_list = util.getSubjectFileList(raw_data_path, [subject_names[i]], \
                                                                  task_name,\
                                                                  time_sort=time_sort, depth=depth)
@@ -725,7 +722,7 @@ def getRawDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
                    handFeatures=[], rawFeatures=[], data_renew=False,\
                    time_sort=False, max_time=None, \
                    target_class=None, ros_bag_image=False, pkl_prefix='',\
-                   depth=False):
+                   depth=False, id_num=0):
     """
     Get data per subject. It also returns leave-one-out cross-validataion indices.
     """
@@ -733,8 +730,7 @@ def getRawDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
     if os.path.isdir(processed_data_path) is False:
         os.system('mkdir -p '+processed_data_path)
 
-    save_pkl = os.path.join(processed_data_path, pkl_prefix+'feature_extraction_'+rf_center+'_'+\
-                            str(local_range) )
+    save_pkl = os.path.join(processed_data_path, pkl_prefix+'feature_extraction_'+str(id_num) )
             
     if os.path.isfile(save_pkl) and data_renew is False:
         print "--------------------------------------"
@@ -1729,7 +1725,6 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
         param_dict = copy.deepcopy(init_param_dict)
         isTrainingData=False
             
-
     # -------------------------------------------------------------        
     # extract local features
     startOffsetSize = 4
@@ -2033,7 +2028,10 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
                 
         # Unimodal feature - fabric skin ------------------------------------
         if 'unimodal_fabricForce' in feature_list:
-            unimodal_fabricForce = d['fabricMagList'][idx]
+            if len(d['fabricMagList']) == 0:
+                unimodal_fabricForce = np.zeros((1,len(timeList)))
+            else:
+                unimodal_fabricForce = d['fabricMagList'][idx]
 
             if offset_flag:
                 # NOTE: overwritten org data
@@ -2330,7 +2328,10 @@ def extractHandFeature(d, feature_list, cut_data=None, init_param_dict=None, ver
         if len(np.shape(dataSample)) < 2: dataSample = np.array([dataSample])
         dataList.append(dataSample)
 
-
+    if len(np.shape(dataList))<2:
+        for i in xrange(len(dataList)):
+            print np.shape(dataList[i]), d['fileNameList'][i]
+    
     # Convert data structure 
     # From nSample x dim x length
     # To dim x nSample x length
