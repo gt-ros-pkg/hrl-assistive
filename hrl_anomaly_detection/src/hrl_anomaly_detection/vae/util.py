@@ -266,8 +266,30 @@ def get_scaled_data(normalTrainData, abnormalTrainData, normalTestData, abnormal
     normalTestData   = normalTestData_scaled.reshape(np.shape(normalTestData))
     abnormalTestData  = abnormalTestData_scaled.reshape(np.shape(abnormalTestData))
 
-    return normalTrainData, abnormalTrainData, normalTestData, abnormalTestData
+    return normalTrainData, abnormalTrainData, normalTestData, abnormalTestData, scaler
 
+
+def get_scaled_data2(x, scaler, aligned=True):
+    if aligned is False:
+        # dim x sample x length => sample x length x dim
+        x = np.swapaxes(x, 0, 1 )
+        x = np.swapaxes(x, 1, 2 )
+
+    x_scaled = scaler.transform(x.reshape(-1,len(x[0][0])))
+
+    # rescale 95%of values into 0-1
+    def rescaler(X, mean, var):
+        
+        max_val = 1.8 #1.9#mean+3.0*np.sqrt(var)
+        min_val = -1.8 #mean-3.0*np.sqrt(var)
+        return (X-min_val)/( max_val-min_val )
+
+    x_scaled = rescaler(x_scaled, scaler.mean_, scaler.var_)
+    x        = x_scaled.reshape(np.shape(x))
+
+    return x
+
+        
 
 def get_ext_feeding_data(task_name, save_data_path, param_dict, d, raw_feature=False):
     if raw_feature is False:
