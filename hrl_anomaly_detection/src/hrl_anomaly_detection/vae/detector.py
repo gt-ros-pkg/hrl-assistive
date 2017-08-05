@@ -102,7 +102,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         if method=='SVR':
             print "Start to fit SVR with gamma="
             from sklearn.svm import SVR
-            clf = SVR(C=1.0, epsilon=0.2, kernel='rbf', gamma=1.0)
+            clf = SVR(C=1.0, epsilon=0.2, kernel='rbf', gamma=2.0)
         elif method=='RF':
             print "Start to fit RF : ", np.shape(x), np.shape(y)
             from sklearn.ensemble import RandomForestRegressor
@@ -124,8 +124,8 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         clf.fit(x, y)
         print "-----------------------------------------"
 
-    if True and False:
-        for i, s in enumerate(scores_te_a):
+    if True :
+        for i, s in enumerate(scores_te_n):
             fig = plt.figure()
             plt.plot(s, '-b')
             ths = 1
@@ -135,16 +135,16 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
             for j in xrange(len(s)):
                 if dyn_ths:
                     if method == 'SVR':
-                        s_pred = clf.predict(zs_te_a[i][j])
+                        s_pred = clf.predict(zs_te_n[i][j])
                         s_pred_mu.append(s_pred)
                         s_pred = s_pred + ths
                     elif method == 'RF':
-                        s_pred = clf.predict(zs_te_a[i][j])
+                        s_pred = clf.predict(zs_te_n[i][j])
                         s_pred_mu.append(s_pred)
-                        err_down, err_up = pred_rf(clf, zs_te_a[i][j], 68)
+                        err_down, err_up = pred_rf(clf, zs_te_n[i][j], 68)
                         s_pred = s_pred + ths*err_up
                     else:
-                        s_pred, MSE = clf.predict(zs_te_a[i][j], eval_MSE=True)
+                        s_pred, MSE = clf.predict(zs_te_n[i][j], eval_MSE=True)
                         #s_pred = np.squeeze(s_pred)
                         #MSE    = np.squeeze(MSE)
                         s_pred = s_pred[0,0]
