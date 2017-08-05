@@ -209,7 +209,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                                        x_train[idx_list[:r]]])
                         while True:
                             if len(x)<batch_size:
-                                x = nOAp.vstack([x, x_train])
+                                x = np.vstack([x, x_train])
                             else:
                                 break
                         
