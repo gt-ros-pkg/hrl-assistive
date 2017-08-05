@@ -184,7 +184,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         ## (normalTrainData, abnormalTrainData, normalTestData, abnormalTestData) = raw_data
         ## (normalTrainData_ft, abnormalTrainData_ft, normalTestData_ft, abnormalTestData_ft) = raw_data_ft
         # ------------------------------------------------------------------------------------------        
-        method      = 'lstm_vae'
+        method      = 'lstm_dvae'
          
         weights_path = os.path.join(save_data_path,'model_weights_'+method+'_'+str(idx)+'.h5')
         ## weights_path = os.path.join(save_data_path,'tmp_fine_weights_'+str(idx)+'.h5')
@@ -213,7 +213,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 ths_l = np.logspace(-1.0,2.2,40) -0.1  
             x_std_div   = 4
             x_std_offset= 0.05
-            z_std       = 0.7
+            z_std       = 0.55
             stateful = True
             ad_method   = 'lower_bound'
             autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
