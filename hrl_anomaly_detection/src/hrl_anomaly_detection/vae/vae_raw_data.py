@@ -142,7 +142,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         abnormalTrainData = d['failureData'][:, abnormalTrainIdx, :]
         normalTestData    = d['successData'][:, normalTestIdx, :]
         abnormalTestData  = d['failureData'][:, abnormalTestIdx, :]
-        if fine_tuning is False:
+        OBif fine_tuning is False:
             normalTrainData   = np.hstack([normalTrainData,
                                            copy.deepcopy(td1['successData']),
                                            copy.deepcopy(td2['successData']),
@@ -161,6 +161,10 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
           vutil.get_scaled_data(normalTrainData, abnormalTrainData,
                                 normalTestData, abnormalTestData, aligned=False)
 
+        ## trainData = [normalTrainData,
+        ##              [0]*len(normalTrainData)]
+        ## testData  = valData = [normalTestData, [0]*len(normalTestData)]
+        
         trainData = [normalTrainData[:int(len(normalTrainData)*0.7)],
                      [0]*len(normalTrainData[:int(len(normalTrainData)*0.7)])]
         valData   = [normalTrainData[int(len(normalTrainData)*0.7):],
@@ -213,13 +217,15 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             x_std_div   = 4
             x_std_offset= 0.1
             z_std       = 0.4
+            trainable   = None
             stateful = True
             ad_method   = 'lower_bound'
             autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
               km.lstm_vae(trainData, valData, weights_path, patience=4, batch_size=batch_size,
                           noise_mag=noise_mag, timesteps=window_size, sam_epoch=sam_epoch,
                           x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,                          
-                          re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot) 
+                          re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot,
+                          trainable=trainable) 
         elif method == 'lstm_ae':
             # LSTM-AE (Confirmed) %74.99
             from hrl_anomaly_detection.vae import lstm_ae_state_batch as km
@@ -279,12 +285,14 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             ## alpha[0] = 1.0
 
         if fine_tuning: clf_renew=True
-        #normalTrainData = vutil.get_scaled_data2(d['successData'][:, normalTrainIdx, :],
-        #                                         scaler, aligned=False)
-        normalTrainData = vutil.get_scaled_data2(np.hstack([d['successData'][:, normalTrainIdx, :],
-                                                            copy.deepcopy(td3['successData'])
-                                                            ]),
-                                                            scaler, aligned=False)
+        normalTrainData = vutil.get_scaled_data2(d['successData'][:, normalTrainIdx, :],
+                                                 scaler, aligned=False)
+        ## normalTrainData = vutil.get_scaled_data2(d['successData'], #[:, normalTestIdx, :],
+        ##                                         scaler, aligned=False)
+        ## normalTrainData = vutil.get_scaled_data2(np.hstack([d['successData'][:, normalTrainIdx, :],
+        ##                                                     copy.deepcopy(td3['successData'])
+        ##                                                     ]),
+        ##                                                     scaler, aligned=False)
         from hrl_anomaly_detection.vae import detector as dt
         save_pkl = os.path.join(save_data_path, 'model_ad_scores_'+str(idx)+'.pkl')
         tp_l, tn_l, fp_l, fn_l, roc = \

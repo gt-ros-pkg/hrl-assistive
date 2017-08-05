@@ -80,8 +80,8 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
     encoded = LSTM(h1_dim, return_sequences=False, activation='tanh', stateful=True,
                    trainable=True if trainable==0 or trainable is None else False )(encoded)
     ## encoded = LSTM(h2_dim, return_sequences=False, activation='tanh', stateful=True)(encoded)
-    z_mean  = Dense(z_dim, trainable=True if trainable==0 or trainable is None else False,)(encoded) 
-    z_log_var = Dense(z_dim, trainable=True if trainable==0 or trainable is None else False,)(encoded) 
+    z_mean  = Dense(z_dim, trainable=True if trainable==1 or trainable is None else False,)(encoded) 
+    z_log_var = Dense(z_dim, trainable=True if trainable==1 or trainable is None else False,)(encoded) 
     
     def sampling(args):
         z_mean, z_log_var = args
@@ -89,12 +89,12 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
         return z_mean + K.exp(z_log_var/2.0) * epsilon    
         
     # we initiate these layers to reuse later.
-    decoded_h1 = Dense(h1_dim, trainable=True if trainable==0 or trainable is None else False,
+    decoded_h1 = Dense(h1_dim, trainable=True if trainable==2 or trainable is None else False,
                        name='h_1') #, activation='tanh'
     decoded_h2 = RepeatVector(timesteps, name='h_2')
     ## decoded_L1 = LSTM(h1_dim, return_sequences=True, activation='tanh', stateful=True, name='L_1')
     decoded_L21 = LSTM(input_dim*2, return_sequences=True, activation='sigmoid', stateful=True,
-                       trainable=True if trainable==0 or trainable is None else False, name='L_21')
+                       trainable=True if trainable==3 or trainable is None else False, name='L_21')
 
     # Custom loss layer
     class CustomVariationalLayer(Layer):
@@ -154,14 +154,9 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
         vae_autoencoder.load_weights(weights_file)
     else:
         if fine_tuning:
-            #for k in range(len(vae_autoencoder.layers)): 
-            #f = h5py.File(weights_file)
-            #print f['layers_5']
             vae_autoencoder.load_weights(weights_file)
-            #print vae_autoencoder.layers[5].get_weights()
-            #sys.exit()
-            lr = 0.0001
-            optimizer = Adam(lr=lr, clipvalue=10)                
+            lr = 0.001
+            optimizer = Adam(lr=lr, clipvalue=10, decay=1e-5)                
             vae_autoencoder.compile(optimizer=optimizer, loss=None)
             #vae_autoencoder.compile(optimizer='adam', loss=None)
         else:
@@ -169,7 +164,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                 vae_autoencoder.load_weights(weights_file)
             lr = 0.01
             #optimizer = RMSprop(lr=lr, rho=0.9, epsilon=1e-08, decay=0.0001, clipvalue=10)
-            optimizer = Adam(lr=lr, clipvalue=10.0)                
+            optimizer = Adam(lr=lr, clipvalue=10.0) #, decay=1e-5)                
             vae_autoencoder.compile(optimizer=optimizer, loss=None)
             #vae_autoencoder.compile(optimizer='adam', loss=None)
             #vae_autoencoder.compile(optimizer='adagrad', loss=None)
@@ -209,7 +204,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                                        x_train[idx_list[:r]]])
                         while True:
                             if len(x)<batch_size:
-                                x = nOAp.vstack([x, x_train])
+                                x = np.vstack([x, x_train])
                             else:
                                 break
                         
