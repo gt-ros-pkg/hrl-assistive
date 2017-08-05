@@ -293,7 +293,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
 
         from hrl_anomaly_detection.vae import detector as dt
         save_pkl = os.path.join(save_data_path, 'model_ad_scores_'+str(idx)+'.pkl')
-        tp_l, tn_l, fp_l, fn_l = \
+        tp_l, tn_l, fp_l, fn_l, roc = \
           dt.anomaly_detection(autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generator,
                                normalTrainData, abnormalTrainData,\
                                normalTestData, abnormalTestData, \
@@ -302,7 +302,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                                x_std_div = x_std_div, x_std_offset=x_std_offset, plot=plot,
                                renew=clf_renew, dyn_ths=True, batch_info=(fixed_batch_size,batch_size))
 
-        #roc_l.append(dt.get_roc(tp_l, tn_l, fp_l, fn_l))
+        roc_l.append(roc)
 
         for i in xrange(len(ths_l)):
             tp_ll[i] += tp_l[i]
@@ -326,6 +326,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
         fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )  
 
+    print roc_l
     print "------------------------------------------------------"
     print tpr_l
     print fpr_l
