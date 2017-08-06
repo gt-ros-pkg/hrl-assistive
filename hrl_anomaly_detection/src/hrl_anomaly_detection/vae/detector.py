@@ -97,28 +97,42 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         #y = np.array(scores_tr_n[:,s:e]).reshape(-1,np.shape(scores_tr_n[:,s:e])[-1])        
         x = np.array(zs_tr_n).reshape(-1,np.shape(zs_tr_n)[-1])
         y = np.array(scores_tr_n).reshape(-1,np.shape(scores_tr_n)[-1])
-        
+
         method = 'SVR'
         if method=='SVR':
             print "Start to fit SVR with gamma="
             from sklearn.svm import SVR
-            clf = SVR(C=1.0, epsilon=0.2, kernel='rbf', gamma=2.0)
+            clf = SVR(C=1.0, epsilon=0.2, kernel='poly', gamma=2.0)
         elif method=='RF':
             print "Start to fit RF : ", np.shape(x), np.shape(y)
             from sklearn.ensemble import RandomForestRegressor
             clf = RandomForestRegressor(n_estimators=100, min_samples_leaf=1, n_jobs=1)
+        elif method == 'KNN':
+            print "Start to fit KNN"
+            from sklearn.neighbors import KNeighborsRegressor 
+            clf = KNeighborsRegressor(n_neighbors=20, n_jobs=1)
         elif method=='GP':
             from sklearn import gaussian_process
             clf = gaussian_process.GaussianProcess(regr='linear', theta0=1.0, \
                                                    corr='squared_exponential', \
-                                                   normalize=True, nugget=10)
-        if len(x)>40000:
-            # random sampling
-            idx_list = range(len(x))
-            np.random.shuffle(idx_list)
-            x = x[idx_list]
-            x = x[:40000]
-            y = y[:40000]
+                                                   normalize=True, nugget=100)
+
+            u, idx = np.unique(x,axis=0,return_index=True)
+            print np.shape(x), len(idx)
+            x = x[idx]
+            y = y[idx]
+                        
+            if len(x)>10000:
+                # random sampling
+                idx_list = range(len(x))
+                np.random.shuffle(idx_list)
+                x = x[idx_list]
+                x = x[:10000]
+                y = y[:10000]
+
+        from sklearn import preprocessing
+        scaler = preprocessing.StandardScaler()
+        #x = scaler.fit_transform(x)            
             
         print np.shape(x), np.shape(y)
         clf.fit(x, y)
@@ -134,17 +148,20 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
             s_pred_bnd = []
             for j in xrange(len(s)):
                 if dyn_ths:
-                    if method == 'SVR':
-                        s_pred = clf.predict(zs_te_n[i][j])
+                    #x = scaler.transform(zs_te_n[i][j])
+                    x = zs_te_n[i][j]
+                    
+                    if method == 'SVR' or method == 'KNN':
+                        s_pred = clf.predict( x )
                         s_pred_mu.append(s_pred)
                         s_pred = s_pred + ths
                     elif method == 'RF':
-                        s_pred = clf.predict(zs_te_n[i][j])
+                        s_pred = clf.predict( x )
                         s_pred_mu.append(s_pred)
-                        err_down, err_up = pred_rf(clf, zs_te_n[i][j], 68)
+                        err_down, err_up = pred_rf(clf, x, 68)
                         s_pred = s_pred + ths*err_up
                     else:
-                        s_pred, MSE = clf.predict(zs_te_n[i][j], eval_MSE=True)
+                        s_pred, MSE = clf.predict(x, eval_MSE=True)
                         #s_pred = np.squeeze(s_pred)
                         #MSE    = np.squeeze(MSE)
                         s_pred = s_pred[0,0]
@@ -178,14 +195,16 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
     err_ups = []
     for i, s in enumerate(scores_te_n):
         if dyn_ths:
-            if method == 'SVR':
-                s_preds.append( clf.predict(zs_te_n[i]) )
+            #x = scaler.transform(zs_te_n[i])
+            x = zs_te_n[i]
+            if method == 'SVR' or method == 'KNN':
+                s_preds.append( clf.predict(x) )
             elif method == 'RF':
-                s_preds.append( clf.predict(zs_te_n[i]) )
-                _, err_up = pred_rf(clf, zs_te_n[i], 95)
+                s_preds.append( clf.predict(x) )
+                _, err_up = pred_rf(clf, x, 95)
                 err_ups.append(err_up)
             else:
-                s_pred, MSE = clf.predict(zs_te_n[i], eval_MSE=True)
+                s_pred, MSE = clf.predict(x, eval_MSE=True)
                 s_preds.append(s_pred)
                 MSEs.append(MSE)
         else:
@@ -197,7 +216,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
 
         for i, s in enumerate(scores_te_n):
             if dyn_ths:
-                if method == 'SVR':
+                if method == 'SVR' or method == 'KNN':
                     vals = s_preds[i]+ths
                 elif method == 'RF':
                     vals = s_preds[i] + ths*err_ups[i]
@@ -205,7 +224,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
                     vals = s_preds[i][:,0] + ths*np.sqrt(MSEs[i])
             else: vals = np.array(s_preds[i])+ths
 
-            for j in xrange(len(s)):
+            for j in xrange(4,len(s)):
                 if s[j]>vals[j]:
                     fp_l.append(1)
                     break
@@ -221,14 +240,16 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
     err_ups = []
     for i, s in enumerate(scores_te_a):
         if dyn_ths:
-            if method == 'SVR':
-                s_preds.append( clf.predict(zs_te_a[i]) )
+            #x = scaler.transform(zs_te_a[i])
+            x = zs_te_a[i]
+            if method == 'SVR' or method == 'KNN':
+                s_preds.append( clf.predict(x) )
             elif method == 'RF':
-                s_preds.append( clf.predict(zs_te_a[i]) )
-                _, err_up = pred_rf(clf, zs_te_a[i], 95)
+                s_preds.append( clf.predict(x) )
+                _, err_up = pred_rf(clf, x, 95)
                 err_ups.append(err_up)
             else:
-                s_pred, MSE = clf.predict(zs_te_a[i], eval_MSE=True)
+                s_pred, MSE = clf.predict(x, eval_MSE=True)
                 s_preds.append(s_pred)
                 MSEs.append(MSE)
         else:
@@ -240,7 +261,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
 
         for i, s in enumerate(scores_te_n):
             if dyn_ths:
-                if method == 'SVR':
+                if method == 'SVR' or method == 'KNN':
                     vals = s_preds[i]+ths
                 elif method == 'RF':
                     vals = s_preds[i] + ths*err_ups[i]
@@ -248,7 +269,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
                     vals = s_preds[i][:,0] + ths*np.sqrt(MSEs[i])
             else: vals = np.array(s_preds[i])+ths
 
-            for j in xrange(len(s)):
+            for j in xrange(4, len(s)):
                 if s[j]>vals[j]:
                     tp_l.append(1)
                     break
@@ -368,9 +389,9 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
             #---------------------------------------------------------------
             if ad_method == 'recon_prob':
                 # Method 1: Reconstruction probability
-                l,z = get_reconstruction_err_prob(xx, x_mean, x_std, alpha=alpha)
+                l = get_reconstruction_err_prob(xx, x_mean, x_std, alpha=alpha)
                 s.append(l)
-                z.append( z.tolist() )                
+                z.append( enc_z_mean.predict(xx, batch_size=batch_info[1])[0].tolist() )                
             elif ad_method == 'recon_err':
                 # Method 1: Reconstruction probability
                 l = get_reconstruction_err(xx, x_mean, alpha=alpha)
@@ -393,6 +414,7 @@ def get_reconstruction_err_prob(x, x_mean, x_std, alpha=1.0):
     '''
     Return minimum value for alpha x \sum P(x_i(t) ; mu, std) over time 
     '''
+    if len(np.shape(x))>2: x = x[0]
     
     p_l     = []
     for k in xrange(len(x_mean[0])): # per dim
@@ -406,7 +428,7 @@ def get_reconstruction_err_prob(x, x_mean, x_std, alpha=1.0):
 
     # find min 
     ## return np.mean(alpha.dot( np.log(np.array(p_l)) )) 
-    return -np.amin(alpha.dot( np.log(np.array(p_l)) ))
+    return [-np.amin(alpha.dot( np.log(np.array(p_l)) ))]
 
 
 def get_reconstruction_err(x, x_mean, alpha=1.0):
