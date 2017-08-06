@@ -212,7 +212,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 ths_l = np.logspace(-1.0,2.2,40) -0.1  
             x_std_div   = 4
             x_std_offset= 0.05
-            z_std       = 0.7
+            z_std       = 1.0
             stateful = True
             ad_method   = 'lower_bound'
             autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \

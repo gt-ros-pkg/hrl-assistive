@@ -239,7 +239,7 @@ def get_scaled_data(normalTrainData, abnormalTrainData, normalTestData, abnormal
 
     # normalization => (sample x dim) ----------------------------------
     from sklearn import preprocessing
-    scaler = preprocessing.MinMaxScaler(feature_range=(0, 1))
+    ## scaler = preprocessing.MinMaxScaler(feature_range=(0, 1))
     scaler = preprocessing.StandardScaler() 
 
 
