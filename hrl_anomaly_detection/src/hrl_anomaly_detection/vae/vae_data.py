@@ -155,8 +155,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         # shuffle
         idx_list = range(len(normalTrainData[0]))
         np.random.shuffle(idx_list)
-        normalTrainData = normalTrainData[:,idx_list]
-            
+        normalTrainData = normalTrainData[:,idx_list]            
 
         normalTrainData, abnormalTrainData, normalTestData, abnormalTestData, scaler =\
           vutil.get_scaled_data(normalTrainData, abnormalTrainData,
@@ -198,13 +197,13 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         window_size = 1
         batch_size  = 256
         fixed_batch_size = True
-        noise_mag   = 0.1
+        noise_mag   = 0.05
         sam_epoch   = 15
 
         if method == 'lstm_vae' or method == 'lstm_vae2' or method == 'lstm_dvae':
             if method == 'lstm_vae':
                 from hrl_anomaly_detection.vae import lstm_vae_state_batch as km
-                ths_l = np.logspace(-1.0,2.2,40) -0.1  
+                ths_l = np.logspace(-1.0,2.3,40) #-0.1  
             elif method == 'lstm_vae2':
                 from hrl_anomaly_detection.vae import lstm_vae_state_batch2 as km
                 ths_l = np.logspace(-1.0,2.2,40) -0.5  
