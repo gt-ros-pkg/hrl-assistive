@@ -113,9 +113,9 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
             clf = KNeighborsRegressor(n_neighbors=20, n_jobs=1)
         elif method=='GP':
             from sklearn import gaussian_process
-            clf = gaussian_process.GaussianProcess(regr='linear', theta0=1.0, \
+            clf = gaussian_process.GaussianProcess(regr='linear', theta0=5.0, \
                                                    corr='squared_exponential', \
-                                                   normalize=True, nugget=100)
+                                                   normalize=True, nugget=1)
 
             u, idx = np.unique(x,axis=0,return_index=True)
             print np.shape(x), len(idx)
@@ -138,7 +138,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         clf.fit(x, y)
         print "-----------------------------------------"
 
-    if True and False:
+    if True :
         for i, s in enumerate(scores_te_n):
             fig = plt.figure()
             plt.plot(s, '-b')
@@ -152,7 +152,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
                     x = zs_te_n[i][j]
                     
                     if method == 'SVR' or method == 'KNN':
-                        s_pred = clf.predict( x )
+                        s_pred = np.squeeze( clf.predict( x ) )
                         s_pred_mu.append(s_pred)
                         s_pred = s_pred + ths
                     elif method == 'RF':
@@ -224,12 +224,16 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
                     vals = s_preds[i][:,0] + ths*np.sqrt(MSEs[i])
             else: vals = np.array(s_preds[i])+ths
 
+            pos_cnt = 0
             for j in xrange(4,len(s)):
                 if s[j]>vals[j]:
-                    fp_l.append(1)
-                    break
+                    if pos_cnt>3:
+                        fp_l.append(1)
+                        break
+                    else:
+                        pos_cnt += 1
                 elif j == len(s)-1:
-                    tn_l.append(1)
+                    tn_l.append(1)                    
 
         tn_ll.append(tn_l)
         fp_ll.append(fp_l)
@@ -269,10 +273,14 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
                     vals = s_preds[i][:,0] + ths*np.sqrt(MSEs[i])
             else: vals = np.array(s_preds[i])+ths
 
+            pos_cnt = 0
             for j in xrange(4, len(s)):
                 if s[j]>vals[j]:
-                    tp_l.append(1)
-                    break
+                    if pos_cnt>3:
+                        tp_l.append(1)
+                        break
+                    else:
+                        pos_cnt += 1
                 elif j == len(s)-1:
                     fn_l.append(1)
 
