@@ -89,7 +89,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
     if dyn_ths:
         zs_tr_n = np.array(zs_tr_n)
         scores_tr_n = np.array(scores_tr_n)
-        
+
         l = len(zs_tr_n[0])
         #s = int(l*0.05)
         #e = int(l*0.95)
@@ -407,7 +407,10 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
                 # Method 2: Lower bound
                 l, z_mean, z_log_var = get_lower_bound(xx, x_mean, x_std, enc_z_mean, enc_z_logvar,\
                                                        x_dim)
-                s.append(l)
+                if len(s)==0:
+                    s.append(np.array(l))
+                else:
+                    s.append(np.array(l)+np.array(s[-1]))
                 z.append(z_mean.tolist() + z_log_var.tolist())
 
         scores.append(s) # s is scalers
