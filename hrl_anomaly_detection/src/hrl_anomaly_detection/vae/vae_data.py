@@ -155,10 +155,9 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         # shuffle
         idx_list = range(len(normalTrainData[0]))
         np.random.shuffle(idx_list)
-        normalTrainData = normalTrainData[:,idx_list]
-            
+        normalTrainData = normalTrainData[:,idx_list]            
 
-        normalTrainData, abnormalTrainData, normalTestData, abnormalTestData, scaler =\
+        normalTrainData, _, normalTestData, abnormalTestData, scaler =\
           vutil.get_scaled_data(normalTrainData, abnormalTrainData,
                                 normalTestData, abnormalTestData, aligned=False)
 
@@ -167,6 +166,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         valData   = [normalTrainData[int(len(normalTrainData)*0.7):],
                      [0]*len(normalTrainData[int(len(normalTrainData)*0.7):])]
         testData  = [normalTestData, [0]*len(normalTestData)]
+        del abnormalTrainData
 
 
         # ------------------------------------------------------------------------------------------
@@ -199,12 +199,13 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         batch_size  = 256
         fixed_batch_size = True
         noise_mag   = 0.05
-        sam_epoch   = 30
+        sam_epoch   = 20
 
         if method == 'lstm_vae' or method == 'lstm_vae2' or method == 'lstm_dvae':
             if method == 'lstm_vae':
                 from hrl_anomaly_detection.vae import lstm_vae_state_batch as km
-                ths_l = np.logspace(-1.0,2.2,40) -0.1  
+                ths_l = np.logspace(-1.0,2.4,40) #-0.1
+                #ths_l = np.logspace(-1.0,1.8,40) -0.1 
             elif method == 'lstm_vae2':
                 from hrl_anomaly_detection.vae import lstm_vae_state_batch2 as km
                 ths_l = np.logspace(-1.0,2.2,40) -0.5  
@@ -212,8 +213,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 from hrl_anomaly_detection.vae import lstm_dvae_state_batch as km
                 ths_l = np.logspace(-1.0,2.2,40) -0.1  
             x_std_div   = 4
-            x_std_offset= 0.1
-            z_std       = 0.7
+            x_std_offset= 0.05
+            z_std       = 0.8
             stateful = True
             ad_method   = 'lower_bound'
             autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
@@ -260,7 +261,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
               km.lstm_vae(trainData, valData, weights_path, patience=5, batch_size=batch_size,
                           noise_mag=noise_mag, sam_epoch=sam_epoch,
                           x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,\
-                          re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot) 
+                          re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot)
+        del trainData, valData
         
         #------------------------------------------------------------------------------------
         ## from hrl_anomaly_detection.vae import lstm_vae_sampling as km
@@ -290,12 +292,17 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         if fine_tuning: clf_renew=True
         normalTrainData = vutil.get_scaled_data2(d['successData'][:, normalTrainIdx, :],
                                                  scaler, aligned=False)
+        #normalTrainData = vutil.get_scaled_data2(np.hstack([d['successData'][:, normalTrainIdx, :],
+        #                                                    copy.deepcopy(td1['successData'])]),
+        #                                                    scaler, aligned=False)
+
+               
 
         from hrl_anomaly_detection.vae import detector as dt
         save_pkl = os.path.join(save_data_path, 'model_ad_scores_'+str(idx)+'.pkl')
         tp_l, tn_l, fp_l, fn_l, roc = \
           dt.anomaly_detection(autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generator,
-                               normalTrainData, abnormalTrainData,\
+                               normalTrainData, None,\
                                normalTestData, abnormalTestData, \
                                ad_method,
                                window_size, alpha, ths_l=ths_l, save_pkl=save_pkl, stateful=stateful,
