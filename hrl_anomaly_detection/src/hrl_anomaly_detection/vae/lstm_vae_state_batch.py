@@ -155,10 +155,10 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
     else:
         if fine_tuning:
             vae_autoencoder.load_weights(weights_file)
-            lr = 0.01
-            optimizer = Adam(lr=lr, clipvalue=10, decay=1e-5)                
-            vae_autoencoder.compile(optimizer=optimizer, loss=None)
-            #vae_autoencoder.compile(optimizer='adam', loss=None)
+            lr = 0.001
+            optimizer = Adam(lr=lr, clipvalue=10)                
+            #vae_autoencoder.compile(optimizer=optimizer, loss=None)
+            vae_autoencoder.compile(optimizer='adam', loss=None)
         else:
             if re_load and os.path.isfile(weights_file):
                 vae_autoencoder.load_weights(weights_file)
@@ -312,7 +312,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
             x_pred_mean = []
             x_pred_std  = []
             for j in xrange(len(x[0])-timesteps+1):
-                x_pred = vae_mean_std.predict(x[:,j:j+timesteps])
+                x_pred = vae_mean_std.predict(x[:,j:j+timesteps], batch_size=batch_size)
                 x_pred_mean.append(x_pred[0,-1,:nDim])
                 x_pred_std.append(x_pred[0,-1,nDim:]/x_std_div*1.5+x_std_offset)
 
