@@ -101,7 +101,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         if method=='SVR':
             print "Start to fit SVR with gamma="
             from sklearn.svm import SVR
-            clf = SVR(C=1.0, epsilon=0.2, kernel='poly', gamma=2.0)
+            clf = SVR(C=1.0, epsilon=0.2, kernel='poly', degree=3, gamma=2.0)
         elif method=='RF':
             print "Start to fit RF : ", np.shape(x), np.shape(y)
             from sklearn.ensemble import RandomForestRegressor
@@ -109,7 +109,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         elif method == 'KNN':
             print "Start to fit KNN"
             from sklearn.neighbors import KNeighborsRegressor 
-            clf = KNeighborsRegressor(n_neighbors=20, n_jobs=1)
+            clf = KNeighborsRegressor(n_neighbors=10, n_jobs=1)
         elif method=='GP':
             from sklearn import gaussian_process
             clf = gaussian_process.GaussianProcess(regr='linear', theta0=5.0, \
@@ -137,7 +137,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         clf.fit(x, y)
         print "-----------------------------------------"
 
-    if True :
+    if True and False:
         for i, s in enumerate(scores_te_n):
             fig = plt.figure()
             plt.plot(s, '-b')
@@ -225,7 +225,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
             pos_cnt = 0
             for j in xrange(4,len(s)):
                 if s[j]>vals[j]:
-                    if pos_cnt>3:
+                    if pos_cnt>1:
                         fp_l.append(1)
                         break
                     else:
@@ -274,7 +274,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
             pos_cnt = 0
             for j in xrange(4, len(s)):
                 if s[j]>vals[j]:
-                    if pos_cnt>3:
+                    if pos_cnt>1:
                         tp_l.append(1)
                         break
                     else:
