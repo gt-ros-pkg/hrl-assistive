@@ -164,7 +164,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                 vae_autoencoder.load_weights(weights_file)
             lr = 0.01
             #optimizer = RMSprop(lr=lr, rho=0.9, epsilon=1e-08, decay=0.0001, clipvalue=10)
-            optimizer = Adam(lr=lr, clipvalue=10, decay=1e-5)                
+            optimizer = Adam(lr=lr, clipvalue=10) #, decay=1e-5)                
             vae_autoencoder.compile(optimizer=optimizer, loss=None)
             #vae_autoencoder.compile(optimizer='adam', loss=None)
             #vae_autoencoder.compile(optimizer='adagrad', loss=None)
@@ -312,7 +312,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
             x_pred_mean = []
             x_pred_std  = []
             for j in xrange(len(x[0])-timesteps+1):
-                x_pred = vae_mean_std.predict(x[:,j:j+timesteps])
+                x_pred = vae_mean_std.predict(x[:,j:j+timesteps], batch_size=batch_size)
                 x_pred_mean.append(x_pred[0,-1,:nDim])
                 x_pred_std.append(x_pred[0,-1,nDim:]/x_std_div*1.5+x_std_offset)
 

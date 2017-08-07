@@ -98,11 +98,11 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         x = np.array(zs_tr_n).reshape(-1,np.shape(zs_tr_n)[-1])
         y = np.array(scores_tr_n).reshape(-1,np.shape(scores_tr_n)[-1])
         
-        method = 'SVR'
+        method = 'GP'
         if method=='SVR':
             print "Start to fit SVR with gamma="
             from sklearn.svm import SVR
-            clf = SVR(C=1.0, epsilon=0.2, kernel='rbf', gamma=2.0)
+            clf = SVR(C=1.0, epsilon=0.2, kernel='poly', gamma=2.0)
         elif method=='RF':
             print "Start to fit RF : ", np.shape(x), np.shape(y)
             from sklearn.ensemble import RandomForestRegressor
@@ -122,7 +122,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
 
         from sklearn import preprocessing
         scaler = preprocessing.StandardScaler()
-        x = scaler.fit_transform(x)            
+        #x = scaler.fit_transform(x)            
             
         print np.shape(x), np.shape(y)
         clf.fit(x, y)
@@ -138,7 +138,8 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
             s_pred_bnd = []
             for j in xrange(len(s)):
                 if dyn_ths:
-                    x = scaler.transform(zs_te_n[i][j])
+                    #x = scaler.transform(zs_te_n[i][j])
+                    x = zs_te_n[i][j]
                     if method == 'SVR':
                         s_pred = clf.predict( x )
                         s_pred_mu.append(s_pred)
@@ -183,7 +184,8 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
     err_ups = []
     for i, s in enumerate(scores_te_n):
         if dyn_ths:
-            x = scaler.transform(zs_te_n[i])
+            #x = scaler.transform(zs_te_n[i])
+            x = zs_te_n[i]
             if method == 'SVR':
                 s_preds.append( clf.predict(x) )
             elif method == 'RF':
@@ -202,7 +204,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         tn_l = []
 
         for i, s in enumerate(scores_te_n):
-            if dyn_ths:
+            if dyn_ths:                
                 if method == 'SVR':
                     vals = s_preds[i]+ths
                 elif method == 'RF':
@@ -227,7 +229,8 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
     err_ups = []
     for i, s in enumerate(scores_te_a):
         if dyn_ths:
-            x = scaler.transform(zs_te_a[i])
+            #x = scaler.transform(zs_te_a[i])
+            x = zs_te_a[i]
             if method == 'SVR':
                 s_preds.append( clf.predict(x) )
             elif method == 'RF':

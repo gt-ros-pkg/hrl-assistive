@@ -2612,17 +2612,23 @@ def extractRawFeature(d, feature_list, init_param_dict=None, cut_data=None, verb
 
         # landmark motion --------------------------
         if 'landmarkPos' in feature_list:
+            kinEEPos          = d['kinEEPosList'][idx]
             visionLandmarkPos = d['visionLandmarkPosList'][idx] # originally length x 3*tags
 
             if len(np.shape(visionLandmarkPos)) == 1:
                 visionLandmarkPos = np.reshape(visionLandmarkPos, (3,1))
 
+            ## visionLandmarkPos = np.linalg.norm(visionLandmarkPos - kinEEPos, axis=0)
+            visionLandmarkPos -= kinEEPos
             if offset_flag:
+                #visionLandmarkPos -= np.mean(visionLandmarkPos[:startOffsetSize])
                 visionLandmarkPos -= np.mean(visionLandmarkPos[:,:startOffsetSize], axis=-1).reshape(3,1)
 
             if dataSample is None: dataSample = np.array(visionLandmarkPos)
             else: dataSample = np.vstack([dataSample, visionLandmarkPos])
             
+            ## if 'landmarkEEDist' not in param_dict['feature_names']:
+            ##     param_dict['feature_names'].append('landmarkEEDist')
             if 'landmarkPosX' not in param_dict['feature_names']:
                 param_dict['feature_names'].append('landmarkPosX')
                 param_dict['feature_names'].append('landmarkPosY')
