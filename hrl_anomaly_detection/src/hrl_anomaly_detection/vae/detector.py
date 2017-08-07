@@ -408,9 +408,9 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
                 l, z_mean, z_log_var = get_lower_bound(xx, x_mean, x_std, enc_z_mean, enc_z_logvar,\
                                                        x_dim)
                 if len(s)==0:
-                    s.append(l)
+                    s.append(np.array(l))
                 else:
-                    s.append(l+s[-1])
+                    s.append(np.array(l)+np.array(s[-1]))
                 z.append(z_mean.tolist() + z_log_var.tolist())
 
         scores.append(s) # s is scalers
