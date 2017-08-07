@@ -173,9 +173,12 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
                 s_pred_bnd.append(s_pred)
 
             print np.shape(s_pred_mu), np.shape(s_pred_bnd)
-            plt.plot(s_pred_mu, '-r')
+            plt.plot(np.cumsum(s_pred_mu), '-r')
+            ## plt.plot(s_pred_mu, '-r')
+            
             if len(s_pred_bnd)>0:
-                plt.plot(s_pred_bnd, '--r') 
+                plt.plot(np.cumsum(s_pred_mu)+ths, '--r') 
+                ## plt.plot(s_pred_bnd, '--r') 
             plt.show()
         
 
@@ -407,12 +410,11 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
                 # Method 2: Lower bound
                 l, z_mean, z_log_var = get_lower_bound(xx, x_mean, x_std, enc_z_mean, enc_z_logvar,\
                                                        x_dim)
-                if len(s)==0:
-                    s.append(np.array(l))
-                else:
-                    s.append(np.array(l)+np.array(s[-1]))
+                s.append(l)
                 z.append(z_mean.tolist() + z_log_var.tolist())
 
+        s = np.cumsum(s)
+        if len(np.shape(s))<2: s = np.expand_dims(s, axis=1)
         scores.append(s) # s is scalers
         zs.append(z)
 
