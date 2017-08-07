@@ -97,7 +97,6 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         #y = np.array(scores_tr_n[:,s:e]).reshape(-1,np.shape(scores_tr_n[:,s:e])[-1])        
         x = np.array(zs_tr_n).reshape(-1,np.shape(zs_tr_n)[-1])
         y = np.array(scores_tr_n).reshape(-1,np.shape(scores_tr_n)[-1])
-
         method = 'SVR'
         if method=='SVR':
             print "Start to fit SVR with gamma="
@@ -150,7 +149,6 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
                 if dyn_ths:
                     #x = scaler.transform(zs_te_n[i][j])
                     x = zs_te_n[i][j]
-                    
                     if method == 'SVR' or method == 'KNN':
                         s_pred = np.squeeze( clf.predict( x ) )
                         s_pred_mu.append(s_pred)
