@@ -86,22 +86,23 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         d['zs_te_a']     = zs_te_a
         ut.save_pickle(d, save_pkl)
 
-    if dyn_ths:
-        zs_tr_n = np.array(zs_tr_n)
-        scores_tr_n = np.array(scores_tr_n)
+    zs_tr_n = np.array(zs_tr_n)
+    zs_te_n = np.array(zs_te_n)
+    zs_te_a = np.array(zs_te_a)
+    scores_tr_n = np.array(scores_tr_n)
+    scores_te_n = np.array(scores_te_n)
+    scores_te_a = np.array(scores_te_a)
 
+    if dyn_ths:
         l = len(zs_tr_n[0])
-        #s = int(l*0.05)
-        #e = int(l*0.95)
-        #x = np.array(zs_tr_n[:,s:e]).reshape(-1,np.shape(zs_tr_n[:,s:e])[-1])
-        #y = np.array(scores_tr_n[:,s:e]).reshape(-1,np.shape(scores_tr_n[:,s:e])[-1])        
         x = np.array(zs_tr_n).reshape(-1,np.shape(zs_tr_n)[-1])
         y = np.array(scores_tr_n).reshape(-1,np.shape(scores_tr_n)[-1])
+
         method = 'SVR'
         if method=='SVR':
             print "Start to fit SVR with gamma="
             from sklearn.svm import SVR
-            clf = SVR(C=1.0, epsilon=0.2, kernel='poly', gamma=2.0)
+            clf = SVR(C=1.0, epsilon=0.2, kernel='linear', gamma=2.0)
         elif method=='RF':
             print "Start to fit RF : ", np.shape(x), np.shape(y)
             from sklearn.ensemble import RandomForestRegressor
@@ -138,6 +139,26 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         print "-----------------------------------------"
 
     if True :
+        print np.shape(zs_tr_n), np.shape(scores_tr_n)
+        
+        from mpl_toolkits.mplot3d import Axes3D
+        fig = plt.figure() 
+        ax = fig.add_subplot(111, projection='3d')
+        for i, s in enumerate(scores_tr_n):
+            ax.scatter(zs_tr_n[i,:,0], zs_tr_n[i,:,1], scores_tr_n[i,:,0], c='g', marker='o')
+        for i, s in enumerate(scores_te_n):
+            ax.scatter(zs_te_n[i,:,0], zs_te_n[i,:,1], scores_te_n[i,:,0], c='b', marker='x')
+        for i, s in enumerate(scores_te_a):
+            ax.scatter(zs_te_a[i,:,0], zs_te_a[i,:,1], scores_te_a[i,:,0], c='r', marker='^')
+        ## for i, s in enumerate(scores_tr_n):
+        ##     plt.plot(s, '-g')
+        ## for i, s in enumerate(scores_te_n):
+        ##     plt.plot(s, '-b')
+        ## for i, s in enumerate(scores_te_a):
+        ##     plt.plot(s, '-r')
+        plt.show()
+
+        
         for i, s in enumerate(scores_te_n):
             fig = plt.figure()
             plt.plot(s, '-b')
@@ -173,12 +194,11 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
                 s_pred_bnd.append(s_pred)
 
             print np.shape(s_pred_mu), np.shape(s_pred_bnd)
-            plt.plot(np.cumsum(s_pred_mu), '-r')
-            ## plt.plot(s_pred_mu, '-r')
+            #plt.plot(np.cumsum(s_pred_mu), '-r')
+            plt.plot(s_pred_mu, '-r')
             
             if len(s_pred_bnd)>0:
-                plt.plot(np.cumsum(s_pred_mu)+ths, '--r') 
-                ## plt.plot(s_pred_bnd, '--r') 
+                plt.plot(s_pred_bnd, '--r') 
             plt.show()
         
 
@@ -411,10 +431,10 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
                 l, z_mean, z_log_var = get_lower_bound(xx, x_mean, x_std, enc_z_mean, enc_z_logvar,\
                                                        x_dim)
                 s.append(l)
-                z.append(z_mean.tolist() + z_log_var.tolist())
+                z.append(z_mean.tolist()) # + z_log_var.tolist())
 
-        s = np.cumsum(s)
-        if len(np.shape(s))<2: s = np.expand_dims(s, axis=1)
+        ## s = np.cumsum(s)
+        ## if len(np.shape(s))<2: s = np.expand_dims(s, axis=1)
         scores.append(s) # s is scalers
         zs.append(z)
 
