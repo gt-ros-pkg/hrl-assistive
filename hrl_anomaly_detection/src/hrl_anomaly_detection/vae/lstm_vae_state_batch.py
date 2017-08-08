@@ -166,8 +166,8 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
             lr = 0.01
             #optimizer = RMSprop(lr=lr, rho=0.9, epsilon=1e-08, decay=0.0001, clipvalue=10)
             optimizer = Adam(lr=lr, clipvalue=10) #, decay=1e-5)                
-            vae_autoencoder.compile(optimizer=optimizer, loss=None)
-            #vae_autoencoder.compile(optimizer='adam', loss=None)
+            #vae_autoencoder.compile(optimizer=optimizer, loss=None)
+            vae_autoencoder.compile(optimizer='adam', loss=None)
             #vae_autoencoder.compile(optimizer='adagrad', loss=None)
 
         # ---------------------------------------------------------------------------------
