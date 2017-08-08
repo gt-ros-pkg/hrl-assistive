@@ -78,7 +78,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
     inputs = Input(batch_shape=(batch_size, timesteps, input_dim))
     encoded = LSTM(h1_dim, return_sequences=False, activation='tanh', stateful=True,
                    trainable=True if trainable==0 or trainable is None else False,
-                   dropout=0.3,
+                   recurrent_dropout=0.05,
                    )(inputs)
     ## encoded = LSTM(h2_dim, return_sequences=False, activation='tanh', stateful=True)(encoded)
     z_mean  = Dense(z_dim, trainable=True if trainable==1 or trainable is None else False)(encoded) 

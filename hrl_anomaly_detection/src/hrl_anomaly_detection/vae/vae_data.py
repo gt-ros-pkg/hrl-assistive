@@ -213,9 +213,9 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             else:
                 from hrl_anomaly_detection.vae import lstm_dvae_state_batch as km
                 ths_l = np.logspace(-1.0,2.2,40) -0.1  
-            x_std_div   = 1.0 #4
+            x_std_div   = 4.0 #4
             x_std_offset= 0.05
-            z_std       = 0.2
+            z_std       = 0.5
             stateful = True
             ad_method   = 'lower_bound'
             autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
@@ -769,10 +769,10 @@ if __name__ == '__main__':
                                                 'crossmodal_landmarkEEDist', \
                                                 'unimodal_audioWristRMS']
 
-    param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
-                                                'unimodal_kinJntEff_1',\
-                                                'unimodal_ftForce_integ',\
-                                                'crossmodal_landmarkEEDist']
+    #param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
+    #                                            'unimodal_kinJntEff_1',\
+    #                                            'unimodal_ftForce_integ',\
+    #                                            'crossmodal_landmarkEEDist']
 
 
     if opt.gen_data:

@@ -101,7 +101,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         if method=='SVR':
             print "Start to fit SVR with gamma="
             from sklearn.svm import SVR
-            clf = SVR(C=1.0, epsilon=0.2, kernel='poly', degree=3, gamma=2.0)
+            clf = SVR(C=1.0, epsilon=0.2, kernel='rbf', degree=3, gamma=2.0)
         elif method=='RF':
             print "Start to fit RF : ", np.shape(x), np.shape(y)
             from sklearn.ensemble import RandomForestRegressor
@@ -137,7 +137,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         clf.fit(x, y)
         print "-----------------------------------------"
 
-    if True and False:
+    if True :
         for i, s in enumerate(scores_te_n):
             fig = plt.figure()
             plt.plot(s, '-b')
@@ -407,11 +407,8 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
                 # Method 2: Lower bound
                 l, z_mean, z_log_var = get_lower_bound(xx, x_mean, x_std, enc_z_mean, enc_z_logvar,\
                                                        x_dim)
-                if len(s)==0:
-                    s.append(np.array(l))
-                else:
-                    s.append(np.array(l)+np.array(s[-1]))
-                z.append(z_mean.tolist() + z_log_var.tolist())
+                s.append(l)
+                z.append(z_mean.tolist() ) #+ z_log_var.tolist())
 
         scores.append(s) # s is scalers
         zs.append(z)
