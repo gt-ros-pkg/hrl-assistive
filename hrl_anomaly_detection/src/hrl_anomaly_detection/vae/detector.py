@@ -203,119 +203,65 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
             plt.show()
         
 
-    tpr_l = []
-    fpr_l = []
+    #--------------------------------------------------------------------
+    def get_pos_neg(zs, scores):
+        s_preds = []
+        MSEs    = []
+        err_ups = []
+        for i, s in enumerate(scores):
+            if dyn_ths:
+                #x = scaler.transform(zs[i])
+                x = zs[i]
+                if method == 'SVR' or method == 'KNN':
+                    s_preds.append( clf.predict(x) )
+                elif method == 'RF':
+                    s_preds.append( clf.predict(x) )
+                    _, err_up = pred_rf(clf, x, 95)
+                    err_ups.append(err_up)
+                else:
+                    s_pred, MSE = clf.predict(x, eval_MSE=True)
+                    s_preds.append(s_pred)
+                    MSEs.append(MSE)
+            else:
+                s_preds.append([0]*len(s))
 
-    tp_ll = []
-    fp_ll = []
-    tn_ll = []
-    fn_ll = []
+        p_ll = []
+        n_ll = [] 
+        for ths in ths_l:
+            p_l = []
+            n_l = []
+
+            for i, s in enumerate(scores):
+                if dyn_ths:
+                    if method == 'SVR' or method == 'KNN':
+                        vals = s_preds[i]+ths
+                    elif method == 'RF':
+                        vals = s_preds[i] + ths*err_ups[i]
+                    else:
+                        vals = s_preds[i][:,0] + ths*np.sqrt(MSEs[i])
+                else: vals = np.array(s_preds[i])+ths
+
+                pos_cnt = 0
+                for j in xrange(4,len(s)):
+                    if s[j]>vals[j]:
+                        if pos_cnt>1:
+                            p_l.append(1)
+                            break
+                        else:
+                            pos_cnt += 1
+                    elif j == len(s)-1:
+                        n_l.append(1)                    
+
+            n_ll.append(n_l)
+            p_ll.append(p_l)
+
+        return p_ll, n_ll
 
     #--------------------------------------------------------------------
-    s_preds = []
-    MSEs    = []
-    err_ups = []
-    for i, s in enumerate(scores_te_n):
-        if dyn_ths:
-            #x = scaler.transform(zs_te_n[i])
-            x = zs_te_n[i]
-            if method == 'SVR' or method == 'KNN':
-                s_preds.append( clf.predict(x) )
-            elif method == 'RF':
-                s_preds.append( clf.predict(x) )
-                _, err_up = pred_rf(clf, x, 95)
-                err_ups.append(err_up)
-            else:
-                s_pred, MSE = clf.predict(x, eval_MSE=True)
-                s_preds.append(s_pred)
-                MSEs.append(MSE)
-        else:
-            s_preds.append([0]*len(s))
-
-    for ths in ths_l:
-        fp_l = []
-        tn_l = []
-
-        for i, s in enumerate(scores_te_n):
-            if dyn_ths:
-                if method == 'SVR' or method == 'KNN':
-                    vals = s_preds[i]+ths
-                elif method == 'RF':
-                    vals = s_preds[i] + ths*err_ups[i]
-                else:
-                    vals = s_preds[i][:,0] + ths*np.sqrt(MSEs[i])
-            else: vals = np.array(s_preds[i])+ths
-
-            pos_cnt = 0
-            for j in xrange(4,len(s)):
-                if s[j]>vals[j]:
-                    if pos_cnt>1:
-                        fp_l.append(1)
-                        break
-                    else:
-                        pos_cnt += 1
-                elif j == len(s)-1:
-                    tn_l.append(1)                    
-
-        tn_ll.append(tn_l)
-        fp_ll.append(fp_l)
+    fp_ll, tn_ll = get_pos_neg(zs_te_n, scores_te_n)
+    tp_ll, fn_ll = get_pos_neg(zs_te_a, scores_te_a)
             
     #--------------------------------------------------------------------
-    s_preds = []
-    MSEs    = []
-    err_ups = []
-    for i, s in enumerate(scores_te_a):
-        if dyn_ths:
-            #x = scaler.transform(zs_te_a[i])
-            x = zs_te_a[i]
-            if method == 'SVR' or method == 'KNN':
-                s_preds.append( clf.predict(x) )
-            elif method == 'RF':
-                s_preds.append( clf.predict(x) )
-                _, err_up = pred_rf(clf, x, 95)
-                err_ups.append(err_up)
-            else:
-                s_pred, MSE = clf.predict(x, eval_MSE=True)
-                s_preds.append(s_pred)
-                MSEs.append(MSE)
-        else:
-            s_preds.append([0]*len(s))
-
-    for ths in ths_l:
-        tp_l = []
-        fn_l = []
-
-        for i, s in enumerate(scores_te_n):
-            if dyn_ths:
-                if method == 'SVR' or method == 'KNN':
-                    vals = s_preds[i]+ths
-                elif method == 'RF':
-                    vals = s_preds[i] + ths*err_ups[i]
-                else:
-                    vals = s_preds[i][:,0] + ths*np.sqrt(MSEs[i])
-            else: vals = np.array(s_preds[i])+ths
-
-            pos_cnt = 0
-            for j in xrange(4, len(s)):
-                if s[j]>vals[j]:
-                    if pos_cnt>1:
-                        tp_l.append(1)
-                        break
-                    else:
-                        pos_cnt += 1
-                elif j == len(s)-1:
-                    fn_l.append(1)
-
-        tp_ll.append(tp_l)
-        fn_ll.append(fn_l)
-
-    #--------------------------------------------------------------------
-    ## e_n_l  = np.amax(scores_te_n, axis=-1) #[val[-1] for val in scores_n if val != np.log(1e-50) ]
-    ## e_ab_l = np.amax(scores_te_a, axis=-1) #[val[-1] for val in scores_a if val != np.log(1e-50) ]
-    ## print np.mean(e_n_l), np.std(e_n_l)
-    ## print np.mean(e_ab_l), np.std(e_ab_l)
-    ## print "acc ", float(np.sum(tp_l)+np.sum(tn_l))/float(np.sum(tp_l+fp_l+tn_l+fn_l))
-
     tpr_l = []
     fpr_l = []
     for i in xrange(len(ths_l)):
@@ -323,26 +269,8 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 )
         
     from sklearn import metrics
-    roc = metrics.auc(fpr_l, tpr_l, True)  
-
-    ## print tpr_l
-    ## print fpr_l
-
-    ## from sklearn import metrics 
-    ## print "roc: ", metrics.auc(fpr_l, tpr_l, True)
-
-    ## if plot:
-    ##     fig = plt.figure(figsize=(12,6))
-    ##     fig.add_subplot(1,2,1)    
-    ##     plt.plot(fpr_l, tpr_l, '-*b', ms=5, mec='b')
-    ##     plt.xlim([0,100])
-    ##     plt.ylim([0,100])
-
-    ##     fig.add_subplot(1,2,2)    
-    ##     plt.plot(e_n_l, '*b', ms=5, mec='b')
-    ##     plt.plot(e_ab_l, '*r', ms=5, mec='r')
-    ##     plt.show()
-
+    roc = metrics.auc(fpr_l, tpr_l, True)
+    
     return tp_ll, tn_ll, fp_ll, fn_ll, roc
 
 
