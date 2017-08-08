@@ -444,6 +444,7 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
                     if train_flag:
                         p = p*np.ones((batch_info[1], window_size, 1))
                     else:
+                        #temp
                         p = p*np.ones((batch_info[1], window_size, 1))
                         ## p = np.zeros((len(x), len(x[0]),1))
                 else:

@@ -169,7 +169,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
             lr = 0.001
             optimizer = Adam(lr=lr, clipvalue=10)                
             #vae_autoencoder.compile(optimizer=optimizer, loss=None)
-            vae_autoencoder.compile(optimizer='adam', loss=None)
+            vae_autoencoder.compile(optimizer='rmsprop', loss=None)
         else:
             if re_load and os.path.isfile(weights_file):
                 vae_autoencoder.load_weights(weights_file)
@@ -178,7 +178,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
             optimizer = Adam(lr=lr, clipvalue=10) #, decay=1e-5)                
             #vae_autoencoder.compile(optimizer=optimizer, loss=None)
             vae_autoencoder.compile(optimizer='adam', loss=None)
-            #vae_autoencoder.compile(optimizer='adagrad', loss=None)
+            #vae_autoencoder.compile(optimizer='rmsprop', loss=None)
 
         # ---------------------------------------------------------------------------------
         nDim         = len(x_train[0][0])
@@ -225,7 +225,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                         np.random.seed(3334 + i*len(x[0]) + j)                        
                         noise = np.random.normal(0, noise_mag, (batch_size, timesteps, nDim))
 
-                        p = float(j)/float(length-timesteps+1)*1.0-0.5
+                        p = float(j)/float(length-timesteps+1)*2.0-1.0
 
                         tr_loss = vae_autoencoder.train_on_batch(
                             np.concatenate((x[:,j+shift_offset:j+shift_offset+timesteps]+noise,
