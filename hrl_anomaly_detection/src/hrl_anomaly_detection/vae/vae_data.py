@@ -185,7 +185,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         ## (normalTrainData, abnormalTrainData, normalTestData, abnormalTestData) = raw_data
         ## (normalTrainData_ft, abnormalTrainData_ft, normalTestData_ft, abnormalTestData_ft) = raw_data_ft
         # ------------------------------------------------------------------------------------------        
-        method      = 'lstm_vae'
+        method      = 'lstm_vae_custom'
          
         weights_path = os.path.join(save_data_path,'model_weights_'+method+'_'+str(idx)+'.h5')
         ## weights_path = os.path.join(save_data_path,'tmp_fine_weights_'+str(idx)+'.h5')
@@ -202,20 +202,29 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         noise_mag   = 0.05
         sam_epoch   = 10
 
-        if method == 'lstm_vae' or method == 'lstm_vae2' or method == 'lstm_dvae':
+        if method == 'lstm_vae' or method == 'lstm_vae2' or method == 'lstm_dvae' or\
+            method == 'lstm_vae_custom':
+            x_std_div   = 4.0 #4
+            x_std_offset= 0.05
+            z_std       = 0.5
+            
             if method == 'lstm_vae':
                 from hrl_anomaly_detection.vae import lstm_vae_state_batch as km
                 ths_l = np.logspace(-1.0,2.4,40) #-0.1
-                #ths_l = np.logspace(-1.0,1.8,40) -0.1 
+            elif method == 'lstm_vae_custom':
+                from hrl_anomaly_detection.vae import lstm_vae_custom as km
+                ths_l = np.logspace(-1.0,2.4,40) #-0.1
+                x_std_div   = 2.
+                x_std_offset= 0.05
+                z_std       = 0.05
             elif method == 'lstm_vae2':
                 from hrl_anomaly_detection.vae import lstm_vae_state_batch2 as km
                 ths_l = np.logspace(-1.0,2.2,40) -0.5  
             else:
                 from hrl_anomaly_detection.vae import lstm_dvae_state_batch as km
                 ths_l = np.logspace(-1.0,2.2,40) -0.1  
-            x_std_div   = 4.0 #4
-            x_std_offset= 0.05
-            z_std       = 0.5
+
+            
             stateful = True
             ad_method   = 'lower_bound'
             autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
@@ -274,7 +283,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         ## from hrl_anomaly_detection.vae import lstm_ae as km
         ## autoencoder = km.lstm_ae(trainData, testData, weights_path, patience=5, batch_size=batch_size)
 
-        if  True and False: 
+        if  True : 
             vutil.graph_latent_space(normalTestData, abnormalTestData, enc_z_mean, batch_size=batch_size,
                                      method=method)
             
@@ -305,9 +314,9 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
           dt.anomaly_detection(autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generator,
                                normalTrainData, None,\
                                normalTestData, abnormalTestData, \
-                               ad_method,
+                               ad_method, method,
                                window_size, alpha, ths_l=ths_l, save_pkl=save_pkl, stateful=stateful,
-                               x_std_div = x_std_div, x_std_offset=x_std_offset, plot=plot,
+                               x_std_div = x_std_div, x_std_offset=x_std_offset, z_std=z_std, plot=plot,
                                renew=clf_renew, dyn_ths=True, batch_info=(fixed_batch_size,batch_size))
 
         roc_l.append(roc)
@@ -740,10 +749,10 @@ if __name__ == '__main__':
     subjects = ['s2', 's3','s4','s5', 's6','s7','s8', 's9']
 
     if os.uname()[1] == 'monty1':
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm'
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_pretrain'
+          '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm'
+        #save_data_path = os.path.expanduser('~')+\
+        #  '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_pretrain'
     else:
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
@@ -769,10 +778,10 @@ if __name__ == '__main__':
                                                 'crossmodal_landmarkEEDist', \
                                                 'unimodal_audioWristRMS']
 
-    #param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
-    #                                            'unimodal_kinJntEff_1',\
-    #                                            'unimodal_ftForce_integ',\
-    #                                            'crossmodal_landmarkEEDist']
+    param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
+                                               'unimodal_kinJntEff_1',\
+                                               'unimodal_ftForce_integ',\
+                                               'crossmodal_landmarkEEDist']
 
 
     if opt.gen_data:

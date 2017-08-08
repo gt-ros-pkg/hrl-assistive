@@ -69,17 +69,21 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
     y_test = testData[1]
 
     input_dim = len(x_train[0][0])
+    length = len(x_train[0])
 
     h1_dim = input_dim
     ## h2_dim = 2 #input_dim
     z_dim  = 2
-    
+
+
+    def slicing(x):
+        return x[:,:,:input_dim]
+           
     ## inputs = Input(batch_shape=(batch_size, timesteps, input_dim))
-    inputs = Input(batch_shape=(batch_size, timesteps, input_dim))
+    inputs = Input(batch_shape=(batch_size, timesteps, input_dim+1))
+    encoded = Lambda(slicing)(inputs)     
     encoded = LSTM(h1_dim, return_sequences=False, activation='tanh', stateful=True,
-                   trainable=True if trainable==0 or trainable is None else False,
-                   #recurrent_dropout=0.03,
-                   )(inputs)
+                   trainable=True if trainable==0 or trainable is None else False)(encoded)
     ## encoded = LSTM(h2_dim, return_sequences=False, activation='tanh', stateful=True)(encoded)
     z_mean  = Dense(z_dim, trainable=True if trainable==1 or trainable is None else False)(encoded) 
     z_log_var = Dense(z_dim, trainable=True if trainable==1 or trainable is None else False)(encoded) 
@@ -103,22 +107,28 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
             self.is_placeholder = True
             super(CustomVariationalLayer, self).__init__(**kwargs)
 
-        def vae_loss(self, x, x_d_mean, x_d_std):
-            # default 1
+        def vae_loss(self, x, x_d_mean, x_d_std, p):
+            '''
+            p : phase variable
+            '''
             log_p_x_z = -0.5 * ( K.sum(K.square((x-x_d_mean)/x_d_std), axis=-1) \
                                  + float(input_dim) * K.log(2.0*np.pi) + K.sum(K.log(K.square(x_d_std)),
                                                                                axis=-1) )
             xent_loss = K.mean(-log_p_x_z, axis=-1)
 
-            kl_loss = - 0.5 * K.sum(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=-1)
+            sig2 = z_std
+            kl_loss = - 0.5 * K.sum(1 + z_log_var -K.log(sig2*sig2) - K.square(z_mean-p)
+                                    - K.exp(z_log_var)/(sig2*sig2), axis=-1)
+            ## kl_loss = - 0.5 * K.sum(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=-1)
             return K.mean(xent_loss + kl_loss) 
 
         def call(self, args):
-            x = args[0]
+            x = args[0][:,:,:input_dim]
+            p = args[0][:,:,input_dim:]
             x_d_mean = args[1][:,:,:input_dim]
             x_d_std  = args[1][:,:,input_dim:]/x_std_div + x_std_offset
             
-            loss = self.vae_loss(x, x_d_mean, x_d_std)
+            loss = self.vae_loss(x, x_d_mean, x_d_std, p)
             self.add_loss(loss, inputs=args)
             # We won't actually use the output.
             return x_d_mean
@@ -215,8 +225,11 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                         np.random.seed(3334 + i*len(x[0]) + j)                        
                         noise = np.random.normal(0, noise_mag, (batch_size, timesteps, nDim))
 
+                        p = float(j)/float(length-timesteps+1)*1.0-0.5
+
                         tr_loss = vae_autoencoder.train_on_batch(
-                            x[:,j+shift_offset:j+shift_offset+timesteps]+noise,
+                            np.concatenate((x[:,j+shift_offset:j+shift_offset+timesteps]+noise,
+                                       p*np.ones((len(x), timesteps, 1))), axis=-1),
                             x[:,j+shift_offset:j+shift_offset+timesteps]+noise )
 
                         ## tr_loss = vae_autoencoder.train_on_batch(
@@ -251,7 +264,8 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                 
                 for j in xrange(len(x[0])-timesteps+1):
                     te_loss = vae_autoencoder.test_on_batch(
-                        x[:,j:j+timesteps],
+                        np.concatenate((x[:,j:j+timesteps],
+                                        np.zeros((len(x), timesteps,1))), axis=-1),
                         x[:,j:j+timesteps] )
                     seq_te_loss.append(te_loss)
                 mean_te_loss.append( np.mean(seq_te_loss) )
@@ -313,7 +327,10 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
             x_pred_mean = []
             x_pred_std  = []
             for j in xrange(len(x[0])-timesteps+1):
-                x_pred = vae_mean_std.predict(x[:,j:j+timesteps], batch_size=batch_size)
+                x_pred = vae_mean_std.predict(np.concatenate((x[:,j:j+timesteps],
+                                                              np.zeros((len(x), timesteps,1))
+                                                              ), axis=-1),
+                                              batch_size=batch_size)
                 x_pred_mean.append(x_pred[0,-1,:nDim])
                 x_pred_std.append(x_pred[0,-1,nDim:]/x_std_div*1.5+x_std_offset)
 

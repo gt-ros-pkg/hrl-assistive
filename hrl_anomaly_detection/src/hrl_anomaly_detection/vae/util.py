@@ -102,9 +102,16 @@ def graph_latent_space(normalTestData, abnormalTestData, enc_z, timesteps=1, bat
             for j in xrange(batch_size-1):
                 x = np.vstack([x,normalTestData[i:i+1]])            
 
+            z_mean=[]
             for j in xrange(len(x[0])-timesteps+1):
-                z = enc_z.predict(x[:,j:j+timesteps], batch_size=batch_size)
-                z_mean_n.append( z[0] )
+                if method == 'lstm_vae_custom':
+                    x_in = np.concatenate((x[:,j:j+timesteps],
+                                           np.zeros((len(x), timesteps,1))), axis=-1)
+                else:
+                    x_in = x[:,j:j+timesteps]
+                z = enc_z.predict(x_in, batch_size=batch_size)
+                z_mean.append( z[0] )
+            z_mean_n.append(z_mean)
 
         z_mean_a = []
         for i in xrange(len(abnormalTestData)):
@@ -113,9 +120,16 @@ def graph_latent_space(normalTestData, abnormalTestData, enc_z, timesteps=1, bat
             for j in xrange(batch_size-1):
                 x = np.vstack([x,abnormalTestData[i:i+1]])            
 
+            z_mean=[]
             for j in xrange(len(x[0])-timesteps+1):
-                z = enc_z.predict(x[:,j:j+timesteps], batch_size=batch_size)
-                z_mean_a.append( z[0] )
+                if method == 'lstm_vae_custom':
+                    x_in = np.concatenate((x[:,j:j+timesteps],
+                                           np.zeros((len(x), timesteps,1))), axis=-1)
+                else:
+                    x_in = x[:,j:j+timesteps]                    
+                z = enc_z.predict(x_in, batch_size=batch_size)
+                z_mean.append( z[0] )
+            z_mean_a.append(z_mean)
 
         viz_latent_space(z_mean_n, z_mean_a)
     
@@ -136,11 +150,17 @@ def viz_latent_space(z_n, z_a=None):
     fig = plt.figure(figsize=(6, 6))
 
     s = 121
-    plt.scatter(z_n[:,0], z_n[:,1], color='b', s=0.5*s, alpha=.4, label='Non-anomalous')
-    if z_a is not None:
-        plt.scatter(z_a[:,0], z_a[:,1], color='r', s=0.5*s, marker='^', alpha=.4, label='Anomalous')
+    
+    #plt.scatter(z_n[:,0], z_n[:,1], color='b', s=0.5*s, alpha=.4, label='Non-anomalous')
+    for z in z_n:
+        plt.plot(z[:,0], z[:,1], '-b', marker='o', ms=5, alpha=.4, label='Non-anomalous')
+    
+    if z_a is not None and False:
+        ## plt.scatter(z_a[:,0], z_a[:,1], color='r', s=0.5*s, marker='^', alpha=.4, label='Anomalous')
+        for z in z_a:
+            plt.plot(z[:,0], z[:,1], '-r', marker='^', ms=5, alpha=.4, label='Anomalous')
 
-    plt.legend(loc=3, ncol=2)
+    #plt.legend(loc=3, ncol=2)
     plt.show()
 
 

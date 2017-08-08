@@ -202,12 +202,15 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         batch_size  = 256
         fixed_batch_size = True
         noise_mag   = 0.05
-        sam_epoch   = 50
+        sam_epoch   = 10
 
         if method == 'lstm_vae' or method == 'lstm_vae2' or method == 'lstm_dvae':
             if method == 'lstm_vae':
                 from hrl_anomaly_detection.vae import lstm_vae_state_batch as km
-                ths_l = np.logspace(-1.0,2.2,40) -0.1  
+                ths_l = np.logspace(-1.0,2.2,40) -0.1
+
+                ths_l = np.logspace(-1.0,3.2,40) -0.1
+                
             elif method == 'lstm_vae2':
                 from hrl_anomaly_detection.vae import lstm_vae_state_batch2 as km
                 ths_l = np.logspace(-1.0,2.2,40) -0.5  
@@ -268,8 +271,9 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                           re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot) 
         
         #------------------------------------------------------------------------------------
-        if  True and False: 
-            vutil.graph_latent_space(normalTestData, abnormalTestData, enc_z_mean, batch_size=batch_size,
+        if  True: 
+            vutil.graph_latent_space(normalTestData, abnormalTestData, enc_z_mean,
+                                     timesteps=window_size, batch_size=batch_size,
                                      method=method)
             
         # -----------------------------------------------------------------------------------
