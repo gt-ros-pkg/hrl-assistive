@@ -225,7 +225,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                         np.random.seed(3334 + i*len(x[0]) + j)                        
                         noise = np.random.normal(0, noise_mag, (batch_size, timesteps, nDim))
 
-                        p = float(j)/float(length-timesteps+1)*2.0-1.0
+                        p = float(j)/float(length-timesteps+1) *2.0-1.0
 
                         tr_loss = vae_autoencoder.train_on_batch(
                             np.concatenate((x[:,j+shift_offset:j+shift_offset+timesteps]+noise,
