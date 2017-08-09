@@ -135,7 +135,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     # HMM-induced vector with LOPO
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(d['kFoldList']):
-        if idx != 7: continue
+        #if idx != 5 : continue
 
 
         # dim x sample x length
@@ -198,7 +198,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         x_std_offset= None
         
         window_size = 1
-        batch_size  = 16
+        batch_size  = 256
         fixed_batch_size = True
         noise_mag   = 0.05
         sam_epoch   = 10
@@ -214,10 +214,10 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 ths_l = np.logspace(-1.0,2.4,40) #-0.1
             elif method == 'lstm_vae_custom':
                 from hrl_anomaly_detection.vae import lstm_vae_custom as km
-                ths_l = np.logspace(-1.0,2.4,40) -1.1
+                ths_l = np.logspace(-1.0,2.8,40) -0.5
                 x_std_div   = 4.
                 x_std_offset= 0.05
-                z_std       = 0.2
+                z_std       = 0.3 #0.2
             elif method == 'lstm_vae2':
                 from hrl_anomaly_detection.vae import lstm_vae_state_batch2 as km
                 ths_l = np.logspace(-1.0,2.2,40) -0.5  
@@ -297,6 +297,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                                       save_pkl=save_pkl)
         else:
             alpha = np.array([1.0]*nDim)/float(nDim)
+            alpha = np.array([0.4,1.0,1.0,1.0]) #/4.0
             ## alpha = np.array([0.0]*nDim)/float(nDim)
             ## alpha[0] = 1.0
 

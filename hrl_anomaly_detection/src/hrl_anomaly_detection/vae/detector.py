@@ -105,7 +105,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         if method=='SVR':
             print "Start to fit SVR with gamma="
             from sklearn.svm import SVR
-            clf = SVR(C=1.0, epsilon=0.2, kernel='rbf', degree=3, gamma=2.0)
+            clf = SVR(C=1.0, epsilon=0.2, kernel='rbf', degree=3, gamma=1.0)
         elif method=='RF':
             print "Start to fit RF : ", np.shape(x), np.shape(y)
             from sklearn.ensemble import RandomForestRegressor
@@ -143,7 +143,8 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
 
     if True and False:
         print np.shape(zs_tr_n), np.shape(scores_tr_n)
-        
+
+        '''
         fig = plt.figure() 
         ## from mpl_toolkits.mplot3d import Axes3D
         ## ax = fig.add_subplot(111, projection='3d')
@@ -160,6 +161,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         for i, s in enumerate(scores_te_a):
             plt.plot(s, '-r')
         plt.show()
+        '''
 
         for i, s in enumerate(scores_te_n):
             fig = plt.figure()
@@ -381,7 +383,7 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
                 # Method 2: Lower bound
                 l, z_mean, z_log_var = get_lower_bound(xx, x_mean, x_std, z_std,
                                                        enc_z_mean, enc_z_logvar,\
-                                                       x_dim, method, p)
+                                                       x_dim, method, p, alpha=alpha)
                 s.append(l)
                 z.append(z_mean.tolist()) # + z_log_var.tolist())
 
@@ -459,7 +461,8 @@ def get_reconstruction_err_lld(x, x_mean, alpha=1.0):
     return [np.amin(p_l)]
 
 
-def get_lower_bound(x, x_mean, x_std, z_std, enc_z_mean, enc_z_logvar, nDim, method=None, p=None):
+def get_lower_bound(x, x_mean, x_std, z_std, enc_z_mean, enc_z_logvar, nDim, method=None, p=None,
+                    alpha=None):
     '''
     No fixed batch
     x: length x dim
@@ -478,8 +481,10 @@ def get_lower_bound(x, x_mean, x_std, z_std, enc_z_mean, enc_z_logvar, nDim, met
         z_mean    = enc_z_mean.predict(x)[0]
         z_log_var = enc_z_logvar.predict(x)[0]        
 
+    if alpha is None: alpha = np.array([1.0]*nDim)
+
     p_l     = []
-    log_p_x_z = -0.5 * ( np.sum( ((x-x_mean)/x_std)**2, axis=-1) \
+    log_p_x_z = -0.5 * ( np.sum( (alpha*(x-x_mean)/x_std)**2, axis=-1) \
                          + float(nDim) * np.log(2.0*np.pi) + np.sum(np.log(x_std**2), axis=-1) )
     if len(np.shape(log_p_x_z))>1:
         xent_loss = np.mean(-log_p_x_z, axis=-1)
@@ -494,6 +499,7 @@ def get_lower_bound(x, x_mean, x_std, z_std, enc_z_mean, enc_z_logvar, nDim, met
         else:
             kl_loss = - 0.5 * np.sum(1 + z_log_var -np.log(z_std*z_std) - (z_mean-p)**2
                                     - np.exp(z_log_var)/(z_std*z_std))
+        kl_loss = 0
     else:
         if len(np.shape(z_log_var))>1:
             kl_loss = - 0.5 * np.sum(1 + z_log_var - z_mean**2 - np.exp(z_log_var), axis=-1)
