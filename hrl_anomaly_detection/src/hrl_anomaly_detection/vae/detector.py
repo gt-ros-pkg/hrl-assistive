@@ -368,7 +368,7 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
             elif ad_method == 'lower_bound':
 
                 if method == 'lstm_vae_custom':
-                    p = float(j)/float(length-window_size+1)*2.0-1.0
+                    p = float(j)/float(length-window_size+1)
                     if train_flag:
                         p = p*np.ones((batch_info[1], window_size, 1))
                     else:
