@@ -50,7 +50,7 @@ matplotlib.rcParams['ps.fonttype'] = 42
 
 
 def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, generator,
-                      normalTrainData, abnormalTrainData,\
+                      normalTrainData, normalValData,\
                       normalTestData, abnormalTestData, ad_method, method, window_size, \
                       alpha, ths_l=None, save_pkl=None, stateful=False, \
                       x_std_div=1.0, x_std_offset=1e-10, z_std=None,\
@@ -69,16 +69,16 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         scores_tr_n, zs_tr_n = get_anomaly_score(normalTrainData, vae_mean, enc_z_mean, enc_z_logvar,
                                                  window_size, alpha, ad_method, method, stateful=stateful,
                                                  x_std_div=x_std_div, x_std_offset=x_std_offset,
-                                                 z_std=z_std, batch_info=batch_info,
-                                                 kwargs={'train': True})        
+                                                 z_std=z_std, batch_info=batch_info, valData=normalValData,
+                                                 train_flag=True)        
         scores_te_n, zs_te_n = get_anomaly_score(normalTestData, vae_mean, enc_z_mean, enc_z_logvar,
                                      window_size, alpha, ad_method, method, stateful=stateful,
                                      x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,
-                                     batch_info=batch_info)
+                                     batch_info=batch_info, ref_scores=scores_tr_n)
         scores_te_a, zs_te_a = get_anomaly_score(abnormalTestData, vae_mean, enc_z_mean, enc_z_logvar,
                                      window_size, alpha, ad_method, method, stateful=stateful,
                                      x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,
-                                     batch_info=batch_info)
+                                     batch_info=batch_info, ref_scores=scores_tr_n)
 
         d = {}
         d['scores_tr_n'] = scores_tr_n
@@ -95,6 +95,10 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
     scores_tr_n = np.array(scores_tr_n)
     scores_te_n = np.array(scores_te_n)
     scores_te_a = np.array(scores_te_a)
+
+    print np.shape(scores_te_n), np.shape(scores_tr_n)
+
+    
 
     if dyn_ths:
         l = len(zs_tr_n[0])
@@ -302,11 +306,12 @@ def get_roc(tp_l, tn_l, fp_l, fn_l):
 def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_method, method,\
                       nSample=1000,\
                       stateful=False, x_std_div=1, x_std_offset=1e-10, z_std=0.5,\
-                      batch_info=(False,None), **kwargs):
+                      batch_info=(False,None), ref_scores=None, **kwargs):
 
     x_dim = len(X[0][0])
     length = len(X[0])
-    train_flag = kwargs.get('train', False)
+    train_flag = kwargs.get('train_flag', False)
+    valData    = kwargs.get('valData', None)
 
 
     scores = []
@@ -367,7 +372,28 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
                 # Method 1: Reconstruction probability
                 l = get_reconstruction_err(xx, x_mean, alpha=alpha)
                 s.append( l )
-                z.append( enc_z_mean.predict(xx, batch_size=batch_info[1])[0].tolist() )                
+                z.append( enc_z_mean.predict(xx, batch_size=batch_info[1])[0].tolist() )
+            elif ad_method == 'recon_err_lld':
+                # Method 1: Reconstruction likelihhod
+                if ref_scores is not None:
+                    mu  = np.mean(np.array(ref_scores).reshape((-1,x_dim)), axis=0)
+                    var = np.var(np.array(ref_scores).reshape((-1,x_dim)), axis=0)
+                    l   = abs(xx[0]-x_mean)
+
+                    ss = []
+                    for k in xrange(len(l)): #per window element
+                        score = 0
+                        for m in xrange(len(mu)):
+                            score += (l[k][m]-mu[m])/var[m]
+                        ss.append(score)
+
+                    s.append(  max( ss ) )
+                else:
+                    l = abs(xx[0]-x_mean)
+                    if len(s) == 0: s = l
+                    else:           s = np.concatenate((s,l), axis=0)
+                #print np.shape(s), np.shape(xx[0]), np.shape(x_mean)
+                    
             elif ad_method == 'lower_bound':
 
                 if method == 'lstm_vae_custom':
