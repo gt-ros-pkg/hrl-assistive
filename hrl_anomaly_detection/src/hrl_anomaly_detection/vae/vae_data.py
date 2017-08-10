@@ -186,7 +186,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         ## (normalTrainData, abnormalTrainData, normalTestData, abnormalTestData) = raw_data
         ## (normalTrainData_ft, abnormalTrainData_ft, normalTestData_ft, abnormalTestData_ft) = raw_data_ft
         # ------------------------------------------------------------------------------------------        
-        method      = 'lstm_vae_custom'
+        method      = 'lstm_pred'
          
         weights_path = os.path.join(save_data_path,'model_weights_'+method+'_'+str(idx)+'.h5')
         ## weights_path = os.path.join(save_data_path,'tmp_fine_weights_'+str(idx)+'.h5')
@@ -196,9 +196,11 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         generator  = None
         x_std_div   = None
         x_std_offset= None
+        z_std      = None
+        ad_dict = {}
         
         window_size = 1
-        batch_size  = 16
+        batch_size  = 256
         fixed_batch_size = True
         noise_mag   = 0.05
         sam_epoch   = 10
@@ -214,7 +216,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 ths_l = np.logspace(-1.0,2.4,40) #-0.1
             elif method == 'lstm_vae_custom':
                 from hrl_anomaly_detection.vae import lstm_vae_custom as km
-                ths_l = np.logspace(-1.0,2.4,40) -1.1
+                ths_l = np.logspace(-1.0,2.0,40) -0.1
                 x_std_div   = 4.
                 x_std_offset= 0.05
                 z_std       = 0.2
@@ -232,7 +234,24 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
               km.lstm_vae(trainData, valData, weights_path, patience=4, batch_size=batch_size,
                           noise_mag=noise_mag, timesteps=window_size, sam_epoch=sam_epoch,
                           x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,                          
-                          re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot) 
+                          re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot)
+            
+        elif method == 'lstm_pred':
+            from hrl_anomaly_detection.vae import lstm_pred as km
+            from hrl_anomaly_detection.vae import lstm_pred_var as km
+            stateful = True
+            ths_l = np.logspace(-3.0,2.1,40) #-0.1
+            ad_method   = 'recon_err_vec'
+            window_size = 5
+            x_std_div   = 2.
+            x_std_offset= 0.1
+            
+            autoencoder, vae_mean = \
+              km.lstm_pred(trainData, valData, weights_path, patience=4, batch_size=batch_size,
+                           noise_mag=noise_mag, timesteps=window_size, sam_epoch=sam_epoch,
+                           x_std_div=x_std_div, x_std_offset=x_std_offset,                          
+                           re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot)
+            
         elif method == 'lstm_ae':
             # LSTM-AE (Confirmed) %74.99
             from hrl_anomaly_detection.vae import lstm_ae_state_batch as km
@@ -296,7 +315,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                                       generator, normalTrainData, window_size,\
                                       save_pkl=save_pkl)
         else:
-            alpha = np.array([1.0]*nDim)/float(nDim)
+            alpha = np.array([1.0]*nDim) #/float(nDim)
+            #alpha[0] = 0.6
             ## alpha = np.array([0.0]*nDim)/float(nDim)
             ## alpha[0] = 1.0
 
@@ -318,7 +338,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                                ad_method, method,
                                window_size, alpha, ths_l=ths_l, save_pkl=save_pkl, stateful=stateful,
                                x_std_div = x_std_div, x_std_offset=x_std_offset, z_std=z_std, plot=plot,
-                               renew=clf_renew, dyn_ths=True, batch_info=(fixed_batch_size,batch_size))
+                               step_ahead = 5,
+                               renew=clf_renew, dyn_ths=False, batch_info=(fixed_batch_size,batch_size))
 
         roc_l.append(roc)
 
