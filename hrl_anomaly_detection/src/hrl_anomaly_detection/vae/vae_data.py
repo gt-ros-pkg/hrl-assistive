@@ -135,7 +135,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     # HMM-induced vector with LOPO
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(d['kFoldList']):
-        if idx != 7: continue
+        #if idx != 5 : continue
 
 
         # dim x sample x length
@@ -197,7 +197,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         x_std_div   = None
         x_std_offset= None
         z_std      = None
-        ad_dict = {}
+        dyn_ths    = False
         
         window_size = 1
         batch_size  = 256
@@ -216,10 +216,11 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 ths_l = np.logspace(-1.0,2.4,40) #-0.1
             elif method == 'lstm_vae_custom':
                 from hrl_anomaly_detection.vae import lstm_vae_custom as km
-                ths_l = np.logspace(-1.0,2.0,40) -0.1
-                x_std_div   = 4.
-                x_std_offset= 0.05
-                z_std       = 0.2
+                ths_l = np.logspace(-1.0,2.,40) -0.2
+                x_std_div   = 2 #4.
+                x_std_offset= 0.1 #0.05
+                z_std       = 0.3 #0.2
+
             elif method == 'lstm_vae2':
                 from hrl_anomaly_detection.vae import lstm_vae_state_batch2 as km
                 ths_l = np.logspace(-1.0,2.2,40) -0.5  
@@ -227,7 +228,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 from hrl_anomaly_detection.vae import lstm_dvae_state_batch as km
                 ths_l = np.logspace(-1.0,2.2,40) -0.1  
 
-            
+            dyn_ths  = True
             stateful = True
             ad_method   = 'lower_bound'
             autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
@@ -258,7 +259,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             stateful = True
             ad_method   = 'recon_err'
             ths_l = np.logspace(-1.0,1.8,40) -0.5 
-            autoencoder,_,_, enc_z_mean = \
+            autoencoder, vae_mean,_, enc_z_mean = \
               km.lstm_ae(trainData, valData, weights_path, patience=4, batch_size=batch_size,
                          noise_mag=noise_mag, timesteps=window_size, sam_epoch=sam_epoch,
                          re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot)
@@ -266,10 +267,10 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         elif method == 'encdec_ad':
             # EncDec-AD from Malhortra
             from hrl_anomaly_detection.vae import lstm_ae_state_batch as km
-            window_size = 10
+            window_size = 3
             stateful = True
-            ad_method   = 'recon_err_likelihood'
-            ths_l = np.logspace(-1.0,1.8,40) -0.5 
+            ad_method   = 'recon_err_lld'
+            ths_l = np.logspace(-0.0,2.8,40) #-0.5 
             autoencoder,_,_, enc_z_mean = \
               km.lstm_ae(trainData, valData, weights_path, patience=4, batch_size=batch_size,
                          noise_mag=noise_mag, timesteps=window_size, sam_epoch=sam_epoch,
@@ -292,7 +293,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                           noise_mag=noise_mag, sam_epoch=sam_epoch,
                           x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,\
                           re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot)
-        del trainData, valData
+        del trainData
         
         #------------------------------------------------------------------------------------
         ## from hrl_anomaly_detection.vae import lstm_vae_sampling as km
@@ -333,13 +334,13 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         save_pkl = os.path.join(save_data_path, 'model_ad_scores_'+str(idx)+'.pkl')
         tp_l, tn_l, fp_l, fn_l, roc = \
           dt.anomaly_detection(autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generator,
-                               normalTrainData, None,\
+                               normalTrainData, valData[0],\
                                normalTestData, abnormalTestData, \
                                ad_method, method,
                                window_size, alpha, ths_l=ths_l, save_pkl=save_pkl, stateful=stateful,
                                x_std_div = x_std_div, x_std_offset=x_std_offset, z_std=z_std, plot=plot,
                                step_ahead = 5,
-                               renew=clf_renew, dyn_ths=False, batch_info=(fixed_batch_size,batch_size))
+                               renew=clf_renew, dyn_ths=dyn_ths, batch_info=(fixed_batch_size,batch_size))
 
         roc_l.append(roc)
 
@@ -778,7 +779,7 @@ if __name__ == '__main__':
     else:
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
-
+          
     ## param_dict['data_param']['handFeatures'] = ['unimodal_kinVel',\
     ##                                             'unimodal_kinJntEff_1',\
     ##                                             'unimodal_ftForce_zero',\
@@ -791,6 +792,7 @@ if __name__ == '__main__':
     ##                                             'unimodal_landmarkDist',\
     ##                                             'crossmodal_landmarkEEAng']
 
+    '''
     param_dict['data_param']['handFeatures'] = ['unimodal_kinVel',\
                                                 'unimodal_kinJntEff_1',\
                                                 'unimodal_ftForce_zero',\
@@ -799,12 +801,13 @@ if __name__ == '__main__':
                                                 'unimodal_kinDesEEChange',\
                                                 'crossmodal_landmarkEEDist', \
                                                 'unimodal_audioWristRMS']
-
+    '''
+    
     param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
                                                'unimodal_kinJntEff_1',\
                                                'unimodal_ftForce_integ',\
                                                'crossmodal_landmarkEEDist']
-
+    
 
     if opt.gen_data:
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        

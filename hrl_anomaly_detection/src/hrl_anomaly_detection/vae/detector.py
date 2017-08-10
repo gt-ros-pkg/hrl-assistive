@@ -50,7 +50,7 @@ matplotlib.rcParams['ps.fonttype'] = 42
 
 
 def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, generator,
-                      normalTrainData, abnormalTrainData,\
+                      normalTrainData, normalValData,\
                       normalTestData, abnormalTestData, ad_method, method, window_size, \
                       alpha, ths_l=None, save_pkl=None, stateful=False, \
                       x_std_div=1.0, x_std_offset=1e-10, z_std=None,\
@@ -69,16 +69,16 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         scores_tr_n, zs_tr_n = get_anomaly_score(normalTrainData, vae_mean, enc_z_mean, enc_z_logvar,
                                                  window_size, alpha, ad_method, method, stateful=stateful,
                                                  x_std_div=x_std_div, x_std_offset=x_std_offset,
-                                                 z_std=z_std, batch_info=batch_info,
-                                                 kwargs={'train': True})        
+                                                 z_std=z_std, batch_info=batch_info, valData=normalValData,
+                                                 train_flag=True)        
         scores_te_n, zs_te_n = get_anomaly_score(normalTestData, vae_mean, enc_z_mean, enc_z_logvar,
                                      window_size, alpha, ad_method, method, stateful=stateful,
                                      x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,
-                                     batch_info=batch_info)
+                                     batch_info=batch_info, ref_scores=scores_tr_n)
         scores_te_a, zs_te_a = get_anomaly_score(abnormalTestData, vae_mean, enc_z_mean, enc_z_logvar,
                                      window_size, alpha, ad_method, method, stateful=stateful,
                                      x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,
-                                     batch_info=batch_info)
+                                     batch_info=batch_info, ref_scores=scores_tr_n)
 
         d = {}
         d['scores_tr_n'] = scores_tr_n
@@ -98,6 +98,10 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
     
     if ad_method == 'recon_err_vec': dyn_ths=False
 
+    print np.shape(scores_te_n), np.shape(scores_tr_n)
+
+    
+
     if dyn_ths:
         l = len(zs_tr_n[0])
         x = np.array(zs_tr_n).reshape(-1,np.shape(zs_tr_n)[-1])
@@ -107,7 +111,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         if method=='SVR':
             print "Start to fit SVR with gamma="
             from sklearn.svm import SVR
-            clf = SVR(C=1.0, epsilon=0.2, kernel='rbf', degree=3, gamma=2.0)
+            clf = SVR(C=1.0, epsilon=0.2, kernel='rbf', degree=3, gamma=.5)
         elif method=='RF':
             print "Start to fit RF : ", np.shape(x), np.shape(y)
             from sklearn.ensemble import RandomForestRegressor
@@ -145,7 +149,8 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
 
     if True and False:
         print np.shape(zs_tr_n), np.shape(scores_tr_n)
-        
+
+        '''
         fig = plt.figure() 
         ## from mpl_toolkits.mplot3d import Axes3D
         ## ax = fig.add_subplot(111, projection='3d')
@@ -162,6 +167,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         for i, s in enumerate(scores_te_a):
             plt.plot(s, '-r')
         plt.show()
+        '''
 
         for i, s in enumerate(scores_te_n):
             fig = plt.figure()
@@ -302,11 +308,12 @@ def get_roc(tp_l, tn_l, fp_l, fn_l):
 def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_method, method,\
                       nSample=1000,\
                       stateful=False, x_std_div=1, x_std_offset=1e-10, z_std=0.5,\
-                      batch_info=(False,None), **kwargs):
+                      batch_info=(False,None), ref_scores=None, **kwargs):
 
     x_dim = len(X[0][0])
     length = len(X[0])
-    train_flag = kwargs.get('train', False)
+    train_flag = kwargs.get('train_flag', False)
+    valData    = kwargs.get('valData', None)
 
     scores = []
     zs = []
@@ -385,6 +392,26 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
                 ##     for k in range(-1, -window_size-1,-1):
                 ##         temp.append(e[k][-k-1])
                 ##     s.append( np.mean(temp) )
+            elif ad_method == 'recon_err_lld':
+                # Method 1: Reconstruction likelihhod
+                if ref_scores is not None:
+                    mu  = np.mean(np.array(ref_scores).reshape((-1,x_dim)), axis=0)
+                    var = np.var(np.array(ref_scores).reshape((-1,x_dim)), axis=0)
+                    l   = abs(xx[0]-x_mean)
+
+                    ss = []
+                    for k in xrange(len(l)): #per window element
+                        score = 0
+                        for m in xrange(len(mu)):
+                            score += (l[k][m]-mu[m])/var[m]
+                        ss.append(score)
+
+                    s.append(  max( ss ) )
+                else:
+                    l = abs(xx[0]-x_mean)
+                    if len(s) == 0: s = l
+                    else:           s = np.concatenate((s,l), axis=0)
+                #print np.shape(s), np.shape(xx[0]), np.shape(x_mean)
             elif ad_method == 'lower_bound':
 
                 if method == 'lstm_vae_custom':
@@ -401,7 +428,7 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
                 # Method 2: Lower bound
                 l, z_mean, z_log_var = get_lower_bound(xx, x_mean, x_std, z_std,
                                                        enc_z_mean, enc_z_logvar,\
-                                                       x_dim, method, p)
+                                                       x_dim, method, p, alpha=alpha)
                 s.append(l)
                 z.append(z_mean.tolist()) # + z_log_var.tolist())
 
@@ -491,7 +518,8 @@ def get_reconstruction_err_vec(x, x_mean, alpha=1.0):
 
 
 
-def get_lower_bound(x, x_mean, x_std, z_std, enc_z_mean, enc_z_logvar, nDim, method=None, p=None):
+def get_lower_bound(x, x_mean, x_std, z_std, enc_z_mean, enc_z_logvar, nDim, method=None, p=None,
+                    alpha=None):
     '''
     No fixed batch
     x: length x dim
@@ -510,8 +538,10 @@ def get_lower_bound(x, x_mean, x_std, z_std, enc_z_mean, enc_z_logvar, nDim, met
         z_mean    = enc_z_mean.predict(x)[0]
         z_log_var = enc_z_logvar.predict(x)[0]        
 
+    if alpha is None: alpha = np.array([1.0]*nDim)
+
     p_l     = []
-    log_p_x_z = -0.5 * ( np.sum( ((x-x_mean)/x_std)**2, axis=-1) \
+    log_p_x_z = -0.5 * ( np.sum( (alpha*(x-x_mean)/x_std)**2, axis=-1) \
                          + float(nDim) * np.log(2.0*np.pi) + np.sum(np.log(x_std**2), axis=-1) )
     if len(np.shape(log_p_x_z))>1:
         xent_loss = np.mean(-log_p_x_z, axis=-1)
@@ -526,6 +556,7 @@ def get_lower_bound(x, x_mean, x_std, z_std, enc_z_mean, enc_z_logvar, nDim, met
         else:
             kl_loss = - 0.5 * np.sum(1 + z_log_var -np.log(z_std*z_std) - (z_mean-p)**2
                                     - np.exp(z_log_var)/(z_std*z_std))
+        kl_loss = 0
     else:
         if len(np.shape(z_log_var))>1:
             kl_loss = - 0.5 * np.sum(1 + z_log_var - z_mean**2 - np.exp(z_log_var), axis=-1)

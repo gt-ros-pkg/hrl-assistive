@@ -129,11 +129,17 @@ def lstm_ae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=50
                     
                     shift_offset = 0
                     if i+batch_size > len(x_train):
-                        r = i+batch_size-len(x_train)
+                        r = (i+batch_size-len(x_train))%len(x_train)
                         idx_list = range(len(x_train))
                         random.shuffle(idx_list)
                         x = np.vstack([x_train[i:],
                                        x_train[idx_list[:r]]])
+                        while True:
+                            if len(x)<batch_size:
+                                x = np.vstack([x, x_train])
+                            else:
+                                break
+                        
                     else:
                         x = x_train[i:i+batch_size]
                     
@@ -234,12 +240,12 @@ def lstm_ae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=50
             x_pred_mean = []
             x_pred_std  = []
             for j in xrange(len(x[0])-timesteps+1):
-                x_pred = ae.predict(x[:,j:j+timesteps])
+                x_pred = ae.predict(x[:,j:j+timesteps], batch_size=batch_size)
                 x_pred_mean.append(x_pred[0,-1,:])
 
             vutil.graph_variations(x_test[i], x_pred_mean)
 
-    return ae, None, None, ae_encoder
+    return ae, ae, None, ae_encoder
 
 
 if __name__ == '__main__':
