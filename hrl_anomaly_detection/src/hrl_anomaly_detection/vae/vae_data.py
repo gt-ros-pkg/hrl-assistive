@@ -758,7 +758,7 @@ if __name__ == '__main__':
     else:
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
-
+          
     ## param_dict['data_param']['handFeatures'] = ['unimodal_kinVel',\
     ##                                             'unimodal_kinJntEff_1',\
     ##                                             'unimodal_ftForce_zero',\
@@ -771,6 +771,7 @@ if __name__ == '__main__':
     ##                                             'unimodal_landmarkDist',\
     ##                                             'crossmodal_landmarkEEAng']
 
+    '''
     param_dict['data_param']['handFeatures'] = ['unimodal_kinVel',\
                                                 'unimodal_kinJntEff_1',\
                                                 'unimodal_ftForce_zero',\
@@ -779,12 +780,13 @@ if __name__ == '__main__':
                                                 'unimodal_kinDesEEChange',\
                                                 'crossmodal_landmarkEEDist', \
                                                 'unimodal_audioWristRMS']
-
+    '''
+    
     param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
                                                'unimodal_kinJntEff_1',\
                                                'unimodal_ftForce_integ',\
                                                'crossmodal_landmarkEEDist']
-
+    
 
     if opt.gen_data:
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
