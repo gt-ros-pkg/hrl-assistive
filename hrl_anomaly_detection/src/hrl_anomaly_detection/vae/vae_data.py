@@ -135,7 +135,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     # HMM-induced vector with LOPO
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(d['kFoldList']):
-        #if idx != 5 : continue
+        #if idx != 7 : continue
 
 
         # dim x sample x length
@@ -216,11 +216,16 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 ths_l = np.logspace(-1.0,2.4,40) #-0.1
             elif method == 'lstm_vae_custom':
                 from hrl_anomaly_detection.vae import lstm_vae_custom as km
-                ths_l = np.logspace(-1.0,2.,40) -0.2
-                x_std_div   = 2 #4.
-                x_std_offset= 0.1 #0.05
-                z_std       = 0.3 #0.2
-
+                if nDim == 4:
+                    ths_l = np.logspace(-1.0,2.,40) -0.2
+                    x_std_div   = 4.
+                    x_std_offset= 0.05
+                    z_std       = 0.3 #0.2
+                else:
+                   ths_l = np.logspace(-1.0,2.,40) -0.2
+                   x_std_div   = 2.
+                   x_std_offset= 0.05
+                   z_std       = 0.3
             elif method == 'lstm_vae2':
                 from hrl_anomaly_detection.vae import lstm_vae_state_batch2 as km
                 ths_l = np.logspace(-1.0,2.2,40) -0.5  
@@ -317,7 +322,10 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                                       save_pkl=save_pkl)
         else:
             alpha = np.array([1.0]*nDim) #/float(nDim)
-            #alpha[0] = 0.6
+            if nDim ==8:
+                alpha[-1] = 0.4
+            elif nDim == 4:
+                alpha[0] = 0.4
             ## alpha = np.array([0.0]*nDim)/float(nDim)
             ## alpha[0] = 1.0
 
@@ -792,7 +800,6 @@ if __name__ == '__main__':
     ##                                             'unimodal_landmarkDist',\
     ##                                             'crossmodal_landmarkEEAng']
 
-    '''
     param_dict['data_param']['handFeatures'] = ['unimodal_kinVel',\
                                                 'unimodal_kinJntEff_1',\
                                                 'unimodal_ftForce_zero',\
@@ -802,12 +809,12 @@ if __name__ == '__main__':
                                                 'crossmodal_landmarkEEDist', \
                                                 'unimodal_audioWristRMS']
     '''
-    
     param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
                                                'unimodal_kinJntEff_1',\
                                                'unimodal_ftForce_integ',\
                                                'crossmodal_landmarkEEDist']
-    
+    '''
+
 
     if opt.gen_data:
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        
