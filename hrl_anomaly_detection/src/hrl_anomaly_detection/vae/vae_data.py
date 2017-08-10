@@ -783,11 +783,23 @@ if __name__ == '__main__':
                                                 'crossmodal_landmarkEEDist', \
                                                 'unimodal_audioWristRMS']
     '''
-    
+
+
+    param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',\
+                                                'unimodal_kinJntEff_1',\
+                                                'unimodal_ftForce_zero',\
+                                                'unimodal_ftForce_integ',\
+                                                'unimodal_kinDesEEChange',\
+                                                'crossmodal_landmarkEEDist', \
+                                                ]
+
+
+    '''
     param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
                                                'unimodal_kinJntEff_1',\
                                                'unimodal_ftForce_integ',\
                                                'crossmodal_landmarkEEDist']
+    '''
     
 
     if opt.gen_data:
