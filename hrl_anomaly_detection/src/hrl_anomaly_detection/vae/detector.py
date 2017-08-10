@@ -101,11 +101,11 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         x = np.array(zs_tr_n).reshape(-1,np.shape(zs_tr_n)[-1])
         y = np.array(scores_tr_n).reshape(-1,np.shape(scores_tr_n)[-1])
 
-        method = 'SVR'
+        method = 'KNN'
         if method=='SVR':
             print "Start to fit SVR with gamma="
             from sklearn.svm import SVR
-            clf = SVR(C=1.0, epsilon=0.2, kernel='rbf', degree=3, gamma=.5)
+            clf = SVR(C=1.0, epsilon=0.2, kernel='poly', degree=3, gamma=.5)
         elif method=='RF':
             print "Start to fit RF : ", np.shape(x), np.shape(y)
             from sklearn.ensemble import RandomForestRegressor
@@ -163,7 +163,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         plt.show()
         '''
 
-        for i, s in enumerate(scores_te_n):
+        for i, s in enumerate(scores_te_a):
             fig = plt.figure()
             plt.plot(s, '-b')
             ths = 1
@@ -172,8 +172,8 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
             s_pred_bnd = []
             for j in xrange(len(s)):
                 if dyn_ths:
-                    #x = scaler.transform(zs_te_n[i][j])
-                    x = zs_te_n[i][j]
+                    #x = scaler.transform(zs_te_a[i][j])
+                    x = zs_te_a[i][j]
                     if method == 'SVR' or method == 'KNN':
                         s_pred = np.squeeze( clf.predict( x ) )
                         s_pred_mu.append(s_pred)
@@ -307,6 +307,7 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
     x_dim = len(X[0][0])
     length = len(X[0])
     train_flag = kwargs.get('train', False)
+
 
     scores = []
     zs = []
