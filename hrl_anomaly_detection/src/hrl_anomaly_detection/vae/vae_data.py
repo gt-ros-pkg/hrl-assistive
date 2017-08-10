@@ -221,8 +221,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                     z_std       = 0.3 #0.2
                 else:
                    ths_l = np.logspace(-1.0,2.,40) -0.2
-                   x_std_div   = 2.
-                   x_std_offset= 0.1
+                   x_std_div   = 3.
+                   x_std_offset= 0.05
                    z_std       = 0.3
                                                                                
 

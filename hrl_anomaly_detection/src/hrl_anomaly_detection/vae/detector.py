@@ -101,7 +101,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         x = np.array(zs_tr_n).reshape(-1,np.shape(zs_tr_n)[-1])
         y = np.array(scores_tr_n).reshape(-1,np.shape(scores_tr_n)[-1])
 
-        method = 'KNN'
+        method = 'SVR'
         if method=='SVR':
             print "Start to fit SVR with gamma="
             from sklearn.svm import SVR
