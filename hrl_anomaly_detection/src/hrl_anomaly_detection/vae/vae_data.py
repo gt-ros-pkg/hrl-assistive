@@ -247,7 +247,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             from hrl_anomaly_detection.vae import lstm_pred_var as km
             stateful = True
             ths_l = np.logspace(-3.0,2.1,40) #-0.1
-            ad_method   = 'recon_err_vec'
+            ad_method   = 'recon_err'
             window_size = 5
             x_std_div   = 2.
             x_std_offset= 0.1

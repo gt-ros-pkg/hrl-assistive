@@ -199,14 +199,6 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                 for i in xrange(0,len(x_train),batch_size):
                     seq_tr_loss = []
 
-                    #shift_offset = int(np.random.normal(0,2,size=batch_size))
-                    ## if shift_offset>0:
-                    ##     x = np.pad(x_train[i],((0,shift_offset),(0,0)), 'edge')
-                    ## else:
-                    ##     x = np.pad(x_train[i],((abs(shift_offset),0),(0,0)), 'edge')
-                    ##     shift_offset = 0
-                    
-                    shift_offset = 0
                     if i+batch_size > len(x_train):
                         r = (i+batch_size-len(x_train))%len(x_train)
                         idx_list = range(len(x_train))
@@ -214,23 +206,38 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                         x = np.vstack([x_train[i:],
                                        x_train[idx_list[:r]]])
                         while True:
-                            if len(x)<batch_size:
-                                x = np.vstack([x, x_train])
-                            else:
-                                break
+                            if len(x)<batch_size: x = np.vstack([x, x_train])
+                            else:                 break
                     else:
                         x = x_train[i:i+batch_size]
+
+                    ## x = x.tolist()
+                    ## shift_offset = np.random.normal(0,2,size=batch_size).astype(int)
+                    ## max_offset = max(shift_offset)
+                    ## ## shift_offset = 0
+                    ## for j in xrange(len(x)):                        
+                    ##     x[j] = x[j][0:1]*max_offset + x[j]
+                    ##     #np.pad(x_train[i],((0,shift_offset),(0,0)), 'edge')
+                    ##     x[j] = x[j] + x[j][-2:-1]*max_offset
+                    ##     ## x = np.pad(x_train[i],((abs(shift_offset),0),(0,0)), 'edge')
+                    ##     if shift_offset[j]>0:
+                    ##         x[j] = x[j][max_offset+shift_offset[j]:  ???]
+                    ##     else:
+                    ##         x[j] = x[j][max_offset+shift_offset[j]: ???]
+                            
+                    ## x = np.array(x)
+                    
+                        
                     
                     for j in xrange(len(x[0])-timesteps+1): # per window
                         np.random.seed(3334 + i*len(x[0]) + j)                        
                         noise = np.random.normal(0, noise_mag, (batch_size, timesteps, nDim))
 
                         p = float(j)/float(length-timesteps+1) *2.0-1.0
-
                         tr_loss = vae_autoencoder.train_on_batch(
-                            np.concatenate((x[:,j+shift_offset:j+shift_offset+timesteps]+noise,
-                                       p*np.ones((len(x), timesteps, 1))), axis=-1),
-                            x[:,j+shift_offset:j+shift_offset+timesteps]+noise )
+                            np.concatenate((x[:,j:j+timesteps]+noise,
+                                            p*np.ones((len(x), timesteps, 1))), axis=-1),
+                            x[:,j:j+timesteps]+noise )
 
                         ## tr_loss = vae_autoencoder.train_on_batch(
                         ##     np.expand_dims(x_train[i,j:j+timesteps]+noise, axis=0),
