@@ -62,7 +62,7 @@ def create_dataset(X, window_size=5, step=5):
 
 
 
-def graph_variations(x_true, x_pred_mean, x_pred_std=None):
+def graph_variations(x_true, x_pred_mean, x_pred_std=None, scaler_dict=None, save_pdf=False):
     '''
     x_true: timesteps x dim
     '''
@@ -82,24 +82,98 @@ def graph_variations(x_true, x_pred_mean, x_pred_std=None):
     #rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
     #rc('text', usetex=True)
     ## matplotlib.rcParams['text.usetex'] = True
+
+    # unscale
+    param_dict = scaler_dict['param_dict']
+
+    def unscale(x, std=False):
+        if type(x) is list: x = np.array(x)
+        x = x*2.*scaler_dict['scale'] - scaler_dict['scale']
+        x = scaler_dict['scaler'].inverse_transform(x)
+        if std is False:
+            x = x*(param_dict['feature_max']-param_dict['feature_min'])+\
+              param_dict['feature_min']
+        else:
+            x = x*(param_dict['feature_max']-param_dict['feature_min'])
+        return x
+
+    print np.shape(x_true), np.shape(x_pred_mean)
+
+    
+
+    ## x_true      = unscale(x_true)
+    ## x_pred_mean = unscale(x_pred_mean)
+    ## x_pred_std  = unscale(x_pred_std, std=True)
+    #--------------------------------------------------------------------
+
     
     nDim = len(x_true[0])
     if nDim > 6: nDim = 6
     
     fig = plt.figure(figsize=(6, 6))
     for k in xrange(nDim):
-        fig.add_subplot(nDim,1,k+1)
+        ax = fig.add_subplot(nDim,1,k+1)
         #plt.rc('text', usetex=True) 
-        plt.plot(np.array(x_true)[:,k], '-b', label='Inputs')
-        plt.plot(np.array(x_pred_mean)[:,k], '-r', )#label=r'$\mu$')
+        ax.plot(np.array(x_true)[:,k], '-b', label='Inputs')
+        ax.plot(np.array(x_pred_mean)[:,k], '-r', )#label=r'$\mu$')
         if x_pred_std is not None and len(x_pred_std)>0:
-            plt.plot(np.array(x_pred_mean)[:,k]+np.array(x_pred_std)[:,k], '--r', )#label=r'$\mu\pm\sigma$')
-            plt.plot(np.array(x_pred_mean)[:,k]-np.array(x_pred_std)[:,k], '--r')
+            ax.fill_between(range(len(x_pred_mean)),
+                            np.array(x_pred_mean)[:,k]+np.array(x_pred_std)[:,k],
+                            np.array(x_pred_mean)[:,k]-np.array(x_pred_std)[:,k],
+                            facecolor='red', alpha=0.5, linewidth=0)
+            ## plt.plot(np.array(x_pred_mean)[:,k]+np.array(x_pred_std)[:,k], '--r', )#label=r'$\mu\pm\sigma$')
+            ## plt.plot(np.array(x_pred_mean)[:,k]-np.array(x_pred_std)[:,k], '--r')
         #plt.ylim([-0.1,1.1])
-    plt.show()
+
+        if k==0:
+            ax.set_ylabel('Sound'+'\n'+'Energy', rotation='horizontal',
+                          verticalalignment='center',
+                          horizontalalignment='center')
+            ## ax.set_ylabel('Audio [RMS]')
+        elif k==1: 
+            ax.set_ylabel('1st Joint'+'\n'+'Torque(Nm)', rotation='horizontal',
+                          verticalalignment='center',
+                          horizontalalignment='center')
+            ## ax.set_ylabel('1st Joint \n effort')            
+        elif k==2: 
+            ax.set_ylabel('Accumulated'+'\n'+'Force'+'\n'+'on Spoon(N)',
+                          rotation='horizontal', verticalalignment='center',
+                          horizontalalignment='center')
+            ## ax.set_ylabel('Accumulated \n force [N]')
+        elif k==3: 
+            ax.set_ylabel('Spoon-Mouth'+'\n'+'Distance(m)', rotation='horizontal',
+                          verticalalignment='center',
+                          horizontalalignment='center')
+            ## ax.set_ylabel('Distance [m]')
+            
+        ax.yaxis.set_label_coords(-0.2,0.5)            
+        #ax.set_ylabel(param_dict['feature_names'][k])
+
+        ax.locator_params(axis='y', nbins=3)
+        if k < nDim-1: ax.tick_params(axis='x', bottom='off', labelbottom='off')
+
+    x_tick = [param_dict['timeList'][0],
+              (param_dict['timeList'][-1]-param_dict['timeList'][0])/2.0,
+              param_dict['timeList'][-1]]
+    ax.set_xticks(np.linspace(0, len(x_pred_mean), len(x_tick)))        
+    ax.set_xticklabels(x_tick)
+    ax.set_xlabel('Time [s]', fontsize=18)
+    fig.subplots_adjust(left=0.25) 
+
+    if save_pdf or True:
+        fig.savefig('test.pdf')
+        fig.savefig('test.png')
+        fig.savefig('test.eps')
+        os.system('cp test.p* ~/Dropbox/HRL/')        
+        os.system('cp test.e* ~/Dropbox/HRL/')        
+    else:
+        plt.show()
+
+    ut.get_keystroke('Hit a key to proceed next')  
+
 
 def graph_latent_space(normalTestData, abnormalTestData, enc_z, timesteps=1, batch_size=None,
-                       method='lstm_vae'):
+                       method='lstm_vae', save_pdf=False):
 
     print "latent variable visualization"
     if method == 'lstm_vae_offline':
@@ -144,11 +218,11 @@ def graph_latent_space(normalTestData, abnormalTestData, enc_z, timesteps=1, bat
                 z_mean.append( z[0] )
             z_mean_a.append(z_mean)
 
-        viz_latent_space(z_mean_n, z_mean_a)
+        viz_latent_space(z_mean_n, z_mean_a, save_pdf=save_pdf)
     
 
 
-def viz_latent_space(z_n, z_a=None):
+def viz_latent_space(z_n, z_a=None, save_pdf=False):
     '''
     z_n: latent variable from normal data
     z_n: latent variable from abnormal data
@@ -164,17 +238,30 @@ def viz_latent_space(z_n, z_a=None):
 
     s = 121
     
-    #plt.scatter(z_n[:,0], z_n[:,1], color='b', s=0.5*s, alpha=.4, label='Non-anomalous')
-    for z in z_n:
-        plt.plot(z[:,0], z[:,1], '-b', marker='o', ms=5, alpha=.4, label='Non-anomalous')
-    
-    if z_a is not None and False:
-        ## plt.scatter(z_a[:,0], z_a[:,1], color='r', s=0.5*s, marker='^', alpha=.4, label='Anomalous')
+    if z_a is not None :
         for z in z_a:
-            plt.plot(z[:,0], z[:,1], '-r', marker='^', ms=5, alpha=.4, label='Anomalous')
+            ax2 = plt.scatter(z[:,0], z[:,1], color='r', s=0.5*s, marker='^', alpha=.4, label='Anomalous')
+        #    plt.plot(z[:,0], z[:,1], 'r', marker='^', ms=5, alpha=.4, label='Anomalous')
 
-    #plt.legend(loc=3, ncol=2)
-    plt.show()
+    for z in z_n:
+        ax1 = plt.scatter(z[:,0], z[:,1], color='b', s=0.5*s, alpha=.4, label='Non-anomalous')
+        #    plt.plot(z[:,0], z[:,1], 'b', marker='o', ms=5, alpha=.4, label='Non-anomalous')
+    
+
+    ax = plt.gca()
+    ax.axes.get_xaxis().set_visible(False)
+    ax.axes.get_yaxis().set_visible(False)
+    
+        
+    plt.legend(handles=[ax1, ax2], loc=3, ncol=2)
+
+    if save_pdf:
+        fig.savefig('test.pdf')
+        fig.savefig('test.png')
+        fig.savefig('test.eps')
+        os.system('cp test.p* ~/Dropbox/HRL/')
+    else:
+        plt.show()
 
 
 def get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
@@ -251,7 +338,8 @@ def get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
     return td
 
 
-def get_scaled_data(normalTrainData, abnormalTrainData, normalTestData, abnormalTestData, aligned=True):
+def get_scaled_data(normalTrainData, abnormalTrainData, normalTestData, abnormalTestData, aligned=True,
+                    scale=1.8):
     '''
     Remove outlier and scale into 0-1 range
     '''
@@ -284,8 +372,8 @@ def get_scaled_data(normalTrainData, abnormalTrainData, normalTestData, abnormal
     # rescale 95%of values into 0-1
     def rescaler(x, mean, var):
         
-        max_val = 1.8 #1.9#mean+3.0*np.sqrt(var)
-        min_val = -1.8 #mean-3.0*np.sqrt(var)
+        max_val = scale #1.9#mean+3.0*np.sqrt(var)
+        min_val = -scale #mean-3.0*np.sqrt(var)
         return (x-min_val)/( max_val-min_val )
     
     normalTrainData_scaled   = rescaler(normalTrainData_scaled, scaler.mean_, scaler.var_)
@@ -302,7 +390,7 @@ def get_scaled_data(normalTrainData, abnormalTrainData, normalTestData, abnormal
     return normalTrainData, abnormalTrainData, normalTestData, abnormalTestData, scaler
 
 
-def get_scaled_data2(x, scaler, aligned=True):
+def get_scaled_data2(x, scaler, aligned=True, scale=1.8):
     if aligned is False:
         # dim x sample x length => sample x length x dim
         x = np.swapaxes(x, 0, 1 )
@@ -313,8 +401,8 @@ def get_scaled_data2(x, scaler, aligned=True):
     # rescale 95%of values into 0-1
     def rescaler(X, mean, var):
         
-        max_val = 1.8 #1.9#mean+3.0*np.sqrt(var)
-        min_val = -1.8 #mean-3.0*np.sqrt(var)
+        max_val = scale #1.9#mean+3.0*np.sqrt(var)
+        min_val = -scale #mean-3.0*np.sqrt(var)
         return (X-min_val)/( max_val-min_val )
 
     x_scaled = rescaler(x_scaled, scaler.mean_, scaler.var_)

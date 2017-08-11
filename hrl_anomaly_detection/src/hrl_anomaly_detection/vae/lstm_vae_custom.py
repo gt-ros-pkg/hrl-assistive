@@ -56,7 +56,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
              patience=20, fine_tuning=False, save_weights_file=None, \
              noise_mag=0.0, timesteps=4, sam_epoch=1, \
              x_std_div=1, x_std_offset=0.001, z_std=0.5,\
-             re_load=False, renew=False, plot=True, trainable=None):
+             re_load=False, renew=False, plot=True, trainable=None, **kwargs):
     """
     Variational Autoencoder with two LSTMs and one fully-connected layer
     x_train is (sample x length x dim)
@@ -320,9 +320,10 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
 
     if plot:
         print "variance visualization"
-        nDim = len(x_test[0,0])
+        nDim = len(x_test[0,0]) 
         
         for i in xrange(len(x_test)):
+            if i!=6: continue #for data viz lstm_vae_custom -4 
 
             x = x_test[i:i+1]
             for j in xrange(batch_size-1):
@@ -341,7 +342,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                 x_pred_mean.append(x_pred[0,-1,:nDim])
                 x_pred_std.append(x_pred[0,-1,nDim:]/x_std_div*1.5+x_std_offset)
 
-            vutil.graph_variations(x_test[i], x_pred_mean, x_pred_std)
+            vutil.graph_variations(x_test[i], x_pred_mean, x_pred_std, scaler_dict=kwargs['scaler_dict'])
         
 
 
