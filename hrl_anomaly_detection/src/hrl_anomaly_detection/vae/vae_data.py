@@ -107,8 +107,11 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     for feature in param_dict['data_param']['handFeatures']:
         idx = [ i for i, x in enumerate(param_dict['data_param']['isolationFeatures']) if feature == x][0]
         feature_list.append(idx)
-    d['successData']    = d['successData'][feature_list]
-    d['failureData']    = d['failureData'][feature_list]
+    d['successData']   = d['successData'][feature_list]
+    d['failureData']   = d['failureData'][feature_list]
+    d['param_dict']['feature_max']   = np.array(d['param_dict']['feature_max'])[feature_list]   
+    d['param_dict']['feature_min']   = np.array(d['param_dict']['feature_min'])[feature_list]
+    #d['param_dict']['feature_names'] = d['param_dict']['feature_names'][feature_list]
     
     if fine_tuning is False :
         td1, td2, td3 = vutil.get_ext_feeding_data(task_name, save_data_path, param_dict, d,
@@ -117,6 +120,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     # Parameters
     nDim = len(d['successData'])
     batch_size  = 1 #64
+    scale = 1.8
 
     #ths_l = -np.logspace(-1,0.8,40)+2.0
     ths_l = -np.logspace(-1,0.5,40)+1.5
@@ -135,7 +139,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     # HMM-induced vector with LOPO
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(d['kFoldList']):
-        #if idx != 7 : continue
+        if idx != 6 : continue
 
 
         # dim x sample x length
@@ -161,7 +165,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
 
         normalTrainData, _, normalTestData, abnormalTestData, scaler =\
           vutil.get_scaled_data(normalTrainData, abnormalTrainData,
-                                normalTestData, abnormalTestData, aligned=False)
+                                normalTestData, abnormalTestData, aligned=False, scale=scale)
 
         trainData = [normalTrainData[:int(len(normalTrainData)*0.7)],
                      [0]*len(normalTrainData[:int(len(normalTrainData)*0.7)])]
@@ -170,6 +174,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         testData  = [normalTestData, [0]*len(normalTestData)]
         del abnormalTrainData
 
+        # scaling info to reconstruct the original scale of data
+        scaler_dict = {'scaler': scaler, 'scale': scale, 'param_dict': d['param_dict']}
 
         # ------------------------------------------------------------------------------------------
         # TEST Code
@@ -186,7 +192,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         ## (normalTrainData, abnormalTrainData, normalTestData, abnormalTestData) = raw_data
         ## (normalTrainData_ft, abnormalTrainData_ft, normalTestData_ft, abnormalTestData_ft) = raw_data_ft
         # ------------------------------------------------------------------------------------------        
-        method      = 'lstm_pred'
+        method      = 'lstm_vae_custom'
          
         weights_path = os.path.join(save_data_path,'model_weights_'+method+'_'+str(idx)+'.h5')
         ## weights_path = os.path.join(save_data_path,'tmp_fine_weights_'+str(idx)+'.h5')
@@ -240,7 +246,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
               km.lstm_vae(trainData, valData, weights_path, patience=4, batch_size=batch_size,
                           noise_mag=noise_mag, timesteps=window_size, sam_epoch=sam_epoch,
                           x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,                          
-                          re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot)
+                          re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot,
+                          scaler_dict=scaler_dict)
             
         elif method == 'lstm_pred':
             from hrl_anomaly_detection.vae import lstm_pred as km
@@ -311,7 +318,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
 
         if  True and False: 
             vutil.graph_latent_space(normalTestData, abnormalTestData, enc_z_mean, batch_size=batch_size,
-                                     method=method)
+                                     method=method, save_pdf=True)
             
         # -----------------------------------------------------------------------------------
         if True and False:
@@ -787,6 +794,11 @@ if __name__ == '__main__':
     else:
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
+
+
+    save_data_path = os.path.expanduser('~')+\
+      '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_4'
+
           
     ## param_dict['data_param']['handFeatures'] = ['unimodal_kinVel',\
     ##                                             'unimodal_kinJntEff_1',\
@@ -808,12 +820,12 @@ if __name__ == '__main__':
                                                 'unimodal_kinDesEEChange',\
                                                 'crossmodal_landmarkEEDist', \
                                                 'unimodal_audioWristRMS']
-    '''
+    
     param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
                                                'unimodal_kinJntEff_1',\
                                                'unimodal_ftForce_integ',\
                                                'crossmodal_landmarkEEDist']
-    '''
+    
 
 
     if opt.gen_data:
