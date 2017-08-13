@@ -78,8 +78,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
     def slicing(x):
         return x[:,:,:input_dim]
            
-    ## inputs = Input(batch_shape=(batch_size, timesteps, input_dim))
-    inputs = Input(batch_shape=(batch_size, timesteps, input_dim+1))
+    inputs = Input(shape=(timesteps, input_dim+1))
     encoded = Lambda(slicing)(inputs)     
     encoded = LSTM(h1_dim, return_sequences=False, activation='tanh', 
                    trainable=True if trainable==0 or trainable is None else False)(encoded)
@@ -148,7 +147,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
     vae_mean_std = Model(inputs, decoded)
 
     if weights_file is not None and os.path.isfile(weights_file) and fine_tuning is False and\
-        and renew is False:
+        renew is False:
         vae_autoencoder.load_weights(weights_file)
     else:
         if fine_tuning:
@@ -177,13 +176,37 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                     ReduceLROnPlateau(monitor='val_loss', factor=0.2,
                                       patience=2, min_lr=0.0)]
 
-        train_datagen = ku.sigGenerator(augmentation=True, noise_mag=noise_mag)
-        train_generator = train_datagen.flow(x_train, x_train, batch_size=batch_size, seed=3334,
-                                             shuffle=True)
+
+        # add phase
+        p = np.arange(0.,float(length),1.)*2.0 - 1.0
+        p = [p.reshape((-1,1)).tolist() for k in range(len(x_train))]
+        x_tr = np.concatenate((x_train, p), axis=-1)
+        
+        p = np.arange(0.,float(length),1.)*2.0 - 1.0
+        p = [p.reshape((-1,1)).tolist() for k in range(len(x_test))] 
+        x_te = np.concatenate((x_test, p), axis=-1)
+        
+        # data conversion
+        # => sample x length x window x dim
+        x_tr, _ = create_dataset(x_tr, timesteps)
+        x_te, _ = create_dataset(x_te, timesteps)
+        ## sys.exit()
+        x_tr = x_tr.reshape((-1,timesteps,nDim+1))
+        x_te = x_te.reshape((-1,timesteps,nDim+1))
+
+        train_datagen = sigGenerator(augmentation=True, noise_mag=noise_mag, with_phase=True)
+        train_generator = train_datagen.flow(x_tr, x_tr, batch_size=batch_size, seed=3334,
+                                             shuffle=False)
+
+        test_datagen = sigGenerator(augmentation=False, with_phase=True)
+        test_generator = train_datagen.flow(x_te, x_te, batch_size=batch_size, seed=3334,
+                                             shuffle=False)
+                        
         hist = vae_autoencoder.fit_generator(train_generator,
-                                             steps_per_epoch=steps_per_epoch,
+                                             steps_per_epoch=sam_epoch,
                                              epochs=nb_epoch,
-                                             validation_data=(x_test, x_test),
+                                             validation_data=test_generator,
+                                             validation_steps=1,
                                              callbacks=callbacks)
 
         gc.collect()
@@ -202,8 +225,8 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
             if i!=6: continue #for data viz lstm_vae_custom -4 
 
             x = x_test[i:i+1]
-            for j in xrange(batch_size-1):
-                x = np.vstack([x,x_test[i:i+1]])
+            #for j in xrange(batch_size-1):
+            #    x = np.vstack([x,x_test[i:i+1]])
 
             vae_autoencoder.reset_states()
             vae_mean_std.reset_states()
@@ -213,8 +236,8 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
             for j in xrange(len(x[0])-timesteps+1):
                 x_pred = vae_mean_std.predict(np.concatenate((x[:,j:j+timesteps],
                                                               np.zeros((len(x), timesteps,1))
-                                                              ), axis=-1),
-                                              batch_size=batch_size)
+                                                              ), axis=-1))
+                                   
                 x_pred_mean.append(x_pred[0,-1,:nDim])
                 x_pred_std.append(x_pred[0,-1,nDim:]/x_std_div*1.5+x_std_offset)
 
@@ -225,13 +248,100 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
     return vae_autoencoder, vae_mean_std, vae_mean_std, vae_encoder_mean, vae_encoder_var, generator
 
 
-## class ResetStatesCallback(Callback):
-##     def __init__(self, max_len):
-##         self.counter = 0
-##         self.max_len = max_len
-        
-##     def on_batch_begin(self, batch, logs={}):
-##         if self.counter % self.max_len == 0:
-##             self.model.reset_states()
-##         self.counter += 1
+def create_dataset(dataset, window_size=1, step=0):
+    '''
+    dataset: sample x timesteps x dim
+    '''
+    
+    dataX, dataY = [], []
+    for i in xrange(len(dataset)):
+        x = []
+        y = []
+        for j in range(len(dataset[i])-step-window_size):
+            x.append(dataset[i,j:(j+window_size), :].tolist())
+            y.append(dataset[i,j+step:(j+step+window_size), :].tolist())
+        dataX.append(x)
+        dataY.append(y)
+    return numpy.array(dataX), numpy.array(dataY)
 
+
+
+class sigGenerator():
+    ''' signal data augmentation
+    Signals should be normalized before.
+    '''
+    
+    def __init__(self, augmentation=False, noise_mag=0.03, with_phase=True):
+
+        self.augmentation  = augmentation
+        self.noise_mag     = noise_mag
+        self.with_phase     = with_phase
+        self.total_batches_seen = 0
+        self.batch_index = 0
+
+    def reset(self):
+        self.batch_index = 0
+
+    def flow(self, x, y, batch_size=32, shuffle=True, seed=None):
+
+        assert len(x) == len(y), "data should have the same length"
+        
+        if type(x) is not np.ndarray: x = np.array(x)
+        if type(y) is not np.ndarray: y = np.array(y)
+
+        # Ensure self.batch_index is 0.
+        self.reset()
+        x_new = x[:]
+
+        # TODO: Need to add random selection
+        if len(x_new) % batch_size > 0:
+            n_add = batch_size - len(x_new) % batch_size
+            x_new = np.vstack([x_new, x_new[:n_add] ])
+
+        n = len(x_new)
+        idx_list = range(n)
+        n_dim  = len(x_new[0,0])
+        timesteps = len(x_new[0])
+
+        while 1:
+
+            if seed is not None:
+                np.random.seed(seed + self.total_batches_seen)
+
+            if self.batch_index == 0:
+                idx_list = range(n)
+                if shuffle:
+                    random.shuffle(idx_list)
+                x_new = x_new[idx_list]
+
+            current_index = (self.batch_index * batch_size) % n
+            if n > current_index + batch_size:
+                current_batch_size = batch_size
+                self.batch_index += 1
+            else:
+                current_batch_size = n - current_index
+                self.batch_index = 0
+
+            ## print " aa ", batch_size, " aa ", self.total_batches_seen, self.batch_index, current_index,"/",n
+            
+            self.total_batches_seen += 1
+            if self.augmentation:
+                # noise
+                if self.with_phase:
+                    noise = np.random.normal(0.0, self.noise_mag, \
+                                             np.shape(x_new[current_index:current_index+current_batch_size,
+                                                            :,:n_dim-1]))
+                    noise = np.concatenate((noise, np.zeros((current_batch_size,timesteps,1))),axis=-1)
+                else:
+                    noise = np.random.normal(0.0, self.noise_mag, \
+                                             np.shape(x_new[current_index:current_index+current_batch_size])) 
+
+                yield x_new[current_index:current_index+current_batch_size]+noise,\
+                  x_new[current_index:current_index+current_batch_size]+noise
+                                          
+            else:
+                yield x_new[current_index:current_index+current_batch_size],\
+                  x_new[current_index:current_index+current_batch_size]
+
+
+                
