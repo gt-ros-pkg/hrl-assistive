@@ -147,10 +147,10 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         clf.fit(x, y)
         print "-----------------------------------------"
 
-    if True and False:
+    if True :
         print np.shape(zs_tr_n), np.shape(scores_tr_n)
 
-        '''
+        
         fig = plt.figure() 
         ## from mpl_toolkits.mplot3d import Axes3D
         ## ax = fig.add_subplot(111, projection='3d')
@@ -160,14 +160,14 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         ##     ax.scatter(zs_te_n[i,:,0], zs_te_n[i,:,1], scores_te_n[i,:,0], c='b', marker='x')
         ## for i, s in enumerate(scores_te_a):
         ##     ax.scatter(zs_te_a[i,:,0], zs_te_a[i,:,1], scores_te_a[i,:,0], c='r', marker='^')
-        for i, s in enumerate(scores_tr_n):
-            plt.plot(s, '-g')
+        #for i, s in enumerate(scores_tr_n):
+        #    plt.plot(s, '-g')
         for i, s in enumerate(scores_te_n):
             plt.plot(s, '-b')
         for i, s in enumerate(scores_te_a):
             plt.plot(s, '-r')
         plt.show()
-        '''
+        
 
         for i, s in enumerate(scores_te_a):
             fig = plt.figure()
@@ -250,9 +250,9 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
                 else: vals = np.array(s_preds[i])+ths
 
                 pos_cnt = 0
-                for j in xrange(4,len(s)):
+                for j in xrange(0,len(s)):
                     if s[j]>vals[j]:
-                        if pos_cnt>1:
+                        if pos_cnt>0:
                             p_l.append(1)
                             break
                         else:
@@ -355,7 +355,7 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
             else:
                 xx = x[j:j+1]
 
-            if method == 'lstm_vae_custom':
+            if method == 'lstm_vae_custom' or method=='lstm_vae_custom2':
                 x_true = np.concatenate((xx, np.zeros((len(xx), len(xx[0]),1))), axis=-1)
             else:
                 x_true = xx
@@ -415,7 +415,7 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
                 #print np.shape(s), np.shape(xx[0]), np.shape(x_mean)
             elif ad_method == 'lower_bound':
 
-                if method == 'lstm_vae_custom':
+                if method == 'lstm_vae_custom' or method == 'lstm_vae_custom2':
                     p = float(j)/float(length-window_size+1) *2.0-1.0
                     if train_flag:
                         p = p*np.ones((batch_info[1], window_size, 1))
@@ -526,10 +526,10 @@ def get_lower_bound(x, x_mean, x_std, z_std, enc_z_mean, enc_z_logvar, nDim, met
     x: length x dim
     '''
     if len(np.shape(x))>2:
-        if method == 'lstm_vae_custom':
+        if method == 'lstm_vae_custom' or method == 'lstm_vae_custom2':
             x_in = np.concatenate((x, p), axis=-1)
         else:
-            x_in = xx
+            x_in = x
         
         batch_size = len(x)
         z_mean    = enc_z_mean.predict(x_in, batch_size=batch_size)[0]
@@ -549,7 +549,7 @@ def get_lower_bound(x, x_mean, x_std, z_std, enc_z_mean, enc_z_logvar, nDim, met
     else:
         xent_loss = -log_p_x_z
 
-    if method == 'lstm_vae_custom':
+    if method == 'lstm_vae_custom' or method == 'lstm_vae_custom2':
         p=0
         if len(np.shape(z_log_var))>1:            
             kl_loss = - 0.5 * np.sum(1 + z_log_var -np.log(z_std*z_std) - (z_mean-p)**2

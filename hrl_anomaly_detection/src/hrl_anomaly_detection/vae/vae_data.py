@@ -139,7 +139,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     # HMM-induced vector with LOPO
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(d['kFoldList']):
-        if idx != 6 : continue
+        if idx != 7 : continue
 
 
         # dim x sample x length
@@ -192,7 +192,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         ## (normalTrainData, abnormalTrainData, normalTestData, abnormalTestData) = raw_data
         ## (normalTrainData_ft, abnormalTrainData_ft, normalTestData_ft, abnormalTestData_ft) = raw_data_ft
         # ------------------------------------------------------------------------------------------        
-        method      = 'lstm_vae_custom'
+        method      = 'lstm_vae_custom3'
          
         weights_path = os.path.join(save_data_path,'model_weights_'+method+'_'+str(idx)+'.h5')
         ## weights_path = os.path.join(save_data_path,'tmp_fine_weights_'+str(idx)+'.h5')
@@ -212,7 +212,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         sam_epoch   = 10
 
         if method == 'lstm_vae' or method == 'lstm_vae2' or method == 'lstm_dvae' or\
-            method == 'lstm_vae_custom':
+            method == 'lstm_vae_custom' or method == 'lstm_vae_custom3':
             x_std_div   = 4.0 #4
             x_std_offset= 0.05
             z_std       = 0.5
@@ -232,6 +232,13 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                    x_std_div   = 2.
                    x_std_offset= 0.05
                    z_std       = 0.3
+            elif method == 'lstm_vae_custom3':
+                from hrl_anomaly_detection.vae import lstm_vae_custom3 as km
+                ths_l = np.logspace(-1.0,2.,40) -0.2
+                x_std_div   = 4.
+                x_std_offset= 0.05
+                z_std       = 0.3 #0.2
+                sam_epoch   = 1
             elif method == 'lstm_vae2':
                 from hrl_anomaly_detection.vae import lstm_vae_state_batch2 as km
                 ths_l = np.logspace(-1.0,2.2,40) -0.5  
@@ -796,8 +803,8 @@ if __name__ == '__main__':
           '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
 
 
-    save_data_path = os.path.expanduser('~')+\
-      '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_4'
+    #save_data_path = os.path.expanduser('~')+\
+    #  '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_4'
 
           
     ## param_dict['data_param']['handFeatures'] = ['unimodal_kinVel',\

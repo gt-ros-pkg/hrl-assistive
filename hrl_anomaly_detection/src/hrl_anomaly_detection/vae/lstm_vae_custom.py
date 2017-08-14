@@ -270,9 +270,12 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                     x = x_test[i:i+batch_size]
                 
                 for j in xrange(len(x[0])-timesteps+1):
+
+                    p = float(j)/float(length-timesteps+1) *2.0-1.0
+                    
                     te_loss = vae_autoencoder.test_on_batch(
                         np.concatenate((x[:,j:j+timesteps],
-                                        np.zeros((len(x), timesteps,1))), axis=-1),
+                                        p*np.ones((len(x), timesteps,1))), axis=-1),
                         x[:,j:j+timesteps] )
                     seq_te_loss.append(te_loss)
                 mean_te_loss.append( np.mean(seq_te_loss) )
