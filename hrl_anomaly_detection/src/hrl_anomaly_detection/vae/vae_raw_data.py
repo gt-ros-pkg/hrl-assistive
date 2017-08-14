@@ -172,7 +172,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
 
 
         # ------------------------------------------------------------------------------------------        
-        method      = 'lstm_vae_custom'
+        method      = 'lstm_vae_custom2'
          
         weights_path = os.path.join(save_data_path,'model_weights_'+method+'_'+str(idx)+'.h5')
         ## weights_path = os.path.join(save_data_path,'tmp_fine_weights_'+str(idx)+'.h5')
@@ -190,16 +190,17 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         fixed_batch_size = True
         noise_mag   = 0.05
         sam_epoch   = 40
+        patience    = 4
 
         if method == 'lstm_vae' or method == 'lstm_vae2' or method == 'lstm_dvae' or\
-            method == 'lstm_vae_custom':
+            method == 'lstm_vae_custom' or method == 'lstm_vae_custom2':
             x_std_div   = 2
             x_std_offset= 0.01
             z_std       = 0.4
             dyn_ths  = True
             stateful = True
             ad_method   = 'lower_bound'
-            
+
             if method == 'lstm_vae':
                 from hrl_anomaly_detection.vae import lstm_vae_state_batch as km
                 ths_l = np.logspace(-1.0,2.2,40) -0.1
@@ -212,8 +213,16 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 x_std_div   = 4.
                 x_std_offset= 0.1
                 z_std       = 0.3 #0.2
-                ad_method   = 'lower_bound'
-                #ad_method   = 'recon_err_likelihood'
+            elif method == 'lstm_vae_custom2':
+                from hrl_anomaly_detection.vae import lstm_vae_custom2 as km
+                ths_l = np.logspace(-1.0,2.,40) -0.2
+                window_size = 1
+                x_std_div   = 4.
+                x_std_offset= 0.2
+                z_std       = 0.3 #0.2
+                batch_size  = 4048
+                patience    = 10
+                stateful    = False
             elif method == 'lstm_vae2':
                 from hrl_anomaly_detection.vae import lstm_vae_state_batch2 as km
                 ths_l = np.logspace(-1.0,2.2,40) -0.5  
@@ -222,10 +231,10 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 ths_l = np.logspace(-1.0,2.2,40) -0.1
                 
             autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
-              km.lstm_vae(trainData, valData, weights_path, patience=4, batch_size=batch_size,
+              km.lstm_vae(trainData, valData, weights_path, patience=patience, batch_size=batch_size,
                           noise_mag=noise_mag, timesteps=window_size, sam_epoch=sam_epoch,
                           x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,                          
-                          re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot) 
+                          renew=ae_renew, fine_tuning=fine_tuning, plot=plot) 
         elif method == 'lstm_ae':
             # LSTM-AE (Confirmed) %74.99
             from hrl_anomaly_detection.vae import lstm_ae_state_batch as km

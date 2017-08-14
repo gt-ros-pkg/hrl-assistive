@@ -47,10 +47,11 @@ class sigGenerator():
     Signals should be normalized before.
     '''
     
-    def __init__(self, augmentation=False, noise_mag=0.03):
+    def __init__(self, augmentation=False, noise_mag=0.03, add_phase=False):
 
         self.augmentation  = augmentation
         self.noise_mag     = noise_mag
+        self.add_phase     = add_phase
         self.total_batches_seen = 0
         self.batch_index = 0
 
@@ -75,7 +76,8 @@ class sigGenerator():
 
         n = len(x_new)
         idx_list = range(n)
-        n_dim = len(x_new[0,0])
+        n_dim  = len(x_new[0,0])
+        length = len(x_new[0])
 
         while 1:
 
@@ -130,13 +132,29 @@ class sigGenerator():
                 ##     ud_offset = np.random.normal(0.0, 0.01, size=(n_dim)) 
                 ##     for j in range(n_dim):
                 ##         x_new[current_index+i,:,j] += ud_offset[j]
-                     
-                yield x_new[current_index:current_index+current_batch_size]+noise,\
-                  x_new[current_index:current_index+current_batch_size]+noise
+
+                if self.add_phase:
+                    p = np.arange(0.,float(length),1.)*2.0 - 1.0
+                    p = [p.reshape((-1,1)).tolist() for k in range(current_batch_size)]
+                    #float(j)/float(length-timesteps+1) *2.0-1.0
+                    outputs = np.concatenate((x_new[current_index:current_index+current_batch_size]+noise,
+                                              p), axis=-1)
+                    yield outputs, outputs
+                    
+                else:
+                    yield x_new[current_index:current_index+current_batch_size]+noise,\
+                      x_new[current_index:current_index+current_batch_size]+noise
                                           
             else:
-                yield x_new[current_index:current_index+current_batch_size],\
-                  x_new[current_index:current_index+current_batch_size]
+                if self.add_phase:
+                    p = np.arange(0.,float(length),1.)*2.0 - 1.0
+                    p = [p.reshape((-1,1)).tolist() for k in range(current_batch_size)]
+                    outputs = np.concatenate((x_new[current_index:current_index+current_batch_size]+noise,
+                                              p), axis=-1)
+                    yield outputs, outputs
+                else:
+                    yield x_new[current_index:current_index+current_batch_size],\
+                      x_new[current_index:current_index+current_batch_size]
 
 
                 
