@@ -54,7 +54,6 @@ def variational_autoencoder(x_train, x_test, weights_file=None, batch_size=140):
     # train the VAE on MNIST digits
     ## (x_train, y_train), (x_test, y_test) = mnist.load_data()
 
-    batch_size = batch_size
     original_dim = len(x_train[0])
     latent_dim = 2
     intermediate_dim = len(x_train[0])/2

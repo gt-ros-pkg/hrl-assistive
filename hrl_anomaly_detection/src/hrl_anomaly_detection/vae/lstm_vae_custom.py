@@ -167,7 +167,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
         if fine_tuning:
             vae_autoencoder.load_weights(weights_file)
             lr = 0.001
-            optimizer = Adam(lr=lr, clipvalue=1.) #4.)# 5)                
+            optimizer = Adam(lr=lr, clipvalue=5.) #4.)# 5)
             vae_autoencoder.compile(optimizer=optimizer, loss=None)
             vae_autoencoder.compile(optimizer='adam', loss=None)
         else:

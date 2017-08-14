@@ -48,6 +48,7 @@ from hrl_anomaly_detection.vae import util as vutil
 # Private learners
 import hrl_anomaly_detection.data_viz as dv
 from hrl_anomaly_detection.vae import keras_models as km
+from hrl_anomaly_detection.vae import detector as dt
 
 # visualization
 import matplotlib
@@ -171,7 +172,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
 
 
         # ------------------------------------------------------------------------------------------        
-        method      = 'lstm_vae_custom'
+        method      = 'lstm_vae_custom2'
          
         weights_path = os.path.join(save_data_path,'model_weights_'+method+'_'+str(idx)+'.h5')
         ## weights_path = os.path.join(save_data_path,'tmp_fine_weights_'+str(idx)+'.h5')
@@ -189,12 +190,17 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         fixed_batch_size = True
         noise_mag   = 0.05
         sam_epoch   = 40
+        patience    = 4
 
         if method == 'lstm_vae' or method == 'lstm_vae2' or method == 'lstm_dvae' or\
-            method == 'lstm_vae_custom':
+            method == 'lstm_vae_custom' or method == 'lstm_vae_custom2':
             x_std_div   = 2
             x_std_offset= 0.01
             z_std       = 0.4
+            dyn_ths  = True
+            stateful = True
+            ad_method   = 'lower_bound'
+
             if method == 'lstm_vae':
                 from hrl_anomaly_detection.vae import lstm_vae_state_batch as km
                 ths_l = np.logspace(-1.0,2.2,40) -0.1
@@ -203,9 +209,20 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             elif method == 'lstm_vae_custom':
                 from hrl_anomaly_detection.vae import lstm_vae_custom as km
                 ths_l = np.logspace(-1.0,2.,40) -0.2
+                #window_size = 10
+                x_std_div   = 4.
+                x_std_offset= 0.1
+                z_std       = 0.3 #0.2
+            elif method == 'lstm_vae_custom2':
+                from hrl_anomaly_detection.vae import lstm_vae_custom2 as km
+                ths_l = np.logspace(-1.0,2.,40) -0.2
+                window_size = 1
                 x_std_div   = 4.
                 x_std_offset= 0.2
                 z_std       = 0.3 #0.2
+                batch_size  = 4048
+                patience    = 10
+                stateful    = False
             elif method == 'lstm_vae2':
                 from hrl_anomaly_detection.vae import lstm_vae_state_batch2 as km
                 ths_l = np.logspace(-1.0,2.2,40) -0.5  
@@ -213,14 +230,11 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 from hrl_anomaly_detection.vae import lstm_dvae_state_batch as km
                 ths_l = np.logspace(-1.0,2.2,40) -0.1
                 
-            dyn_ths  = True
-            stateful = True
-            ad_method   = 'lower_bound'
             autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
-              km.lstm_vae(trainData, valData, weights_path, patience=4, batch_size=batch_size,
+              km.lstm_vae(trainData, valData, weights_path, patience=patience, batch_size=batch_size,
                           noise_mag=noise_mag, timesteps=window_size, sam_epoch=sam_epoch,
                           x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,                          
-                          re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot) 
+                          renew=ae_renew, fine_tuning=fine_tuning, plot=plot) 
         elif method == 'lstm_ae':
             # LSTM-AE (Confirmed) %74.99
             from hrl_anomaly_detection.vae import lstm_ae_state_batch as km
@@ -271,15 +285,18 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         # -----------------------------------------------------------------------------------
         if True and False:
             # get optimized alpha
-            save_pkl = os.path.join(save_data_path, 'tmp_data.pkl')
-            alpha = get_optimal_alpha(autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std,
-                                      generator, normalTrainData, window_size,\
-                                      save_pkl=save_pkl)
+            if fine_tuning: alpha_renew = True
+            else: alpha_renew = False
+            save_pkl = os.path.join(save_data_path, 'model_alpha_'+method+'_'+str(idx)+'.pkl')
+            alpha = dt.get_optimal_alpha((valData[0], abnormalTrainData), autoencoder, vae_mean,
+                                         ad_method, method, window_size, save_pkl,\
+                                         stateful=stateful, renew=alpha_renew,\
+                                         x_std_div = x_std_div, x_std_offset=x_std_offset, z_std=z_std,
+                                         dyn_ths=dyn_ths, batch_info=(fixed_batch_size,batch_size))
         else:
             alpha = np.array([1.0]*nDim) #/float(nDim)
-            alpha[0] = 1. #0.5
-            ## alpha = np.array([0.0]*nDim)/float(nDim)
-            ## alpha[0] = 1.0
+            alpha[0] = 0.5
+
 
         if fine_tuning: clf_renew=True
         normalTrainData = vutil.get_scaled_data2(d['successData'][:, normalTrainIdx, :],
@@ -290,7 +307,6 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         ##                                                     copy.deepcopy(td3['successData'])
         ##                                                     ]),
         ##                                                     scaler, aligned=False)
-        from hrl_anomaly_detection.vae import detector as dt
         save_pkl = os.path.join(save_data_path, 'model_ad_scores_'+str(idx)+'.pkl')
         tp_l, tn_l, fp_l, fn_l, roc = \
           dt.anomaly_detection(autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generator,
