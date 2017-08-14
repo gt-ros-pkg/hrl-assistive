@@ -111,7 +111,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         if method=='SVR':
             print "Start to fit SVR with gamma="
             from sklearn.svm import SVR
-            clf = SVR(C=1.0, epsilon=0.2, kernel='rbf', degree=3, gamma=.5)
+            clf = SVR(C=1.0, epsilon=0.2, kernel='rbf', degree=3, gamma=1.5)
         elif method=='RF':
             print "Start to fit RF : ", np.shape(x), np.shape(y)
             from sklearn.ensemble import RandomForestRegressor
@@ -250,9 +250,9 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
                 else: vals = np.array(s_preds[i])+ths
 
                 pos_cnt = 0
-                for j in xrange(4,len(s)):
+                for j in xrange(0,len(s)):
                     if s[j]>vals[j]:
-                        if pos_cnt>1:
+                        if pos_cnt>0:
                             p_l.append(1)
                             break
                         else:

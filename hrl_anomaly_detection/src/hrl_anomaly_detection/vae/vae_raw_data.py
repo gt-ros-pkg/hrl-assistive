@@ -1,4 +1,4 @@
-
+3
 #!/usr/bin/env python
 #
 # Copyright (c) 2014, Georgia Tech Research Corporation
@@ -79,7 +79,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     if os.path.isdir(processed_data_path) is False:
         os.system('mkdir -p '+processed_data_path)
 
-    crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')    
+    crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
     if os.path.isfile(crossVal_pkl) and data_renew is False:
         print "CV data exists and no renew"
         d = ut.load_pickle(crossVal_pkl)         
@@ -136,7 +136,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     # HMM-induced vector with LOPO
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(d['kFoldList']):
-        if idx != 7: continue
+        if idx != 1: continue
 
         # dim x sample x length
         normalTrainData   = d['successData'][:, normalTrainIdx, :]
@@ -188,7 +188,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         batch_size  = 256
         fixed_batch_size = True
         noise_mag   = 0.05
-        sam_epoch   = 10
+        sam_epoch   = 40
 
         if method == 'lstm_vae' or method == 'lstm_vae2' or method == 'lstm_dvae' or\
             method == 'lstm_vae_custom':
@@ -276,7 +276,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                                       generator, normalTrainData, window_size,\
                                       save_pkl=save_pkl)
         else:
-            alpha = np.array([1.0]*nDim)/float(nDim)
+            alpha = np.array([1.0]*nDim) #/float(nDim)
+            alpha[0] = 1. #0.5
             ## alpha = np.array([0.0]*nDim)/float(nDim)
             ## alpha[0] = 1.0
 
