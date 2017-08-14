@@ -90,7 +90,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
     
     def sampling(args):
         z_mean, z_log_var = args
-        epsilon = K.random_normal(shape=K.shape(z_mean), mean=0., stddev=z_std)
+        epsilon = K.random_normal(shape=K.shape(z_mean), mean=0., stddev=1.0)
         return z_mean + K.exp(z_log_var/2.0) * epsilon    
         
     # we initiate these layers to reuse later.
@@ -166,10 +166,11 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
     else:
         if fine_tuning:
             vae_autoencoder.load_weights(weights_file)
-            lr = 0.01            
-            optimizer = Adam(lr=lr, clipvalue=4.)# 5)                
+            lr = 0.0001        
+            optimizer = Adam(lr=lr, clipvalue=5.) #4.)# 5)
+            #optimizer = RMSprop(lr=lr, clipvalue=1.)
             vae_autoencoder.compile(optimizer=optimizer, loss=None)
-            #vae_autoencoder.compile(optimizer='rmsprop', loss=None)
+            vae_autoencoder.compile(optimizer='adam', loss=None)
         else:
             if re_load and os.path.isfile(weights_file):
                 vae_autoencoder.load_weights(weights_file)
@@ -270,9 +271,10 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                     x = x_test[i:i+batch_size]
                 
                 for j in xrange(len(x[0])-timesteps+1):
+                    p = float(j)/float(length-timesteps+1) *2.0-1.0
                     te_loss = vae_autoencoder.test_on_batch(
                         np.concatenate((x[:,j:j+timesteps],
-                                        np.zeros((len(x), timesteps,1))), axis=-1),
+                                        p*np.ones((len(x), timesteps,1))), axis=-1),
                         x[:,j:j+timesteps] )
                     seq_te_loss.append(te_loss)
                 mean_te_loss.append( np.mean(seq_te_loss) )
