@@ -172,7 +172,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
 
 
         # ------------------------------------------------------------------------------------------        
-        method      = 'lstm_vae_custom2'
+        method      = 'lstm_vae_custom'
          
         weights_path = os.path.join(save_data_path,'model_weights_'+method+'_'+str(idx)+'.h5')
         ## weights_path = os.path.join(save_data_path,'tmp_fine_weights_'+str(idx)+'.h5')
