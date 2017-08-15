@@ -54,7 +54,8 @@ import gc
 
 def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500, \
              patience=20, fine_tuning=False, save_weights_file=None, \
-             noise_mag=0.0, timesteps=4, sam_epoch=1, z_std=0.5,\
+             noise_mag=0.0, timesteps=4, sam_epoch=1, \
+             x_std_div=1.0, x_std_offset=0, z_std=0.5,\
              renew=False, plot=True, trainable=None, **kwargs):
     """
     Variational Autoencoder with two LSTMs and one fully-connected layer
@@ -103,7 +104,6 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
     decoded = decoded_h1(z)
     decoded = decoded_h2(decoded)
     outputs = decoded_L1(decoded)
-    ## outputs = CustomVariationalLayer()([inputs, decoded])
 
     vae_autoencoder = Model(inputs, outputs)
     print(vae_autoencoder.summary())
@@ -114,7 +114,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
         p      = x_tr[:,0,input_dim-1:]
 
         x_mean = K.mean(K.reshape(x_pred, shape=(-1,input_dim)), axis=0) #dim
-        x_std  = K.std(K.reshape(x_pred, shape=(-1,input_dim)), axis=0)
+        x_std  = K.std(K.reshape(x_pred, shape=(-1,input_dim)), axis=0)/x_std_div+x_std_offset
 
         # sample x length 
         log_p_x_z = -0.5 * ( K.sum(K.square((x_true-x_mean)/x_std), axis=-1) \
