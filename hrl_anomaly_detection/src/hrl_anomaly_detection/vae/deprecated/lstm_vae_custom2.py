@@ -74,16 +74,16 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
     h1_dim = input_dim
     z_dim  = 2
 
+    
 
     def slicing(x):
         return x[:,:,:input_dim]
            
     inputs = Input(shape=(timesteps, input_dim+1))
     encoded = Lambda(slicing)(inputs)     
-    encoded = LSTM(h1_dim, return_sequences=False, activation='tanh', 
-                   trainable=True if trainable==0 or trainable is None else False)(encoded)
-    z_mean  = Dense(z_dim, trainable=True if trainable==1 or trainable is None else False)(encoded) 
-    z_log_var = Dense(z_dim, trainable=True if trainable==1 or trainable is None else False)(encoded) 
+    encoded = LSTM(h1_dim, return_sequences=False, activation='tanh')(encoded)
+    z_mean  = Dense(z_dim)(encoded) 
+    z_log_var = Dense(z_dim)(encoded) 
     
     def sampling(args):
         z_mean, z_log_var = args
@@ -91,10 +91,9 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
         return z_mean + K.exp(z_log_var/2.0) * epsilon    
         
     # we initiate these layers to reuse later.
-    decoded_h1 = Dense(h1_dim, trainable=True if trainable==2 or trainable is None else False) 
-    decoded_h2 = RepeatVector(timesteps, name='h_2')
-    decoded_L21 = LSTM(input_dim*2, return_sequences=True, activation='sigmoid', 
-                       trainable=True if trainable==3 or trainable is None else False)
+    decoded_h1 = Dense(h1_dim) 
+    decoded_h2 = RepeatVector(timesteps)
+    decoded_L21 = LSTM(input_dim*2, return_sequences=True, activation='sigmoid')
 
     # Custom loss layer
     class CustomVariationalLayer(Layer):
@@ -114,12 +113,12 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
             sig2 = z_std
             kl_loss = - 0.5 * K.sum(1 + z_log_var -K.log(sig2*sig2) - K.square(z_mean-p)
                                     - K.exp(z_log_var)/(sig2*sig2), axis=-1)
-            ## kl_loss = - 0.5 * K.sum(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=-1)
+            #kl_loss = - 0.5 * K.sum(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=-1)
             return K.mean(xent_loss + kl_loss) 
 
         def call(self, args):
             x = args[0][:,:,:input_dim]
-            p = args[0][:,:,input_dim:]
+            p = args[0][:,0,input_dim:]
             x_d_mean = args[1][:,:,:input_dim]
             x_d_std  = args[1][:,:,input_dim:]/x_std_div + x_std_offset
             
@@ -152,7 +151,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
     else:
         if fine_tuning:
             vae_autoencoder.load_weights(weights_file)
-            lr = 0.01            
+            lr = 0.001            
             optimizer = Adam(lr=lr, clipvalue=4.)# 5)                
             vae_autoencoder.compile(optimizer=optimizer, loss=None)
             #vae_autoencoder.compile(optimizer='rmsprop', loss=None)
@@ -161,7 +160,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
             #optimizer = RMSprop(lr=lr, rho=0.9, epsilon=1e-08, decay=0.0001, clipvalue=10)
             optimizer = Adam(lr=lr, clipvalue=10) #, decay=1e-5)                
             #vae_autoencoder.compile(optimizer=optimizer, loss=None)
-            vae_autoencoder.compile(optimizer='adam', loss=None)
+            vae_autoencoder.compile(optimizer='rmsprop', loss=None)
 
         # ---------------------------------------------------------------------------------
         nDim         = len(x_train[0][0])
@@ -194,22 +193,29 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
         x_tr = x_tr.reshape((-1,timesteps,nDim+1))
         x_te = x_te.reshape((-1,timesteps,nDim+1))
 
-        train_datagen = sigGenerator(augmentation=True, noise_mag=noise_mag, with_phase=True)
+        train_datagen = sigGenerator(augmentation=False, noise_mag=noise_mag, with_phase=True)
         train_generator = train_datagen.flow(x_tr, x_tr, batch_size=batch_size, seed=3334,
                                              shuffle=False)
 
-        test_datagen = sigGenerator(augmentation=False, with_phase=True)
-        test_generator = train_datagen.flow(x_te, x_te, batch_size=batch_size, seed=3334,
-                                             shuffle=False)
+        #for t in train_generator:
+        #    print np.shape(t[0])#, np.shape(t[1])
+        #sys.exit()
+
+
+        #test_datagen = sigGenerator(augmentation=False, with_phase=True)
+        #test_generator = train_datagen.flow(x_te, x_te, batch_size=batch_size, seed=3334,
+        #                                     shuffle=False)
                         
         hist = vae_autoencoder.fit_generator(train_generator,
                                              steps_per_epoch=sam_epoch,
                                              epochs=nb_epoch,
-                                             validation_data=test_generator,
-                                             validation_steps=1,
+                                             validation_data=(x_te, x_te),
                                              callbacks=callbacks)
+        #validation_data=test_generator,
+        #validation_steps=1,
+        #callbacks=callbacks)
 
-        gc.collect()
+        #gc.collect()
 
     # ---------------------------------------------------------------------------------
     # visualize outputs
@@ -234,14 +240,17 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
             x_pred_mean = []
             x_pred_std  = []
             for j in xrange(len(x[0])-timesteps+1):
+                
                 x_pred = vae_mean_std.predict(np.concatenate((x[:,j:j+timesteps],
                                                               np.zeros((len(x), timesteps,1))
                                                               ), axis=-1))
-                                   
+                
+
+                #x_pred = vae_mean_std.predict(x[:,j:j+timesteps])
                 x_pred_mean.append(x_pred[0,-1,:nDim])
                 x_pred_std.append(x_pred[0,-1,nDim:]/x_std_div*1.5+x_std_offset)
 
-            vutil.graph_variations(x_test[i], x_pred_mean, x_pred_std, scaler_dict=kwargs['scaler_dict'])
+            vutil.graph_variations(x_test[i], x_pred_mean, x_pred_std) #, scaler_dict=kwargs['scaler_dict'])
         
 
 
@@ -323,9 +332,10 @@ class sigGenerator():
                 self.batch_index = 0
 
             ## print " aa ", batch_size, " aa ", self.total_batches_seen, self.batch_index, current_index,"/",n
+            #print np.shape(x_new)
             
             self.total_batches_seen += 1
-            if self.augmentation:
+            if self.augmentation and False:
                 # noise
                 if self.with_phase:
                     noise = np.random.normal(0.0, self.noise_mag, \
@@ -336,12 +346,12 @@ class sigGenerator():
                     noise = np.random.normal(0.0, self.noise_mag, \
                                              np.shape(x_new[current_index:current_index+current_batch_size])) 
 
-                yield x_new[current_index:current_index+current_batch_size]+noise,\
-                  x_new[current_index:current_index+current_batch_size]+noise
+                yield (x_new[current_index:current_index+current_batch_size]+noise,
+                       x_new[current_index:current_index+current_batch_size]+noise)
                                           
             else:
-                yield x_new[current_index:current_index+current_batch_size],\
-                  x_new[current_index:current_index+current_batch_size]
+                yield (x_new[current_index:current_index+current_batch_size],
+                       x_new[current_index:current_index+current_batch_size])
 
 
                 

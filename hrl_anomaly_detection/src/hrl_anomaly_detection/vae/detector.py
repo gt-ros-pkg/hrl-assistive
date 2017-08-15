@@ -98,7 +98,8 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
     
     if ad_method == 'recon_err_vec': dyn_ths=False
 
-    print np.shape(scores_te_n), np.shape(scores_tr_n)
+    #print np.isnan(scores_te_n).any(), np.isnan(scores_tr_n).any()
+    #sys.exit()
 
     
 
@@ -150,7 +151,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
     if True and False:
         print np.shape(zs_tr_n), np.shape(scores_tr_n)
 
-        '''
+        
         fig = plt.figure() 
         ## from mpl_toolkits.mplot3d import Axes3D
         ## ax = fig.add_subplot(111, projection='3d')
@@ -160,14 +161,14 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         ##     ax.scatter(zs_te_n[i,:,0], zs_te_n[i,:,1], scores_te_n[i,:,0], c='b', marker='x')
         ## for i, s in enumerate(scores_te_a):
         ##     ax.scatter(zs_te_a[i,:,0], zs_te_a[i,:,1], scores_te_a[i,:,0], c='r', marker='^')
-        for i, s in enumerate(scores_tr_n):
-            plt.plot(s, '-g')
+        #for i, s in enumerate(scores_tr_n):
+        #    plt.plot(s, '-g')
         for i, s in enumerate(scores_te_n):
             plt.plot(s, '-b')
         for i, s in enumerate(scores_te_a):
             plt.plot(s, '-r')
         plt.show()
-        '''
+        
 
         for i, s in enumerate(scores_te_a):
             fig = plt.figure()
@@ -333,19 +334,25 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
             else:
                 xx = x[j:j+1]
 
-            if method == 'lstm_vae_custom':
+            # Get prediction
+            if method.find('lstm_vae_custom')>=0 or method.find('phase')>=0:
                 x_true = np.concatenate((xx, np.zeros((len(xx), len(xx[0]),1))), axis=-1)
             else:
                 x_true = xx
-                
-            x_pred  = vae.predict(x_true, batch_size=batch_info[1])[0]
+            x_pred  = vae.predict(x_true, batch_size=batch_info[1])
 
-            # length x dim
-            x_mean = x_pred[:,:x_dim]
-            if enc_z_logvar is not None or len(x_pred[0])>x_dim:
-                x_std  = np.sqrt(x_pred[:,x_dim:]/x_std_div+x_std_offset)
+            # Get mean and std
+            if method == 'lstm_vae_custom3':
+                x_mean = np.mean(x_pred, axis=0) #length x dim
+                x_std  = np.std(x_pred, axis=0)
             else:
-                x_std = None
+                x_pred = x_pred[0]
+                # length x dim
+                x_mean = x_pred[:,:x_dim]
+                if enc_z_logvar is not None or len(x_pred[0])>x_dim:
+                    x_std  = np.sqrt(x_pred[:,x_dim:]/x_std_div+x_std_offset)
+                else:
+                    x_std = None
 
             #---------------------------------------------------------------
             if ad_method == 'recon_prob':
@@ -393,7 +400,7 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
                 #print np.shape(s), np.shape(xx[0]), np.shape(x_mean)
             elif ad_method == 'lower_bound':
 
-                if method == 'lstm_vae_custom':
+                if method.find('lstm_vae_custom')>=0 or method.find('phase')>=0:
                     p = float(j)/float(length-window_size+1) *2.0-1.0
                     if train_flag:
                         p = p*np.ones((batch_info[1], window_size, 1))
@@ -501,13 +508,13 @@ def get_lower_bound(x, x_mean, x_std, z_std, enc_z_mean, enc_z_logvar, nDim, met
                     alpha=None):
     '''
     No fixed batch
-    x: length x dim
+    x: batch x length x dim
     '''
     if len(np.shape(x))>2:
-        if method == 'lstm_vae_custom':
+        if method.find('lstm_vae_custom')>=0 or method.find('phase')>=0:
             x_in = np.concatenate((x, p), axis=-1)
         else:
-            x_in = xx
+            x_in = x
         
         batch_size = len(x)
         z_mean    = enc_z_mean.predict(x_in, batch_size=batch_size)[0]
@@ -519,7 +526,7 @@ def get_lower_bound(x, x_mean, x_std, z_std, enc_z_mean, enc_z_logvar, nDim, met
 
     if alpha is None: alpha = np.array([1.0]*nDim)
 
-
+    # x: length x dim ?
     log_p_x_z = -0.5 * ( np.sum( (alpha*(x-x_mean)/x_std)**2, axis=-1) \
                          + float(nDim) * np.log(2.0*np.pi) + np.sum(np.log(x_std**2), axis=-1) )
     if len(np.shape(log_p_x_z))>1:
@@ -527,20 +534,21 @@ def get_lower_bound(x, x_mean, x_std, z_std, enc_z_mean, enc_z_logvar, nDim, met
     else:
         xent_loss = -log_p_x_z
 
-    if method == 'lstm_vae_custom':
-        p=0
-        if len(np.shape(z_log_var))>1:            
-            kl_loss = - 0.5 * np.sum(1 + z_log_var -np.log(z_std*z_std) - (z_mean-p)**2
-                                    - np.exp(z_log_var)/(z_std*z_std), axis=-1)
-        else:
-            kl_loss = - 0.5 * np.sum(1 + z_log_var -np.log(z_std*z_std) - (z_mean-p)**2
-                                    - np.exp(z_log_var)/(z_std*z_std))
-        kl_loss = 0
-    else:
-        if len(np.shape(z_log_var))>1:
-            kl_loss = - 0.5 * np.sum(1 + z_log_var - z_mean**2 - np.exp(z_log_var), axis=-1)
-        else:
-            kl_loss = - 0.5 * np.sum(1 + z_log_var - z_mean**2 - np.exp(z_log_var))
+    ## if method == 'lstm_vae_custom' or method == 'lstm_vae_custom2':
+    ##     p=0
+    ##     if len(np.shape(z_log_var))>1:            
+    ##         kl_loss = - 0.5 * np.sum(1 + z_log_var -np.log(z_std*z_std) - (z_mean-p)**2
+    ##                                 - np.exp(z_log_var)/(z_std*z_std), axis=-1)
+    ##     else:
+    ##         kl_loss = - 0.5 * np.sum(1 + z_log_var -np.log(z_std*z_std) - (z_mean-p)**2
+    ##                                 - np.exp(z_log_var)/(z_std*z_std))
+    ##     kl_loss = 0
+    ## else:
+    ##     if len(np.shape(z_log_var))>1:
+    ##         kl_loss = - 0.5 * np.sum(1 + z_log_var - z_mean**2 - np.exp(z_log_var), axis=-1)
+    ##     else:
+    ##         kl_loss = - 0.5 * np.sum(1 + z_log_var - z_mean**2 - np.exp(z_log_var))
+    kl_loss = 0
 
     if len(xent_loss + kl_loss)>1:
         return [np.mean(xent_loss + kl_loss)], z_mean, z_log_var
@@ -613,20 +621,26 @@ def get_optimal_alpha(inputs, vae, vae_mean, ad_method, method, window_size, sav
                 else:
                     xx = x[j:j+1]
 
-                if method == 'lstm_vae_custom':
+                if method.find('lstm_vae_custom')>=0 or method.find('phase')>=0:
                     x_true = np.concatenate((xx, np.zeros((len(xx), len(xx[0]),1))), axis=-1)
                 else:
                     x_true = xx
 
                 # x_true : batch x timesteps x dim +1
-                x_pred  = vae_mean.predict(x_true, batch_size=batch_info[1])[0]
+                x_pred  = vae_mean.predict(x_true, batch_size=batch_info[1])
 
-                # x_pred: length x dim
-                x_mean = x_pred[:,:nDim]
-                if enc_z_logvar is not None or len(x_pred[0])>nDim:
-                    x_std  = np.sqrt(x_pred[:,nDim:]/x_std_div+x_std_offset)
+                # Get mean and std
+                if method == 'lstm_vae_custom3':
+                    x_mean = np.mean(x_pred, axis=0) #length x dim
+                    x_std  = np.std(x_pred, axis=0)
                 else:
-                    x_std = None
+                    x_pred = x_pred[0]
+                    # x_pred: length x dim
+                    x_mean = x_pred[:,:nDim]
+                    if enc_z_logvar is not None or len(x_pred[0])>nDim:
+                        x_std  = np.sqrt(x_pred[:,nDim:]/x_std_div+x_std_offset)
+                    else:
+                        x_std = None
 
                 #log_p_x_z = -0.5 * ( np.sum( (alpha*(x-x_mean)/x_std)**2, axis=-1) )
                 #log_p_x_z = np.sum( (alpha*(x-x_mean)/x_std)**2, axis=-1) 

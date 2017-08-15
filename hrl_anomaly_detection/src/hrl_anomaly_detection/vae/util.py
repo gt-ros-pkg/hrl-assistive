@@ -62,7 +62,7 @@ def create_dataset(X, window_size=5, step=5):
 
 
 
-def graph_variations(x_true, x_pred_mean, x_pred_std=None, scaler_dict=None, save_pdf=False):
+def graph_variations(x_true, x_pred_mean, x_pred_std=None, scaler_dict={}, save_pdf=False):
     '''
     x_true: timesteps x dim
     '''
@@ -84,7 +84,8 @@ def graph_variations(x_true, x_pred_mean, x_pred_std=None, scaler_dict=None, sav
     ## matplotlib.rcParams['text.usetex'] = True
 
     # unscale
-    param_dict = scaler_dict['param_dict']
+    if scaler_dict is None: param_dict = None
+    else: param_dict = scaler_dict.get('param_dict', None)
 
     def unscale(x, std=False):
         if type(x) is list: x = np.array(x)
@@ -152,15 +153,16 @@ def graph_variations(x_true, x_pred_mean, x_pred_std=None, scaler_dict=None, sav
         ax.locator_params(axis='y', nbins=3)
         if k < nDim-1: ax.tick_params(axis='x', bottom='off', labelbottom='off')
 
-    x_tick = [param_dict['timeList'][0],
-              (param_dict['timeList'][-1]-param_dict['timeList'][0])/2.0,
-              param_dict['timeList'][-1]]
-    ax.set_xticks(np.linspace(0, len(x_pred_mean), len(x_tick)))        
-    ax.set_xticklabels(x_tick)
-    ax.set_xlabel('Time [s]', fontsize=18)
-    fig.subplots_adjust(left=0.25) 
+    if param_dict is not None:
+        x_tick = [param_dict['timeList'][0],
+                  (param_dict['timeList'][-1]-param_dict['timeList'][0])/2.0,
+                  param_dict['timeList'][-1]]
+        ax.set_xticks(np.linspace(0, len(x_pred_mean), len(x_tick)))        
+        ax.set_xticklabels(x_tick)
+        ax.set_xlabel('Time [s]', fontsize=18)
+        fig.subplots_adjust(left=0.25) 
 
-    if save_pdf or True:
+    if save_pdf :
         fig.savefig('test.pdf')
         fig.savefig('test.png')
         fig.savefig('test.eps')
