@@ -221,9 +221,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             elif method == 'lstm_vae_custom3':
                 from hrl_anomaly_detection.vae import lstm_vae_custom3 as km
                 ths_l = np.logspace(-1.0,2.,40) -0.2
-                #x_std_div   = 1.
-                x_std_offset= 0.01
-                z_std       = 0.6
+                x_std_offset= 0.0001
+                z_std       = 0.5
                 sam_epoch   = 1
             elif method == 'lstm_vae2':
                 from hrl_anomaly_detection.vae import lstm_vae_state_batch2 as km
