@@ -139,7 +139,12 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     # HMM-induced vector with LOPO
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(d['kFoldList']):
+<<<<<<< HEAD
         #if idx != 3 : continue
+=======
+        #if idx != 7 : continue
+        print "==================== ", idx, " ========================"
+>>>>>>> df130df17ad8fd915946d23d2a9707c712b7af0a
 
 
         # dim x sample x length
@@ -147,7 +152,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         abnormalTrainData = d['failureData'][:, abnormalTrainIdx, :]
         normalTestData    = d['successData'][:, normalTestIdx, :]
         abnormalTestData  = d['failureData'][:, abnormalTestIdx, :]
-        if fine_tuning is False and False:
+        if fine_tuning is False:
             normalTrainData   = np.hstack([normalTrainData,
                                            copy.deepcopy(td1['successData']),
                                            copy.deepcopy(td2['successData']),
@@ -195,7 +200,6 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         method      = 'lstm_vae_custom3'
          
         weights_path = os.path.join(save_data_path,'model_weights_'+method+'_'+str(idx)+'.h5')
-        ## weights_path = os.path.join(save_data_path,'tmp_fine_weights_'+str(idx)+'.h5')
         vae_mean   = None
         vae_logvar = None
         enc_z_mean = enc_z_std = None
@@ -235,9 +239,15 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             elif method == 'lstm_vae_custom3':
                 from hrl_anomaly_detection.vae import lstm_vae_custom3 as km
                 ths_l = np.logspace(-1.0,2.,40) -0.2
+<<<<<<< HEAD
                 x_std_div   = 1.
                 x_std_offset= 0.01
                 z_std       = 0.4
+=======
+                x_std_div   = 1.0
+                x_std_offset= 0.0
+                z_std       = 0.5 #0.2
+>>>>>>> df130df17ad8fd915946d23d2a9707c712b7af0a
                 sam_epoch   = 1
             elif method == 'lstm_vae2':
                 from hrl_anomaly_detection.vae import lstm_vae_state_batch2 as km

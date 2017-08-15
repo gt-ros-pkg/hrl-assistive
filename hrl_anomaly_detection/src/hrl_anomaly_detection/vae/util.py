@@ -84,7 +84,8 @@ def graph_variations(x_true, x_pred_mean, x_pred_std=None, scaler_dict={}, save_
     ## matplotlib.rcParams['text.usetex'] = True
 
     # unscale
-    param_dict = scaler_dict.get('param_dict', None)
+    if scaler_dict is None: param_dict = None
+    else: param_dict = scaler_dict.get('param_dict', None)
 
     def unscale(x, std=False):
         if type(x) is list: x = np.array(x)
