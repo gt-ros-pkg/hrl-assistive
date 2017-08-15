@@ -166,7 +166,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
 
 
         # ------------------------------------------------------------------------------------------        
-        method      = 'lstm_vae_custom3'
+        method      = 'lstm_vae_custom'
          
         weights_path = os.path.join(save_data_path,'model_weights_'+method+'_'+str(idx)+'.h5')
         vae_mean   = None
@@ -182,8 +182,9 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         batch_size  = 256
         fixed_batch_size = True
         noise_mag   = 0.05
-        sam_epoch   = 5
+        sam_epoch   = 40
         patience    = 4
+        h1_dim      = nDim
 
         if (method.find('lstm_vae')>=0 or method.find('lstm_dvae')>=0) and\
             method.find('offline')<0:
@@ -197,7 +198,6 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             if method == 'lstm_vae':
                 from hrl_anomaly_detection.vae import lstm_vae_state_batch as km
                 ths_l = np.logspace(-1.0,2.2,40) -0.1
-
                 ths_l = np.logspace(-1.0,3.2,40) -0.1
             elif method == 'lstm_vae_custom':
                 from hrl_anomaly_detection.vae import lstm_vae_custom as km
@@ -205,12 +205,13 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 x_std_div   = 4.
                 x_std_offset= 0.1
                 z_std       = 0.3 #0.2
+                h1_dim      = 8 # raw
             elif method == 'lstm_dvae_phase':
                 from hrl_anomaly_detection.vae import lstm_dvae_phase as km
                 ths_l = np.logspace(-1.0,2.,40) -0.2
-                x_std_div   = 1.
-                x_std_offset= 0.0
-                z_std       = 0.5
+                x_std_div   = 4.
+                x_std_offset= 0.2
+                z_std       = 0.3
             elif method == 'lstm_vae_custom3':
                 from hrl_anomaly_detection.vae import lstm_vae_custom3 as km
                 ths_l = np.logspace(-1.0,2.,40) -0.2
@@ -227,7 +228,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
               km.lstm_vae(trainData, valData, weights_path, patience=patience, batch_size=batch_size,
                           noise_mag=noise_mag, timesteps=window_size, sam_epoch=sam_epoch,
-                          x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,                          
+                          x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,
+                          h1_dim = h1_dim,\
                           renew=ae_renew, fine_tuning=fine_tuning, plot=plot) 
         elif method == 'lstm_ae':
             # LSTM-AE (Confirmed) %74.99
