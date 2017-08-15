@@ -98,7 +98,8 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
     
     if ad_method == 'recon_err_vec': dyn_ths=False
 
-    print np.shape(scores_te_n), np.shape(scores_tr_n)
+    #print np.isnan(scores_te_n).any(), np.isnan(scores_tr_n).any()
+    #sys.exit()
 
     
 
@@ -111,7 +112,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         if method=='SVR':
             print "Start to fit SVR with gamma="
             from sklearn.svm import SVR
-            clf = SVR(C=1.0, epsilon=0.2, kernel='rbf', degree=3, gamma=2.0)
+            clf = SVR(C=1.0, epsilon=0.2, kernel='rbf', degree=3, gamma=1.5)
         elif method=='RF':
             print "Start to fit RF : ", np.shape(x), np.shape(y)
             from sklearn.ensemble import RandomForestRegressor
@@ -150,7 +151,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
     if True and False:
         print np.shape(zs_tr_n), np.shape(scores_tr_n)
 
-        '''
+        
         fig = plt.figure() 
         ## from mpl_toolkits.mplot3d import Axes3D
         ## ax = fig.add_subplot(111, projection='3d')
@@ -160,14 +161,14 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         ##     ax.scatter(zs_te_n[i,:,0], zs_te_n[i,:,1], scores_te_n[i,:,0], c='b', marker='x')
         ## for i, s in enumerate(scores_te_a):
         ##     ax.scatter(zs_te_a[i,:,0], zs_te_a[i,:,1], scores_te_a[i,:,0], c='r', marker='^')
-        for i, s in enumerate(scores_tr_n):
-            plt.plot(s, '-g')
+        #for i, s in enumerate(scores_tr_n):
+        #    plt.plot(s, '-g')
         for i, s in enumerate(scores_te_n):
             plt.plot(s, '-b')
         for i, s in enumerate(scores_te_a):
             plt.plot(s, '-r')
         plt.show()
-        '''
+        
 
         for i, s in enumerate(scores_te_a):
             fig = plt.figure()
@@ -250,9 +251,9 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
                 else: vals = np.array(s_preds[i])+ths
 
                 pos_cnt = 0
-                for j in xrange(4,len(s)):
+                for j in xrange(0,len(s)):
                     if s[j]>vals[j]:
-                        if pos_cnt>1:
+                        if pos_cnt>0:
                             p_l.append(1)
                             break
                         else:
@@ -281,28 +282,6 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
     
     return tp_ll, tn_ll, fp_ll, fn_ll, roc
 
-
-def get_roc(tp_l, tn_l, fp_l, fn_l):
-
-    tp_ll = []
-    fp_ll = []
-    tn_ll = []
-    fn_ll = []  
-    for i in xrange(len(tp_l)):
-        tp_ll.append( tp_l[i])
-        fp_ll.append( fp_l[i])
-        tn_ll.append( tn_l[i])
-        fn_ll.append( fn_l[i])
-
-
-
-    tpr_l = np.array(tp_ll).astype(float)/(np.array(tp_ll).astype(float)+
-                                           np.array(fn_ll).astype(float))*100.0
-    fpr_l = np.array(fp_ll).astype(float)/(np.array(fp_ll).astype(float)+
-                                           np.array(tn_ll).astype(float))*100.0
-
-    from sklearn import metrics 
-    return metrics.auc(fpr_l, tpr_l, True)
 
 
 def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_method, method,\
@@ -355,19 +334,25 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
             else:
                 xx = x[j:j+1]
 
-            if method == 'lstm_vae_custom':
+            # Get prediction
+            if method.find('lstm_vae_custom')>=0:
                 x_true = np.concatenate((xx, np.zeros((len(xx), len(xx[0]),1))), axis=-1)
             else:
                 x_true = xx
-                
-            x_pred  = vae.predict(x_true, batch_size=batch_info[1])[0]
+            x_pred  = vae.predict(x_true, batch_size=batch_info[1])
 
-            # length x dim
-            x_mean = x_pred[:,:x_dim]
-            if enc_z_logvar is not None or len(x_pred[0])>x_dim:
-                x_std  = np.sqrt(x_pred[:,x_dim:]/x_std_div+x_std_offset)
+            # Get mean and std
+            if method == 'lstm_vae_custom3':
+                x_mean = np.mean(x_pred, axis=0) #length x dim
+                x_std  = np.std(x_pred, axis=0)
             else:
-                x_std = None
+                x_pred = x_pred[0]
+                # length x dim
+                x_mean = x_pred[:,:x_dim]
+                if enc_z_logvar is not None or len(x_pred[0])>x_dim:
+                    x_std  = np.sqrt(x_pred[:,x_dim:]/x_std_div+x_std_offset)
+                else:
+                    x_std = None
 
             #---------------------------------------------------------------
             if ad_method == 'recon_prob':
@@ -415,7 +400,7 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
                 #print np.shape(s), np.shape(xx[0]), np.shape(x_mean)
             elif ad_method == 'lower_bound':
 
-                if method == 'lstm_vae_custom':
+                if method.find('lstm_vae_custom')>=0:
                     p = float(j)/float(length-window_size+1) *2.0-1.0
                     if train_flag:
                         p = p*np.ones((batch_info[1], window_size, 1))
@@ -523,13 +508,13 @@ def get_lower_bound(x, x_mean, x_std, z_std, enc_z_mean, enc_z_logvar, nDim, met
                     alpha=None):
     '''
     No fixed batch
-    x: length x dim
+    x: batch x length x dim
     '''
     if len(np.shape(x))>2:
-        if method == 'lstm_vae_custom':
+        if method.find('lstm_vae_custom')>=0:
             x_in = np.concatenate((x, p), axis=-1)
         else:
-            x_in = xx
+            x_in = x
         
         batch_size = len(x)
         z_mean    = enc_z_mean.predict(x_in, batch_size=batch_size)[0]
@@ -541,7 +526,7 @@ def get_lower_bound(x, x_mean, x_std, z_std, enc_z_mean, enc_z_logvar, nDim, met
 
     if alpha is None: alpha = np.array([1.0]*nDim)
 
-    p_l     = []
+    # x: length x dim ?
     log_p_x_z = -0.5 * ( np.sum( (alpha*(x-x_mean)/x_std)**2, axis=-1) \
                          + float(nDim) * np.log(2.0*np.pi) + np.sum(np.log(x_std**2), axis=-1) )
     if len(np.shape(log_p_x_z))>1:
@@ -549,20 +534,21 @@ def get_lower_bound(x, x_mean, x_std, z_std, enc_z_mean, enc_z_logvar, nDim, met
     else:
         xent_loss = -log_p_x_z
 
-    if method == 'lstm_vae_custom':
-        p=0
-        if len(np.shape(z_log_var))>1:            
-            kl_loss = - 0.5 * np.sum(1 + z_log_var -np.log(z_std*z_std) - (z_mean-p)**2
-                                    - np.exp(z_log_var)/(z_std*z_std), axis=-1)
-        else:
-            kl_loss = - 0.5 * np.sum(1 + z_log_var -np.log(z_std*z_std) - (z_mean-p)**2
-                                    - np.exp(z_log_var)/(z_std*z_std))
-        kl_loss = 0
-    else:
-        if len(np.shape(z_log_var))>1:
-            kl_loss = - 0.5 * np.sum(1 + z_log_var - z_mean**2 - np.exp(z_log_var), axis=-1)
-        else:
-            kl_loss = - 0.5 * np.sum(1 + z_log_var - z_mean**2 - np.exp(z_log_var))
+    ## if method == 'lstm_vae_custom' or method == 'lstm_vae_custom2':
+    ##     p=0
+    ##     if len(np.shape(z_log_var))>1:            
+    ##         kl_loss = - 0.5 * np.sum(1 + z_log_var -np.log(z_std*z_std) - (z_mean-p)**2
+    ##                                 - np.exp(z_log_var)/(z_std*z_std), axis=-1)
+    ##     else:
+    ##         kl_loss = - 0.5 * np.sum(1 + z_log_var -np.log(z_std*z_std) - (z_mean-p)**2
+    ##                                 - np.exp(z_log_var)/(z_std*z_std))
+    ##     kl_loss = 0
+    ## else:
+    ##     if len(np.shape(z_log_var))>1:
+    ##         kl_loss = - 0.5 * np.sum(1 + z_log_var - z_mean**2 - np.exp(z_log_var), axis=-1)
+    ##     else:
+    ##         kl_loss = - 0.5 * np.sum(1 + z_log_var - z_mean**2 - np.exp(z_log_var))
+    kl_loss = 0
 
     if len(xent_loss + kl_loss)>1:
         return [np.mean(xent_loss + kl_loss)], z_mean, z_log_var
@@ -580,3 +566,132 @@ def pred_rf(model, x, percentile=95):
 
     return err_down, err_up
 
+
+def get_optimal_alpha(inputs, vae, vae_mean, ad_method, method, window_size, save_pkl,\
+                      stateful=False, renew=False,\
+                      x_std_div=1.0, x_std_offset=1e-10, z_std=None,\
+                      dyn_ths=False, batch_info=(False,None), **kwargs):
+
+    X_nor, X_abnor = inputs
+    enc_z_logvar = None    
+    nDim    = len(X_nor[0,0])
+    ## nSample = len(X_nor)
+    p_ll = [[] for i in xrange(nDim) ]
+
+    ## labels = np.vstack([ np.ones((len(X_nor), len(X_nor[0]))), -np.ones((len(X_abnor), len(X_abnor[0])))  ])
+    labels = [1.]*len(X_nor)*len(X_nor[0])+[-1.]*len(X_abnor)*len(X_abnor[0])
+
+    if os.path.isfile(save_pkl) and renew is False:
+        d = ut.load_pickle(save_pkl)
+        ## nSample    = d['nSample']
+        p_ll       = d['p_ll']
+        ## labels     = d['labels']
+    else:
+
+        X = np.vstack([X_nor, X_abnor])
+                
+        p_ll = None
+        for i in xrange(len(X)): # per sample
+            print "sample: ", i+1, " out of ", len(X), np.shape(p_ll)
+            np.random.seed(3334 + i)
+
+            if window_size>0: x = vutil.sampleWithWindow(X[i:i+1], window=window_size)
+            else:             x = X[i:i+1]
+            if type(x) is list: x = np.array(x)
+
+            if stateful:
+                vae.reset_states()
+                vae_mean.reset_states()
+                #if enc_z_mean is not None: enc_z_mean.reset_states()
+                #if enc_z_logvar is not None: enc_z_logvar.reset_states()                
+
+                
+            for j in xrange(len(x)): # per window
+
+                if batch_info[0]:
+                    if window_size>1:
+                        xx = x[j:j+1]
+                        for k in xrange(batch_info[1]-1):
+                            xx = np.vstack([xx, x[j:j+1] ])
+                    else:
+                        xx = np.expand_dims(x[j:j+1,0], axis=0)
+                        for k in xrange(batch_info[1]-1):
+                            xx = np.vstack([xx, np.expand_dims(x[j:j+1,0], axis=0) ])
+
+                else:
+                    xx = x[j:j+1]
+
+                if method.find('lstm_vae_custom')>=0:
+                    x_true = np.concatenate((xx, np.zeros((len(xx), len(xx[0]),1))), axis=-1)
+                else:
+                    x_true = xx
+
+                # x_true : batch x timesteps x dim +1
+                x_pred  = vae_mean.predict(x_true, batch_size=batch_info[1])
+
+                # Get mean and std
+                if method == 'lstm_vae_custom3':
+                    x_mean = np.mean(x_pred, axis=0) #length x dim
+                    x_std  = np.std(x_pred, axis=0)
+                else:
+                    x_pred = x_pred[0]
+                    # x_pred: length x dim
+                    x_mean = x_pred[:,:nDim]
+                    if enc_z_logvar is not None or len(x_pred[0])>nDim:
+                        x_std  = np.sqrt(x_pred[:,nDim:]/x_std_div+x_std_offset)
+                    else:
+                        x_std = None
+
+                #log_p_x_z = -0.5 * ( np.sum( (alpha*(x-x_mean)/x_std)**2, axis=-1) )
+                #log_p_x_z = np.sum( (alpha*(x-x_mean)/x_std)**2, axis=-1) 
+
+                #---------------------------------------------------------------
+                # anomaly score
+                p_l     = []
+                for k in xrange(len(x_mean[0])): # per dim
+                    p = []
+                    for l in xrange(len(x_mean)): # per length
+                        p.append( ((xx[0,l,k]-x_mean[l][k])/x_std[l][k])**2 )
+                        #p.append(scipy.stats.norm(x_mean[k][l], x_std[k][l]).pdf(x[j,l,k])) # length
+                    p_l.append(p) # dim x length
+
+                # dim x length
+                if p_ll is None: p_ll = np.array(p_l)
+                else:            p_ll = np.hstack([p_ll, np.array(p_l)])
+                                
+        d = {'p_ll': p_ll, 'labels': labels}
+        ut.save_pickle(d, save_pkl)
+
+    print "p_ll: ", np.shape(p_ll)
+    print "labels: ", np.shape(labels)
+
+
+    r  = np.sum(p_ll, axis=-1)/np.sum(p_ll)
+    r  = 1.0-r
+    r  = (r-np.amin(r))/(np.amax(r)-np.amin(r))*0.6+0.4
+    print r
+    return r
+
+    
+    def score_func(X, *args):
+        '''
+        X      : dim
+        args[0]: dim
+        '''
+        return float(np.sum( X.dot(args[0])*args[1] ))
+    
+    def const(X): return np.sum(X)-0.5
+
+
+    from scipy.optimize import minimize
+    x0   = np.array([1.0]*nDim) /float(nDim)
+    bnds = [[1.0/float(nDim)/4.,x0[0]] for i in xrange(nDim) ]
+    res  = minimize(score_func, x0, args=(p_ll[:,:len(X_nor)*len(X_nor[0])],
+                                          np.array(labels)[:len(X_nor)*len(X_nor[0])]),
+                                          method='SLSQP', tol=1e-6, bounds=bnds,
+                    constraints={'type':'ineq', 'fun': const}, options={'disp': False})
+
+    print res
+    sys.exit()
+    
+    return res.x
