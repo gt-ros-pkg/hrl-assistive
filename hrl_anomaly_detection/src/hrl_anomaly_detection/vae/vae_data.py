@@ -235,9 +235,9 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             elif method == 'lstm_vae_custom3':
                 from hrl_anomaly_detection.vae import lstm_vae_custom3 as km
                 ths_l = np.logspace(-1.0,2.,40) -0.2
-                x_std_div   = 4.
-                x_std_offset= 0.05
-                z_std       = 0.3 #0.2
+                x_std_div   = 1.
+                x_std_offset= 0.0
+                z_std       = 0.5 #0.2
                 sam_epoch   = 1
             elif method == 'lstm_vae2':
                 from hrl_anomaly_detection.vae import lstm_vae_state_batch2 as km
@@ -359,10 +359,13 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                                normalTrainData, valData[0],\
                                normalTestData, abnormalTestData, \
                                ad_method, method,
-                               window_size, alpha, ths_l=ths_l, save_pkl=save_pkl, stateful=stateful,
-                               x_std_div = x_std_div, x_std_offset=x_std_offset, z_std=z_std, plot=plot,
+                               window_size, alpha, ths_l=ths_l, save_pkl=save_pkl,
+                               stateful=stateful,
+                               x_std_div = x_std_div, x_std_offset=x_std_offset, z_std=z_std,
+                               plot=plot,
                                step_ahead = 5,
-                               renew=clf_renew, dyn_ths=dyn_ths, batch_info=(fixed_batch_size,batch_size))
+                               renew=clf_renew, dyn_ths=dyn_ths,
+                               batch_info=(fixed_batch_size,batch_size))
 
         roc_l.append(roc)
 

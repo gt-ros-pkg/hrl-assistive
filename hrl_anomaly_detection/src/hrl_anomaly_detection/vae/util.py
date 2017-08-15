@@ -440,3 +440,26 @@ def get_ext_feeding_data(task_name, save_data_path, param_dict, d, raw_feature=F
 
     return td1, td2, td3
     
+
+def get_roc(tp_l, tn_l, fp_l, fn_l):
+
+    tp_ll = []
+    fp_ll = []
+    tn_ll = []
+    fn_ll = []  
+    for i in xrange(len(tp_l)):
+        tp_ll.append( tp_l[i])
+        fp_ll.append( fp_l[i])
+        tn_ll.append( tn_l[i])
+        fn_ll.append( fn_l[i])
+
+
+
+    tpr_l = np.array(tp_ll).astype(float)/(np.array(tp_ll).astype(float)+
+                                           np.array(fn_ll).astype(float))*100.0
+    fpr_l = np.array(fp_ll).astype(float)/(np.array(fp_ll).astype(float)+
+                                           np.array(tn_ll).astype(float))*100.0
+
+    from sklearn import metrics 
+    return metrics.auc(fpr_l, tpr_l, True)
+
