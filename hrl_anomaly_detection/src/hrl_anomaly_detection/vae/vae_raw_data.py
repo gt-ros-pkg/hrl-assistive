@@ -172,10 +172,9 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
 
 
         # ------------------------------------------------------------------------------------------        
-        method      = 'lstm_vae_custom'
+        method      = 'lstm_vae_custom3'
          
         weights_path = os.path.join(save_data_path,'model_weights_'+method+'_'+str(idx)+'.h5')
-        ## weights_path = os.path.join(save_data_path,'tmp_fine_weights_'+str(idx)+'.h5')
         vae_mean   = None
         vae_logvar = None
         enc_z_mean = enc_z_std = None
@@ -189,11 +188,11 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         batch_size  = 256
         fixed_batch_size = True
         noise_mag   = 0.05
-        sam_epoch   = 40
+        sam_epoch   = 10
         patience    = 4
 
         if method == 'lstm_vae' or method == 'lstm_vae2' or method == 'lstm_dvae' or\
-            method == 'lstm_vae_custom' or method == 'lstm_vae_custom2':
+            method.find('lstm_vae_custom')>=0:
             x_std_div   = 2
             x_std_offset= 0.01
             z_std       = 0.4
@@ -216,13 +215,17 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             elif method == 'lstm_vae_custom2':
                 from hrl_anomaly_detection.vae import lstm_vae_custom2 as km
                 ths_l = np.logspace(-1.0,2.,40) -0.2
-                window_size = 1
+                window_size = 5
                 x_std_div   = 4.
-                x_std_offset= 0.2
-                z_std       = 0.3 #0.2
-                batch_size  = 4048
-                patience    = 10
+                x_std_offset= 0.05
+                z_std       = 0.2 #0.2
                 stateful    = False
+            elif method == 'lstm_vae_custom3':
+                from hrl_anomaly_detection.vae import lstm_vae_custom3 as km
+                ths_l = np.logspace(-1.0,2.,40) -0.2
+                x_std_div   = 1.
+                x_std_offset= 0.0
+                z_std       = 0.5
             elif method == 'lstm_vae2':
                 from hrl_anomaly_detection.vae import lstm_vae_state_batch2 as km
                 ths_l = np.logspace(-1.0,2.2,40) -0.5  
