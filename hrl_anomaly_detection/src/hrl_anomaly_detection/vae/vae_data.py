@@ -172,25 +172,11 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         valData   = [normalTrainData[int(len(normalTrainData)*0.7):],
                      [0]*len(normalTrainData[int(len(normalTrainData)*0.7):])]
         testData  = [normalTestData, [0]*len(normalTestData)]
-        #del abnormalTrainData
 
         # scaling info to reconstruct the original scale of data
         scaler_dict = {'scaler': scaler, 'scale': scale, 'param_dict': d['param_dict']}
 
         # ------------------------------------------------------------------------------------------
-        # TEST Code
-        # ------------------------------------------------------------------------------------------
-        ## normalData   = np.hstack([copy.deepcopy(d['successData']), copy.deepcopy(td1['successData']), \
-        ##                           copy.deepcopy(td2['successData'])])
-        ## abnormalData = np.hstack([copy.deepcopy(d['failureData']), copy.deepcopy(td1['failureData']), \
-        ##                           copy.deepcopy(td2['failureData'])])
-        ## normalData   = copy.deepcopy(d['successData'])
-        ## abnormalData = copy.deepcopy(d['failureData'])
-        
-        ## trainData, testData, window_size, raw_data, raw_data_ft = \
-        ##   get_batch_data(normalData, abnormalData, win=False)
-        ## (normalTrainData, abnormalTrainData, normalTestData, abnormalTestData) = raw_data
-        ## (normalTrainData_ft, abnormalTrainData_ft, normalTestData_ft, abnormalTestData_ft) = raw_data_ft
         # ------------------------------------------------------------------------------------------        
         method      = 'lstm_vae_custom3'
          
@@ -235,8 +221,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 from hrl_anomaly_detection.vae import lstm_vae_custom3 as km
                 ths_l = np.logspace(-1.0,2.,40) -0.2
                 x_std_div   = 1.
-                x_std_offset= 0.01
-                z_std       = 0.4
+                x_std_offset= 0.05
+                z_std       = 0.5
                 sam_epoch   = 1
             elif method == 'lstm_vae2':
                 from hrl_anomaly_detection.vae import lstm_vae_state_batch2 as km
