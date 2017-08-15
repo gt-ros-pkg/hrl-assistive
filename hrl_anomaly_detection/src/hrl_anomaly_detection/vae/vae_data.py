@@ -178,7 +178,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
 
         # ------------------------------------------------------------------------------------------
         # ------------------------------------------------------------------------------------------        
-        method      = 'lstm_vae_custom3'
+        method      = 'lstm_vae_custom'
          
         weights_path = os.path.join(save_data_path,'model_weights_'+method+'_'+str(idx)+'.h5')
         vae_mean   = None
@@ -212,6 +212,11 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                     x_std_div   = 4.
                     x_std_offset= 0.05
                     z_std       = 0.3 #0.2
+                elif nDim == 6:
+                   ths_l = np.logspace(-1.0,2.,40) -0.2
+                   x_std_div   = 4.
+                   x_std_offset= 0.1
+                   z_std       = 0.2
                 else:
                    ths_l = np.logspace(-1.0,2.,40) -0.2
                    x_std_div   = 2.
@@ -220,8 +225,13 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             elif method == 'lstm_vae_custom3':
                 from hrl_anomaly_detection.vae import lstm_vae_custom3 as km
                 ths_l = np.logspace(-1.0,2.,40) -0.2
+<<<<<<< HEAD
                 x_std_offset= 0.05
                 z_std       = 0.6
+=======
+                x_std_offset= 0.0001
+                z_std       = 0.5
+>>>>>>> 75151a627af93f754c00f080649569534816aa9b
                 sam_epoch   = 1
             elif method == 'lstm_vae2':
                 from hrl_anomaly_detection.vae import lstm_vae_state_batch2 as km
@@ -326,7 +336,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             alpha = np.array([1.0]*nDim) #/float(nDim)
             if nDim ==8:
                 alpha[-1] = 0.4
-            elif nDim == 4:
+            else:
                 alpha[0] = 0.4
             ## alpha = np.array([0.0]*nDim)/float(nDim)
             ## alpha[0] = 1.0
@@ -809,6 +819,7 @@ if __name__ == '__main__':
     ##                                             'unimodal_landmarkDist',\
     ##                                             'crossmodal_landmarkEEAng']
 
+    '''
     param_dict['data_param']['handFeatures'] = ['unimodal_kinVel',\
                                                 'unimodal_kinJntEff_1',\
                                                 'unimodal_ftForce_zero',\
@@ -817,7 +828,18 @@ if __name__ == '__main__':
                                                 'unimodal_kinDesEEChange',\
                                                 'crossmodal_landmarkEEDist', \
                                                 'unimodal_audioWristRMS']
-    
+
+
+    param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',\
+                                                'unimodal_kinJntEff_1',\
+                                                'unimodal_ftForce_zero',\
+                                                'unimodal_ftForce_integ',\
+                                                'unimodal_kinDesEEChange',\
+                                                'crossmodal_landmarkEEDist', \
+                                                ]
+
+
+    '''
     param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
                                                'unimodal_kinJntEff_1',\
                                                'unimodal_ftForce_integ',\
