@@ -38,7 +38,7 @@ import scipy
 import h5py 
 from keras.models import Sequential, Model
 from keras.layers import Merge, Input, TimeDistributed, Layer
-from keras.layers import Activation, Dropout, Flatten, Dense, merge, Lambda, RepeatVector, LSTM
+from keras.layers import Activation, Dropout, Flatten, Dense, merge, Lambda, RepeatVector, LSTM, GaussianNoise
 from keras.layers.advanced_activations import PReLU, LeakyReLU
 from keras.utils.np_utils import to_categorical
 from keras.optimizers import SGD, Adagrad, Adadelta, RMSprop, Adam
@@ -80,10 +80,10 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
     inputs = Input(batch_shape=(batch_size, timesteps, input_dim+1))
     def slicing(x): return x[:,:,:input_dim]
     encoded = Lambda(slicing)(inputs)     
-    encoded = LSTM(h1_dim, return_sequences=False, activation='tanh', stateful=True,
-                   trainable=True if trainable==0 or trainable is None else False)(encoded)
-    z_mean  = Dense(z_dim, trainable=True if trainable==1 or trainable is None else False)(encoded) 
-    z_log_var = Dense(z_dim, trainable=True if trainable==1 or trainable is None else False)(encoded) 
+    encoded = GaussianNoise(noise_mag)(encoded)
+    encoded = LSTM(h1_dim, return_sequences=False, activation='tanh', stateful=True)(encoded)
+    z_mean  = Dense(z_dim)(encoded) 
+    z_log_var = Dense(z_dim)(encoded) 
     
     def sampling(args):
         z_mean, z_log_var = args
@@ -91,11 +91,9 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
         return z_mean + K.exp(z_log_var/2.0) * epsilon    
         
     # we initiate these layers to reuse later.
-    decoded_h1 = Dense(h1_dim, trainable=True if trainable==2 or trainable is None else False,
-                       name='h_1') #, activation='tanh'
+    decoded_h1 = Dense(h1_dim) #, activation='tanh'
     decoded_h2 = RepeatVector(timesteps, name='h_2')
-    decoded_L21 = LSTM(input_dim*2, return_sequences=True, activation='sigmoid', stateful=True,
-                       trainable=True if trainable==3 or trainable is None else False, name='L_21')
+    decoded_L21 = LSTM(input_dim*2, return_sequences=True, activation='sigmoid', stateful=True)
 
     # Custom loss layer
     class CustomVariationalLayer(Layer):
@@ -225,8 +223,8 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                         
                     
                     for j in xrange(len(x[0])-timesteps+1): # per window
-                        np.random.seed(3334 + i*len(x[0]) + j)                        
-                        noise = np.random.normal(0, noise_mag, (batch_size, timesteps, nDim))
+                        #np.random.seed(3334 + i*len(x[0]) + j)                        
+                        noise = 0 #np.random.normal(0, noise_mag, (batch_size, timesteps, nDim))
 
                         p = float(j)/float(length-timesteps+1) *2.0-1.0
                         tr_loss = vae_autoencoder.train_on_batch(
