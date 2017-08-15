@@ -135,7 +135,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     # HMM-induced vector with LOPO
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(d['kFoldList']):
-        #if idx != 5 : continue
+        #if idx != 7 : continue
 
 
         # dim x sample x length
@@ -216,10 +216,21 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 ths_l = np.logspace(-1.0,2.4,40) #-0.1
             elif method == 'lstm_vae_custom':
                 from hrl_anomaly_detection.vae import lstm_vae_custom as km
-                ths_l = np.logspace(-1.0,2.,40) -0.2
-                x_std_div   = 2 #4.
-                x_std_offset= 0.1 #0.05
-                z_std       = 0.3 #0.2
+                if nDim == 4:
+                    ths_l = np.logspace(-1.0,2.,40) -0.2
+                    x_std_div   = 4.
+                    x_std_offset= 0.05
+                    z_std       = 0.3 #0.2
+                elif nDim == 6:
+                   ths_l = np.logspace(-1.0,2.,40) -0.2
+                   x_std_div   = 4.
+                   x_std_offset= 0.1
+                   z_std       = 0.2
+                else:
+                   ths_l = np.logspace(-1.0,2.,40) -0.2
+                   x_std_div   = 2.
+                   x_std_offset= 0.05
+                   z_std       = 0.3
             elif method == 'lstm_vae2':
                 from hrl_anomaly_detection.vae import lstm_vae_state_batch2 as km
                 ths_l = np.logspace(-1.0,2.2,40) -0.5  
@@ -234,7 +245,24 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
               km.lstm_vae(trainData, valData, weights_path, patience=4, batch_size=batch_size,
                           noise_mag=noise_mag, timesteps=window_size, sam_epoch=sam_epoch,
                           x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,                          
-                          re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot) 
+                          re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot)
+            
+        elif method == 'lstm_pred':
+            from hrl_anomaly_detection.vae import lstm_pred as km
+            from hrl_anomaly_detection.vae import lstm_pred_var as km
+            stateful = True
+            ths_l = np.logspace(-3.0,2.1,40) #-0.1
+            ad_method   = 'recon_err_vec'
+            window_size = 5
+            x_std_div   = 2.
+            x_std_offset= 0.1
+            
+            autoencoder, vae_mean = \
+              km.lstm_pred(trainData, valData, weights_path, patience=4, batch_size=batch_size,
+                           noise_mag=noise_mag, timesteps=window_size, sam_epoch=sam_epoch,
+                           x_std_div=x_std_div, x_std_offset=x_std_offset,                          
+                           re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot)
+            
         elif method == 'lstm_ae':
             # LSTM-AE (Confirmed) %74.99
             from hrl_anomaly_detection.vae import lstm_ae_state_batch as km
@@ -298,8 +326,11 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                                       generator, normalTrainData, window_size,\
                                       save_pkl=save_pkl)
         else:
-            alpha = np.array([1.0]*nDim)/float(nDim)
-            alpha = np.array([0.4,1.0,1.0,1.0]) #/4.0
+            alpha = np.array([1.0]*nDim) #/float(nDim)
+            if nDim ==8:
+                alpha[-1] = 0.4
+            else:
+                alpha[0] = 0.4
             ## alpha = np.array([0.0]*nDim)/float(nDim)
             ## alpha[0] = 1.0
 
@@ -321,6 +352,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                                ad_method, method,
                                window_size, alpha, ths_l=ths_l, save_pkl=save_pkl, stateful=stateful,
                                x_std_div = x_std_div, x_std_offset=x_std_offset, z_std=z_std, plot=plot,
+                               step_ahead = 5,
                                renew=clf_renew, dyn_ths=dyn_ths, batch_info=(fixed_batch_size,batch_size))
 
         roc_l.append(roc)
@@ -785,6 +817,7 @@ if __name__ == '__main__':
     '''
 
 
+
     param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',\
                                                 'unimodal_kinJntEff_1',\
                                                 'unimodal_ftForce_zero',\
@@ -800,7 +833,7 @@ if __name__ == '__main__':
                                                'unimodal_ftForce_integ',\
                                                'crossmodal_landmarkEEDist']
     '''
-    
+
 
     if opt.gen_data:
         if opt.bNoUpdate: param_dict['ROC']['update_list'] = []        

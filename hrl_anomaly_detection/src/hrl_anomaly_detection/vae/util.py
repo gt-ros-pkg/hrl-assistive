@@ -49,6 +49,19 @@ def sampleWithWindow(X, window=5):
     return X_new
 
 
+def create_dataset(X, window_size=5, step=5):
+    '''
+    dataset: timesteps x dim
+    '''    
+    x = []
+    y = []
+    for j in range(len(X)-step-window_size):
+        x.append(X[j:(j+window_size), :].tolist())
+        y.append(X[j+step:(j+step+window_size), :].tolist())
+    return np.array(x), np.array(y)
+
+
+
 def graph_variations(x_true, x_pred_mean, x_pred_std=None):
     '''
     x_true: timesteps x dim

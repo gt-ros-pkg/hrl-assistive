@@ -95,6 +95,8 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
     scores_tr_n = np.array(scores_tr_n)
     scores_te_n = np.array(scores_te_n)
     scores_te_a = np.array(scores_te_a)
+    
+    if ad_method == 'recon_err_vec': dyn_ths=False
 
     print np.shape(scores_te_n), np.shape(scores_tr_n)
 
@@ -109,7 +111,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         if method=='SVR':
             print "Start to fit SVR with gamma="
             from sklearn.svm import SVR
-            clf = SVR(C=1.0, epsilon=0.2, kernel='rbf', degree=3, gamma=.5)
+            clf = SVR(C=1.0, epsilon=0.2, kernel='rbf', degree=3, gamma=2.0)
         elif method=='RF':
             print "Start to fit RF : ", np.shape(x), np.shape(y)
             from sklearn.ensemble import RandomForestRegressor
@@ -167,7 +169,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         plt.show()
         '''
 
-        for i, s in enumerate(scores_te_n):
+        for i, s in enumerate(scores_te_a):
             fig = plt.figure()
             plt.plot(s, '-b')
             ths = 1
@@ -176,8 +178,8 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
             s_pred_bnd = []
             for j in xrange(len(s)):
                 if dyn_ths:
-                    #x = scaler.transform(zs_te_n[i][j])
-                    x = zs_te_n[i][j]
+                    #x = scaler.transform(zs_te_a[i][j])
+                    x = zs_te_a[i][j]
                     if method == 'SVR' or method == 'KNN':
                         s_pred = np.squeeze( clf.predict( x ) )
                         s_pred_mu.append(s_pred)
@@ -313,23 +315,30 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
     train_flag = kwargs.get('train_flag', False)
     valData    = kwargs.get('valData', None)
 
+
     scores = []
     zs = []
     for i in xrange(len(X)): # per sample
         #print "sample: ", i+1, " out of ", len(X)
         np.random.seed(3334 + i)
             
-        if window_size>0: x = vutil.sampleWithWindow(X[i:i+1], window=window_size)
-        else:             x = X[i:i+1]
+        if window_size>0:
+            if method == 'lstm_pred':                
+                x,y = vutil.create_dataset(X[i], window_size, 5)
+            else:
+                x = vutil.sampleWithWindow(X[i:i+1], window=window_size)
+        else:
+            x = X[i:i+1]
         if type(x) is list: x = np.array(x)
 
         if stateful:
             vae.reset_states()
-            enc_z_mean.reset_states()
+            if enc_z_mean is not None: enc_z_mean.reset_states()
             if enc_z_logvar is not None: enc_z_logvar.reset_states()                
 
         z = []
         s = []
+        e = []
         for j in xrange(len(x)): # per window
             # anomaly score per timesteps in an window            
             # pdf prediction
@@ -347,17 +356,16 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
                 xx = x[j:j+1]
 
             if method == 'lstm_vae_custom':
-                x_in = np.concatenate((xx, np.zeros((len(xx), len(xx[0]),1))), axis=-1)
+                x_true = np.concatenate((xx, np.zeros((len(xx), len(xx[0]),1))), axis=-1)
             else:
-                x_in = xx
+                x_true = xx
                 
-            x_new  = vae.predict(x_in, batch_size=batch_info[1])[0]
-            ## x_new  = vae.predict(x[j:j+1])[0]
+            x_pred  = vae.predict(x_true, batch_size=batch_info[1])[0]
 
             # length x dim
-            x_mean = x_new[:,:x_dim]
-            if enc_z_logvar is not None:
-                x_std  = np.sqrt(x_new[:,x_dim:]/x_std_div+x_std_offset)
+            x_mean = x_pred[:,:x_dim]
+            if enc_z_logvar is not None or len(x_pred[0])>x_dim:
+                x_std  = np.sqrt(x_pred[:,x_dim:]/x_std_div+x_std_offset)
             else:
                 x_std = None
 
@@ -371,7 +379,20 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
                 # Method 1: Reconstruction probability
                 l = get_reconstruction_err(xx, x_mean, alpha=alpha)
                 s.append( l )
-                z.append( enc_z_mean.predict(xx, batch_size=batch_info[1])[0].tolist() )
+                z.append( enc_z_mean.predict(xx, batch_size=batch_info[1])[0].tolist() )                
+            elif ad_method == 'recon_err_vec':
+                # Method 1: Reconstruction errors
+                #print np.shape(x_mean) #win x dim
+                l = get_reconstruction_err_prob(y[j], x_mean, x_std, alpha=alpha)
+                s.append(l)
+                ## err_vec = np.linalg.norm(y[j]-x_mean, axis=-1)
+                ## e.append( err_vec )
+
+                ## if len(e)>window_size:
+                ##     temp = []
+                ##     for k in range(-1, -window_size-1,-1):
+                ##         temp.append(e[k][-k-1])
+                ##     s.append( np.mean(temp) )
             elif ad_method == 'recon_err_lld':
                 # Method 1: Reconstruction likelihhod
                 if ref_scores is not None:
@@ -392,7 +413,6 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
                     if len(s) == 0: s = l
                     else:           s = np.concatenate((s,l), axis=0)
                 #print np.shape(s), np.shape(xx[0]), np.shape(x_mean)
-                    
             elif ad_method == 'lower_bound':
 
                 if method == 'lstm_vae_custom':
@@ -485,6 +505,18 @@ def get_reconstruction_err_lld(x, x_mean, alpha=1.0):
 
     # find min 
     return [np.amin(p_l)]
+
+
+def get_reconstruction_err_vec(x, x_mean, alpha=1.0):
+    '''
+    Return error vector
+    '''
+
+    if len(np.shape(x))>2:
+        x = x[0]
+        
+    return np.linalg.norm(x-x_mean, axis=-1)
+
 
 
 def get_lower_bound(x, x_mean, x_std, z_std, enc_z_mean, enc_z_logvar, nDim, method=None, p=None,
