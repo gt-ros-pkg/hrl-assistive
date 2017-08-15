@@ -139,13 +139,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     # HMM-induced vector with LOPO
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(d['kFoldList']):
-<<<<<<< HEAD
-        #if idx != 3 : continue
-=======
-        #if idx != 7 : continue
+        if not(idx == 0 or idx == 7): continue
         print "==================== ", idx, " ========================"
->>>>>>> df130df17ad8fd915946d23d2a9707c712b7af0a
-
 
         # dim x sample x length
         normalTrainData   = d['successData'][:, normalTrainIdx, :]
@@ -239,15 +234,9 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             elif method == 'lstm_vae_custom3':
                 from hrl_anomaly_detection.vae import lstm_vae_custom3 as km
                 ths_l = np.logspace(-1.0,2.,40) -0.2
-<<<<<<< HEAD
                 x_std_div   = 1.
                 x_std_offset= 0.01
                 z_std       = 0.4
-=======
-                x_std_div   = 1.0
-                x_std_offset= 0.0
-                z_std       = 0.5 #0.2
->>>>>>> df130df17ad8fd915946d23d2a9707c712b7af0a
                 sam_epoch   = 1
             elif method == 'lstm_vae2':
                 from hrl_anomaly_detection.vae import lstm_vae_state_batch2 as km
