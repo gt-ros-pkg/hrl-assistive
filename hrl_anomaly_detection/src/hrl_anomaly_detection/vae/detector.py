@@ -150,7 +150,6 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
 
     if True and False:
         print np.shape(zs_tr_n), np.shape(scores_tr_n)
-
         
         fig = plt.figure() 
         ## from mpl_toolkits.mplot3d import Axes3D

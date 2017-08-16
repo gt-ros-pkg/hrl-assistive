@@ -71,7 +71,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
     input_dim = len(x_train[0][0])
     length = len(x_train[0])
 
-    h1_dim = input_dim
+    h1_dim = 4 #input_dim
     ## h2_dim = 2 #input_dim
     z_dim  = 2
 

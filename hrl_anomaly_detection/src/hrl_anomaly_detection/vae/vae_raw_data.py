@@ -131,7 +131,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     # HMM-induced vector with LOPO
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(d['kFoldList']):
-        if not(idx == 0 or idx==1): continue
+        if idx != 0: continue
+        #if not(idx == 0 or idx==1): continue
 
         # dim x sample x length
         normalTrainData   = d['successData'][:, normalTrainIdx, :]
@@ -185,7 +186,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         sam_epoch   = 40
         patience    = 4
 
-        if (method.find('lstm_vae')>=0 or method.find('lstm_dvae')>=0) and
+        if (method.find('lstm_vae')>=0 or method.find('lstm_dvae')>=0) and\
             method.find('offline')<0:
             x_std_div   = 2
             x_std_offset= 0.01
@@ -204,7 +205,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 ths_l = np.logspace(-1.0,2.,40) -0.2
                 x_std_div   = 4.
                 x_std_offset= 0.1
-                z_std       = 0.3 #0.2
+                z_std       = 0.01 #0.2
             elif method == 'lstm_dvae_phase':
                 from hrl_anomaly_detection.vae import lstm_dvae_phase as km
                 ths_l = np.logspace(-1.0,2.,40) -0.2
@@ -271,7 +272,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                           re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot) 
         
         #------------------------------------------------------------------------------------
-        if  True and False: 
+        if  True : 
             vutil.graph_latent_space(normalTestData, abnormalTestData, enc_z_mean,
                                      timesteps=window_size, batch_size=batch_size,
                                      method=method)
@@ -289,7 +290,9 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                                          dyn_ths=dyn_ths, batch_info=(fixed_batch_size,batch_size))
         else:
             alpha = np.array([1.0]*nDim) #/float(nDim)
-            alpha[0] = 0.5
+            alpha[0] = 1.0
+            alpha[4:11] = 0.5
+            
 
 
         if fine_tuning: clf_renew=True
