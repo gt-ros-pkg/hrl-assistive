@@ -121,8 +121,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
             x_d_mean = args[1][:,:,:input_dim]
             x_d_std  = args[1][:,:,input_dim:]/x_std_div + x_std_offset
 
-            for i in range(z_dim-1):
-                p = K.concatenate([K.zeros(shape=(K.shape(p))),p], axis=-1)
+            p = K.concatenate([K.zeros(shape=(batch_size, timesteps ,z_dim-1)),p], axis=-1)
             
             loss = self.vae_loss(x, x_d_mean, x_d_std, p)
             self.add_loss(loss, inputs=args)
