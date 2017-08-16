@@ -274,7 +274,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                           re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot) 
         
         #------------------------------------------------------------------------------------
-        if  True : 
+        if  True and False: 
             vutil.graph_latent_space(normalTestData, abnormalTestData, enc_z_mean,
                                      timesteps=window_size, batch_size=batch_size,
                                      method=method)
@@ -292,7 +292,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                                          dyn_ths=dyn_ths, batch_info=(fixed_batch_size,batch_size))
         else:
             alpha = np.array([1.0]*nDim) #/float(nDim)
-            alpha[0] = 1.0
+            alpha[0] = 1.
             alpha[4:11] = 0.5
             
 
