@@ -186,6 +186,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         sam_epoch   = 40
         patience    = 4
         h1_dim      = nDim
+        phase       = 1.0
 
         if (method.find('lstm_vae')>=0 or method.find('lstm_dvae')>=0) and\
             method.find('offline')<0:
@@ -205,14 +206,16 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 ths_l = np.logspace(-1.0,2.,40) -0.2
                 x_std_div   = 4.
                 x_std_offset= 0.1
-                z_std       = 0.01 #0.2
-                h1_dim      = 4 # raw
+                z_std       = 0.1 #0.2
+                h1_dim      = nDim #8 #4 # raw
+                phase       = 5.0
             elif method == 'lstm_dvae_phase':
                 from hrl_anomaly_detection.vae import lstm_dvae_phase as km
                 ths_l = np.logspace(-1.0,2.,40) -0.2
                 x_std_div   = 4.
                 x_std_offset= 0.2
                 z_std       = 0.3
+                phase       = 5.0
             elif method == 'lstm_vae_custom3':
                 from hrl_anomaly_detection.vae import lstm_vae_custom3 as km
                 ths_l = np.logspace(-1.0,2.,40) -0.2
@@ -230,7 +233,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
               km.lstm_vae(trainData, valData, weights_path, patience=patience, batch_size=batch_size,
                           noise_mag=noise_mag, timesteps=window_size, sam_epoch=sam_epoch,
                           x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,
-                          h1_dim = h1_dim,\
+                          h1_dim = h1_dim, phase=phase,\
                           renew=ae_renew, fine_tuning=fine_tuning, plot=plot) 
         elif method == 'lstm_ae':
             # LSTM-AE (Confirmed) %74.99
@@ -292,8 +295,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                                          dyn_ths=dyn_ths, batch_info=(fixed_batch_size,batch_size))
         else:
             alpha = np.array([1.0]*nDim) #/float(nDim)
-            alpha[0] = 1.0
-            alpha[4:11] = 0.5
+            alpha[0] = 0.5
+            #alpha[4:11] = 0.5
             
 
 
@@ -313,7 +316,9 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                                normalTestData, abnormalTestData, \
                                ad_method, method,
                                window_size, alpha, ths_l=ths_l, save_pkl=save_pkl, stateful=stateful,
-                               x_std_div = x_std_div, x_std_offset=x_std_offset, z_std=z_std, plot=plot,
+                               x_std_div = x_std_div, x_std_offset=x_std_offset, z_std=z_std, \
+                               phase=phase,\
+                               plot=plot,
                                renew=clf_renew, dyn_ths=dyn_ths, batch_info=(fixed_batch_size,batch_size))
 
         roc_l.append(roc)

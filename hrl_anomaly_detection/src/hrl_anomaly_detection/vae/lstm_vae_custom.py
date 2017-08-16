@@ -56,6 +56,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
              patience=20, fine_tuning=False, save_weights_file=None, \
              noise_mag=0.0, timesteps=4, sam_epoch=1, \
              x_std_div=1, x_std_offset=0.001, z_std=0.5,\
+             phase=1.0,\
              re_load=False, renew=False, plot=True, trainable=None, **kwargs):
     """
     Variational Autoencoder with two LSTMs and one fully-connected layer
@@ -227,7 +228,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                         np.random.seed(3334 + i*len(x[0]) + j)                        
                         noise = np.random.normal(0, noise_mag, (batch_size, timesteps, nDim))
 
-                        p = float(j)/float(length-timesteps+1) *2.0-1.0
+                        p = float(j)/float(length-timesteps+1) *2.0*phase - phase
                         tr_loss = vae_autoencoder.train_on_batch(
                             np.concatenate((x[:,j:j+timesteps]+noise,
                                             p*np.ones((len(x), timesteps, 1))), axis=-1),
@@ -264,7 +265,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                     x = x_test[i:i+batch_size]
                 
                 for j in xrange(len(x[0])-timesteps+1):
-                    p = float(j)/float(length-timesteps+1) *2.0-1.0
+                    p = float(j)/float(length-timesteps+1) * 2.0* phase - phase
                     te_loss = vae_autoencoder.test_on_batch(
                         np.concatenate((x[:,j:j+timesteps],
                                         p*np.ones((len(x), timesteps,1))), axis=-1),
