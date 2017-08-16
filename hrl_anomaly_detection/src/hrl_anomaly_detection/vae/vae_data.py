@@ -139,7 +139,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     # HMM-induced vector with LOPO
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(d['kFoldList']):
-        if not(idx == 0 or idx == 7): continue
+        if idx != 0: continue
+        #if not(idx == 0 or idx == 7): continue
         print "==================== ", idx, " ========================"
 
 
@@ -220,8 +221,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                    z_std       = 0.2
                 else:
                    ths_l = np.logspace(-1.0,2.,40) -0.2
-                   x_std_div   = 2.
-                   x_std_offset= 0.05
+                   x_std_div   = 4.
+                   x_std_offset= 0.1
                    z_std       = 0.3
             elif method == 'lstm_vae_custom3':
                 from hrl_anomaly_detection.vae import lstm_vae_custom3 as km
