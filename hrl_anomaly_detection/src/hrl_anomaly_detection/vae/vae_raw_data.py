@@ -131,8 +131,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     # HMM-induced vector with LOPO
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(d['kFoldList']):
+        if idx != 0: continue
         #if not(idx == 0 or idx==1): continue
-        if idx!=0: continue
 
         # dim x sample x length
         normalTrainData   = d['successData'][:, normalTrainIdx, :]
@@ -292,7 +292,9 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                                          dyn_ths=dyn_ths, batch_info=(fixed_batch_size,batch_size))
         else:
             alpha = np.array([1.0]*nDim) #/float(nDim)
-            alpha[0] = 0.5
+            alpha[0] = 1.0
+            alpha[4:11] = 0.5
+            
 
 
         if fine_tuning: clf_renew=True

@@ -185,6 +185,8 @@ def graph_latent_space(normalTestData, abnormalTestData, enc_z, timesteps=1, bat
     else:
         #if batch_size is not None:
         z_mean_n = []
+        z_mean_n_s = []
+        z_mean_n_e = []
         for i in xrange(len(normalTestData)):
 
             x = normalTestData[i:i+1]
@@ -200,9 +202,13 @@ def graph_latent_space(normalTestData, abnormalTestData, enc_z, timesteps=1, bat
                     x_in = x[:,j:j+timesteps]
                 z = enc_z.predict(x_in, batch_size=batch_size)
                 z_mean.append( z[0] )
+                if j==0: z_mean_n_s.append(z[0])
+                if j==len(x[0])-timesteps: z_mean_n_e.append(z[0])
             z_mean_n.append(z_mean)
 
         z_mean_a = []
+        z_mean_a_s = []
+        z_mean_a_e = []
         for i in xrange(len(abnormalTestData)):
 
             x = abnormalTestData[i:i+1]
@@ -218,13 +224,16 @@ def graph_latent_space(normalTestData, abnormalTestData, enc_z, timesteps=1, bat
                     x_in = x[:,j:j+timesteps]                    
                 z = enc_z.predict(x_in, batch_size=batch_size)
                 z_mean.append( z[0] )
+                if j==0: z_mean_a_s.append(z[0])
+                if j==len(x[0])-timesteps: z_mean_a_e.append(z[0])
             z_mean_a.append(z_mean)
 
-        viz_latent_space(z_mean_n, z_mean_a, save_pdf=save_pdf)
+        viz_latent_space(z_mean_n, z_mean_a, z_n_se=(z_mean_n_s, z_mean_n_e),
+                         save_pdf=save_pdf)
     
 
 
-def viz_latent_space(z_n, z_a=None, save_pdf=False):
+def viz_latent_space(z_n, z_a=None, z_n_se=None, save_pdf=False):
     '''
     z_n: latent variable from normal data
     z_n: latent variable from abnormal data
@@ -248,7 +257,12 @@ def viz_latent_space(z_n, z_a=None, save_pdf=False):
     for z in z_n:
         ax1 = plt.scatter(z[:,0], z[:,1], color='b', s=0.5*s, alpha=.4, label='Non-anomalous')
         #    plt.plot(z[:,0], z[:,1], 'b', marker='o', ms=5, alpha=.4, label='Non-anomalous')
-    
+
+    if z_n_se is not None:
+        z_n_s, z_n_e = z_n_se
+        plt.scatter(np.array(z_n_s)[:,0], np.array(z_n_s)[:,1], color='g', s=1.*s, marker='x')
+        plt.scatter(np.array(z_n_e)[:,0], np.array(z_n_e)[:,1], color='y', s=1.*s, marker='x') 
+            
 
     ax = plt.gca()
     ax.axes.get_xaxis().set_visible(False)

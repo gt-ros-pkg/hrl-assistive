@@ -72,7 +72,6 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
     length = len(x_train[0])
 
     h1_dim = kwargs.get('h1_dim', input_dim)
-    ## h2_dim = 2 #input_dim
     z_dim  = 2
 
 
@@ -228,7 +227,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                         np.random.seed(3334 + i*len(x[0]) + j)                        
                         noise = np.random.normal(0, noise_mag, (batch_size, timesteps, nDim))
 
-                        p = float(j)/float(length-timesteps+1) *2.0-1.0
+                        p = float(j)/float(length-timesteps+1) *20.0-10.0
                         tr_loss = vae_autoencoder.train_on_batch(
                             np.concatenate((x[:,j:j+timesteps]+noise,
                                             p*np.ones((len(x), timesteps, 1))), axis=-1),
@@ -265,7 +264,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                     x = x_test[i:i+batch_size]
                 
                 for j in xrange(len(x[0])-timesteps+1):
-                    p = float(j)/float(length-timesteps+1) *2.0-1.0
+                    p = float(j)/float(length-timesteps+1) *20.0-10.0
                     te_loss = vae_autoencoder.test_on_batch(
                         np.concatenate((x[:,j:j+timesteps],
                                         p*np.ones((len(x), timesteps,1))), axis=-1),
