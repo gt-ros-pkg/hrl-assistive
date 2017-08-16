@@ -167,7 +167,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
 
 
         # ------------------------------------------------------------------------------------------        
-        method      = 'lstm_vae_custom'
+        method      = 'lstm_vae_phase'
          
         weights_path = os.path.join(save_data_path,'model_weights_'+method+'_'+str(idx)+'.h5')
         vae_mean   = None
@@ -208,7 +208,15 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 x_std_offset= 0.1
                 z_std       = 0.3 #0.2
                 h1_dim      = nDim #8 #4 # raw
-                phase       = 0.0
+                phase       = 1.0
+            elif method == 'lstm_vae_phase':
+                from hrl_anomaly_detection.vae import lstm_vae_phase as km
+                ths_l = np.logspace(-1.0,2.,40) -0.2
+                x_std_div   = 4.
+                x_std_offset= 0.1
+                z_std       = 0.3 #0.2
+                h1_dim      = nDim #8 #4 # raw
+                phase       = 1.0
             elif method == 'lstm_dvae_phase':
                 from hrl_anomaly_detection.vae import lstm_dvae_phase as km
                 ths_l = np.logspace(-1.0,2.,40) -0.2
