@@ -114,7 +114,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
         p      = x_tr[:,0,input_dim-1:]
 
         x_mean = K.mean(K.reshape(x_pred, shape=(-1,input_dim)), axis=0) #dim
-        x_std  = K.std(K.reshape(x_pred, shape=(-1,input_dim)), axis=0)/x_std_div+x_std_offset
+        x_std  = K.std(K.reshape(x_pred, shape=(-1,input_dim)), axis=0)+x_std_offset
 
         # sample x length 
         log_p_x_z = -0.5 * ( K.sum(K.square((x_true-x_mean)/x_std), axis=-1) \
