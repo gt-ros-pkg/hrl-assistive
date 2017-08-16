@@ -255,7 +255,7 @@ def viz_latent_space(z_n, z_a=None, save_pdf=False):
     ax.axes.get_yaxis().set_visible(False)
     
         
-    plt.legend(handles=[ax1, ax2], loc=3, ncol=2)
+    #plt.legend(handles=[ax1, ax2], loc=3, ncol=2)
 
     if save_pdf:
         fig.savefig('test.pdf')
