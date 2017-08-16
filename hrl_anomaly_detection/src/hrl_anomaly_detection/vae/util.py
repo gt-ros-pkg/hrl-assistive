@@ -195,7 +195,7 @@ def graph_latent_space(normalTestData, abnormalTestData, enc_z, timesteps=1, bat
 
             z_mean=[]
             for j in xrange(len(x[0])-timesteps+1):
-                if method == 'lstm_vae_custom':
+                if method.find('lstm_vae_custom') >=0 or method.find('phase')>=0:
                     x_in = np.concatenate((x[:,j:j+timesteps],
                                            np.zeros((len(x), timesteps,1))), axis=-1)
                 else:
@@ -217,7 +217,7 @@ def graph_latent_space(normalTestData, abnormalTestData, enc_z, timesteps=1, bat
 
             z_mean=[]
             for j in xrange(len(x[0])-timesteps+1):
-                if method == 'lstm_vae_custom':
+                if method.find('lstm_vae_custom')>=0 or method.find('phase')>=0:
                     x_in = np.concatenate((x[:,j:j+timesteps],
                                            np.zeros((len(x), timesteps,1))), axis=-1)
                 else:
