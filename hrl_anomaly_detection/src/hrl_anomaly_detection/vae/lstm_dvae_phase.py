@@ -56,6 +56,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
              patience=20, fine_tuning=False, save_weights_file=None, \
              noise_mag=0.0, timesteps=4, sam_epoch=1, \
              x_std_div=1, x_std_offset=0.001, z_std=0.5,\
+             phase=1.0,\
              re_load=False, renew=False, plot=True, trainable=None, **kwargs):
     """
     Variational Autoencoder with two LSTMs and one fully-connected layer
@@ -71,9 +72,8 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
     input_dim = len(x_train[0][0])
     length = len(x_train[0])
 
-    h1_dim = input_dim
-    ## h2_dim = 2 #input_dim
-    z_dim  = 2
+    h1_dim = kwargs.get('h1_dim', input_dim)
+    z_dim  = 3 #2
 
 
            
@@ -92,7 +92,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
         
     # we initiate these layers to reuse later.
     decoded_h1 = Dense(h1_dim) #, activation='tanh'
-    decoded_h2 = RepeatVector(timesteps, name='h_2')
+    decoded_h2 = RepeatVector(timesteps)
     decoded_L21 = LSTM(input_dim*2, return_sequences=True, activation='sigmoid', stateful=True)
 
     # Custom loss layer
@@ -121,6 +121,8 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
             p = args[0][:,:,input_dim:]
             x_d_mean = args[1][:,:,:input_dim]
             x_d_std  = args[1][:,:,input_dim:]/x_std_div + x_std_offset
+
+            p = K.concatenate([K.zeros(shape=(batch_size, timesteps ,z_dim-1)),p], axis=-1)
             
             loss = self.vae_loss(x, x_d_mean, x_d_std, p)
             self.add_loss(loss, inputs=args)
@@ -223,18 +225,15 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                         
                     
                     for j in xrange(len(x[0])-timesteps+1): # per window
-                        #np.random.seed(3334 + i*len(x[0]) + j)                        
-                        noise = 0 #np.random.normal(0, noise_mag, (batch_size, timesteps, nDim))
+                        ## np.random.seed(3334 + i*len(x[0]) + j)                        
+                        ## noise = np.random.normal(0, noise_mag, (batch_size, timesteps, nDim))
 
-                        p = float(j)/float(length-timesteps+1) *2.0-1.0
+                        p = float(j)/float(length-timesteps+1) *2.0*phase - phase
                         tr_loss = vae_autoencoder.train_on_batch(
-                            np.concatenate((x[:,j:j+timesteps]+noise,
+                            np.concatenate((x[:,j:j+timesteps],
                                             p*np.ones((len(x), timesteps, 1))), axis=-1),
-                            x[:,j:j+timesteps]+noise )
+                            x[:,j:j+timesteps] )
 
-                        ## tr_loss = vae_autoencoder.train_on_batch(
-                        ##     np.expand_dims(x_train[i,j:j+timesteps]+noise, axis=0),
-                        ##     np.expand_dims(x_train[i,j:j+timesteps]+noise, axis=0))
                         seq_tr_loss.append(tr_loss)
                     mean_tr_loss.append( np.mean(seq_tr_loss) )
                     vae_autoencoder.reset_states()
@@ -263,7 +262,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                     x = x_test[i:i+batch_size]
                 
                 for j in xrange(len(x[0])-timesteps+1):
-                    p = float(j)/float(length-timesteps+1) *2.0-1.0
+                    p = float(j)/float(length-timesteps+1) * 2.0* phase - phase
                     te_loss = vae_autoencoder.test_on_batch(
                         np.concatenate((x[:,j:j+timesteps],
                                         p*np.ones((len(x), timesteps,1))), axis=-1),

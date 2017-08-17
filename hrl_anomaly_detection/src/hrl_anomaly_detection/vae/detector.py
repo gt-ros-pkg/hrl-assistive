@@ -53,7 +53,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
                       normalTrainData, normalValData,\
                       normalTestData, abnormalTestData, ad_method, method, window_size, \
                       alpha, ths_l=None, save_pkl=None, stateful=False, \
-                      x_std_div=1.0, x_std_offset=1e-10, z_std=None,\
+                      x_std_div=1.0, x_std_offset=1e-10, z_std=None, phase=1.0, \
                       dyn_ths=False, plot=False, renew=False, batch_info=(False,None), **kwargs):
     
     print "Start to get anomaly scores"
@@ -70,14 +70,17 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
                                                  window_size, alpha, ad_method, method, stateful=stateful,
                                                  x_std_div=x_std_div, x_std_offset=x_std_offset,
                                                  z_std=z_std, batch_info=batch_info, valData=normalValData,
+                                                 phase=phase,\
                                                  train_flag=True)        
         scores_te_n, zs_te_n = get_anomaly_score(normalTestData, vae_mean, enc_z_mean, enc_z_logvar,
                                      window_size, alpha, ad_method, method, stateful=stateful,
                                      x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,
+                                     phase=phase,\
                                      batch_info=batch_info, ref_scores=scores_tr_n)
         scores_te_a, zs_te_a = get_anomaly_score(abnormalTestData, vae_mean, enc_z_mean, enc_z_logvar,
                                      window_size, alpha, ad_method, method, stateful=stateful,
                                      x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,
+                                     phase=phase,\
                                      batch_info=batch_info, ref_scores=scores_tr_n)
 
         d = {}
@@ -112,7 +115,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         if method=='SVR':
             print "Start to fit SVR with gamma="
             from sklearn.svm import SVR
-            clf = SVR(C=1.0, epsilon=0.2, kernel='rbf', degree=3, gamma=1.5)
+            clf = SVR(C=1.0, epsilon=0.2, kernel='poly', degree=3, gamma=0.5)
         elif method=='RF':
             print "Start to fit RF : ", np.shape(x), np.shape(y)
             from sklearn.ensemble import RandomForestRegressor
@@ -150,7 +153,6 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
 
     if True and False:
         print np.shape(zs_tr_n), np.shape(scores_tr_n)
-
         
         fig = plt.figure() 
         ## from mpl_toolkits.mplot3d import Axes3D
@@ -287,6 +289,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
 def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_method, method,\
                       nSample=1000,\
                       stateful=False, x_std_div=1, x_std_offset=1e-10, z_std=0.5,\
+                      phase=1.0,\
                       batch_info=(False,None), ref_scores=None, **kwargs):
 
     x_dim = len(X[0][0])
@@ -401,7 +404,7 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
             elif ad_method == 'lower_bound':
 
                 if method.find('lstm_vae_custom')>=0 or method.find('phase')>=0:
-                    p = float(j)/float(length-window_size+1) *2.0-1.0
+                    p = float(j)/float(length-window_size+1) *2.0*phase-phase
                     if train_flag:
                         p = p*np.ones((batch_info[1], window_size, 1))
                     else:
