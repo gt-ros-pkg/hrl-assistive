@@ -579,7 +579,8 @@ def get_optimal_alpha(inputs, vae, vae_mean, ad_method, method, window_size, sav
     p_ll = [[] for i in xrange(nDim) ]
 
     ## labels = np.vstack([ np.ones((len(X_nor), len(X_nor[0]))), -np.ones((len(X_abnor), len(X_abnor[0])))  ])
-    labels = [1.]*len(X_nor)*len(X_nor[0])+[-1.]*len(X_abnor)*len(X_abnor[0])
+    #labels = [1.]*len(X_nor)*len(X_nor[0])+[-1.]*len(X_abnor)*len(X_abnor[0])
+    labels = [1.]*len(X_nor)
 
     if os.path.isfile(save_pkl) and renew is False:
         d = ut.load_pickle(save_pkl)
@@ -588,9 +589,10 @@ def get_optimal_alpha(inputs, vae, vae_mean, ad_method, method, window_size, sav
         ## labels     = d['labels']
     else:
 
-        X = np.vstack([X_nor, X_abnor])
+        #X = np.vstack([X_nor, X_abnor])
+        X = X_nor
                 
-        p_ll = None
+        p_ll = []
         for i in xrange(len(X)): # per sample
             print "sample: ", i+1, " out of ", len(X), np.shape(p_ll)
             np.random.seed(3334 + i)
@@ -605,7 +607,7 @@ def get_optimal_alpha(inputs, vae, vae_mean, ad_method, method, window_size, sav
                 #if enc_z_mean is not None: enc_z_mean.reset_states()
                 #if enc_z_logvar is not None: enc_z_logvar.reset_states()                
 
-                
+            p_l = []
             for j in xrange(len(x)): # per window
 
                 if batch_info[0]:
@@ -621,7 +623,7 @@ def get_optimal_alpha(inputs, vae, vae_mean, ad_method, method, window_size, sav
                 else:
                     xx = x[j:j+1]
 
-                if method.find('lstm_vae_custom')>=0 or method.find('phase')>=0:
+                if method.find('lstm_vae')>=0 or method.find('lstm_dvae')>=0 or method.find('phase')>=0:
                     x_true = np.concatenate((xx, np.zeros((len(xx), len(xx[0]),1))), axis=-1)
                 else:
                     x_true = xx
@@ -631,6 +633,7 @@ def get_optimal_alpha(inputs, vae, vae_mean, ad_method, method, window_size, sav
 
                 # Get mean and std
                 if method == 'lstm_vae_custom3':
+                    # Real sampling
                     x_mean = np.mean(x_pred, axis=0) #length x dim
                     x_std  = np.std(x_pred, axis=0)
                 else:
@@ -644,20 +647,17 @@ def get_optimal_alpha(inputs, vae, vae_mean, ad_method, method, window_size, sav
 
                 #log_p_x_z = -0.5 * ( np.sum( (alpha*(x-x_mean)/x_std)**2, axis=-1) )
                 #log_p_x_z = np.sum( (alpha*(x-x_mean)/x_std)**2, axis=-1) 
-
                 #---------------------------------------------------------------
-                # anomaly score
-                p_l     = []
-                for k in xrange(len(x_mean[0])): # per dim
-                    p = []
-                    for l in xrange(len(x_mean)): # per length
-                        p.append( ((xx[0,l,k]-x_mean[l][k])/x_std[l][k])**2 )
-                        #p.append(scipy.stats.norm(x_mean[k][l], x_std[k][l]).pdf(x[j,l,k])) # length
-                    p_l.append(p) # dim x length
+                # anomaly score : window x dim
+                p_l.append( ((xx[0]-x_mean)/x_std)**2 )
+                
+            ## p_l     = []
+            ## for l in xrange(len(x_mean)): # per length
+            ##     p = ((xx[0,l]-x_mean[l])/x_std[l])**2
+            ##     p_l.append(p.tolist()) # length x dim
 
-                # dim x length
-                if p_ll is None: p_ll = np.array(p_l)
-                else:            p_ll = np.hstack([p_ll, np.array(p_l)])
+            max_idx = np.argmax(np.sum(np.sum(p_l, axis=-1), axis=-1))
+            p_ll.append( p_l[max_idx][0].tolist() )# sample x dim
                                 
         d = {'p_ll': p_ll, 'labels': labels}
         ut.save_pickle(d, save_pkl)
@@ -666,7 +666,9 @@ def get_optimal_alpha(inputs, vae, vae_mean, ad_method, method, window_size, sav
     print "labels: ", np.shape(labels)
 
 
-    r  = np.sum(p_ll, axis=-1)/np.sum(p_ll)
+    print np.linalg.norm(p_ll, axis=0)
+
+    r  = np.sum(p_ll, axis=0)/np.sum(p_ll)
     r  = 1.0-r
     r  = (r-np.amin(r))/(np.amax(r)-np.amin(r))*0.6+0.4
     print r

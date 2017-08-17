@@ -131,7 +131,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     # HMM-induced vector with LOPO
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(d['kFoldList']):
-        if not(idx == 0 or idx==7): continue
+        #if (idx == 0 or idx==7): continue
 
         # dim x sample x length
         normalTrainData   = d['successData'][:, normalTrainIdx, :]
@@ -207,10 +207,10 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 z_std       = 0.3 #0.2
             elif method == 'lstm_dvae_phase':
                 from hrl_anomaly_detection.vae import lstm_dvae_phase as km
-                ths_l = np.logspace(-1.0,2.,40) -0.2
+                ths_l = np.logspace(-1.0,2.4,40) -0.2
                 x_std_div   = 4.
-                x_std_offset= 0.2
-                z_std       = 0.3
+                x_std_offset= 0.1
+                z_std       = 0.5
             elif method == 'lstm_vae_custom3':
                 from hrl_anomaly_detection.vae import lstm_vae_custom3 as km
                 ths_l = np.logspace(-1.0,2.,40) -0.2
@@ -277,7 +277,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                                      method=method)
             
         # -----------------------------------------------------------------------------------
-        if True and False:
+        if True :
             # get optimized alpha
             if fine_tuning: alpha_renew = True
             else: alpha_renew = False
@@ -287,6 +287,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                                          stateful=stateful, renew=alpha_renew,\
                                          x_std_div = x_std_div, x_std_offset=x_std_offset, z_std=z_std,
                                          dyn_ths=dyn_ths, batch_info=(fixed_batch_size,batch_size))
+            sys.exit()
         else:
             alpha = np.array([1.0]*nDim) #/float(nDim)
             alpha[0] = 0.5
