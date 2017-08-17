@@ -304,7 +304,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                                      method=method)
             
         # -----------------------------------------------------------------------------------
-        if True and False:
+        if True:
             # get optimized alpha
             if fine_tuning: alpha_renew = True
             else: alpha_renew = False
@@ -313,8 +313,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                                          ad_method, method, window_size, save_pkl,\
                                          stateful=stateful, renew=alpha_renew,\
                                          x_std_div = x_std_div, x_std_offset=x_std_offset, z_std=z_std,
-                                         dyn_ths=dyn_ths, batch_info=(fixed_batch_size,batch_size))
-            sys.exit()
+                                         dyn_ths=dyn_ths, batch_info=(fixed_batch_size,batch_size))            
         else:
             alpha = np.array([1.0]*nDim) #/float(nDim)
             alpha[0] = 1.0
