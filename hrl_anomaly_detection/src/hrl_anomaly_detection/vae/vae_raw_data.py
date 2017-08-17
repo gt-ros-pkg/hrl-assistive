@@ -133,7 +133,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
       in enumerate(d['kFoldList']):
         #if (idx == 0 or idx==7): continue
         #if idx != 0: continue
-        #if not(idx == 0 or idx==1): continue
+        print "==================== ", idx, " ========================"
 
         # dim x sample x length
         normalTrainData   = d['successData'][:, normalTrainIdx, :]
@@ -166,7 +166,10 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                      [0]*len(normalTrainData[int(len(normalTrainData)*0.7):])]
         testData  = [normalTestData, [0]*len(normalTestData)]
 
+        # scaling info to reconstruct the original scale of data
+        scaler_dict = {'scaler': scaler, 'scale': scale, 'param_dict': d['param_dict']}
 
+        # ------------------------------------------------------------------------------------------
         # ------------------------------------------------------------------------------------------        
         method      = 'lstm_dvae_custom'
          
@@ -200,7 +203,6 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
 
             if method == 'lstm_vae':
                 from hrl_anomaly_detection.vae import lstm_vae_state_batch as km
-                ths_l = np.logspace(-1.0,2.2,40) -0.1
                 ths_l = np.logspace(-1.0,3.2,40) -0.1
             #------------------------------------------------------------------
             elif method == 'lstm_vae_custom':
@@ -255,7 +257,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                           noise_mag=noise_mag, timesteps=window_size, sam_epoch=sam_epoch,
                           x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,
                           h1_dim = h1_dim, phase=phase,\
-                          renew=ae_renew, fine_tuning=fine_tuning, plot=plot) 
+                          renew=ae_renew, fine_tuning=fine_tuning, plot=plot,\
+                          scaler_dict=scaler_dict) 
         elif method == 'lstm_ae':
             # LSTM-AE (Confirmed) %74.99
             from hrl_anomaly_detection.vae import lstm_ae_state_batch as km
@@ -357,8 +360,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     d['fp_ll'] = fp_ll
     d['tn_ll'] = tn_ll
     d['fn_ll'] = fn_ll
-    roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
-    ut.save_pickle(d, roc_pkl)
+    #roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
+    #ut.save_pickle(d, roc_pkl)
 
     tpr_l = []
     fpr_l = []
