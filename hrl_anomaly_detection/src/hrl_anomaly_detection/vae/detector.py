@@ -673,7 +673,7 @@ def get_optimal_alpha(inputs, vae, vae_mean, ad_method, method, window_size, sav
 
     r  = np.sum(p_ll, axis=0)/np.sum(p_ll)
     r  = 1.0-r
-    r  = (r-np.amin(r))/(np.amax(r)-np.amin(r))*0.6+0.4
+    #r  = (r-np.amin(r))/(np.amax(r)-np.amin(r))*0.6+0.4
     print r
     return r
 
