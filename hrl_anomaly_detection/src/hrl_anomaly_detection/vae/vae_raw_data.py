@@ -131,7 +131,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     # HMM-induced vector with LOPO
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(d['kFoldList']):
-        if idx != 0: continue
+        #if (idx == 0 or idx==7): continue
+        #if idx != 0: continue
         #if not(idx == 0 or idx==1): continue
 
         # dim x sample x length
@@ -167,7 +168,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
 
 
         # ------------------------------------------------------------------------------------------        
-        method      = 'lstm_vae_phase'
+        method      = 'lstm_dvae_custom'
          
         weights_path = os.path.join(save_data_path,'model_weights_'+method+'_'+str(idx)+'.h5')
         vae_mean   = None
@@ -201,6 +202,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 from hrl_anomaly_detection.vae import lstm_vae_state_batch as km
                 ths_l = np.logspace(-1.0,2.2,40) -0.1
                 ths_l = np.logspace(-1.0,3.2,40) -0.1
+            #------------------------------------------------------------------
             elif method == 'lstm_vae_custom':
                 from hrl_anomaly_detection.vae import lstm_vae_custom as km
                 ths_l = np.logspace(-1.0,2.,40) -0.2
@@ -209,6 +211,15 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 z_std       = 0.3 #0.2
                 h1_dim      = nDim #8 #4 # raw
                 phase       = 1.0
+            elif method == 'lstm_dvae_custom':
+                from hrl_anomaly_detection.vae import lstm_dvae_custom as km
+                ths_l = np.logspace(-1.0,2.4,40) -0.2
+                x_std_div   = 4.
+                x_std_offset= 0.1
+                z_std       = 0.5
+                h1_dim      = nDim #8 #4 # raw
+                phase       = 1.0
+            #------------------------------------------------------------------
             elif method == 'lstm_vae_phase':
                 from hrl_anomaly_detection.vae import lstm_vae_phase as km
                 ths_l = np.logspace(-1.0,2.,40) -0.2
@@ -219,11 +230,13 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 phase       = 1.0
             elif method == 'lstm_dvae_phase':
                 from hrl_anomaly_detection.vae import lstm_dvae_phase as km
-                ths_l = np.logspace(-1.0,2.,40) -0.2
+                ths_l = np.logspace(-1.0,2.4,40) -0.2
                 x_std_div   = 4.
-                x_std_offset= 0.2
-                z_std       = 0.3
-                phase       = 5.0
+                x_std_offset= 0.1
+                z_std       = 0.3 #0.2
+                h1_dim      = nDim #8 #4 # raw
+                phase       = 1.0
+            #------------------------------------------------------------------
             elif method == 'lstm_vae_custom3':
                 from hrl_anomaly_detection.vae import lstm_vae_custom3 as km
                 ths_l = np.logspace(-1.0,2.,40) -0.2
@@ -301,6 +314,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                                          stateful=stateful, renew=alpha_renew,\
                                          x_std_div = x_std_div, x_std_offset=x_std_offset, z_std=z_std,
                                          dyn_ths=dyn_ths, batch_info=(fixed_batch_size,batch_size))
+            sys.exit()
         else:
             alpha = np.array([1.0]*nDim) #/float(nDim)
             alpha[0] = 1.0
