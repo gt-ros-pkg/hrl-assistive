@@ -112,22 +112,19 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     d['param_dict']['feature_max']   = np.array(d['param_dict']['feature_max'])[feature_list]   
     d['param_dict']['feature_min']   = np.array(d['param_dict']['feature_min'])[feature_list]
     #d['param_dict']['feature_names'] = d['param_dict']['feature_names'][feature_list]
-    
-    if fine_tuning is False :
-        td1, td2, td3 = vutil.get_ext_feeding_data(task_name, save_data_path, param_dict, d,
-                                                   raw_feature=False)
 
+    
     # Parameters
     nDim = len(d['successData'])
     batch_size  = 1 #64
     scale = 1.8
+    ths_l = np.logspace(-1.0,2.2,40) -0.1
+    add_data = False
 
-    #ths_l = -np.logspace(-1,0.8,40)+2.0
-    ths_l = -np.logspace(-1,0.5,40)+1.5
-    ths_l = np.linspace(127,133,40)
-    #ths_l = np.logspace(0.2,1.8,40) #2.0  
-    ths_l = np.logspace(-1.0,2.2,40) -0.1 
-
+    if fine_tuning is False and add_data:
+        td1, td2, td3 = vutil.get_ext_feeding_data(task_name, save_data_path, param_dict, d,
+                                                   raw_feature=False)
+                  
 
     tp_ll = [[] for i in xrange(len(ths_l))]
     fp_ll = [[] for i in xrange(len(ths_l))]
@@ -139,17 +136,16 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     # HMM-induced vector with LOPO
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(d['kFoldList']):
-        if idx != 0: continue
+        if idx != 6: continue
         #if not(idx == 0 or idx == 7): continue
         print "==================== ", idx, " ========================"
-
 
         # dim x sample x length
         normalTrainData   = d['successData'][:, normalTrainIdx, :]
         abnormalTrainData = d['failureData'][:, abnormalTrainIdx, :]
         normalTestData    = d['successData'][:, normalTestIdx, :]
         abnormalTestData  = d['failureData'][:, abnormalTestIdx, :]
-        if fine_tuning is False:
+        if fine_tuning is False and add_data:
             normalTrainData   = np.hstack([normalTrainData,
                                            copy.deepcopy(td1['successData']),
                                            copy.deepcopy(td2['successData']),
@@ -180,7 +176,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
 
         # ------------------------------------------------------------------------------------------
         # ------------------------------------------------------------------------------------------        
-        method      = 'lstm_vae_phase'
+        method      = 'lstm_dvae_custom'
          
         weights_path = os.path.join(save_data_path,'model_weights_'+method+'_'+str(idx)+'.h5')
         vae_mean   = None
@@ -201,20 +197,21 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         h1_dim      = nDim
         phase       = 1.0
 
-        if method == 'lstm_vae' or method == 'lstm_vae2' or method == 'lstm_dvae' or\
-            method == 'lstm_vae_custom' or method == 'lstm_vae_custom3':
+        if (method.find('lstm_vae')>=0 or method.find('lstm_dvae')>=0) and\
+            method.find('offline')<0:
             x_std_div   = 4.0 #4
             x_std_offset= 0.05
             z_std       = 0.5
             dyn_ths  = True
             stateful = True
             ad_method   = 'lower_bound'
+            phase       = 1.0
             
             if method == 'lstm_vae':
-                from hrl_anomaly_detection.vae import lstm_vae_state_batch as km
+                from hrl_anomaly_detection.vae.models import lstm_vae_state_batch as km
                 ths_l = np.logspace(-1.0,2.4,40) #-0.1
             elif method == 'lstm_vae_custom':
-                from hrl_anomaly_detection.vae import lstm_vae_custom as km
+                from hrl_anomaly_detection.vae.models import lstm_vae_custom as km
                 if nDim == 4:
                     ths_l = np.logspace(-1.0,2.,40) -0.2
                     x_std_div   = 4.
@@ -231,40 +228,51 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                    x_std_offset= 0.1
                    z_std       = 0.3
                 h1_dim      = nDim #8 #4 # raw
-                phase       = 1.0
+            elif method == 'lstm_dvae_custom':
+                from hrl_anomaly_detection.vae.models import lstm_dvae_custom as km
+                ths_l = np.logspace(-1.0,1.7,40) -0.01
+                x_std_div   = 4.
+                x_std_offset= 0.1
+                z_std       = 0.5
+                h1_dim      = nDim #8 #4 # raw
+                if add_data is False:
+                    batch_size = 32
+                    
+            #------------------------------------------------------------------
             elif method == 'lstm_vae_phase':
-                from hrl_anomaly_detection.vae import lstm_vae_phase as km
+                from hrl_anomaly_detection.vae.models import lstm_vae_phase as km
                 ths_l = np.logspace(-1.0,2.,40) -0.2
                 x_std_div   = 4.
                 x_std_offset= 0.1
                 z_std       = 0.3 #0.2
                 h1_dim      = nDim #8 #4 # raw
-                phase       = 1.0
-                   
+            #------------------------------------------------------------------
             elif method == 'lstm_vae_custom3':
-                from hrl_anomaly_detection.vae import lstm_vae_custom3 as km
+                from hrl_anomaly_detection.vae.models import lstm_vae_custom3 as km
                 ths_l = np.logspace(-1.0,2.,40) -0.2
-                x_std_offset= 0.0001
-                z_std       = 0.5
+                x_std_offset= 0.05
+                z_std       = 0.6
                 sam_epoch   = 1
             elif method == 'lstm_vae2':
-                from hrl_anomaly_detection.vae import lstm_vae_state_batch2 as km
+                from hrl_anomaly_detection.vae.models import lstm_vae_state_batch2 as km
                 ths_l = np.logspace(-1.0,2.2,40) -0.5  
             else:
-                from hrl_anomaly_detection.vae import lstm_dvae_state_batch as km
+                from hrl_anomaly_detection.vae.models import lstm_dvae_state_batch as km
                 ths_l = np.logspace(-1.0,2.2,40) -0.1  
 
+                
+
             autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
-              km.lstm_vae(trainData, valData, weights_path, patience=4, batch_size=batch_size,
+              km.lstm_vae(trainData, [abnormalTrainData, abnormalTrainData], weights_path, patience=4, batch_size=batch_size,
                           noise_mag=noise_mag, timesteps=window_size, sam_epoch=sam_epoch,
                           x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,                          
-                          h1_dim = h1_dim, phase=phase,\                           
-                          re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot,
+                          h1_dim = h1_dim, phase=phase,\
+                          renew=ae_renew, fine_tuning=fine_tuning, plot=plot,
                           scaler_dict=scaler_dict)
             
         elif method == 'lstm_pred':
-            from hrl_anomaly_detection.vae import lstm_pred as km
-            from hrl_anomaly_detection.vae import lstm_pred_var as km
+            from hrl_anomaly_detection.vae.models import lstm_pred as km
+            from hrl_anomaly_detection.vae.models import lstm_pred_var as km
             stateful = True
             ths_l = np.logspace(-3.0,2.1,40) #-0.1
             ad_method   = 'recon_err'
@@ -280,7 +288,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             
         elif method == 'lstm_ae':
             # LSTM-AE (Confirmed) %74.99
-            from hrl_anomaly_detection.vae import lstm_ae_state_batch as km
+            from hrl_anomaly_detection.vae.models import lstm_ae_state_batch as km
             stateful = True
             ad_method   = 'recon_err'
             ths_l = np.logspace(-1.0,1.8,40) -0.5 
@@ -291,7 +299,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             vae_mean = autoencoder
         elif method == 'encdec_ad':
             # EncDec-AD from Malhortra
-            from hrl_anomaly_detection.vae import lstm_ae_state_batch as km
+            from hrl_anomaly_detection.vae.models import lstm_ae_state_batch as km
             window_size = 3
             stateful = True
             ad_method   = 'recon_err_lld'
@@ -302,7 +310,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                          re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot)
             vae_mean = autoencoder
         elif method == 'lstm_vae_offline':
-            from hrl_anomaly_detection.vae import lstm_vae_offline as km
+            from hrl_anomaly_detection.vae.models import lstm_vae_offline as km
             window_size  = 0
             batch_size   = 1024
             sam_epoch    = 100
@@ -330,8 +338,9 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         ## autoencoder = km.lstm_ae(trainData, testData, weights_path, patience=5, batch_size=batch_size)
 
         if  True and False: 
-            vutil.graph_latent_space(normalTestData, abnormalTestData, enc_z_mean, batch_size=batch_size,
-                                     method=method, save_pdf=True)
+            vutil.graph_latent_space(normalTestData, abnormalTestData, enc_z_mean,
+                                     timesteps=window_size, batch_size=batch_size,
+                                     method=method, save_pdf=False)
             
         # -----------------------------------------------------------------------------------
         if True and False:
@@ -346,12 +355,10 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                                          dyn_ths=dyn_ths, batch_info=(fixed_batch_size,batch_size))
         else:
             alpha = np.array([1.0]*nDim) #/float(nDim)
-            if nDim ==8:
-                alpha[-1] = 0.4
-            else:
-                alpha[0] = 0.4
-            ## alpha = np.array([0.0]*nDim)/float(nDim)
-            ## alpha[0] = 1.0
+            ## if nDim ==8:
+            ##     alpha[-1] = 0.4
+            ## else:
+            ##     alpha[0] = 0.4
 
         if fine_tuning: clf_renew=True
         normalTrainData = vutil.get_scaled_data2(d['successData'][:, normalTrainIdx, :],
@@ -360,21 +367,17 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         #                                                    copy.deepcopy(td1['successData'])]),
         #                                                    scaler, aligned=False)
 
-               
-
         save_pkl = os.path.join(save_data_path, 'model_ad_scores_'+str(idx)+'.pkl')
         tp_l, tn_l, fp_l, fn_l, roc = \
           dt.anomaly_detection(autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generator,
                                normalTrainData, valData[0],\
                                normalTestData, abnormalTestData, \
                                ad_method, method,
-                               window_size, alpha, ths_l=ths_l, save_pkl=save_pkl,
-                               stateful=stateful,
+                               window_size, alpha, ths_l=ths_l, save_pkl=save_pkl, stateful=stateful,
                                x_std_div = x_std_div, x_std_offset=x_std_offset, z_std=z_std,
-                               plot=plot,
-                               step_ahead = 5,
-                               renew=clf_renew, dyn_ths=dyn_ths,
-                               batch_info=(fixed_batch_size,batch_size))
+                               phase=phase, plot=plot, step_ahead = 5,
+                               renew=clf_renew, dyn_ths=dyn_ths, batch_info=(fixed_batch_size,batch_size),
+                               param_dict=d['param_dict'])
 
         roc_l.append(roc)
 
@@ -391,8 +394,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     d['fp_ll'] = fp_ll
     d['tn_ll'] = tn_ll
     d['fn_ll'] = fn_ll
-    roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
-    ut.save_pickle(d, roc_pkl)
+    #roc_pkl = os.path.join(processed_data_path, 'roc_'+task_name+'.pkl')
+    #ut.save_pickle(d, roc_pkl)
 
     tpr_l = []
     fpr_l = []
@@ -812,7 +815,7 @@ if __name__ == '__main__':
         #  '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_pretrain'
     else:
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/TCDS2017/'+opt.task+'_data_adaptation2'
+          '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_dvae_c_4d'
 
 
     #save_data_path = os.path.expanduser('~')+\

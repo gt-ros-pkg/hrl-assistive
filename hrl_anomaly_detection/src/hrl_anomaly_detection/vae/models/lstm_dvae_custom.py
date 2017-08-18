@@ -316,7 +316,9 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
         nDim = len(x_test[0,0]) 
         
         for i in xrange(len(x_test)):
-            if i!=6: continue #for data viz lstm_vae_custom -4 
+            #if i!=6: continue #for data viz lstm_vae_custom -4
+            # normal 4d: 7 - 11
+            # abnormal 4d: 6-12
 
             x = x_test[i:i+1]
             for j in xrange(batch_size-1):
@@ -335,7 +337,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                 x_pred_mean.append(x_pred[0,-1,:nDim])
                 x_pred_std.append(x_pred[0,-1,nDim:]/x_std_div*1.5+x_std_offset)
 
-            vutil.graph_variations(x_test[i], x_pred_mean, x_pred_std) #, scaler_dict=kwargs['scaler_dict'])
+            vutil.graph_variations(x_test[i], x_pred_mean, x_pred_std, scaler_dict=kwargs['scaler_dict'])
         
 
 
