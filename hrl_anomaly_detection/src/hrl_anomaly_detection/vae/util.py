@@ -32,6 +32,8 @@ import os
 import numpy as np
 import hrl_lib.util as ut
 
+
+
 def sampleWithWindow(X, window=5):
     '''
     X : sample x length x features
@@ -102,9 +104,9 @@ def graph_variations(x_true, x_pred_mean, x_pred_std=None, scaler_dict={}, save_
 
     
 
-    ## x_true      = unscale(x_true)
-    ## x_pred_mean = unscale(x_pred_mean)
-    ## x_pred_std  = unscale(x_pred_std, std=True)
+    x_true      = unscale(x_true)
+    x_pred_mean = unscale(x_pred_mean)
+    x_pred_std  = unscale(x_pred_std, std=True)
     #--------------------------------------------------------------------
 
     
@@ -162,16 +164,16 @@ def graph_variations(x_true, x_pred_mean, x_pred_std=None, scaler_dict={}, save_
         ax.set_xlabel('Time [s]', fontsize=18)
         fig.subplots_adjust(left=0.25) 
 
-    if save_pdf :
+    if save_pdf or True:
         fig.savefig('test.pdf')
         fig.savefig('test.png')
         fig.savefig('test.eps')
         os.system('cp test.p* ~/Dropbox/HRL/')        
         os.system('cp test.e* ~/Dropbox/HRL/')        
-    else:
-        plt.show()
+    #else:
+    plt.show()
 
-    ut.get_keystroke('Hit a key to proceed next')  
+    #ut.get_keystroke('Hit a key to proceed next')  
 
 
 def graph_latent_space(normalTestData, abnormalTestData, enc_z, timesteps=1, batch_size=None,
@@ -195,7 +197,7 @@ def graph_latent_space(normalTestData, abnormalTestData, enc_z, timesteps=1, bat
 
             z_mean=[]
             for j in xrange(len(x[0])-timesteps+1):
-                if method.find('lstm_vae_custom') >=0 or method.find('lstm_dvae_custom') >=0
+                if method.find('lstm_vae_custom') >=0 or method.find('lstm_dvae_custom') >=0\
                     or method.find('phase')>=0:
                     x_in = np.concatenate((x[:,j:j+timesteps],
                                            np.zeros((len(x), timesteps,1))), axis=-1)
@@ -218,7 +220,7 @@ def graph_latent_space(normalTestData, abnormalTestData, enc_z, timesteps=1, bat
 
             z_mean=[]
             for j in xrange(len(x[0])-timesteps+1):
-                if method.find('lstm_vae_custom')>=0 or method.find('lstm_vae_custom')>=0
+                if method.find('lstm_vae_custom')>=0 or method.find('lstm_dvae_custom')>=0\
                     or method.find('phase')>=0:
                     x_in = np.concatenate((x[:,j:j+timesteps],
                                            np.zeros((len(x), timesteps,1))), axis=-1)
@@ -280,6 +282,69 @@ def viz_latent_space(z_n, z_a=None, z_n_se=None, save_pdf=False):
         os.system('cp test.p* ~/Dropbox/HRL/')
     else:
         plt.show()
+
+
+
+def graph_score_distribution(scores_n, scores_a, param_dict, save_pdf=False):
+
+    import matplotlib.pyplot as plt
+    
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ## from mpl_toolkits.mplot3d import Axes3D
+    ## ax = fig.add_subplot(111, projection='3d')
+    ## for i, s in enumerate(scores_tr_n):
+    ##     ax.scatter(zs_tr_n[i,:,0], zs_tr_n[i,:,1], scores_tr_n[i,:,0], c='g', marker='o')
+    ## for i, s in enumerate(scores_te_n):
+    ##     ax.scatter(zs_te_n[i,:,0], zs_te_n[i,:,1], scores_te_n[i,:,0], c='b', marker='x')
+    ## for i, s in enumerate(scores_te_a):
+    ##     ax.scatter(zs_te_a[i,:,0], zs_te_a[i,:,1], scores_te_a[i,:,0], c='r', marker='^')
+    #for i, s in enumerate(scores_tr_n):
+    #    plt.plot(s, '-g')
+    s_nor_mu  = np.mean(scores_n, axis=0)
+    s_nor_std = np.std(scores_n, axis=0)
+
+    #for i, s in enumerate(scores_n):
+    #    if i==0: plt.plot(s, '--b', label='Non-anomalous data')
+    #    else: plt.plot(s, '--b')
+    for i, s in enumerate(scores_a):
+        if i==0: plt.plot(s, '-r', label='Anomalous data')
+        else: plt.plot(s, '-r')
+
+    s_nor_mu  = np.mean(scores_n, axis=0)[:,0]
+    s_nor_std = np.std(scores_n, axis=0)[:,0]
+
+    print np.shape(s_nor_mu), np.shape(s_nor_std), np.shape(scores_a)
+    
+    ax.fill_between(range(len(scores_a[0])),
+                    s_nor_mu+s_nor_std,
+                    s_nor_mu-s_nor_std, alpha=0.5, facecolor='blue', linewidth=0, label='Non-anomalous data')
+
+    if param_dict is not None:
+        x_tick = [param_dict['timeList'][0],
+                  (param_dict['timeList'][-1]-param_dict['timeList'][0])/2.0,
+                  param_dict['timeList'][-1]]
+        ax.set_xticks(np.linspace(0, len(s_nor_mu), len(x_tick)))        
+        ax.set_xticklabels(x_tick)
+        ax.set_xlabel('Time [s]', fontsize=18)
+        ## fig.subplots_adjust(left=0.25) 
+
+    ax.set_ylim([-2,3])
+    ax.set_ylabel('Anomaly Score', fontsize=18)
+    
+    plt.legend(loc=3,ncol=2)
+
+    if save_pdf:
+        fig.savefig('test.pdf')
+        fig.savefig('test.png')
+        fig.savefig('test.eps')
+        os.system('cp test.p* ~/Dropbox/HRL/')        
+        os.system('cp test.e* ~/Dropbox/HRL/')        
+    else:
+        plt.show()
+
+
+    
 
 
 def get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,

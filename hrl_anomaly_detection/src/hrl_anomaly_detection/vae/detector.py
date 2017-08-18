@@ -148,30 +148,16 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         #x = scaler.fit_transform(x)            
             
         print np.shape(x), np.shape(y)
-        clf.fit(x, y)
+        #clf.fit(x, y)
         print "-----------------------------------------"
 
-    if True and False:
+    if True:
         print np.shape(zs_tr_n), np.shape(scores_tr_n)
-        
-        fig = plt.figure() 
-        ## from mpl_toolkits.mplot3d import Axes3D
-        ## ax = fig.add_subplot(111, projection='3d')
-        ## for i, s in enumerate(scores_tr_n):
-        ##     ax.scatter(zs_tr_n[i,:,0], zs_tr_n[i,:,1], scores_tr_n[i,:,0], c='g', marker='o')
-        ## for i, s in enumerate(scores_te_n):
-        ##     ax.scatter(zs_te_n[i,:,0], zs_te_n[i,:,1], scores_te_n[i,:,0], c='b', marker='x')
-        ## for i, s in enumerate(scores_te_a):
-        ##     ax.scatter(zs_te_a[i,:,0], zs_te_a[i,:,1], scores_te_a[i,:,0], c='r', marker='^')
-        #for i, s in enumerate(scores_tr_n):
-        #    plt.plot(s, '-g')
-        for i, s in enumerate(scores_te_n):
-            plt.plot(s, '-b')
-        for i, s in enumerate(scores_te_a):
-            plt.plot(s, '-r')
-        plt.show()
-        
 
+        param_dict = kwargs.get('param_dict', None) 
+        vutil.graph_score_distribution(scores_te_n, scores_te_a, param_dict, save_pdf=False)
+
+        
         for i, s in enumerate(scores_te_a):
             fig = plt.figure()
             plt.plot(s, '-b')

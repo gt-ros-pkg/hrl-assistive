@@ -136,7 +136,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     # HMM-induced vector with LOPO
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(d['kFoldList']):
-        #if idx != 0: continue
+        if idx != 6: continue
         #if not(idx == 0 or idx == 7): continue
         print "==================== ", idx, " ========================"
 
@@ -260,8 +260,10 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 from hrl_anomaly_detection.vae.models import lstm_dvae_state_batch as km
                 ths_l = np.logspace(-1.0,2.2,40) -0.1  
 
+                
+
             autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
-              km.lstm_vae(trainData, valData, weights_path, patience=4, batch_size=batch_size,
+              km.lstm_vae(trainData, [abnormalTrainData, abnormalTrainData], weights_path, patience=4, batch_size=batch_size,
                           noise_mag=noise_mag, timesteps=window_size, sam_epoch=sam_epoch,
                           x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,                          
                           h1_dim = h1_dim, phase=phase,\
@@ -335,7 +337,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         ## from hrl_anomaly_detection.vae import lstm_ae as km
         ## autoencoder = km.lstm_ae(trainData, testData, weights_path, patience=5, batch_size=batch_size)
 
-        if  True : 
+        if  True and False: 
             vutil.graph_latent_space(normalTestData, abnormalTestData, enc_z_mean,
                                      timesteps=window_size, batch_size=batch_size,
                                      method=method, save_pdf=False)
@@ -374,7 +376,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                                window_size, alpha, ths_l=ths_l, save_pkl=save_pkl, stateful=stateful,
                                x_std_div = x_std_div, x_std_offset=x_std_offset, z_std=z_std,
                                phase=phase, plot=plot, step_ahead = 5,
-                               renew=clf_renew, dyn_ths=dyn_ths, batch_info=(fixed_batch_size,batch_size))
+                               renew=clf_renew, dyn_ths=dyn_ths, batch_info=(fixed_batch_size,batch_size),
+                               param_dict=d['param_dict'])
 
         roc_l.append(roc)
 
