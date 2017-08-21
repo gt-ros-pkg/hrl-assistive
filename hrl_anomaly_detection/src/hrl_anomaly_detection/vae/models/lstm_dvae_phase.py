@@ -311,10 +311,6 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
 
     # ---------------------------------------------------------------------------------
     # visualize outputs
-    if False:
-        print "latent variable visualization"
-        
-
     if plot:
         print "variance visualization"
         nDim = len(x_test[0,0]) 
