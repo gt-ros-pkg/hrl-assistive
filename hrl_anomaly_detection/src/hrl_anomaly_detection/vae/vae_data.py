@@ -274,12 +274,16 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         elif method == 'lstm_dvae_pred':
             from hrl_anomaly_detection.vae.models import lstm_dvae_pred as km
             ths_l = np.logspace(-1.0,2.,40) -0.2
+            window_size = 1
             x_std_div   = 4.
             x_std_offset= 0.1
-            z_std       = 0.5 #0.2
+            z_std       = 1.0 #0.5 #0.2
             h1_dim      = nDim #8 #4 # raw
             phase       = 1.0
+            ad_method   = 'lower_bound'
             dyn_ths    = True
+            stateful = True   
+            
             if add_data is False:
                 batch_size = 32
             autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
@@ -834,10 +838,12 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm'
         #save_data_path = os.path.expanduser('~')+\
-        #  '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_pretrain'
+        #  '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_retrain'
     else:
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_dvae_c_4d'
+          '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_4'    
+        #save_data_path = os.path.expanduser('~')+\
+        #  '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_dvae_c_4d'
 
 
     #save_data_path = os.path.expanduser('~')+\

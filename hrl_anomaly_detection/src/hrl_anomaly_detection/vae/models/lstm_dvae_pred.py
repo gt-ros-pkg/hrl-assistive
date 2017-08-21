@@ -311,7 +311,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
 
     if plot:
         print "variance visualization"
-        nDim = len(x_test[0,0]) 
+        nDim = np.shape(x_test)[-1]
         
         for i in xrange(len(x_test)):
             #if i!=6: continue #for data viz lstm_vae_custom -4
@@ -336,7 +336,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                 x_pred_mean.append(x_pred[0,-1,:nDim])
                 x_pred_std.append(x_pred[0,-1,nDim:]/x_std_div*1.5+x_std_offset)
 
-            vutil.graph_variations(x_test[i], x_pred_mean, x_pred_std, scaler_dict=kwargs['scaler_dict'])
+            vutil.graph_variations(x_test[i,:,-1], x_pred_mean, x_pred_std, scaler_dict=kwargs['scaler_dict'])
         
 
 

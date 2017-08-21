@@ -291,8 +291,8 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
         np.random.seed(3334 + i)
             
         if window_size>0:
-            if method == 'lstm_pred':                
-                x,y = vutil.create_dataset(X[i], window_size, 5)
+            if method.find('pred')>=0:                
+                x,y = vutil.create_dataset(X[i], window_size, 1)
             else:
                 x = vutil.sampleWithWindow(X[i:i+1], window=window_size)
         else:
@@ -326,6 +326,8 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
             if method.find('lstm_vae_custom')>=0 or method.find('lstm_dvae_custom')>=0 or\
                 method.find('phase')>=0:
                 x_true = np.concatenate((xx, np.zeros((len(xx), len(xx[0]),1))), axis=-1)
+            elif method.find('pred')>=0:
+                x_true = np.concatenate((xx, np.zeros((len(xx), len(xx[0]),1)),xx), axis=-1) 
             else:
                 x_true = xx
             x_pred  = vae.predict(x_true, batch_size=batch_info[1])
@@ -390,7 +392,7 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
             elif ad_method == 'lower_bound':
 
                 if method.find('lstm_vae_custom')>=0 or method.find('lstm_dvae_custom')>=0 or\
-                    method.find('phase')>=0:
+                    method.find('phase')>=0 or method.find('pred')>=0:
                     p = float(j)/float(length-window_size+1) *2.0*phase-phase
                     if train_flag:
                         p = p*np.ones((batch_info[1], window_size, 1))
@@ -504,6 +506,8 @@ def get_lower_bound(x, x_mean, x_std, z_std, enc_z_mean, enc_z_logvar, nDim, met
         if method.find('lstm_vae_custom')>=0 or method.find('lstm_dvae_custom')>=0 or\
             method.find('phase')>=0:
             x_in = np.concatenate((x, p), axis=-1)
+        elif method.find('pred')>=0:
+            x_in = np.concatenate((x, p, x), axis=-1) 
         else:
             x_in = x
         
@@ -614,8 +618,11 @@ def get_optimal_alpha(inputs, vae, vae_mean, ad_method, method, window_size, sav
                 else:
                     xx = x[j:j+1]
 
-                if method.find('lstm_vae')>=0 or method.find('lstm_dvae')>=0 or method.find('phase')>=0:
+                if (method.find('lstm_vae')>=0 or method.find('lstm_dvae')>=0 or method.find('phase')>=0) and\
+                    method.find('pred')<0:
                     x_true = np.concatenate((xx, np.zeros((len(xx), len(xx[0]),1))), axis=-1)
+                elif method.find('pred')>=0:
+                    x_true = np.concatenate((xx, np.zeros((len(xx), len(xx[0]),1)), xx), axis=-1) 
                 else:
                     x_true = xx
 
