@@ -136,7 +136,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     # HMM-induced vector with LOPO
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(d['kFoldList']):
-        if idx != 0: continue
+        #if idx != 0: continue
         #if not(idx == 0 or idx == 7): continue
         print "==================== ", idx, " ========================"
 
@@ -275,11 +275,11 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             from hrl_anomaly_detection.vae.models import lstm_dvae_pred as km
             ths_l = np.logspace(-1.0,2.,40) -0.2
             window_size = 1
-            x_std_div   = 4.
+            x_std_div   = 2.
             x_std_offset= 0.1
-            z_std       = 1.0 #0.5 #0.2
+            z_std       = 1. #0.5 #0.2
             h1_dim      = nDim #8 #4 # raw
-            phase       = 1.0
+            phase       = 0.5
             ad_method   = 'lower_bound'
             dyn_ths    = True
             stateful = True   
@@ -363,7 +363,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         ## from hrl_anomaly_detection.vae import lstm_ae as km
         ## autoencoder = km.lstm_ae(trainData, testData, weights_path, patience=5, batch_size=batch_size)
 
-        if  True and False: 
+        if  True : 
             vutil.graph_latent_space(normalTestData, abnormalTestData, enc_z_mean,
                                      timesteps=window_size, batch_size=batch_size,
                                      method=method, save_pdf=False)
