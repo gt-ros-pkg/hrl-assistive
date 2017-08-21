@@ -1,4 +1,3 @@
-3
 #!/usr/bin/env python
 #
 # Copyright (c) 2014, Georgia Tech Research Corporation
@@ -264,12 +263,15 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         elif method == 'lstm_dvae_pred':
             from hrl_anomaly_detection.vae.models import lstm_dvae_pred as km
             ths_l = np.logspace(-1.0,2.,40) -0.2
+            window_size = 1
             x_std_div   = 4.
             x_std_offset= 0.1
-            z_std       = 0.3 #0.2
-            h1_dim      = nDim #8 #4 # raw
+            z_std       = 1.0 #3 
+            h1_dim      = 4 #nDim #8 #4 # raw
             phase       = 1.0
             dyn_ths    = True
+            stateful   = True
+            ad_method  = 'lower_bound'
             autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
               km.lstm_vae(trainData, valData, weights_path, patience=patience, batch_size=batch_size,
                           noise_mag=noise_mag, timesteps=window_size, sam_epoch=sam_epoch,
@@ -321,7 +323,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                           re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot) 
         
         #------------------------------------------------------------------------------------
-        if  True and False: 
+        if  True : 
             vutil.graph_latent_space(normalTestData, abnormalTestData, enc_z_mean,
                                      timesteps=window_size, batch_size=batch_size,
                                      method=method)

@@ -94,8 +94,8 @@ def graph_variations(x_true, x_pred_mean, x_pred_std=None, scaler_dict=None, sav
         x = x*2.*scaler_dict['scale'] - scaler_dict['scale']
         x = scaler_dict['scaler'].inverse_transform(x)
         if std is False:
-            x = x*(param_dict['feature_max']-param_dict['feature_min'])+\
-              param_dict['feature_min']
+            x = x*(np.array(param_dict['feature_max'])-np.array(param_dict['feature_min']))+\
+              np.array(param_dict['feature_min'])
         else:
             x = x*(param_dict['feature_max']-param_dict['feature_min'])
         return x
@@ -103,7 +103,7 @@ def graph_variations(x_true, x_pred_mean, x_pred_std=None, scaler_dict=None, sav
     print np.shape(x_true), np.shape(x_pred_mean)
 
     
-    if param_dict is not None:
+    if param_dict is not None and False:
         x_true      = unscale(x_true)
         x_pred_mean = unscale(x_pred_mean)
         x_pred_std  = unscale(x_pred_std, std=True)
