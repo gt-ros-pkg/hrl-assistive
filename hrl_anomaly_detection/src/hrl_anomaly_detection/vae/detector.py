@@ -148,10 +148,10 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         #x = scaler.fit_transform(x)            
             
         print np.shape(x), np.shape(y)
-        #clf.fit(x, y)
+        clf.fit(x, y)
         print "-----------------------------------------"
 
-    if True:
+    if True and False:
         print np.shape(zs_tr_n), np.shape(scores_tr_n)
 
         param_dict = kwargs.get('param_dict', None) 

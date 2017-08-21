@@ -110,9 +110,12 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                                                                                axis=-1) )
             xent_loss = K.mean(-log_p_x_z, axis=-1)
 
-            sig2 = z_std
-            kl_loss = - 0.5 * K.sum(1 + z_log_var -K.log(sig2*sig2) - K.square(z_mean-p)
-                                    - K.exp(z_log_var)/(sig2*sig2), axis=-1)
+            kl_loss = - 0.5 * K.sum( - K.exp(z_log_var)/(z_std*z_std)
+                                     - K.square((z_mean-p)/(z_std*z_std))
+                                     + 1
+                                     - K.log(z_std*z_std) + z_log_var, axis=-1)
+            ## kl_loss = - 0.5 * K.sum(1 + z_log_var -K.log(z_std*z_std) - K.square(z_mean-p)
+            ##                         - K.exp(z_log_var)/(z_std*z_std), axis=-1)            
             ## kl_loss = - 0.5 * K.sum(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=-1)
             return K.mean(xent_loss + kl_loss) 
 
@@ -337,7 +340,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                 x_pred_mean.append(x_pred[0,-1,:nDim])
                 x_pred_std.append(x_pred[0,-1,nDim:]/x_std_div*1.5+x_std_offset)
 
-            vutil.graph_variations(x_test[i], x_pred_mean, x_pred_std, scaler_dict=kwargs['scaler_dict'])
+            vutil.graph_variations(x_test[i], x_pred_mean, x_pred_std)#, scaler_dict=kwargs['scaler_dict'])
         
 
 

@@ -64,7 +64,7 @@ def create_dataset(X, window_size=5, step=5):
 
 
 
-def graph_variations(x_true, x_pred_mean, x_pred_std=None, scaler_dict={}, save_pdf=False):
+def graph_variations(x_true, x_pred_mean, x_pred_std=None, scaler_dict=None, save_pdf=False):
     '''
     x_true: timesteps x dim
     '''
@@ -103,10 +103,10 @@ def graph_variations(x_true, x_pred_mean, x_pred_std=None, scaler_dict={}, save_
     print np.shape(x_true), np.shape(x_pred_mean)
 
     
-
-    x_true      = unscale(x_true)
-    x_pred_mean = unscale(x_pred_mean)
-    x_pred_std  = unscale(x_pred_std, std=True)
+    if param_dict is not None:
+        x_true      = unscale(x_true)
+        x_pred_mean = unscale(x_pred_mean)
+        x_pred_std  = unscale(x_pred_std, std=True)
     #--------------------------------------------------------------------
 
     
@@ -201,6 +201,10 @@ def graph_latent_space(normalTestData, abnormalTestData, enc_z, timesteps=1, bat
                     or method.find('phase')>=0:
                     x_in = np.concatenate((x[:,j:j+timesteps],
                                            np.zeros((len(x), timesteps,1))), axis=-1)
+                elif method.find('lstm_dvae_pred') >=0:
+                    x_in = np.concatenate((x[:,j:j+timesteps],
+                                           np.zeros((len(x), timesteps,1)),
+                                           x[:,j:j+timesteps]), axis=-1)
                 else:
                     x_in = x[:,j:j+timesteps]
                 z = enc_z.predict(x_in, batch_size=batch_size)
@@ -224,6 +228,10 @@ def graph_latent_space(normalTestData, abnormalTestData, enc_z, timesteps=1, bat
                     or method.find('phase')>=0:
                     x_in = np.concatenate((x[:,j:j+timesteps],
                                            np.zeros((len(x), timesteps,1))), axis=-1)
+                if method.find('lstm_dvae_pred')>=0:
+                    x_in = np.concatenate((x[:,j:j+timesteps],
+                                           np.zeros((len(x), timesteps,1)),
+                                           x[:,j:j+timesteps]), axis=-1)
                 else:
                     x_in = x[:,j:j+timesteps]                    
                 z = enc_z.predict(x_in, batch_size=batch_size)
