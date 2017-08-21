@@ -170,8 +170,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
 
         # ------------------------------------------------------------------------------------------
         # ------------------------------------------------------------------------------------------        
-        ## method      = 'lstm_dvae_custom'
-        method      = 'lstm_dvae_pred'
+        method      = 'lstm_dvae_phase'
+        #method      = 'lstm_dvae_pred'
          
         weights_path = os.path.join(save_data_path,'model_weights_'+method+'_'+str(idx)+'.h5')
         vae_mean   = None
@@ -218,7 +218,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 ths_l = np.logspace(-1.0,2.,40) -0.02
                 x_std_div   = 4.
                 x_std_offset= 0.1
-                z_std       = 0.3 #5
+                z_std       = 0.4 #5
                 h1_dim      = nDim #8 #4 # raw
                 phase       = 1.0
             #------------------------------------------------------------------
@@ -235,8 +235,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 ths_l = np.logspace(-1.0,2.4,40) -0.2
                 x_std_div   = 4.
                 x_std_offset= 0.1
-                z_std       = 0.3 #0.2
-                h1_dim      = nDim #8 #4 # raw
+                z_std       = 1.0 
+                h1_dim      = 4 #nDim 
                 phase       = 1.0
             #------------------------------------------------------------------
             elif method == 'lstm_vae_custom3':
@@ -280,7 +280,6 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                           renew=ae_renew, fine_tuning=fine_tuning, plot=plot,\
                           scaler_dict=scaler_dict)  
             
-                          
         elif method == 'lstm_ae':
             # LSTM-AE (Confirmed) %74.99
             from hrl_anomaly_detection.vae.models import lstm_ae_state_batch as km
@@ -327,6 +326,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             vutil.graph_latent_space(normalTestData, abnormalTestData, enc_z_mean,
                                      timesteps=window_size, batch_size=batch_size,
                                      method=method)
+            continue
             
         # -----------------------------------------------------------------------------------
         if True and False:
@@ -341,7 +341,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                                          dyn_ths=dyn_ths, batch_info=(fixed_batch_size,batch_size))            
         else:
             alpha = np.array([1.0]*nDim) #/float(nDim)
-            alpha[0] = 1.0
+            alpha[0] = 0.5
             alpha[1:] = 1.0
             #alpha[4:11] = 0.5
 
