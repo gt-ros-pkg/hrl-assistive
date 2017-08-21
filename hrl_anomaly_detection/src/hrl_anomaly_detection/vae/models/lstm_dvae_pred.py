@@ -221,9 +221,9 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
 
                         p = float(j)/float(length-timesteps+1) *2.0*phase - phase
                         tr_loss = vae_autoencoder.train_on_batch(
-                            np.concatenate((x[:,j:j+timesteps],
+                            np.concatenate((x[:,j],
                                             p*np.ones((len(x), timesteps, 1)),
-                                            y[:,j:j+timesteps]), axis=-1),
+                                            y[:,j]), axis=-1),
                             y[:,j:j+timesteps] )
 
                         seq_tr_loss.append(tr_loss)
@@ -261,9 +261,9 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                 for j in xrange(len(x[0])-timesteps+1):
                     p = float(j)/float(length-timesteps+1) * 2.0* phase - phase
                     te_loss = vae_autoencoder.test_on_batch(
-                        np.concatenate((x[:,j:j+timesteps],
+                        np.concatenate((x[:,j],
                                         p*np.ones((len(x), timesteps,1)),
-                                        y[:,j:j+timesteps]), axis=-1),
+                                        y[:,j]), axis=-1),
                         x[:,j:j+timesteps] )
                     seq_te_loss.append(te_loss)
                 mean_te_loss.append( np.mean(seq_te_loss) )
@@ -328,9 +328,9 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
             x_pred_mean = []
             x_pred_std  = []
             for j in xrange(len(x[0])-timesteps+1):
-                x_pred = vae_mean_std.predict(np.concatenate((x[:,j:j+timesteps],
+                x_pred = vae_mean_std.predict(np.concatenate((x[:,j],
                                                               np.zeros((len(x), timesteps,1)),
-                                                              x[:,j:j+timesteps]
+                                                              x[:,j]
                                                               ), axis=-1),
                                               batch_size=batch_size)
                 x_pred_mean.append(x_pred[0,-1,:nDim])
