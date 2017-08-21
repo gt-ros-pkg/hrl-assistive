@@ -73,7 +73,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
     length = len(x_train[0])
 
     h1_dim = kwargs.get('h1_dim', input_dim)
-    z_dim  = 2
+    z_dim  = 3
 
 
            
@@ -87,7 +87,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
     
     def sampling(args):
         z_mean, z_log_var = args
-        epsilon = K.random_normal(shape=K.shape(z_mean), mean=0., stddev=1.0) #z_std)
+        epsilon = K.random_normal(shape=K.shape(z_mean), mean=0., stddev=1.0) 
         return z_mean + K.exp(z_log_var/2.0) * epsilon    
         
     # we initiate these layers to reuse later.
@@ -110,9 +110,13 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                                                                                axis=-1) )
             xent_loss = K.mean(-log_p_x_z, axis=-1)
 
-            sig2 = z_std
-            kl_loss = - 0.5 * K.sum(1 + z_log_var -K.log(sig2*sig2) - K.square(z_mean-p)
-                                    - K.exp(z_log_var)/(sig2*sig2), axis=-1)
+
+            kl_loss = - 0.5 * K.sum( - K.exp(z_log_var)/(z_std*z_std)
+                                     - K.square((z_mean-p)/(z_std*z_std))
+                                     + 1
+                                     - K.log(z_std*z_std) + z_log_var, axis=-1)  
+            #kl_loss = - 0.5 * K.sum(1 + z_log_var -K.log(z_std*z_std) - K.square(z_mean-p)
+            #                        - K.exp(z_log_var)/(z_std*z_std), axis=-1)
             ## kl_loss = - 0.5 * K.sum(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=-1)
             return K.mean(xent_loss + kl_loss) 
 
@@ -122,7 +126,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
             x_d_mean = args[1][:,:,:input_dim]
             x_d_std  = args[1][:,:,input_dim:]/x_std_div + x_std_offset
 
-            #p = K.concatenate([K.zeros(shape=(batch_size, timesteps ,z_dim-1)),p], axis=-1)
+            p = K.concatenate([K.zeros(shape=(batch_size, timesteps ,z_dim-1)),p], axis=-1)
             
             loss = self.vae_loss(x, x_d_mean, x_d_std, p)
             self.add_loss(loss, inputs=args)

@@ -132,7 +132,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(d['kFoldList']):
         #if (idx == 0 or idx==7): continue
-        #if idx != 0: continue
+        if idx != 0: continue
         print "==================== ", idx, " ========================"
 
         # dim x sample x length
@@ -171,7 +171,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
 
         # ------------------------------------------------------------------------------------------
         # ------------------------------------------------------------------------------------------        
-        method      = 'lstm_dvae_custom'
+        method      = 'lstm_dvae_phase'
+        #method      = 'lstm_dvae_pred'
          
         weights_path = os.path.join(save_data_path,'model_weights_'+method+'_'+str(idx)+'.h5')
         vae_mean   = None
@@ -235,8 +236,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 ths_l = np.logspace(-1.0,2.4,40) -0.2
                 x_std_div   = 4.
                 x_std_offset= 0.1
-                z_std       = 0.3 #0.2
-                h1_dim      = nDim #8 #4 # raw
+                z_std       = 1.0 
+                h1_dim      = 4 #nDim 
                 phase       = 1.0
             #------------------------------------------------------------------
             elif method == 'lstm_vae_custom3':
@@ -267,7 +268,16 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             x_std_offset= 0.1
             z_std       = 0.3 #0.2
             h1_dim      = nDim #8 #4 # raw
-            phase       = 1.0                          
+            phase       = 1.0
+            dyn_ths    = True
+            autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
+              km.lstm_vae(trainData, valData, weights_path, patience=patience, batch_size=batch_size,
+                          noise_mag=noise_mag, timesteps=window_size, sam_epoch=sam_epoch,
+                          x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,
+                          h1_dim = h1_dim, phase=phase,\
+                          renew=ae_renew, fine_tuning=fine_tuning, plot=plot,\
+                          scaler_dict=scaler_dict)  
+            
         elif method == 'lstm_ae':
             # LSTM-AE (Confirmed) %74.99
             from hrl_anomaly_detection.vae.models import lstm_ae_state_batch as km

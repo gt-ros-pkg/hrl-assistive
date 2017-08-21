@@ -228,7 +228,7 @@ def graph_latent_space(normalTestData, abnormalTestData, enc_z, timesteps=1, bat
                     or method.find('phase')>=0:
                     x_in = np.concatenate((x[:,j:j+timesteps],
                                            np.zeros((len(x), timesteps,1))), axis=-1)
-                if method.find('lstm_dvae_pred')>=0:
+                elif method.find('lstm_dvae_pred')>=0:
                     x_in = np.concatenate((x[:,j:j+timesteps],
                                            np.zeros((len(x), timesteps,1)),
                                            x[:,j:j+timesteps]), axis=-1)
