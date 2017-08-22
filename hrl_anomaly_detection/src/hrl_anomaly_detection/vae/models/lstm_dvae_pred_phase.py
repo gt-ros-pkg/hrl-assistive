@@ -74,7 +74,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
     x_test, y_test   = create_dataset(x_test, 1, 1)
 
     h1_dim = kwargs.get('h1_dim', input_dim)
-    z_dim  = 2
+    z_dim  = 3
     np.random.seed(3334)
 
            

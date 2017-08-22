@@ -252,7 +252,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 x_std_div   = 4.
                 x_std_offset= 0.1
                 z_std       = 1.0 #3 
-                h1_dim      = 4 #nDim #8 #4 # raw
+                h1_dim      = 2 #nDim #8 #4 # raw
                 phase       = 1.0            
             elif method == 'lstm_vae_custom3':
                 from hrl_anomaly_detection.vae.models import lstm_vae_custom3 as km
@@ -317,11 +317,11 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                           re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot) 
         
         #------------------------------------------------------------------------------------
-        if  True : 
+        if  True and False: 
             vutil.graph_latent_space(normalTestData, abnormalTestData, enc_z_mean,
                                      timesteps=window_size, batch_size=batch_size,
                                      method=method)
-            continue
+            #continue
             
         # -----------------------------------------------------------------------------------
         if True and False:
