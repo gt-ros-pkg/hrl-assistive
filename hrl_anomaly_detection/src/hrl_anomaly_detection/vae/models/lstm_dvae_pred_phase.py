@@ -56,7 +56,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
              patience=20, fine_tuning=False, save_weights_file=None, \
              noise_mag=0.0, timesteps=4, sam_epoch=1, \
              x_std_div=1, x_std_offset=0.001, z_std=0.5,\
-             phase=1.0,\
+             phase=1.0, \
              re_load=False, renew=False, plot=True, trainable=None, **kwargs):
     """
     Variational Autoencoder with two LSTMs and one fully-connected layer
@@ -74,7 +74,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
     x_test, y_test   = create_dataset(x_test, 1, 1)
 
     h1_dim = kwargs.get('h1_dim', input_dim)
-    z_dim  = 2
+    z_dim  = kwargs.get('z_dim', 2)
     np.random.seed(3334)
 
            

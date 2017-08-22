@@ -323,8 +323,8 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
                 xx = x[j:j+1]
 
             # Get prediction
-            if method.find('lstm_vae_custom')>=0 or method.find('lstm_dvae_custom')>=0 or\
-                method.find('phase')>=0:
+            if (method.find('lstm_vae_custom')>=0 or method.find('lstm_dvae_custom')>=0 or\
+                method.find('phase')>=0) and method.find('pred')<0:
                 x_true = np.concatenate((xx, np.zeros((len(xx), len(xx[0]),1))), axis=-1)
             elif method.find('pred')>=0:
                 x_true = np.concatenate((xx, np.zeros((len(xx), len(xx[0]),1)),xx), axis=-1) 
@@ -503,8 +503,8 @@ def get_lower_bound(x, x_mean, x_std, z_std, enc_z_mean, enc_z_logvar, nDim, met
     x: batch x length x dim
     '''
     if len(np.shape(x))>2:
-        if method.find('lstm_vae_custom')>=0 or method.find('lstm_dvae_custom')>=0 or\
-            method.find('phase')>=0:
+        if (method.find('lstm_vae_custom')>=0 or method.find('lstm_dvae_custom')>=0 or\
+            method.find('phase')>=0) and method.find('pred')<0:
             x_in = np.concatenate((x, p), axis=-1)
         elif method.find('pred')>=0:
             x_in = np.concatenate((x, p, x), axis=-1) 
