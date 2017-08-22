@@ -235,7 +235,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 ths_l = np.logspace(-1.0,2.4,40) -0.2
                 x_std_div   = 4.
                 x_std_offset= 0.1
-                z_std       = 0.5 
+                z_std       = 0.1
                 h1_dim      = 4 #nDim 
                 phase       = 1.0
             #------------------------------------------------------------------
@@ -246,7 +246,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 x_std_offset= 0.1
                 z_std       = 1.0 #3 
                 h1_dim      = 4 #nDim 
-                phase       = 1.0
+                phase       = 0.5
             elif method == 'lstm_dvae_pred_phase':
                 from hrl_anomaly_detection.vae.models import lstm_dvae_pred_phase as km            
                 ths_l = np.logspace(-1.0,2.,40) -0.2
@@ -320,7 +320,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                           re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot) 
         
         #------------------------------------------------------------------------------------
-        if  True and False: 
+        if  True : 
             vutil.graph_latent_space(normalTestData, abnormalTestData, enc_z_mean,
                                      timesteps=window_size, batch_size=batch_size,
                                      method=method)

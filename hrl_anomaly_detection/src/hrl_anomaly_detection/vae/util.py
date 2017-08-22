@@ -208,6 +208,7 @@ def graph_latent_space(normalTestData, abnormalTestData, enc_z, timesteps=1, bat
                 else:
                     x_in = x[:,j:j+timesteps]
                 z = enc_z.predict(x_in, batch_size=batch_size)
+
                 z_mean.append( z[0] )
                 if j==0: z_mean_n_s.append(z[0])
                 if j==len(x[0])-timesteps: z_mean_n_e.append(z[0])
