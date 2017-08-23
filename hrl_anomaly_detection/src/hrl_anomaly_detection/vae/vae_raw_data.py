@@ -186,7 +186,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         batch_size  = 256
         fixed_batch_size = True
         noise_mag   = 0.05
-        sam_epoch   = 30
+        sam_epoch   = 20
         patience    = 4
         h1_dim      = nDim
         z_dim       = 2
@@ -321,7 +321,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                           re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot) 
         
         #------------------------------------------------------------------------------------
-        if  True : 
+        if  True and False: 
             vutil.graph_latent_space(normalTestData, abnormalTestData, enc_z_mean,
                                      timesteps=window_size, batch_size=batch_size,
                                      method=method)
