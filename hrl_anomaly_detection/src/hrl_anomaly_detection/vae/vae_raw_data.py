@@ -247,7 +247,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 x_std_offset= 0.1
                 z_std       = 1.0 #3 
                 h1_dim      = 4 #nDim 
-                phase       = 1.0
+                phase       = 0.5
             elif method == 'lstm_dvae_pred_phase':
                 from hrl_anomaly_detection.vae.models import lstm_dvae_pred_phase as km            
                 ths_l = np.logspace(-1.0,2.,40) -0.2

@@ -208,6 +208,7 @@ def graph_latent_space(normalTestData, abnormalTestData, enc_z, timesteps=1, bat
                 else:
                     x_in = x[:,j:j+timesteps]
                 z = enc_z.predict(x_in, batch_size=batch_size)
+
                 z_mean.append( z[0] )
                 if j==0: z_mean_n_s.append(z[0])
                 if j==len(x[0])-timesteps: z_mean_n_e.append(z[0])
@@ -259,11 +260,13 @@ def viz_latent_space(z_n, z_a=None, z_n_se=None, save_pdf=False):
     matplotlib.rcParams['pdf.fonttype'] = 42
     matplotlib.rcParams['ps.fonttype'] = 42
 
+
     fig = plt.figure(figsize=(6, 6))
     if np.shape(z_n)[-1]>2:
         ax = fig.add_subplot(111, projection='3d')
         
     s = 121    
+
     
     if z_a is not None :
         for z in z_a:
@@ -280,7 +283,7 @@ def viz_latent_space(z_n, z_a=None, z_n_se=None, save_pdf=False):
         else:
             ax.scatter(z[:,0], z[:,1], z[:,2], color='b', s=0.5*s, alpha=.4, label='Non-anomalous') 
 
-    if z_n_se is not None:
+    if z_n_se is not None and False:
         z_n_s, z_n_e = z_n_se
         if np.shape(z)[-1] == 2:
             plt.scatter(np.array(z_n_s)[:,0], np.array(z_n_s)[:,1], color='g', s=1.*s, marker='x')

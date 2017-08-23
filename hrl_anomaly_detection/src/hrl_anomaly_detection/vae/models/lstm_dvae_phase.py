@@ -75,7 +75,6 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
     h1_dim = kwargs.get('h1_dim', input_dim)
     z_dim  = kwargs.get('z_dim', 2) 
     np.random.seed(3334)  
-
            
     inputs = Input(batch_shape=(batch_size, timesteps, input_dim+1))
     def slicing(x): return x[:,:,:input_dim]
@@ -113,7 +112,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
 
             kl_loss = - 0.5 * K.sum( - K.exp(z_log_var)/(z_std*z_std)
                                      - K.square((z_mean-p)/(z_std*z_std))
-                                     + 1
+                                     + 1.
                                      - K.log(z_std*z_std) + z_log_var, axis=-1)  
             #kl_loss = - 0.5 * K.sum(1 + z_log_var -K.log(z_std*z_std) - K.square(z_mean-p)
             #                        - K.exp(z_log_var)/(z_std*z_std), axis=-1)
@@ -122,11 +121,12 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
 
         def call(self, args):
             x = args[0][:,:,:input_dim]
-            p = args[0][:,:,input_dim:]
+            p = args[0][:,0,input_dim:input_dim+1]
             x_d_mean = args[1][:,:,:input_dim]
             x_d_std  = args[1][:,:,input_dim:]/x_std_div + x_std_offset
 
-            p = K.concatenate([K.zeros(shape=(batch_size, timesteps ,z_dim-1)),p], axis=-1)
+            p = K.concatenate([K.zeros(shape=(batch_size, z_dim-1)),p], axis=-1)
+            #p = K.concatenate([K.zeros(shape=(batch_size, timesteps ,z_dim-1)),p], axis=-1)
             
             loss = self.vae_loss(x, x_d_mean, x_d_std, p)
             self.add_loss(loss, inputs=args)
