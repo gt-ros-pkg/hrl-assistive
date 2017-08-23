@@ -294,8 +294,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                           renew=ae_renew, fine_tuning=fine_tuning, plot=plot,\
                           scaler_dict=scaler_dict)    
 
-
-            
+        #--------------------------------------------------------------------------------
         elif method == 'lstm_pred':
             from hrl_anomaly_detection.vae.models import lstm_pred as km
             from hrl_anomaly_detection.vae.models import lstm_pred_var as km
@@ -311,6 +310,21 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                            noise_mag=noise_mag, timesteps=window_size, sam_epoch=sam_epoch,
                            x_std_div=x_std_div, x_std_offset=x_std_offset,
                            re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot)
+
+        elif method == 'ae':
+            from hrl_anomaly_detection.vae.models import ae
+            window_size  = 10
+            batch_size   = 256
+            sam_epoch    = 100
+            fixed_batch_size = False
+            stateful     = False
+            ad_method    = 'recon_err' #'recon_err_lld'
+            ths_l = np.logspace(-1.0,0.6,40)-1.0  
+            autoencoder, enc_z_mean, generator = \
+              ae.autoencoder(trainData, valData, weights_path, patience=5, batch_size=batch_size,
+                             noise_mag=noise_mag, sam_epoch=sam_epoch, timesteps=window_size,\
+                             renew=ae_renew, fine_tuning=fine_tuning, plot=plot)
+            vae_mean = autoencoder
             
         elif method == 'lstm_ae':
             # LSTM-AE (Confirmed) %74.99

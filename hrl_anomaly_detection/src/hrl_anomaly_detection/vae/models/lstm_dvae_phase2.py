@@ -91,7 +91,9 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
     # we initiate these layers to reuse later.
     decoded_h1 = Dense(h1_dim) 
     decoded_h2 = RepeatVector(timesteps)
-    decoded_L21 = LSTM(input_dim*2, return_sequences=True, activation='sigmoid', stateful=True)
+    decoded_L1 = LSTM(input_dim, return_sequences=True, activation='tanh', stateful=True)
+    decoded_mu    = TimeDistributed(Dense(input_dim, activation='linear'))
+    decoded_sigma = TimeDistributed(Dense(input_dim, activation='softplus'))
 
     # Custom loss layer
     class CustomVariationalLayer(Layer):
@@ -108,7 +110,6 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                                                                                axis=-1) )
             xent_loss = K.mean(-log_p_x_z, axis=-1)
 
-
             kl_loss = - 0.5 * K.sum( - K.exp(z_log_var)/(z_std*z_std)
                                      - K.square((z_mean-p)/(z_std*z_std))
                                      + 1.
@@ -122,6 +123,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
             x_d_std  = args[1][:,:,input_dim:]/x_std_div + x_std_offset
 
             p = K.concatenate([K.zeros(shape=(batch_size, z_dim-1)),p], axis=-1)
+            #p = K.concatenate([K.zeros(shape=(batch_size, timesteps ,z_dim-1)),p], axis=-1)
             
             loss = self.vae_loss(x, x_d_mean, x_d_std, p)
             self.add_loss(loss, inputs=args)
@@ -132,7 +134,10 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
     z = Lambda(sampling)([z_mean, z_log_var])    
     decoded = decoded_h1(z)
     decoded = decoded_h2(decoded)
-    decoded = decoded_L21(decoded)
+    decoded = decoded_L1(decoded)
+    decoded1 = decoded_mu(decoded)
+    decoded2 = decoded_sigma(decoded)
+    decoded = merge([decoded1, decoded2], mode='concat')
     outputs = CustomVariationalLayer()([inputs, decoded])
 
     vae_autoencoder = Model(inputs, outputs)
