@@ -75,7 +75,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
     h1_dim = kwargs.get('h1_dim', input_dim)
     z_dim  = kwargs.get('z_dim', 3)
            
-    inputs = Input(batch_shape=(batch_size, timesteps, input_dim+1))
+    inputs = Input(batch_shape=(batch_size, timesteps, input_dim*2+1))
     def slicing(x): return x[:,:,:input_dim]
     encoded = Lambda(slicing)(inputs)     
     encoded = GaussianNoise(noise_mag)(encoded)
@@ -130,10 +130,14 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
             # We won't actually use the output.
             return x_d_mean
 
+    #last_inputs = Input(batch_shape=(batch_size, timesteps, input_dim))
+    def slicing_last(x): return x[:,:,input_dim+1:]
+    prev_inputs = Lambda(slicing_last)(inputs)             
 
     z = Lambda(sampling)([z_mean, z_log_var])    
     decoded = decoded_h1(z)
     decoded = decoded_h2(decoded)
+    decoded = merge([prev_inputs, decoded], mode='concat')
     decoded = decoded_L1(decoded)
     decoded1 = decoded_mu(decoded)
     decoded2 = decoded_sigma(decoded)
@@ -157,12 +161,16 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
         re_load is False and renew is False:
         vae_autoencoder.load_weights(weights_file)
     else:
+
+        def pred(y_true, y_pred): return y_pred
+
+        
         if fine_tuning:
             vae_autoencoder.load_weights(weights_file)
             lr = 0.001
             optimizer = Adam(lr=lr, clipvalue=5.) #4.)# 5)
             vae_autoencoder.compile(optimizer=optimizer, loss=None)
-            vae_autoencoder.compile(optimizer='adam', loss=None)
+            vae_autoencoder.compile(optimizer='adam', loss=None, metrics=[pred])
         else:
             if re_load and os.path.isfile(weights_file):
                 vae_autoencoder.load_weights(weights_file)
@@ -170,7 +178,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
             #optimizer = RMSprop(lr=lr, rho=0.9, epsilon=1e-08, decay=0.0001, clipvalue=10)
             optimizer = Adam(lr=lr, clipvalue=10) #, decay=1e-5)                
             #vae_autoencoder.compile(optimizer=optimizer, loss=None)
-            vae_autoencoder.compile(optimizer='adam', loss=None)
+            vae_autoencoder.compile(optimizer='adam', loss=None, metrics=[pred])
             #vae_autoencoder.compile(optimizer='rmsprop', loss=None)
 
         # ---------------------------------------------------------------------------------
@@ -204,33 +212,20 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                     else:
                         x = x_train[i:i+batch_size]
 
-                    ## x = x.tolist()
-                    ## shift_offset = np.random.normal(0,2,size=batch_size).astype(int)
-                    ## max_offset = max(shift_offset)
-                    ## ## shift_offset = 0
-                    ## for j in xrange(len(x)):                        
-                    ##     x[j] = x[j][0:1]*max_offset + x[j]
-                    ##     #np.pad(x_train[i],((0,shift_offset),(0,0)), 'edge')
-                    ##     x[j] = x[j] + x[j][-2:-1]*max_offset
-                    ##     ## x = np.pad(x_train[i],((abs(shift_offset),0),(0,0)), 'edge')
-                    ##     if shift_offset[j]>0:
-                    ##         x[j] = x[j][max_offset+shift_offset[j]:  ???]
-                    ##     else:
-                    ##         x[j] = x[j][max_offset+shift_offset[j]: ???]
-                            
-                    ## x = np.array(x)
-                    
-                        
-                    
+                    prev_inputs = x[:,0:timesteps]                    
                     for j in xrange(len(x[0])-timesteps+1): # per window
-                        ## np.random.seed(3334 + i*len(x[0]) + j)                        
-                        ## noise = np.random.normal(0, noise_mag, (batch_size, timesteps, nDim))
-
                         p = float(j)/float(length-timesteps+1) *2.0*phase - phase
                         tr_loss = vae_autoencoder.train_on_batch(
                             np.concatenate((x[:,j:j+timesteps],
-                                            p*np.ones((len(x), timesteps, 1))), axis=-1),
+                                            p*np.ones((len(x), timesteps, 1)),
+                                            prev_inputs), axis=-1),
                             x[:,j:j+timesteps] )
+                        prev_inputs = x[:,j:j+timesteps]
+
+                        ## last_outputs = vae_autoencoder.predict(np.concatenate((x[:,j:j+timesteps],
+                        ##                                                        p*np.ones((len(x), timesteps, 1)),
+                        ##                                                        last_outputs), axis=-1), batch_size=batch_size)
+                        ## last_outputs = vae_autoencoder.outputs[0]
 
                         seq_tr_loss.append(tr_loss)
                     mean_tr_loss.append( np.mean(seq_tr_loss) )
@@ -259,12 +254,21 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                 else:
                     x = x_test[i:i+batch_size]
                 
+                prev_inputs = x[:,0:timesteps]
                 for j in xrange(len(x[0])-timesteps+1):
                     p = float(j)/float(length-timesteps+1) * 2.0* phase - phase
                     te_loss = vae_autoencoder.test_on_batch(
                         np.concatenate((x[:,j:j+timesteps],
-                                        p*np.ones((len(x), timesteps,1))), axis=-1),
+                                        p*np.ones((len(x), timesteps,1)),
+                                        prev_inputs), axis=-1),
                         x[:,j:j+timesteps] )
+
+                    prev_inputs = x[:,j:j+timesteps]
+                    ## last_outputs = vae_autoencoder.predict(np.concatenate((x[:,j:j+timesteps],
+                    ##                                                        p*np.ones((len(x), timesteps, 1)),
+                    ##                                                        last_outputs), axis=-1),
+                    ##                                                        batch_size=batch_size)
+                    
                     seq_te_loss.append(te_loss)
                 mean_te_loss.append( np.mean(seq_te_loss) )
                 vae_autoencoder.reset_states()
@@ -310,7 +314,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
         nDim = len(x_test[0,0]) 
         
         for i in xrange(len(x_test)):
-            if i!=6: continue #for data viz lstm_vae_custom -4 
+            #if i!=6: continue #for data viz lstm_vae_custom -4 
 
             x = x_test[i:i+1]
             for j in xrange(batch_size-1):
@@ -321,11 +325,14 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
             
             x_pred_mean = []
             x_pred_std  = []
+            prev_inputs = x[:,0:timesteps]                    
             for j in xrange(len(x[0])-timesteps+1):
                 x_pred = vae_mean_std.predict(np.concatenate((x[:,j:j+timesteps],
-                                                              np.zeros((len(x), timesteps,1))
-                                                              ), axis=-1),
+                                                              np.zeros((len(x), timesteps,1)),
+                                                              prev_inputs), axis=-1),
                                               batch_size=batch_size)
+                prev_inputs = x[:,j:j+timesteps]
+                ## last_outputs = x_pred[:,:,:nDim]
                 x_pred_mean.append(x_pred[0,-1,:nDim])
                 x_pred_std.append(x_pred[0,-1,nDim:]/x_std_div*1.5+x_std_offset)
 

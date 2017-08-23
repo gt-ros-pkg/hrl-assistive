@@ -240,6 +240,15 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 h1_dim      = 4 #nDim
                 z_dim       = 3
                 phase       = 1.0
+            elif method == 'lstm_dvae_phase_lastinput':
+                from hrl_anomaly_detection.vae.models import lstm_dvae_phase_lastinput as km
+                ths_l = np.logspace(-1.0,2.4,40) -0.2
+                x_std_div   = 4.
+                x_std_offset= 0.1
+                z_std       = 1.0
+                h1_dim      = 4 #nDim
+                z_dim       = 3
+                phase       = 1.0
             #------------------------------------------------------------------
             elif method == 'lstm_dvae_pred':
                 from hrl_anomaly_detection.vae.models import lstm_dvae_pred as km            
@@ -275,8 +284,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
               km.lstm_vae(trainData, valData, weights_path, patience=patience, batch_size=batch_size,
                           noise_mag=noise_mag, timesteps=window_size, sam_epoch=sam_epoch,
-                          x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,
-                          h1_dim = h1_dim, phase=phase, z_dim=z_dim,\
+                          x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,\
+                          phase=phase, z_dim=z_dim, h1_dim=h1_dim, \
                           renew=ae_renew, fine_tuning=fine_tuning, plot=plot,\
                           scaler_dict=scaler_dict)
 

@@ -72,23 +72,31 @@ def lstm_ae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=50
     h1_dim = input_dim
     z_dim  = 2
     
-    inputs = Input(batch_shape=(batch_size, timesteps, input_dim))
-    encoded = LSTM(z_dim, return_sequences=False, activation='tanh', stateful=True)(inputs)
+    inputs = Input(batch_shape=(batch_size, timesteps, input_dim*2))
+    def slicing(x): return x[:,:,:input_dim]
+    encoded = Lambda(slicing)(inputs)         
+    encoded = LSTM(z_dim, return_sequences=False, activation='tanh', stateful=True)(encoded)
         
     # we initiate these layers to reuse later.
     #decoded_H2 = RepeatVector(timesteps)
     decoded_L1 = LSTM(input_dim, return_sequences=True, go_backwards=True, activation='sigmoid',
                       stateful=True)
-
-    #decoded = decoded_H2(encoded)
-    decoded = decoded_L1(encoded)
     
+    def slicing_last(x): return x[:,:,input_dim:]
+    last_outputs = Lambda(slicing_last)(inputs)             
+        
+    decoded = merge([last_outputs, encoded], mode='concat')
+    decoded = decoded_L1(decoded)    
     ae = Model(inputs, decoded)
     print(ae.summary())
 
     # Encoder --------------------------------------------------
     ae_encoder = Model(inputs, encoded)
 
+
+    def mse_loss(y_true, y_pred):
+        y = y[:,:,:input_dim]
+        return K.mean(K.mean(K.square(y-y_pred),axis=-1), axis=-1)
 
     # AE --------------------------------------
     if weights_file is not None and os.path.isfile(weights_file) and fine_tuning is False and\
@@ -99,11 +107,11 @@ def lstm_ae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=50
             ae.load_weights(weights_file)
             lr = 0.0001
             optimizer = Adam(lr=lr, clipvalue=10)                
-            ae.compile(optimizer=optimizer, loss='mean_squared_error')
+            ae.compile(optimizer=optimizer, loss=mse_loss)
         else:
             if re_load and os.path.isfile(weights_file):
                 ae.load_weights(weights_file)
-            ae.compile(optimizer='adam', loss='mean_squared_error')
+            ae.compile(optimizer='adam', loss=mse_loss)
 
         # ---------------------------------------------------------------------------------
         nDim         = len(x_train[0][0])
@@ -117,15 +125,7 @@ def lstm_ae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=50
             for sample in xrange(sam_epoch):
                 for i in xrange(0,len(x_train),batch_size):
                     seq_tr_loss = []
-
-                    #shift_offset = int(np.random.normal(0,2,size=batch_size))
-                    ## if shift_offset>0:
-                    ##     x = np.pad(x_train[i],((0,shift_offset),(0,0)), 'edge')
-                    ## else:
-                    ##     x = np.pad(x_train[i],((abs(shift_offset),0),(0,0)), 'edge')
-                    ##     shift_offset = 0
                     
-                    shift_offset = 0
                     if i+batch_size > len(x_train):
                         r = (i+batch_size-len(x_train))%len(x_train)
                         idx_list = range(len(x_train))
@@ -141,13 +141,17 @@ def lstm_ae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=50
                     else:
                         x = x_train[i:i+batch_size]
                     
+                    last_outputs = x[:,0:timesteps]                    
                     for j in xrange(len(x[0])-timesteps+1): # per window
                         np.random.seed(3334 + i*len(x[0]) + j)                        
                         noise = np.random.normal(0, noise_mag, (batch_size, timesteps, nDim))
 
-                        tr_loss = ae.train_on_batch(
-                            x[:,j+shift_offset:j+shift_offset+timesteps]+noise,
-                            x[:,j+shift_offset:j+shift_offset+timesteps]+noise )
+                        tr_loss = ae.train_on_batch(np.concatenate((x[:,j:j+timesteps]+noise,
+                                                                    last_outputs), axis=-1),
+                                                                    x[:,j:j+timesteps]+noise )
+                        last_outputs = ae.predict(np.concatenate((x[:,j:j+timesteps]+noise,
+                                                                 last_outputs), axis=-1),
+                                                  batch_size=batch_size)
 
                         seq_tr_loss.append(tr_loss)
                     mean_tr_loss.append( np.mean(seq_tr_loss) )
