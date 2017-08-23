@@ -73,7 +73,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
     length = len(x_train[0])
 
     h1_dim = kwargs.get('h1_dim', input_dim)
-    z_dim  = 3
+    z_dim  = kwargs.get('z_dim', 3)
 
 
            
@@ -91,7 +91,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
         return z_mean + K.exp(z_log_var/2.0) * epsilon    
         
     # we initiate these layers to reuse later.
-    decoded_h1 = Dense(h1_dim) #, activation='tanh'
+    decoded_h1 = Dense(h1_dim) 
     decoded_h2 = RepeatVector(timesteps)
     decoded_L21 = LSTM(input_dim*2, return_sequences=True, activation='sigmoid', stateful=True)
 

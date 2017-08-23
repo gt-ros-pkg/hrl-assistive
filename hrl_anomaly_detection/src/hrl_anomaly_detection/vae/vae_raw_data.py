@@ -170,7 +170,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
 
         # ------------------------------------------------------------------------------------------
         # ------------------------------------------------------------------------------------------        
-        method      = 'lstm_dvae_phase'
+        #method      = 'lstm_dvae_phase'
+        method      = 'ae'
          
         weights_path = os.path.join(save_data_path,'model_weights_'+method+'_'+str(idx)+'.h5')
         vae_mean   = None
@@ -291,7 +292,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             vae_mean = autoencoder
         elif method == 'encdec_ad':
             # EncDec-AD from Malhortra
-            from hrl_anomaly_detection.vae.models import lstm_ae_state_batch as km
+            from hrl_anomaly_detection.vae.models import encdec_ad as km
             window_size = 10
             stateful = True
             ad_method   = 'recon_err_likelihood'
@@ -301,6 +302,21 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                          noise_mag=noise_mag, timesteps=window_size, sam_epoch=sam_epoch,
                          re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot)
             vae_mean = autoencoder
+        elif method == 'ae':
+            from hrl_anomaly_detection.vae.models import ae
+            window_size  = 10
+            batch_size   = 256
+            sam_epoch    = 100
+            fixed_batch_size = False
+            stateful     = False
+            ad_method    = 'recon_err_lld' #'recon_err' #
+            ths_l = np.logspace(-1.0,3.0,40)-120.0  
+            autoencoder, enc_z_mean, generator = \
+              ae.autoencoder(trainData, valData, weights_path, patience=5, batch_size=batch_size,
+                             noise_mag=noise_mag, sam_epoch=sam_epoch, timesteps=window_size,\
+                             renew=ae_renew, fine_tuning=fine_tuning, plot=plot)
+            vae_mean = autoencoder
+            
         elif method == 'lstm_vae_offline':
             from hrl_anomaly_detection.vae.models import lstm_vae_offline as km
             window_size  = 0
@@ -320,7 +336,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                           re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot) 
         
         #------------------------------------------------------------------------------------
-        if  True : 
+        if  True and False: 
             vutil.graph_latent_space(normalTestData, abnormalTestData, enc_z_mean,
                                      timesteps=window_size, batch_size=batch_size,
                                      method=method)

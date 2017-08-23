@@ -74,16 +74,14 @@ def lstm_ae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=50
     
     inputs = Input(batch_shape=(batch_size, timesteps, input_dim))
     encoded = LSTM(z_dim, return_sequences=False, activation='tanh', stateful=True)(inputs)
-    ## encoded = LSTM(z_dim, return_sequences=False, activation='tanh', stateful=True)(encoded)
         
     # we initiate these layers to reuse later.
-    decoded_H2 = RepeatVector(timesteps, name='H_2')
-    ## decoded_L1 = LSTM(h1_dim, return_sequences=True, activation='tanh', stateful=True, name='L_1')
-    decoded_L2 = LSTM(input_dim, return_sequences=True, activation='sigmoid', stateful=True, name='L_2')
+    #decoded_H2 = RepeatVector(timesteps)
+    decoded_L1 = LSTM(input_dim, return_sequences=True, go_backwards=True, activation='sigmoid',
+                      stateful=True)
 
-    decoded = decoded_H2(encoded)
-    ## decoded = decoded_L1(decoded)
-    decoded = decoded_L2(decoded)
+    #decoded = decoded_H2(encoded)
+    decoded = decoded_L1(encoded)
     
     ae = Model(inputs, decoded)
     print(ae.summary())
