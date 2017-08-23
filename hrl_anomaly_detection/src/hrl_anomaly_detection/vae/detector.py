@@ -101,9 +101,8 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
     
     if ad_method == 'recon_err_vec': dyn_ths=False
 
-    #print np.isnan(scores_te_n).any(), np.isnan(scores_tr_n).any()
-    #sys.exit()
 
+    print np.amax(scores_te_a), np.amin(scores_te_a)
     
 
     if dyn_ths:
@@ -327,23 +326,28 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
                 method.find('phase')>=0) and method.find('pred')<0:
                 x_true = np.concatenate((xx, np.zeros((len(xx), len(xx[0]),1))), axis=-1)
             elif method.find('pred')>=0:
-                x_true = np.concatenate((xx, np.zeros((len(xx), len(xx[0]),1)),xx), axis=-1) 
+                x_true = np.concatenate((xx, np.zeros((len(xx), len(xx[0]),1)),xx), axis=-1)
+            elif method == 'ae' or method == 'vae':
+                x_true = xx.reshape((-1,window_size*x_dim))
+                batch_info = (None, 1)
             else:
                 x_true = xx
             x_pred  = vae.predict(x_true, batch_size=batch_info[1])
 
             # Get mean and std
+            x_mean = None; x_std = None
             if method == 'lstm_vae_custom3':
                 x_mean = np.mean(x_pred, axis=0) #length x dim
                 x_std  = np.std(x_pred, axis=0)
+            elif method == 'ae':
+                x_mean = x_pred.reshape((-1,x_dim))
+                ## x_mean = np.expand_dims(x_pred.reshape((-1,x_dim)), axis=0)
             else:
                 x_pred = x_pred[0]
                 # length x dim
                 x_mean = x_pred[:,:x_dim]
                 if enc_z_logvar is not None or len(x_pred[0])>x_dim:
                     x_std  = np.sqrt(x_pred[:,x_dim:]/x_std_div+x_std_offset)
-                else:
-                    x_std = None
 
             #---------------------------------------------------------------
             if ad_method == 'recon_prob':
@@ -352,43 +356,44 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
                 s.append(l)
                 z.append( enc_z_mean.predict(xx, batch_size=batch_info[1])[0].tolist() )                
             elif ad_method == 'recon_err':
-                # Method 1: Reconstruction probability
-                l = get_reconstruction_err(xx, x_mean, alpha=alpha)
-                s.append( l )
+                # Method 1: Reconstruction error
+                s.append( get_reconstruction_err(xx, x_mean, alpha=alpha) )
                 z.append( enc_z_mean.predict(xx, batch_size=batch_info[1])[0].tolist() )                
             elif ad_method == 'recon_err_vec':
-                # Method 1: Reconstruction errors
-                #print np.shape(x_mean) #win x dim
+                # Method 1: Reconstruction prob from vectors?
                 l = get_reconstruction_err_prob(y[j], x_mean, x_std, alpha=alpha)
                 s.append(l)
-                ## err_vec = np.linalg.norm(y[j]-x_mean, axis=-1)
-                ## e.append( err_vec )
-
-                ## if len(e)>window_size:
-                ##     temp = []
-                ##     for k in range(-1, -window_size-1,-1):
-                ##         temp.append(e[k][-k-1])
-                ##     s.append( np.mean(temp) )
             elif ad_method == 'recon_err_lld':
                 # Method 1: Reconstruction likelihhod
                 if ref_scores is not None:
-                    mu  = np.mean(np.array(ref_scores).reshape((-1,x_dim)), axis=0)
-                    var = np.var(np.array(ref_scores).reshape((-1,x_dim)), axis=0)
+
+                    print np.shape(ref_scores)
+                    sys.exit()
+
+                    import mvn
+                    mu, cov = mvn.fit_mvn_param(np.array(ref_scores).reshape((-1,x_dim)))
+                    print np.shape(cov)
+                                       
+                    #maximum likelihood-based fitting of MVN?
+                    #instead we use diagonal co-variance                   
+                    ## mu  = np.mean(np.array(ref_scores).reshape((-1,x_dim)), axis=0)
+                    ## var = np.var(np.array(ref_scores).reshape((-1,x_dim)), axis=0)
                     l   = abs(xx[0]-x_mean)
-
-                    ss = []
-                    for k in xrange(len(l)): #per window element
-                        score = 0
-                        for m in xrange(len(mu)):
-                            score += (l[k][m]-mu[m])/var[m]
-                        ss.append(score)
-
+                    from scipy.stats import multivariate_normal
+                    ss = multivariate_normal.pdf(l, mean=mu, cov=cov)
+                    print np.shape(ss)
+                    
+                    
+                    ## ss = np.sum( (l-mu)/var, axis=-1)
                     s.append(  max( ss ) )
                 else:
-                    l = abs(xx[0]-x_mean)
-                    if len(s) == 0: s = l
-                    else:           s = np.concatenate((s,l), axis=0)
-                #print np.shape(s), np.shape(xx[0]), np.shape(x_mean)
+                    e = abs(xx[0]-x_mean)
+                    print np.shape(xx[0]), np.shape(x_mean)
+                    
+                    # it returns sample x (length x window_size) x dim?
+                    # it should return sample x window
+                    if len(s) == 0: s = e
+                    else:           s = np.concatenate((s,e), axis=0)
             elif ad_method == 'lower_bound':
 
                 if method.find('lstm_vae_custom')>=0 or method.find('lstm_dvae_custom')>=0 or\
@@ -440,23 +445,12 @@ def get_reconstruction_err_prob(x, x_mean, x_std, alpha=1.0):
 
 
 def get_reconstruction_err(x, x_mean, alpha=1.0):
-    '''
-    Return minimum value for alpha \sum alpha * |x(i)-x_mean(i)|^2 over time 
-    '''
-
+    ''' Return minimum value for alpha \sum alpha * |x(i)-x_mean(i)|^2 over time '''
     if len(np.shape(x))>2:
         x = x[0]
-        
-    p_l     = []
-    for k in xrange(len(x_mean[0])): # per dim
-        p = []
-        for l in xrange(len(x_mean)): # per length
-            
-            p.append( alpha * (x_mean[l,k] - x[l,k])**2 ) # length
+        x_mean = x_mean[0]
 
-        p_l.append(p) # dim x length
-    p_l = np.sum(p_l, axis=0)
-
+    p_l = np.sum(alpha * ((x_mean-x)**2), axis=-1)
     # find min 
     return [np.amin(p_l)]
 
@@ -469,16 +463,18 @@ def get_reconstruction_err_lld(x, x_mean, alpha=1.0):
 
     if len(np.shape(x))>2:
         x = x[0]
-        
-    p_l     = []
-    for k in xrange(len(x_mean[0])): # per dim
-        p = []
-        for l in xrange(len(x_mean)): # per length
-            
-            p.append( alpha * (x_mean[l,k] - x[l,k])**2 ) # length
 
-        p_l.append(p) # dim x length
-    p_l = np.sum(p_l, axis=0)
+    p_l = np.sum(alpha * ((x_mean-x)**2), axis=-1)
+        
+    ## p_l     = []
+    ## for k in xrange(len(x_mean[0])): # per dim
+    ##     p = []
+    ##     for l in xrange(len(x_mean)): # per length
+            
+    ##         p.append( alpha * (x_mean[l,k] - x[l,k])**2 ) # length
+
+    ##     p_l.append(p) # dim x length
+    ## p_l = np.sum(p_l, axis=0)
 
     # find min 
     return [np.amin(p_l)]
