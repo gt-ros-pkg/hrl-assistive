@@ -186,7 +186,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         batch_size  = 256
         fixed_batch_size = True
         noise_mag   = 0.05
-        sam_epoch   = 40
+        sam_epoch   = 30
         patience    = 4
         h1_dim      = nDim
         z_dim       = 2
@@ -235,8 +235,9 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 ths_l = np.logspace(-1.0,2.4,40) -0.2
                 x_std_div   = 4.
                 x_std_offset= 0.1
-                z_std       = 0.1
-                h1_dim      = 4 #nDim 
+                z_std       = 1.0
+                h1_dim      = 4 #nDim
+                z_dim       = 3
                 phase       = 1.0
             #------------------------------------------------------------------
             elif method == 'lstm_dvae_pred':

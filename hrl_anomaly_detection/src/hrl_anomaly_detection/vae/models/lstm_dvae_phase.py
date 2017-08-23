@@ -73,7 +73,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
     length = len(x_train[0])
 
     h1_dim = kwargs.get('h1_dim', input_dim)
-    z_dim  = 3
+    z_dim  = kwargs.get('z_dim', 2)
 
 
            
@@ -113,7 +113,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
 
             kl_loss = - 0.5 * K.sum( - K.exp(z_log_var)/(z_std*z_std)
                                      - K.square((z_mean-p)/(z_std*z_std))
-                                     + 1
+                                     + 1.
                                      - K.log(z_std*z_std) + z_log_var, axis=-1)  
             #kl_loss = - 0.5 * K.sum(1 + z_log_var -K.log(z_std*z_std) - K.square(z_mean-p)
             #                        - K.exp(z_log_var)/(z_std*z_std), axis=-1)
