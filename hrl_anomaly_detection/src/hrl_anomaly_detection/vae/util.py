@@ -252,35 +252,49 @@ def viz_latent_space(z_n, z_a=None, z_n_se=None, save_pdf=False):
     '''
     import matplotlib
     import matplotlib.pyplot as plt
+    from mpl_toolkits.mplot3d import Axes3D
     if type(z_n) is list: z_n = np.array(z_n)
     if type(z_a) is list: z_a = np.array(z_a)
 
     matplotlib.rcParams['pdf.fonttype'] = 42
-    matplotlib.rcParams['ps.fonttype'] = 42 
-    fig = plt.figure(figsize=(6, 6))
+    matplotlib.rcParams['ps.fonttype'] = 42
 
-    s = 121
+    fig = plt.figure(figsize=(6, 6))
+    if np.shape(z_n)[-1]>2:
+        ax = fig.add_subplot(111, projection='3d')
+        
+    s = 121    
     
     if z_a is not None :
         for z in z_a:
-            ax2 = plt.scatter(z[:,0], z[:,1], color='r', s=0.5*s, marker='^', alpha=.4, label='Anomalous')
-        #    plt.plot(z[:,0], z[:,1], 'r', marker='^', ms=5, alpha=.4, label='Anomalous')
+            if np.shape(z)[-1] == 2:
+                plt.scatter(z[:,0], z[:,1], color='r', s=0.5*s, marker='^', alpha=.4, label='Anomalous')
+                # plt.plot(z[:,0], z[:,1], 'r', marker='^', ms=5, alpha=.4, label='Anomalous')
+            else:
+                ax.scatter(z[:,0], z[:,1], z[:,2], color='r', s=0.5*s, marker='^', alpha=.4, label='Anomalous')
 
     for z in z_n:
-        ax1 = plt.scatter(z[:,0], z[:,1], color='b', s=0.5*s, alpha=.4, label='Non-anomalous')
-        #    plt.plot(z[:,0], z[:,1], 'b', marker='o', ms=5, alpha=.4, label='Non-anomalous')
+        if np.shape(z)[-1] == 2:
+            plt.scatter(z[:,0], z[:,1], color='b', s=0.5*s, alpha=.4, label='Non-anomalous')
+            #    plt.plot(z[:,0], z[:,1], 'b', marker='o', ms=5, alpha=.4, label='Non-anomalous')
+        else:
+            ax.scatter(z[:,0], z[:,1], z[:,2], color='b', s=0.5*s, alpha=.4, label='Non-anomalous') 
 
     if z_n_se is not None:
         z_n_s, z_n_e = z_n_se
-        plt.scatter(np.array(z_n_s)[:,0], np.array(z_n_s)[:,1], color='g', s=1.*s, marker='x')
-        plt.scatter(np.array(z_n_e)[:,0], np.array(z_n_e)[:,1], color='y', s=1.*s, marker='x') 
+        if np.shape(z)[-1] == 2:
+            plt.scatter(np.array(z_n_s)[:,0], np.array(z_n_s)[:,1], color='g', s=1.*s, marker='x')
+            plt.scatter(np.array(z_n_e)[:,0], np.array(z_n_e)[:,1], color='y', s=1.*s, marker='x')
+        else:
+            ax.scatter(np.array(z_n_s)[:,0], np.array(z_n_s)[:,1], np.array(z_n_s)[:,2],
+                        color='g', s=1.*s, marker='x')
+            ax.scatter(np.array(z_n_e)[:,0], np.array(z_n_e)[:,1], np.array(z_n_e)[:,2],
+                        color='y', s=1.*s, marker='x')
             
 
     ax = plt.gca()
     ax.axes.get_xaxis().set_visible(False)
     ax.axes.get_yaxis().set_visible(False)
-    
-        
     #plt.legend(handles=[ax1, ax2], loc=3, ncol=2)
 
     if save_pdf:
