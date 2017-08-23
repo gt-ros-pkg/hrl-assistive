@@ -131,7 +131,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(d['kFoldList']):
         #if (idx == 0 or idx==7): continue
-        if idx != 0: continue
+        #if idx != 0: continue
         print "==================== ", idx, " ========================"
 
         # dim x sample x length
@@ -236,9 +236,9 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 ths_l = np.logspace(-1.0,2.4,40) -0.2
                 x_std_div   = 4.
                 x_std_offset= 0.1
-                z_std       = 1.0
-                h1_dim      = 4 #nDim
-                z_dim       = 3
+                z_std       = 1. 
+                h1_dim      = 8 #nDim
+                z_dim       = 2
                 phase       = 1.0
             elif method == 'lstm_dvae_phase_lastinput':
                 from hrl_anomaly_detection.vae.models import lstm_dvae_phase_lastinput as km
@@ -264,7 +264,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 x_std_div   = 4.
                 x_std_offset= 0.1
                 z_std       = 1.0 #3 
-                h1_dim      = 4 #nDim
+                h1_dim      = 2 #nDim #8 #4 # raw
                 z_dim       = 3
                 phase       = 1.0
             #------------------------------------------------------------------
@@ -350,7 +350,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             vutil.graph_latent_space(normalTestData, abnormalTestData, enc_z_mean,
                                      timesteps=window_size, batch_size=batch_size,
                                      method=method)
-            
+            #continue
             
         # -----------------------------------------------------------------------------------
         if True and False:
@@ -365,8 +365,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                                          dyn_ths=dyn_ths, batch_info=(fixed_batch_size,batch_size))            
         else:
             alpha = np.array([1.0]*nDim) #/float(nDim)
-            alpha[0] = 1.0
-            alpha[1:] = 1.0
+            alpha[0] = 1.
+            #alpha[1:] = 1.0
             #alpha[4:11] = 0.5
 
 

@@ -73,7 +73,8 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
     length = len(x_train[0])
 
     h1_dim = kwargs.get('h1_dim', input_dim)
-    z_dim  = kwargs.get('z_dim', 3)
+    z_dim  = kwargs.get('z_dim', 2) 
+    np.random.seed(3334)  
            
     inputs = Input(batch_shape=(batch_size, timesteps, input_dim+1))
     def slicing(x): return x[:,:,:input_dim]
