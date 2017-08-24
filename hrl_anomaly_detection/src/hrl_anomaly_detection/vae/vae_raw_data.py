@@ -187,7 +187,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         batch_size  = 256
         fixed_batch_size = True
         noise_mag   = 0.05
-        sam_epoch   = 20
+        sam_epoch   = 40
         patience    = 4
         h1_dim      = nDim
         z_dim       = 2
@@ -240,6 +240,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 h1_dim      = 4 #nDim
                 z_dim       = 3
                 phase       = 1.0
+                sam_epoch   = 40
             #------------------------------------------------------------------
             elif method == 'lstm_dvae_pred':
                 from hrl_anomaly_detection.vae.models import lstm_dvae_pred as km            
@@ -356,8 +357,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                                          dyn_ths=dyn_ths, batch_info=(fixed_batch_size,batch_size))            
         else:
             alpha = np.array([1.0]*nDim) #/float(nDim)
-            alpha[0] = 1.0
-            alpha[1:] = 1.0
+            alpha[0] = 1.
+            #alpha[1:] = 1.0
             #alpha[4:11] = 0.5
 
 
