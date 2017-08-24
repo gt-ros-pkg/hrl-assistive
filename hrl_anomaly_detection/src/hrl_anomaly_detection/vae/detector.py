@@ -348,6 +348,7 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
             elif method == 'ae':
                 x_mean = x_pred.reshape((-1,x_dim))
                 ## x_mean = np.expand_dims(x_pred.reshape((-1,x_dim)), axis=0)
+                
             else:
                 x_pred = x_pred[0]
                 # length x dim

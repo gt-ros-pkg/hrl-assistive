@@ -178,6 +178,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
         wait         = 0
         plateau_wait = 0
         min_loss = 1e+15
+        np.random.seed(3334) 
         for epoch in xrange(nb_epoch):
             print 
 
