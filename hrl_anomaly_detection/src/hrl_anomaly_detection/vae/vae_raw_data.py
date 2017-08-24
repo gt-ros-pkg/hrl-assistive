@@ -237,9 +237,10 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 x_std_div   = 4.
                 x_std_offset= 0.1
                 z_std       = 1. 
-                h1_dim      = 8 #nDim
-                z_dim       = 2
+                h1_dim      = 4 #nDim
+                z_dim       = 3
                 phase       = 1.0
+                sam_epoch   = 40
             elif method == 'lstm_dvae_phase_lastinput':
                 from hrl_anomaly_detection.vae.models import lstm_dvae_phase_lastinput as km
                 ths_l = np.logspace(-1.0,2.4,40) -0.2
