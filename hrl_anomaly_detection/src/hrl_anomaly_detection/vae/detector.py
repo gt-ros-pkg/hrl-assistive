@@ -386,14 +386,12 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
                     from scipy.stats import multivariate_normal
                     ss = multivariate_normal.pdf(l, mean=mu, cov=cov)
                     print np.shape(ss)
-                    
-                    
+                                        
                     ## ss = np.sum( (l-mu)/var, axis=-1)
                     s.append(  max( ss ) )
                 else:
                     e = abs(xx[0]-x_mean)
-                    print np.shape(xx[0]), np.shape(x_mean)
-                    
+                    #print np.shape(xx[0]), np.shape(x_mean)                    
                     # it returns sample x (length x window_size) x dim?
                     # it should return sample x window
                     if len(s) == 0: s = e

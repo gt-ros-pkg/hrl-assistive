@@ -171,7 +171,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         # ------------------------------------------------------------------------------------------
         # ------------------------------------------------------------------------------------------        
         method      = 'lstm_dvae_phase'
-        #method      = 'ae'
+        method      = 'encdec_ad'
          
         weights_path = os.path.join(save_data_path,'model_weights_'+method+'_'+str(idx)+'.h5')
         vae_mean   = None
@@ -302,13 +302,14 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             # EncDec-AD from Malhortra
             from hrl_anomaly_detection.vae.models import encdec_ad as km
             window_size = 3
-            stateful = True
-            ad_method   = 'recon_err_likelihood'
+            fixed_batch_size = False
+            stateful = False
+            ad_method   = 'recon_err_lld'
             ths_l = np.logspace(-1.0,1.8,40) -0.5 
-            autoencoder,_,_, enc_z_mean = \
+            autoencoder = \
               km.lstm_ae(trainData, valData, weights_path, patience=4, batch_size=batch_size,
                          noise_mag=noise_mag, timesteps=window_size, sam_epoch=sam_epoch,
-                         re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot)
+                         renew=ae_renew, fine_tuning=fine_tuning, plot=plot)
             vae_mean = autoencoder
         elif method == 'ae':
             from hrl_anomaly_detection.vae.models import ae

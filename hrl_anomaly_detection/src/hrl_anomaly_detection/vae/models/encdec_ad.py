@@ -40,6 +40,7 @@ from keras.models import Sequential, Model
 from keras.layers import Merge, Input, TimeDistributed, Layer
 from keras.layers import Activation, Dropout, Flatten, Dense, merge, Lambda, RepeatVector, LSTM
 from keras.layers.advanced_activations import PReLU, LeakyReLU
+from keras.layers.wrappers import Bidirectional
 from keras.utils.np_utils import to_categorical
 from keras.optimizers import SGD, Adagrad, Adadelta, RMSprop, Adam
 from keras import backend as K
@@ -53,7 +54,7 @@ import gc
 def lstm_ae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=500,
             patience=20, fine_tuning=False, save_weights_file=None,
             noise_mag=0.0, timesteps=4, sam_epoch=1,
-            re_load=False, renew=False, plot=True):
+            renew=False, plot=True, **kwargs):
     """
     x_train is (sample x length x dim)
     x_test is (sample x length x dim)
@@ -64,45 +65,48 @@ def lstm_ae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=50
     y_test = testData[1]
 
     input_dim = len(x_train[0][0])
+    length    = len(x_train[0])
     x_train, y_train = create_dataset(x_train, timesteps, 0)
     x_test, y_test   = create_dataset(x_test, timesteps, 0)
-
-    h1_dim = kwargs.get('h1_dim', input_dim)
-    z_dim  = kwargs.get('z_dim', input_dim) 
     
-    inputs  = Input(shape=(timesteps, input_dim))
-    outputs = Bidirectional( LSTM(input_dim, activation='sigmoid') )(inputs)    
+    x_train = x_train.reshape((-1, timesteps, input_dim))
+    x_test  = x_test.reshape((-1, timesteps, input_dim))
+
+    ## inputs  = Input(shape=(timesteps, input_dim))
+    ## outputs = Bidirectional( LSTM(input_dim, activation='sigmoid', return_sequences=True) )(inputs)    
     ## encoded = LSTM(z_dim, return_sequences=False, activation='tanh')(inputs)
     ## #decoded_H2 = RepeatVector(timesteps)    
     ## decoded = LSTM(input_dim, return_sequences=True, go_backwards=True, activation='sigmoid',
     ##                stateful=False)
-    
-    ae = Model(inputs, outputs)
+    ## ae = Model(inputs, outputs)
+
+    import seq2seq
+    from seq2seq.models import SimpleSeq2Seq
+    ae = SimpleSeq2Seq(input_dim=input_dim, hidden_dim=2, output_length=timesteps, output_dim=input_dim)
     print(ae.summary())
 
     # Encoder --------------------------------------------------
     ae_encoder = None #Model(inputs, encoded)
 
-
-    def mse_loss(y_true, y_pred):
-        #y = y[:,:,:input_dim]
-        y_pred = y_pred[:,:,::-1]
-        return K.mean(K.mean(K.square(y_true-y_pred),axis=-1), axis=-1)
+    ## def mse_loss(y_true, y_pred):
+    ##     #y = y[:,:,:input_dim]
+    ##     #print np.shape(y_true), np.shape(y_pred)
+    ##     #y_pred = y_pred[:,:,::-1]
+    ##     return K.mean(K.mean(K.square(y_true-y_pred),axis=-1), axis=-1)
 
     # AE --------------------------------------
     if weights_file is not None and os.path.isfile(weights_file) and fine_tuning is False and\
-        re_load is False and renew is False:
+        renew is False:
         ae.load_weights(weights_file)
     else:
         if fine_tuning:
             ae.load_weights(weights_file)
-            lr = 0.0001
-            optimizer = Adam(lr=lr, clipvalue=10)                
-            ae.compile(optimizer=optimizer, loss=mse_loss)
-        else:
-            if re_load and os.path.isfile(weights_file):
-                ae.load_weights(weights_file)
+            ## lr = 0.0001
+            ## optimizer = Adam(lr=lr, clipvalue=10)                
+            ## ae.compile(optimizer=optimizer, loss=mse_loss)
             ae.compile(optimizer='adam', loss=mse_loss)
+        else:
+            ae.compile(optimizer='adam', loss='mse') #mse_loss)
 
         # ---------------------------------------------------------------------------------
         from keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
