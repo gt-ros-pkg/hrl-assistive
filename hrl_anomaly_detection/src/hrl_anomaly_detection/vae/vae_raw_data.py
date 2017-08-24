@@ -195,9 +195,6 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
 
         if (method.find('lstm_vae')>=0 or method.find('lstm_dvae')>=0) and\
             method.find('offline')<0:
-            x_std_div   = 2
-            x_std_offset= 0.01
-            z_std       = 0.4
             dyn_ths     = True
             stateful    = True
             ad_method   = 'lower_bound'

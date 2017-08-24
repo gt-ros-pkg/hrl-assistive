@@ -33,6 +33,7 @@ import os, sys, copy, random
 import numpy
 import numpy as np
 import scipy
+np.random.seed(1337)
 
 # Keras
 import h5py 
@@ -178,6 +179,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
         wait         = 0
         plateau_wait = 0
         min_loss = 1e+15
+        np.random.seed(3334)
         for epoch in xrange(nb_epoch):
             print 
 
@@ -204,27 +206,8 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                     else:
                         x = x_train[i:i+batch_size]
 
-                    ## x = x.tolist()
-                    ## shift_offset = np.random.normal(0,2,size=batch_size).astype(int)
-                    ## max_offset = max(shift_offset)
-                    ## ## shift_offset = 0
-                    ## for j in xrange(len(x)):                        
-                    ##     x[j] = x[j][0:1]*max_offset + x[j]
-                    ##     #np.pad(x_train[i],((0,shift_offset),(0,0)), 'edge')
-                    ##     x[j] = x[j] + x[j][-2:-1]*max_offset
-                    ##     ## x = np.pad(x_train[i],((abs(shift_offset),0),(0,0)), 'edge')
-                    ##     if shift_offset[j]>0:
-                    ##         x[j] = x[j][max_offset+shift_offset[j]:  ???]
-                    ##     else:
-                    ##         x[j] = x[j][max_offset+shift_offset[j]: ???]
-                            
-                    ## x = np.array(x)
-                    
-                        
                     
                     for j in xrange(len(x[0])-timesteps+1): # per window
-                        ## np.random.seed(3334 + i*len(x[0]) + j)                        
-                        ## noise = np.random.normal(0, noise_mag, (batch_size, timesteps, nDim))
 
                         p = float(j)/float(length-timesteps+1) *2.0*phase - phase
                         tr_loss = vae_autoencoder.train_on_batch(
