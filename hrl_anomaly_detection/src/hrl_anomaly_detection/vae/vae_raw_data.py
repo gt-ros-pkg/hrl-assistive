@@ -131,7 +131,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(d['kFoldList']):
         #if (idx == 0 or idx==7): continue
-        #if idx != 0: continue
+        if idx != 0: continue
         print "==================== ", idx, " ========================"
 
         # dim x sample x length
