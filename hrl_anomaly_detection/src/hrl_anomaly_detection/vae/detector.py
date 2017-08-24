@@ -306,6 +306,7 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
         z = []
         s = []
         e = []
+        last_inputs = None
         for j in xrange(len(x)): # per window
             # anomaly score per timesteps in an window            
             # pdf prediction
@@ -323,8 +324,13 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
 
             # Get prediction
             if (method.find('lstm_vae_custom')>=0 or method.find('lstm_dvae_custom')>=0 or\
-                method.find('phase')>=0) and method.find('pred')<0:
+                method.find('phase')>=0) and method.find('pred')<0 and method.find('input')<0:
                 x_true = np.concatenate((xx, np.zeros((len(xx), len(xx[0]),1))), axis=-1)
+            elif method.find('input')>=0:
+                if last_inputs is None: last_inputs = xx
+                x_true = np.concatenate((xx, np.zeros((len(xx), len(xx[0]),1)), last_inputs),
+                                        axis=-1)                
+                last_inputs = xx
             elif method.find('pred')>=0:
                 x_true = np.concatenate((xx, np.zeros((len(xx), len(xx[0]),1)),xx), axis=-1)
             elif method == 'ae' or method == 'vae':
@@ -342,6 +348,7 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
             elif method == 'ae':
                 x_mean = x_pred.reshape((-1,x_dim))
                 ## x_mean = np.expand_dims(x_pred.reshape((-1,x_dim)), axis=0)
+                
             else:
                 x_pred = x_pred[0]
                 # length x dim
@@ -366,9 +373,6 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
             elif ad_method == 'recon_err_lld':
                 # Method 1: Reconstruction likelihhod
                 if ref_scores is not None:
-
-                    print np.shape(ref_scores)
-                    sys.exit()
 
                     import mvn
                     mu, cov = mvn.fit_mvn_param(np.array(ref_scores).reshape((-1,x_dim)))
@@ -499,10 +503,10 @@ def get_lower_bound(x, x_mean, x_std, z_std, enc_z_mean, enc_z_logvar, nDim, met
     x: batch x length x dim
     '''
     if len(np.shape(x))>2:
-        if (method.find('lstm_vae_custom')>=0 or method.find('lstm_dvae_custom')>=0 or\
-            method.find('phase')>=0) and method.find('pred')<0:
+        if (method.find('lstm_vae_custom')>=0 or method.find('lstm_dvae_custom')>=0 or \
+            method.find('phase')>=0) and method.find('pred')<0 and method.find('input')<0:
             x_in = np.concatenate((x, p), axis=-1)
-        elif method.find('pred')>=0:
+        elif method.find('pred')>=0 or method.find('input')>=0:
             x_in = np.concatenate((x, p, x), axis=-1) 
         else:
             x_in = x
@@ -615,9 +619,9 @@ def get_optimal_alpha(inputs, vae, vae_mean, ad_method, method, window_size, sav
                     xx = x[j:j+1]
 
                 if (method.find('lstm_vae')>=0 or method.find('lstm_dvae')>=0 or method.find('phase')>=0) and\
-                    method.find('pred')<0:
+                    method.find('pred')<0 and method.find('input')<0:
                     x_true = np.concatenate((xx, np.zeros((len(xx), len(xx[0]),1))), axis=-1)
-                elif method.find('pred')>=0:
+                elif method.find('pred')>=0 or method.find('input')>=0:
                     x_true = np.concatenate((xx, np.zeros((len(xx), len(xx[0]),1)), xx), axis=-1) 
                 else:
                     x_true = xx

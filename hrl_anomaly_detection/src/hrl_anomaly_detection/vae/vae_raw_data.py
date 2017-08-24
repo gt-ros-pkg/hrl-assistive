@@ -195,9 +195,6 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
 
         if (method.find('lstm_vae')>=0 or method.find('lstm_dvae')>=0) and\
             method.find('offline')<0:
-            x_std_div   = 2
-            x_std_offset= 0.01
-            z_std       = 0.4
             dyn_ths     = True
             stateful    = True
             ad_method   = 'lower_bound'
@@ -236,6 +233,16 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 ths_l = np.logspace(-1.0,2.4,40) -0.2
                 x_std_div   = 4.
                 x_std_offset= 0.1
+                z_std       = 1.0 
+                h1_dim      = 4 #nDim
+                z_dim       = 3
+                phase       = 1.0
+                sam_epoch   = 40
+            elif method == 'lstm_dvae_phase_lastinput':
+                from hrl_anomaly_detection.vae.models import lstm_dvae_phase_lastinput as km
+                ths_l = np.logspace(-1.0,2.4,40) -0.2
+                x_std_div   = 4.
+                x_std_offset= 0.1
                 z_std       = 1.0
                 h1_dim      = 4 #nDim
                 z_dim       = 3
@@ -256,7 +263,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 x_std_div   = 4.
                 x_std_offset= 0.1
                 z_std       = 1.0 #3 
-                h1_dim      = 4 #nDim
+                h1_dim      = 2 #nDim #8 #4 # raw
                 z_dim       = 3
                 phase       = 1.0
             #------------------------------------------------------------------
@@ -276,8 +283,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
               km.lstm_vae(trainData, valData, weights_path, patience=patience, batch_size=batch_size,
                           noise_mag=noise_mag, timesteps=window_size, sam_epoch=sam_epoch,
-                          x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,
-                          h1_dim = h1_dim, phase=phase, z_dim=z_dim,\
+                          x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,\
+                          phase=phase, z_dim=z_dim, h1_dim=h1_dim, \
                           renew=ae_renew, fine_tuning=fine_tuning, plot=plot,\
                           scaler_dict=scaler_dict)
 
@@ -295,7 +302,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         elif method == 'encdec_ad':
             # EncDec-AD from Malhortra
             from hrl_anomaly_detection.vae.models import encdec_ad as km
-            window_size = 10
+            window_size = 3
             stateful = True
             ad_method   = 'recon_err_likelihood'
             ths_l = np.logspace(-1.0,1.8,40) -0.5 
@@ -343,7 +350,6 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                                      timesteps=window_size, batch_size=batch_size,
                                      method=method)
             
-            
         # -----------------------------------------------------------------------------------
         if True and False:
             # get optimized alpha
@@ -365,12 +371,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         if fine_tuning: clf_renew=True
         normalTrainData = vutil.get_scaled_data2(d['successData'][:, normalTrainIdx, :],
                                                  scaler, aligned=False)
-        ## normalTrainData = vutil.get_scaled_data2(d['successData'], #[:, normalTestIdx, :],
-        ##                                         scaler, aligned=False)
-        ## normalTrainData = vutil.get_scaled_data2(np.hstack([d['successData'][:, normalTrainIdx, :],
-        ##                                                     copy.deepcopy(td3['successData'])
-        ##                                                     ]),
-        ##                                                     scaler, aligned=False)
+        
         save_pkl = os.path.join(save_data_path, 'model_ad_scores_'+str(idx)+'.pkl')
         tp_l, tn_l, fp_l, fn_l, roc = \
           dt.anomaly_detection(autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generator,

@@ -130,10 +130,10 @@ def lstm_ae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=50
         ##        batch_size=batch_size,
         ##        callbacks=callbacks,
         ##        validation_data=(x_test, x_test))
-        if save_weights_file is not None:
-            ae.save_weights(save_weights_file)
-        else:
-            ae.save_weights(weights_file)
+        ## if save_weights_file is not None:
+        ##     ae.save_weights(save_weights_file)
+        ## else:
+        ##     ae.save_weights(weights_file)
 
         gc.collect()
         
