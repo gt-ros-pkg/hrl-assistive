@@ -51,8 +51,8 @@ matplotlib.rcParams['ps.fonttype'] = 42
 
 def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, generator,
                       normalTrainData, normalValData,\
-                      normalTestData, abnormalTestData, ad_method, method, window_size, \
-                      alpha, ths_l=None, save_pkl=None, stateful=False, \
+                      normalTestData, abnormalTestData, ad_method, method, window_size=1, \
+                      alpha=None, ths_l=None, save_pkl=None, stateful=False, \
                       x_std_div=1.0, x_std_offset=1e-10, z_std=None, phase=1.0, \
                       dyn_ths=False, plot=False, renew=False, batch_info=(False,None), **kwargs):
     
@@ -73,15 +73,15 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
                                                  phase=phase,\
                                                  train_flag=True)        
         scores_te_n, zs_te_n = get_anomaly_score(normalTestData, vae_mean, enc_z_mean, enc_z_logvar,
-                                     window_size, alpha, ad_method, method, stateful=stateful,
-                                     x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,
-                                     phase=phase,\
-                                     batch_info=batch_info, ref_scores=scores_tr_n)
+                                                    window_size, alpha, ad_method, method, stateful=stateful,
+                                                    x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,
+                                                    phase=phase,\
+                                                    batch_info=batch_info, ref_scores=scores_tr_n)
         scores_te_a, zs_te_a = get_anomaly_score(abnormalTestData, vae_mean, enc_z_mean, enc_z_logvar,
-                                     window_size, alpha, ad_method, method, stateful=stateful,
-                                     x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,
-                                     phase=phase,\
-                                     batch_info=batch_info, ref_scores=scores_tr_n)
+                                                    window_size, alpha, ad_method, method, stateful=stateful,
+                                                    x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,
+                                                    phase=phase,\
+                                                    batch_info=batch_info, ref_scores=scores_tr_n)
 
         d = {}
         d['scores_tr_n'] = scores_tr_n
@@ -102,28 +102,25 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
     if ad_method == 'recon_err_vec': dyn_ths=False
 
 
-    print np.amax(scores_te_a), np.amin(scores_te_a)
-    
-
     if dyn_ths:
         l = len(zs_tr_n[0])
         x = np.array(zs_tr_n).reshape(-1,np.shape(zs_tr_n)[-1])
         y = np.array(scores_tr_n).reshape(-1,np.shape(scores_tr_n)[-1])
 
-        method = 'SVR'
-        if method=='SVR':
+        clf_method = 'SVR'
+        if clf_method=='SVR':
             print "Start to fit SVR with gamma="
             from sklearn.svm import SVR
             clf = SVR(C=1.0, epsilon=0.2, kernel='rbf', degree=3, gamma=2.5)
-        elif method=='RF':
+        elif clf_method=='RF':
             print "Start to fit RF : ", np.shape(x), np.shape(y)
             from sklearn.ensemble import RandomForestRegressor
             clf = RandomForestRegressor(n_estimators=100, min_samples_leaf=1, n_jobs=1)
-        elif method == 'KNN':
+        elif clf_method == 'KNN':
             print "Start to fit KNN"
             from sklearn.neighbors import KNeighborsRegressor 
             clf = KNeighborsRegressor(n_neighbors=10, n_jobs=1)
-        elif method=='GP':
+        elif clf_method=='GP':
             from sklearn import gaussian_process
             clf = gaussian_process.GaussianProcess(regr='linear', theta0=5.0, \
                                                    corr='squared_exponential', \
@@ -168,11 +165,11 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
                 if dyn_ths:
                     #x = scaler.transform(zs_te_a[i][j])
                     x = zs_te_a[i][j]
-                    if method == 'SVR' or method == 'KNN':
+                    if clf_method == 'SVR' or clf_method == 'KNN':
                         s_pred = np.squeeze( clf.predict( x ) )
                         s_pred_mu.append(s_pred)
                         s_pred = s_pred + ths
-                    elif method == 'RF':
+                    elif clf_method == 'RF':
                         s_pred = clf.predict( x )
                         s_pred_mu.append(s_pred)
                         err_down, err_up = pred_rf(clf, x, 68)
@@ -200,7 +197,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         
 
     #--------------------------------------------------------------------
-    def get_pos_neg(zs, scores):
+    def get_pos_neg(zs, scores, method=None):
         s_preds = []
         MSEs    = []
         err_ups = []
@@ -208,9 +205,9 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
             if dyn_ths:
                 #x = scaler.transform(zs[i])
                 x = zs[i]
-                if method == 'SVR' or method == 'KNN':
+                if clf_method == 'SVR' or clf_method == 'KNN':
                     s_preds.append( clf.predict(x) )
-                elif method == 'RF':
+                elif clf_method == 'RF':
                     s_preds.append( clf.predict(x) )
                     _, err_up = pred_rf(clf, x, 95)
                     err_ups.append(err_up)
@@ -224,18 +221,30 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         p_ll = []
         n_ll = [] 
         for ths in ths_l:
-            p_l = []
-            n_l = []
+
+            if method == 'rnd':
+                p_ll.append([1]*int(len(scores)*ths))
+                n_ll.append([1]*(len(scores)-int(len(scores)*ths)))                
+                continue
+            else:
+                p_l = []
+                n_l = []
+                    
 
             for i, s in enumerate(scores):
                 if dyn_ths:
-                    if method == 'SVR' or method == 'KNN':
+                    if clf_method == 'SVR' or clf_method == 'KNN':
                         vals = s_preds[i]+ths
-                    elif method == 'RF':
+                    elif clf_method == 'RF':
                         vals = s_preds[i] + ths*err_ups[i]
                     else:
                         vals = s_preds[i][:,0] + ths*np.sqrt(MSEs[i])
-                else: vals = np.array(s_preds[i])+ths
+                else:
+                    #if method == 'rnd':
+                    #    vals = np.ones(len(s_preds[i])) * np.random.choice([-1,1], size=1,
+                    #                                                       p=[ths, 1.0-ths])
+                    #else:
+                    vals = np.array(s_preds[i])+ths
 
                 pos_cnt = 0
                 for j in xrange(0,len(s)):
@@ -246,7 +255,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
                         else:
                             pos_cnt += 1
                     elif j == len(s)-1:
-                        n_l.append(1)                    
+                        n_l.append(1)
 
             n_ll.append(n_l)
             p_ll.append(p_l)
@@ -254,8 +263,8 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         return p_ll, n_ll
 
     #--------------------------------------------------------------------
-    fp_ll, tn_ll = get_pos_neg(zs_te_n, scores_te_n)
-    tp_ll, fn_ll = get_pos_neg(zs_te_a, scores_te_a)
+    fp_ll, tn_ll = get_pos_neg(zs_te_n, scores_te_n, method=method)
+    tp_ll, fn_ll = get_pos_neg(zs_te_a, scores_te_a, method=method)
             
     #--------------------------------------------------------------------
     tpr_l = []
@@ -297,6 +306,10 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
         else:
             x = X[i:i+1]
         if type(x) is list: x = np.array(x)
+
+        if method == 'rnd':            
+            scores.append( np.zeros(len(x)) )            
+            continue
 
         if stateful:
             vae.reset_states()
@@ -374,21 +387,22 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
                 # Method 1: Reconstruction likelihhod
                 if ref_scores is not None:
 
-                    import mvn
-                    mu, cov = mvn.fit_mvn_param(np.array(ref_scores).reshape((-1,x_dim)))
-                    print np.shape(cov)
-                                       
                     #maximum likelihood-based fitting of MVN?
+                    ## import mvn
+                    ## mu, cov = mvn.fit_mvn_param( np.array(ref_scores).reshape((-1,x_dim)) )
+                    ## print np.shape(mu)
+                    ## print np.shape(cov)
+                    
                     #instead we use diagonal co-variance                   
-                    ## mu  = np.mean(np.array(ref_scores).reshape((-1,x_dim)), axis=0)
-                    ## var = np.var(np.array(ref_scores).reshape((-1,x_dim)), axis=0)
-                    l   = abs(xx[0]-x_mean)
-                    from scipy.stats import multivariate_normal
-                    ss = multivariate_normal.pdf(l, mean=mu, cov=cov)
-                    print np.shape(ss)
+                    mu  = np.mean(np.array(ref_scores).reshape((-1,x_dim)), axis=0)
+                    var = cov = np.var(np.array(ref_scores).reshape((-1,x_dim)), axis=0)
+                    e   = abs(xx[0]-x_mean)
+
+                    ## from scipy.stats import multivariate_normal
+                    ## ss = multivariate_normal.pdf(e, mean=mu, cov=cov)
                                         
-                    ## ss = np.sum( (l-mu)/var, axis=-1)
-                    s.append(  max( ss ) )
+                    a_score = np.mean(np.sum( ((e-mu)**2)/var, axis=-1))
+                    s.append( a_score )
                 else:
                     e = abs(xx[0]-x_mean)
                     #print np.shape(xx[0]), np.shape(x_mean)                    

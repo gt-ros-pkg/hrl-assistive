@@ -131,7 +131,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(d['kFoldList']):
         #if (idx == 0 or idx==7): continue
-        if idx != 0: continue
+        #if idx != 0: continue
         print "==================== ", idx, " ========================"
 
         # dim x sample x length
@@ -171,7 +171,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         # ------------------------------------------------------------------------------------------
         # ------------------------------------------------------------------------------------------        
         method      = 'lstm_dvae_phase'
-        method      = 'encdec_ad'
+        method      = 'osvm'
          
         weights_path = os.path.join(save_data_path,'model_weights_'+method+'_'+str(idx)+'.h5')
         vae_mean   = None
@@ -192,6 +192,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         h1_dim      = nDim
         z_dim       = 2
         phase       = 1.0
+        stateful    = None
+        ad_method   = None
 
         if (method.find('lstm_vae')>=0 or method.find('lstm_dvae')>=0) and\
             method.find('offline')<0:
@@ -287,6 +289,22 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                           phase=phase, z_dim=z_dim, h1_dim=h1_dim, \
                           renew=ae_renew, fine_tuning=fine_tuning, plot=plot,\
                           scaler_dict=scaler_dict)
+                          
+        elif method == 'ae':
+            from hrl_anomaly_detection.vae.models import ae
+            window_size  = 3
+            batch_size   = 256
+            sam_epoch    = 20
+            noise_mag    = 0.05
+            fixed_batch_size = False
+            stateful     = False
+            ad_method    = 'recon_err_lld' #'recon_err_lld'
+            ths_l = np.logspace(-1.0,4.0,40)  
+            autoencoder, enc_z_mean, generator = \
+              ae.autoencoder(trainData, valData, weights_path, patience=5, batch_size=batch_size,
+                             noise_mag=noise_mag, sam_epoch=sam_epoch, timesteps=window_size,\
+                             renew=ae_renew, fine_tuning=fine_tuning, plot=plot)
+            vae_mean = autoencoder
 
         elif method == 'lstm_ae':
             # LSTM-AE (Confirmed) %74.99
@@ -303,28 +321,17 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             # EncDec-AD from Malhortra
             from hrl_anomaly_detection.vae.models import encdec_ad as km
             window_size = 3
+            sam_epoch   = 40
+            batch_size  = 256
+            noise_mag   = 0.05
             fixed_batch_size = False
             stateful = False
             ad_method   = 'recon_err_lld'
-            ths_l = np.logspace(-1.0,1.8,40) -0.5 
+            ths_l = np.logspace(-1.0,4.0,40) 
             autoencoder = \
               km.lstm_ae(trainData, valData, weights_path, patience=4, batch_size=batch_size,
                          noise_mag=noise_mag, timesteps=window_size, sam_epoch=sam_epoch,
                          renew=ae_renew, fine_tuning=fine_tuning, plot=plot)
-            vae_mean = autoencoder
-        elif method == 'ae':
-            from hrl_anomaly_detection.vae.models import ae
-            window_size  = 10
-            batch_size   = 256
-            sam_epoch    = 100
-            fixed_batch_size = False
-            stateful     = False
-            ad_method    = 'recon_err_lld' #'recon_err' #
-            ths_l = np.logspace(-1.0,3.0,40)-120.0  
-            autoencoder, enc_z_mean, generator = \
-              ae.autoencoder(trainData, valData, weights_path, patience=5, batch_size=batch_size,
-                             noise_mag=noise_mag, sam_epoch=sam_epoch, timesteps=window_size,\
-                             renew=ae_renew, fine_tuning=fine_tuning, plot=plot)
             vae_mean = autoencoder
             
         elif method == 'lstm_vae_offline':
@@ -343,7 +350,21 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
               km.lstm_vae(trainData, valData, weights_path, patience=5, batch_size=batch_size,
                           noise_mag=noise_mag, sam_epoch=sam_epoch,
                           x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,\
-                          re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot) 
+                          remo_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot)
+        elif method == 'rnd':
+            autoencoder = None
+            dyn_ths     = False
+            window_size = 1
+            ths_l = np.linspace(0.0,1.0,40)
+        elif method == 'osvm':
+            window_size = 3
+            fixed_batch_size = False
+            ad_method   = None
+            ths_l = np.linspace(1e-3, 0.999, 40)
+            autoencoder = None
+            #autoencoder = km.osvm(trainData, valData, weights_path, timesteps=window_size,
+            #                      renew=ae_renew)
+            
         
         #------------------------------------------------------------------------------------
         if  True and False: 
@@ -372,6 +393,9 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         if fine_tuning: clf_renew=True
         normalTrainData = vutil.get_scaled_data2(d['successData'][:, normalTrainIdx, :],
                                                  scaler, aligned=False)
+
+        if method == 'osvm':
+            from hrl_anomaly_detection.vae.models import osvm as dt
         
         save_pkl = os.path.join(save_data_path, 'model_ad_scores_'+str(idx)+'.pkl')
         tp_l, tn_l, fp_l, fn_l, roc = \
@@ -462,7 +486,7 @@ if __name__ == '__main__':
           '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_rawtrain2'
     else:
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_rawtrain2'
+          '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_osvm_raw'
 
 
     param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \

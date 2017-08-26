@@ -101,10 +101,10 @@ def lstm_ae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=50
     else:
         if fine_tuning:
             ae.load_weights(weights_file)
-            ## lr = 0.0001
-            ## optimizer = Adam(lr=lr, clipvalue=10)                
-            ## ae.compile(optimizer=optimizer, loss=mse_loss)
-            ae.compile(optimizer='adam', loss=mse_loss)
+            lr = 0.0001
+            optimizer = Adam(lr=lr, clipvalue=10)                
+            ae.compile(optimizer=optimizer, loss='mse')
+            #ae.compile(optimizer='adam', loss='mse')
         else:
             ae.compile(optimizer='adam', loss='mse') #mse_loss)
 
@@ -119,7 +119,7 @@ def lstm_ae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=50
                     ReduceLROnPlateau(monitor='val_loss', factor=0.2,
                                       patience=5, min_lr=0.0001)]
 
-        train_datagen = ku.sigGenerator(augmentation=True, noise_mag=0.05 )
+        train_datagen = ku.sigGenerator(augmentation=True, noise_mag=noise_mag )
         train_generator = train_datagen.flow(x_train, x_train, batch_size=batch_size)
 
         hist = ae.fit_generator(train_generator,

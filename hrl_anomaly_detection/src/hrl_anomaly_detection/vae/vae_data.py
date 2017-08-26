@@ -176,7 +176,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
 
         # ------------------------------------------------------------------------------------------
         # ------------------------------------------------------------------------------------------        
-        method      = 'lstm_dvae_phase'
+        ## method      = 'lstm_dvae_phase'
+        method      = 'rnd'
          
         weights_path = os.path.join(save_data_path,'model_weights_'+method+'_'+str(idx)+'.h5')
         vae_mean   = None
@@ -320,13 +321,13 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
 
         elif method == 'ae':
             from hrl_anomaly_detection.vae.models import ae
-            window_size  = 10
+            window_size  = 3
             batch_size   = 256
-            sam_epoch    = 100
+            sam_epoch    = 20
             fixed_batch_size = False
             stateful     = False
-            ad_method    = 'recon_err' #'recon_err_lld'
-            ths_l = np.logspace(-1.0,0.6,40)-1.0  
+            ad_method    = 'recon_err_lld' #'recon_err_lld'
+            ths_l = np.logspace(-1.0,4.0,40)  
             autoencoder, enc_z_mean, generator = \
               ae.autoencoder(trainData, valData, weights_path, patience=5, batch_size=batch_size,
                              noise_mag=noise_mag, sam_epoch=sam_epoch, timesteps=window_size,\
@@ -346,12 +347,15 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             vae_mean = autoencoder
         elif method == 'encdec_ad':
             # EncDec-AD from Malhortra
-            from hrl_anomaly_detection.vae.models import lstm_ae_state_batch as km
+            from hrl_anomaly_detection.vae.models import encdec_ad as km
             window_size = 3
+            sam_epoch   = 40
+            batch_size  = 256
+            noise_mag   = 0.05
             fixed_batch_size = False
             stateful = False
             ad_method   = 'recon_err_lld'
-            ths_l = np.logspace(-0.0,2.8,40) #-0.5 
+            ths_l = np.logspace(-0.3,4.0,40) #-0.5 
             autoencoder = \
               km.lstm_ae(trainData, valData, weights_path, patience=4, batch_size=batch_size,
                          noise_mag=noise_mag, timesteps=window_size, sam_epoch=sam_epoch,
@@ -374,6 +378,12 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                           noise_mag=noise_mag, sam_epoch=sam_epoch,
                           x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,\
                           re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot)
+
+        elif method == 'rnd':
+            autoencoder = None
+            dyn_ths     = False
+            window_size = 1
+            ths_l = np.linspace(0.0,1.0,40)
 
         #------------------------------------------------------------------------------------
         if  True and False: 
@@ -851,7 +861,7 @@ if __name__ == '__main__':
           '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_4'    
     else:
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_4'    
+          '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_rnd'    
         #save_data_path = os.path.expanduser('~')+\
         #  '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_dvae_c_4d'
 
