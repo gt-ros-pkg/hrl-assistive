@@ -360,7 +360,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             window_size = 3
             fixed_batch_size = False
             ad_method   = None
-            ths_l = np.linspace(1e-3, 0.999, 40)
+            ths_l = np.linspace(1e-1, 1.0, 40)
             autoencoder = None
             #autoencoder = km.osvm(trainData, valData, weights_path, timesteps=window_size,
             #                      renew=ae_renew)

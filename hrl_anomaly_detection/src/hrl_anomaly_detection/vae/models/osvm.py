@@ -35,6 +35,7 @@ import numpy as np
 import scipy
 np.random.seed(3334)
 
+import hrl_lib.util as ut
 from hrl_anomaly_detection.vae import util as vutil
 from hrl_anomaly_detection.vae import keras_util as ku
 
