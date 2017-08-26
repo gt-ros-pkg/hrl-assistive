@@ -136,7 +136,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     # HMM-induced vector with LOPO
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(d['kFoldList']):
-        #if idx != 0: continue
+        #if idx == 0: continue
         #if not(idx == 0 or idx == 7): continue
         print "==================== ", idx, " ========================"
 
@@ -249,12 +249,15 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 from hrl_anomaly_detection.vae.models import lstm_dvae_phase2 as km
                 ths_l = np.logspace(-1.0,2.4,40) -0.2
                 x_std_div   = 4.
-                x_std_offset= 0.1
+                x_std_offset= 0.05 #1
                 z_std       = 1.0 
-                h1_dim      = 4 #nDim
-                z_dim       = 3
+                h1_dim      = nDim
+                z_dim       = 2
                 phase       = 1.0
-                sam_epoch   = 60
+                sam_epoch   = 40
+                if add_data is False:
+                    batch_size = 32
+                    
             #------------------------------------------------------------------
             elif method == 'lstm_vae_custom3':
                 from hrl_anomaly_detection.vae.models import lstm_vae_custom3 as km
@@ -403,7 +406,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                                          x_std_div = x_std_div, x_std_offset=x_std_offset, z_std=z_std,
                                          dyn_ths=dyn_ths, batch_info=(fixed_batch_size,batch_size))
         else:
-            alpha = np.array([1.0]*nDim) 
+            alpha = np.array([1.0]*nDim)
+            #alpha[0] = 0.5
             ## if nDim ==8:
             ##     alpha[-1] = 0.4
             ## else:

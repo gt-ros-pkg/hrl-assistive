@@ -18,14 +18,16 @@ def fit_mvn_param(y, niter=100):
         # prior on LKJ shape
         nu = pm.Uniform('nu', 0, 5)
         # LKJ prior for correlation matrix as upper triangular vector
-        C_triu = pm.LKJCorr('C_triu', n=nu, p=2)
+        C_triu = pm.LKJCorr('C_triu', n=nu, p=n_dim)
         # convert to matrix form
-        C = T.fill_diagonal(C_triu[np.zeros((2,2), 'int')], 1)
+        C = T.fill_diagonal(C_triu[np.zeros((n_dim,n_dim), 'int')], 1)
         sigma_diag = T.nlinalg.diag(sigma)
         # indduced covariance matrix
         cov = pm.Deterministic('cov', T.nlinalg.matrix_dot(sigma_diag, C, sigma_diag))
         tau = pm.Deterministic('tau', T.nlinalg.matrix_inverse(cov))
         mu = pm.MvNormal('mu', mu=0, tau=tau, shape=n_dim)
+        print mu, tau, np.shape(y)
+
         Y_obs_ = pm.MvNormal('Y_obs', mu=mu, tau=tau, observed=y)
 
         start = pm.find_MAP()
