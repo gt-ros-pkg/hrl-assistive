@@ -101,7 +101,6 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
     
     if ad_method == 'recon_err_vec': dyn_ths=False
 
-
     if dyn_ths:
         l = len(zs_tr_n[0])
         x = np.array(zs_tr_n).reshape(-1,np.shape(zs_tr_n)[-1])
@@ -149,16 +148,24 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
 
     if True and False:
         print np.shape(zs_tr_n), np.shape(scores_tr_n)
-
-        param_dict = kwargs.get('param_dict', None) 
-        vutil.graph_score_distribution(scores_te_n, scores_te_a, param_dict, save_pdf=False)
-
         
-        for i, s in enumerate(scores_te_a):
-            fig = plt.figure()
-            plt.plot(s, '-b')
-            ths = 1
+        nDim         = len(normalTestData[0,0])
+        max_viz_data = 4
+        scores    = scores_te_a
+        testData  = abnormalTestData
+        filenames = kwargs['filenames'][1]
+        print np.shape(scores), np.shape(testData)
+        
+        for i, s in enumerate(scores):
+            print filenames[i]
+            
+            # data prediction
+            from hrl_anomaly_detection.vae.models import lstm_dvae_phase2 as km
+            x_pred_mean, x_pred_std = km.predict(testData[i:i+1], vae_mean, nDim, batch_info[1], window_size,\
+                                                 x_std_div, x_std_offset)
 
+            ths = 1.0 #5
+            # score prediction
             s_pred_mu = []
             s_pred_bnd = []
             for j in xrange(len(s)):
@@ -188,12 +195,22 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
                 
                 s_pred_bnd.append(s_pred)
 
-            print np.shape(s_pred_mu), np.shape(s_pred_bnd)
-            plt.plot(s_pred_mu, '-r')
+            # visualization
+            vutil.graph_data_score((testData[i], x_pred_mean, x_pred_std), (s, s_pred_mu, s_pred_bnd),
+                                   scaler_dict=kwargs['scaler_dict'], max_viz_data=max_viz_data,
+                                   save_pdf=False)
+
+            continue
+            ## fig = plt.figure()
+            ## for j in range(max_viz_data+1):
+            ## plt.plot(s, '-b')
+            ## ths = 1
+            ## print np.shape(s_pred_mu), np.shape(s_pred_bnd)
+            ## plt.plot(s_pred_mu, '-r')
             
-            if len(s_pred_bnd)>0:
-                plt.plot(s_pred_bnd, '--r') 
-            plt.show()
+            ## if len(s_pred_bnd)>0:
+            ##     plt.plot(s_pred_bnd, '--r') 
+            ## plt.show()
         
 
     #--------------------------------------------------------------------
@@ -439,128 +456,6 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
     return scores, zs
 
 
-def get_reconstruction_err_prob(x, x_mean, x_std, alpha=1.0):
-    '''
-    Return minimum value for alpha x \sum P(x_i(t) ; mu, std) over time 
-    '''
-    if len(np.shape(x))>2: x = x[0]
-    
-    p_l     = []
-    for k in xrange(len(x_mean[0])): # per dim
-        p = []
-        for l in xrange(len(x_mean)): # per length
-            p.append(scipy.stats.norm(x_mean[l,k], x_std[l,k]).pdf(x[l,k])) # length
-
-        p = [val if not np.isinf(val).any() and not np.isnan(val).any() and val > 0
-             else 1e-50 for val in p]
-        p_l.append(p) # dim x length
-
-    # find min 
-    ## return np.mean(alpha.dot( np.log(np.array(p_l)) )) 
-    return [-np.amin(alpha.dot( np.log(np.array(p_l)) ))]
-
-
-def get_reconstruction_err(x, x_mean, alpha=1.0):
-    ''' Return minimum value for alpha \sum alpha * |x(i)-x_mean(i)|^2 over time '''
-    if len(np.shape(x))>2:
-        x = x[0]
-        x_mean = x_mean[0]
-
-    p_l = np.sum(alpha * ((x_mean-x)**2), axis=-1)
-    # find min 
-    return [np.amin(p_l)]
-
-
-def get_reconstruction_err_lld(x, x_mean, alpha=1.0):
-    '''
-    Return reconstruction error likelihood
-    Return minimum value for alpha \sum alpha * |x(i)-x_mean(i)|^2 over time 
-    '''
-
-    if len(np.shape(x))>2:
-        x = x[0]
-
-    p_l = np.sum(alpha * ((x_mean-x)**2), axis=-1)
-        
-    ## p_l     = []
-    ## for k in xrange(len(x_mean[0])): # per dim
-    ##     p = []
-    ##     for l in xrange(len(x_mean)): # per length
-            
-    ##         p.append( alpha * (x_mean[l,k] - x[l,k])**2 ) # length
-
-    ##     p_l.append(p) # dim x length
-    ## p_l = np.sum(p_l, axis=0)
-
-    # find min 
-    return [np.amin(p_l)]
-
-
-def get_reconstruction_err_vec(x, x_mean, alpha=1.0):
-    '''
-    Return error vector
-    '''
-
-    if len(np.shape(x))>2:
-        x = x[0]
-        
-    return np.linalg.norm(x-x_mean, axis=-1)
-
-
-
-def get_lower_bound(x, x_mean, x_std, z_std, enc_z_mean, enc_z_logvar, nDim, method=None, p=None,
-                    alpha=None):
-    '''
-    No fixed batch
-    x: batch x length x dim
-    '''
-    if len(np.shape(x))>2:
-        if (method.find('lstm_vae_custom')>=0 or method.find('lstm_dvae_custom')>=0 or \
-            method.find('phase')>=0) and method.find('pred')<0 and method.find('input')<0:
-            x_in = np.concatenate((x, p), axis=-1)
-        elif method.find('pred')>=0 or method.find('input')>=0:
-            x_in = np.concatenate((x, p, x), axis=-1) 
-        else:
-            x_in = x
-        
-        batch_size = len(x)
-        z_mean    = enc_z_mean.predict(x_in, batch_size=batch_size)[0]
-        z_log_var = enc_z_logvar.predict(x_in, batch_size=batch_size)[0]
-        x = x[0]
-    else:
-        z_mean    = enc_z_mean.predict(x)[0]
-        z_log_var = enc_z_logvar.predict(x)[0]        
-
-    if alpha is None: alpha = np.array([1.0]*nDim)
-
-    # x: length x dim ?
-    log_p_x_z = -0.5 * ( np.sum( (alpha*(x-x_mean)/x_std)**2, axis=-1) \
-                         + float(nDim) * np.log(2.0*np.pi) + np.sum(np.log(x_std**2), axis=-1) )
-    if len(np.shape(log_p_x_z))>1:
-        xent_loss = np.mean(-log_p_x_z, axis=-1)
-    else:
-        xent_loss = -log_p_x_z
-
-    ## if method == 'lstm_vae_custom' or method == 'lstm_vae_custom2':
-    ##     p=0
-    ##     if len(np.shape(z_log_var))>1:            
-    ##         kl_loss = - 0.5 * np.sum(1 + z_log_var -np.log(z_std*z_std) - (z_mean-p)**2
-    ##                                 - np.exp(z_log_var)/(z_std*z_std), axis=-1)
-    ##     else:
-    ##         kl_loss = - 0.5 * np.sum(1 + z_log_var -np.log(z_std*z_std) - (z_mean-p)**2
-    ##                                 - np.exp(z_log_var)/(z_std*z_std))
-    ##     kl_loss = 0
-    ## else:
-    ##     if len(np.shape(z_log_var))>1:
-    ##         kl_loss = - 0.5 * np.sum(1 + z_log_var - z_mean**2 - np.exp(z_log_var), axis=-1)
-    ##     else:
-    ##         kl_loss = - 0.5 * np.sum(1 + z_log_var - z_mean**2 - np.exp(z_log_var))
-    kl_loss = 0
-
-    if len(xent_loss + kl_loss)>1:
-        return [np.mean(xent_loss + kl_loss)], z_mean, z_log_var
-    else:
-        return xent_loss + kl_loss, z_mean, z_log_var
 
 
 def pred_rf(model, x, percentile=95):

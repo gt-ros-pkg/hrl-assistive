@@ -136,8 +136,14 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     # HMM-induced vector with LOPO
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(d['kFoldList']):
-        #if idx == 0: continue
+        #if idx != 2: continue
         #if not(idx == 0 or idx == 7): continue
+
+        # pred_score_4dim_success: idx==5, ths=1.5, first data
+        # pred_score_4dim_failure: idx==2, ths=1. , 4th data
+        # /home/dpark/hrl_file_server/dpark_data/anomaly/RAW_DATA/AURO2016/s4_feeding/12_23_failure.pkl
+        
+        
         print "==================== ", idx, " ========================"
 
         # dim x sample x length
@@ -176,8 +182,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
 
         # ------------------------------------------------------------------------------------------
         # ------------------------------------------------------------------------------------------        
-        ## method      = 'lstm_dvae_phase'
-        method      = 'rnd'
+        method      = 'lstm_dvae_phase'
+        #method      = 'rnd'
          
         weights_path = os.path.join(save_data_path,'model_weights_'+method+'_'+str(idx)+'.h5')
         vae_mean   = None
@@ -249,10 +255,10 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 from hrl_anomaly_detection.vae.models import lstm_dvae_phase2 as km
                 ths_l = np.logspace(-1.0,2.4,40) -0.2
                 x_std_div   = 4.
-                x_std_offset= 0.05 #1
+                x_std_offset= 0.1
                 z_std       = 1.0 
                 h1_dim      = nDim
-                z_dim       = 2
+                z_dim       = 3
                 phase       = 1.0
                 sam_epoch   = 40
                 if add_data is False:
@@ -425,9 +431,11 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                                ad_method, method,
                                window_size, alpha, ths_l=ths_l, save_pkl=save_pkl, stateful=stateful,
                                x_std_div = x_std_div, x_std_offset=x_std_offset, z_std=z_std,
-                               phase=phase, plot=plot, step_ahead = 5,
+                               phase=phase, plot=plot,
                                renew=clf_renew, dyn_ths=dyn_ths, batch_info=(fixed_batch_size,batch_size),
-                               param_dict=d['param_dict'])
+                               param_dict=d['param_dict'], scaler_dict=scaler_dict,
+                               filenames=(np.array(d['success_files'])[normalTestIdx],
+                                          np.array(d['failure_files'])[abnormalTestIdx]))
 
         roc_l.append(roc)
 
@@ -865,7 +873,7 @@ if __name__ == '__main__':
           '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_4'    
     else:
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_rnd'    
+          '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_dvae_phase'    
         #save_data_path = os.path.expanduser('~')+\
         #  '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_dvae_c_4d'
 

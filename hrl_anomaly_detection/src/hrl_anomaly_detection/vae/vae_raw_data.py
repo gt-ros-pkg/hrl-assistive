@@ -47,7 +47,6 @@ from hrl_anomaly_detection.vae import util as vutil
 # Private learners
 import hrl_anomaly_detection.data_viz as dv
 from hrl_anomaly_detection.vae import keras_models as km
-from hrl_anomaly_detection.vae import detector as dt
 
 # visualization
 import matplotlib
@@ -101,18 +100,10 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
 
         ut.save_pickle(d, crossVal_pkl)
 
-    ## # select feature for detection
-    ## feature_list = []
-    ## for feature in param_dict['data_param']['handFeatures']:
-    ##     idx = [ i for i, x in enumerate(param_dict['data_param']['isolationFeatures']) if feature == x][0]
-    ##     feature_list.append(idx)
-    ## d['successData']    = d['successData'][feature_list]
-    ## d['failureData']    = d['failureData'][feature_list]
-
     if fine_tuning is False:
         td1, td2, td3 = vutil.get_ext_feeding_data(task_name, save_data_path, param_dict, d,
                                                    raw_feature=True)
-
+        sys.exit()
         
 
     # Parameters
@@ -166,12 +157,12 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         testData  = [normalTestData, [0]*len(normalTestData)]
 
         # scaling info to reconstruct the original scale of data
-        scaler_dict = {'scaler': scaler, 'scale': scale, 'param_dict': d['param_dict']}
+        scaler_dict = {'scaler': scaler, 'scale': scale, 'param_dict': d['raw_param_dict']}
 
         # ------------------------------------------------------------------------------------------
         # ------------------------------------------------------------------------------------------        
         method      = 'lstm_dvae_phase'
-        method      = 'osvm'
+        #method      = 'osvm'
          
         weights_path = os.path.join(save_data_path,'model_weights_'+method+'_'+str(idx)+'.h5')
         vae_mean   = None
@@ -367,7 +358,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             
         
         #------------------------------------------------------------------------------------
-        if  True and False: 
+        if  True : 
             vutil.graph_latent_space(normalTestData, abnormalTestData, enc_z_mean,
                                      timesteps=window_size, batch_size=batch_size,
                                      method=method)
@@ -378,6 +369,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             if fine_tuning: alpha_renew = True
             else: alpha_renew = False
             save_pkl = os.path.join(save_data_path, 'model_alpha_'+method+'_'+str(idx)+'.pkl')
+            from hrl_anomaly_detection.vae import detector as dt
             alpha = dt.get_optimal_alpha((valData[0], abnormalTrainData), autoencoder, vae_mean,
                                          ad_method, method, window_size, save_pkl,\
                                          stateful=stateful, renew=alpha_renew,\
@@ -396,6 +388,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
 
         if method == 'osvm':
             from hrl_anomaly_detection.vae.models import osvm as dt
+        else:
+            from hrl_anomaly_detection.vae import detector as dt
         
         save_pkl = os.path.join(save_data_path, 'model_ad_scores_'+str(idx)+'.pkl')
         tp_l, tn_l, fp_l, fn_l, roc = \
@@ -407,7 +401,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                                x_std_div = x_std_div, x_std_offset=x_std_offset, z_std=z_std, \
                                phase=phase,\
                                plot=plot, param_dict=d['param_dict'],\
-                               renew=clf_renew, dyn_ths=dyn_ths, batch_info=(fixed_batch_size,batch_size))
+                               renew=clf_renew, dyn_ths=dyn_ths, batch_info=(fixed_batch_size,batch_size),\
+                               scaler_dict=scaler_dict)
 
         roc_l.append(roc)
 
@@ -448,6 +443,25 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     plt.show()
 
 
+def ad_score_viz(task_name, raw_data_path, processed_data_path, param_dict):
+
+    crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
+    d = ut.load_pickle(crossVal_pkl)         
+
+    for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
+      in enumerate(d['kFoldList']):
+
+        if idx != 1: continue
+        save_pkl = os.path.join(processed_data_path, 'model_ad_scores_'+str(idx)+'.pkl')
+
+        dd = ut.load_pickle(save_pkl)
+        ## scores_tr_n = d['scores_tr_n']
+        scores_te_n = dd['scores_te_n']
+        scores_te_a = dd['scores_te_a']
+        
+        vutil.graph_score_distribution(scores_te_n, scores_te_a, d['param_dict'], save_pdf=True)
+    
+
 if __name__ == '__main__':
 
     import optparse
@@ -462,6 +476,8 @@ if __name__ == '__main__':
                  default=False, help='Run fine tuning.')
     p.add_option('--dyn_ths', '--dt', action='store_true', dest='bDynThs',
                  default=False, help='Run dynamic threshold.')
+    p.add_option('--ad_score', '--as', action='store_true', dest='ad_score_viz',
+                 default=False, help='Visualize anomaly scores.')
 
     opt, args = p.parse_args()
 
@@ -486,7 +502,7 @@ if __name__ == '__main__':
           '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_rawtrain2'
     else:
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_osvm_raw'
+          '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_dvae_phase_raw'
 
 
     param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
@@ -497,3 +513,6 @@ if __name__ == '__main__':
     if opt.lstm_test:
         lstm_test(subjects, opt.task, raw_data_path, save_data_path, param_dict, plot=not opt.bNoPlot,
                   re_load=opt.bReLoad, fine_tuning=opt.bFineTune, dyn_ths=opt.bDynThs)
+    elif opt.ad_score_viz:
+        ad_score_viz(opt.task, raw_data_path, save_data_path, param_dict)
+
