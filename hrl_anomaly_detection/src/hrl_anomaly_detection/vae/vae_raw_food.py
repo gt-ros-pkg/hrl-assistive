@@ -103,6 +103,14 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     if fine_tuning is False:
         td1, td2, td3 = vutil.get_ext_feeding_data(task_name, save_data_path, param_dict, d,
                                                    raw_feature=True)
+
+    # Change training/testing set and pre-training set
+    temp = copy.copy(td1)
+    td1  = copy.copy(d)
+    d    = copy.copy(temp)
+
+    # need to exclude non-yogurt feeding data.
+    
         
 
     # Parameters
@@ -501,7 +509,7 @@ if __name__ == '__main__':
           '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_osvm_raw'
     else:
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_dvae_phase_raw'
+          '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_dvae_phase_raw_food'
 
 
     param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
