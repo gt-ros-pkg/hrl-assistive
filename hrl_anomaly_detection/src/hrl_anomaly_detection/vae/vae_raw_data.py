@@ -122,7 +122,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(d['kFoldList']):
         #if (idx == 0 or idx==7): continue
-        #if idx != 0: continue
+        if idx != 0: continue
         print "==================== ", idx, " ========================"
 
         # dim x sample x length
@@ -351,7 +351,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             window_size = 3
             fixed_batch_size = False
             ad_method   = None
-            ths_l = np.linspace(1e-1, 1.0, 40)
+            ths_l = np.linspace(3e-1, 1.0, 40)
             autoencoder = None
             #autoencoder = km.osvm(trainData, valData, weights_path, timesteps=window_size,
             #                      renew=ae_renew)
@@ -499,7 +499,7 @@ if __name__ == '__main__':
 
     if os.uname()[1] == 'monty1':
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_rawtrain2'
+          '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_osvm_raw'
     else:
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_dvae_phase_raw'
