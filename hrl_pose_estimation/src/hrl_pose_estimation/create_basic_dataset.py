@@ -6,7 +6,7 @@ import cPickle as pkl
 import random
 
 # ROS
-import roslib; roslib.load_manifest('autobed_physical_trainer')
+import roslib; roslib.load_manifest('hrl_pose_estimation')
 
 # Graphics
 import matplotlib.pyplot as plt
@@ -64,8 +64,9 @@ class DatabaseCreator():
         self.final_dataset = []
 
 
-            
-        [self.p_world_mat, self.R_world_mat] = load_pickle(self.training_dump_path+'/mat_axes.p')         
+        print self.training_dump_path
+        #[self.p_world_mat, self.R_world_mat] = load_pickle(self.training_dump_path+'/mat_axes.p')         
+        [self.p_world_mat, self.R_world_mat] = load_pickle('/home/henryclever/hrl_file_server/Autobed/pose_estimation_data/mat_axes15.p')
         self.mat_size = (NUMOFTAXELS_X, NUMOFTAXELS_Y)
         self.individual_dataset = {} 
 
@@ -226,77 +227,84 @@ class DatabaseCreator():
         '''Creates a database using the raw pressure values(full_body) and only
         transforms world frame coordinates to mat coordinates'''
 
-        home_sup = load_pickle(self.training_dump_path+'/home_sup.p')
-        RH_sup = load_pickle(self.training_dump_path+'/RH_sup.p')
-        LH_sup = load_pickle(self.training_dump_path+'/LH_sup.p')
-        RL_sup = load_pickle(self.training_dump_path+'/RL_sup.p')
-        LL_sup = load_pickle(self.training_dump_path+'/LL_sup.p')
+        #for subject in [4, 9, 15, 16, 17]:
+        for subject in [18]:
+             
+
+            self.training_dump_path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_'+str(subject)
+            print self.training_dump_path
+
+            home_sup = load_pickle(self.training_dump_path+'/home_sup.p')
+            RH_sup = load_pickle(self.training_dump_path+'/RH_sup.p')
+            LH_sup = load_pickle(self.training_dump_path+'/LH_sup.p')
+            RL_sup = load_pickle(self.training_dump_path+'/RL_sup.p')
+            LL_sup = load_pickle(self.training_dump_path+'/LL_sup.p')
         
-        count = 0
+            count = 0
 
-        for [p_map_raw, target_raw] in home_sup:
-            target_mat = self.world_to_mat(target_raw, self.p_world_mat, self.R_world_mat)
-            rot_p_map = self.rotate_taxel_space(p_map_raw)
-            #print rot_p_map
-            rot_target_mat = self.rotate_3D_space(target_mat)
-            #print rot_target_mat
-            #print rot_target_mat.flatten()
-            #print rot_p_map.flatten()
-            #print tuple(rot_p_map.flatten())
+            for [p_map_raw, target_raw] in home_sup:
+                target_mat = self.world_to_mat(target_raw, self.p_world_mat, self.R_world_mat)
+                rot_p_map = self.rotate_taxel_space(p_map_raw)
+                #print rot_p_map
+                rot_target_mat = self.rotate_3D_space(target_mat)
+                #print rot_target_mat
+                #print rot_target_mat.flatten()
+                #print rot_p_map.flatten()
+                #print tuple(rot_p_map.flatten())
 
 
-            #print list(rot_p_map.flatten())
-            #print rot_target_mat.flatten()
+                #print list(rot_p_map.flatten())
+                #print rot_target_mat.flatten()
             
-            #self.final_dataset[tuple(rot_p_map.flatten())] = rot_target_mat.flatten()
-            self.final_dataset.append([list(rot_p_map.flatten()), rot_target_mat.flatten()])
-            #self.individual_dataset[tuple(rot_p_map.flatten())] = rot_target_mat.flatten()
-            count += 1
-        print 'working on LH sup'
+                #self.final_dataset[tuple(rot_p_map.flatten())] = rot_target_mat.flatten()
+                self.final_dataset.append([list(rot_p_map.flatten()), rot_target_mat.flatten()])
+                #self.individual_dataset[tuple(rot_p_map.flatten())] = rot_target_mat.flatten()
+                count += 1
+            print 'working on LH sup'
         
-        for [p_map_raw, target_raw] in LH_sup:
-            target_mat = self.world_to_mat(target_raw, self.p_world_mat, self.R_world_mat)
-            rot_p_map = self.rotate_taxel_space(p_map_raw)
-            rot_target_mat = self.rotate_3D_space(target_mat)
-            #self.final_dataset[tuple(rot_p_map.flatten())] = rot_target_mat.flatten()
-            self.final_dataset.append([list(rot_p_map.flatten()), rot_target_mat.flatten()])
+            for [p_map_raw, target_raw] in LH_sup:
+                target_mat = self.world_to_mat(target_raw, self.p_world_mat, self.R_world_mat)
+                rot_p_map = self.rotate_taxel_space(p_map_raw)
+                rot_target_mat = self.rotate_3D_space(target_mat)
+                #self.final_dataset[tuple(rot_p_map.flatten())] = rot_target_mat.flatten()
+                self.final_dataset.append([list(rot_p_map.flatten()), rot_target_mat.flatten()])
            
-            #self.individual_dataset[tuple(rot_p_map.flatten())] = rot_target_mat.flatten()
-            count += 1
-        print 'working on RH_sup'
+                #self.individual_dataset[tuple(rot_p_map.flatten())] = rot_target_mat.flatten()
+                count += 1
+            print 'working on RH_sup'
             
-        for [p_map_raw, target_raw] in RH_sup:
-            target_mat = self.world_to_mat(target_raw, self.p_world_mat, self.R_world_mat)
-            rot_p_map = self.rotate_taxel_space(p_map_raw)
-            rot_target_mat = self.rotate_3D_space(target_mat)
-            #self.final_dataset[tuple(rot_p_map.flatten())] = rot_target_mat.flatten()
-            self.final_dataset.append([list(rot_p_map.flatten()), rot_target_mat.flatten()])
+            for [p_map_raw, target_raw] in RH_sup:
+                target_mat = self.world_to_mat(target_raw, self.p_world_mat, self.R_world_mat)
+                rot_p_map = self.rotate_taxel_space(p_map_raw)
+                rot_target_mat = self.rotate_3D_space(target_mat)
+                #self.final_dataset[tuple(rot_p_map.flatten())] = rot_target_mat.flatten()
+                self.final_dataset.append([list(rot_p_map.flatten()), rot_target_mat.flatten()])
            
-            #self.individual_dataset[tuple(rot_p_map.flatten())] = rot_target_mat.flatten()
-            count += 1
-        print 'working on LL_sup'
+                #self.individual_dataset[tuple(rot_p_map.flatten())] = rot_target_mat.flatten()
+                count += 1
+            print 'working on LL_sup'
         
-        for [p_map_raw, target_raw] in LL_sup:
-            target_mat = self.world_to_mat(target_raw, self.p_world_mat, self.R_world_mat)
-            rot_p_map = self.rotate_taxel_space(p_map_raw)
-            rot_target_mat = self.rotate_3D_space(target_mat)
-            #self.final_dataset[tuple(rot_p_map.flatten())] = rot_target_mat.flatten()
-            self.final_dataset.append([list(rot_p_map.flatten()), rot_target_mat.flatten()])
+            for [p_map_raw, target_raw] in LL_sup:
+                target_mat = self.world_to_mat(target_raw, self.p_world_mat, self.R_world_mat)
+                rot_p_map = self.rotate_taxel_space(p_map_raw)
+                rot_target_mat = self.rotate_3D_space(target_mat)
+                #self.final_dataset[tuple(rot_p_map.flatten())] = rot_target_mat.flatten()
+                self.final_dataset.append([list(rot_p_map.flatten()), rot_target_mat.flatten()])
            
-            #self.individual_dataset[tuple(rot_p_map.flatten())] = rot_target_mat.flatten()
-            count += 1
-        print 'working on RH_sup'
+                #self.individual_dataset[tuple(rot_p_map.flatten())] = rot_target_mat.flatten()
+                count += 1
+            print 'working on RH_sup'
 
-        for [p_map_raw, target_raw] in RL_sup:
-            target_mat = self.world_to_mat(target_raw, self.p_world_mat, self.R_world_mat)
-            rot_p_map = self.rotate_taxel_space(p_map_raw)
-            rot_target_mat = self.rotate_3D_space(target_mat)
-            self.final_dataset.append([list(rot_p_map.flatten()), rot_target_mat.flatten()])
-            count += 1
+            for [p_map_raw, target_raw] in RL_sup:
+                target_mat = self.world_to_mat(target_raw, self.p_world_mat, self.R_world_mat)
+                rot_p_map = self.rotate_taxel_space(p_map_raw)
+                rot_target_mat = self.rotate_3D_space(target_mat)
+                self.final_dataset.append([list(rot_p_map.flatten()), rot_target_mat.flatten()])
+                count += 1
 
         print "Saving final_dataset"
-        pkl.dump(self.final_dataset, open(os.path.join(self.training_dump_path,'basic_train_dataset.p'), 'wb'))
-        #pkl.dump(self.individual_dataset, open(os.path.join(self.training_dump_path, 'individual_database.p'), 'wb'))
+        pkl.dump(self.final_dataset, open(os.path.join(self.training_dump_path,'../basic_test_dataset.p'), 'wb'))
+            #pkl.dump(self.individual_dataset, open(os.path.join(self.training_dump_path, 'individual_database.p'), 'wb'))
         
         print 'Done.'
         return

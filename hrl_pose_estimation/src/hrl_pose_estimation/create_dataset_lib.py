@@ -9,7 +9,7 @@ import cPickle as pkl
 import random
 
 # ROS
-import roslib; roslib.load_manifest('autobed_physical_trainer')
+import roslib; roslib.load_manifest('hrl_pose_estimation')
 
 # Graphics
 import matplotlib.pyplot as plt
@@ -56,6 +56,8 @@ class CreateDatasetLib():
         last_row = np.array([[0, 0, 0, 1]])
         B_m_w = np.concatenate((B_m_w, last_row), axis=0)
         w_data = np.hstack([w_data, np.ones([len(w_data),1])])
+        #print p_world_mat
+        #print R_world_mat
     
         #Convert input to the mat frame vector
         m_data = B_m_w * w_data.T

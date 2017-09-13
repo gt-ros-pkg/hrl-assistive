@@ -6,7 +6,7 @@ import cPickle as pkl
 import random
 
 # ROS
-import roslib; roslib.load_manifest('autobed_physical_trainer')
+import roslib; roslib.load_manifest('hrl_pose_estimation')
 
 # Graphics
 import matplotlib.pyplot as plt
@@ -246,7 +246,7 @@ if __name__ == "__main__":
 
     p.add_option('--training_data_path', '--path',  action='store', type='string', \
                  dest='trainingPath',\
-                 default='/home/henryclever/hrl_file_server/Autobed/pose_estimation_data/subject_4', \
+                 default='/home/henryclever/hrl_file_server/Autobed/subject_4', \
                  help='Set path to the training database.')
     p.add_option('--verbose', '--v',  action='store_true', dest='verbose', default=False, help='Printout everything (under construction).')
     

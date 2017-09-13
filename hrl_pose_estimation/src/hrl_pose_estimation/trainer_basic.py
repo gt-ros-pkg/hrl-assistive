@@ -119,6 +119,7 @@ class PhysicalTrainer():
         '''Computes a HoG(Histogram of gradients for a list of images provided
         to it. Returns a list of flattened lists'''
         flat_hog = []
+        if self.verbose==True: print np.shape(data), 'Size of dataset we are performing HoG on'
         print "*****Begin HoGing the dataset*****"
         for index in range(len(data)):
             print "HoG being applied over image number: {}".format(index)
@@ -127,6 +128,9 @@ class PhysicalTrainer():
                     pixels_per_cell=(4,4), cells_per_block = (1, 1), 
                     visualise=True)
             flat_hog.append(fd) 
+            #self.visualize_pressure_map(data[index])
+            #print hog_image[30], data[index][30]
+   
         return flat_hog
 
 
@@ -146,6 +150,8 @@ class PhysicalTrainer():
             #Resize mat to make into a matrix
             p_map = np.reshape(data[map_index], self.mat_size)
             p_map_dataset.append(p_map)
+	if self.verbose: print len(data[0]),'x',1, 'size of an incoming pressure map'
+	if self.verbose: print len(p_map_dataset[0]),'x',len(p_map_dataset[0][0]), 'size of a resized pressure map'
         return p_map_dataset
 
 
@@ -156,6 +162,7 @@ class PhysicalTrainer():
             #Upsample the current map using bilinear interpolation
             p_map_highres_dataset.append(
                     ndimage.zoom(data[map_index], multiple, order=order))
+	if self.verbose: print len(p_map_highres_dataset[0]),'x',len(p_map_highres_dataset[0][0]), 'size of an upsampled pressure map'
         return p_map_highres_dataset
 
  
@@ -172,15 +179,20 @@ class PhysicalTrainer():
 
     def compute_pixel_variance(self, data):
         weight_matrix = np.std(data, axis=0)
+        if self.verbose == True: print len(weight_matrix),'x', len(weight_matrix[0]), 'size of weight matrix'
         weight_matrix = weight_matrix/weight_matrix.max()
+
         x = np.zeros((20, 54))
         y = np.hstack((
                 np.hstack((np.ones((60,10)), np.zeros((60, 32)))),
                 np.ones((60,12))))
         z = np.ones((48, 54))
         weight_matrix = np.vstack((np.vstack((x,y)), z))
-        #matshow(weight_matrix, fignum=100, cmap=cm.gray)
-        #show()
+        matshow(weight_matrix, fignum=100, cmap=cm.gray)
+        show()
+        if self.verbose == True: print len(x),'x', len(x[0]), 'size of x matrix'
+        if self.verbose == True: print len(y),'x', len(y[0]), 'size of y matrix'
+        if self.verbose == True: print len(z),'x', len(z[0]), 'size of z matrix'
         return weight_matrix
 
 
@@ -197,7 +209,7 @@ class PhysicalTrainer():
         
         #Resize incoming pressure map
         pressure_map_dataset_lowres_train = (
-                self.preprocessing_pressure_array_resize(self.dataset_x_flat))
+            self.preprocessing_pressure_array_resize(self.dataset_x_flat))
         #Upsample the lowres training dataset 
         pressure_map_dataset_highres_train = (
             self.preprocessing_pressure_map_upsample(
@@ -209,7 +221,7 @@ class PhysicalTrainer():
         #OPTIONAL: PCA STAGE
         #X = self.pca_pressure_map( self.train_y, False)
         #Now we train a linear classifier on the dataset of HoGs
-
+        if self.verbose == True: print np.shape(pressure_hog_train), 'shape of the pressure hog training set'
         self.regr = linear_model.LinearRegression()
         scores = cross_validation.cross_val_score(
             self.regr, pressure_hog_train, self.dataset_y, cv=self.cv_fold)
@@ -224,9 +236,12 @@ class PhysicalTrainer():
               #% np.mean((predicted - self.dataset_y) **2))
 
         # Train the model using the training sets
+        if self.verbose == True: print np.shape(pressure_hog_train), np.shape(self.dataset_y), 'shapes of input/ground truth in model'
         self.regr.fit(pressure_hog_train, self.dataset_y)
+
+        if self.verbose == True:  print 'regression successfully fit'
         #Pickle the trained model
-        pkl.dump(self.regr, open(os.path.join('/home/henryclever/hrl_file_server/Autobed/pose_estimation_data/subject_4', 'HoG_Linear.p'),'wb'))
+        pkl.dump(self.regr, open(os.path.join('/home/henryclever/hrl_file_server/Autobed/pose_estimation_data/', 'HoG_Linear.p'),'wb'))
         return self.regr
     
 
@@ -263,7 +278,7 @@ class PhysicalTrainer():
         self.regr.fit(pressure_hog_train, self.dataset_y)
         #Pickle the trained model
         #pkl.dump(self.regr, open('./dataset/trained_model_'+'HoG_Ridge.p', 'wb'))
-        pkl.dump(self.regr, open(os.path.join('/home/henryclever/hrl_file_server/Autobed/pose_estimation_data/subject_4', 'HoG_Ridge.p'),'wb'))
+        pkl.dump(self.regr, open(os.path.join('/home/henryclever/hrl_file_server/Autobed/pose_estimation_data/', 'HoG_Ridge.p'),'wb'))
         return self.regr
  
 
@@ -299,7 +314,8 @@ class PhysicalTrainer():
         # Train the model using the training sets
         self.regr.fit(pressure_hog_train, self.dataset_y)
         #Pickle the trained model
-        pkl.dump(self.regr, open('./dataset/trained_model_'+'HoG_KRR.p', 'wb'))
+        #pkl.dump(self.regr, open('./dataset/trained_model_'+'HoG_KRR.p', 'wb'))
+        pkl.dump(self.regr, open(os.path.join('/home/henryclever/hrl_file_server/Autobed/pose_estimation_data/', 'HoG_KRR.p'),'wb'))
         return self.regr
  
 
@@ -310,41 +326,54 @@ class PhysicalTrainer():
         n_neighbors = 5
         #Resize incoming pressure map
         pressure_map_dataset_lowres_train = (
-                self.preprocessing_pressure_array_resize(self.dataset_x_flat))
+            self.preprocessing_pressure_array_resize(self.dataset_x_flat))
         #Upsample the lowres training dataset 
         pressure_map_dataset_highres_train = (
             self.preprocessing_pressure_map_upsample(
                 pressure_map_dataset_lowres_train))
 
-        self.weight_vector = (
-        self.compute_pixel_variance(pressure_map_dataset_highres_train))
+        self.weight_vector = (self.compute_pixel_variance(pressure_map_dataset_highres_train))
+
         weighted_p_map = np.multiply(pressure_map_dataset_highres_train,
                 self.weight_vector)
+
+        if self.verbose==True: print np.shape(weighted_p_map)[0], np.shape(weighted_p_map)[1], np.shape(weighted_p_map)[2], 'dims of weighted_p_map'
+
+
         weighted_dataset_flat = np.zeros((np.shape(weighted_p_map)[0],
                 np.shape(weighted_p_map)[1]*np.shape(weighted_p_map)[2]))
-        for i in range(np.shape(weighted_p_map)[0]):
+
+        if self.verbose == True: print np.shape(weighted_dataset_flat)[0],np.shape(weighted_dataset_flat)[1], 'dims of flattened weighted_p_map'
+
+        #here enumerate the weighted_dataset_flat with flattened entries of weighted_p_map
+        for i in range(np.shape(weighted_p_map)[0]): #i goes from 0 to whatever number of pressure mat readings we have
             curr_map = weighted_p_map[i][:][:]
             weighted_dataset_flat[i][:] = np.reshape(curr_map,
                     (np.shape(curr_map)[0]*np.shape(curr_map)[1]))
+
+
         #p_map_normalized = self.normalize_data(
                 #pressure_map_dataset_highres_train)
         #Compute HoG of the current(training) pressure map dataset
-        pressure_hog_train = (
-        self.compute_HoG(pressure_map_dataset_highres_train))
+        pressure_hog_train = (self.compute_HoG(pressure_map_dataset_highres_train))
+
         #OPTIONAL: PCA STAGE
         #X = self.pca_pressure_map( self.train_y, False)
         #Now we train a Ridge regression on the dataset of HoGs
         #self.regr = neighbors.KNeighborsRegressor(n_neighbors,
         #weights='distance')
+        #self.regr = (neighbors.KNeighborsRegressor(n_neighbors,
+        #weights='distance', metric='pyfunc', func=self.chi2_distance))
+        
         self.regr = (neighbors.KNeighborsRegressor(n_neighbors,
-        weights='distance', metric='pyfunc', func=self.chi2_distance))
+                weights='distance', metric='pyfunc'))
+       
         print "JOINT STANDARD DEVIATION"
         joint_std_dev = self.find_dataset_deviation()
         print joint_std_dev
         sys.exit()
-
         scores = cross_validation.cross_val_score(
-            self.regr, weighted_dataset_flat, self.dataset_y, cv=self.cv_fold)
+                self.regr, weighted_dataset_flat, self.dataset_y, cv=self.cv_fold)
         print("Accuracy after k-fold cross validation: %0.2f (+/- %0.2f)" 
                 % (scores.mean(), scores.std() * 2))
 
@@ -424,8 +453,9 @@ class PhysicalTrainer():
         # Train the model using the training sets
         self.regr.fit(pressure_hog_train, self.dataset_y)
         #Pickle the trained model
-        pkl.dump(self.regr, open('./dataset/trained_model_'+'KMeans_SVM_Linear.p'
-                ,'wb'))
+        #pkl.dump(self.regr, open('./dataset/trained_model_'+'KMeans_SVM_Linear.p'
+        #        ,'wb'))
+        pkl.dump(self.regr, open(os.path.join('/home/henryclever/hrl_file_server/Autobed/pose_estimation_data/', 'SVM_Linear.p'),'wb'))
         return self.regr
 
 
@@ -436,25 +466,40 @@ class PhysicalTrainer():
         #Upsample the current map using bilinear interpolation
         test_x_highres = self.preprocessing_pressure_map_upsample(
                 test_x_lowres)
+
+        self.weight_vector = (self.compute_pixel_variance(test_x_highres))
+
         weighted_p_map = np.multiply(test_x_highres,
                 self.weight_vector)
         weighted_dataset_flat = np.zeros((np.shape(weighted_p_map)[0],
                 np.shape(weighted_p_map)[1]*np.shape(weighted_p_map)[2]))
+
         for i in range(np.shape(weighted_p_map)[0]):
             curr_map = weighted_p_map[i][:][:]
             weighted_dataset_flat[i][:] = np.reshape(curr_map,
                     (np.shape(curr_map)[0]*np.shape(curr_map)[1]))
+
         #Compute HoG of the current(test) pressure map dataset
-        #test_hog = self.compute_HoG(test_x_highres)
+        test_hog = self.compute_HoG(test_x_highres)
+
         #Load training model
         regr = trained_model
+
         # The coefficients
         try:
             print('Coefficients: \n', regr.coef_)
         except AttributeError:
             pass
+
+        print np.shape(regr.coef_), 'size of regression coefficients'
+        print np.shape(weighted_dataset_flat), 'size of weighted flat test dataset'
+        print np.shape(test_hog), 'size of the HOG of the test set'
+        print np.shape(self.test_y), 'size of test y matrix'
+
         # The mean square error
-        diff = regr.predict(weighted_dataset_flat) - self.test_y
+        #diff = regr.predict(weighted_dataset_flat) - self.test_y
+        diff = regr.predict(test_hog) - self.test_y
+
 #        print "Max absolute distance in each axis"
         #mean_indiv_error = np.ndarray.max(np.absolute(diff), axis = 0)
         #mean_indiv_error = mean_indiv_error.reshape(np.shape(mean_indiv_error)[0]/3, 3)
@@ -482,8 +527,10 @@ class PhysicalTrainer():
         print std_joint_error
         print ('Head, Torso, Elbows, Hands, Knees, Ankles')
         ##Plot n test poses at random
-        estimated_y = regr.predict(weighted_dataset_flat)
-        distances, indices = regr.kneighbors(weighted_dataset_flat)
+        #estimated_y = regr.predict(weighted_dataset_flat)
+        #distances, indices = regr.kneighbors(weighted_dataset_flat)
+        estimated_y = regr.predict(test_hog)
+        distances, indices = regr.kneighbors(test_hog)
         train_x_lowres = self.preprocessing_pressure_array_resize(self.train_x_flat)
 
         for i in range(np.shape(indices)[0]):
@@ -642,10 +689,55 @@ class PhysicalTrainer():
         return taxels
 
 
-    def visualize_pressure_map(self, pressure_map_matrix):
-        '''Visualizing a plot of the pressure map'''
-        plt.imshow(pressure_map_matrix, interpolation='nearest', cmap=
-                plt.cm.bwr, origin='upper', vmin=0, vmax=300)
+    def visualize_pressure_map(self, pressure_map_matrix, rotated_targets=None, fileNumber=0, plot_3d=False):
+        '''Visualizing a plot of the pressure map'''        
+        fig = plt.figure()
+                 
+        if plot_3d == False:            
+            plt.imshow(pressure_map_matrix, interpolation='nearest', cmap=
+                plt.cm.bwr, origin='upper', vmin=0, vmax=100)
+        else:
+            ax1= fig.add_subplot(121, projection='3d')
+            ax2= fig.add_subplot(122, projection='3d')
+   
+            n,m = np.shape(pressure_map_matrix)
+            X,Y = np.meshgrid(range(m), range(n))
+            ax1.contourf(X,Y,pressure_map_matrix, zdir='z', offset=0.0, cmap=plt.cm.bwr)
+            ax2.contourf(X,Y,pressure_map_matrix, zdir='z', offset=0.0, cmap=plt.cm.bwr)
+
+        if rotated_targets is not None:
+            
+            rotated_target_coord = rotated_targets[:,:2]/INTER_SENSOR_DISTANCE            
+            rotated_target_coord[:,1] -= (NUMOFTAXELS_X - 1)
+            rotated_target_coord[:,1] *= -1.0                       
+
+            xlim = [-10.0, 35.0]
+            ylim = [70.0, -10.0]                     
+            
+            if plot_3d == False:
+                plt.plot(rotated_target_coord[:,0], rotated_target_coord[:,1],\
+                         'y*', ms=10)
+                plt.xlim(xlim)
+                plt.ylim(ylim)                         
+            else:
+                ax1.plot(np.squeeze(rotated_target_coord[:,0]), \
+                         np.squeeze(rotated_target_coord[:,1]),\
+                         np.squeeze(rotated_targets[:,2]), 'y*', ms=10)
+                ax1.set_xlim(xlim)
+                ax1.set_ylim(ylim)
+                ax1.view_init(20,-30)
+
+                ax2.plot(np.squeeze(rotated_target_coord[:,0]), \
+                         np.squeeze(rotated_target_coord[:,1]),\
+                         np.squeeze(rotated_targets[:,2]), 'y*', ms=10)
+                ax2.view_init(1,10)
+                ax2.set_xlim(xlim)
+                ax2.set_ylim(ylim)
+                ax2.set_zlim([-0.1,0.4])
+        #for saving a visualized pressure mat see latest version of create_sliced_dataset.py in hrl_autobed_dev under the autobed_pose_estimation_dev branch
+
+        plt.show()
+        
         return
 
 
@@ -726,7 +818,8 @@ if __name__ == "__main__":
     p = optparse.OptionParser()
     p.add_option('--training_dataset', '--train_dataset',  action='store', type='string', \
                  dest='trainPath',\
-                 default='/home/henryclever/hrl_file_server/Autobed/pose_estimation_data/subject_4/basic_train_dataset.p', \
+                 #default='/home/henryclever/hrl_file_server/Autobed/pose_estimation_data/basic_train_dataset.p', \
+                 default = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/basic_train_dataset.p', \
                  help='Specify path to the training database.')
     p.add_option('--training_type', '--type',  action='store', type='string', \
                  dest='trainingType',\
@@ -735,10 +828,12 @@ if __name__ == "__main__":
                  default=False, help='Whether you want only testing of previously stored model')
     p.add_option('--training_model', '--model',  action='store', type='string', \
                  dest='modelPath',\
+                 default = '/home/henryclever/hrl_file_server/Autobed/pose_estimation_data', \
                  help='Specify path to the trained model')
     p.add_option('--testing_dataset', '--test_dataset',  action='store', type='string', \
                  dest='testPath',\
-                 default='/home/henryclever/hrl_file_server/Autobed/pose_estimation_data/subject_4/basic_test_dataset.p', \
+                 #default='/home/henryclever/hrl_file_server/Autobed/subject_4/basic_test_dataset.p', \
+                 default = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/basic_test_dataset.p', \
                  help='Specify path to the training database.')
     p.add_option('--verbose', '--v',  action='store_true', dest='verbose',
                  default=False, help='Printout everything (under construction).')
@@ -767,7 +862,7 @@ if __name__ == "__main__":
     p = PhysicalTrainer(training_database_file, test_database_file, verbose=opt.verbose) 
 
     if test_bool == True:
-        trained_model = pkl.load(open(opt.modelPath, 'r'))#Where the trained model is
+        trained_model = load_pickle(opt.modelPath+'/'+training_type+'.p')#Where the trained model is 
         p.test_learning_algorithm(trained_model)
         sys.exit()
     else:
@@ -776,6 +871,8 @@ if __name__ == "__main__":
             regr = p.train_hog_linear()
         elif training_type == 'HoG_Ridge':
             regr = p.train_hog_ridge()
+        elif training_type == 'HoG_KRR':
+            regr = p.train_hog_krr()
         elif training_type == 'HoG_KNN':
             #p.person_based_loocv()
             regr = p.train_hog_knn()
@@ -783,8 +880,7 @@ if __name__ == "__main__":
                 #p.test_learning_algorithm(regr)
 #                sys.exit()
             sys.exit()
-        elif training_type == 'HoG_KRR':
-            regr = p.train_hog_krr()
+
         elif training_type == 'SVM_Linear':
             regr = p.train_hog_KMeans_SVM_Linear()
         else:
