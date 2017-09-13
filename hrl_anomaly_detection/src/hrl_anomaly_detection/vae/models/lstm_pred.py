@@ -50,65 +50,62 @@ from hrl_anomaly_detection.vae import util as vutil
 
 import gc
 
-def lstm_ae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=500,
-            patience=20, fine_tuning=False, save_weights_file=None,
-            noise_mag=0.0, timesteps=4, sam_epoch=1,
-            re_load=False, renew=False, plot=True):
+
+
+def lstm_pred(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500, \
+              patience=20, fine_tuning=False, save_weights_file=None, \
+              noise_mag=0.0, timesteps=4, sam_epoch=1, \
+              re_load=False, renew=False, plot=True, trainable=None):
     """
     Variational Autoencoder with two LSTMs and one fully-connected layer
     x_train is (sample x length x dim)
     x_test is (sample x length x dim)
-
-    Note: it uses offline data.
-    This code based on "https://gist.github.com/tushuhei/e684c2a5382c324880532aded9faf4e6"
     """
+
     x_train = trainData[0]
-    y_train = trainData[1]
     x_test = testData[0]
-    y_test = testData[1]
 
     input_dim = len(x_train[0][0])
+    length = len(x_train[0])
 
-    h1_dim = input_dim
-    z_dim  = 2
-    
-    inputs = Input(batch_shape=(batch_size, timesteps, input_dim))
-    encoded = LSTM(z_dim, return_sequences=False, activation='tanh', stateful=True)(inputs)
-    ## encoded = LSTM(z_dim, return_sequences=False, activation='tanh', stateful=True)(encoded)
-        
-    # we initiate these layers to reuse later.
-    decoded_H2 = RepeatVector(timesteps, name='H_2')
-    ## decoded_L1 = LSTM(h1_dim, return_sequences=True, activation='tanh', stateful=True, name='L_1')
-    decoded_L2 = LSTM(input_dim, return_sequences=True, activation='sigmoid', stateful=True, name='L_2')
-
-    decoded = decoded_H2(encoded)
-    ## decoded = decoded_L1(decoded)
-    decoded = decoded_L2(decoded)
-    
-    ae = Model(inputs, decoded)
-    print(ae.summary())
-
-    # Encoder --------------------------------------------------
-    ae_encoder = Model(inputs, encoded)
+    x_train, y_train = create_dataset(x_train, timesteps, 5)
+    x_test, y_test   = create_dataset(x_test, timesteps, 5)
 
 
-    # AE --------------------------------------
+    h_dim = input_dim
+    o_dim  = timesteps
+    np.random.seed(3334)
+
+    inputs  = Input(batch_shape=(batch_size, timesteps, input_dim))
+    encoded = LSTM(h_dim, return_sequences=True, activation='tanh', stateful=True,
+                   trainable=True if trainable==0 or trainable is None else False)(inputs)
+    outputs = LSTM(input_dim, return_sequences=True, activation='sigmoid', stateful=True,
+                   trainable=True if trainable==0 or trainable is None else False)(encoded)
+    ## outputs  = Dense(o_dim, trainable=True if trainable==1 or trainable is None else False)(encoded) 
+    net = Model(inputs, outputs)
+    print(net.summary())
+
     if weights_file is not None and os.path.isfile(weights_file) and fine_tuning is False and\
         re_load is False and renew is False:
-        ae.load_weights(weights_file)
+        net.load_weights(weights_file)
     else:
         if fine_tuning:
-            ae.load_weights(weights_file)
-            lr = 0.0001
+            net.load_weights(weights_file)
+            lr = 0.001
             optimizer = Adam(lr=lr, clipvalue=10)                
-            ae.compile(optimizer=optimizer, loss='mean_squared_error')
+            #net.compile(optimizer=optimizer, loss=None)
+            net.compile(optimizer='rmsprop', loss=None)
         else:
             if re_load and os.path.isfile(weights_file):
-                ae.load_weights(weights_file)
-            ae.compile(optimizer='adam', loss='mean_squared_error')
+                net.load_weights(weights_file)
+            lr = 0.01
+            #optimizer = RMSprop(lr=lr, rho=0.9, epsilon=1e-08, decay=0.0001, clipvalue=10)
+            optimizer = Adam(lr=lr, clipvalue=10) #, decay=1e-5)                
+            #net.compile(optimizer=optimizer, loss=None)
+            net.compile(optimizer='adam', loss='mse')
 
         # ---------------------------------------------------------------------------------
-        nDim         = len(x_train[0][0])
+        nDim         = len(x_train[0][0][0])
         wait         = 0
         plateau_wait = 0
         min_loss = 1e+15
@@ -117,6 +114,13 @@ def lstm_ae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=50
 
             mean_tr_loss = []
             for sample in xrange(sam_epoch):
+
+                # shuffle
+                idx_list = range(len(x_train))
+                np.random.shuffle(idx_list)
+                x_train = x_train[idx_list]
+                y_train = y_train[idx_list]
+                
                 for i in xrange(0,len(x_train),batch_size):
                     seq_tr_loss = []
 
@@ -134,26 +138,29 @@ def lstm_ae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=50
                         random.shuffle(idx_list)
                         x = np.vstack([x_train[i:],
                                        x_train[idx_list[:r]]])
+                        y = np.vstack([y_train[i:],
+                                       y_train[idx_list[:r]]])
+                        
                         while True:
                             if len(x)<batch_size:
                                 x = np.vstack([x, x_train])
+                                y = np.vstack([y, y_train])
                             else:
                                 break
-                        
                     else:
                         x = x_train[i:i+batch_size]
-                    
-                    for j in xrange(len(x[0])-timesteps+1): # per window
+                        y = y_train[i:i+batch_size]
+
+                    for j in xrange(len(x[0])): # per window
                         np.random.seed(3334 + i*len(x[0]) + j)                        
                         noise = np.random.normal(0, noise_mag, (batch_size, timesteps, nDim))
 
-                        tr_loss = ae.train_on_batch(
-                            x[:,j+shift_offset:j+shift_offset+timesteps]+noise,
-                            x[:,j+shift_offset:j+shift_offset+timesteps]+noise )
-
+                        tr_loss = net.train_on_batch(
+                            x[:,j]+noise,
+                            y[:,j]+noise)
                         seq_tr_loss.append(tr_loss)
                     mean_tr_loss.append( np.mean(seq_tr_loss) )
-                    ae.reset_states()
+                    net.reset_states()
 
                 sys.stdout.write('Epoch {} / {} : loss training = {} , loss validating = {}\r'.format(epoch, nb_epoch, np.mean(mean_tr_loss), 0))
                 sys.stdout.flush()   
@@ -165,26 +172,29 @@ def lstm_ae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=50
                 # batch augmentation
                 if i+batch_size > len(x_test):
                     x = x_test[i:]
+                    y = y_test[i:]
                     r = i+batch_size-len(x_test)
 
                     for k in xrange(r/len(x_test)):
                         x = np.vstack([x, x_test])
+                        y = np.vstack([y, y_test])
                     
                     if (r%len(x_test)>0):
                         idx_list = range(len(x_test))
                         random.shuffle(idx_list)
                         x = np.vstack([x,
                                        x_test[idx_list[:r%len(x_test)]]])
+                        y = np.vstack([y,
+                                       y_test[idx_list[:r%len(y_test)]]])
                 else:
                     x = x_test[i:i+batch_size]
+                    y = y_test[i:i+batch_size]
                 
-                for j in xrange(len(x[0])-timesteps+1):
-                    te_loss = ae.test_on_batch(
-                        x[:,j:j+timesteps],
-                        x[:,j:j+timesteps] )
+                for j in xrange(len(x[0])):
+                    te_loss = net.test_on_batch(x[:,j], y[:,j])
                     seq_te_loss.append(te_loss)
                 mean_te_loss.append( np.mean(seq_te_loss) )
-                ae.reset_states()
+                net.reset_states()
 
             val_loss = np.mean(mean_te_loss)
             sys.stdout.write('Epoch {} / {} : loss training = {} , loss validating = {}\r'.format(epoch, nb_epoch, np.mean(mean_tr_loss), val_loss))
@@ -198,9 +208,9 @@ def lstm_ae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=50
                 plateau_wait = 0
 
                 if save_weights_file is not None:
-                    ae.save_weights(save_weights_file)
+                    net.save_weights(save_weights_file)
                 else:
-                    ae.save_weights(weights_file)
+                    net.save_weights(weights_file)
                 
             else:
                 if wait > patience:
@@ -212,9 +222,9 @@ def lstm_ae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=50
 
             #ReduceLROnPlateau
             if plateau_wait > 2:
-                old_lr = float(K.get_value(ae.optimizer.lr))
+                old_lr = float(K.get_value(net.optimizer.lr))
                 new_lr = old_lr * 0.2
-                K.set_value(ae.optimizer.lr, new_lr)
+                K.set_value(net.optimizer.lr, new_lr)
                 plateau_wait = 0
                 print 'Reduced learning rate {} to {}'.format(old_lr, new_lr)
 
@@ -224,34 +234,49 @@ def lstm_ae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=50
     # visualize outputs
     if False:
         print "latent variable visualization"
+        
 
     if plot:
         print "variance visualization"
-        nDim = len(x_test[0,0])
+        nDim = input_dim
         
-        for i in xrange(len(x_test)):
+        for i in xrange(len(x_test)): #per sample
 
             x = x_test[i:i+1]
             for j in xrange(batch_size-1):
                 x = np.vstack([x,x_test[i:i+1]])
 
-            ae.reset_states()
+            net.reset_states()
             
             x_pred_mean = []
-            x_pred_std  = []
-            for j in xrange(len(x[0])-timesteps+1):
-                x_pred = ae.predict(x[:,j:j+timesteps], batch_size=batch_size)
-                x_pred_mean.append(x_pred[0,-1,:])
-
-            vutil.graph_variations(x_test[i], x_pred_mean)
-
-    return ae, ae, None, ae_encoder
+            x_true = []
+            ## x_pred_std  = []
+            for j in xrange(len(x[0])):
+                x_pred = net.predict(x[:,j], batch_size=batch_size)
+                x_pred_mean.append(x_pred[0,-1,:nDim])
+                x_true.append(x_test[i,j,-1])
 
 
-if __name__ == '__main__':
 
-    print "N/A"
+            vutil.graph_variations(x_true, x_pred_mean)
+        
+
+
+    return net #, vae_mean_std, vae_mean_std, vae_encoder_mean, vae_encoder_var, generator
+
+
+def create_dataset(dataset, window_size=5, step=5):
+    '''
+    dataset: sample x timesteps x dim
+    '''
     
-
-
-    
+    dataX, dataY = [], []
+    for i in xrange(len(dataset)):
+        x = []
+        y = []
+        for j in range(len(dataset[i])-step-window_size):
+            x.append(dataset[i,j:(j+window_size), :].tolist())
+            y.append(dataset[i,j+step:(j+step+window_size), :].tolist())
+        dataX.append(x)
+        dataY.append(y)
+    return numpy.array(dataX), numpy.array(dataY)

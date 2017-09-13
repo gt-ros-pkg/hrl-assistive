@@ -103,6 +103,14 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     if fine_tuning is False:
         td1, td2, td3 = vutil.get_ext_feeding_data(task_name, save_data_path, param_dict, d,
                                                    raw_feature=True)
+
+    # Change training/testing set and pre-training set
+    temp = copy.copy(td1)
+    td1  = copy.copy(d)
+    d    = copy.copy(temp)
+
+    # need to exclude non-yogurt feeding data.
+    
         
 
     # Parameters
@@ -121,8 +129,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(d['kFoldList']):
         #if (idx == 0 or idx==7): continue
-        if idx != 3: continue
-        
+        if idx != 0: continue
         print "==================== ", idx, " ========================"
 
         # dim x sample x length
@@ -196,7 +203,6 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 from hrl_anomaly_detection.vae.models import lstm_vae_state_batch as km
                 ths_l = np.logspace(-1.0,3.2,40) -0.1
             #------------------------------------------------------------------
-            # Moving prior (mu_p1, mu_p2, ...) -> (mu'_p1, mu'_p2, ...) 
             elif method == 'lstm_vae_custom':
                 from hrl_anomaly_detection.vae.models import lstm_vae_custom as km
                 ths_l = np.logspace(-1.0,2.,40) -0.2
@@ -214,7 +220,6 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                 h1_dim      = nDim #8 #4 # raw
                 phase       = 1.0
             #------------------------------------------------------------------
-            # Moving prior (0, 0, ... , mu_p) -> (0, 0, ... , mu'_p) 
             elif method == 'lstm_vae_phase':
                 from hrl_anomaly_detection.vae.models import lstm_vae_phase as km
                 ths_l = np.logspace(-1.0,2.,40) -0.2
@@ -360,7 +365,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             
         
         #------------------------------------------------------------------------------------
-        if  True and False: 
+        if  True : 
             vutil.graph_latent_space(normalTestData, abnormalTestData, enc_z_mean,
                                      timesteps=window_size, batch_size=batch_size,
                                      method=method)
@@ -401,11 +406,10 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                                ad_method, method,
                                window_size, alpha, ths_l=ths_l, save_pkl=save_pkl, stateful=stateful,
                                x_std_div = x_std_div, x_std_offset=x_std_offset, z_std=z_std, \
-                               phase=phase, plot=plot, \
+                               phase=phase,\
+                               plot=plot, param_dict=d['param_dict'],\
                                renew=clf_renew, dyn_ths=dyn_ths, batch_info=(fixed_batch_size,batch_size),\
-                               param_dict=d['param_dict'], scaler_dict=scaler_dict,\
-                               filenames=(np.array(d['success_files'])[normalTestIdx],
-                                          np.array(d['failure_files'])[abnormalTestIdx]))
+                               scaler_dict=scaler_dict)
 
         roc_l.append(roc)
 
@@ -505,7 +509,7 @@ if __name__ == '__main__':
           '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_osvm_raw'
     else:
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_dvae_phase_raw'
+          '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_dvae_phase_raw_food'
 
 
     param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
