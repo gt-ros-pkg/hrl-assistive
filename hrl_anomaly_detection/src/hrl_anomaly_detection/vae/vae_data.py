@@ -136,12 +136,15 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     # HMM-induced vector with LOPO
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(d['kFoldList']):
-        #if idx != 2: continue
+        if idx != 5: continue
         #if not(idx == 0 or idx == 7): continue
 
         # pred_score_4dim_success: idx==5, ths=1.5, first data
-        # pred_score_4dim_failure: idx==2, ths=1. , 4th data
-        # /home/dpark/hrl_file_server/dpark_data/anomaly/RAW_DATA/AURO2016/s4_feeding/12_23_failure.pkl
+        # pred_score_4dim_failure: idx==3, class 5-10, ths=1.5 
+        # /home/dpark/hrl_file_server/dpark_data/anomaly/RAW_DATA/AURO2016/s5_feeding/5_10_failure.pkl
+        
+        # pred_score_4dim_failure: idx==2, class 7-14, ths=1. 
+        # /home/dpark/hrl_file_server/dpark_data/anomaly/RAW_DATA/AURO2016/s4_feeding/7_14_failure.pkl
         
         
         print "==================== ", idx, " ========================"
@@ -184,6 +187,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         # ------------------------------------------------------------------------------------------        
         method      = 'lstm_dvae_phase'
         #method      = 'rnd'
+        #method      = 'osvm'
          
         weights_path = os.path.join(save_data_path,'model_weights_'+method+'_'+str(idx)+'.h5')
         vae_mean   = None
@@ -194,6 +198,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         x_std_offset= None
         z_std      = None
         dyn_ths    = False
+        stateful   = False
         
         window_size = 1
         batch_size  = 256
@@ -204,6 +209,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         h1_dim      = nDim
         z_dim       = 2
         phase       = 1.0
+        gamma       = 0.1
+        nu          = 1.0
 
         if (method.find('lstm_vae')>=0 or method.find('lstm_dvae')>=0) and\
             method.find('offline')<0 and method.find('pred')<0:
@@ -394,6 +401,16 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             window_size = 1
             ths_l = np.linspace(0.0,1.0,40)
 
+        elif method == 'osvm':
+            window_size = 3
+            fixed_batch_size = False
+            ad_method   = None
+            nu    = 0.05
+            gamma = 1e-5
+            ths_l = np.logspace(-4, -0.2, 40)
+            #ths_l = np.logspace(-6.5, -1, 10)
+            autoencoder = None
+
         #------------------------------------------------------------------------------------
         if  True and False: 
             vutil.graph_latent_space(normalTestData, abnormalTestData, enc_z_mean,
@@ -423,13 +440,20 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         normalTrainData = vutil.get_scaled_data2(d['successData'][:, normalTrainIdx, :],
                                                  scaler, aligned=False)
 
+        if method == 'osvm':
+            from hrl_anomaly_detection.vae.models import osvm as dt
+        else:
+            from hrl_anomaly_detection.vae import detector as dt
+
+
         save_pkl = os.path.join(save_data_path, 'model_ad_scores_'+str(idx)+'.pkl')
         tp_l, tn_l, fp_l, fn_l, roc = \
           dt.anomaly_detection(autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generator,
                                normalTrainData, valData[0],\
                                normalTestData, abnormalTestData, \
                                ad_method, method,
-                               window_size, alpha, ths_l=ths_l, save_pkl=save_pkl, stateful=stateful,
+                               window_size, alpha, nu=nu, gamma=gamma, ths_l=ths_l,
+                               save_pkl=save_pkl, stateful=stateful,
                                x_std_div = x_std_div, x_std_offset=x_std_offset, z_std=z_std,
                                phase=phase, plot=plot,
                                renew=clf_renew, dyn_ths=dyn_ths, batch_info=(fixed_batch_size,batch_size),
@@ -875,7 +899,7 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_dvae_phase'    
         #save_data_path = os.path.expanduser('~')+\
-        #  '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_dvae_c_4d'
+        #  '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_osvm'    
 
 
     #save_data_path = os.path.expanduser('~')+\

@@ -69,7 +69,7 @@ def osvm_detector(trainData, testData, weights_file=None, batch_size=32, nb_epoc
 def anomaly_detection(clf, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, generator,\
                       normalTrainData, normalValData, \
                       normalTestData, abnormalTestData,
-                      ad_method, method, window_size, alpha,
+                      ad_method, method, window_size, alpha, nu=0.01, gamma=1.,
                       ths_l=None, save_pkl=None, plot=False, renew=False, **kwargs):
     from sklearn import preprocessing
 
@@ -102,11 +102,7 @@ def anomaly_detection(clf, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         tp_ll = []; fn_ll = []
         for ths in ths_l:
 
-            #0.05; 56.67
-            #0.1: 56.67
-            #1.0:
-
-            clf = svm.OneClassSVM(nu=ths, kernel="rbf", gamma=1.0)
+            clf = svm.OneClassSVM(nu=ths, kernel="rbf", gamma=gamma)
             clf.fit(x_train)
 
             fp_l=[]; tn_l=[]
@@ -116,7 +112,7 @@ def anomaly_detection(clf, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
                 xx = scaler.transform(xx)
                 yy = clf.predict(xx)
 
-                if any( label>0 for label in yy): fp_l.append(1)
+                if any( label<0 for label in yy): fp_l.append(1)
                 else:                             tn_l.append(1)
 
             tp_l=[]; fn_l=[]
@@ -124,7 +120,7 @@ def anomaly_detection(clf, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
                 xx = x.reshape((-1, input_dim*timesteps))
                 xx = scaler.transform(xx)
                 yy = clf.predict(xx)
-                if any( label>0 for label in yy): tp_l.append(1)
+                if any( label<0 for label in yy): tp_l.append(1)
                 else:                             fn_l.append(1) 
                 
         

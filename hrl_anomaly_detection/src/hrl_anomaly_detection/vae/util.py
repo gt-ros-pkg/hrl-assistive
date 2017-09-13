@@ -190,7 +190,7 @@ def graph_data_score(data, score, scaler_dict=None, save_pdf=False, **kwargs):
     from matplotlib import rc
     import matplotlib.patches as patches
     import itertools
-    colors = itertools.cycle(['g', 'm', 'c', 'k', 'y','r', 'b', ])
+    colors = itertools.cycle(['g', 'm', 'c', 'k', 'y', 'r', 'b', ])
     shapes = itertools.cycle(['x','v', 'o', '+'])
 
     #matplotlib.rcParams['pdf.fonttype'] = 42
@@ -201,9 +201,7 @@ def graph_data_score(data, score, scaler_dict=None, save_pdf=False, **kwargs):
 
     x_true, x_pred_mean, x_pred_std = data
     s, s_pred_mean, s_pred_bnd = score
-    nVizData = kwargs.get('max_viz_data', 4)
-    
-
+    nVizData = kwargs.get('max_viz_data', 4)    
 
     # unscale
     if scaler_dict is None: param_dict = None
@@ -229,7 +227,22 @@ def graph_data_score(data, score, scaler_dict=None, save_pdf=False, **kwargs):
         x_pred_std  = unscale(x_pred_std[:], std=True)
     #--------------------------------------------------------------------
 
+    # Save Data
+    prefix   = kwargs.get('prefix', '')
+    sd = {}
+    sd['nDim']   = len(x_true[0])
+    sd['s']      = s
+    sd['s_pred_mean'] = s_pred_mean
+    sd['s_pred_bnd']  = s_pred_bnd
+    sd['x_true'] = x_true
+    sd['x_pred_mean'] = x_pred_mean
+    sd['x_pred_std']  = x_pred_std
+    sd['param_dict']  = param_dict
+    save_pkl = os.path.join('./'+prefix+'_data_score.pkl')
+    ut.save_pickle(sd, save_pkl)
+
     
+    #--------------------------------------------------------------------
     nDim = len(x_true[0])
     if nDim > nVizData: nDim = nVizData
     
@@ -270,12 +283,14 @@ def graph_data_score(data, score, scaler_dict=None, save_pdf=False, **kwargs):
                           horizontalalignment='center', fontsize=12)
             ## ax.set_ylabel('Distance [m]')
             
-        ax.yaxis.set_label_coords(-0.25,0.5)            
+        ax.yaxis.set_label_coords(-0.22,0.5)            
         #ax.set_ylabel(param_dict['feature_names'][k])
 
         ax.locator_params(axis='y', nbins=3)
         #if k < nDim-1:
         ax.tick_params(axis='x', bottom='off', labelbottom='off')
+        ax.set_xlim([0, len(x_pred_mean)])
+
 
     # Score visualization ------------------------------------------------------
     ax2 = fig.add_subplot(gs[k+1+1])
@@ -284,15 +299,17 @@ def graph_data_score(data, score, scaler_dict=None, save_pdf=False, **kwargs):
     plt.plot(s_pred_bnd, ':r') 
     ax2.set_ylabel('Anomaly \n Score',
                   rotation='horizontal', verticalalignment='center',
-                  horizontalalignment='center')
-    ax2.yaxis.set_label_coords(-0.25,0.5)            
+                  horizontalalignment='center', fontsize=12)
+    ax2.yaxis.set_label_coords(-0.22,0.5)            
     ax2.locator_params(axis='y', nbins=3)
-    ax2.set_ylim([-1, 4])
+    ax2.set_ylim([-1, 5])
+    
+    ax2.set_xlim([0, len(s_pred_bnd)])
 
     anomaly = [True, ]
     for i in range(len(s)):
         if s[i]-s_pred_bnd[i]>0:
-            ax2.add_patch( patches.Rectangle((i,-1),1,5, facecolor='peru', edgecolor='none' ))
+            ax2.add_patch( patches.Rectangle((i,-1),1,6, facecolor='peru', edgecolor='none' ))
 
     # --------------------------------------------------------------------------
 
@@ -307,7 +324,7 @@ def graph_data_score(data, score, scaler_dict=None, save_pdf=False, **kwargs):
     handles = [blue_line,red_line]
     labels = [h.get_label() for h in handles]
     lg1 = plt.legend(handles=handles, labels=labels, loc=(axbox.x0-0.4, axbox.y0+0.5), #loc='upper center',
-               ncol=2, shadow=True, fancybox=True, prop={'size': 12})
+               ncol=2, shadow=False, fancybox=False, edgecolor='k', prop={'size': 12})
 
     blue_line = mlines.Line2D([], [], color='blue', alpha=0.5, markersize=30, label='Current')
     red_line  = mlines.Line2D([], [], color='red', markersize=15, label=r'Expected')
@@ -316,13 +333,14 @@ def graph_data_score(data, score, scaler_dict=None, save_pdf=False, **kwargs):
     labels = [h.get_label() for h in handles]
     axbox = ax2.get_position()
     lg2 = plt.legend(handles=handles, labels=labels, ncol=3, loc=(axbox.x0-0.28, axbox.y0-4.4),
-                     shadow=True, fancybox=True, prop={'size': 12})
+                     shadow=False, fancybox=False, edgecolor='k', prop={'size': 12})
     ax.add_artist(lg1)
     ax.add_artist(lg2)
 
+
     if param_dict is not None:
-        x_tick = [param_dict['timeList'][0],
-                  (param_dict['timeList'][-1]-param_dict['timeList'][0])/2.0,
+        x_tick = [0,
+                  (param_dict['timeList'][-1]-0)/2.0,
                   param_dict['timeList'][-1]]
         ax2.set_xticks(np.linspace(0, len(x_pred_mean), len(x_tick)))        
         ax2.set_xticklabels(x_tick)
@@ -331,11 +349,12 @@ def graph_data_score(data, score, scaler_dict=None, save_pdf=False, **kwargs):
 
 
     if save_pdf:
-        fig.savefig('data_score.pdf')
-        fig.savefig('data_score.png')
-        fig.savefig('data_score.eps')
-        os.system('mv data_score.* ~/Dropbox/HRL/')        
-        ut.get_keystroke('Hit a key to proceed next')  
+        prefix   = kwargs.get('prefix', '')
+        fig.savefig(prefix+'data_score.pdf')
+        fig.savefig(prefix+'data_score.png')
+        fig.savefig(prefix+'data_score.eps')
+        #os.system('mv *data_score.* ~/Dropbox/HRL/')        
+        #ut.get_keystroke('Hit a key to proceed next')  
     else:
         plt.show()
 

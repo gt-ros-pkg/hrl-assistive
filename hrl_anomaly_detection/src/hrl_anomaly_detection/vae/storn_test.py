@@ -205,10 +205,12 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         #clf = rd.TimeSeriesPredictor()
         #clf.fit(normalTrainData, normalTrainData, validation_split=0.3)
 
+        normalTrainData_prev = np.concatenate((normalTrainData[:,0:1],normalTrainData[:,:-1]), axis=1)
+
         import STORN as rd  
-        clf = rd.STORNModel(activation='sigmoid', data_dim=len(normalTrainData[0][0])  )
-        #clf.fit(normalTrainData, normalTrainData, validation_split=0.3) 
-        clf.fit([normalTrainData, normalTrainData], normalTrainData, validation_split=0.3)
+        clf = rd.STORNModel(activation='sigmoid', data_dim=len(normalTrainData[0][0]), n_deep=1  )
+        #clf.fit([normalTrainData], normalTrainData, validation_split=0.3) 
+        clf.fit([normalTrainData, normalTrainData_prev], normalTrainData, validation_split=0.3)
         #clf.save(str(idx))
         
 

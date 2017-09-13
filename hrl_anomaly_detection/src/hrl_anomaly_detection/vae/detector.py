@@ -146,14 +146,14 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         clf.fit(x, y)
         print "-----------------------------------------"
 
-    if True and False:
+    if True :
         print np.shape(zs_tr_n), np.shape(scores_tr_n)
         
         nDim         = len(normalTestData[0,0])
         max_viz_data = 4
-        scores    = scores_te_a
-        testData  = abnormalTestData
-        filenames = kwargs['filenames'][1]
+        scores    = scores_te_n
+        testData  = normalTestData
+        filenames = kwargs['filenames'][0] # if failure, index should be 1
         print np.shape(scores), np.shape(testData)
         
         for i, s in enumerate(scores):
@@ -164,7 +164,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
             x_pred_mean, x_pred_std = km.predict(testData[i:i+1], vae_mean, nDim, batch_info[1], window_size,\
                                                  x_std_div, x_std_offset)
 
-            ths = 1.0 #5
+            ths = 1.5
             # score prediction
             s_pred_mu = []
             s_pred_bnd = []
@@ -196,10 +196,13 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
                 s_pred_bnd.append(s_pred)
 
             # visualization
+            ## if filenames[i].split('/')[-1].split('.')[0].split('_')[0] != '5': continue
+            ## if filenames[i].split('/')[-1].split('.')[0].split('_')[1] != '10': continue
+            
             vutil.graph_data_score((testData[i], x_pred_mean, x_pred_std), (s, s_pred_mu, s_pred_bnd),
                                    scaler_dict=kwargs['scaler_dict'], max_viz_data=max_viz_data,
-                                   save_pdf=False)
-
+                                   save_pdf=True, prefix=filenames[i].split('/')[-1].split('.')[0])
+            sys.exit()
             continue
             ## fig = plt.figure()
             ## for j in range(max_viz_data+1):
