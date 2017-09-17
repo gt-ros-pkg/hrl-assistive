@@ -9,9 +9,14 @@
     <arg name="optical_rotate" value="0 0 0 -$(arg pi/2) 0 -$(arg pi/2)" />
 
     <node pkg="tf" type="static_transform_publisher" name="tf_$(arg camera)_link_broadcaster"
-        args="0.117 0.0096 -0.06972 0.02 -0.02 3.18959 $(arg arm)_gripper_palm_link
+        args="0.13211 -0.0044 -0.06972 0 0 3.141592 $(arg arm)_gripper_palm_link
               $(arg tf_prefix)/$(arg camera)_link 100" respawn="false"
         output="screen" />
+
+    <!--node pkg="tf" type="static_transform_publisher" name="tf_$(arg camera)_link_broadcaster"
+        args="0.117 0.0096 -0.06972 0.0 0.0 0.0 $(arg arm)_gripper_palm_link
+              $(arg tf_prefix)/$(arg camera)_link 100" respawn="false"
+        output="screen" /-->
 
     <!--node pkg="tf" type="static_transform_publisher" name="tf_$(arg camera)_link_broadcaster"
         args="0.117 0.0096 -0.06472 0.02 -0.02 3.18959 $(arg arm)_gripper_palm_link
