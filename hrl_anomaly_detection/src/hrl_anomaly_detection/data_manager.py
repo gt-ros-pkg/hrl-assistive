@@ -88,8 +88,8 @@ def kFold_data_index(nNormal, nAbnormal, nNormalFold, nAbnormalFold ):
     return kFold_list
 
 def LOPO_data_index(success_data_list, failure_data_list, \
-                    success_file_list, failure_file_list, many_to_one=True,\
-                    target_class=None):
+                    success_file_list, failure_file_list, \
+                    many_to_one=True, target_class=None, **kwargs):
     """
     Return completed set of success and failure data with LOPO cross-validatation fold list
     """
@@ -108,6 +108,9 @@ def LOPO_data_index(success_data_list, failure_data_list, \
             failure_data = failure_data_list[i]
             failureIdx.append( range(len(failure_data_list[i][0])) )
             last_failure_idx = failureIdx[-1][-1]
+            if 'success_image_list' in kwargs.keys():
+                success_image_data = kwargs['success_image_list'][i];
+                failure_image_data = kwargs['failure_image_list'][i];            
         else:
             success_data = np.vstack([ np.swapaxes(success_data,0,1), \
                                       np.swapaxes(success_data_list[i], 0,1)])
@@ -184,7 +187,12 @@ def LOPO_data_index(success_data_list, failure_data_list, \
 
             kFold_list.append([ normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx])
 
-    return success_data, failure_data, success_files, failure_files, kFold_list
+    if 'success_image_list' in kwargs.keys():
+        return success_data, failure_data, success_files, failure_files, kFold_list
+    else:
+        return (success_data, success_image_data), (failure_data, failure_image_data),\
+          success_files, failure_files, kFold_list
+        
 
 
 def rnd_fold_index(nNormal, nAbnormal, train_ratio=0.8, nSet=1):
@@ -746,12 +754,12 @@ def getRawDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
         print "--------------------------------------"
         data_dict = ut.load_pickle(save_pkl)
         # Task-oriented hand-crafted features
-        successDataList = data_dict['successDataList']
-        failureDataList = data_dict['failureDataList']
+        successDataList    = data_dict['successDataList']
+        failureDataList    = data_dict['failureDataList']
         successRawDataList = data_dict['successRawDataList']
         failureRawDataList = data_dict['failureRawDataList']
-        param_dict      = data_dict['param_dict']
-        raw_param_dict  = data_dict['raw_param_dict']
+        param_dict         = data_dict['param_dict']
+        raw_param_dict     = data_dict['raw_param_dict']
         successFileList     = data_dict.get('successFileList',[])
         failureFileList     = data_dict.get('failureFileList',[])
         success_image_list  = data_dict.get('success_image_list',[])
