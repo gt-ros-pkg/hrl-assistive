@@ -37,8 +37,11 @@ import hrl_lib.util as ut
 ## from hrl_anomaly_detection.util_viz import *
 from hrl_anomaly_detection import util as util
 from hrl_anomaly_detection import data_manager as dm
-import hrl_anomaly_detection.isolator.isolation_util as iutil
+import hrl_anomaly_detection.IROS17_isolation.isolation_util as iutil
 from hrl_execution_monitor import util as autil
+
+from hrl_anomaly_detection.RA-L18_detection import util as vutil
+
 
 # Private learners
 from hrl_anomaly_detection.hmm import learning_hmm as hmm
@@ -52,7 +55,7 @@ random.seed(3334)
 np.random.seed(3334)
 
 def get_isolation_data(subject_names, task_name, raw_data_path, save_data_path,
-                       param_dict, weight, window_steps=10, single_detector=False,
+                       param_dict, weight=1., window_steps=10, single_detector=False,
                        verbose=False):
     
     # load params (param_dict)
@@ -66,10 +69,10 @@ def get_isolation_data(subject_names, task_name, raw_data_path, save_data_path,
     else: clf_renew  = param_dict['SVM']['renew']
 
     #------------------------------------------
-    if os.path.isdir(processed_data_path) is False:
-        os.system('mkdir -p '+processed_data_path)
+    if os.path.isdir(save_data_path) is False:
+        os.system('mkdir -p '+save_data_path)
 
-    crossVal_pkl = os.path.join(processed_data_path, 'cv_'+task_name+'.pkl')
+    crossVal_pkl = os.path.join(save_data_path, 'cv_'+task_name+'.pkl')
     if os.path.isfile(crossVal_pkl) and data_renew is False:
         print "CV data exists and no renew"
         d = ut.load_pickle(crossVal_pkl)         
@@ -78,7 +81,7 @@ def get_isolation_data(subject_names, task_name, raw_data_path, save_data_path,
         Use augmented data? if nAugment is 0, then aug_successData = successData
         '''        
         d = dm.getRawDataLOPO(subject_names, task_name, raw_data_path, \
-                              processed_data_path,\
+                              save_data_path,\
                               downSampleSize=data_dict['downSampleSize'],\
                               handFeatures=data_dict['isolationFeatures'], \
                               rawFeatures=AE_dict['rawFeatures'], \
@@ -86,15 +89,20 @@ def get_isolation_data(subject_names, task_name, raw_data_path, save_data_path,
                               data_renew=data_renew, max_time=data_dict['max_time'],
                               ros_bag_image=True)
 
-        print np.shape(d['success_image_list'])
-        sys.exit()
+        ## print np.shape(d['successRawDataList'])
+        ## print np.shape(d['failureRawDataList'])
+        ## print np.shape(d['success_image_list']), type(d['success_image_list'][0])
+        ## print np.shape(d['failure_image_list'])
 
-        d['successData'], d['failureData'], d['success_files'], d['failure_files'], d['kFoldList'] \
+        (d['successData'], d['success_image_list']), (d['failureData'], d['failure_image_list']), \
+          d['success_files'], d['failure_files'], d['kFoldList'] \
           = dm.LOPO_data_index(d['successRawDataList'], d['failureRawDataList'],\
-                               d['successFileList'], d['failureFileList'],
+                               d['successFileList'], d['failureFileList'],\
                                success_image_list = d['success_image_list'], \
                                failure_image_list = d['failure_image_list'])
 
+        print np.shape(d['successData']), np.shape(d['success_image_list'])
+        print np.shape(d['failureData']), np.shape(d['failure_image_list'])
         ut.save_pickle(d, crossVal_pkl)
 
     if fine_tuning is False:
@@ -242,20 +250,16 @@ if __name__ == '__main__':
     # IROS2017
     subject_names = ['s2', 's3','s4','s5', 's6','s7','s8', 's9']
     raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
-                                                          opt.bHMMRenew, opt.bCLFRenew, nPoints=nPoints)
+                                                          opt.bHMMRenew, opt.bCLFRenew)
     save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/JOURNAL_ISOL/'+opt.task+'_1'
 
 
     window_steps= 5
     task_name = 'feeding'
-    method    = ['progress0', 'progress1'] 
-    param_dict['ROC']['methods'] = ['progress0', 'progress1'] #'hmmgp'
-    param_dict['HMM']['scale'] = [5.0, 11.0]
-    param_dict['HMM']['cov']   = 1.0
-    single_detector=False    
+    single_detector=True
     nb_classes = 12
 
 
     get_isolation_data(subject_names, task_name, raw_data_path, save_data_path,
-                       param_dict, weight, single_detector=single_detector,
+                       param_dict, weight=1.0, single_detector=single_detector,
                        window_steps=window_steps, verbose=False)

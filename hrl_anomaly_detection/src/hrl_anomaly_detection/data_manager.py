@@ -108,7 +108,7 @@ def LOPO_data_index(success_data_list, failure_data_list, \
             failure_data = failure_data_list[i]
             failureIdx.append( range(len(failure_data_list[i][0])) )
             last_failure_idx = failureIdx[-1][-1]
-            if 'success_image_list' in kwargs.keys():
+            if 'success_image_list' in kwargs.keys() and len(kwargs['success_image_list'])>0:
                 success_image_data = kwargs['success_image_list'][i];
                 failure_image_data = kwargs['failure_image_list'][i];            
         else:
@@ -117,6 +117,10 @@ def LOPO_data_index(success_data_list, failure_data_list, \
             success_data = np.swapaxes(success_data, 0, 1)
             successIdx.append( range(successIdx[-1][-1]+1, successIdx[-1][-1]+1+\
                                      len(success_data_list[i][0])) )
+
+            if 'success_image_list' in kwargs.keys() and len(kwargs['success_image_list'])>0:
+                success_image_data += kwargs['success_image_list'][i]
+                failure_image_data += kwargs['failure_image_list'][i]
             
             if len(failure_data_list[i])>0:
                 failure_data = np.vstack([ np.swapaxes(failure_data,0,1), \
@@ -187,7 +191,7 @@ def LOPO_data_index(success_data_list, failure_data_list, \
 
             kFold_list.append([ normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx])
 
-    if 'success_image_list' in kwargs.keys():
+    if 'success_image_list' not in kwargs.keys() and len(kwargs['success_image_list'])==0:
         return success_data, failure_data, success_files, failure_files, kFold_list
     else:
         return (success_data, success_image_data), (failure_data, failure_image_data),\
