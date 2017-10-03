@@ -28,7 +28,7 @@
 
 #  \author Daehyung Park (Healthcare Robotics Lab, Georgia Tech.)
 
-import os
+import os, sys
 import numpy as np
 import hrl_lib.util as ut
 
@@ -651,7 +651,8 @@ def get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
                                 pkl_prefix='tgt_', depth=depth, id_num=id_num,\
                                 ros_bag_image=ros_bag_image)
 
-            if ros_bag_image:
+
+            if ros_bag_image is False:
                 td['successData'], td['failureData'], td['success_files'], td['failure_files'], td['kFoldList'] \
                   = dm.LOPO_data_index(td['successDataList'], td['failureDataList'],\
                                        td['successFileList'], td['failureFileList'])
@@ -662,6 +663,7 @@ def get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
                                        td['successFileList'], td['failureFileList'],\
                                        success_image_list = td['success_image_list'], \
                                        failure_image_list = td['failure_image_list'])
+                                       
         else:
             # Extract data from designated location
             td = dm.getRawDataLOPO(subjects, task_name, raw_data_path, save_data_path,\
@@ -675,11 +677,12 @@ def get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
                                    pkl_prefix='tgt_', depth=depth, id_num=id_num,
                                    ros_bag_image=ros_bag_image)
 
-            if ros_bag_image:
+            # Get flatten array
+            if ros_bag_image is False:
                 td['successData'], td['failureData'], td['success_files'], td['failure_files'], td['kFoldList'] \
                   = dm.LOPO_data_index(td['successRawDataList'], td['failureRawDataList'],\
                                        td['successFileList'], td['failureFileList'])
-            else:
+            else:                
                 (td['successData'], td['success_image_list']), (td['failureData'], td['failure_image_list']), \
                   td['success_files'], td['failure_files'], td['kFoldList'] \
                   = dm.LOPO_data_index(td['successRawDataList'], td['failureRawDataList'],\
@@ -700,9 +703,10 @@ def get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
         td['successData']    = np.array(td['successData'])[feature_list]
         td['failureData']    = np.array(td['failureData'])[feature_list]
 
-    ## print np.shape(td['successDataList']), np.shape(td['failureDataList'])
-    ## print np.shape(td['successData']), np.shape(td['failureData'])
-    ## print np.shape(td['successFileList']), np.shape(td['failureFileList'])
+    if ros_bag_image :
+        print "complement data"
+        print np.shape(td['successData']), np.shape(td['success_files']), np.shape(td['success_image_list'])
+        print np.shape(td['failureData']), np.shape(td['failure_files']), np.shape(td['failure_image_list'])
 
     return td
 

@@ -752,7 +752,7 @@ def getRawDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
 
     save_pkl = os.path.join(processed_data_path, pkl_prefix+'feature_extraction_'+str(id_num) )
             
-    if os.path.isfile(save_pkl) and data_renew is False:
+    if os.path.isfile(save_pkl) and data_renew is False :
         print "--------------------------------------"
         print "Load saved data"
         print "--------------------------------------"
@@ -847,11 +847,15 @@ def getRawDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
                 new_success_list = []
                 for f in success_list:
                     root_dir = os.path.split(f)[0]+'_rosbag'
+                    if os.path.isdir(root_dir) is False:
+                        root_dir = os.path.join(os.path.split(f)[0],'rosbag')                        
                     sub_dir  = os.path.split(f)[1].split('.pkl')[0]
                     new_success_list.append( os.path.join(root_dir, sub_dir) )
                 new_failure_list = []
                 for f in failure_list:
                     root_dir = os.path.split(f)[0]+'_rosbag'
+                    if os.path.isdir(root_dir) is False:
+                        root_dir = os.path.join(os.path.split(f)[0],'rosbag')                        
                     sub_dir  = os.path.split(f)[1].split('.pkl')[0]
                     new_failure_list.append( os.path.join(root_dir, sub_dir) )
                     
@@ -2789,10 +2793,16 @@ def export_images(folder_list, data_dict, downSampleSize):
         des_time_list = data_dict['timesList'][idx]
 
         # get image folder
-        files = os.listdir(f)
+        try:
+            files = os.listdir(f)
+        except:
+            print "No path exists: ", f
+            images.append([])
+            continue            
+            
         if len(files) == 0:
             print "No images so skip: ", f
-            images.append(None)
+            images.append([])
             continue            
 
         # get time list

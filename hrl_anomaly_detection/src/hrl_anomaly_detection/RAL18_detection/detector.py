@@ -34,7 +34,8 @@ import scipy
 
 # Private utils
 import hrl_lib.util as ut
-from hrl_anomaly_detection.vae import util as vutil
+from hrl_anomaly_detection.RAL18_detection import util as vutil
+from hrl_anomaly_detection.RAL18_detection import metrics as ad_metrics
 
 # visualization
 import matplotlib
@@ -55,7 +56,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
                       alpha=None, ths_l=None, save_pkl=None, stateful=False, \
                       x_std_div=1.0, x_std_offset=1e-10, z_std=None, phase=1.0, \
                       dyn_ths=False, plot=False, renew=False, batch_info=(False,None), **kwargs):
-    
+                      
     print "Start to get anomaly scores"
     if os.path.isfile(save_pkl) and renew is False :
         d = ut.load_pickle(save_pkl)
@@ -146,7 +147,8 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         clf.fit(x, y)
         print "-----------------------------------------"
 
-    if True :
+
+    if True and False:
         print np.shape(zs_tr_n), np.shape(scores_tr_n)
         
         nDim         = len(normalTestData[0,0])
@@ -160,7 +162,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
             print filenames[i]
             
             # data prediction
-            from hrl_anomaly_detection.vae.models import lstm_dvae_phase2 as km
+            from hrl_anomaly_detection.RAL18_detection.models import lstm_dvae_phase2 as km
             x_pred_mean, x_pred_std = km.predict(testData[i:i+1], vae_mean, nDim, batch_info[1], window_size,\
                                                  x_std_div, x_std_offset)
 
@@ -240,6 +242,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
 
         p_ll = []
         n_ll = [] 
+        idx_ll = []
         for ths in ths_l:
 
             if method == 'rnd':
@@ -249,6 +252,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
             else:
                 p_l = []
                 n_l = []
+            idx_l = []                    
                     
 
             for i, s in enumerate(scores):
@@ -271,20 +275,25 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
                     if s[j]>vals[j]:
                         if pos_cnt>0:
                             p_l.append(1)
+                            idx_l.append(j)
                             break
                         else:
                             pos_cnt += 1
-                    elif j == len(s)-1:
+                            
+                    ## elif j == len(s)-1:
+                    if j == len(s)-1:
                         n_l.append(1)
+                        idx_l.append(None)
 
             n_ll.append(n_l)
             p_ll.append(p_l)
+            idx_ll.append(idx_l)
 
-        return p_ll, n_ll
+        return p_ll, n_ll, idx_ll
 
     #--------------------------------------------------------------------
-    fp_ll, tn_ll = get_pos_neg(zs_te_n, scores_te_n, method=method)
-    tp_ll, fn_ll = get_pos_neg(zs_te_a, scores_te_a, method=method)
+    fp_ll, tn_ll, te_n_idx_ll = get_pos_neg(zs_te_n, scores_te_n, method=method)
+    tp_ll, fn_ll, te_a_idx_ll = get_pos_neg(zs_te_a, scores_te_a, method=method)
             
     #--------------------------------------------------------------------
     tpr_l = []
@@ -295,8 +304,12 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         
     from sklearn import metrics
     roc = metrics.auc(fpr_l, tpr_l, True)
-    
-    return tp_ll, tn_ll, fp_ll, fn_ll, roc
+
+    return_idx = kwargs.get('return_idx', False)
+    if return_idx:
+        return tp_ll, tn_ll, fp_ll, fn_ll, roc, te_a_idx_ll
+    else:
+        return tp_ll, tn_ll, fp_ll, fn_ll, roc
 
 
 
@@ -445,9 +458,9 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
                     p = None
                 
                 # Method 2: Lower bound
-                l, z_mean, z_log_var = get_lower_bound(xx, x_mean, x_std, z_std,
-                                                       enc_z_mean, enc_z_logvar,\
-                                                       x_dim, method, p, alpha=alpha)
+                l, z_mean, z_log_var = ad_metrics.get_lower_bound(xx, x_mean, x_std, z_std,
+                                                                  enc_z_mean, enc_z_logvar,\
+                                                                  x_dim, method, p, alpha=alpha)
                 s.append(l)
                 z.append(z_mean.tolist()) # + z_log_var.tolist())
 
