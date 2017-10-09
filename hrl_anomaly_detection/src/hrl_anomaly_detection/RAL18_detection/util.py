@@ -690,6 +690,18 @@ def get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
                                        success_image_list = td['success_image_list'], \
                                        failure_image_list = td['failure_image_list'])
 
+
+        def get_label_from_filename(file_names):
+
+            labels = []
+            for f in file_names:
+                labels.append( int(f.split('/')[-1].split('_')[0]) )
+
+            return labels
+        
+        td['failure_labels'] = get_label_from_filename(td['failure_files'])
+
+
         ut.save_pickle(td, crossVal_pkl)
     
     if raw_feature is False:

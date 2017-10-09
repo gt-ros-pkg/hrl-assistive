@@ -74,7 +74,7 @@ matplotlib.rcParams['ps.fonttype'] = 42
 
 class rosbagExtractor():
     # Must have __init__(self) function for a class, similar to a C++ class constructor.
-    def __init__(self, save_dir, filename):
+    def __init__(self, save_dir, filename, depth=False):
 
         t0 = None
         # Open bag file.
@@ -82,7 +82,7 @@ class rosbagExtractor():
             for topic, msg, t in bag.read_messages():
                 if t0 is None: t0 = t
 
-                if topic == "/SR300/rgb/image_raw" :
+                if topic == "/SR300/rgb/image_raw" and depth is False:
                     # Use a CvBridge to convert ROS images to OpenCV images so they can be saved.
                     self.bridge = CvBridge()
                     try:
@@ -93,6 +93,30 @@ class rosbagExtractor():
                     image_name = str(save_dir)+"/image_"+timestr+".jpg"
                     cv2.imwrite(image_name, cv_image)
 
+                elif topic == "/SR300/depth_registered/sw_registered/image_rect" and depth:
+                    # Use a CvBridge to convert ROS images to OpenCV images so they can be saved.
+                    self.bridge = CvBridge()
+                    try:
+                        #cv_image = self.bridge.imgmsg_to_cv2(msg, "32FC1")
+                        cv_image = self.bridge.imgmsg_to_cv2(msg, "passthrough")
+                    except CvBridgeError, e:
+                        print e
+                
+                    cv_array = np.array(cv_image, dtype=np.float32)
+                    cv_array[cv_array>1.2] = np.nan;
+                    cv_array[cv_array<0.2] = np.nan;
+                    cv2.normalize(cv_array, cv_array, 0, 1, cv2.NORM_MINMAX)
+
+                    ## print cv_image
+                    ## print np.amax(cv_image), np.amin(cv_image), np.shape(cv_image)
+                    ## print cv_array
+                    ## print np.amax(cv_array), np.amin(cv_array), np.shape(cv_array)
+                    
+                    timestr = "%.6f" % msg.header.stamp.to_sec()
+                    image_name = str(save_dir)+"/image_"+timestr+".jpg"
+                    cv2.imwrite(image_name, cv_array*255)
+                    #cv2.imwrite(image_name, cv_array)
+                                        
                 ## if topic == "/manipulation_task/hmm_input0":                    
                 ##     timestr = "%.6f" % msg.header.stamp.to_sec()
                 ##     print np.shape(msg.data)
@@ -100,24 +124,26 @@ class rosbagExtractor():
                 ## if topic == "/feeding/manipulation_task/ad_sensitivity_state":
                 ##     print t-t0, msg.data
 
-                if topic == "/hrl_manipulation_task/raw_data":                    
+                if topic == "/hrl_manipulation_task/raw_data" and False:                    
                     timestr = "%.6f" % msg.header.stamp.to_sec()
                     print msg
+            
+
 
                     
-def extract_rosbag_subfolders(subject_path):
+def extract_rosbag_subfolders(subject_path, depth=False):
 
     if not(os.path.isdir(subject_path)): return
     list_dir = os.listdir(subject_path)
     for l in list_dir:
         print l
-        extract_rosbag(os.path.join(subject_path,l))
-        extract_rosbag_subfolders(os.path.join(subject_path,l))
+        extract_rosbag(os.path.join(subject_path,l), depth=depth)
+        extract_rosbag_subfolders(os.path.join(subject_path,l), depth=depth)
 
     return
 
                         
-def extract_rosbag(subject_path):
+def extract_rosbag(subject_path, depth=False):
 
     if not(os.path.isdir(subject_path)): return
 
@@ -137,6 +163,7 @@ def extract_rosbag(subject_path):
         # Remove time stamps on the folder name.
         if (folder_name.find('_feeding')>=0):
             folder_name = folder_name.split('_feeding')[0]
+        if depth: folder_name+='_depth'
 
         # create save folder
         save_dir = os.path.join(subject_path, folder_name)
@@ -144,7 +171,7 @@ def extract_rosbag(subject_path):
 
         # save image file
         bag_file = os.path.join(subject_path,f)
-        rosbagExtractor(save_dir, bag_file)
+        rosbagExtractor(save_dir, bag_file, depth=depth)
 
     return 
 
@@ -328,6 +355,8 @@ if __name__ == '__main__':
     import optparse
     p = optparse.OptionParser()
     util.initialiseOptParser(p)
+    p.add_option('--depth', action='store_true', dest='depth',
+                 default=False, help='Extract depth images.')    
     ## p.add_option('--eval_isol', '--ei', action='store_true', dest='evaluation_isolation',
     ##              default=False, help='Evaluate anomaly isolation with double detectors.')    
     opt, args = p.parse_args()
@@ -342,12 +371,13 @@ if __name__ == '__main__':
     else:                                                                  
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/JOURNAL_ISOL/'+opt.task+'_1'
-        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RAW_DATA/ICRA2017/'
+        ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RAW_DATA/ICRA2017/'
+        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RAW_DATA/ICRA2018/day22_feeding'
 
         rospy.init_node("export_data")
         rospy.sleep(1)
 
         # extract data
-        extract_rosbag_subfolders(save_data_path)
+        extract_rosbag_subfolders(save_data_path, depth=opt.depth)
         #extract_rosbag(save_data_path)
         ## extract_rosbag(sys.argv[1])

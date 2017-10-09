@@ -291,17 +291,17 @@ class armReachAction(mpcBaseAction):
            ['PAUSE', 0.0],
            ['MOVEL', '[ 0.04, -0.01-self.highBowlDiff[1], 0.03, -0.1, 0.8, 0]', 3, 'self.bowl_frame'],
            ['PAUSE', 0.0],
-           ['MOVES', '[ 0.04-0.02, -0.01-self.highBowlDiff[1], -0.035, 0, 1.5, 0]', 3, 'self.bowl_frame'],]
+           ['MOVES', '[ 0.04-0.02, -0.01, -0.035, 0, 1.5, 0]', 3, 'self.bowl_frame'],]
 
         self.motions['runScooping_pspoon'] = {}
         self.motions['runScooping_pspoon']['left'] = \
           [['MOVES', '[-0.04-0.01, 0.035-self.highBowlDiff[1],  0.04, -0.2, 0.5, 0]', 3, 'self.bowl_frame'],
            ['PAUSE', 0.0],
-           ['MOVEL', '[ 0.04-0.01, -0.01-self.highBowlDiff[1],  0.03, -0.1, 0.8, 0]', 3, 'self.bowl_frame'],
+           ['MOVEL', '[ 0.04-0.01, -0.01-self.highBowlDiff[1],  0.035, -0.1, 0.8, 0]', 3, 'self.bowl_frame'],
            ['PAUSE', 0.0],
-           ['MOVES', '[ 0.04-0.01, -0.0-self.highBowlDiff[1],  -0.01, 0, 1.4, 0]', 3, 'self.bowl_frame'],
+           ['MOVES', '[ 0.04-0.01, -0.0,  -0.01, 0, 1.4, 0]', 3, 'self.bowl_frame'],
            ['PAUSE', 0.0],
-           ['MOVES', '[ 0.04-0.04, -0.0-self.highBowlDiff[1],  -0.1, 0, 1.4, 0]', 3, 'self.bowl_frame'],]
+           ['MOVES', '[ 0.04-0.04, -0.0,  -0.1, 0, 1.4, 0]', 3, 'self.bowl_frame'],]
 
         ## Clean spoon motoins --------------------------------------------------------
         self.motions['cleanSpoon1'] = {}
@@ -366,7 +366,7 @@ class armReachAction(mpcBaseAction):
 
         self.motions['initFeeding1_pspoon'] = {}
         self.motions['initFeeding1_pspoon']['left'] =\
-          [['MOVEJ', '[0.7447, 0.1256, 0.721, -1.9, 1.374, -0.7956, 1.0291]', 7.0],]        
+          [['MOVEJ', '[0.7447, 0.1256, 0.721, -1.9, 1.374, -0.7956, 1.0291+0.17]', 7.0],]        
 
         self.motions['initFeeding13_pspoon'] = {}
         self.motions['initFeeding13_pspoon']['left'] = \
@@ -714,7 +714,7 @@ if __name__ == '__main__':
     p.add_option('--kinect_ir_pause', '--kip', action='store_false', dest='kinect_ir_pause',
                  default=True, help='Pause kinect IR')
     p.add_option('--rnd_bowl_pt', '--rbp', action='store_false', dest='rnd_bowl_point',
-                 default=True, help='Pause kinect IR')
+                 default=True, help='Add noise to the center of bowl.')
     haptic_mpc_util.initialiseOptParser(p)
     opt = haptic_mpc_util.getValidInput(p)
 

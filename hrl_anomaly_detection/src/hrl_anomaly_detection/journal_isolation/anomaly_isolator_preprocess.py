@@ -54,10 +54,9 @@ import gc
 random.seed(3334)
 np.random.seed(3334)
 
-def get_isolation_data(subject_names, task_name, raw_data_path, save_data_path,
-                       param_dict, weight=1., window_steps=10, single_detector=False,\
-                       fine_tuning=False, verbose=False):
-    
+
+def get_data(subject_names, task_name, raw_data_path, save_data_path, param_dict):
+
     # load params (param_dict)
     data_dict  = param_dict['data_param']
     AE_dict    = param_dict['AE']
@@ -66,9 +65,6 @@ def get_isolation_data(subject_names, task_name, raw_data_path, save_data_path,
     method     = param_dict['ROC']['methods'][0]
     nPoints    = param_dict['ROC']['nPoints']
     
-    if ae_renew: clf_renew = True
-    else: clf_renew  = param_dict['SVM']['renew']
-
     #------------------------------------------
     if os.path.isdir(save_data_path) is False:
         os.system('mkdir -p '+save_data_path)
@@ -76,7 +72,7 @@ def get_isolation_data(subject_names, task_name, raw_data_path, save_data_path,
     crossVal_pkl = os.path.join(save_data_path, 'cv_'+task_name+'.pkl')
     if os.path.isfile(crossVal_pkl) and data_renew is False:
         print "CV data exists and no renew"
-        d = ut.load_pickle(crossVal_pkl)         
+        d = ut.load_pickle(crossVal_pkl)        
     else:
         '''
         Use augmented data? if nAugment is 0, then aug_successData = successData
@@ -97,48 +93,92 @@ def get_isolation_data(subject_names, task_name, raw_data_path, save_data_path,
                                success_image_list = d['success_image_list'], \
                                failure_image_list = d['failure_image_list'])
 
+        d['failure_labels']  = get_label_from_filename(d['failure_files'])
+
         ut.save_pickle(d, crossVal_pkl)
 
     print "Main data"
     print np.shape(d['successData']), np.shape(d['success_image_list'])
     print np.shape(d['failureData']), np.shape(d['failure_image_list'])
 
+    ## if fine_tuning is False:
+    td1, td2, td3 = vutil.get_ext_feeding_data(task_name, save_data_path, param_dict, d,
+                                               raw_feature=True, ros_bag_image=True)
 
-    if fine_tuning is False:
-        td1, td2, td3 = vutil.get_ext_feeding_data(task_name, save_data_path, param_dict, d,
-                                                   raw_feature=True, ros_bag_image=True)
+    # Get main and sub data dictionary
+    td = {}
+    for key in td1.keys():
+        if key in ['success_image_list', 'failure_image_list',
+                   'successRawDataList', 'failureRawDataList',
+                   'successFileList', 'failureFileList',
+                   'success_files', 'failure_files',
+                   'failure_labels']:
+            td[key] = td1[key]+td2[key]+td3[key]
+        elif key in ['successData', 'failureData']:
+            td[key] = np.vstack([np.swapaxes(td1[key],0,1),
+                                 np.swapaxes(td2[key],0,1),
+                                 np.swapaxes(td3[key],0,1)])
+            td[key] = np.swapaxes(td[key],0,1)
 
-    # addition images?
+    return d, td
+
+
+def get_label_from_filename(file_names):
+
+    labels = []
+    for f in file_names:
+        labels.append( int(f.split('/')[-1].split('_')[0]) )
+
+    return labels
+
+    
+
+def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=False, renew=False):
+    
+    # load params (param_dict)
+    data_dict  = param_dict['data_param']
+    AE_dict    = param_dict['AE']
+    data_renew = data_dict['renew']
+    ae_renew   = param_dict['HMM']['renew']
+    method     = param_dict['ROC']['methods'][0]
+    nPoints    = param_dict['ROC']['nPoints']
+    
+    if ae_renew: clf_renew = True
+    else:        clf_renew = param_dict['SVM']['renew']
+    fine_tuning = False
+
     # Check the list of temporal data and images
-    nDim = len(d['successData'])
+    nDim = len(main_data['successData'])
     tp_ll = [[] for i in xrange(nPoints)]
     fp_ll = [[] for i in xrange(nPoints)]
     tn_ll = [[] for i in xrange(nPoints)]
     fn_ll = [[] for i in xrange(nPoints)]
     roc_l = []
+    train_idx_ll = []
+    test_idx_ll  = []
+
+    detection_pkl = os.path.join(save_data_path, 'anomaly_idx.pkl')
 
     #-----------------------------------------------------------------------------------------
+    # Anomaly Detection using lstm-dvae-phase
+    #-----------------------------------------------------------------------------------------        
     # Leave-one-person-out cross validation
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
-      in enumerate(d['kFoldList']):
+      in enumerate(main_data['kFoldList']):
 
+        if renew is False and os.path.isfile(detection_pkl) : break
         print "==================== ", idx, " ========================"
         
         # ------------------------------------------------------------------------------------------         
         # dim x sample x length
-        normalTrainData   = d['successData'][:, normalTrainIdx, :]
-        abnormalTrainData = d['failureData'][:, abnormalTrainIdx, :]
-        normalTestData    = d['successData'][:, normalTestIdx, :]
-        abnormalTestData  = d['failureData'][:, abnormalTestIdx, :]
-        if fine_tuning is False:
-            normalTrainData   = np.hstack([normalTrainData,
-                                           copy.deepcopy(td1['successData']),
-                                           copy.deepcopy(td2['successData']),
-                                           copy.deepcopy(td3['successData'])])
-            abnormalTrainData = np.hstack([abnormalTrainData,
-                                           copy.deepcopy(td1['failureData']),
-                                           copy.deepcopy(td2['failureData']),
-                                           copy.deepcopy(td3['failureData'])])
+        normalTrainData   = main_data['successData'][:, normalTrainIdx, :]
+        abnormalTrainData = main_data['failureData'][:, abnormalTrainIdx, :]
+        normalTestData    = main_data['successData'][:, normalTestIdx, :]
+        abnormalTestData  = main_data['failureData'][:, abnormalTestIdx, :]
+        normalTrainData   = np.hstack([normalTrainData,
+                                       copy.deepcopy(sub_data['successData'])])
+        abnormalTrainData = np.hstack([abnormalTrainData,
+                                       copy.deepcopy(sub_data['failureData'])])
 
         # shuffle
         np.random.seed(3334+idx)
@@ -156,39 +196,25 @@ def get_isolation_data(subject_names, task_name, raw_data_path, save_data_path,
                      [0]*len(normalTrainData[int(len(normalTrainData)*0.7):])]
         testData  = [normalTestData, [0]*len(normalTestData)]
 
-
         # ------------------------------------------------------------------------------------------         
         # scaling info to reconstruct the original scale of data
-        scaler_dict  = {'scaler': scaler, 'scale': 1, 'param_dict': d['raw_param_dict']}
+        scaler_dict  = {'scaler': scaler, 'scale': 1, 'param_dict': main_data['raw_param_dict']}
         method       = 'lstm_dvae_phase'
-        window_size  = 1
-        batch_size   = 256
-        fixed_batch_size = True
-        noise_mag    = 0.05
-        patience     = 4
         vae_logvar   = None
 
         weights_path = os.path.join(save_data_path,'model_weights_'+method+'_'+str(idx)+'.h5')
         
         if (method.find('lstm_vae')>=0 or method.find('lstm_dvae')>=0):
-            dyn_ths     = False
-            stateful    = True
+            dyn_ths     = True
             ad_method   = 'lower_bound'
             
             from hrl_execution_monitor.keras_util import lstm_dvae_phase as km
-            x_std_div   = 4.
-            x_std_offset= 0.1
-            z_std       = 1.0 
-            h1_dim      = 4 #nDim
-            z_dim       = 3
-            phase       = 1.0
-            sam_epoch   = 40
 
             autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
-              km.lstm_vae(trainData, valData, weights_path, patience=patience, batch_size=batch_size,
-                          noise_mag=noise_mag, timesteps=window_size, sam_epoch=sam_epoch,
-                          x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,\
-                          phase=phase, z_dim=z_dim, h1_dim=h1_dim, \
+              km.lstm_vae(trainData, valData, weights_path, patience=4, batch_size=256,
+                          noise_mag=0.05, timesteps=1, sam_epoch=40,
+                          x_std_div=4., x_std_offset=0.1, z_std=1.0,\
+                          phase=1., z_dim=3, h1_dim=4, \
                           renew=ae_renew, fine_tuning=fine_tuning, plot=False,\
                           scaler_dict=scaler_dict)
         else:
@@ -197,84 +223,111 @@ def get_isolation_data(subject_names, task_name, raw_data_path, save_data_path,
         alpha = np.array([1.0]*nDim) #/float(nDim)
         ths_l = np.logspace(-1.0,2.4,nPoints) - 0.2
 
-        from hrl_anomaly_detection.RAL18_detection import detector as dt
+        from hrl_anomaly_detection.journal_isolation import detector as dt
         save_pkl = os.path.join(save_data_path, 'model_ad_scores_'+str(idx)+'.pkl')
-        tp_l, tn_l, fp_l, fn_l, roc, idx_l = \
+        tp_l, tn_l, fp_l, fn_l, roc, train_anomaly_idx_l, test_anomaly_idx_l = \
           dt.anomaly_detection(autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generator,
-                               normalTrainData, valData[0],\
+                               normalTrainData, valData[0], abnormalTrainData,\
                                normalTestData, abnormalTestData, \
                                ad_method, method,
-                               window_size, alpha, ths_l=ths_l, save_pkl=save_pkl, stateful=stateful,
-                               x_std_div = x_std_div, x_std_offset=x_std_offset, z_std=z_std, \
-                               phase=phase, plot=False, \
-                               renew=clf_renew, dyn_ths=dyn_ths, batch_info=(fixed_batch_size,batch_size),\
-                               param_dict=d['param_dict'], scaler_dict=scaler_dict,\
-                               filenames=(np.array(d['success_files'])[normalTestIdx],
-                                          np.array(d['failure_files'])[abnormalTestIdx]),\
-                                return_idx=True)
+                               1, alpha, ths_l=ths_l, save_pkl=save_pkl, stateful=True,
+                               x_std_div = 4, x_std_offset=0.1, z_std=1.0, \
+                               phase=1.0, plot=False, \
+                               renew=clf_renew, dyn_ths=dyn_ths, batch_info=(True,256),\
+                               param_dict=main_data['param_dict'], scaler_dict=scaler_dict,\
+                               filenames=(np.array(main_data['success_files'])[normalTestIdx],
+                                          np.array(main_data['failure_files'])[abnormalTestIdx]),\
+                               return_idx=True)
 
         roc_l.append(roc)
+        train_idx_ll.append(train_anomaly_idx_l)
+        test_idx_ll.append(test_anomaly_idx_l)
 
         for i in xrange(len(ths_l)):
             tp_ll[i] += tp_l[i]
             fp_ll[i] += fp_l[i]
             tn_ll[i] += tn_l[i]
             fn_ll[i] += fn_l[i]
-    print "roc list ", roc_l
-    d = {}
-    d['tp_ll'] = tp_ll
-    d['fp_ll'] = fp_ll
-    d['tn_ll'] = tn_ll
-    d['fn_ll'] = fn_ll
-
-
+   
     #--------------------------------------------------------------------
-    tpr_l = []
-    fpr_l = []
-    for i in xrange(len(ths_l)):
-        tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
-        fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 ) 
+    if renew or os.path.isfile(detection_pkl) is False:
+        print "roc list ", roc_l
+        tpr_l = []
+        fpr_l = []
+        for i in xrange(len(ths_l)):
+            tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
+            fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 ) 
 
-    print roc_l
-    print "------------------------------------------------------"
-    print tpr_l
-    print fpr_l
+        print roc_l
+        print "------------------------------------------------------"
+        print tpr_l
+        print fpr_l
+
+        from sklearn import metrics
+        print "roc: ", metrics.auc(fpr_l, tpr_l, True)  
+
+        fs_l = []
+        for i in xrange(len(ths_l)):
+            fs_l.append( (2.0*float(np.sum(tp_ll[i])))/ (2.0*float(np.sum(tp_ll[i])) + float(np.sum(fn_ll[i])) + float(np.sum(fp_ll[i]))) )
+
+        dd = {}
+        dd['tp_ll'] = tp_ll
+        dd['fp_ll'] = fp_ll
+        dd['tn_ll'] = tn_ll
+        dd['fn_ll'] = fn_ll
+        ## d['roc_l'] = roc_l
+        dd['train_idx_ll'] = train_idx_ll
+        dd['test_idx_ll']  = test_idx_ll
+        dd['fs_l']  = fs_l
+        dd['kFoldList'] = main_data['kFoldList']
+        ut.save_pickle(dd, detection_pkl)
+    else:
+        dd = ut.load_pickle(detection_pkl)
+
+    return dd['train_idx_ll'], dd['test_idx_ll'], dd['fs_l']
+
     
-    from sklearn import metrics
-    print "roc: ", metrics.auc(fpr_l, tpr_l, True)  
-
-    fs_l = []
-    for i in xrange(len(ths_l)):
-        fs_l.append( (2.0*float(np.sum(tp_ll[i])))/ (2.0*float(np.sum(tp_ll[i])) + float(np.sum(fn_ll[i])) + float(np.sum(fp_ll[i]))) )
-
-    print "F-score: ", fs_l
-    print np.argmax(fs_l), np.amax(fs_l)
-
-    sys.exit()
-    
-        ## Anomaly detection using lstm-dvae-phase
-
-    ## Data extraction
+def get_isolation_data(save_data_path, main_data, sub_data,
+                       train_idx_list, test_idx_list, ths_idx, param_dict):
 
 
     
+    #-----------------------------------------------------------------------------------------
+    # Data extraction
+    #-----------------------------------------------------------------------------------------        
+    for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
+      in enumerate(main_data['kFoldList']):
+        print "==================== ", idx, " ========================"
+
+        # detection indices
+        train_idx = train_idx_list[idx][ths_idx]
+        test_idx  = test_idx_list[idx][ths_idx]
 
 
+        #Signal data
+        abnormalTrainData = main_data['failureData'][:, abnormalTrainIdx, :]
+        abnormalTrainData = np.hstack([abnormalTrainData,
+                                       copy.deepcopy(sub_data['failureData'])])
+        abnormalTrainLabels = np.array(main_data['failure_labels'])[abnormalTrainIdx].tolist()+\
+          sub_data['failure_labels']
+          
+        abnormalTestData   = main_data['failureData'][:, abnormalTestIdx, :]
+        abnormalTestLabels = np.array(main_data['failure_labels'])[abnormalTestIdx].tolist()
 
+        ## print np.shape(train_idx_list)
+        ## print np.shape(test_idx_list)
+        ## print np.shape(abnormalTrainData), np.shape(abnormalTrainLabels)
+        ## print np.shape(abnormalTestData), np.shape(abnormalTestLabels)
 
+        #Image data
 
-    #==========================================================
-    # parameters
-    startIdx    = 4
+        #Extra images
+
+        
+        sys.exit()
+
     
-
-    ## # load data (mix) -------------------------------------------------
-    ## d = dm.getDataSet(subject_names, task_name, raw_data_path, \
-    ##                   save_data_path,\
-    ##                   downSampleSize=data_dict['downSampleSize'],\
-    ##                   handFeatures=data_dict['isolationFeatures'], \
-    ##                   data_renew=data_renew, max_time=data_dict['max_time'],\
-    ##                   ros_bag_image=True, rndFold=True)
+    return train_data, test_data
                       
     # split data with 80:20 ratio, 3set
     kFold_list = d['kFold_list'][:1]
@@ -411,3 +464,12 @@ if __name__ == '__main__':
     get_isolation_data(subject_names, task_name, raw_data_path, save_data_path,
                        param_dict, weight=1.0, single_detector=single_detector,
                        window_steps=window_steps, verbose=False)
+
+
+
+
+## def get_isolation_data(idx, failureData, failureImages, failureLabels, failureIdx):
+
+
+
+##     return idx, [x_train, x_train_img], y_train, [x_test, x_test_img], y_test
