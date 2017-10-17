@@ -350,7 +350,7 @@ class anomaly_detector:
     def set_anomaly_alarm(self):
         rospy.loginfo( '-'*15 +  'Anomaly has occured!' + '-'*15 )
         if self.en_alarm is False:
-            self.soundHandle.play(0) #(2)
+            self.soundHandle.play(1) #(2)
             self.ad_sync_pub.publish(True)
         else:
             self.soundHandle.play(1) #(2)

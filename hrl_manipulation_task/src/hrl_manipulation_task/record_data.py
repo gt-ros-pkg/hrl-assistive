@@ -97,6 +97,9 @@ class logger:
         self.waitForReady()
         self.initComms(self.task)
 
+        ## # Iteration counter
+        ## self.id = -1
+
         if self.data_pub:
             t = threading.Thread(target=self.runDataPub)
             t.setDaemon(True)
@@ -287,6 +290,10 @@ class logger:
                 fileName = os.path.join(self.folderName, 'iter_%d_%s_%s.pkl' % (test_id+1, status, failure_class))
             else:
                 fileName = os.path.join(self.folderName, 'iter_%d_%s.pkl' % (test_id+1, status))
+
+            ## # added to to make iteration number consecutive regardless of status
+            ## self.id = self.id + 1
+            ## fileName = os.path.join(self.folderName, 'iter_%d_%s.pkl' % (self.id, status))
 
             print 'Saving to', fileName
             ut.save_pickle(self.data, fileName)
@@ -677,6 +684,14 @@ def feedback_to_label(data):
             label = 'success'
         else:
             label = 'failure'
+    #for one s/f question
+    elif len(data) > 0:
+	if data[0] == "TRUE":
+            label = 'success'
+        elif data[0] == "FALSE":
+            label = 'failure'
+	else:
+	    label = 'skip'
     else:
         label = 'skip'
     return label

@@ -461,7 +461,19 @@ class armReacherGUI:
                 self.motion_complete = True
                 if emergencyStatus or self.emergencyStatus: break
 
-            self.FeedNumber = 0            
+            self.FeedNumber = 0
+
+            ## # temp
+            ## rospy.loginfo("Running feeding")
+            ## if self.log is not None:   
+            ##     self.log.log_start()
+            ## self.proceedPub.publish("Done")
+            ## self.guiStatusPub.publish("request feedback")
+            ## print "before logging"
+            ## self.log.log_stop()
+            ## self.log.close_log_file_GUI()
+            ## self.motion_complete = True
+            
             break
 
 
