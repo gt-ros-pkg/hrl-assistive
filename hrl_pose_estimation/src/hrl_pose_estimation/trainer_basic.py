@@ -150,8 +150,8 @@ class PhysicalTrainer():
             #Resize mat to make into a matrix
             p_map = np.reshape(data[map_index], self.mat_size)
             p_map_dataset.append(p_map)
-	if self.verbose: print len(data[0]),'x',1, 'size of an incoming pressure map'
-	if self.verbose: print len(p_map_dataset[0]),'x',len(p_map_dataset[0][0]), 'size of a resized pressure map'
+        if self.verbose: print len(data[0]),'x',1, 'size of an incoming pressure map'
+        if self.verbose: print len(p_map_dataset[0]),'x',len(p_map_dataset[0][0]), 'size of a resized pressure map'
         return p_map_dataset
 
 
@@ -162,7 +162,7 @@ class PhysicalTrainer():
             #Upsample the current map using bilinear interpolation
             p_map_highres_dataset.append(
                     ndimage.zoom(data[map_index], multiple, order=order))
-	if self.verbose: print len(p_map_highres_dataset[0]),'x',len(p_map_highres_dataset[0][0]), 'size of an upsampled pressure map'
+        if self.verbose: print len(p_map_highres_dataset[0]),'x',len(p_map_highres_dataset[0][0]), 'size of an upsampled pressure map'
         return p_map_highres_dataset
 
  

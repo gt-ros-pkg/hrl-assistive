@@ -89,7 +89,9 @@ class DatabaseCreator():
         #print home_sup_joint_pos
         self.split_matrices, self.split_targets = self.preprocess_home_position(home_sup_pressure_map, home_sup_joint_pos)
         ## self.pca_transformation_sup(home_sup_pressure_map, home_sup_joint_pos)
-        
+        print len(home_sup_pressure_map)
+        print len(home_sup_joint_pos), 'sizes'
+
 
     def preprocess_home_position(self, p_map_flat, target):
         '''Performs PCA on binarized pressure map, rotates and translates
@@ -691,6 +693,8 @@ class DatabaseCreator():
                 head_sliced[tuple(sliced_p_map.flatten())] = sliced_target
         
         print 'current image is home_sup'
+        print len(sliced_p_map), len(sliced_target), 'lengths'
+        print sliced_p_map, sliced_target
         self.visualize_pressure_map(sliced_p_map, rotated_targets=sliced_target)
 
                 
@@ -809,18 +813,20 @@ if __name__ == "__main__":
     import optparse
     p = optparse.OptionParser()
 
-    p.add_option('--training_data_path', '--path',  action='store', type='string', 
+    p.add_option('--training_data_path_local', '--local',  action='store', type='string',
                  dest='trainingPath',\
                  default='/home/henryclever/hrl_file_server/Autobed/pose_estimation_data/subject_4', \
                  #default='/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_9', \
                  help='Set path to the training database.')
+
+
     p.add_option('--save_pdf', '--sp',  action='store_true', dest='save_pdf',
                  default=False, help='Save plot as a pdf.')
     p.add_option('--verbose', '--v',  action='store_true', dest='verbose',
                  default=False, help='Printout everything (under construction).')
     
     opt, args = p.parse_args()
-    
+
     
     #Initialize trainer with a training database file
     ## training_database_pkl_directory = sys.argv[1] #  

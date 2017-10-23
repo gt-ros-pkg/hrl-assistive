@@ -54,47 +54,77 @@ class BagfileToPickle():
        
         print "Ready to start reading bags."
 
-    def read_bag(self, subject, filename):
+    def read_bag(self, subject, filename, start, stop):
         print 'Starting on subject ', subject, 'with the following trial: ', filename
 
 
         self.mat_sampled = False
 
+        filepath = self.database_path+'/subject_'+str(subject)+'/subject'+str(subject)+filename
+        print filepath
 
-        bag = rosbag.Bag(self.database_path+'/subject_'+str(subject)+'/subject'+str(subject)+filename, 'r')
+        bag = rosbag.Bag(filepath, 'r')
         count = 0
 
+        targets = np.zeros((10,3))
+        bed_pos = np.zeros((1,3))
+
+        #don't forget to clear out  the caches of all the labels when you log
         for topic, msg, t in bag.read_messages():
             if topic == '/fsascan':
                 self.mat_sampled = True
                 print len(msg.data)
-                print topic
                 count += 1
             elif topic == '/abdout0':
-                print topic
+                bed_pos[0,0] = msg.data[0]
+                bed_pos[1,0] = msg.data[1]
+                bed_pos[2,0] = msg.data[2]
             elif topic == '/head_o/pose':
-                print topic
+                targets[0,0] = msg.transform.translation.x
+                targets[0,1] = msg.transform.translation.y
+                targets[0,2] = msg.transform.translation.z
             elif topic == '/l_ankle_o/pose':
-                print topic
+                targets[9, 0] = msg.transform.translation.x
+                targets[9, 1] = msg.transform.translation.y
+                targets[9, 2] = msg.transform.translation.z
             elif topic == 'l_elbow_o/pose':
-                print topic
+                targets[3, 0] = msg.transform.translation.x
+                targets[3, 1] = msg.transform.translation.y
+                targets[3, 2] = msg.transform.translation.z
             elif topic == '/l_hand_o/pose':
-                print topic
+                targets[5, 0] = msg.transform.translation.x
+                targets[5, 1] = msg.transform.translation.y
+                targets[5, 2] = msg.transform.translation.z
             elif topic == '/l_knee_o/pose':
-                print topic
+                targets[7, 0] = msg.transform.translation.x
+                targets[7, 1] = msg.transform.translation.y
+                targets[7, 2] = msg.transform.translation.z
             elif topic == '/r_ankle_o/pose':
-                print topic
+                targets[8, 0] = msg.transform.translation.x
+                targets[8, 1] = msg.transform.translation.y
+                targets[8, 2] = msg.transform.translation.z
             elif topic == '/r_elbow_o/pose':
-                print topic
+                targets[2, 0] = msg.transform.translation.x
+                targets[2, 1] = msg.transform.translation.y
+                targets[2, 2] = msg.transform.translation.z
             elif topic == '/r_hand_o/pose':
-                print topic
+                targets[4, 0] = msg.transform.translation.x
+                targets[4, 1] = msg.transform.translation.y
+                targets[4, 2] = msg.transform.translation.z
             elif topic == '/r_knee_o/pose':
-                print topic
+                targets[6, 0] = msg.transform.translation.x
+                targets[6, 1] = msg.transform.translation.y
+                targets[6, 2] = msg.transform.translation.z
             elif topic == '/torso_o/pose':
-                print topic
+                targets[1,0] = msg.transform.translation.x
+                targets[1,1] = msg.transform.translation.y
+                targets[1,2] = msg.transform.translation.z
             if self.mat_sampled == True:
                 print 'pressure mat has been scanned'
+                print targets
                 self.mat_sampled = False
+                targets = np.zeros((10,3))
+                #print targets
                
         bag.close()
 
@@ -105,83 +135,81 @@ class BagfileToPickle():
 
 
 if __name__ == '__main__':
-    rospy.init_node('bag to pickle')
+    #rospy.init_node('bag to pickle')
     bagtopkl = BagfileToPickle()
     filename = '_full_trial_RH1.bag'
 
-    filename_list = []
+    file_details = []
 
     x = []
     x.append(4)
     x.append('_full_trial_head.bag')
     x.append(0)
     x.append(50)
-    filename_list.append(x)
+    file_details.append(x)
 
     x = []
     x.append(4)
     x.append('_full_trial_home.bag')
     x.append(0)
     x.append(50)
-    filename_list.append(x)
+    file_details.append(x)
 
     x = []
     x.append(4)
     x.append('_full_trial_LH1.bag')
     x.append(0)
     x.append(50)
-    filename_list.append(x)
+    file_details.append(x)
 
     x = []
     x.append(4)
     x.append('_full_trial_LH2.bag')
     x.append(0)
     x.append(50)
-    filename_list.append(x)
+    file_details.append(x)
 
     x = []
     x.append(4)
     x.append('_full_trial_LH3.bag')
     x.append(0)
     x.append(50)
-    filename_list.append(x)
+    file_details.append(x)
 
     x = []
     x.append(4)
     x.append('_full_trial_RH1.bag')
     x.append(0)
     x.append(50)
-    filename_list.append(x)
+    file_details.append(x)
 
     x = []
     x.append(4)
     x.append('_full_trial_RH2.bag')
     x.append(0)
     x.append(50)
-    filename_list.append(x)
+    file_details.append(x)
 
     x = []
     x.append(4)
     x.append('_full_trial_RH3.bag')
     x.append(0)
     x.append(50)
-    filename_list.append(x)
+    file_details.append(x)
 
     x = []
     x.append(4)
     x.append('_full_trial_LL.bag')
     x.append(0)
     x.append(50)
-    filename_list.append(x)
+    file_details.append(x)
 
     x = []
     x.append(4)
     x.append('_full_trial_RL.bag')
     x.append(0)
     x.append(50)
-    filename_list.append(x)
-    
-
+    file_details.append(x)
 
 
     x = []
@@ -189,71 +217,71 @@ if __name__ == '__main__':
     x.append('_full_trial_head.bag')
     x.append(0)
     x.append(50)
-    filename_list.append(x)
+    file_details.append(x)
 
     x = []
     x.append(9)
     x.append('_full_trial_home.bag')
     x.append(0)
     x.append(50)
-    filename_list.append(x)
+    file_details.append(x)
 
     x = []
     x.append(9)
     x.append('_full_trial_LH1.bag')
     x.append(0)
     x.append(50)
-    filename_list.append(x)
+    file_details.append(x)
 
     x = []
     x.append(9)
     x.append('_full_trial_LH2.bag')
     x.append(0)
     x.append(50)
-    filename_list.append(x)
+    file_details.append(x)
 
     x = []
     x.append(9)
     x.append('_full_trial_LH3.bag')
     x.append(0)
     x.append(50)
-    filename_list.append(x)
+    file_details.append(x)
 
     x = []
     x.append(9)
     x.append('_full_trial_RH1.bag')
     x.append(0)
     x.append(50)
-    filename_list.append(x)
+    file_details.append(x)
 
     x = []
     x.append(9)
     x.append('_full_trial_RH2.bag')
     x.append(0)
     x.append(50)
-    filename_list.append(x)
+    file_details.append(x)
 
     x = []
     x.append(9)
     x.append('_full_trial_RH3.bag')
     x.append(0)
     x.append(50)
-    filename_list.append(x)
+    file_details.append(x)
 
     x = []
     x.append(9)
     x.append('_full_trial_LL.bag')
     x.append(0)
     x.append(50)
-    filename_list.append(x)
+    file_details.append(x)
 
     x = []
     x.append(9)
     x.append('_full_trial_RL.bag')
     x.append(0)
     x.append(50)
-    filename_list.append(x)
-    
+    file_details.append(x)
+
 
 
 
@@ -262,77 +290,77 @@ if __name__ == '__main__':
     x.append('_full_trial_head.bag')
     x.append(0)
     x.append(50)
-    filename_list.append(x)
+    file_details.append(x)
 
     x = []
     x.append(10)
     x.append('_full_trial_home.bag')
     x.append(0)
     x.append(50)
-    filename_list.append(x)
+    file_details.append(x)
 
     x = []
     x.append(10)
     x.append('_full_trial_LH1.bag')
     x.append(0)
     x.append(50)
-    filename_list.append(x)
+    file_details.append(x)
 
     x = []
     x.append(10)
     x.append('_full_trial_LH2.bag')
     x.append(0)
     x.append(50)
-    filename_list.append(x)
+    file_details.append(x)
 
     x = []
     x.append(10)
     x.append('_full_trial_LH3.bag')
     x.append(0)
     x.append(50)
-    filename_list.append(x)
+    file_details.append(x)
 
     x = []
     x.append(10)
     x.append('_full_trial_RH1.bag')
     x.append(0)
     x.append(50)
-    filename_list.append(x)
+    file_details.append(x)
 
     x = []
     x.append(10)
     x.append('_full_trial_RH2.bag')
     x.append(0)
     x.append(50)
-    filename_list.append(x)
+    file_details.append(x)
 
     x = []
     x.append(10)
     x.append('_full_trial_RH3.bag')
     x.append(0)
     x.append(50)
-    filename_list.append(x)
+    file_details.append(x)
 
     x = []
     x.append(10)
     x.append('_full_trial_LL.bag')
     x.append(0)
     x.append(50)
-    filename_list.append(x)
+    file_details.append(x)
 
     x = []
     x.append(10)
     x.append('_full_trial_RL.bag')
     x.append(0)
     x.append(50)
-    filename_list.append(x)
+    file_details.append(x)
+
+
     
- 
     
-    
-    print filename_list
-    #for subject in [4,9,10,11,12,13,14,15]:
-    #for filename in filename_list:
-    #    print filename
+    #print file_details
+    #for subject in [4,9,10,11,12,13,14,15,16,17,18]:
+    for detail in file_details:
+        print detail
     #    for subject in [13]:
-    #        bagtopkl.read_bag(subject, filename, start, stop)     
+        bagtopkl.read_bag(detail[0], detail[1], detail[2], detail[3])
