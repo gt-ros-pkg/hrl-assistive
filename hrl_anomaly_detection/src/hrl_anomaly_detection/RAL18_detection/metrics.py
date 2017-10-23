@@ -28,6 +28,8 @@
 
 #  \author Daehyung Park (Healthcare Robotics Lab, Georgia Tech.)
 
+import numpy as np
+import scipy
 
 def get_reconstruction_err_prob(x, x_mean, x_std, alpha=1.0):
     '''

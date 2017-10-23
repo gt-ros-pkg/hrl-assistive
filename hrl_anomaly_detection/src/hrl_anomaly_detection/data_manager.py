@@ -88,8 +88,8 @@ def kFold_data_index(nNormal, nAbnormal, nNormalFold, nAbnormalFold ):
     return kFold_list
 
 def LOPO_data_index(success_data_list, failure_data_list, \
-                    success_file_list, failure_file_list, many_to_one=True,\
-                    target_class=None):
+                    success_file_list, failure_file_list, \
+                    many_to_one=True, target_class=None, **kwargs):
     """
     Return completed set of success and failure data with LOPO cross-validatation fold list
     """
@@ -108,12 +108,19 @@ def LOPO_data_index(success_data_list, failure_data_list, \
             failure_data = failure_data_list[i]
             failureIdx.append( range(len(failure_data_list[i][0])) )
             last_failure_idx = failureIdx[-1][-1]
+            if 'success_image_list' in kwargs.keys() and len(kwargs['success_image_list'])>0:
+                success_image_data = kwargs['success_image_list'][i];
+                failure_image_data = kwargs['failure_image_list'][i];            
         else:
             success_data = np.vstack([ np.swapaxes(success_data,0,1), \
                                       np.swapaxes(success_data_list[i], 0,1)])
             success_data = np.swapaxes(success_data, 0, 1)
             successIdx.append( range(successIdx[-1][-1]+1, successIdx[-1][-1]+1+\
                                      len(success_data_list[i][0])) )
+
+            if 'success_image_list' in kwargs.keys() and len(kwargs['success_image_list'])>0:
+                success_image_data += kwargs['success_image_list'][i]
+                failure_image_data += kwargs['failure_image_list'][i]
             
             if len(failure_data_list[i])>0:
                 failure_data = np.vstack([ np.swapaxes(failure_data,0,1), \
@@ -184,7 +191,12 @@ def LOPO_data_index(success_data_list, failure_data_list, \
 
             kFold_list.append([ normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx])
 
-    return success_data, failure_data, success_files, failure_files, kFold_list
+    if 'success_image_list' not in kwargs.keys() and len(kwargs['success_image_list'])==0:
+        return success_data, failure_data, success_files, failure_files, kFold_list
+    else:
+        return (success_data, success_image_data), (failure_data, failure_image_data),\
+          success_files, failure_files, kFold_list
+        
 
 
 def rnd_fold_index(nNormal, nAbnormal, train_ratio=0.8, nSet=1):
@@ -740,18 +752,18 @@ def getRawDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
 
     save_pkl = os.path.join(processed_data_path, pkl_prefix+'feature_extraction_'+str(id_num) )
             
-    if os.path.isfile(save_pkl) and data_renew is False:
+    if os.path.isfile(save_pkl) and data_renew is False :
         print "--------------------------------------"
         print "Load saved data"
         print "--------------------------------------"
         data_dict = ut.load_pickle(save_pkl)
         # Task-oriented hand-crafted features
-        successDataList = data_dict['successDataList']
-        failureDataList = data_dict['failureDataList']
+        successDataList    = data_dict['successDataList']
+        failureDataList    = data_dict['failureDataList']
         successRawDataList = data_dict['successRawDataList']
         failureRawDataList = data_dict['failureRawDataList']
-        param_dict      = data_dict['param_dict']
-        raw_param_dict  = data_dict['raw_param_dict']
+        param_dict         = data_dict['param_dict']
+        raw_param_dict     = data_dict['raw_param_dict']
         successFileList     = data_dict.get('successFileList',[])
         failureFileList     = data_dict.get('failureFileList',[])
         success_image_list  = data_dict.get('success_image_list',[])
@@ -835,11 +847,15 @@ def getRawDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
                 new_success_list = []
                 for f in success_list:
                     root_dir = os.path.split(f)[0]+'_rosbag'
+                    if os.path.isdir(root_dir) is False:
+                        root_dir = os.path.join(os.path.split(f)[0],'rosbag')                        
                     sub_dir  = os.path.split(f)[1].split('.pkl')[0]
                     new_success_list.append( os.path.join(root_dir, sub_dir) )
                 new_failure_list = []
                 for f in failure_list:
                     root_dir = os.path.split(f)[0]+'_rosbag'
+                    if os.path.isdir(root_dir) is False:
+                        root_dir = os.path.join(os.path.split(f)[0],'rosbag')                        
                     sub_dir  = os.path.split(f)[1].split('.pkl')[0]
                     new_failure_list.append( os.path.join(root_dir, sub_dir) )
                     
@@ -2777,10 +2793,16 @@ def export_images(folder_list, data_dict, downSampleSize):
         des_time_list = data_dict['timesList'][idx]
 
         # get image folder
-        files = os.listdir(f)
+        try:
+            files = os.listdir(f)
+        except:
+            print "No path exists: ", f
+            images.append([])
+            continue            
+            
         if len(files) == 0:
             print "No images so skip: ", f
-            images.append(None)
+            images.append([])
             continue            
 
         # get time list

@@ -55,7 +55,8 @@ QUEUE_SIZE = 10
 
 
 class armReachAction(mpcBaseAction):
-    def __init__(self, d_robot, controller, arm, viz=False, verbose=False):
+    def __init__(self, d_robot, controller, arm, viz=False, kinect_ir_pause=False,
+                 rnd_bowl_point=False, verbose=False):
         mpcBaseAction.__init__(self, d_robot, controller, arm)
 
         #Variables...! #
@@ -69,6 +70,8 @@ class armReachAction(mpcBaseAction):
         self.mouthOffset    = self.mouthManOffset+self.mouthNoise 
 
         self.viz = viz
+        self.kinect_ir_pause = kinect_ir_pause
+        self.rnd_bowl_point  = rnd_bowl_point
         self.bowl_frame_kinect  = None
         self.mouth_frame_vision = None
         self.bowl_frame         = None
@@ -225,7 +228,6 @@ class armReachAction(mpcBaseAction):
            ['MOVES', '[0.7, -0.15, -0., -3.1415, 0.0, 1.574]', 5.],
            ['TOOL', self.org_tool]
           ]
-           ## ['MOVES', '[0.7, -0.15, -0., -3.1415, 0.0, 1.574]', 5.]]
 
         self.motions['initStabbing2'] = {}
         self.motions['initStabbing2']['left'] = [
@@ -247,15 +249,6 @@ class armReachAction(mpcBaseAction):
           [['MOVES', '[-0.02+self.highBowlDiff[0], 0.01-self.highBowlDiff[1], 0.03, 0, -0.1, 0]', 5, 'self.bowl_frame'],
            ['STOP'],
            ['MOVET', '[0.0,0.0,-0.15,0,0.0,0]',5]]
-        
-           #['MOVES', '[-0.02+self.highBowlDiff[0], 0.0-self.highBowlDiff[1], -0.1, 0, -0.1, 0]', 5, 'self.bowl_frame']]
-           
-        
-           ##['MOVES', '[-0.03+self.highBowlDiff[0]+random.choice([-0.01, 0, 0.01]), 0.0-self.highBowlDiff[1]++random.choice([-0.015, 0, 0.015]), 0.04, 0, 0., 0]', 5, 'self.bowl_frame'],
-           ## ['MOVES', '[-0.03+self.highBowlDiff[0], 0.0-self.highBowlDiff[1],  0.0, 0, 0., 0]', 2,
-           ##  'self.bowl_frame'],
-           ## ['MOVES', '[-0.03+self.highBowlDiff[0], 0.0-self.highBowlDiff[1], -0.15, 0, 0., 0]', 3,
-           ##  'self.bowl_frame'],]
         self.motions['runStabbing']['right'] = \
           [['PAUSE', 5.0],
            ['STOP'],
@@ -275,6 +268,7 @@ class armReachAction(mpcBaseAction):
          ['TOOL', 0],
          ['MOVES', '[0.7, 0., 0., -3.1415, 0.0, 1.574]', 5.],
          ['TOOL', self.org_tool]]
+         #['MOVET', '[0,0,0,0,0,0+random.choice([-0.26, 0.])]', 3]]
 
         self.motions['initScooping2'] = {}
         self.motions['initScooping2']['left'] = \
@@ -285,33 +279,29 @@ class armReachAction(mpcBaseAction):
         self.motions['initScooping12'] = {}
         self.motions['initScooping12']['left'] = \
           [['MOVES', '[-0.04, 0.0, -0.15, 0, 0.5, 0]', 7, 'self.bowl_frame']]
-          ## self.motions['initScooping2']['left'][0]]
-          ## [self.motions['initScooping1']['left'][0],
         self.motions['initScooping12']['right'] = \
           self.motions['initScooping1']['right'][1:]
-
 
 
         # [Y (from center of bowl away from Pr2), X (towards right gripper), Z (towards floor) ,
         #  roll?, pitch (tilt downwards), yaw?]
         self.motions['runScooping'] = {}
         self.motions['runScooping']['left'] = \
-          [['MOVES', '[-0.04, 0.04-self.highBowlDiff[1],  0.04, -0.2, 0.8, 0]', 3, 'self.bowl_frame'],
+          [['MOVES', '[-0.04, 0.04-self.highBowlDiff[1], 0.04, -0.2, 0.8, 0]', 3, 'self.bowl_frame'],
            ['PAUSE', 0.0],
-           ['MOVEL', '[ 0.04, -0.01-self.highBowlDiff[1],  0.03, -0.1, 0.8, 0]', 3, 'self.bowl_frame'],
+           ['MOVEL', '[ 0.04, -0.01-self.highBowlDiff[1], 0.03, -0.1, 0.8, 0]', 3, 'self.bowl_frame'],
            ['PAUSE', 0.0],
-           ['MOVES', '[ 0.04-0.02, -0.01-self.highBowlDiff[1],  -0.035, 0, 1.5, 0]', 3, 'self.bowl_frame'],]
-           ## ['MOVES', '[ 0.04-0.005, -0.01-self.highBowlDiff[1],  -0.08, 0, 1.5, 0]', 3, 'self.bowl_frame'],]
+           ['MOVES', '[ 0.04-0.02, -0.01, -0.035, 0, 1.5, 0]', 3, 'self.bowl_frame'],]
 
         self.motions['runScooping_pspoon'] = {}
         self.motions['runScooping_pspoon']['left'] = \
           [['MOVES', '[-0.04-0.01, 0.035-self.highBowlDiff[1],  0.04, -0.2, 0.5, 0]', 3, 'self.bowl_frame'],
            ['PAUSE', 0.0],
-           ['MOVEL', '[ 0.04-0.01, -0.01-self.highBowlDiff[1],  0.03, -0.1, 0.8, 0]', 3, 'self.bowl_frame'],
+           ['MOVEL', '[ 0.04-0.01, -0.01-self.highBowlDiff[1],  0.035, -0.1, 0.8, 0]', 3, 'self.bowl_frame'],
            ['PAUSE', 0.0],
-           ['MOVES', '[ 0.04-0.01, -0.0-self.highBowlDiff[1],  -0.01, 0, 1.4, 0]', 3, 'self.bowl_frame'],
+           ['MOVES', '[ 0.04-0.01, -0.0,  -0.01, 0, 1.4, 0]', 3, 'self.bowl_frame'],
            ['PAUSE', 0.0],
-           ['MOVES', '[ 0.04-0.04, -0.0-self.highBowlDiff[1],  -0.1, 0, 1.4, 0]', 3, 'self.bowl_frame'],]
+           ['MOVES', '[ 0.04-0.04, -0.0,  -0.1, 0, 1.4, 0]', 3, 'self.bowl_frame'],]
 
         ## Clean spoon motoins --------------------------------------------------------
         self.motions['cleanSpoon1'] = {}
@@ -323,14 +313,6 @@ class armReachAction(mpcBaseAction):
            ['MOVEL', '[ 0.06-0.05, 0.04,  -0.01, 0, 1.5, 0]', 3, 'self.bowl_frame'],
            ['PAUSE', 0.0],
            ['MOVEL', '[ 0.06-0.05, 0.0,  -0.04, 0, 1.5, 0]', 3, 'self.bowl_frame'],]
-        ## self.motions['cleanSpoon1']['left'] = \
-        ##   [['MOVEL', '[ 0.06+0.01, 0.03,  -0.09, 0, 1.5, 0]', 3, 'self.bowl_frame'],
-        ##    ['PAUSE', 0.0],
-        ##    ['MOVEL', '[ 0.06+0.01, 0.03,  -0.02, 0, 1.5, 0]', 3, 'self.bowl_frame'],
-        ##    ['PAUSE', 0.0],
-        ##    ['MOVEL', '[ 0.06-0.05, 0.03,  -0.02, 0, 1.5, 0]', 3, 'self.bowl_frame'],
-        ##    ['PAUSE', 0.0],
-        ##    ['MOVEL', '[ 0.06-0.01, 0.0,  -0.1, 0, 1.5, 0]', 3, 'self.bowl_frame'],]
         self.motions['cleanSpoon1']['right'] = []
                                                 
 
@@ -384,7 +366,7 @@ class armReachAction(mpcBaseAction):
 
         self.motions['initFeeding1_pspoon'] = {}
         self.motions['initFeeding1_pspoon']['left'] =\
-          [['MOVEJ', '[0.7447, 0.1256, 0.721, -1.9, 1.374, -0.7956, 1.0291]', 7.0],]        
+          [['MOVEJ', '[0.7447, 0.1256, 0.721, -1.9, 1.374, -0.7956, 1.0291+0.17]', 7.0],]        
 
         self.motions['initFeeding13_pspoon'] = {}
         self.motions['initFeeding13_pspoon']['left'] = \
@@ -459,7 +441,10 @@ class armReachAction(mpcBaseAction):
                 Provide head position and try again!"
 
         elif task == "getBowlHighestPoint":
-            self.bowl_height_init_pub.publish(Empty())
+            if self.rnd_bowl_point is False:
+                self.bowl_height_init_pub.publish(Empty())
+            else:
+                self.highBowlDiff = np.array([0, random.choice([0.02,0,-0.02]), 0])
             return "Completed to get the highest point in the bowl."
 
         elif task == "lookAtBowl":
@@ -479,7 +464,10 @@ class armReachAction(mpcBaseAction):
 
         else:
             if task.find('initScooping')>=0 or task.find('initStabbing')>=0:
-                self.kinect_pause.publish('start')
+                if self.kinect_ir_pause:
+                    self.kinect_pause.publish('pause')
+                else:
+                    self.kinect_pause.publish('start')
             elif task.find('initFeeding')>=0:
                 self.kinect_pause.publish('pause')
             self.parsingMovements(self.motions[task][self.arm_name])
@@ -487,8 +475,8 @@ class armReachAction(mpcBaseAction):
 
 
     def highestBowlPointCallback(self, data):
-        if not self.arm_name == 'left':
-            return
+        if not self.arm_name == 'left': return
+        
         # Find difference between current highest point in bowl and center of bowl
         print 'Highest Point original position:', [data.x, data.y, data.z]
         print 'Bowl Position:', self.bowlPosition
@@ -723,6 +711,10 @@ if __name__ == '__main__':
     # TODO: optparse should be replaced to our own one.
     import optparse
     p = optparse.OptionParser()
+    p.add_option('--kinect_ir_pause', '--kip', action='store_false', dest='kinect_ir_pause',
+                 default=True, help='Pause kinect IR')
+    p.add_option('--rnd_bowl_pt', '--rbp', action='store_false', dest='rnd_bowl_point',
+                 default=True, help='Add noise to the center of bowl.')
     haptic_mpc_util.initialiseOptParser(p)
     opt = haptic_mpc_util.getValidInput(p)
 
@@ -738,7 +730,8 @@ if __name__ == '__main__':
 
 
     rospy.init_node('arm_reacher_feeding_and_scooping')
-    ara = armReachAction(d_robot, controller, arm, viz=True, verbose=verbose)
+    ara = armReachAction(d_robot, controller, arm, viz=True, kinect_ir_pause=opt.kinect_ir_pause,
+                         rnd_bowl_point=opt.rnd_bowl_point, verbose=verbose)
     rospy.spin()
 
 

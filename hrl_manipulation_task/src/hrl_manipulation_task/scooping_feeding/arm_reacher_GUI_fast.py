@@ -536,7 +536,7 @@ if __name__ == '__main__':
     p.add_option('--en_logger', '--l', action='store_true', dest='bLog',
                  default=False, help='Enable logger.')
     p.add_option('--data_path', action='store', dest='sRecordDataPath',
-                 default='/home/dpark/hrl_file_server/dpark_data/anomaly/ICRA2018', \
+                 default='/home/dpark/hrl_file_server/dpark_data/anomaly/JOURNAL_FEEDING', \
                  help='Enter a record data path')
  
     opt, args = p.parse_args()

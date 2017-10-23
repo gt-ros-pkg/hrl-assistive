@@ -28,7 +28,7 @@
 
 #  \author Daehyung Park (Healthcare Robotics Lab, Georgia Tech.)
 
-import os
+import os, sys
 import numpy as np
 import hrl_lib.util as ut
 
@@ -613,7 +613,7 @@ def graph_score_distribution(scores_n, scores_a, param_dict, save_pdf=False):
 
 def get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
                  init_param_dict=None, init_raw_param_dict=None, id_num=0, raw_feature=False,
-                 depth=False):
+                 depth=False, ros_bag_image=False):
     from hrl_anomaly_detection import data_manager as dm
     
     ## Parameters # data
@@ -648,11 +648,22 @@ def get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
                                 handFeatures=data_dict['isolationFeatures'], \
                                 cut_data=data_dict['cut_data'],\
                                 data_renew=data_renew, max_time=data_dict['max_time'],
-                                pkl_prefix='tgt_', depth=depth, id_num=id_num)
+                                pkl_prefix='tgt_', depth=depth, id_num=id_num,\
+                                ros_bag_image=ros_bag_image)
 
-            td['successData'], td['failureData'], td['success_files'], td['failure_files'], td['kFoldList'] \
-              = dm.LOPO_data_index(td['successDataList'], td['failureDataList'],\
-                                   td['successFileList'], td['failureFileList'])
+
+            if ros_bag_image is False:
+                td['successData'], td['failureData'], td['success_files'], td['failure_files'], td['kFoldList'] \
+                  = dm.LOPO_data_index(td['successDataList'], td['failureDataList'],\
+                                       td['successFileList'], td['failureFileList'])
+            else:
+                (td['successData'], td['success_image_list']), (td['failureData'], td['failure_image_list']), \
+                  td['success_files'], td['failure_files'], td['kFoldList'] \
+                  = dm.LOPO_data_index(td['successDataList'], td['failureDataList'],\
+                                       td['successFileList'], td['failureFileList'],\
+                                       success_image_list = td['success_image_list'], \
+                                       failure_image_list = td['failure_image_list'])
+                                       
         else:
             # Extract data from designated location
             td = dm.getRawDataLOPO(subjects, task_name, raw_data_path, save_data_path,\
@@ -663,11 +674,33 @@ def get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
                                    rawFeatures=AE_dict['rawFeatures'],\
                                    cut_data=data_dict['cut_data'],\
                                    data_renew=data_renew, max_time=data_dict['max_time'],
-                                   pkl_prefix='tgt_', depth=depth, id_num=id_num)
+                                   pkl_prefix='tgt_', depth=depth, id_num=id_num,
+                                   ros_bag_image=ros_bag_image)
 
-            td['successData'], td['failureData'], td['success_files'], td['failure_files'], td['kFoldList'] \
-              = dm.LOPO_data_index(td['successRawDataList'], td['failureRawDataList'],\
-                                   td['successFileList'], td['failureFileList'])
+            # Get flatten array
+            if ros_bag_image is False:
+                td['successData'], td['failureData'], td['success_files'], td['failure_files'], td['kFoldList'] \
+                  = dm.LOPO_data_index(td['successRawDataList'], td['failureRawDataList'],\
+                                       td['successFileList'], td['failureFileList'])
+            else:                
+                (td['successData'], td['success_image_list']), (td['failureData'], td['failure_image_list']), \
+                  td['success_files'], td['failure_files'], td['kFoldList'] \
+                  = dm.LOPO_data_index(td['successRawDataList'], td['failureRawDataList'],\
+                                       td['successFileList'], td['failureFileList'],\
+                                       success_image_list = td['success_image_list'], \
+                                       failure_image_list = td['failure_image_list'])
+
+
+        def get_label_from_filename(file_names):
+
+            labels = []
+            for f in file_names:
+                labels.append( int(f.split('/')[-1].split('_')[0]) )
+
+            return labels
+        
+        td['failure_labels'] = get_label_from_filename(td['failure_files'])
+
 
         ut.save_pickle(td, crossVal_pkl)
     
@@ -682,9 +715,10 @@ def get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
         td['successData']    = np.array(td['successData'])[feature_list]
         td['failureData']    = np.array(td['failureData'])[feature_list]
 
-    ## print np.shape(td['successDataList']), np.shape(td['failureDataList'])
-    ## print np.shape(td['successData']), np.shape(td['failureData'])
-    ## print np.shape(td['successFileList']), np.shape(td['failureFileList'])
+    if ros_bag_image :
+        print "complement data"
+        print np.shape(td['successData']), np.shape(td['success_files']), np.shape(td['success_image_list'])
+        print np.shape(td['failureData']), np.shape(td['failure_files']), np.shape(td['failure_image_list'])
 
     return td
 
@@ -763,20 +797,20 @@ def get_scaled_data2(x, scaler, aligned=True, scale=1.8):
 
         
 
-def get_ext_feeding_data(task_name, save_data_path, param_dict, d, raw_feature=False):
+def get_ext_feeding_data(task_name, save_data_path, param_dict, d, raw_feature=False, ros_bag_image=False):
     if raw_feature is False: d['raw_param_dict'] = None
     
     subjects = ['Andrew', 'Britteney', 'Joshua', 'Jun', 'Kihan', 'Lichard', 'Shingshing', 'Sid', 'Tao']
     raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/CORL2017/'
     td1 = get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
                        init_param_dict=d['param_dict'], init_raw_param_dict=d['raw_param_dict'],
-                       depth=True, id_num=1, raw_feature=raw_feature)
+                       depth=True, id_num=1, raw_feature=raw_feature, ros_bag_image=ros_bag_image)
 
     subjects = ['ari', 'park', 'jina', 'linda', 'sai', 'hyun']
     raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/ICRA2017/'
     td2 = get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
                        init_param_dict=d['param_dict'], init_raw_param_dict=d['raw_param_dict'],
-                       id_num=2, raw_feature=raw_feature)
+                       id_num=2, raw_feature=raw_feature, ros_bag_image=ros_bag_image)
 
     subjects = []
     for i in xrange(1,23):
@@ -784,7 +818,7 @@ def get_ext_feeding_data(task_name, save_data_path, param_dict, d, raw_feature=F
     raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/ICRA2018/'
     td3 = get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
                        init_param_dict=d['param_dict'], init_raw_param_dict=d['raw_param_dict'],
-                       id_num=3, raw_feature=raw_feature)
+                       id_num=3, raw_feature=raw_feature, ros_bag_image=ros_bag_image)
 
     return td1, td2, td3
     
