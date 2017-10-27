@@ -367,7 +367,7 @@ def reconstruct_audio(mfccs, sr, y_shape):
     #print recon
     #print recon.shape
 
-    wav.write('./sounds/predicted/' + 'combined_predict_testdata13' +'FromMFCC3', sr, recon)
+    wav.write('./sounds/predicted/' + 'combined_predict_testdata13' +'FromMFCC3.wav', sr, recon)
 
 def test_prediction():
     os.environ["KERAS_BACKEND"] = "tensorflow"

@@ -60,7 +60,7 @@ def audio_creator():
     #print recon
     #print recon.shape
 
-    wav.write('./sounds/cropped/' + WAVE_OUTPUT_FILENAME +'FromMFCC', sr, recon)
+    wav.write('./sounds/cropped/' + WAVE_OUTPUT_FILENAME +'FromMFCC.wav', sr, recon)
 
 def main():
     audio_creator()

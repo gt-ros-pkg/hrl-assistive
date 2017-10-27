@@ -26,11 +26,9 @@ def griffinlim(spectrogram, n_iter = 100, window = 'hann', n_fft = 2048, hop_len
     t = tqdm(range(n_iter), ncols=100, mininterval=2.0, disable=not verbose)
     
     for i in t:
-        print 'a'
         print spectrogram.shape
         print angles.shape
         full = np.abs(spectrogram).astype(np.complex) * angles
-        print 'b'
         inverse = librosa.istft(full, hop_length = hop_length, window = window)
         rebuilt = librosa.stft(inverse, n_fft = n_fft, hop_length = hop_length, window = window)
         angles = np.exp(1j * np.angle(rebuilt))
