@@ -54,31 +54,36 @@ class BagfileToPickle():
        
         print "Ready to start reading bags."
 
-    def read_bag(self, subject, filename, start, stop):
+    def read_bag(self, subject, filename):
         print 'Starting on subject ', subject, 'with the following trial: ', filename
 
 
         self.mat_sampled = False
 
         filepath = self.database_path+'/subject_'+str(subject)+'/subject'+str(subject)+filename
-        print filepath
+        #print filepath
 
         bag = rosbag.Bag(filepath, 'r')
         count = 0
 
+
         targets = np.zeros((10,3))
         bed_pos = np.zeros((1,3))
+        p_mat = []
+
+        mat_tar_pos = []
+        single_mat_tar_pos = []
 
         #don't forget to clear out  the caches of all the labels when you log
         for topic, msg, t in bag.read_messages():
             if topic == '/fsascan':
                 self.mat_sampled = True
-                print len(msg.data)
+                p_mat = msg.data
                 count += 1
             elif topic == '/abdout0':
                 bed_pos[0,0] = msg.data[0]
-                bed_pos[1,0] = msg.data[1]
-                bed_pos[2,0] = msg.data[2]
+                bed_pos[0,1] = msg.data[1]
+                bed_pos[0,2] = msg.data[2]
             elif topic == '/head_o/pose':
                 targets[0,0] = msg.transform.translation.x
                 targets[0,1] = msg.transform.translation.y
@@ -120,247 +125,260 @@ class BagfileToPickle():
                 targets[1,1] = msg.transform.translation.y
                 targets[1,2] = msg.transform.translation.z
             if self.mat_sampled == True:
-                print 'pressure mat has been scanned'
-                print targets
-                self.mat_sampled = False
-                targets = np.zeros((10,3))
-                #print targets
+                if np.count_nonzero(targets) == 30 and len(p_mat) == 1728:
+                    #print 'pressure mat has been scanned'
+                    #print targets
+                    #print np.count_nonzero(targets)
+                    single_mat_tar_pos = []
+                    single_mat_tar_pos.append(p_mat)
+                    single_mat_tar_pos.append(targets)
+                    single_mat_tar_pos.append(bed_pos)
+                    mat_tar_pos.append(single_mat_tar_pos)
+
+
+                    self.mat_sampled = False
+                    p_mat = []
+                    targets = np.zeros((10,3))
+                    bed_pos = np.zeros((1,3))
+                    #print targets
+                    #print mat_tar_pos[len(mat_tar_pos)-1][2], 'accelerometer reading', len(mat_tar_pos)
                
         bag.close()
 
-        print count
-        return
+
+        print count, len(mat_tar_pos), len(mat_tar_pos[0]), 'count, count, number of datatypes (should be 3)'
+        return mat_tar_pos
 
     
 
 
 if __name__ == '__main__':
-    #rospy.init_node('bag to pickle')
+    rospy.init_node('bag_to_pickle')
     bagtopkl = BagfileToPickle()
     filename = '_full_trial_RH1.bag'
 
-    file_details = []
-
-    x = []
-    x.append(4)
-    x.append('_full_trial_head.bag')
-    x.append(0)
-    x.append(50)
-    file_details.append(x)
-
-    x = []
-    x.append(4)
-    x.append('_full_trial_home.bag')
-    x.append(0)
-    x.append(50)
-    file_details.append(x)
-
-    x = []
-    x.append(4)
-    x.append('_full_trial_LH1.bag')
-    x.append(0)
-    x.append(50)
-    file_details.append(x)
-
-    x = []
-    x.append(4)
-    x.append('_full_trial_LH2.bag')
-    x.append(0)
-    x.append(50)
-    file_details.append(x)
-
-    x = []
-    x.append(4)
-    x.append('_full_trial_LH3.bag')
-    x.append(0)
-    x.append(50)
-    file_details.append(x)
-
-    x = []
-    x.append(4)
-    x.append('_full_trial_RH1.bag')
-    x.append(0)
-    x.append(50)
-    file_details.append(x)
-
-    x = []
-    x.append(4)
-    x.append('_full_trial_RH2.bag')
-    x.append(0)
-    x.append(50)
-    file_details.append(x)
-
-    x = []
-    x.append(4)
-    x.append('_full_trial_RH3.bag')
-    x.append(0)
-    x.append(50)
-    file_details.append(x)
-
-    x = []
-    x.append(4)
-    x.append('_full_trial_LL.bag')
-    x.append(0)
-    x.append(50)
-    file_details.append(x)
-
-    x = []
-    x.append(4)
-    x.append('_full_trial_RL.bag')
-    x.append(0)
-    x.append(50)
-    file_details.append(x)
-
-
-    x = []
-    x.append(9)
-    x.append('_full_trial_head.bag')
-    x.append(0)
-    x.append(50)
-    file_details.append(x)
-
-    x = []
-    x.append(9)
-    x.append('_full_trial_home.bag')
-    x.append(0)
-    x.append(50)
-    file_details.append(x)
-
-    x = []
-    x.append(9)
-    x.append('_full_trial_LH1.bag')
-    x.append(0)
-    x.append(50)
-    file_details.append(x)
-
-    x = []
-    x.append(9)
-    x.append('_full_trial_LH2.bag')
-    x.append(0)
-    x.append(50)
-    file_details.append(x)
-
-    x = []
-    x.append(9)
-    x.append('_full_trial_LH3.bag')
-    x.append(0)
-    x.append(50)
-    file_details.append(x)
-
-    x = []
-    x.append(9)
-    x.append('_full_trial_RH1.bag')
-    x.append(0)
-    x.append(50)
-    file_details.append(x)
-
-    x = []
-    x.append(9)
-    x.append('_full_trial_RH2.bag')
-    x.append(0)
-    x.append(50)
-    file_details.append(x)
-
-    x = []
-    x.append(9)
-    x.append('_full_trial_RH3.bag')
-    x.append(0)
-    x.append(50)
-    file_details.append(x)
-
-    x = []
-    x.append(9)
-    x.append('_full_trial_LL.bag')
-    x.append(0)
-    x.append(50)
-    file_details.append(x)
-
-    x = []
-    x.append(9)
-    x.append('_full_trial_RL.bag')
-    x.append(0)
-    x.append(50)
-    file_details.append(x)
-
-
-
-
-    x = []
-    x.append(10)
-    x.append('_full_trial_head.bag')
-    x.append(0)
-    x.append(50)
-    file_details.append(x)
-
-    x = []
-    x.append(10)
-    x.append('_full_trial_home.bag')
-    x.append(0)
-    x.append(50)
-    file_details.append(x)
-
-    x = []
-    x.append(10)
-    x.append('_full_trial_LH1.bag')
-    x.append(0)
-    x.append(50)
-    file_details.append(x)
-
-    x = []
-    x.append(10)
-    x.append('_full_trial_LH2.bag')
-    x.append(0)
-    x.append(50)
-    file_details.append(x)
-
-    x = []
-    x.append(10)
-    x.append('_full_trial_LH3.bag')
-    x.append(0)
-    x.append(50)
-    file_details.append(x)
-
-    x = []
-    x.append(10)
-    x.append('_full_trial_RH1.bag')
-    x.append(0)
-    x.append(50)
-    file_details.append(x)
-
-    x = []
-    x.append(10)
-    x.append('_full_trial_RH2.bag')
-    x.append(0)
-    x.append(50)
-    file_details.append(x)
-
-    x = []
-    x.append(10)
-    x.append('_full_trial_RH3.bag')
-    x.append(0)
-    x.append(50)
-    file_details.append(x)
-
-    x = []
-    x.append(10)
-    x.append('_full_trial_LL.bag')
-    x.append(0)
-    x.append(50)
-    file_details.append(x)
-
-    x = []
-    x.append(10)
-    x.append('_full_trial_RL.bag')
-    x.append(0)
-    x.append(50)
-    file_details.append(x)
 
 
     
-    
+    file_details_dict = {}
     #print file_details
-    #for subject in [4,9,10,11,12,13,14,15,16,17,18]:
-    for detail in file_details:
-        print detail
-    #    for subject in [13]:
-        bagtopkl.read_bag(detail[0], detail[1], detail[2], detail[3])
+    for subject in [1,2,3,4,5,6,7,9,10,11,12,13,14,15,16,18]:
+        file_details = []
+        x = []
+        x.append(subject)
+        x.append('_full_trial_head.bag')
+        x.append('head')
+        file_details.append(x)
+
+        x = []
+        x.append(subject)
+        x.append('_full_trial_home.bag')
+        x.append('home')
+        file_details.append(x)
+
+        x = []
+        x.append(subject)
+        x.append('_full_trial_LH1.bag')
+        x.append('LH1')
+        file_details.append(x)
+
+        x = []
+        x.append(subject)
+        x.append('_full_trial_LH2.bag')
+        x.append('LH2')
+        file_details.append(x)
+
+        x = []
+        x.append(subject)
+        x.append('_full_trial_LH3.bag')
+        x.append('LH3')
+        file_details.append(x)
+
+        x = []
+        x.append(subject)
+        x.append('_full_trial_RH1.bag')
+        x.append('RH1')
+        file_details.append(x)
+
+        x = []
+        x.append(subject)
+        x.append('_full_trial_RH2.bag')
+        x.append('RH2')
+        file_details.append(x)
+
+        x = []
+        x.append(subject)
+        x.append('_full_trial_RH3.bag')
+        x.append('RH3')
+        file_details.append(x)
+
+        x = []
+        x.append(subject)
+        x.append('_full_trial_LL.bag')
+        x.append('LL')
+        file_details.append(x)
+
+        x = []
+        x.append(subject)
+        x.append('_full_trial_RL.bag')
+        x.append('RL')
+        file_details.append(x)
+
+        file_details_dict[str(subject)] = file_details
+
+    for subject in [8]:
+        file_details = []
+        x = []
+        x.append(subject)
+        x.append('_full_trial_head.bag')
+        x.append('head')
+        file_details.append(x)
+
+        x = []
+        x.append(subject)
+        x.append('_full_trial_home.bag')
+        x.append('home')
+        file_details.append(x)
+
+        x = []
+        x.append(subject)
+        x.append('_full_trial_LH1.bag')
+        x.append('LH1')
+        file_details.append(x)
+
+        x = []
+        x.append(subject)
+        x.append('_full_trial_LH2.bag')
+        x.append('LH2')
+        file_details.append(x)
+
+        x = []
+        x.append(subject)
+        x.append('_full_trial_LH3.bag')
+        x.append('LH3')
+        file_details.append(x)
+
+        x = []
+        x.append(subject)
+        x.append('_full_trial_RH1.bag')
+        x.append('RH1')
+        file_details.append(x)
+
+        x = []
+        x.append(subject)
+        x.append('_full_trial_RH2.bag')
+        x.append('RH2')
+        file_details.append(x)
+
+        x = []
+        x.append(subject)
+        x.append('_full_trial_RH3.bag')
+        x.append('RH3')
+        file_details.append(x)
+
+        x = []
+        x.append(subject)
+        x.append('_full_trial_LL1.bag')
+        x.append('LL1')
+        file_details.append(x)
+
+        x = []
+        x.append(subject)
+        x.append('_full_trial_LL2.bag')
+        x.append('LL2')
+        file_details.append(x)
+
+        x = []
+        x.append(subject)
+        x.append('_full_trial_RL1.bag')
+        x.append('RL1')
+        file_details.append(x)
+
+        x = []
+        x.append(subject)
+        x.append('_full_trial_RL2.bag')
+        x.append('RL2')
+        file_details.append(x)
+
+        file_details_dict[str(subject)] = file_details
+
+
+    for subject in [17]:
+        file_details = []
+        x = []
+        x.append(subject)
+        x.append('_full_trial_head.bag')
+        x.append('head')
+        file_details.append(x)
+
+        x = []
+        x.append(subject)
+        x.append('_full_trial_LH1.bag')
+        x.append('LH1')
+        file_details.append(x)
+
+        x = []
+        x.append(subject)
+        x.append('_full_trial_LH2.bag')
+        x.append('LH2')
+        file_details.append(x)
+
+        x = []
+        x.append(subject)
+        x.append('_full_trial_LH3.bag')
+        x.append('LH3')
+        file_details.append(x)
+
+        x = []
+        x.append(subject)
+        x.append('_full_trial_RH1.bag')
+        x.append('RH1')
+        file_details.append(x)
+
+        x = []
+        x.append(subject)
+        x.append('_full_trial_RH2.bag')
+        x.append('RH2')
+        file_details.append(x)
+
+        x = []
+        x.append(subject)
+        x.append('_full_trial_RH3.bag')
+        x.append('RH3')
+        file_details.append(x)
+
+        x = []
+        x.append(subject)
+        x.append('_full_trial_LL.bag')
+        x.append('LL')
+        file_details.append(x)
+
+        x = []
+        x.append(subject)
+        x.append('_full_trial_RL.bag')
+        x.append('RL')
+        file_details.append(x)
+
+        file_details_dict[str(subject)] = file_details
+
+
+    #print file_details_dict['9']
+    database_path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials'
+
+    for subject in [1]:
+    #for subject in [2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]:
+
+
+
+        entry = file_details_dict[str(subject)] #the entry has all the filename information for a subject, such as RH1, RH2, etc
+        subject_alldata = {}
+
+        for detail in entry: #the detail is for a specific bag file such as RH1
+
+            #print detail[2]
+
+            subject_detaildata = bagtopkl.read_bag(detail[0], detail[1])
+            #pkl.dump(database_path, open(database_path+detail[2],'.p', "wb"))
+            pkl.dump(subject_detaildata,open(os.path.join(database_path,'subject_'+str(subject),'p_files',detail[2]+'.p'), 'wb'))
+
+
