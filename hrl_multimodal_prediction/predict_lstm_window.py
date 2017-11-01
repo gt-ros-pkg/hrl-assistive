@@ -68,7 +68,7 @@ from keras.callbacks import EarlyStopping, CSVLogger, ModelCheckpoint
 #*Note that parameters and operations related to the window size are hardcoded for now, so don't change them
 
 #Configurations
-SOUND_FOLDER = './sounds/'
+SOUND_FOLDER = './sounds/cropped/'
 CSV_FOLDER = './csv/'
 EPOCHS = 10
 # N_PRE = 10
@@ -118,21 +118,11 @@ def train_model(model, dataX, dataY):
 
     csv_logger = CSVLogger('training_audio.log')
     escb = EarlyStopping(monitor='val_loss', patience=2, verbose=1)
-    checkpoint = ModelCheckpoint("models/audio-{epoch:02d}-{val_loss:.2f}.hdf5", 
+    checkpoint = ModelCheckpoint("models/combined-{epoch:02d}-{val_loss:.2f}.hdf5", 
         monitor='val_loss', save_best_only=True, verbose=1) #, period=2)
 
     model.fit(dataX, dataY, shuffle=True, batch_size=256, verbose=1, #initial_epoch=50,
               validation_split=0.3, nb_epoch=500, callbacks=[csv_logger, escb, checkpoint])
-
-    #matplotlib inline
-    # print "Training history"
-    # fig = plt.figure(figsize=(10,4))
-    # ax1 = fig.add_subplot(1, 2, 1)
-    # plt.plot(model.history.history['loss'])
-    # ax1.set_title('loss')
-    # ax2 = fig.add_subplot(1, 2, 2)
-    # plt.plot(model.history.history['val_loss'])
-    # ax2.set_title('validation loss')
 
 def normalize(y):
     # normalize - for feeding into LSTM
@@ -189,7 +179,7 @@ def scale_back(seq, min_y, max_y):
 
 def create_data(n_pre, n_post, combined_filename):
     if AUDIO_DATA and IMAGE_DATA:
-        print 'using audio and image mode'
+        print 'using audio and image mode...'
         audio_dataX = []
         audio_dataY = []
         image_dataX = []
@@ -254,8 +244,12 @@ def create_data(n_pre, n_post, combined_filename):
         #audio normalize over entire samples and mfccs
         audio_dataX = np.array(audio_dataX)
         audio_dataY = np.array(audio_dataY)
+        print audio_dataX.shape
+        print audio_dataY.shape
         #For Prediction
+        print 'bug fixed at this point'
         audio_dataX = audio_dataX[0]
+        audio_dataY = audio_dataY[0]
         #Comment out 2 lines below for Predction -- really crappy code for now
         # audio_dataX = np.concatenate((audio_dataX[0], audio_dataX[1], audio_dataX[2]), axis=0)
         # audio_dataY = np.concatenate((audio_dataY[0], audio_dataY[1], audio_dataY[2]), axis=0)
@@ -263,12 +257,16 @@ def create_data(n_pre, n_post, combined_filename):
         audio_dataY, min_audio_dataY, max_audio_dataY = normalize(audio_dataY)
         audio_dataX = np.array(audio_dataX, dtype=float)
         audio_dataY = np.array(audio_dataY, dtype=float) 
+        print audio_dataX.shape
+        print audio_dataY.shape
 
         #image normalize over entire samples and xyz
         image_dataX = np.array(image_dataX)
         image_dataY = np.array(image_dataY)
         #For Prediction
+        print 'bug fixed at this point'
         image_dataX = image_dataX[0]
+        image_dataY = image_dataY[0]
         #Comment out 2 lines below for Predction -- really crappy code for now
         # image_dataX = np.concatenate((image_dataX[0], image_dataX[1], image_dataX[2]), axis=0)
         # image_dataY = np.concatenate((image_dataY[0], image_dataY[1], image_dataY[2]), axis=0)
@@ -277,6 +275,7 @@ def create_data(n_pre, n_post, combined_filename):
         image_dataX = np.array(image_dataX, dtype=float)
         image_dataY = np.array(image_dataY, dtype=float) 
 
+        print 'audio image separate'
         print audio_dataX.shape
         print audio_dataY.shape
         print image_dataX.shape
@@ -285,6 +284,7 @@ def create_data(n_pre, n_post, combined_filename):
         #combine normalized audio and image data
         combined_dataX = np.concatenate((audio_dataX, image_dataX), axis=2)
         combined_dataY = np.concatenate((audio_dataY, image_dataY), axis=1)
+        print 'audio image combined'
         print combined_dataX.shape
         print combined_dataY.shape
 
@@ -367,7 +367,10 @@ def reconstruct_audio(mfccs, sr, y_shape):
     #print recon
     #print recon.shape
 
-    wav.write('./sounds/predicted/' + 'combined_predict_testdata13' +'FromMFCC3.wav', sr, recon)
+    wav.write('./sounds/predicted/' + 'combined_predict_testdata20' +'FromMFCC3.wav', sr, recon)
+
+def reconstruct_image(image):
+    np.savetxt('./csv/predicted/' + 'combined_predict_testdata20' + '.txt', image)
 
 def test_prediction():
     os.environ["KERAS_BACKEND"] = "tensorflow"
@@ -413,23 +416,44 @@ def test_prediction():
     # Prepare Testing Data - MODIFIED(COMBINED DATA)
     (sr, min_audio_dataX, max_audio_dataX, min_audio_dataY, max_audio_dataY, 
         min_image_dataX, max_image_dataX, min_image_dataY, max_image_dataY, 
-        combined_dataX, combined_dataY) = create_data(WINDOW_SIZE_IN, WINDOW_SIZE_OUT, {'data13.txt':'data13crop4.wav'})
+        combined_dataX, combined_dataY) = create_data(WINDOW_SIZE_IN, WINDOW_SIZE_OUT, {'data20.txt':'data20crop4.wav'})
     datain = combined_dataX
     print 'shape?'
     print datain.shape
+    print combined_dataY.shape
     y_shape = 512*(NUM_STEP_SHOW-1)
 
-    combined_predict = model.predict(datain)
+    #################################
+    seq = []
+    for i in range(datain.shape[0]):
+        tmp = datain[i]
+        tmp = np.expand_dims(tmp, axis=0)
+        print 'preidction loop'
+        print tmp.shape
+        predicted = model.predict(tmp)
+        print predicted.shape
+        seq.append(predicted[0])
+    seq = np.array(seq)
+    print seq
+    print seq.shape
+    combined_predict = seq
+    #################################
+
     combined_predict = np.rollaxis(combined_predict, 1, 0) # (array, axis, start=0), mfccformat = (feature, time)
     print 'predicted test data'
     print combined_predict.shape
     #print combined_predict
     #Need to extract mfccs only from the combined
     audio_predict = combined_predict[0:3,:] #mfcc=[0:3,:], xyz=[3:6,:]
-    print audio_predict.shape
+    image_predict = combined_predict[3:6,:]
+    # print audio_predict.shape
     audio_predict = scale_back(audio_predict, min_audio_dataX, max_audio_dataX)
-    print audio_predict
+    image_predict = scale_back(image_predict, min_image_dataX, max_image_dataX)
+    # print audio_predict
     reconstruct_audio(audio_predict, sr, y_shape)
+    reconstruct_image(image_predict)
+    print image_predict.shape
+    print image_predict
 
 def main():
     test_prediction()

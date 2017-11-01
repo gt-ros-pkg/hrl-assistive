@@ -62,7 +62,7 @@ def dataset_creator():
     # bag_files = ['data1', 'data2', 'data3', 'data4', 'data5']
     # file_length = [5, 3, 3, 3, 3]
 
-    bag_files = {'data1':5, 'data2':3, 'data3':3, 'data4':3, 'data5':3, 'data13':3}
+    bag_files = {'data1':5, 'data2':3, 'data3':3, 'data4':3, 'data5':3, 'data13':3, 'data20':4}
 
     # for bagfile in bag_files:
     # bagfile = 'data1.bag'

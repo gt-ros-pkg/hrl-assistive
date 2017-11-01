@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import librosa
 import librosa.display
 
-y, sr = librosa.load('./sounds/original/data13.wav')
+y, sr = librosa.load('./sounds/cropped/data13crop4.wav')
 
 mfccs = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=3)
 
