@@ -454,11 +454,11 @@ if __name__ == '__main__':
     subject_std = []
     subject_scan_count = 0
     time_ranges = []
-    filename = '_full_trial_home.bag'
+    filename = '_full_trial_head.bag'
     #filename = '_mat_o.bag'
     method = 'center_of_mass'  # options are: 'blob', 'center_of_mass'
-    #for subject in [2,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18]:
-    for subject in [1]:
+    for subject in [1,2,3,4,5,6,7,8]:
+    #for subject in [8]:
         new_mean, new_std, new_count, new_time_range = head_blob.read_bag(subject, filename, method, visualize=False)
         subject_means.append(new_mean)
         subject_std.append(new_std)

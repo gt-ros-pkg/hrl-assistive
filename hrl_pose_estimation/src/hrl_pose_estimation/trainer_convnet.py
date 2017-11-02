@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import sys
 import os
+import time
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.pylab import *
@@ -8,6 +9,7 @@ from matplotlib.pylab import *
 import cPickle as pkl
 import random
 from scipy import ndimage
+import scipy.stats as ss
 from skimage.feature import hog
 from skimage import data, color, exposure
 
@@ -66,6 +68,26 @@ class PhysicalTrainer():
         #Entire pressure dataset with coordinates in world frame
 
 
+        #we'll be loading this later
+        self.train_val_losses = load_pickle('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/train_val_losses.p')
+        #print self.train_val_losses
+
+        if self.opt.sitting == True:
+            print 'appending to sitting losses'
+            self.train_val_losses['train_sitting_flip_shift_nd_' + str(self.opt.leaveOut)] = []
+            self.train_val_losses['val_sitting_flip_shift_nd_' + str(self.opt.leaveOut)] = []
+            self.train_val_losses['epoch_sitting_flip_shift_nd_' + str(self.opt.leaveOut)] = []
+        else:
+            print 'appending to laying losses'
+            self.train_val_losses['train_flip_shift_nd_nohome_1000e_'+str(self.opt.leaveOut)] = []
+            self.train_val_losses['val_flip_shift_nd_nohome_1000e_'+str(self.opt.leaveOut)] = []
+            self.train_val_losses['epoch_flip_shift_nd_nohome_1000e_' + str(self.opt.leaveOut)] = []
+
+
+
+
+
+
         #Here we concatenate all subjects in the training database in to one file
         dat = []
         for some_subject in training_database_file:
@@ -112,12 +134,15 @@ class PhysicalTrainer():
 
         rand_keys = dat
         random.shuffle(rand_keys)
-        self.dataset_y = [] #Initialization for the entire dataset 
+        self.dataset_y = [] #Initialization for the entire dataset
+
         
         self.train_x_flat = [] #Initialize the training pressure mat list
         for entry in range(len(dat_rand)):
             self.train_x_flat.append(dat_rand[entry][0])
         train_x = self.preprocessing_pressure_array_resize(self.train_x_flat)
+        train_x = np.array(train_x)
+        train_x = self.pad_pressure_mats(train_x)
         self.train_x_tensor = torch.Tensor(train_x)
 
 
@@ -133,6 +158,8 @@ class PhysicalTrainer():
         for entry in range(len(test_dat)):
             self.test_x_flat.append(test_dat[entry][0])
         test_x = self.preprocessing_pressure_array_resize(self.test_x_flat)
+        test_x = np.array(test_x)
+        test_x = self.pad_pressure_mats(test_x)
         self.test_x_tensor = torch.Tensor(test_x)
 
         self.test_y_flat = [] #Initialize the ground truth list
@@ -149,24 +176,11 @@ class PhysicalTrainer():
         self.mat_frame_joints = []
 
 
-    def compute_HoG(self, data):
-        '''Computes a HoG(Histogram of gradients for a list of images provided
-        to it. Returns a list of flattened lists'''
-        flat_hog = []
-        if self.verbose==True: print np.shape(data), 'Size of dataset we are performing HoG on'
-        print "*****Begin HoGing the dataset*****"
-        for index in range(len(data)):
-            print "HoG being applied over image number: {}".format(index)
-            #Compute HoG of the current pressure map
-            fd, hog_image = hog(data[index], orientations=8, 
-                    pixels_per_cell=(4,4), cells_per_block = (1, 1), 
-                    visualise=True)
-            flat_hog.append(fd) 
-            #self.visualize_pressure_map(data[index])
-            #print hog_image[30], data[index][30]
-   
-        return flat_hog
-
+    def pad_pressure_mats(self,NxHxWimages):
+        padded = np.zeros((NxHxWimages.shape[0],NxHxWimages.shape[1]+20,NxHxWimages.shape[2]+20))
+        padded[:,10:74,10:37] = NxHxWimages
+        NxHxWimages = padded
+        return NxHxWimages
 
     def chi2_distance(self, histA, histB, eps = 1e-10):
         # compute the chi-squared distance
@@ -201,18 +215,6 @@ class PhysicalTrainer():
         return p_map_dataset
 
 
-    def preprocessing_pressure_map_upsample(self, data, multiple=2, order=1):
-        '''Will upsample an incoming pressure map dataset'''
-        p_map_highres_dataset = []
-        for map_index in range(len(data)):
-            #Upsample the current map using bilinear interpolation
-            p_map_highres_dataset.append(
-                    ndimage.zoom(data[map_index], multiple, order=order))
-        if self.verbose: print len(p_map_highres_dataset[0]),'x',len(p_map_highres_dataset[0][0]), 'size of an upsampled pressure map'
-        return p_map_highres_dataset
-
- 
-
     def compute_pixel_variance(self, data):
         weight_matrix = np.std(data, axis=0)
         if self.verbose == True: print len(weight_matrix),'x', len(weight_matrix[0]), 'size of weight matrix'
@@ -230,6 +232,107 @@ class PhysicalTrainer():
         if self.verbose == True: print len(y),'x', len(y[0]), 'size of y matrix'
         if self.verbose == True: print len(z),'x', len(z[0]), 'size of z matrix'
         return weight_matrix
+
+
+    def synthetic_shiftxy(self, images, targets):
+        x = np.arange(-10, 11)
+        xU, xL = x + 0.5, x - 0.5
+        prob = ss.norm.cdf(xU, scale=3) - ss.norm.cdf(xL, scale=3)
+        prob = prob / prob.sum()  # normalize the probabilities so their sum is 1
+        modified_x = np.random.choice(x, size=images.shape[0], p=prob)
+
+
+        y = np.arange(-10, 11)
+        yU, yL = y + 0.5, y - 0.5
+        prob = ss.norm.cdf(yU, scale=3) - ss.norm.cdf(yL, scale=3)
+        prob = prob / prob.sum()  # normalize the probabilities so their sum is 1
+        modified_y = np.random.choice(y, size=images.shape[0], p=prob)
+
+        tar_mod = np.reshape(targets, (targets.shape[0], targets.shape[1] / 3, 3))
+
+
+
+        #print images[0,30:34,10:14]
+        #print modified_x[0]
+        for i in np.arange(images.shape[0]):
+            if modified_x[i] > 0:
+                images[i, :, modified_x[i]:] = images[i, :, 0:-modified_x[i]]
+            elif modified_x[i] < 0:
+                images[i, :, 0:modified_x[i]] = images[i, :, -modified_x[i]:]
+
+            if modified_y[i] > 0:
+                images[i, modified_y[i]:,:] = images[i, 0:-modified_y[i], :]
+            elif modified_y[i] < 0:
+                images[i, 0:modified_y[i], :] = images[i, -modified_y[i]:, :]
+
+            tar_mod[i, :, 0] += modified_x[i]*INTER_SENSOR_DISTANCE*1000
+            tar_mod[i, :, 1] -= modified_y[i] * INTER_SENSOR_DISTANCE * 1000
+
+
+        #print images[0, 30:34, 10:14]
+        targets = np.reshape(tar_mod, (targets.shape[0], targets.shape[1]))
+
+        return images, targets
+
+    def synthetic_fliplr(self, images, targets):
+
+        coin = np.random.randint(2, size = images.shape[0])
+        modified = coin
+        original = 1-coin
+
+        im_orig = np.multiply(images,original[:,np.newaxis,np.newaxis])
+        im_mod = np.multiply(images,modified[:,np.newaxis,np.newaxis])
+
+        #flip the x axis on all the modified pressure mat images
+        im_mod = im_mod[:,:,::-1]
+
+        tar_orig = np.multiply(targets,original[:,np.newaxis])
+        tar_mod = np.multiply(targets,modified[:,np.newaxis])
+
+        #change the left and right tags on the target in the z, flip x target left to right
+        tar_mod = np.reshape(tar_mod, (tar_mod.shape[0], tar_mod.shape[1] / 3, 3))
+
+        #flip the x left to right
+        tar_mod[:, :, 0] = (tar_mod[:, :, 0] -371.8) * -1 + 371.8
+
+        #swap in the z
+        dummy = zeros((tar_mod.shape))
+        dummy[:,[2,4,6,8], :] = tar_mod[:, [2,4,6,8], :]
+        tar_mod[:, [2,4,6,8], :] = tar_mod[:, [3,5,7,9], :]
+        tar_mod[:, [3,5,7,9], :] = dummy[:, [2,4,6,8], :]
+        #print dummy[0,:,2], tar_mod[0,:,2]
+
+        tar_mod = np.reshape(tar_mod, (tar_mod.shape[0], tar_orig.shape[1]))
+        tar_mod = np.multiply(tar_mod, modified[:, np.newaxis])
+
+        images = im_orig+im_mod
+        targets = tar_orig+tar_mod
+        return images,targets
+
+    def synthetic_master(self, images_tensor, targets_tensor):
+        self.t1 = time.time()
+        images_tensor = torch.squeeze(images_tensor)
+        #images_tensor.torch.Tensor.permute(1,2,0)
+        images = images_tensor.numpy()
+        targets = targets_tensor.numpy()
+        #print images.shape, targets.shape, 'shapes'
+
+        images, targets = self.synthetic_fliplr(images,targets)
+        images, targets = self.synthetic_shiftxy(images,targets)
+
+        #print images[0, 10:15, 20:25]
+
+        images_tensor = torch.Tensor(images)
+        targets_tensor = torch.Tensor(targets)
+        #images_tensor.torch.Tensor.permute(2, 0, 1)
+        images_tensor = torch.unsqueeze(images_tensor,1)
+        try:
+            self.t2 = time.time() - self.t1
+        except:
+            self.t2 = 0
+        #print self.t2, 'elapsed time'
+        return images_tensor,targets_tensor
+
 
 
 
@@ -252,7 +355,7 @@ class PhysicalTrainer():
 
 
         batch_size = 150
-        num_epochs = 500
+        num_epochs = 1000
         hidden_dim = 12
         kernel_size = 10
 
@@ -282,8 +385,16 @@ class PhysicalTrainer():
         print 'done with epochs, now evaluating'
         self.evaluate('test', verbose=True)
 
+        print self.train_val_losses, 'trainval'
         # Save the model (architecture and weights)
-        torch.save(self.model, opt.trainingType + '.pt')
+
+        if self.opt.sitting == True:
+            torch.save(self.model,'/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leaveOut) + '/p_files/' + opt.trainingType + '_sitting' + '.pt')
+        else:
+            torch.save(self.model, '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_'+str(self.opt.leaveOut)+'/p_files/'+opt.trainingType + '.pt')
+        pkl.dump(self.train_val_losses,
+                 open(os.path.join('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/train_val_losses.p'), 'wb'))
+
 
     def train(self, epoch):
         '''
@@ -299,9 +410,16 @@ class PhysicalTrainer():
 
         #This will loop a total = training_images/batch_size times
         for batch_idx, batch in enumerate(self.train_loader):
+
+
+            batch[0],batch[1] = self.synthetic_master(batch[0], batch[1])
+
+
+
             # prepare data
             sc_last = scores
             images, targets = Variable(batch[0]), Variable(batch[1])
+
 
             self.optimizer.zero_grad()
 
@@ -346,6 +464,18 @@ class PhysicalTrainer():
                       'Train Loss: {:.6f}\tVal Loss: {:.6f}'.format(
                     epoch, examples_this_epoch, len(self.train_loader.dataset),
                     epoch_progress, train_loss, val_loss))
+
+                if self.opt.sitting == True:
+                    print 'appending to sitting losses'
+                    self.train_val_losses['train_sitting_flip_shift_nd_' + str(self.opt.leaveOut)].append(train_loss)
+                    self.train_val_losses['val_sitting_flip_shift_nd_' + str(self.opt.leaveOut)].append(val_loss)
+                    self.train_val_losses['epoch_sitting_flip_shift_nd_' + str(self.opt.leaveOut)].append(epoch)
+                else:
+                    self.train_val_losses['train_flip_shift_nd_nohome_1000e_' + str(self.opt.leaveOut)].append(train_loss)
+                    self.train_val_losses['val_flip_shift_nd_nohome_1000e_' + str(self.opt.leaveOut)].append(val_loss)
+                    self.train_val_losses['epoch_flip_shift_nd_nohome_1000e_' + str(self.opt.leaveOut)].append(epoch)
+
+
 
     def evaluate(self, split, verbose=False, n_batches=None):
         '''
@@ -425,274 +555,6 @@ class PhysicalTrainer():
                 np.concatenate(([['', '', ''], ['x, cm', 'y, cm', 'z, cm']], error_std))))))
         print data, error_std
 
-    def train_hog_knn(self):
-        '''Runs training on the dataset using the Upsample+ HoG+
-        + K Nearest Neighbor Regression technique'''
-        #Number of neighbors
-        n_neighbors = 5
-        #Resize incoming pressure map
-        pressure_map_dataset_lowres_train = (
-            self.preprocessing_pressure_array_resize(self.dataset_x_flat))
-        #Upsample the lowres training dataset 
-        pressure_map_dataset_highres_train = (
-            self.preprocessing_pressure_map_upsample(
-                pressure_map_dataset_lowres_train))
-
-        self.weight_vector = (self.compute_pixel_variance(pressure_map_dataset_highres_train))
-
-        weighted_p_map = np.multiply(pressure_map_dataset_highres_train,
-                self.weight_vector)
-
-        if self.verbose==True: print np.shape(weighted_p_map)[0], np.shape(weighted_p_map)[1], np.shape(weighted_p_map)[2], 'dims of weighted_p_map'
-
-
-        weighted_dataset_flat = np.zeros((np.shape(weighted_p_map)[0],
-                np.shape(weighted_p_map)[1]*np.shape(weighted_p_map)[2]))
-
-        if self.verbose == True: print np.shape(weighted_dataset_flat)[0],np.shape(weighted_dataset_flat)[1], 'dims of flattened weighted_p_map'
-
-        #here enumerate the weighted_dataset_flat with flattened entries of weighted_p_map
-        for i in range(np.shape(weighted_p_map)[0]): #i goes from 0 to whatever number of pressure mat readings we have
-            curr_map = weighted_p_map[i][:][:]
-            weighted_dataset_flat[i][:] = np.reshape(curr_map,
-                    (np.shape(curr_map)[0]*np.shape(curr_map)[1]))
-
-
-        #p_map_normalized = self.normalize_data(
-                #pressure_map_dataset_highres_train)
-        #Compute HoG of the current(training) pressure map dataset
-        pressure_hog_train = (self.compute_HoG(pressure_map_dataset_highres_train))
-
-        #OPTIONAL: PCA STAGE
-        #X = self.pca_pressure_map( self.train_y, False)
-        #Now we train a Ridge regression on the dataset of HoGs
-        #self.regr = neighbors.KNeighborsRegressor(n_neighbors,
-        #weights='distance')
-        #self.regr = (neighbors.KNeighborsRegressor(n_neighbors,
-        #weights='distance', metric='pyfunc', func=self.chi2_distance))
-        
-        self.regr = (neighbors.KNeighborsRegressor(n_neighbors,
-                weights='distance', metric='pyfunc'))
-       
-        print "JOINT STANDARD DEVIATION"
-        joint_std_dev = self.find_dataset_deviation()
-        print joint_std_dev
-        sys.exit()
-        scores = cross_validation.cross_val_score(
-                self.regr, weighted_dataset_flat, self.dataset_y, cv=self.cv_fold)
-        print("Accuracy after k-fold cross validation: %0.2f (+/- %0.2f)" 
-                % (scores.mean(), scores.std() * 2))
-
-        predicted = cross_validation.cross_val_predict(
-                self.regr, np.asarray(pressure_hog_train), self.dataset_y, cv=self.cv_fold)
-        ##Mean Squared Error
-        print("Residual sum of squares: %.8f"
-              % np.mean((predicted - self.dataset_y) **2))
-        diff = predicted - self.dataset_y
-        mean_error = np.mean(np.linalg.norm(diff, axis = 1))
-        joint_error = np.zeros([np.shape(diff)[0],np.shape(diff)[1]/3])
-        for i in range(np.shape(diff)[0]):
-            diff_row = diff[i][:].reshape(np.shape(diff)[1]/3, 3)
-            joint_error[i][:] = np.linalg.norm(diff_row, axis = 1)
-        mean_joint_error =  np.mean(joint_error, axis = 0)
-        std_joint_error = np.std(joint_error, axis = 0)
-        print "MEAN JOINT ERROR AFTER {} FOLD CV".format(self.cv_fold)
-        print mean_joint_error
-        print "STANDARD DEVIATION AFTER {} FOLD CV".format(self.cv_fold) 
-        print std_joint_error
-        try:
-            total_mean_error = pkl.load(open('./dataset/total_mean_error.p', 'rb'))
-        except:
-            total_mean_error = np.asarray(mean_joint_error)
-            total_std_dev = np.asarray(std_joint_error)
-            pkl.dump(total_mean_error, open('./dataset/total_mean_error.p', 'wb'))
-            pkl.dump(total_std_dev, open('./dataset/total_std_dev.p', 'wb'))
-            sys.exit()
-
-        total_std_dev = pkl.load(open('./dataset/total_std_dev.p', 'rb'))
-        total_mean_error = np.vstack((total_mean_error,
-                                                np.asarray(mean_joint_error)))
-        total_std_dev = np.vstack((total_std_dev, std_joint_error))
-        pkl.dump(total_mean_error, open('./dataset/total_mean_error.p', 'wb'))
-        pkl.dump(total_std_dev, open('./dataset/total_std_dev.p', 'wb'))
-        ## Train the model using the training sets
-        self.regr.fit(weighted_dataset_flat, self.dataset_y)
-        #Pickle the trained model
-        #pkl.dump(self.regr, open('./dataset/trained_model_'+'HoG_KNN.p', 'wb'))
-        return self.regr 
-
-
-    def test_learning_algorithm(self, trained_model):
-        '''Tests the learning algorithm we're trying to implement'''
-        test_x_lowres = (
-            self.preprocessing_pressure_array_resize(self.test_x_flat))
-        #Upsample the current map using bilinear interpolation
-        test_x_highres = self.preprocessing_pressure_map_upsample(
-                test_x_lowres)
-
-        self.weight_vector = (self.compute_pixel_variance(test_x_highres))
-
-        weighted_p_map = np.multiply(test_x_highres,
-                self.weight_vector)
-        weighted_dataset_flat = np.zeros((np.shape(weighted_p_map)[0],
-                np.shape(weighted_p_map)[1]*np.shape(weighted_p_map)[2]))
-
-        for i in range(np.shape(weighted_p_map)[0]):
-            curr_map = weighted_p_map[i][:][:]
-            weighted_dataset_flat[i][:] = np.reshape(curr_map,
-                    (np.shape(curr_map)[0]*np.shape(curr_map)[1]))
-
-        #Compute HoG of the current(test) pressure map dataset
-        test_hog = self.compute_HoG(test_x_highres)
-
-        #Load training model
-        regr = trained_model
-
-        # The coefficients
-        try:
-            print('Coefficients: \n', regr.coef_)
-        except AttributeError:
-            pass
-
-        print np.shape(regr.coef_), 'size of regression coefficients'
-        print np.shape(weighted_dataset_flat), 'size of weighted flat test dataset'
-        print np.shape(test_hog), 'size of the HOG of the test set'
-        print np.shape(self.test_y), 'size of test y matrix'
-
-        # The mean square error
-        #diff = regr.predict(weighted_dataset_flat) - self.test_y
-        diff = regr.predict(test_hog) - self.test_y
-
-#        print "Max absolute distance in each axis"
-        #mean_indiv_error = np.ndarray.max(np.absolute(diff), axis = 0)
-        #mean_indiv_error = mean_indiv_error.reshape(np.shape(mean_indiv_error)[0]/3, 3)
-        #std_indiv_error = np.std(np.absolute(diff), axis = 0)
-        #print mean_indiv_error
-        #print "Std dev in absolute distance"
-        #print std_indiv_error
-        #sys.exit()
-        mean_error = np.mean(np.linalg.norm(diff, axis = 1))
-        joint_error = np.zeros([np.shape(diff)[0],np.shape(diff)[1]/3])
-        for i in range(np.shape(diff)[0]):
-            diff_row = diff[i][:].reshape(np.shape(diff)[1]/3, 3)
-            joint_error[i][:] = np.linalg.norm(diff_row, axis = 1)
-        mean_joint_error =  np.mean(joint_error, axis = 0)
-        std_joint_error = np.std(joint_error, axis = 0)
-        # Explained variance score: 1 is perfect prediction
-        #print("Residual sum of squares: %.8f"
-              #% np.mean((regr.predict(test_hog) - self.test_y) **2))
-        #print('Variance score: %.8f' % regr.score(test_hog, self.test_y))
-        #print ('Mean Euclidian Error (meters): %.8f' % mean_error)
-        print 'Mean Joint Error (meters):' 
-        print mean_joint_error
-        print ('Head, Torso, Elbows, Hands, Knees, Ankles')
-        print "Variance Joint Error"
-        print std_joint_error
-        print ('Head, Torso, Elbows, Hands, Knees, Ankles')
-        ##Plot n test poses at random
-        #estimated_y = regr.predict(weighted_dataset_flat)
-        #distances, indices = regr.kneighbors(weighted_dataset_flat)
-        estimated_y = regr.predict(test_hog)
-        distances, indices = regr.kneighbors(test_hog)
-        train_x_lowres = self.preprocessing_pressure_array_resize(self.train_x_flat)
-
-        for i in range(np.shape(indices)[0]):
-            taxel_real = []
-            plt.subplot(161)
-            [taxel_real.append(self.mat_to_taxels(item)) for item in (
-                list(self.chunks(self.test_y[i], 3)))]
-            for item in taxel_real:
-                test_x_lowres[i][(NUMOFTAXELS_X-1) - item[1], item[0]] = 300
-            self.visualize_pressure_map(test_x_lowres[i])
-
-            taxel_real = []
-            plt.subplot(162)
-            [taxel_real.append(self.mat_to_taxels(item)) for item in (
-                list(self.chunks(self.train_y[indices[i][0]], 3)))]
-            for item in taxel_real:
-                train_x_lowres[indices[i][0]][(NUMOFTAXELS_X-1) - item[1], item[0]] = 300
-            self.visualize_pressure_map(train_x_lowres[indices[i][0]])
-
-            taxel_real = []
-            plt.subplot(163)
-            [taxel_real.append(self.mat_to_taxels(item)) for item in (
-                list(self.chunks(self.train_y[indices[i][1]], 3)))]
-            for item in taxel_real:
-                train_x_lowres[indices[i][1]][(NUMOFTAXELS_X-1) - item[1], item[0]] = 300
-            self.visualize_pressure_map(train_x_lowres[indices[i][1]])
-
-            taxel_real = []
-            plt.subplot(164)
-            [taxel_real.append(self.mat_to_taxels(item)) for item in (
-                list(self.chunks(self.train_y[indices[i][2]], 3)))]
-            for item in taxel_real:
-                train_x_lowres[indices[i][2]][(NUMOFTAXELS_X-1) - item[1], item[0]] = 300
-            self.visualize_pressure_map(train_x_lowres[indices[i][2]])
-
-            taxel_real = []
-            plt.subplot(165)
-            [taxel_real.append(self.mat_to_taxels(item)) for item in (
-                list(self.chunks(self.train_y[indices[i][3]], 3)))]
-            for item in taxel_real:
-                train_x_lowres[indices[i][3]][(NUMOFTAXELS_X-1) - item[1], item[0]] = 300
-            self.visualize_pressure_map(train_x_lowres[indices[i][3]])
-
-            taxel_real = []
-            plt.subplot(166)
-            [taxel_real.append(self.mat_to_taxels(item)) for item in (
-                list(self.chunks(self.train_y[indices[i][4]], 3)))]
-            for item in taxel_real:
-                train_x_lowres[indices[i][4]][(NUMOFTAXELS_X-1) - item[1], item[0]] = 300
-            self.visualize_pressure_map(train_x_lowres[indices[i][4]])
-            #plt.show()
-#        plt.subplot(131)
-        #taxel_est = []
-        #taxel_real = []
-        #img = random.randint(1, len(test_x_lowres)-1)
-        #for item in (list(self.chunks(estimated_y[img], 3))):
-            #print item
-
-        #[taxel_est.append(self.mat_to_taxels(item)) for item in (
-           #list(self.chunks(estimated_y[img], 3)))]
-        #for item in taxel_est:
-            #test_x_lowres[img][(NUMOFTAXELS_X-1) - item[1], item[0]] = 200
-        #[taxel_real.append(self.mat_to_taxels(item)) for item in (
-            #list(self.chunks(self.test_y[img], 3)))]
-        #for item in taxel_real:
-            #test_x_lowres[img][(NUMOFTAXELS_X-1) - item[1], item[0]] = 300
-        #self.visualize_pressure_map(test_x_lowres[img])
-        
-        #plt.subplot(132)
-        #taxel_est = []
-        #taxel_real = []
-        #img = random.randint(1, len(test_x_lowres)-1)
-        #[taxel_est.append(self.mat_to_taxels(item)) for item in (
-            #list(self.chunks(estimated_y[img], 3)))]
-        #for item in taxel_est:
-            #test_x_lowres[img][(NUMOFTAXELS_X-1) - item[1], item[0]] = 200
-        #[taxel_real.append(self.mat_to_taxels(item)) for item in (
-            #list(self.chunks(self.test_y[img], 3)))]
-        #for item in taxel_real:
-            #print item
-            #test_x_lowres[img][(NUMOFTAXELS_X - 1) - item[1], item[0]] = 300
-        #self.visualize_pressure_map(test_x_lowres[img])
-
-        #plt.subplot(133)
-        #taxel_est = []
-        #taxel_real = []
-        #img = random.randint(1, len(test_x_lowres)-1)
-        #[taxel_est.append(self.mat_to_taxels(item)) for item in (list(self.chunks(estimated_y[img], 3)))]
-        #for item in taxel_est:
-            #test_x_lowres[img][(NUMOFTAXELS_X-1) - item[1], item[0]] = 200
-        #[taxel_real.append(self.mat_to_taxels(item)) for item in (
-            #list(self.chunks(self.test_y[img], 3)))]
-        #for item in taxel_real:
-            #test_x_lowres[img][(NUMOFTAXELS_X-1) - item[1], item[0]] = 300
-        #self.visualize_pressure_map(test_x_lowres[img])
-        #plt.show()
-        return mean_joint_error, std_joint_error
-
-
 
     def chunks(self, l, n):
         """ Yield successive n-sized chunks from l.
@@ -701,64 +563,16 @@ class PhysicalTrainer():
             yield l[i:i+n]
 
 
-    def pca_pressure_map(self, data, visualize = True):
-        '''Computing the 3D PCA of the dataset given to it. If visualize is set
-        to True, we can also visualize the output of this function'''
-        X = data
-        if visualize:
-            fig = plt.figure(1, figsize=(4, 3))
-            plt.clf()
-            ax = Axes3D(fig, rect=[0, 0, .95, 1], elev=48, azim=134)
-            plt.cla()
-
-        pca = decomposition.PCA(n_components=3)
-        pca.fit(X)
-        X = pca.transform(X)
-        if visualize:
-            ax.scatter(X[:, 0], X[:, 1], X[:, 2], cmap=plt.cm.spectral)
-            x_surf = [X[:, 0].min(), X[:, 0].max(),
-                              X[:, 0].min(), X[:, 0].max()]
-            y_surf = [X[:, 0].max(), X[:, 0].max(),
-                              X[:, 0].min(), X[:, 0].min()]
-            x_surf = np.array(x_surf)
-            y_surf = np.array(y_surf)
-            v0 = pca.transform(pca.components_[0])
-            v0 /= v0[-1]
-            v1 = pca.transform(pca.components_[1])
-            v1 /= v1[-1]
-
-            ax.w_xaxis.set_ticklabels([])
-            ax.w_yaxis.set_ticklabels([])
-            ax.w_zaxis.set_ticklabels([])
-            plt.show()
-        return X
+    def visualize_pressure_map(self, p_map, targets_raw=None, scores_raw = None, p_map_val = None, targets_val = None, scores_val = None):
+        print p_map.shape, 'pressure mat size', targets_raw.shape, 'target shape'
+        #p_map = fliplr(p_map)
 
 
-    def mat_to_taxels(self, m_data):
-        ''' 
-        Input:  Nx2 array 
-        Output: Nx2 array
-        '''       
-        #Convert coordinates in 3D space in the mat frame into taxels
-        taxels = np.asarray(m_data) / INTER_SENSOR_DISTANCE
-        '''Typecast into int, so that we can highlight the right taxel 
-        in the pressure matrix, and threshold the resulting values'''
-        taxels = np.rint(taxels)
-        #Thresholding the taxels_* array
-        if taxels[1] < LOW_TAXEL_THRESH_X: taxels[1] = LOW_TAXEL_THRESH_X
-        if taxels[0] < LOW_TAXEL_THRESH_Y: taxels[0] = LOW_TAXEL_THRESH_Y
-        if taxels[1] > HIGH_TAXEL_THRESH_X: taxels[1] = HIGH_TAXEL_THRESH_X
-        if taxels[0] > HIGH_TAXEL_THRESH_Y: taxels[0] = HIGH_TAXEL_THRESH_Y
-        return taxels
 
-
-    def visualize_pressure_map(self, p_map_raw, targets_raw=None, scores_raw = None, p_map_val = None, targets_val = None, scores_val = None):
-        print p_map_raw.shape, 'pressure mat size'
 
         plt.close()
         plt.pause(0.0001)
-        p_map = np.asarray(np.reshape(p_map_raw, self.mat_size))
-        p_map_val = np.asarray(np.reshape(p_map_val, self.mat_size))
+
         fig = plt.figure()
         mngr = plt.get_current_fig_manager()
         # to put it into the upper left corner for example:
@@ -771,8 +585,8 @@ class PhysicalTrainer():
         ax2 = fig.add_subplot(1, 2, 2)
 
 
-        xlim = [-10.0, 35.0]
-        ylim = [70.0, -10.0]
+        xlim = [-2.0, 49.0]
+        ylim = [86.0, -2.0]
         ax1.set_xlim(xlim)
         ax1.set_ylim(ylim)
         ax2.set_xlim(xlim)
@@ -792,51 +606,52 @@ class PhysicalTrainer():
 
         # Visualize targets of training set
         if targets_raw is not None:
-            if type(targets_raw) == list:
-                targets_raw = np.array(targets_raw)
+
             if len(np.shape(targets_raw)) == 1:
                 targets_raw = np.reshape(targets_raw, (len(targets_raw) / 3, 3))
+
+            #targets_raw[:, 0] = ((targets_raw[:, 0] - 0.3718) * -1) + 0.3718
+            print targets_raw
+            #extra_point = np.array([[0.,0.3718,0.7436],[0.,0.,0.]])
+            #extra_point = extra_point/INTER_SENSOR_DISTANCE
+            #ax1.plot(extra_point[0,:],extra_point[1,:], 'r*', ms=8)
+
             target_coord = targets_raw[:, :2] / INTER_SENSOR_DISTANCE
             target_coord[:, 1] -= (NUMOFTAXELS_X - 1)
             target_coord[:, 1] *= -1.0
-            ax1.plot(target_coord[:, 0], target_coord[:, 1], 'y*', ms=8)
+            ax1.plot(target_coord[:, 0]+10, target_coord[:, 1]+10, 'y*', ms=8)
+
         plt.pause(0.0001)
 
         #Visualize estimated from training set
         if scores_raw is not None:
-            if type(scores_raw) == list:
-                scores_raw = np.array(scores_raw)
             if len(np.shape(scores_raw)) == 1:
                 scores_raw = np.reshape(scores_raw, (len(scores_raw) / 3, 3))
             target_coord = scores_raw[:, :2] / INTER_SENSOR_DISTANCE
             target_coord[:, 1] -= (NUMOFTAXELS_X - 1)
             target_coord[:, 1] *= -1.0
-            ax1.plot(target_coord[:, 0], target_coord[:, 1], 'g*', ms=8)
+            ax1.plot(target_coord[:, 0]+10, target_coord[:, 1]+10, 'g*', ms=8)
         ax1.set_title('Training Sample \n Targets and Estimates')
         plt.pause(0.0001)
 
         # Visualize targets of validation set
         if targets_val is not None:
-            if type(targets_val) == list:
-                targets_val = np.array(targets_val)
             if len(np.shape(targets_val)) == 1:
                 targets_val = np.reshape(targets_val, (len(targets_val) / 3, 3))
             target_coord = targets_val[:, :2] / INTER_SENSOR_DISTANCE
             target_coord[:, 1] -= (NUMOFTAXELS_X - 1)
             target_coord[:, 1] *= -1.0
-            ax2.plot(target_coord[:, 0], target_coord[:, 1], 'y*', ms=8)
+            ax2.plot(target_coord[:, 0]+10, target_coord[:, 1]+10, 'y*', ms=8)
         plt.pause(0.0001)
 
         # Visualize estimated from training set
         if scores_val is not None:
-            if type(scores_val) == list:
-                scores_val = np.array(scores_val)
             if len(np.shape(scores_val)) == 1:
                 scores_val = np.reshape(scores_val, (len(scores_val) / 3, 3))
             target_coord = scores_val[:, :2] / INTER_SENSOR_DISTANCE
             target_coord[:, 1] -= (NUMOFTAXELS_X - 1)
             target_coord[:, 1] *= -1.0
-            ax2.plot(target_coord[:, 0], target_coord[:, 1], 'g*', ms=8)
+            ax2.plot(target_coord[:, 0]+10, target_coord[:, 1]+10, 'g*', ms=8)
         ax2.set_title('Validation Sample \n Targets and Estimates')
         plt.pause(0.0001)
 
@@ -955,6 +770,10 @@ if __name__ == "__main__":
                  dest='lab_harddrive', \
                  default=False, \
                  help='Set path to the training database on lab harddrive.')
+    p.add_option('--sitting', action='store_true',
+                 dest='sitting', \
+                 default=False, \
+                 help='Set path to train on sitting data.')
     p.add_option('--verbose', '--v',  action='store_true', dest='verbose',
                  default=False, help='Printout everything (under construction).')
     p.add_option('--log_interval', type=int, default=10, metavar='N',
@@ -963,46 +782,58 @@ if __name__ == "__main__":
     opt, args = p.parse_args()
 
     if opt.lab_harddrive == True:
-        opt.testPath = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/basic_test_dataset_select.p'
-        opt.trainPath = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/basic_train_dataset_select.p'
-        opt.subject4Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_4_dataset.p'
-        opt.subject9Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_9_dataset.p'
-        opt.subject10Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_10_dataset.p'
-        opt.subject11Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_11_dataset.p'
-        opt.subject12Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_12_dataset.p'
-        opt.subject13Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_13_dataset.p'
-        opt.subject14Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_14_dataset.p'
-        opt.subject15Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_15_dataset.p'
-        opt.subject16Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_16_dataset.p'
-        opt.subject17Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_17_dataset.p'
-        opt.subject18Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_18_dataset.p'
+
+        if opt.sitting == True:
+            opt.subject2Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_2/p_files/trainval_sitting_120rh_lh_rl_ll.p'
+            opt.subject3Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_3/p_files/trainval_sitting_120rh_lh_rl_ll.p'
+            opt.subject4Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_4/p_files/trainval_sitting_120rh_lh_rl_ll.p'
+            opt.subject5Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_5/p_files/trainval_sitting_120rh_lh_rl_ll.p'
+            opt.subject6Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_6/p_files/trainval_sitting_120rh_lh_rl_ll.p'
+            opt.subject7Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_7/p_files/trainval_sitting_120rh_lh_rl_ll.p'
+            opt.subject8Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_8/p_files/trainval_sitting_120rh_lh_rl_ll.p'
+
+        else:
+            opt.testPath = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/basic_test_dataset_select.p'
+            opt.trainPath = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/basic_train_dataset_select.p'
+            opt.subject1Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_1/p_files/trainval_200rh1_lh1_rl_ll.p'
+            opt.subject2Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_2/p_files/trainval_200rh1_lh1_rl_ll.p'
+            opt.subject3Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_3/p_files/trainval_200rh1_lh1_rl_ll.p'
+            opt.subject4Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_4/p_files/trainval_200rh1_lh1_rl_ll.p'
+            opt.subject5Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_5/p_files/trainval_200rh1_lh1_rl_ll.p'
+            opt.subject6Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_6/p_files/trainval_200rh1_lh1_rl_ll.p'
+            opt.subject7Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_7/p_files/trainval_200rh1_lh1_rl_ll.p'
+            opt.subject8Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_8/p_files/trainval_200rh1_lh1_rl_ll.p'
 
         training_database_file = []
         if opt.leaveOut == 4:
             test_database_file = opt.subject4Path
-            training_database_file.append(opt.subject9Path)
-            training_database_file.append(opt.subject10Path)
-            training_database_file.append(opt.subject11Path)
-            training_database_file.append(opt.subject12Path)
-            training_database_file.append(opt.subject13Path)
-            training_database_file.append(opt.subject14Path)
-            training_database_file.append(opt.subject15Path)
-            training_database_file.append(opt.subject16Path)
-            training_database_file.append(opt.subject17Path)
-            training_database_file.append(opt.subject18Path)
+            training_database_file.append(opt.subject1Path)
+            training_database_file.append(opt.subject2Path)
+            training_database_file.append(opt.subject3Path)
+            training_database_file.append(opt.subject5Path)
+            training_database_file.append(opt.subject6Path)
+            training_database_file.append(opt.subject7Path)
+            training_database_file.append(opt.subject8Path)
 
-        elif opt.leaveOut == 9:
-            test_database_file = opt.subject9Path
+        elif opt.leaveOut == 1:
+            test_database_file = opt.subject1Path
+            training_database_file.append(opt.subject2Path)
+            training_database_file.append(opt.subject3Path)
             training_database_file.append(opt.subject4Path)
-            training_database_file.append(opt.subject10Path)
-            training_database_file.append(opt.subject11Path)
-            training_database_file.append(opt.subject12Path)
-            training_database_file.append(opt.subject13Path)
-            training_database_file.append(opt.subject14Path)
-            training_database_file.append(opt.subject15Path)
-            training_database_file.append(opt.subject16Path)
-            training_database_file.append(opt.subject17Path)
-            training_database_file.append(opt.subject18Path)
+            training_database_file.append(opt.subject5Path)
+            training_database_file.append(opt.subject6Path)
+            training_database_file.append(opt.subject7Path)
+            training_database_file.append(opt.subject8Path)
+
+        elif opt.leaveOut == 2:
+            test_database_file = opt.subject2Path
+            training_database_file.append(opt.subject1Path)
+            training_database_file.append(opt.subject3Path)
+            training_database_file.append(opt.subject4Path)
+            training_database_file.append(opt.subject5Path)
+            training_database_file.append(opt.subject6Path)
+            training_database_file.append(opt.subject7Path)
+            training_database_file.append(opt.subject8Path)
 
         else:
             print 'please specify which subject to leave out for validation using --leave_out _'

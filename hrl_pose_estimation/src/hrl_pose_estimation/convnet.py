@@ -53,8 +53,8 @@ class CNN(nn.Module):
 
         print 'x'
         self.CNN_fc = nn.Sequential(
-            torch.nn.Linear(1792, 1500),
-            torch.nn.Linear(1500, 1000),
+            torch.nn.Linear(5472, 2500),
+            torch.nn.Linear(2500, 1000),
             torch.nn.Linear(1000, 200),
             torch.nn.Linear(200, 30),
         )
