@@ -10,6 +10,8 @@ import cPickle as pkl
 import random
 from scipy import ndimage
 import scipy.stats as ss
+from scipy.misc import imresize
+from scipy.ndimage.interpolation import zoom
 from skimage.feature import hog
 from skimage import data, color, exposure
 
@@ -234,6 +236,67 @@ class PhysicalTrainer():
         return weight_matrix
 
 
+    def synthetic_scale(self, images, targets):
+
+        x = np.arange(0.85, 1.15, 0.01)
+        xU, xL = x + 0.05, x - 0.05
+        prob = ss.norm.cdf(xU, scale=3) - ss.norm.cdf(xL, scale=3)
+        prob = prob / prob.sum()  # normalize the probabilities so their sum is 1
+        multiplier = np.random.choice(x, size=images.shape[0], p=prob)
+
+        #print multiplier
+        tar_mod = np.reshape(targets, (targets.shape[0], targets.shape[1] / 3, 3))/1000
+
+        for i in np.arange(images.shape[0]):
+            #multiplier[i] = 1
+            resized = zoom(images[i,:,:], multiplier[i])
+            resized = np.clip(resized, 0, 100)
+
+            rl_diff = resized.shape[1] - images[i,:,:].shape[1]
+            ud_diff = resized.shape[0] - images[i,:,:].shape[0]
+            l_clip = np.int(math.ceil((rl_diff) / 2))
+            #r_clip = rl_diff - l_clip
+            u_clip = np.int(math.ceil((ud_diff) / 2))
+            #d_clip = ud_diff - u_clip
+
+            if rl_diff < 0:  # if less than 0, we'll have to add some padding in to get back up to normal size
+                resized_adjusted = np.zeros_like(images[i,:,:])
+                resized_adjusted[-u_clip:-u_clip + resized.shape[0], -l_clip:-l_clip + resized.shape[1]] = np.copy(resized)
+                images[i,:,:] = resized_adjusted
+                shift_factor_x = INTER_SENSOR_DISTANCE * -l_clip
+            elif rl_diff > 0: # if greater than 0, we'll have to cut the sides to get back to normal size
+                resized_adjusted = np.copy(resized[u_clip:u_clip + images[i,:,:].shape[0], l_clip:l_clip + images[i,:,:].shape[1]])
+                images[i,:,:] = resized_adjusted
+                shift_factor_x = INTER_SENSOR_DISTANCE * -l_clip
+            else:
+                shift_factor_x = 0
+
+            if ud_diff < 0:
+                shift_factor_y = INTER_SENSOR_DISTANCE * u_clip
+            elif ud_diff > 0:
+                shift_factor_y = INTER_SENSOR_DISTANCE * u_clip
+            else:
+                shift_factor_y = 0
+            #print shift_factor_y, shift_factor_x
+
+            resized_tar = np.copy(tar_mod[i,:,:])
+            #resized_tar = np.reshape(resized_tar, (len(resized_tar) / 3, 3))
+            # print resized_tar.shape/
+            resized_tar = (resized_tar + INTER_SENSOR_DISTANCE ) * multiplier[i]
+
+            resized_tar[:, 0] = resized_tar[:, 0] + shift_factor_x  - 10*INTER_SENSOR_DISTANCE*(1-multiplier[i]) - INTER_SENSOR_DISTANCE
+            # resized_tar2 = np.copy(resized_tar)
+            resized_tar[:, 1] = resized_tar[:, 1] + 84 * (1 - multiplier[i]) * INTER_SENSOR_DISTANCE  + shift_factor_y - 10*INTER_SENSOR_DISTANCE*(1-multiplier[i]) - INTER_SENSOR_DISTANCE
+            # resized_tar[7,:] = [-0.286,0,0]
+            tar_mod[i,:,:] = resized_tar
+
+        targets = np.reshape(tar_mod, (targets.shape[0], targets.shape[1]))*1000
+
+        return images, targets
+
+
+
+
     def synthetic_shiftxy(self, images, targets):
         x = np.arange(-10, 11)
         xU, xL = x + 0.5, x - 0.5
@@ -249,8 +312,6 @@ class PhysicalTrainer():
         modified_y = np.random.choice(y, size=images.shape[0], p=prob)
 
         tar_mod = np.reshape(targets, (targets.shape[0], targets.shape[1] / 3, 3))
-
-
 
         #print images[0,30:34,10:14]
         #print modified_x[0]
@@ -317,6 +378,7 @@ class PhysicalTrainer():
         targets = targets_tensor.numpy()
         #print images.shape, targets.shape, 'shapes'
 
+        images, targets = self.synthetic_scale(images, targets)
         images, targets = self.synthetic_fliplr(images,targets)
         images, targets = self.synthetic_shiftxy(images,targets)
 
@@ -355,7 +417,7 @@ class PhysicalTrainer():
 
 
         batch_size = 150
-        num_epochs = 1000
+        num_epochs = 100
         hidden_dim = 12
         kernel_size = 10
 
@@ -411,10 +473,19 @@ class PhysicalTrainer():
         #This will loop a total = training_images/batch_size times
         for batch_idx, batch in enumerate(self.train_loader):
 
+            # im_sample = np.copy(batch[0].numpy())
+            # im_sample = np.squeeze(im_sample[0, :])
+            # tar_sample = np.copy(batch[1].numpy())
+            # tar_sample = np.squeeze(tar_sample[0, :]) / 1000
 
             batch[0],batch[1] = self.synthetic_master(batch[0], batch[1])
-
-
+            #
+            # im_sample2 = np.copy(batch[0].numpy())
+            # im_sample2 = np.squeeze(im_sample2[0, :])
+            # tar_sample2 = np.copy(batch[1].numpy())
+            # tar_sample2 = np.squeeze(tar_sample2[0, :]) / 1000
+            #
+            # self.visualize_pressure_map(p_map = im_sample, targets_raw=tar_sample, p_map_val=im_sample2, targets_val=tar_sample2)
 
             # prepare data
             sc_last = scores
@@ -431,7 +502,6 @@ class PhysicalTrainer():
             #print scores.size(), 'scores'
             self.sc = scores
             self.tg = targets
-
 
             #print scores-sc_last
 
@@ -520,7 +590,7 @@ class PhysicalTrainer():
         self.sc_sampleval = output.data.numpy()
         self.sc_sampleval = np.squeeze(self.sc_sampleval[0, :]) / 1000
         self.sc_sampleval = np.reshape(self.sc_sampleval, self.output_size)
-        #self.visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample, self.im_sampleval, self.tar_sampleval, self.sc_sampleval)
+        self.visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample, self.im_sampleval, self.tar_sampleval, self.sc_sampleval)
 
 
 
@@ -664,7 +734,7 @@ class PhysicalTrainer():
         #plt.title('Distance above Bed')
         #plt.pause(0.0001)
 
-
+        #plt.show()
         plt.show(block = False)
 
         return

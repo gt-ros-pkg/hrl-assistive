@@ -4,6 +4,7 @@ import os
 import numpy as np
 import cPickle as pkl
 import random
+import math
 
 # ROS
 #import roslib; roslib.load_manifest('hrl_pose_estimation')
@@ -19,6 +20,7 @@ from scipy.ndimage.filters import gaussian_filter
 from scipy import interpolate
 from scipy.misc import imresize
 from scipy.ndimage.interpolation import zoom
+import scipy.stats as ss
 ## from skimage import data, color, exposure
 from sklearn.decomposition import PCA
 
@@ -134,7 +136,7 @@ class DataVisualizer():
 
 
         #print len(validation_set)
-        batch_size = 850
+        batch_size = 1
 
         self.test_x_tensor = self.test_x_tensor.unsqueeze(1)
         self.test_dataset = torch.utils.data.TensorDataset(self.test_x_tensor, self.test_y_tensor)
@@ -171,24 +173,71 @@ class DataVisualizer():
             self.sc_sample = np.squeeze(self.sc_sample[0, :]) / 1000
             self.sc_sample = np.reshape(self.sc_sample, self.output_size)
 
-            multiplier = 1.2
 
-            print self.im_sample[0:50, 10:30].astype(int), 'orig'
+
+
+
+            x = np.arange(0.85, 1.15, 0.01)
+            xU, xL = x + 0.05, x - 0.05
+            prob = ss.norm.cdf(xU, scale=3) - ss.norm.cdf(xL, scale=3)
+            prob = prob / prob.sum()  # normalize the probabilities so their sum is 1
+            multiplier = np.random.choice(x, size=1, p=prob)[0]
+
+            print multiplier
+
+
+            #multiplier = 1.2
+            #print self.im_sample[0:50, 10:30].astype(int), 'orig'
             resized = zoom(self.im_sample, multiplier)
-            print resized[0:50, 10:30].astype(int)
+            resized = np.clip(resized, 0, 100)
+            #print resized[0:50, 10:30].astype(int)
+            print resized.shape
+            rl_diff = resized.shape[1]-self.im_sample.shape[1]
+            ud_diff = resized.shape[0]-self.im_sample.shape[0]
+            l_clip = np.int(math.ceil((rl_diff)/2))
+            r_clip = rl_diff - l_clip
+            u_clip = np.int(math.ceil((ud_diff)/2))
+            d_clip = ud_diff - u_clip
+
+            print l_clip, r_clip, u_clip, d_clip
+
+            if rl_diff < 0: #if less than 0, we'll have to add some padding in to get back up to normal size
+                resized_adjusted = np.zeros_like(self.im_sample)
+                resized_adjusted[-u_clip:-u_clip+resized.shape[0],-l_clip:-l_clip+resized.shape[1]] = resized
+                resized = resized_adjusted
+                shift_factor_x = 0.0286*-l_clip
+            elif rl_diff > 0:
+                resized_adjusted = resized[u_clip:u_clip+self.im_sample.shape[0],l_clip:l_clip+self.im_sample.shape[1]]
+                resized = resized_adjusted
+                shift_factor_x = 0.0286*-l_clip
+            else:
+                shift_factor_x = 0
+
+            if ud_diff < 0:
+                shift_factor_y = 0.0286 * u_clip
+            elif ud_diff > 0:
+                shift_factor_y = 0.0286 * u_clip
+            else:
+                shift_factor_y = 0
+
 
             resized_tar = np.copy(self.tar_sample)
             resized_tar = np.reshape(resized_tar, (len(resized_tar) / 3, 3))
-            print resized_tar.shape
-            resized_tar[:,0] = (resized_tar[:,0] + .286)*multiplier - 0.286
+            #print resized_tar.shape
+            resized_tar = (resized_tar+0.286)*multiplier
+
+            resized_tar[:,0] = resized_tar[:,0] - 0.286 + shift_factor_x
             #resized_tar2 = np.copy(resized_tar)
-            resized_tar[:,1] = (resized_tar[:,1] + .286)*multiplier + 84*(1-multiplier)*.0286 - .286
+            resized_tar[:,1] = resized_tar[:,1] + 84*(1-multiplier)*.0286 - .286 + shift_factor_y
             #resized_tar[7,:] = [-0.286,0,0]
 
-            self.visualize_pressure_map(self.im_sample, self.tar_sample, p_map_val=resized, targets_val=resized_tar)
 
 
-            #self.visualize_pressure_map_shift(self.im_sample)
+
+
+            self.visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample, p_map_val=resized, targets_val=resized_tar)
+
+
 
 
 
@@ -343,56 +392,11 @@ class DataVisualizer():
         #plt.title('Distance above Bed')
         #plt.pause(0.0001)
 
-        plt.show()
-        #plt.show(block = False)
+        #plt.show()
+        plt.show(block = False)
 
         return
 
-
-
-    def visualize_pressure_map_shift(self, p_map, p_map_skew = None):
-        print p_map.shape, 'pressure mat size'
-        #p_map = fliplr(p_map)
-        fig = plt.figure(figsize=plt.figaspect(0.5))
-
-        ax = fig.add_subplot(1, 1, 1, projection='3d')
-
-        # plot a 3D surface like in the example mplot3d/surface3d_demo
-        X = np.arange(0, 27, 1)
-        Y = np.arange(0, 64, 1)
-        X, Y = np.meshgrid(X, Y)
-
-
-        print X.shape
-        print Y.shape
-        print p_map.shape
-        #ax.plot_wireframe(Y, X, p_map, rstride=1, cstride=1)
-
-        f = interpolate.interp2d(Y,X,p_map, kind='cubic')
-        xnew = np.arange(0,27,0.2)
-        ynew = np.arange(0,64,0.2)
-
-        p_map_new = f(xnew,ynew)
-
-        xnew,ynew = np.meshgrid(xnew, ynew)
-
-        print xnew.shape
-        print ynew.shape
-        print p_map_new.shape
-
-        ax.plot_wireframe(ynew,xnew,p_map_new)
-
-        #Visualize estimated from training set
-        if p_map_skew is not None:
-            pass
-        ax.set_title('Wire Mesh')
-        plt.pause(0.0001)
-
-
-
-        plt.show()
-
-        return
 
 
 
