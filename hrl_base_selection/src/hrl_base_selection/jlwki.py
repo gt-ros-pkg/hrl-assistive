@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 from matplotlib.path import Path
 import matplotlib.patches as patches
 from matplotlib.cbook import flatten
+import matplotlib.ticker as ticker
 from itertools import combinations as comb
 from operator import itemgetter
 
@@ -45,7 +46,13 @@ for i in xrange(3001):
     q_list.append(q)
     weights = np.zeros(7)
     for joint in xrange(len(weights)):
+        # My weighting function. Should be altered to max at 0.5?
         weights[joint] = (1. - m.pow(0.5, ((l_range[joint])/2. - np.abs((l_range[joint])/2. - q[joint] + l_min[joint]))/(l_range[joint]/40.)))
+
+        # From Vahrencamp work on joint limit weighting
+        # weights[joint] = (m.pow((q[joint]-l_min[joint]), 2.0)*(2*q[joint]-l_min[joint]-l_max[joint]))/(4.*m.pow((l_max[joint]-q[joint]), 2.0)*m.pow((q[joint]-l_min[joint]), 2.0))
+
+
         # weights[joint] = (1. - m.pow(0.5, (np.abs((l_max[joint] - l_min[joint])/2. - q[joint] - l_min[joint]))))
         # print weights[joint]
         # if weights[joint] < 0.01:
@@ -68,12 +75,26 @@ q_percent = np.array(q_percent)
 # print q_list[:,0]
 fig1 = plt.figure(1)
 joint = 0
+
 ax1 = fig1.add_subplot(231)
+ax12 = ax1.twiny()
 ax1.set_xlabel('Percent of Angle Range')
-ax1.set_ylabel('Weight')
-ax1.set_ylim(0.0, 1.05)
+ax1.set_ylabel('Transmission Weight, $t_i$')
+ax1.set_ylim(-0.05, 1.05)
 # ax1.set_xlim(l_min[joint], l_max[joint])
-ax1.set_xlim(-1.0, 1.0)
+ax1.set_xlim(-1.05, 1.05)
+ax1.grid(True, linestyle='dotted')
+for item in ([ax1.title, ax1.xaxis.label, ax1.yaxis.label] + ax12.get_xticklabels() +
+             ax1.get_xticklabels() + ax1.get_yticklabels()):
+    item.set_fontsize(20)
+ax1.yaxis.set_ticks([0, 1])
+ax1.yaxis.set_major_formatter(ticker.FormatStrFormatter('%0.1f'))
+ax1.xaxis.set_ticks([-1, 0, 1])
+ax12.set_xlim(-1.05, 1.05)
+ax12.xaxis.set_ticks([-1, 0, 1])
+ax12.xaxis.set_ticklabels(['$q_{min}$', '', '$q_{max}$'])
+ax1.xaxis.set_major_formatter(ticker.FormatStrFormatter('%0.1f'))
+
 # surf11 = ax1.scatter(q_list[:, joint], weights_list[:, joint], color="green", s=1, alpha=1)
 surf11 = ax1.scatter(q_percent[:, joint], weights_list[:, joint], color="green", s=1, alpha=1)
 
