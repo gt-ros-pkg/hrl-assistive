@@ -71,14 +71,23 @@ class PhysicalTrainer():
 
 
         #we'll be loading this later
-        self.train_val_losses = load_pickle('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/train_val_losses.p')
+        if self.opt.lab_harddrive == True:
+            self.train_val_losses = load_pickle('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/train_val_losses.p')
+        else:
+            self.train_val_losses = load_pickle('/home/henryclever/hrl_file_server/Autobed/train_val_losses.p')
+
         #print self.train_val_losses
 
         if self.opt.sitting == True:
             print 'appending to sitting losses'
-            self.train_val_losses['train_sitting_flip_shift_nd_' + str(self.opt.leaveOut)] = []
-            self.train_val_losses['val_sitting_flip_shift_nd_' + str(self.opt.leaveOut)] = []
-            self.train_val_losses['epoch_sitting_flip_shift_nd_' + str(self.opt.leaveOut)] = []
+            self.train_val_losses['train_sitting_flip_shift_scale_nd_' + str(self.opt.leaveOut)] = []
+            self.train_val_losses['val_sitting_flip_shift_scale_nd_' + str(self.opt.leaveOut)] = []
+            self.train_val_losses['epoch_sitting_flip_shift_scale_nd_' + str(self.opt.leaveOut)] = []
+        elif self.opt.armsup == True:
+            print 'appending to armsup losses'
+            self.train_val_losses['train_armsup_flip_shift_scale5_nd_nohome_'+str(self.opt.leaveOut)] = []
+            self.train_val_losses['val_armsup_flip_shift_scale5_nd_nohome_'+str(self.opt.leaveOut)] = []
+            self.train_val_losses['epoch_armsup_flip_shift_scale5_nd_nohome_' + str(self.opt.leaveOut)] = []
         else:
             print 'appending to laying losses'
             self.train_val_losses['train_flip_shift_nd_nohome_1000e_'+str(self.opt.leaveOut)] = []
@@ -238,7 +247,7 @@ class PhysicalTrainer():
 
     def synthetic_scale(self, images, targets):
 
-        x = np.arange(0.85, 1.15, 0.01)
+        x = np.arange(0.95, 1.05, 0.005)
         xU, xL = x + 0.05, x - 0.05
         prob = ss.norm.cdf(xU, scale=3) - ss.norm.cdf(xL, scale=3)
         prob = prob / prob.sum()  # normalize the probabilities so their sum is 1
@@ -417,7 +426,7 @@ class PhysicalTrainer():
 
 
         batch_size = 150
-        num_epochs = 100
+        num_epochs = 300
         hidden_dim = 12
         kernel_size = 10
 
@@ -450,12 +459,23 @@ class PhysicalTrainer():
         print self.train_val_losses, 'trainval'
         # Save the model (architecture and weights)
 
-        if self.opt.sitting == True:
-            torch.save(self.model,'/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leaveOut) + '/p_files/' + opt.trainingType + '_sitting' + '.pt')
+        if self.opt.lab_harddrive == True:
+            if self.opt.sitting == True:
+                torch.save(self.model,'/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leaveOut) + '/p_files/' + opt.trainingType + '_sitting' + '.pt')
+
+            else:
+                torch.save(self.model, '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_'+str(self.opt.leaveOut)+'/p_files/'+opt.trainingType + '.pt')
+            pkl.dump(self.train_val_losses,
+                     open(os.path.join('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/train_val_losses.p'), 'wb'))
+
+
         else:
-            torch.save(self.model, '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_'+str(self.opt.leaveOut)+'/p_files/'+opt.trainingType + '.pt')
-        pkl.dump(self.train_val_losses,
-                 open(os.path.join('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/train_val_losses.p'), 'wb'))
+            if self.opt.sitting == True:
+                torch.save(self.model,'/home/henryclever/hrl_file_server/Autobed/subject_' + str(self.opt.leaveOut) + '/p_files/' + opt.trainingType + '_sitting' + '.pt')
+            else:
+                torch.save(self.model, '/home/henryclever/hrl_file_server/Autobed/subject_'+str(self.opt.leaveOut)+'/p_files/'+opt.trainingType + '.pt')
+            pkl.dump(self.train_val_losses,
+                     open(os.path.join('/home/henryclever/hrl_file_server/Autobed/train_val_losses.p'), 'wb'))
 
 
     def train(self, epoch):
@@ -537,13 +557,18 @@ class PhysicalTrainer():
 
                 if self.opt.sitting == True:
                     print 'appending to sitting losses'
-                    self.train_val_losses['train_sitting_flip_shift_nd_' + str(self.opt.leaveOut)].append(train_loss)
-                    self.train_val_losses['val_sitting_flip_shift_nd_' + str(self.opt.leaveOut)].append(val_loss)
-                    self.train_val_losses['epoch_sitting_flip_shift_nd_' + str(self.opt.leaveOut)].append(epoch)
+                    self.train_val_losses['train_sitting_flip_shift_scale_nd_' + str(self.opt.leaveOut)].append(train_loss)
+                    self.train_val_losses['val_sitting_flip_shift_scale_nd_' + str(self.opt.leaveOut)].append(val_loss)
+                    self.train_val_losses['epoch_sitting_flip_shift_scale_nd_' + str(self.opt.leaveOut)].append(epoch)
+                elif self.opt.armsup == True:
+                    print 'appending to armsup losses'
+                    self.train_val_losses['train_armsup_flip_shift_scale5_nd_nohome_' + str(self.opt.leaveOut)].append(train_loss)
+                    self.train_val_losses['val_armsup_flip_shift_scale5_nd_nohome_' + str(self.opt.leaveOut)].append(val_loss)
+                    self.train_val_losses['epoch_armsup_flip_shift_scale5_nd_nohome_' + str(self.opt.leaveOut)].append(epoch)
                 else:
-                    self.train_val_losses['train_flip_shift_nd_nohome_1000e_' + str(self.opt.leaveOut)].append(train_loss)
-                    self.train_val_losses['val_flip_shift_nd_nohome_1000e_' + str(self.opt.leaveOut)].append(val_loss)
-                    self.train_val_losses['epoch_flip_shift_nd_nohome_1000e_' + str(self.opt.leaveOut)].append(epoch)
+                    self.train_val_losses['train_flip_shift_scale5_nd_nohome_700e_' + str(self.opt.leaveOut)].append(train_loss)
+                    self.train_val_losses['val_flip_shift_scale5_nd_nohome_700e_' + str(self.opt.leaveOut)].append(val_loss)
+                    self.train_val_losses['epoch_flip_shift_scale5_nd_nohome_700e_' + str(self.opt.leaveOut)].append(epoch)
 
 
 
@@ -844,6 +869,10 @@ if __name__ == "__main__":
                  dest='sitting', \
                  default=False, \
                  help='Set path to train on sitting data.')
+    p.add_option('--armsup', action='store_true',
+                 dest='armsup', \
+                 default=False, \
+                 help='Set path to train on larger dataset where arms and head move upwards.')
     p.add_option('--verbose', '--v',  action='store_true', dest='verbose',
                  default=False, help='Printout everything (under construction).')
     p.add_option('--log_interval', type=int, default=10, metavar='N',
@@ -875,47 +904,74 @@ if __name__ == "__main__":
             opt.subject8Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_8/p_files/trainval_200rh1_lh1_rl_ll.p'
 
         training_database_file = []
-        if opt.leaveOut == 4:
-            test_database_file = opt.subject4Path
-            training_database_file.append(opt.subject1Path)
-            training_database_file.append(opt.subject2Path)
-            training_database_file.append(opt.subject3Path)
-            training_database_file.append(opt.subject5Path)
-            training_database_file.append(opt.subject6Path)
-            training_database_file.append(opt.subject7Path)
-            training_database_file.append(opt.subject8Path)
-
-        elif opt.leaveOut == 1:
-            test_database_file = opt.subject1Path
-            training_database_file.append(opt.subject2Path)
-            training_database_file.append(opt.subject3Path)
-            training_database_file.append(opt.subject4Path)
-            training_database_file.append(opt.subject5Path)
-            training_database_file.append(opt.subject6Path)
-            training_database_file.append(opt.subject7Path)
-            training_database_file.append(opt.subject8Path)
-
-        elif opt.leaveOut == 2:
-            test_database_file = opt.subject2Path
-            training_database_file.append(opt.subject1Path)
-            training_database_file.append(opt.subject3Path)
-            training_database_file.append(opt.subject4Path)
-            training_database_file.append(opt.subject5Path)
-            training_database_file.append(opt.subject6Path)
-            training_database_file.append(opt.subject7Path)
-            training_database_file.append(opt.subject8Path)
-
-        else:
-            print 'please specify which subject to leave out for validation using --leave_out _'
     else:
-        training_database_file = opt.trainPath #Where is the training database is
+        if opt.sitting == True:
+            opt.subject2Path = '/home/henryclever/hrl_file_server/Autobed/subject_2/p_files/trainval_sitting_120rh_lh_rl_ll.p'
+            opt.subject3Path = '/home/henryclever/hrl_file_server/Autobed/subject_3/p_files/trainval_sitting_120rh_lh_rl_ll.p'
+            opt.subject4Path = '/home/henryclever/hrl_file_server/Autobed/subject_4/p_files/trainval_sitting_120rh_lh_rl_ll.p'
+            opt.subject5Path = '/home/henryclever/hrl_file_server/Autobed/subject_5/p_files/trainval_sitting_120rh_lh_rl_ll.p'
+            opt.subject6Path = '/home/henryclever/hrl_file_server/Autobed/subject_6/p_files/trainval_sitting_120rh_lh_rl_ll.p'
+            opt.subject7Path = '/home/henryclever/hrl_file_server/Autobed/subject_7/p_files/trainval_sitting_120rh_lh_rl_ll.p'
+            opt.subject8Path = '/home/henryclever/hrl_file_server/Autobed/subject_8/p_files/trainval_sitting_120rh_lh_rl_ll.p'
 
-        if opt.testPath is None:
-            test_database_file = opt.testPath#Make it the same as train dataset
+        elif opt.armsup == True:
+            opt.subject1Path = '/home/henryclever/hrl_file_server/Autobed/subject_1/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head.p'
+            opt.subject2Path = '/home/henryclever/hrl_file_server/Autobed/subject_2/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head.p'
+            opt.subject3Path = '/home/henryclever/hrl_file_server/Autobed/subject_3/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head.p'
+            opt.subject4Path = '/home/henryclever/hrl_file_server/Autobed/subject_4/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head.p'
+            opt.subject5Path = '/home/henryclever/hrl_file_server/Autobed/subject_5/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head.p'
+            opt.subject6Path = '/home/henryclever/hrl_file_server/Autobed/subject_6/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head.p'
+            opt.subject7Path = '/home/henryclever/hrl_file_server/Autobed/subject_7/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head.p'
+            opt.subject8Path = '/home/henryclever/hrl_file_server/Autobed/subject_8/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head.p'
+
         else:
-            test_database_file = opt.testPath#Where the test dataset is
+            opt.subject1Path = '/home/henryclever/hrl_file_server/Autobed/subject_1/p_files/trainval_200rh1_lh1_rl_ll.p'
+            opt.subject2Path = '/home/henryclever/hrl_file_server/Autobed/subject_2/p_files/trainval_200rh1_lh1_rl_ll.p'
+            opt.subject3Path = '/home/henryclever/hrl_file_server/Autobed/subject_3/p_files/trainval_200rh1_lh1_rl_ll.p'
+            opt.subject4Path = '/home/henryclever/hrl_file_server/Autobed/subject_4/p_files/trainval_200rh1_lh1_rl_ll.p'
+            opt.subject5Path = '/home/henryclever/hrl_file_server/Autobed/subject_5/p_files/trainval_200rh1_lh1_rl_ll.p'
+            opt.subject6Path = '/home/henryclever/hrl_file_server/Autobed/subject_6/p_files/trainval_200rh1_lh1_rl_ll.p'
+            opt.subject7Path = '/home/henryclever/hrl_file_server/Autobed/subject_7/p_files/trainval_200rh1_lh1_rl_ll.p'
+            opt.subject8Path = '/home/henryclever/hrl_file_server/Autobed/subject_8/p_files/trainval_200rh1_lh1_rl_ll.p'
+
+        training_database_file = []
 
 
+
+
+
+    if opt.leaveOut == 4:
+        test_database_file = opt.subject4Path
+        training_database_file.append(opt.subject1Path)
+        training_database_file.append(opt.subject2Path)
+        training_database_file.append(opt.subject3Path)
+        training_database_file.append(opt.subject5Path)
+        training_database_file.append(opt.subject6Path)
+        training_database_file.append(opt.subject7Path)
+        training_database_file.append(opt.subject8Path)
+
+    elif opt.leaveOut == 1:
+        test_database_file = opt.subject1Path
+        training_database_file.append(opt.subject2Path)
+        training_database_file.append(opt.subject3Path)
+        training_database_file.append(opt.subject4Path)
+        training_database_file.append(opt.subject5Path)
+        training_database_file.append(opt.subject6Path)
+        training_database_file.append(opt.subject7Path)
+        training_database_file.append(opt.subject8Path)
+
+    elif opt.leaveOut == 2:
+        test_database_file = opt.subject2Path
+        training_database_file.append(opt.subject1Path)
+        training_database_file.append(opt.subject3Path)
+        training_database_file.append(opt.subject4Path)
+        training_database_file.append(opt.subject5Path)
+        training_database_file.append(opt.subject6Path)
+        training_database_file.append(opt.subject7Path)
+        training_database_file.append(opt.subject8Path)
+
+    else:
+        print 'please specify which subject to leave out for validation using --leave_out _'
 
 
 
