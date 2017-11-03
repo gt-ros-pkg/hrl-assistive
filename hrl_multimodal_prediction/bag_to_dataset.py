@@ -66,7 +66,7 @@ import optparse
 # Once this is done, train and predict
 # Then predict with ros for real time demo, with subscriber node
 
-ROSBAG_PATH = './bagfiles/'
+ROSBAG_PATH = './bagfiles/testbag/'
 ROSBAG_UNPACK_PATH = './bagfiles/unpacked/'
 UNPACK = False
 
@@ -107,7 +107,6 @@ class dataset_creator:
             audio_t = []
             ars_t = []
             ard_t = []
-
 
             for topic, msg, t in rosbag.Bag(bagfile).read_messages():
                 #print msg
@@ -234,6 +233,10 @@ class dataset_creator:
         print image_dataY.shape
 
         #normalize by feature
+        a_max = np.max(audio_dataX)
+        a_min =  np.min(audio_dataX)
+        i_max = np.max(image_dataX)
+        i_min =  np.min(image_dataX)
         audio_dataX = self.normalize(audio_dataX) 
         audio_dataY = self.normalize(audio_dataY)
         image_dataX = self.normalize(image_dataX) 
@@ -250,10 +253,20 @@ class dataset_creator:
         print combined_dataX.shape
         print combined_dataY.shape
 
+        a_minmax = []
+        a_minmax.append(a_min)
+        a_minmax.append(a_max)
+        a_minmax = np.array(a_minmax)
+        i_minmax = []
+        i_minmax.append(i_min)
+        i_minmax.append(i_max)
+        i_minmax = np.array(i_minmax)
         #save as np
-        np.save('./processed_data/combined'+'_x', combined_dataX)
-        np.save('./processed_data/combined'+'_y', combined_dataY)
-        
+        np.save('./processed_data/combined_test'+'_x', combined_dataX)
+        np.save('./processed_data/combined_test'+'_y', combined_dataY)
+        np.save('./processed_data/combined_test_AudioMinMax'+'_x', a_minmax)
+        np.save('./processed_data/combined_test_ImageMinMax'+'_x', i_minmax)
+
     def construct_dataset(self, data):
         # Create a windowed set dX_audio, dY_audio, concatenate, normalize(91,mfcc)
         dX, dY = [], []
