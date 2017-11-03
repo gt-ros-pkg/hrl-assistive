@@ -76,30 +76,31 @@ class DataVisualizer():
 
         #print train_val_loss
 
+        if self.subject == 1:
+            #plt.plot(train_val_loss['epoch_flip_1'], train_val_loss['train_flip_1'],'b')
+            #plt.plot(train_val_loss['epoch_1'], train_val_loss['train_1'], 'g')
+            plt.plot(train_val_loss['epoch_1'], train_val_loss['val_1'], 'k')
+            #plt.plot(train_val_loss['epoch_flip_1'], train_val_loss['val_flip_1'], 'r')
+            #plt.plot(train_val_loss['epoch_flip_shift_1'], train_val_loss['train_flip_shift_1'], 'g')
+            #plt.plot(train_val_loss['epoch_flip_shift_1'], train_val_loss['val_flip_shift_1'], 'g')
+            #plt.plot(train_val_loss['epoch_flip_shift_nd_1'], train_val_loss['val_flip_shift_nd_1'], 'g')
+            plt.plot(train_val_loss['epoch_flip_shift_nd_nohome_1'], train_val_loss['val_flip_shift_nd_nohome_1'], 'y')
+            #plt.plot(train_val_loss['epoch_armsup_flip_shift_scale5_nd_nohome_1'], train_val_loss['train_armsup_flip_shift_scale5_nd_nohome_1'], 'b')
+            plt.plot(train_val_loss['epoch_armsup_flip_shift_scale5_nd_nohome_1'], train_val_loss['val_armsup_flip_shift_scale5_nd_nohome_1'], 'r')
 
-        #plt.plot(train_val_loss['epoch_flip_1'], train_val_loss['train_flip_1'],'b')
-        #plt.plot(train_val_loss['epoch_1'], train_val_loss['train_1'], 'g')
-        plt.plot(train_val_loss['epoch_1'], train_val_loss['val_1'], 'k')
-        #plt.plot(train_val_loss['epoch_flip_1'], train_val_loss['val_flip_1'], 'r')
-        #plt.plot(train_val_loss['epoch_flip_shift_1'], train_val_loss['train_flip_shift_1'], 'g')
-        #plt.plot(train_val_loss['epoch_flip_shift_1'], train_val_loss['val_flip_shift_1'], 'g')
-        #plt.plot(train_val_loss['epoch_flip_shift_nd_1'], train_val_loss['val_flip_shift_nd_1'], 'g')
-        plt.plot(train_val_loss['epoch_flip_shift_nd_nohome_1'], train_val_loss['val_flip_shift_nd_nohome_1'], 'y')
-        #plt.plot(train_val_loss['epoch_armsup_flip_shift_scale5_nd_nohome_1'], train_val_loss['train_armsup_flip_shift_scale5_nd_nohome_1'], 'b')
-        plt.plot(train_val_loss['epoch_armsup_flip_shift_scale5_nd_nohome_1'], train_val_loss['val_armsup_flip_shift_scale5_nd_nohome_1'], 'r')
+        if self.subject == 4:
+            #plt.plot(train_val_loss['epoch_flip_4'], train_val_loss['train_flip_4'], 'g')
+            #plt.plot(train_val_loss['epoch_flip_4'], train_val_loss['val_flip_4'], 'y')
+            #plt.plot(train_val_loss['epoch_4'], train_val_loss['train_4'], 'b')
+            #plt.plot(train_val_loss['epoch_4'], train_val_loss['val_4'], 'r')
+            #plt.plot(train_val_loss['epoch_flip_shift_nd_4'], train_val_loss['val_flip_shift_nd_4'], 'b')
+            #plt.plot(train_val_loss['epoch_flip_shift_nd_nohome_4'], train_val_loss['val_flip_shift_nd_nohome_4'], 'y')
 
-        #plt.plot(train_val_loss['epoch_flip_4'], train_val_loss['train_flip_4'], 'g')
-        #plt.plot(train_val_loss['epoch_flip_4'], train_val_loss['val_flip_4'], 'y')
-        #plt.plot(train_val_loss['epoch_4'], train_val_loss['train_4'], 'b')
-        #plt.plot(train_val_loss['epoch_4'], train_val_loss['val_4'], 'r')
-        #plt.plot(train_val_loss['epoch_flip_shift_nd_4'], train_val_loss['val_flip_shift_nd_4'], 'b')
-        #plt.plot(train_val_loss['epoch_flip_shift_nd_nohome_4'], train_val_loss['val_flip_shift_nd_nohome_4'], 'y')
+            #plt.plot(train_val_loss['epoch_sitting_flip_shift_nd_4'], train_val_loss['val_sitting_flip_shift_nd_4'], 'y')
 
-        #plt.plot(train_val_loss['epoch_sitting_flip_shift_nd_4'], train_val_loss['val_sitting_flip_shift_nd_4'], 'y')
-
-        #plt.plot(train_val_loss['epoch_flip_2'], train_val_loss['train_flip_2'], 'y')
-        #plt.plot(train_val_loss['epoch_flip_2'], train_val_loss['val_flip_2'], 'g')
-        #plt.plot(train_val_loss['epoch_flip_shift_nd_2'], train_val_loss['val_flip_shift_nd_2'], 'y')
+            #plt.plot(train_val_loss['epoch_flip_2'], train_val_loss['train_flip_2'], 'y')
+            #plt.plot(train_val_loss['epoch_flip_2'], train_val_loss['val_flip_2'], 'g')
+            plt.plot(train_val_loss['epoch_flip_shift_nd_2'], train_val_loss['val_flip_shift_nd_2'], 'y')
 
         plt.axis([0,400,0,5000])
         plt.show()
@@ -115,7 +116,7 @@ class DataVisualizer():
         if self.sitting == True:
             validation_set = load_pickle(self.dump_path + '/subject_'+str(self.subject)+'/p_files/trainval_sitting_120rh_lh_rl_ll.p')
         elif self.armsup == True:
-            validation_set = load_pickle(self.dump_path + '/subject_' + str(self.subject) + '/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head.p')
+            validation_set = load_pickle(self.dump_path + '/subject_' + str(3) + '/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head.p')
         else:
             validation_set = load_pickle(self.dump_path + '/subject_'+str(self.subject)+'/p_files/trainval_200rh1_lh1_rl_ll.p')
 
@@ -141,7 +142,9 @@ class DataVisualizer():
 
 
         #print len(validation_set)
-        batch_size = 850
+        batch_size = 1
+
+        self.height_error = np.zeros((1300,10,6))
 
         self.test_x_tensor = self.test_x_tensor.unsqueeze(1)
         self.test_dataset = torch.utils.data.TensorDataset(self.test_x_tensor, self.test_y_tensor)
@@ -180,70 +183,109 @@ class DataVisualizer():
             self.sc_sample = np.squeeze(self.sc_sample[0, :]) / 1000
             self.sc_sample = np.reshape(self.sc_sample, self.output_size)
 
+            self.tar_sample = np.reshape(self.tar_sample, (len(self.tar_sample) / 3, 3))
+
+
+            #log the estimated height of the right elbow
+            for joint in xrange(10):
+                self.height_error[count-1,joint,0]=self.tar_sample[joint, 2]*100
+                self.height_error[count-1,joint,1]=self.sc_sample[joint,2]*100
+                self.height_error[count-1,joint,2]=(self.sc_sample[joint, 0] - self.tar_sample[joint, 0])*100
+                self.height_error[count-1,joint,3]=(self.sc_sample[joint, 1] - self.tar_sample[joint, 1])*100
+                self.height_error[count-1,joint,4]=(self.sc_sample[joint, 2] - self.tar_sample[joint, 2])*100
+                self.height_error[count-1,joint,5]=(np.sqrt(np.square(self.sc_sample[joint, 0] - self.tar_sample[joint, 0])+np.square(self.sc_sample[joint, 1] - self.tar_sample[joint, 1])+np.square(self.sc_sample[joint, 2] - self.tar_sample[joint, 2])))*100
+
+                #print self.right_elbow
+
+            #print self.right_elbow['est_height'][count-1], self.right_elbow['abserror'][count-1]
+
+
+            #self.visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample)
+
+        fig = plt.figure()
+
+        ax1 = fig.add_subplot(2, 2, 1)
+        ax1.plot(self.height_error[:,2,0], np.abs(self.height_error[:,2,2]), 'k.')
+        ax1.plot(self.height_error[:,2,1], np.abs(self.height_error[:,2,2]), 'r.')
+        ax1.set_title('x error as a function of height.')
+
+
+        ax2 = fig.add_subplot(2, 2, 2)
+        ax2.plot(self.height_error[:, 2, 0], np.abs(self.height_error[:, 2, 3]), 'k.')
+        ax2.plot(self.height_error[:, 2, 1], np.abs(self.height_error[:, 2, 3]), 'r.')
+        ax2.set_title('y error as a function of height.')
+
+        ax3 = fig.add_subplot(2, 2, 3)
+        ax3.plot(self.height_error[:, 2, 0], np.abs(self.height_error[:, 2, 4]), 'k.')
+        ax3.plot(self.height_error[:, 2, 1], np.abs(self.height_error[:, 2, 4]), 'r.')
+        ax3.set_title('z error as a function of height.')
+
+        ax4 = fig.add_subplot(2, 2, 4)
+        ax4.plot(self.height_error[:, 2, 0], np.abs(self.height_error[:, 2, 5]), 'k.')
+        ax4.plot(self.height_error[:, 2, 1], np.abs(self.height_error[:, 2, 5]), 'r.')
+        ax4.set_title('absolute error as a function of height.')
+
+        plt.show()
+
+
+        fig = plt.figure()
+        ax1 = fig.add_subplot(1, 2, 1)
+        ax1.plot(self.height_error[:,0,0], np.abs(self.height_error[:,0,5]), 'k.')
+        ax1.plot(self.height_error[:,0,1], np.abs(self.height_error[:,0,5]), 'r.')
+        ax1.set_title('Head')
+
+        ax2 = fig.add_subplot(1, 2, 2)
+        ax2.plot(self.height_error[:, 1, 0], np.abs(self.height_error[:, 1, 5]), 'k.')
+        ax2.plot(self.height_error[:, 1, 1], np.abs(self.height_error[:, 1, 5]), 'r.')
+        ax2.set_title('Torso')
+        plt.show()
+
+
+        fig = plt.figure()
+        ax1 = fig.add_subplot(2, 2, 1)
+        ax1.plot(self.height_error[:,3,0], np.abs(self.height_error[:,3,5]), 'k.')
+        ax1.plot(self.height_error[:,3,1], np.abs(self.height_error[:,3,5]), 'r.')
+        ax1.set_title('Left Elbow')
+
+        ax2 = fig.add_subplot(2, 2, 2)
+        ax2.plot(self.height_error[:, 2, 0], np.abs(self.height_error[:, 2, 5]), 'k.')
+        ax2.plot(self.height_error[:, 2, 1], np.abs(self.height_error[:, 2, 5]), 'r.')
+        ax2.set_title('Right Elbow')
+
+        ax3 = fig.add_subplot(2, 2, 3)
+        ax3.plot(self.height_error[:, 5, 0], np.abs(self.height_error[:, 5, 5]), 'k.')
+        ax3.plot(self.height_error[:, 5, 1], np.abs(self.height_error[:, 5, 5]), 'r.')
+        ax3.set_title('Left Hand')
+
+        ax4 = fig.add_subplot(2, 2, 4)
+        ax4.plot(self.height_error[:, 4, 0], np.abs(self.height_error[:, 4, 5]), 'k.')
+        ax4.plot(self.height_error[:, 4, 1], np.abs(self.height_error[:, 4, 5]), 'r.')
+        ax4.set_title('Right Hand')
+        plt.show()
 
 
 
+        fig = plt.figure()
+        ax1 = fig.add_subplot(2, 2, 1)
+        ax1.plot(self.height_error[:, 7, 0], np.abs(self.height_error[:, 7, 5]), 'k.')
+        ax1.plot(self.height_error[:, 7, 1], np.abs(self.height_error[:, 7, 5]), 'r.')
+        ax1.set_title('Left Knee')
 
-            x = np.arange(0.85, 1.15, 0.01)
-            xU, xL = x + 0.05, x - 0.05
-            prob = ss.norm.cdf(xU, scale=3) - ss.norm.cdf(xL, scale=3)
-            prob = prob / prob.sum()  # normalize the probabilities so their sum is 1
-            multiplier = np.random.choice(x, size=1, p=prob)[0]
+        ax2 = fig.add_subplot(2, 2, 2)
+        ax2.plot(self.height_error[:, 6, 0], np.abs(self.height_error[:, 6, 5]), 'k.')
+        ax2.plot(self.height_error[:, 6, 1], np.abs(self.height_error[:, 6, 5]), 'r.')
+        ax2.set_title('Right Knee')
 
-            print multiplier
+        ax3 = fig.add_subplot(2, 2, 3)
+        ax3.plot(self.height_error[:, 9, 0], np.abs(self.height_error[:, 9, 5]), 'k.')
+        ax3.plot(self.height_error[:, 9, 1], np.abs(self.height_error[:, 9, 5]), 'r.')
+        ax3.set_title('Left Foot')
 
-
-            #multiplier = 1.2
-            #print self.im_sample[0:50, 10:30].astype(int), 'orig'
-            resized = zoom(self.im_sample, multiplier)
-            resized = np.clip(resized, 0, 100)
-            #print resized[0:50, 10:30].astype(int)
-            print resized.shape
-            rl_diff = resized.shape[1]-self.im_sample.shape[1]
-            ud_diff = resized.shape[0]-self.im_sample.shape[0]
-            l_clip = np.int(math.ceil((rl_diff)/2))
-            r_clip = rl_diff - l_clip
-            u_clip = np.int(math.ceil((ud_diff)/2))
-            d_clip = ud_diff - u_clip
-
-            print l_clip, r_clip, u_clip, d_clip
-
-            if rl_diff < 0: #if less than 0, we'll have to add some padding in to get back up to normal size
-                resized_adjusted = np.zeros_like(self.im_sample)
-                resized_adjusted[-u_clip:-u_clip+resized.shape[0],-l_clip:-l_clip+resized.shape[1]] = resized
-                resized = resized_adjusted
-                shift_factor_x = 0.0286*-l_clip
-            elif rl_diff > 0:
-                resized_adjusted = resized[u_clip:u_clip+self.im_sample.shape[0],l_clip:l_clip+self.im_sample.shape[1]]
-                resized = resized_adjusted
-                shift_factor_x = 0.0286*-l_clip
-            else:
-                shift_factor_x = 0
-
-            if ud_diff < 0:
-                shift_factor_y = 0.0286 * u_clip
-            elif ud_diff > 0:
-                shift_factor_y = 0.0286 * u_clip
-            else:
-                shift_factor_y = 0
-
-
-            resized_tar = np.copy(self.tar_sample)
-            resized_tar = np.reshape(resized_tar, (len(resized_tar) / 3, 3))
-            #print resized_tar.shape
-            resized_tar = (resized_tar+0.286)*multiplier
-
-            resized_tar[:,0] = resized_tar[:,0] - 0.286 + shift_factor_x
-            #resized_tar2 = np.copy(resized_tar)
-            resized_tar[:,1] = resized_tar[:,1] + 84*(1-multiplier)*.0286 - .286 + shift_factor_y
-            #resized_tar[7,:] = [-0.286,0,0]
-
-
-
-
-
-            self.visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample, p_map_val=resized, targets_val=resized_tar)
-
+        ax4 = fig.add_subplot(2, 2, 4)
+        ax4.plot(self.height_error[:, 8, 0], np.abs(self.height_error[:, 8, 5]), 'k.')
+        ax4.plot(self.height_error[:, 8, 1], np.abs(self.height_error[:, 8, 5]), 'r.')
+        ax4.set_title('Right Foot')
+        plt.show()
 
 
 
@@ -399,8 +441,8 @@ class DataVisualizer():
         #plt.title('Distance above Bed')
         #plt.pause(0.0001)
 
-        #plt.show()
-        plt.show(block = False)
+        plt.show()
+        #plt.show(block = False)
 
         return
 
