@@ -85,9 +85,9 @@ class PhysicalTrainer():
             self.train_val_losses['epoch_sitting_flip_shift_scale_nd_' + str(self.opt.leaveOut)] = []
         elif self.opt.armsup == True:
             print 'appending to armsup losses'
-            self.train_val_losses['train_armsup_flip_shift_scale5_nd_nohome_'+str(self.opt.leaveOut)] = []
-            self.train_val_losses['val_armsup_flip_shift_scale5_nd_nohome_'+str(self.opt.leaveOut)] = []
-            self.train_val_losses['epoch_armsup_flip_shift_scale5_nd_nohome_' + str(self.opt.leaveOut)] = []
+            self.train_val_losses['train_armsup_flip_shift_scale5_nd_nohome_700e_'+str(self.opt.leaveOut)] = []
+            self.train_val_losses['val_armsup_flip_shift_scale5_nd_nohome_700e_'+str(self.opt.leaveOut)] = []
+            self.train_val_losses['epoch_armsup_flip_shift_scale5_nd_nohome_700e_' + str(self.opt.leaveOut)] = []
         else:
             print 'appending to laying losses'
             self.train_val_losses['train_flip_shift_nd_nohome_1000e_'+str(self.opt.leaveOut)] = []
@@ -426,7 +426,7 @@ class PhysicalTrainer():
 
 
         batch_size = 150
-        num_epochs = 300
+        num_epochs = 700
         hidden_dim = 12
         kernel_size = 10
 
@@ -562,9 +562,9 @@ class PhysicalTrainer():
                     self.train_val_losses['epoch_sitting_flip_shift_scale_nd_' + str(self.opt.leaveOut)].append(epoch)
                 elif self.opt.armsup == True:
                     print 'appending to armsup losses'
-                    self.train_val_losses['train_armsup_flip_shift_scale5_nd_nohome_' + str(self.opt.leaveOut)].append(train_loss)
-                    self.train_val_losses['val_armsup_flip_shift_scale5_nd_nohome_' + str(self.opt.leaveOut)].append(val_loss)
-                    self.train_val_losses['epoch_armsup_flip_shift_scale5_nd_nohome_' + str(self.opt.leaveOut)].append(epoch)
+                    self.train_val_losses['train_armsup_flip_shift_scale5_nd_nohome_700e_' + str(self.opt.leaveOut)].append(train_loss)
+                    self.train_val_losses['val_armsup_flip_shift_scale5_nd_nohome_700e_' + str(self.opt.leaveOut)].append(val_loss)
+                    self.train_val_losses['epoch_armsup_flip_shift_scale5_nd_nohome_700e_' + str(self.opt.leaveOut)].append(epoch)
                 else:
                     self.train_val_losses['train_flip_shift_scale5_nd_nohome_700e_' + str(self.opt.leaveOut)].append(train_loss)
                     self.train_val_losses['val_flip_shift_scale5_nd_nohome_700e_' + str(self.opt.leaveOut)].append(val_loss)
@@ -615,7 +615,7 @@ class PhysicalTrainer():
         self.sc_sampleval = output.data.numpy()
         self.sc_sampleval = np.squeeze(self.sc_sampleval[0, :]) / 1000
         self.sc_sampleval = np.reshape(self.sc_sampleval, self.output_size)
-        self.visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample, self.im_sampleval, self.tar_sampleval, self.sc_sampleval)
+        #self.visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample, self.im_sampleval, self.tar_sampleval, self.sc_sampleval)
 
 
 
