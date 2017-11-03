@@ -25,8 +25,8 @@ ax07 = subplot2grid((4, 2), (2, 1))
 ax08 = subplot2grid((4, 2), (3, 1))
 
 def updateData(self):
-	image = np.loadtxt('./bagfiles/data1.txt')	
-	image = np.rollaxis(image, 1, 0)
+	image = np.loadtxt('./samplebag/data50.txt')	
+	# image = np.rollaxis(image, 1, 0)
 	x=image[0]
 	y=image[1]
 	z=image[2]
@@ -71,7 +71,7 @@ def updateData(self):
 	ax03.plot(xs, ys)
 
 	#audio
-	audio, sr = librosa.load('./bagfiles/data1.wav', mono=True)
+	audio, sr = librosa.load('./samplebag/data50MFCC.wav', mono=True)
 	l_a = audio.shape[0]
 	t_a = np.linspace(0,4,l_a)
 

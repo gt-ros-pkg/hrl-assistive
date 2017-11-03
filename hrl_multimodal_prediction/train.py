@@ -27,6 +27,8 @@
 #
 #  \author Michael Park (Healthcare Robotics Lab, Georgia Tech.)
 
+import rosbag
+import rospy
 from attrdict import AttrDict
 import numpy as np
 import matplotlib.pyplot as plt
@@ -56,14 +58,8 @@ WINDOW_SIZE_OUT = 1
 LOAD_WEIGHT = False
 
 def create_model():
-    # For multiple LSTMS
-    # hidden_neurons = 300
-    # if LAYERS == 1:
-    #     hidden_neurons = feature_count
     model = Sequential()
     model.add(LSTM(output_dim=NUM_FEATURE, input_shape=(WINDOW_SIZE_IN, NUM_FEATURE)))
-    #model.add(LSTM(output_dim=hidden_neurons, return_sequences=True))
-    #model.add(TimeDistributed(Dense(feature_count)))
     model.add(Activation('linear'))  
 
     if LOAD_WEIGHT:
@@ -73,8 +69,6 @@ def create_model():
     return model
 
 def train_model(model, dataX, dataY):
-    #history = model.fit(dataX, dataY, batch_size=3, nb_epoch=epoch_count, validation_split=0.05)
-
     csv_logger = CSVLogger('training_audio.log')
     escb = EarlyStopping(monitor='val_loss', patience=2, verbose=1)
     checkpoint = ModelCheckpoint("models/combined-{epoch:02d}-{val_loss:.2f}.hdf5", 
