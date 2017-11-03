@@ -77,9 +77,18 @@ class dataset_creator:
     FORMAT     = pyaudio.paInt16
     MAX_INT    = 32768.0
 
-    def convert_bag2dataset(self): 
+    WINDOW_SIZE_IN = 5
+    WINDOW_SIZE_OUT = 1 
+
+    def convert_bag2dataset(self):         
+        audio_dataX = []
+        audio_dataY = []
+        image_dataX = []
+        image_dataY = []
+        combined_dataX = []
+        combined_dataY = []
+
         for filename in glob.glob(os.path.join(ROSBAG_PATH, '*.bag')):
-            print filename
             num = re.findall(r'\d+', filename)
             # bagfile  = ROSBAG_PATH + 'data1.bag'
             # wavfile  = ROSBAG_PATH + 'data1.wav'
@@ -98,6 +107,8 @@ class dataset_creator:
             audio_t = []
             ars_t = []
             ard_t = []
+
+
             for topic, msg, t in rosbag.Bag(bagfile).read_messages():
                 #print msg
                 if msg._type == 'hrl_anomaly_detection/audio':
@@ -116,7 +127,7 @@ class dataset_creator:
             dynamic_ar = np.array(dynamic_ar, dtype=np.float64)
 
             ##################################
-            # Find max of the raw data to find peak and +-88000 samples
+            # Find max of the raw data to find peak and +-88200 samples
             # how to line up image data? interpolate and downsample?
             ##################################
             audio_store = np.hstack(audio_store)
@@ -140,8 +151,7 @@ class dataset_creator:
             for i in range(new_length):
                 relative_position.append(static_ar_intp[i] - dynamic_ar_intp[i])
             relative_position = np.array(relative_position)
-            print relative_position.shape
-
+            
             #uncropped
             # a_max = np.max(audio_store)
             # a_min =  np.min(audio_store)
@@ -179,19 +189,83 @@ class dataset_creator:
             # mapping xyz to mfcc
             new_length = mfcc_len
             relative_position_intp = self.interpolate(relative_position, new_length) 
-            # np.save(out_file+'_x', x_data)
-            # np.save(out_file+'_y', y_data)
             ##################################
             
             if UNPACK:
                 self.reconstruct_mfcc(mfccs, y, wavfileMFCC)        
 
+            #window over entire dataset - mfcc
+            mfccs = np.rollaxis(mfccs, 1, 0)
+            aX, aY = self.construct_dataset(mfccs)
+            audio_dataX.append(aX)
+            audio_dataY.append(aY)
+            #window over entire dataset - xyz
+            iX, iY = self.construct_dataset(relative_position_intp)
+            image_dataX.append(iX)
+            image_dataY.append(iY)
+
+        #Below here should be outside the loop
+        audio_dataX = np.array(audio_dataX)
+        audio_dataY = np.array(audio_dataY)
+        image_dataX = np.array(image_dataX)
+        image_dataY = np.array(image_dataY)
+        print audio_dataX.shape
+        print audio_dataY.shape
+        print image_dataX.shape
+        print image_dataY.shape
+
+        #concatenate for number of experiment samples
+        audio_dataX2 = audio_dataX[0]
+        audio_dataY2 = audio_dataY[0]
+        image_dataX2 = image_dataX[0]
+        image_dataY2 = image_dataY[0]
+        for i in range(1, audio_dataX.shape[0]):
+            audio_dataX2 = np.concatenate((audio_dataX2, audio_dataX[i]), axis=0)
+            audio_dataY2 = np.concatenate((audio_dataY2, audio_dataY[i]), axis=0)
+            image_dataX2 = np.concatenate((image_dataX2, image_dataX[i]), axis=0)
+            image_dataY2 = np.concatenate((image_dataY2, image_dataY[i]), axis=0)
+        audio_dataX = audio_dataX2
+        audio_dataY = audio_dataY2
+        image_dataX = image_dataX2
+        image_dataY = image_dataY2
+        print audio_dataX.shape
+        print audio_dataY.shape
+        print image_dataX.shape
+        print image_dataY.shape
+
+        #normalize by feature
+        audio_dataX = self.normalize(audio_dataX) 
+        audio_dataY = self.normalize(audio_dataY)
+        image_dataX = self.normalize(image_dataX) 
+        image_dataY = self.normalize(image_dataY)
+        audio_dataX = np.array(audio_dataX, dtype=float)
+        audio_dataY = np.array(audio_dataY, dtype=float) 
+        image_dataX = np.array(image_dataX, dtype=float)
+        image_dataY = np.array(image_dataY, dtype=float)
+
+        #combine
+        combined_dataX = np.concatenate((audio_dataX, image_dataX), axis=2)
+        combined_dataY = np.concatenate((audio_dataY, image_dataY), axis=1)
+        print 'audio image combined'
+        print combined_dataX.shape
+        print combined_dataY.shape
+
+        #save as np
+        np.save('./processed_data/combined'+'_x', combined_dataX)
+        np.save('./processed_data/combined'+'_y', combined_dataY)
+        
+    def construct_dataset(self, data):
+        # Create a windowed set dX_audio, dY_audio, concatenate, normalize(91,mfcc)
+        dX, dY = [], []
+        for i in range(data.shape[0] - self.WINDOW_SIZE_IN):
+            dX.append(data[i:i+self.WINDOW_SIZE_IN])
+            dY.append(data[i+self.WINDOW_SIZE_IN:i+self.WINDOW_SIZE_IN+self.WINDOW_SIZE_OUT][0])
+        return dX, dY        
+
     def normalize(self, data):
         a_max = np.max(data)
         a_min =  np.min(data)
         data = (data - a_min) / (a_max - a_min)
-        print 'after normalization - audio_store'
-        print data.shape
         return data
 
     def crop2s(self, data, peak_idx, audio_len_sample=88200): #1s=44100, 2s=88200
@@ -212,8 +286,6 @@ class dataset_creator:
         data_intp[1] = f2(np.linspace(0,time_len-1, new_length))
         data_intp[2] = f3(np.linspace(0,time_len-1, new_length))
         data_intp = np.rollaxis(data_intp, 1, 0)    
-        print 'interpolated shape'
-        print data_intp.shape
         return data_intp
 
     def reconstruct_mfcc(self, mfccs, y, wavfileMFCC):
