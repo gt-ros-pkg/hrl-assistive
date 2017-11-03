@@ -137,6 +137,46 @@ def scale_back(seq, min_y, max_y):
     seq = seq * (max_y - min_y) + min_y
     return seq
 
+# def image_to_tensor(csv_filename):
+    
+# def audio_to_tensor(audio_filename):
+#     #these data have to be in same length
+#     # audio_filename = ['data1crop4.wav', 'data2crop4.wav', 'data5crop4.wav']
+#     audio_dataX = []
+#     audio_dataY = []
+
+#     for audio_file in audio_filename:
+#         y, sr = librosa.load(SOUND_FOLDER + audio_file, mono=True)
+#         mfccs = librosa.feature.mfcc(y, n_mfcc=N_MFCC) #default hop_length=512
+#         mfccs = np.rollaxis(mfccs, 1, 0)
+#         dX, dY = [], []
+#         for i in range(mfccs.shape[0] - WINDOW_SIZE_IN):
+#                 dX.append(mfccs[i:i+WINDOW_SIZE_IN])
+#                 dY.append(mfccs[i+WINDOW_SIZE_IN:i+WINDOW_SIZE_IN+WINDOW_SIZE_OUT][0])
+#         audio_dataX.append(dX)
+#         audio_dataY.append(dY)
+#     audio_dataX = np.array(audio_dataX)
+#     audio_dataY = np.array(audio_dataY)
+
+#     #For Prediction
+#     audio_dataX = audio_dataX[0]
+#     #Comment out for Predction -- really crappy code for now
+#     # audio_dataX = np.concatenate((audio_dataX[0], audio_dataX[1], audio_dataX[2]), axis=0)
+#     # audio_dataY = np.concatenate((audio_dataY[0], audio_dataY[1], audio_dataY[2]), axis=0)
+
+#     print 'audiodata shape'
+#     print audio_dataX.shape, audio_dataY.shape
+
+#     #normalization should be done feature by feature
+#     audio_dataX, min_audio_dataX, max_audio_dataX = normalize(audio_dataX) 
+#     audio_dataY, min_audio_dataY, max_audio_dataY = normalize(audio_dataY) 
+
+#     audio_dataX = np.array(audio_dataX, dtype=float)
+#     audio_dataY = np.array(audio_dataY, dtype=float) 
+#     print audio_dataX.shape, audio_dataY.shape    
+
+#     return sr, audio_dataX, min_audio_dataX, max_audio_dataX, audio_dataY, min_audio_dataY, max_audio_dataY
+
 def create_data(n_pre, n_post, combined_filename):
     if AUDIO_DATA and IMAGE_DATA:
         print 'using audio and image mode...'
@@ -327,10 +367,10 @@ def reconstruct_audio(mfccs, sr, y_shape):
     #print recon
     #print recon.shape
 
-    wav.write('./sounds/predicted/' + 'combined_predict_testdata20' +'FromMFCC3.wav', sr, recon)
+    wav.write('./sounds/predicted/' + 'combined_predict_predict_base_testdata13' +'FromMFCC3.wav', sr, recon)
 
 def reconstruct_image(image):
-    np.savetxt('./csv/predicted/' + 'combined_predict_testdata20' + '.txt', image)
+    np.savetxt('./csv/predicted/' + 'combined_predict_predict_base_testdata13' + '.txt', image)
 
 def test_prediction():
     os.environ["KERAS_BACKEND"] = "tensorflow"
@@ -376,26 +416,35 @@ def test_prediction():
     # Prepare Testing Data - MODIFIED(COMBINED DATA)
     (sr, min_audio_dataX, max_audio_dataX, min_audio_dataY, max_audio_dataY, 
         min_image_dataX, max_image_dataX, min_image_dataY, max_image_dataY, 
-        combined_dataX, combined_dataY) = create_data(WINDOW_SIZE_IN, WINDOW_SIZE_OUT, {'data20.txt':'data20crop4.wav'})
+        combined_dataX, combined_dataY) = create_data(WINDOW_SIZE_IN, WINDOW_SIZE_OUT, {'data13.txt':'data13crop4.wav'})
     datain = combined_dataX
     print 'shape?'
     print datain.shape
     print combined_dataY.shape
     y_shape = 512*(NUM_STEP_SHOW-1)
 
+    #preprocessing for predict based
     #################################
     seq = []
+    tmp = datain[0]
+    tmp = np.expand_dims(tmp, axis=0)
     for i in range(datain.shape[0]):
-        tmp = datain[i]
-        tmp = np.expand_dims(tmp, axis=0)
-        print 'preidction loop'
-        print tmp.shape
         predicted = model.predict(tmp)
+        predicted = predicted[0]
+        seq.append(predicted)
+
+        #create next input
+        predicted = np.expand_dims(predicted, axis=0)
+        predicted = np.expand_dims(predicted, axis=0)
+        print 'predicted processed'
         print predicted.shape
-        seq.append(predicted[0])
+        tmp = tmp[:,1:5,:]
+        print 'tmp before concat'
+        print tmp.shape
+        tmp = np.concatenate((tmp, predicted), axis=1)
+        print 'tmp after concat aka next input'
+        print tmp.shape
     seq = np.array(seq)
-    print seq
-    print seq.shape
     combined_predict = seq
     #################################
 
