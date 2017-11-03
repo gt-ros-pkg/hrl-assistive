@@ -6,7 +6,7 @@ import cPickle as pkl
 import random
 
 # ROS
-import roslib; roslib.load_manifest('hrl_pose_estimation')
+#import roslib; roslib.load_manifest('hrl_pose_estimation')
 
 # Graphics
 import matplotlib.pyplot as plt
@@ -22,7 +22,7 @@ from sklearn.decomposition import PCA
 # HRL libraries
 import hrl_lib.util as ut
 import pickle
-roslib.load_manifest('hrl_lib')
+#roslib.load_manifest('hrl_lib')
 from hrl_lib.util import load_pickle
 
 # Pose Estimation Libraries
@@ -176,12 +176,12 @@ class DatabaseCreator():
         '''Creates a database using the raw pressure values(full_body) and only
         transforms world frame coordinates to mat coordinates'''
 
-        for subject in [1]:
+        for subject in [1,2,3,4,5,6,7,8]:
         #for subject in [4, 9, 15, 16, 17, 18]:
         #for subject in [4, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]:
 
-            for movement in ['home','RH1','LH1','RL','LL']:
-            #for movement in ['RH1, LH1, RL, LL']:
+            #for movement in ['RH1','RH2','RH3','LH1','LH2','LH3','head','LL','RL']:
+            for movement in ['head']:
             #self.training_dump_path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_'+str(subject)
             #print self.training_dump_path
 
@@ -196,10 +196,14 @@ class DatabaseCreator():
                 indexlist = self.rand_index_p_length(p_file)
 
 
-                if movement == 'home':
-                    num_samp = 50
-                else:
+                if movement == 'head':
+                    num_samp = 10
+                elif movement == 'RH1' or movement == 'LH1' or movement == 'RL' or movement == 'LL':
                     num_samp = 200
+                elif movement == 'RH_sitting' or movement == 'LH_sitting' or movement == 'RL_sitting' or movement == 'LL_sitting':
+                    num_samp = 120
+                else:
+                    num_samp = 100
 
                 print 'working on subject: ',subject, '  movement type:', movement, '  length: ',len(p_file), '  Number sampled: ',num_samp
 
@@ -227,10 +231,12 @@ class DatabaseCreator():
                     target_mat = self.world_to_mat(target_raw, self.p_world_mat, self.R_world_mat)
                     rot_p_map = np.array(p_map_raw)
                     rot_target_mat = target_mat
+
                     if i < 5:
                         self.visualize_single_pressure_map(rot_p_map, rot_target_mat)
                         if self.keep_image == True: self.final_dataset.append([list(rot_p_map.flatten()), rot_target_mat.flatten()])
                     elif self.select == True:
+                        self.visualize_single_pressure_map(rot_p_map, rot_target_mat)
                         if self.keep_image == True: self.final_dataset.append([list(rot_p_map.flatten()), rot_target_mat.flatten()])
                     else:
                         self.final_dataset.append([list(rot_p_map.flatten()), rot_target_mat.flatten()])
@@ -239,7 +245,7 @@ class DatabaseCreator():
 
         print 'Output file size: ~', int(len(self.final_dataset) * 0.08958031837), 'Mb'
         print "Saving final_dataset"
-        pkl.dump(self.final_dataset, open(os.path.join(self.training_dump_path+str(subject)+'/p_files/trainval_200rh1_lh1_rl_ll_50_home.p'), 'wb'))
+        pkl.dump(self.final_dataset, open(os.path.join(self.training_dump_path+str(subject)+'/p_files/trainval_50_head_test.p'), 'wb'))
             #pkl.dump(self.individual_dataset, open(os.path.join(self.training_dump_path, 'individual_database.p'), 'wb'))
         
         print 'Done.'
