@@ -63,8 +63,8 @@ class DataVisualizer():
     cutting up the pressure maps and creating synthetic database'''
     def __init__(self, pkl_directory):
 
-        self.sitting = False
-        self.subject = 1
+        self.sitting = True
+        self.subject = 4
         self.armsup = True
         # Set initial parameters
         self.dump_path = pkl_directory.rstrip('/')
@@ -74,34 +74,44 @@ class DataVisualizer():
 
         train_val_loss = load_pickle(self.dump_path + '/train_val_losses.p')
 
+        #handles, labels = plt.get_legend_handles_labels()
+        #plt.legend(handles, labels)
         #print train_val_loss
 
+        if self.subject == 1:
+            #plt.plot(train_val_loss['epoch_flip_1'], train_val_loss['train_flip_1'],'b')
+            #plt.plot(train_val_loss['epoch_1'], train_val_loss['train_1'], 'g')
+            plt.plot(train_val_loss['epoch_1'], train_val_loss['val_1'], 'k')
+            #plt.plot(train_val_loss['epoch_flip_1'], train_val_loss['val_flip_1'], 'r')
+            #plt.plot(train_val_loss['epoch_flip_shift_1'], train_val_loss['train_flip_shift_1'], 'g')
+            #plt.plot(train_val_loss['epoch_flip_shift_1'], train_val_loss['val_flip_shift_1'], 'g')
+            #plt.plot(train_val_loss['epoch_flip_shift_nd_1'], train_val_loss['val_flip_shift_nd_1'], 'g')
+            plt.plot(train_val_loss['epoch_flip_shift_nd_nohome_1'], train_val_loss['val_flip_shift_nd_nohome_1'], 'y')
+            #plt.plot(train_val_loss['epoch_armsup_flip_shift_scale5_nd_nohome_1'], train_val_loss['train_armsup_flip_shift_scale5_nd_nohome_1'], 'b')
+            #plt.plot(train_val_loss['epoch_armsup_flip_shift_scale5_nd_nohome_1'], train_val_loss['val_armsup_flip_shift_scale5_nd_nohome_1'], 'r')
 
-        #plt.plot(train_val_loss['epoch_flip_1'], train_val_loss['train_flip_1'],'b')
-        #plt.plot(train_val_loss['epoch_1'], train_val_loss['train_1'], 'g')
-        plt.plot(train_val_loss['epoch_1'], train_val_loss['val_1'], 'k')
-        #plt.plot(train_val_loss['epoch_flip_1'], train_val_loss['val_flip_1'], 'r')
-        #plt.plot(train_val_loss['epoch_flip_shift_1'], train_val_loss['train_flip_shift_1'], 'g')
-        #plt.plot(train_val_loss['epoch_flip_shift_1'], train_val_loss['val_flip_shift_1'], 'g')
-        #plt.plot(train_val_loss['epoch_flip_shift_nd_1'], train_val_loss['val_flip_shift_nd_1'], 'g')
-        plt.plot(train_val_loss['epoch_flip_shift_nd_nohome_1'], train_val_loss['val_flip_shift_nd_nohome_1'], 'y')
-        #plt.plot(train_val_loss['epoch_armsup_flip_shift_scale5_nd_nohome_1'], train_val_loss['train_armsup_flip_shift_scale5_nd_nohome_1'], 'b')
-        plt.plot(train_val_loss['epoch_armsup_flip_shift_scale5_nd_nohome_1'], train_val_loss['val_armsup_flip_shift_scale5_nd_nohome_1'], 'r')
+        elif self.subject == 4:
+            #plt.plot(train_val_loss['epoch_flip_4'], train_val_loss['train_flip_4'], 'g')
+            #plt.plot(train_val_loss['epoch_flip_4'], train_val_loss['val_flip_4'], 'y')
+            #plt.plot(train_val_loss['epoch_4'], train_val_loss['train_4'], 'b')
+            #plt.plot(train_val_loss['epoch_4'], train_val_loss['val_4'], 'r')
+            #plt.plot(train_val_loss['epoch_flip_shift_nd_4'], train_val_loss['val_flip_shift_nd_4'], 'b')
+            #plt.plot(train_val_loss['epoch_flip_shift_nd_nohome_4'], train_val_loss['val_flip_shift_nd_nohome_4'], 'y')
 
-        #plt.plot(train_val_loss['epoch_flip_4'], train_val_loss['train_flip_4'], 'g')
-        #plt.plot(train_val_loss['epoch_flip_4'], train_val_loss['val_flip_4'], 'y')
-        #plt.plot(train_val_loss['epoch_4'], train_val_loss['train_4'], 'b')
-        #plt.plot(train_val_loss['epoch_4'], train_val_loss['val_4'], 'r')
-        #plt.plot(train_val_loss['epoch_flip_shift_nd_4'], train_val_loss['val_flip_shift_nd_4'], 'b')
-        #plt.plot(train_val_loss['epoch_flip_shift_nd_nohome_4'], train_val_loss['val_flip_shift_nd_nohome_4'], 'y')
+            plt.plot(train_val_loss['epoch_sitting_700e_4'],train_val_loss['val_sitting_700e_4'],'k', label='Raw Pressure Map Input')
+            plt.plot(train_val_loss['epoch_sitting_flip_700e_4'], train_val_loss['val_sitting_flip_700e_4'], 'c', label='Synthetic Flipping: $Pr(X=flip)=0.5$')
+            plt.plot(train_val_loss['epoch_sitting_flip_shift_nd_700e4'],train_val_loss['val_sitting_flip_shift_nd_700e4'], 'g', label='Synthetic Flipping+Shifting: $X,Y \sim N(\mu,\sigma), \mu = 0 cm, \sigma \~= 9 cm$')
+            plt.plot(train_val_loss['epoch_sitting_flip_shift_scale5_nd_4'],train_val_loss['val_sitting_flip_shift_scale5_nd_4'], 'y', label='Synthetic Flipping+Shifting+Scaling: $S_C \sim N(\mu,\sigma), \mu = 1, \sigma \~= 1.02$')
+            plt.legend()
+            plt.ylabel('Mean squared error loss over 30 joint vectors')
+            plt.xlabel('Epochs, where 700 epochs ~ 4 hours')
+            plt.title('Subject 4 sitting validation Loss, training performed on subjects 2, 3, 5, 6, 7, 8')
 
-        #plt.plot(train_val_loss['epoch_sitting_flip_shift_nd_4'], train_val_loss['val_sitting_flip_shift_nd_4'], 'y')
+            #plt.plot(train_val_loss['epoch_flip_2'], train_val_loss['train_flip_2'], 'y')
+            #plt.plot(train_val_loss['epoch_flip_2'], train_val_loss['val_flip_2'], 'g')
+            #plt.plot(train_val_loss['epoch_flip_shift_nd_2'], train_val_loss['val_flip_shift_nd_2'], 'y')
 
-        #plt.plot(train_val_loss['epoch_flip_2'], train_val_loss['train_flip_2'], 'y')
-        #plt.plot(train_val_loss['epoch_flip_2'], train_val_loss['val_flip_2'], 'g')
-        #plt.plot(train_val_loss['epoch_flip_shift_nd_2'], train_val_loss['val_flip_shift_nd_2'], 'y')
-
-        plt.axis([0,400,0,5000])
+        plt.axis([0,700,0,20000])
         plt.show()
 
 
@@ -149,7 +159,7 @@ class DataVisualizer():
 
 
         if self.sitting == True:
-            model = torch.load(self.dump_path + '/subject_'+str(self.subject)+'/p_files/convnet_sitting_1to8_flip_shift_nodrop.pt')
+            model = torch.load(self.dump_path + '/subject_'+str(self.subject)+'/p_files/convnet_sitting_1to8_700e.pt')
         elif self.armsup == True:
             model = torch.load(self.dump_path + '/subject_' + str(self.subject) + '/p_files/convnet_1to8_flip_shift_scale5_armsup.pt')
         else:
@@ -430,7 +440,7 @@ if __name__ == "__main__":
 
 
     Path =  '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/'
-    Path = '/home/henryclever/hrl_file_server/Autobed/'
+    ##Path = '/home/henryclever/hrl_file_server/Autobed/'
 
     print Path
 

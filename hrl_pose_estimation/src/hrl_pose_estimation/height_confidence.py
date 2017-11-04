@@ -63,9 +63,9 @@ class DataVisualizer():
     cutting up the pressure maps and creating synthetic database'''
     def __init__(self, pkl_directory):
 
-        self.sitting = False
+        self.sitting =False
         self.subject = 1
-        self.armsup = True
+        self.armsup = False
         # Set initial parameters
         self.dump_path = pkl_directory.rstrip('/')
 
@@ -86,7 +86,7 @@ class DataVisualizer():
             #plt.plot(train_val_loss['epoch_flip_shift_nd_1'], train_val_loss['val_flip_shift_nd_1'], 'g')
             plt.plot(train_val_loss['epoch_flip_shift_nd_nohome_1'], train_val_loss['val_flip_shift_nd_nohome_1'], 'y')
             #plt.plot(train_val_loss['epoch_armsup_flip_shift_scale5_nd_nohome_1'], train_val_loss['train_armsup_flip_shift_scale5_nd_nohome_1'], 'b')
-            plt.plot(train_val_loss['epoch_armsup_flip_shift_scale5_nd_nohome_1'], train_val_loss['val_armsup_flip_shift_scale5_nd_nohome_1'], 'r')
+            #plt.plot(train_val_loss['epoch_armsup_flip_shift_scale5_nd_nohome_1'], train_val_loss['val_armsup_flip_shift_scale5_nd_nohome_1'], 'r')
 
         if self.subject == 4:
             #plt.plot(train_val_loss['epoch_flip_4'], train_val_loss['train_flip_4'], 'g')
@@ -96,13 +96,14 @@ class DataVisualizer():
             #plt.plot(train_val_loss['epoch_flip_shift_nd_4'], train_val_loss['val_flip_shift_nd_4'], 'b')
             #plt.plot(train_val_loss['epoch_flip_shift_nd_nohome_4'], train_val_loss['val_flip_shift_nd_nohome_4'], 'y')
 
-            #plt.plot(train_val_loss['epoch_sitting_flip_shift_nd_4'], train_val_loss['val_sitting_flip_shift_nd_4'], 'y')
+            plt.plot(train_val_loss['epoch_sitting_flip_shift_nd_700e4'], train_val_loss['val_sitting_flip_shift_nd_700e4'],'g')
+            plt.plot(train_val_loss['epoch_sitting_flip_shift_scale5_nd_4'], train_val_loss['val_sitting_flip_shift_scale5_nd_4'],'y')
 
             #plt.plot(train_val_loss['epoch_flip_2'], train_val_loss['train_flip_2'], 'y')
             #plt.plot(train_val_loss['epoch_flip_2'], train_val_loss['val_flip_2'], 'g')
-            plt.plot(train_val_loss['epoch_flip_shift_nd_2'], train_val_loss['val_flip_shift_nd_2'], 'y')
+            #plt.plot(train_val_loss['epoch_flip_shift_nd_2'], train_val_loss['val_flip_shift_nd_2'], 'y')
 
-        plt.axis([0,400,0,5000])
+        plt.axis([0,701,0,15000])
         plt.show()
 
 
@@ -111,14 +112,14 @@ class DataVisualizer():
         for key in train_val_loss:
             print key
 
-    def validate_model(self):
+    def validate_model(self, shorttrain = False):
 
         if self.sitting == True:
             validation_set = load_pickle(self.dump_path + '/subject_'+str(self.subject)+'/p_files/trainval_sitting_120rh_lh_rl_ll.p')
         elif self.armsup == True:
-            validation_set = load_pickle(self.dump_path + '/subject_' + str(3) + '/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head.p')
+            validation_set = load_pickle(self.dump_path + '/subject_' + str(6) + '/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head.p')
         else:
-            validation_set = load_pickle(self.dump_path + '/subject_'+str(self.subject)+'/p_files/trainval_200rh1_lh1_rl_ll.p')
+            validation_set = load_pickle(self.dump_path + '/subject_'+str(5)+'/p_files/trainval_200rh1_lh1_rl_ll.p')
 
         test_dat = validation_set
 
@@ -144,7 +145,8 @@ class DataVisualizer():
         #print len(validation_set)
         batch_size = 1
 
-        self.height_error = np.zeros((1300,10,6))
+        self.height_error = np.zeros((800,10,6))
+        self.arm_angle_error = np.zeros((800,4,6))
 
         self.test_x_tensor = self.test_x_tensor.unsqueeze(1)
         self.test_dataset = torch.utils.data.TensorDataset(self.test_x_tensor, self.test_y_tensor)
@@ -152,11 +154,14 @@ class DataVisualizer():
 
 
         if self.sitting == True:
-            model = torch.load(self.dump_path + '/subject_'+str(self.subject)+'/p_files/convnet_sitting_1to8_flip_shift_nodrop.pt')
+            model = torch.load(self.dump_path + '/subject_'+str(self.subject)+'/p_files/convnet_sitting_1to8_flip_shift_700e.pt')
         elif self.armsup == True:
             model = torch.load(self.dump_path + '/subject_' + str(self.subject) + '/p_files/convnet_1to8_flip_shift_scale5_armsup.pt')
         else:
-            model = torch.load(self.dump_path + '/subject_'+str(self.subject)+'/p_files/convnet_1to8_flip_shift_scale5_armsup.pt')
+            if shorttrain == True:
+                model = torch.load(self.dump_path + '/subject_'+str(self.subject)+'/p_files/convnet_1to8_flip_shift_nodrop_nohome.pt')
+            else:
+                model = torch.load(self.dump_path + '/subject_' + str(self.subject) + '/p_files/convnet_1to8_flip_shift_nodrop_nohome_1000e.pt')
 
         count = 0
         for batch_idx, batch in enumerate(self.test_loader):
@@ -195,12 +200,25 @@ class DataVisualizer():
                 self.height_error[count-1,joint,4]=(self.sc_sample[joint, 2] - self.tar_sample[joint, 2])*100
                 self.height_error[count-1,joint,5]=(np.sqrt(np.square(self.sc_sample[joint, 0] - self.tar_sample[joint, 0])+np.square(self.sc_sample[joint, 1] - self.tar_sample[joint, 1])+np.square(self.sc_sample[joint, 2] - self.tar_sample[joint, 2])))*100
 
-                #print self.right_elbow
-
-            #print self.right_elbow['est_height'][count-1], self.right_elbow['abserror'][count-1]
-
+            for joint in xrange(4):
+                self.arm_angle_error[count-1,joint,0] = self.tar_sample[joint+2,1]*100
+                self.arm_angle_error[count-1,joint,1] = self.sc_sample[joint+2,1]*100
+                self.arm_angle_error[count - 1, joint, 2] = (self.sc_sample[joint+2, 0] - self.tar_sample[joint+2, 0]) * 100
+                self.arm_angle_error[count - 1, joint, 3] = (self.sc_sample[joint+2, 1] - self.tar_sample[joint+2, 1]) * 100
+                self.arm_angle_error[count - 1, joint, 4] = (self.sc_sample[joint+2, 2] - self.tar_sample[joint+2, 2]) * 100
+                self.arm_angle_error[count - 1, joint, 5] = (np.sqrt(np.square(self.sc_sample[joint+2, 0] - self.tar_sample[joint+2, 0]) + np.square(self.sc_sample[joint+2, 1] - self.tar_sample[joint+2, 1]) + np.square(self.sc_sample[joint+2, 2] - self.tar_sample[joint+2, 2]))) * 100
 
             #self.visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample)
+
+        #self.height_error_plotter()
+        #self.arm_angle_error_plotter()
+
+        return self.arm_angle_error
+
+
+
+
+    def height_error_plotter(self):
 
         fig = plt.figure()
 
@@ -224,73 +242,124 @@ class DataVisualizer():
         ax4.plot(self.height_error[:, 2, 0], np.abs(self.height_error[:, 2, 5]), 'k.')
         ax4.plot(self.height_error[:, 2, 1], np.abs(self.height_error[:, 2, 5]), 'r.')
         ax4.set_title('absolute error as a function of height.')
-
+        plt.suptitle('Error as a function of the z-distance (height above bed)')
         plt.show()
 
 
         fig = plt.figure()
         ax1 = fig.add_subplot(1, 2, 1)
-        ax1.plot(self.height_error[:,0,0], np.abs(self.height_error[:,0,5]), 'k.')
-        ax1.plot(self.height_error[:,0,1], np.abs(self.height_error[:,0,5]), 'r.')
+        #ax1.plot(self.height_error[:,0,0], np.abs(self.height_error[:,0,5]), 'k.')
+        ax1.plot(self.height_error[:,0,1], np.abs(self.height_error[:,0,5]), 'k.')
         ax1.set_title('Head')
 
         ax2 = fig.add_subplot(1, 2, 2)
-        ax2.plot(self.height_error[:, 1, 0], np.abs(self.height_error[:, 1, 5]), 'k.')
-        ax2.plot(self.height_error[:, 1, 1], np.abs(self.height_error[:, 1, 5]), 'r.')
+        #ax2.plot(self.height_error[:, 1, 0], np.abs(self.height_error[:, 1, 5]), 'k.')
+        ax2.plot(self.height_error[:, 1, 1], np.abs(self.height_error[:, 1, 5]), 'k.')
         ax2.set_title('Torso')
+        plt.suptitle('Error as a function of the z-distance (height above bed)')
         plt.show()
 
 
         fig = plt.figure()
         ax1 = fig.add_subplot(2, 2, 1)
-        ax1.plot(self.height_error[:,3,0], np.abs(self.height_error[:,3,5]), 'k.')
-        ax1.plot(self.height_error[:,3,1], np.abs(self.height_error[:,3,5]), 'r.')
+        #ax1.plot(self.height_error[:,3,0], np.abs(self.height_error[:,3,5]), 'k.')
+        ax1.plot(self.height_error[:,3,1], np.abs(self.height_error[:,3,5]), 'k.')
         ax1.set_title('Left Elbow')
+        ax1.set_xlim([-3,15])
+        ax1.set_ylim([0, 40])
 
         ax2 = fig.add_subplot(2, 2, 2)
-        ax2.plot(self.height_error[:, 2, 0], np.abs(self.height_error[:, 2, 5]), 'k.')
-        ax2.plot(self.height_error[:, 2, 1], np.abs(self.height_error[:, 2, 5]), 'r.')
+        #ax2.plot(self.height_error[:, 2, 0], np.abs(self.height_error[:, 2, 5]), 'k.')
+        ax2.plot(self.height_error[:, 2, 1], np.abs(self.height_error[:, 2, 5]), 'k.')
         ax2.set_title('Right Elbow')
+        ax2.set_xlim([-3,15])
+        ax2.set_ylim([0, 40])
 
         ax3 = fig.add_subplot(2, 2, 3)
-        ax3.plot(self.height_error[:, 5, 0], np.abs(self.height_error[:, 5, 5]), 'k.')
-        ax3.plot(self.height_error[:, 5, 1], np.abs(self.height_error[:, 5, 5]), 'r.')
+        #ax3.plot(self.height_error[:, 5, 0], np.abs(self.height_error[:, 5, 5]), 'k.')
+        ax3.plot(self.height_error[:, 5, 1], np.abs(self.height_error[:, 5, 5]), 'k.')
         ax3.set_title('Left Hand')
+        ax3.set_xlim([-2,20])
+        ax3.set_ylim([0, 60])
 
         ax4 = fig.add_subplot(2, 2, 4)
-        ax4.plot(self.height_error[:, 4, 0], np.abs(self.height_error[:, 4, 5]), 'k.')
-        ax4.plot(self.height_error[:, 4, 1], np.abs(self.height_error[:, 4, 5]), 'r.')
+        #ax4.plot(self.height_error[:, 4, 0], np.abs(self.height_error[:, 4, 5]), 'k.')
+        ax4.plot(self.height_error[:, 4, 1], np.abs(self.height_error[:, 4, 5]), 'k.')
         ax4.set_title('Right Hand')
+        ax4.set_xlim([-2,20])
+        ax4.set_ylim([0, 60])
+        plt.suptitle('Error as a function of the z-distance (height above bed)')
         plt.show()
 
 
 
         fig = plt.figure()
         ax1 = fig.add_subplot(2, 2, 1)
-        ax1.plot(self.height_error[:, 7, 0], np.abs(self.height_error[:, 7, 5]), 'k.')
-        ax1.plot(self.height_error[:, 7, 1], np.abs(self.height_error[:, 7, 5]), 'r.')
+        #ax1.plot(self.height_error[:, 7, 0], np.abs(self.height_error[:, 7, 5]), 'k.')
+        ax1.plot(self.height_error[:, 7, 1], np.abs(self.height_error[:, 7, 5]), 'k.')
         ax1.set_title('Left Knee')
+        ax1.set_xlim([0,40])
+        ax1.set_ylim([0, 40])
 
         ax2 = fig.add_subplot(2, 2, 2)
-        ax2.plot(self.height_error[:, 6, 0], np.abs(self.height_error[:, 6, 5]), 'k.')
-        ax2.plot(self.height_error[:, 6, 1], np.abs(self.height_error[:, 6, 5]), 'r.')
+        #ax2.plot(self.height_error[:, 6, 0], np.abs(self.height_error[:, 6, 5]), 'k.')
+        ax2.plot(self.height_error[:, 6, 1], np.abs(self.height_error[:, 6, 5]), 'k.')
         ax2.set_title('Right Knee')
+        ax2.set_xlim([0,40])
+        ax2.set_ylim([0, 40])
 
         ax3 = fig.add_subplot(2, 2, 3)
-        ax3.plot(self.height_error[:, 9, 0], np.abs(self.height_error[:, 9, 5]), 'k.')
-        ax3.plot(self.height_error[:, 9, 1], np.abs(self.height_error[:, 9, 5]), 'r.')
+        #ax3.plot(self.height_error[:, 9, 0], np.abs(self.height_error[:, 9, 5]), 'k.')
+        ax3.plot(self.height_error[:, 9, 1], np.abs(self.height_error[:, 9, 5]), 'k.')
         ax3.set_title('Left Foot')
+        ax3.set_xlim([-3,30])
+        ax3.set_ylim([0, 50])
 
         ax4 = fig.add_subplot(2, 2, 4)
-        ax4.plot(self.height_error[:, 8, 0], np.abs(self.height_error[:, 8, 5]), 'k.')
-        ax4.plot(self.height_error[:, 8, 1], np.abs(self.height_error[:, 8, 5]), 'r.')
+        #ax4.plot(self.height_error[:, 8, 0], np.abs(self.height_error[:, 8, 5]), 'k.')
+        ax4.plot(self.height_error[:, 8, 1], np.abs(self.height_error[:, 8, 5]), 'k.')
         ax4.set_title('Right Foot')
+        ax4.set_xlim([-3, 30])
+        ax4.set_ylim([0, 50])
+        plt.suptitle('Error as a function of the z-distance (height above bed)')
         plt.show()
 
 
+    def arm_angle_error_plotter(self,arm_angle_error1, arm_angle_error2 = None):
+        fig = plt.figure()
+        ax1 = fig.add_subplot(2, 2, 1)
+        if arm_angle_error2 is not None:
+            ax1.plot(arm_angle_error2[:, 1, 1], np.abs(arm_angle_error2[:,1,5]), 'r.')
+        ax1.plot(arm_angle_error1[:, 1, 1], np.abs(arm_angle_error1[:, 1, 5]), 'k.')
+        ax1.set_title('Left Elbow')
+        ax1.set_xlim([100, 190])
+        ax1.set_ylim([0, 40])
 
+        ax2 = fig.add_subplot(2, 2, 2)
+        if arm_angle_error2 is not None:
+            ax2.plot(arm_angle_error2[:, 0, 1], np.abs(arm_angle_error2[:, 0, 5]), 'r.')
+        ax2.plot(arm_angle_error1[:, 0, 1], np.abs(arm_angle_error1[:, 0, 5]), 'k.')
+        ax2.set_title('Right Elbow')
+        ax2.set_xlim([100, 190])
+        ax2.set_ylim([0, 40])
 
-        return mean, stdev
+        ax3 = fig.add_subplot(2, 2, 3)
+        if arm_angle_error2 is not None:
+            ax3.plot(arm_angle_error2[:, 3, 1], np.abs(arm_angle_error2[:, 3, 5]), 'r.')
+        ax3.plot(arm_angle_error1[:, 3, 1], np.abs(arm_angle_error1[:, 3, 5]), 'k.')
+        ax3.set_title('Left Hand')
+        ax3.set_xlim([60, 210])
+        ax3.set_ylim([0, 60])
+
+        ax4 = fig.add_subplot(2, 2, 4)
+        if arm_angle_error2 is not None:
+            ax4.plot(arm_angle_error1[:, 2, 1], np.abs(arm_angle_error1[:, 2, 5]), 'r.')
+        ax4.plot(arm_angle_error1[:, 2, 1], np.abs(arm_angle_error1[:, 2, 5]), 'k.')
+        ax4.set_title('Right Hand')
+        ax4.set_xlim([60, 210])
+        ax4.set_ylim([0, 60])
+        plt.suptitle('Error as a function of the y-distance (toe to head) of arm joints')
+        plt.show()
 
     def pad_pressure_mats(self,NxHxWimages):
         padded = np.zeros((NxHxWimages.shape[0],NxHxWimages.shape[1]+20,NxHxWimages.shape[2]+20))
@@ -452,7 +521,9 @@ class DataVisualizer():
     def run(self):
         '''Runs either the synthetic database creation script or the
         raw dataset creation script to create a dataset'''
-        self.validate_model()
+        arm_angle_err1 = self.validate_model()
+        arm_angle_err2 = self.validate_model(shorttrain=True)
+        self.arm_angle_error_plotter(arm_angle_err1,arm_angle_err2)
         return
 
 
@@ -472,7 +543,7 @@ if __name__ == "__main__":
 
 
     Path =  '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/'
-    Path = '/home/henryclever/hrl_file_server/Autobed/'
+    #Path = '/home/henryclever/hrl_file_server/Autobed/'
 
     print Path
 

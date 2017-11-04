@@ -80,9 +80,9 @@ class PhysicalTrainer():
 
         if self.opt.sitting == True:
             print 'appending to sitting losses'
-            self.train_val_losses['train_sitting_flip_shift_scale_nd_' + str(self.opt.leaveOut)] = []
-            self.train_val_losses['val_sitting_flip_shift_scale_nd_' + str(self.opt.leaveOut)] = []
-            self.train_val_losses['epoch_sitting_flip_shift_scale_nd_' + str(self.opt.leaveOut)] = []
+            self.train_val_losses['train_sitting_flip_shift_scale10_700e_' + str(self.opt.leaveOut)] = []
+            self.train_val_losses['val_sitting_flip_shift_scale10_700e_' + str(self.opt.leaveOut)] = []
+            self.train_val_losses['epoch_sitting_flip_shift_scale10_700e_' + str(self.opt.leaveOut)] = []
         elif self.opt.armsup == True:
             print 'appending to armsup losses'
             self.train_val_losses['train_armsup_flip_shift_scale5_nd_nohome_700e_'+str(self.opt.leaveOut)] = []
@@ -247,11 +247,14 @@ class PhysicalTrainer():
 
     def synthetic_scale(self, images, targets):
 
-        x = np.arange(0.95, 1.05, 0.005)
-        xU, xL = x + 0.05, x - 0.05
+        x = np.arange(-10,11)
+        xU, xL = x + 0.5, x - 0.05
         prob = ss.norm.cdf(xU, scale=3) - ss.norm.cdf(xL, scale=3)
         prob = prob / prob.sum()  # normalize the probabilities so their sum is 1
         multiplier = np.random.choice(x, size=images.shape[0], p=prob)
+        multiplier = (multiplier+100)*0.01
+        #plt.hist(multiplier)
+        #plt.show()
 
         #print multiplier
         tar_mod = np.reshape(targets, (targets.shape[0], targets.shape[1] / 3, 3))/1000
@@ -312,7 +315,8 @@ class PhysicalTrainer():
         prob = ss.norm.cdf(xU, scale=3) - ss.norm.cdf(xL, scale=3)
         prob = prob / prob.sum()  # normalize the probabilities so their sum is 1
         modified_x = np.random.choice(x, size=images.shape[0], p=prob)
-
+        #plt.hist(modified_x)
+        #plt.show()
 
         y = np.arange(-10, 11)
         yU, yL = y + 0.5, y - 0.5
@@ -557,9 +561,9 @@ class PhysicalTrainer():
 
                 if self.opt.sitting == True:
                     print 'appending to sitting losses'
-                    self.train_val_losses['train_sitting_flip_shift_scale_nd_' + str(self.opt.leaveOut)].append(train_loss)
-                    self.train_val_losses['val_sitting_flip_shift_scale_nd_' + str(self.opt.leaveOut)].append(val_loss)
-                    self.train_val_losses['epoch_sitting_flip_shift_scale_nd_' + str(self.opt.leaveOut)].append(epoch)
+                    self.train_val_losses['train_sitting_flip_shift_scale10_700e_' + str(self.opt.leaveOut)].append(train_loss)
+                    self.train_val_losses['val_sitting_flip_shift_scale10_700e_' + str(self.opt.leaveOut)].append(val_loss)
+                    self.train_val_losses['epoch_sitting_flip_shift_scale10_700e_' + str(self.opt.leaveOut)].append(epoch)
                 elif self.opt.armsup == True:
                     print 'appending to armsup losses'
                     self.train_val_losses['train_armsup_flip_shift_scale5_nd_nohome_700e_' + str(self.opt.leaveOut)].append(train_loss)
@@ -942,7 +946,7 @@ if __name__ == "__main__":
 
     if opt.leaveOut == 4:
         test_database_file = opt.subject4Path
-        training_database_file.append(opt.subject1Path)
+        #training_database_file.append(opt.subject1Path)
         training_database_file.append(opt.subject2Path)
         training_database_file.append(opt.subject3Path)
         training_database_file.append(opt.subject5Path)
