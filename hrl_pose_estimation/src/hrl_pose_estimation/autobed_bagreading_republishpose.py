@@ -38,8 +38,8 @@ class HeadDetector:
         # rospy.Subscriber("/head_o/pose", TransformStamped,
         #         self.head_origin_callback)
         # self.database_path = '/home/yashc/Desktop/dataset/subject_4'
-        #self.database_path = '/media/ari/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials'
-        self.database_path = '/home/henryclever/hrl_file_server/Autobed'
+        self.database_path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials'
+        #self.database_path = '/home/henryclever/hrl_file_server/Autobed'
         self.head_center_2d = None
         self.zoom_factor = 2
         self.mat_sampled = False
@@ -51,7 +51,7 @@ class HeadDetector:
 
     def read_bag(self, subject, filename, method, visualize=False):
         print 'Starting on subject ', subject
-        [self.p_world_mat, self.R_world_mat] = load_pickle(self.database_path+'/subject_'+str(subject)+'/mat_axes.p')
+        [self.p_world_mat, self.R_world_mat] = load_pickle(self.database_path+'/subject_15/mat_axes.p')
         # +'/subject_' + str(subject) +
         # pkl.load(open(os.path.join(self.database_path, '/subject_',str(subject),'/','mat_axes.p'), "r"))
         # self.p_world_mat = np.array([0, 0, 0])
@@ -87,18 +87,22 @@ class HeadDetector:
         bag = rosbag.Bag(self.database_path+'/subject_'+str(subject)+'/subject'+str(subject)+filename, 'r')
         latest_scan_time = None
         self.latest_ground_truth_time = None
+        counter = 0
+        rando = 0
         for topic, msg, t in bag.read_messages():
             if topic == '/fsascan':
                 self.mat_sampled = True
                 latest_scan_time = t
                 self.current_physical_pressure_map_callback(msg)
-                print t
+                counter += 1
+                print t, 'count: ',counter, rando
             elif topic == '/abdout0':
                 self.publish_floatarr(msg,abdout)
             elif topic == '/head_o/pose':
                 self.publish_pose(msg,head_pose)
             elif topic == '/l_ankle_o/pose':
                 self.publish_pose(msg,l_ankle_pose)
+                rando = msg.transform.translation.x
             elif topic == 'l_elbow_o/pose':
                 self.publish_pose(msg,l_elbow_pose)
             elif topic == '/l_hand_o/pose':
@@ -450,11 +454,11 @@ if __name__ == '__main__':
     subject_std = []
     subject_scan_count = 0
     time_ranges = []
-    filename = '_full_trial_RH1.bag'
+    filename = '_full_trial_head.bag'
     #filename = '_mat_o.bag'
     method = 'center_of_mass'  # options are: 'blob', 'center_of_mass'
-    #for subject in [4,9,10,11,12,13,14,15]:
-    for subject in [13]:
+    for subject in [1,2,3,4,5,6,7,8]:
+    #for subject in [8]:
         new_mean, new_std, new_count, new_time_range = head_blob.read_bag(subject, filename, method, visualize=False)
         subject_means.append(new_mean)
         subject_std.append(new_std)
