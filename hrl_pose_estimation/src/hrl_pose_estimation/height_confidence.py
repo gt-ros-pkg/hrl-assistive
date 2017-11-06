@@ -65,7 +65,7 @@ class DataVisualizer():
 
         self.sitting =False
         self.subject = 1
-        self.armsup = False
+        self.armsup = True
         # Set initial parameters
         self.dump_path = pkl_directory.rstrip('/')
 
@@ -114,14 +114,40 @@ class DataVisualizer():
 
     def validate_model(self, shorttrain = False):
 
+        validation_set = []
         if self.sitting == True:
             validation_set = load_pickle(self.dump_path + '/subject_'+str(self.subject)+'/p_files/trainval_sitting_120rh_lh_rl_ll.p')
         elif self.armsup == True:
-            validation_set = load_pickle(self.dump_path + '/subject_' + str(6) + '/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head.p')
+            validation = load_pickle(
+                self.dump_path + '/subject_' + str(1) + '/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head.p')
+            for item in validation: validation_set.append(item)
+            validation = load_pickle(
+                self.dump_path + '/subject_' + str(2) + '/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head.p')
+            for item in validation: validation_set.append(item)
+            validation = load_pickle(
+                self.dump_path + '/subject_' + str(3) + '/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head.p')
+            for item in validation: validation_set.append(item)
+            validation = load_pickle(
+                self.dump_path + '/subject_' + str(4) + '/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head.p')
+            for item in validation: validation_set.append(item)
+            validation = load_pickle(
+                self.dump_path + '/subject_' + str(5) + '/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head.p')
+            for item in validation: validation_set.append(item)
+            validation = load_pickle(
+                self.dump_path + '/subject_' + str(6) + '/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head.p')
+            for item in validation: validation_set.append(item)
+            validation = load_pickle(
+                self.dump_path + '/subject_' + str(7) + '/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head.p')
+            for item in validation: validation_set.append(item)
+            validation = load_pickle(
+                self.dump_path + '/subject_' + str(8) + '/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head.p')
+            for item in validation: validation_set.append(item)
         else:
             validation_set = load_pickle(self.dump_path + '/subject_'+str(5)+'/p_files/trainval_200rh1_lh1_rl_ll.p')
 
         test_dat = validation_set
+
+        print len(test_dat)
 
         self.test_x_flat = []  # Initialize the testing pressure mat list
         for entry in range(len(test_dat)):
@@ -145,8 +171,8 @@ class DataVisualizer():
         #print len(validation_set)
         batch_size = 1
 
-        self.height_error = np.zeros((800,10,6))
-        self.arm_angle_error = np.zeros((800,4,6))
+        self.height_error = np.zeros((10400,10,6))
+        self.arm_angle_error = np.zeros((10400,4,6))
 
         self.test_x_tensor = self.test_x_tensor.unsqueeze(1)
         self.test_dataset = torch.utils.data.TensorDataset(self.test_x_tensor, self.test_y_tensor)
@@ -210,7 +236,7 @@ class DataVisualizer():
 
             #self.visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample)
 
-        #self.height_error_plotter()
+        self.height_error_plotter()
         #self.arm_angle_error_plotter()
 
         return self.arm_angle_error
@@ -242,7 +268,7 @@ class DataVisualizer():
         ax4.plot(self.height_error[:, 2, 0], np.abs(self.height_error[:, 2, 5]), 'k.')
         ax4.plot(self.height_error[:, 2, 1], np.abs(self.height_error[:, 2, 5]), 'r.')
         ax4.set_title('absolute error as a function of height.')
-        plt.suptitle('Error as a function of the z-distance (height above bed)')
+        plt.suptitle('Error as a function of the z-distance (height above bed)\n Model trained on subjects 2-8, Graph from scores of subjects 1-8.')
         plt.show()
 
 
@@ -256,7 +282,7 @@ class DataVisualizer():
         #ax2.plot(self.height_error[:, 1, 0], np.abs(self.height_error[:, 1, 5]), 'k.')
         ax2.plot(self.height_error[:, 1, 1], np.abs(self.height_error[:, 1, 5]), 'k.')
         ax2.set_title('Torso')
-        plt.suptitle('Error as a function of the z-distance (height above bed)')
+        plt.suptitle('Error as a function of the z-distance (height above bed)\n Model trained on subjects 2-8, Graph from scores of subjects 1-8.')
         plt.show()
 
 
@@ -288,7 +314,7 @@ class DataVisualizer():
         ax4.set_title('Right Hand')
         ax4.set_xlim([-2,20])
         ax4.set_ylim([0, 60])
-        plt.suptitle('Error as a function of the z-distance (height above bed)')
+        plt.suptitle('Error as a function of the z-distance (height above bed)\n Model trained on subjects 2-8, Graph from scores of subjects 1-8.')
         plt.show()
 
 
@@ -321,7 +347,7 @@ class DataVisualizer():
         ax4.set_title('Right Foot')
         ax4.set_xlim([-3, 30])
         ax4.set_ylim([0, 50])
-        plt.suptitle('Error as a function of the z-distance (height above bed)')
+        plt.suptitle('Error as a function of the z-distance (height above bed)\n Model trained on subjects 2-8, Graph from scores of subjects 1-8.')
         plt.show()
 
 

@@ -61,8 +61,11 @@ class CreateDatasetLib():
     
         #Convert input to the mat frame vector
         m_data = B_m_w * w_data.T
+        m_data = np.squeeze(np.asarray(m_data[:3, :].T))
+        m_data[:,0] = m_data[:,0]+10*INTER_SENSOR_DISTANCE
+        m_data[:, 1] = m_data[:, 1] + 10* INTER_SENSOR_DISTANCE
 
-        return np.squeeze(np.asarray(m_data[:3,:].T))
+        return m_data
 
     
     def mat_to_taxels(self, m_data):

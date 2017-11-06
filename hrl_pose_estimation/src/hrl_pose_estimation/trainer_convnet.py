@@ -28,6 +28,7 @@ from hrl_lib.util import load_pickle
 
 # Pose Estimation Libraries
 from create_dataset_lib import CreateDatasetLib
+from synthetic_lib import SyntheticLib
  
 #PyTorch libraries
 import argparse
@@ -45,8 +46,8 @@ np.set_printoptions(threshold='nan')
 MAT_WIDTH = 0.762 #metres
 MAT_HEIGHT = 1.854 #metres
 MAT_HALF_WIDTH = MAT_WIDTH/2 
-NUMOFTAXELS_X = 64#73 #taxels
-NUMOFTAXELS_Y = 27#30
+NUMOFTAXELS_X = 84#73 #taxels
+NUMOFTAXELS_Y = 47#30
 NUMOFOUTPUTDIMS = 3
 NUMOFOUTPUTNODES = 10
 INTER_SENSOR_DISTANCE = 0.0286#metres
@@ -65,6 +66,7 @@ class PhysicalTrainer():
         3d position and orientation of the markers associated with it.'''
         self.verbose = opt.verbose
         self.opt = opt
+        self.synthetic_master = SyntheticLib().synthetic_master
 
         print test_file
         #Entire pressure dataset with coordinates in world frame
@@ -80,9 +82,9 @@ class PhysicalTrainer():
 
         if self.opt.sitting == True:
             print 'appending to sitting losses'
-            self.train_val_losses['train_sitting_flip_shift_scale10_700e_' + str(self.opt.leaveOut)] = []
-            self.train_val_losses['val_sitting_flip_shift_scale10_700e_' + str(self.opt.leaveOut)] = []
-            self.train_val_losses['epoch_sitting_flip_shift_scale10_700e_' + str(self.opt.leaveOut)] = []
+            self.train_val_losses['train_sitting_flip_shift_scale10_M90_700e_' + str(self.opt.leaveOut)] = []
+            self.train_val_losses['val_sitting_flip_shift_scale10_M90_700e_' + str(self.opt.leaveOut)] = []
+            self.train_val_losses['epoch_sitting_flip_shift_scale10_M90_700e_' + str(self.opt.leaveOut)] = []
         elif self.opt.armsup == True:
             print 'appending to armsup losses'
             self.train_val_losses['train_armsup_flip_shift_scale5_nd_nohome_700e_'+str(self.opt.leaveOut)] = []
@@ -114,27 +116,10 @@ class PhysicalTrainer():
 
        
         #TODO:Write code for the dataset to store these vals
+        self.mat_size_orig = (NUMOFTAXELS_X-20, NUMOFTAXELS_Y-20)
         self.mat_size = (NUMOFTAXELS_X, NUMOFTAXELS_Y)
         self.output_size = (NUMOFOUTPUTNODES, NUMOFOUTPUTDIMS)
-        #Remove empty elements from the dataset, that may be due to Motion
-        #Capture issues.
-        print "Checking database for empty values."
-        empty_count = 0
-        for entry in range(len(dat)):
-            if len(dat[entry][1]) < (30) or (len(dat[entry][0]) <
-                    self.mat_size[0]*self.mat_size[1]):
-                empty_count += 1
-                del dat[entry]
-        print "Empty value check results for training set: {} rogue entries found".format(
-                empty_count)
 
-
-        for entry in range(len(test_dat)):
-            if len(test_dat[entry][1]) < (30) or (len(test_dat[entry][0]) <
-                    self.mat_size[0]*self.mat_size[1]):
-                empty_count += 1
-                del test_dat[entry]
-        print "Empty value check results for test set: {} rogue entries found".format(empty_count)
 
         #Randomize the dataset entries
         dat_rand = []
@@ -153,9 +138,7 @@ class PhysicalTrainer():
             self.train_x_flat.append(dat_rand[entry][0])
         train_x = self.preprocessing_pressure_array_resize(self.train_x_flat)
         train_x = np.array(train_x)
-        train_x = self.pad_pressure_mats(train_x)
         self.train_x_tensor = torch.Tensor(train_x)
-
 
         self.train_y_flat = [] #Initialize the training ground truth list
         for entry in range(len(dat_rand)):
@@ -163,6 +146,8 @@ class PhysicalTrainer():
         #train_y = self.preprocessing_output_resize(self.train_y_flat)
         self.train_y_tensor = torch.Tensor(self.train_y_flat)
         self.train_y_tensor = torch.mul(self.train_y_tensor, 1000)
+
+
         
 
         self.test_x_flat = [] #Initialize the testing pressure mat list
@@ -170,7 +155,6 @@ class PhysicalTrainer():
             self.test_x_flat.append(test_dat[entry][0])
         test_x = self.preprocessing_pressure_array_resize(self.test_x_flat)
         test_x = np.array(test_x)
-        test_x = self.pad_pressure_mats(test_x)
         self.test_x_tensor = torch.Tensor(test_x)
 
         self.test_y_flat = [] #Initialize the ground truth list
@@ -187,11 +171,6 @@ class PhysicalTrainer():
         self.mat_frame_joints = []
 
 
-    def pad_pressure_mats(self,NxHxWimages):
-        padded = np.zeros((NxHxWimages.shape[0],NxHxWimages.shape[1]+20,NxHxWimages.shape[2]+20))
-        padded[:,10:74,10:37] = NxHxWimages
-        NxHxWimages = padded
-        return NxHxWimages
 
     def chi2_distance(self, histA, histB, eps = 1e-10):
         # compute the chi-squared distance
@@ -245,172 +224,6 @@ class PhysicalTrainer():
         return weight_matrix
 
 
-    def synthetic_scale(self, images, targets):
-
-        x = np.arange(-10,11)
-        xU, xL = x + 0.5, x - 0.05
-        prob = ss.norm.cdf(xU, scale=3) - ss.norm.cdf(xL, scale=3)
-        prob = prob / prob.sum()  # normalize the probabilities so their sum is 1
-        multiplier = np.random.choice(x, size=images.shape[0], p=prob)
-        multiplier = (multiplier+100)*0.01
-        #plt.hist(multiplier)
-        #plt.show()
-
-        #print multiplier
-        tar_mod = np.reshape(targets, (targets.shape[0], targets.shape[1] / 3, 3))/1000
-
-        for i in np.arange(images.shape[0]):
-            #multiplier[i] = 1
-            resized = zoom(images[i,:,:], multiplier[i])
-            resized = np.clip(resized, 0, 100)
-
-            rl_diff = resized.shape[1] - images[i,:,:].shape[1]
-            ud_diff = resized.shape[0] - images[i,:,:].shape[0]
-            l_clip = np.int(math.ceil((rl_diff) / 2))
-            #r_clip = rl_diff - l_clip
-            u_clip = np.int(math.ceil((ud_diff) / 2))
-            #d_clip = ud_diff - u_clip
-
-            if rl_diff < 0:  # if less than 0, we'll have to add some padding in to get back up to normal size
-                resized_adjusted = np.zeros_like(images[i,:,:])
-                resized_adjusted[-u_clip:-u_clip + resized.shape[0], -l_clip:-l_clip + resized.shape[1]] = np.copy(resized)
-                images[i,:,:] = resized_adjusted
-                shift_factor_x = INTER_SENSOR_DISTANCE * -l_clip
-            elif rl_diff > 0: # if greater than 0, we'll have to cut the sides to get back to normal size
-                resized_adjusted = np.copy(resized[u_clip:u_clip + images[i,:,:].shape[0], l_clip:l_clip + images[i,:,:].shape[1]])
-                images[i,:,:] = resized_adjusted
-                shift_factor_x = INTER_SENSOR_DISTANCE * -l_clip
-            else:
-                shift_factor_x = 0
-
-            if ud_diff < 0:
-                shift_factor_y = INTER_SENSOR_DISTANCE * u_clip
-            elif ud_diff > 0:
-                shift_factor_y = INTER_SENSOR_DISTANCE * u_clip
-            else:
-                shift_factor_y = 0
-            #print shift_factor_y, shift_factor_x
-
-            resized_tar = np.copy(tar_mod[i,:,:])
-            #resized_tar = np.reshape(resized_tar, (len(resized_tar) / 3, 3))
-            # print resized_tar.shape/
-            resized_tar = (resized_tar + INTER_SENSOR_DISTANCE ) * multiplier[i]
-
-            resized_tar[:, 0] = resized_tar[:, 0] + shift_factor_x  - 10*INTER_SENSOR_DISTANCE*(1-multiplier[i]) - INTER_SENSOR_DISTANCE
-            # resized_tar2 = np.copy(resized_tar)
-            resized_tar[:, 1] = resized_tar[:, 1] + 84 * (1 - multiplier[i]) * INTER_SENSOR_DISTANCE  + shift_factor_y - 10*INTER_SENSOR_DISTANCE*(1-multiplier[i]) - INTER_SENSOR_DISTANCE
-            # resized_tar[7,:] = [-0.286,0,0]
-            tar_mod[i,:,:] = resized_tar
-
-        targets = np.reshape(tar_mod, (targets.shape[0], targets.shape[1]))*1000
-
-        return images, targets
-
-
-
-
-    def synthetic_shiftxy(self, images, targets):
-        x = np.arange(-10, 11)
-        xU, xL = x + 0.5, x - 0.5
-        prob = ss.norm.cdf(xU, scale=3) - ss.norm.cdf(xL, scale=3)
-        prob = prob / prob.sum()  # normalize the probabilities so their sum is 1
-        modified_x = np.random.choice(x, size=images.shape[0], p=prob)
-        #plt.hist(modified_x)
-        #plt.show()
-
-        y = np.arange(-10, 11)
-        yU, yL = y + 0.5, y - 0.5
-        prob = ss.norm.cdf(yU, scale=3) - ss.norm.cdf(yL, scale=3)
-        prob = prob / prob.sum()  # normalize the probabilities so their sum is 1
-        modified_y = np.random.choice(y, size=images.shape[0], p=prob)
-
-        tar_mod = np.reshape(targets, (targets.shape[0], targets.shape[1] / 3, 3))
-
-        #print images[0,30:34,10:14]
-        #print modified_x[0]
-        for i in np.arange(images.shape[0]):
-            if modified_x[i] > 0:
-                images[i, :, modified_x[i]:] = images[i, :, 0:-modified_x[i]]
-            elif modified_x[i] < 0:
-                images[i, :, 0:modified_x[i]] = images[i, :, -modified_x[i]:]
-
-            if modified_y[i] > 0:
-                images[i, modified_y[i]:,:] = images[i, 0:-modified_y[i], :]
-            elif modified_y[i] < 0:
-                images[i, 0:modified_y[i], :] = images[i, -modified_y[i]:, :]
-
-            tar_mod[i, :, 0] += modified_x[i]*INTER_SENSOR_DISTANCE*1000
-            tar_mod[i, :, 1] -= modified_y[i] * INTER_SENSOR_DISTANCE * 1000
-
-
-        #print images[0, 30:34, 10:14]
-        targets = np.reshape(tar_mod, (targets.shape[0], targets.shape[1]))
-
-        return images, targets
-
-    def synthetic_fliplr(self, images, targets):
-
-        coin = np.random.randint(2, size = images.shape[0])
-        modified = coin
-        original = 1-coin
-
-        im_orig = np.multiply(images,original[:,np.newaxis,np.newaxis])
-        im_mod = np.multiply(images,modified[:,np.newaxis,np.newaxis])
-
-        #flip the x axis on all the modified pressure mat images
-        im_mod = im_mod[:,:,::-1]
-
-        tar_orig = np.multiply(targets,original[:,np.newaxis])
-        tar_mod = np.multiply(targets,modified[:,np.newaxis])
-
-        #change the left and right tags on the target in the z, flip x target left to right
-        tar_mod = np.reshape(tar_mod, (tar_mod.shape[0], tar_mod.shape[1] / 3, 3))
-
-        #flip the x left to right
-        tar_mod[:, :, 0] = (tar_mod[:, :, 0] -371.8) * -1 + 371.8
-
-        #swap in the z
-        dummy = zeros((tar_mod.shape))
-        dummy[:,[2,4,6,8], :] = tar_mod[:, [2,4,6,8], :]
-        tar_mod[:, [2,4,6,8], :] = tar_mod[:, [3,5,7,9], :]
-        tar_mod[:, [3,5,7,9], :] = dummy[:, [2,4,6,8], :]
-        #print dummy[0,:,2], tar_mod[0,:,2]
-
-        tar_mod = np.reshape(tar_mod, (tar_mod.shape[0], tar_orig.shape[1]))
-        tar_mod = np.multiply(tar_mod, modified[:, np.newaxis])
-
-        images = im_orig+im_mod
-        targets = tar_orig+tar_mod
-        return images,targets
-
-    def synthetic_master(self, images_tensor, targets_tensor):
-        self.t1 = time.time()
-        images_tensor = torch.squeeze(images_tensor)
-        #images_tensor.torch.Tensor.permute(1,2,0)
-        images = images_tensor.numpy()
-        targets = targets_tensor.numpy()
-        #print images.shape, targets.shape, 'shapes'
-
-        images, targets = self.synthetic_scale(images, targets)
-        images, targets = self.synthetic_fliplr(images,targets)
-        images, targets = self.synthetic_shiftxy(images,targets)
-
-        #print images[0, 10:15, 20:25]
-
-        images_tensor = torch.Tensor(images)
-        targets_tensor = torch.Tensor(targets)
-        #images_tensor.torch.Tensor.permute(2, 0, 1)
-        images_tensor = torch.unsqueeze(images_tensor,1)
-        try:
-            self.t2 = time.time() - self.t1
-        except:
-            self.t2 = 0
-        #print self.t2, 'elapsed time'
-        return images_tensor,targets_tensor
-
-
-
-
     def find_dataset_deviation(self):
         '''Should return the standard deviation of each joint in the (x,y,z) 
         axis'''
@@ -448,10 +261,20 @@ class PhysicalTrainer():
         self.model = convnet.CNN(self.mat_size, self.output_size, hidden_dim, kernel_size)
         self.criterion = F.cross_entropy
         self.optimizer = optim.SGD(self.model.parameters(), lr=0.00000015, momentum=0.7, weight_decay=0.0005)
+        #self.optimizer = optim.RMSprop(self.model.parameters(), lr=0.000015, momentum=0.9, weight_decay=0.0005)
 
         # train the model one epoch at a time
         for epoch in range(1, num_epochs + 1):
+            self.t1 = time.time()
+
             self.train(epoch)
+
+            try:
+                self.t2 = time.time() - self.t1
+            except:
+                self.t2 = 0
+            print 'Time taken by epoch',epoch,':',self.t2,' seconds'
+
 
         #print self.sc
         #print self.tg
@@ -466,7 +289,6 @@ class PhysicalTrainer():
         if self.opt.lab_harddrive == True:
             if self.opt.sitting == True:
                 torch.save(self.model,'/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leaveOut) + '/p_files/' + opt.trainingType + '_sitting' + '.pt')
-
             else:
                 torch.save(self.model, '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_'+str(self.opt.leaveOut)+'/p_files/'+opt.trainingType + '.pt')
             pkl.dump(self.train_val_losses,
@@ -497,21 +319,9 @@ class PhysicalTrainer():
         #This will loop a total = training_images/batch_size times
         for batch_idx, batch in enumerate(self.train_loader):
 
-            # im_sample = np.copy(batch[0].numpy())
-            # im_sample = np.squeeze(im_sample[0, :])
-            # tar_sample = np.copy(batch[1].numpy())
-            # tar_sample = np.squeeze(tar_sample[0, :]) / 1000
+            batch[0],batch[1] = self.synthetic_master(batch[0], batch[1], flip=True, shift=True, scale=True, bedangle = False)
 
-            batch[0],batch[1] = self.synthetic_master(batch[0], batch[1])
-            #
-            # im_sample2 = np.copy(batch[0].numpy())
-            # im_sample2 = np.squeeze(im_sample2[0, :])
-            # tar_sample2 = np.copy(batch[1].numpy())
-            # tar_sample2 = np.squeeze(tar_sample2[0, :]) / 1000
-            #
-            # self.visualize_pressure_map(p_map = im_sample, targets_raw=tar_sample, p_map_val=im_sample2, targets_val=tar_sample2)
 
-            # prepare data
             sc_last = scores
             images, targets = Variable(batch[0]), Variable(batch[1])
 
@@ -550,6 +360,7 @@ class PhysicalTrainer():
                 self.sc_sample = np.reshape(self.sc_sample, self.output_size)
 
 
+
                 val_loss = self.evaluate('test', n_batches=4)
                 train_loss = loss.data[0]
                 examples_this_epoch = batch_idx * len(images)
@@ -561,9 +372,9 @@ class PhysicalTrainer():
 
                 if self.opt.sitting == True:
                     print 'appending to sitting losses'
-                    self.train_val_losses['train_sitting_flip_shift_scale10_700e_' + str(self.opt.leaveOut)].append(train_loss)
-                    self.train_val_losses['val_sitting_flip_shift_scale10_700e_' + str(self.opt.leaveOut)].append(val_loss)
-                    self.train_val_losses['epoch_sitting_flip_shift_scale10_700e_' + str(self.opt.leaveOut)].append(epoch)
+                    self.train_val_losses['train_sitting_flip_shift_scale10_M90_700e_' + str(self.opt.leaveOut)].append(train_loss)
+                    self.train_val_losses['val_sitting_flip_shift_scale10_M90_700e_' + str(self.opt.leaveOut)].append(val_loss)
+                    self.train_val_losses['epoch_sitting_flip_shift_scale10_M90_700e_' + str(self.opt.leaveOut)].append(epoch)
                 elif self.opt.armsup == True:
                     print 'appending to armsup losses'
                     self.train_val_losses['train_armsup_flip_shift_scale5_nd_nohome_700e_' + str(self.opt.leaveOut)].append(train_loss)
@@ -613,13 +424,14 @@ class PhysicalTrainer():
         self.print_error(target, output, data='validate')
 
         self.im_sampleval = data.data.numpy()
+        #print self.im_sampleval.shape, 'im sample shape'
         self.im_sampleval = np.squeeze(self.im_sampleval[0, :])
         self.tar_sampleval = target.data.numpy()
         self.tar_sampleval = np.squeeze(self.tar_sampleval[0, :]) / 1000
         self.sc_sampleval = output.data.numpy()
         self.sc_sampleval = np.squeeze(self.sc_sampleval[0, :]) / 1000
         self.sc_sampleval = np.reshape(self.sc_sampleval, self.output_size)
-        #self.visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample, self.im_sampleval, self.tar_sampleval, self.sc_sampleval)
+        self.visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample, self.im_sampleval, self.tar_sampleval, self.sc_sampleval)
 
 
 
@@ -660,6 +472,8 @@ class PhysicalTrainer():
         """
         for i in xrange(0, len(l), n):
             yield l[i:i+n]
+
+
 
 
     def visualize_pressure_map(self, p_map, targets_raw=None, scores_raw = None, p_map_val = None, targets_val = None, scores_val = None):
@@ -718,7 +532,7 @@ class PhysicalTrainer():
             target_coord = targets_raw[:, :2] / INTER_SENSOR_DISTANCE
             target_coord[:, 1] -= (NUMOFTAXELS_X - 1)
             target_coord[:, 1] *= -1.0
-            ax1.plot(target_coord[:, 0]+10, target_coord[:, 1]+10, 'y*', ms=8)
+            ax1.plot(target_coord[:, 0], target_coord[:, 1], 'y*', ms=8)
 
         plt.pause(0.0001)
 
@@ -729,7 +543,7 @@ class PhysicalTrainer():
             target_coord = scores_raw[:, :2] / INTER_SENSOR_DISTANCE
             target_coord[:, 1] -= (NUMOFTAXELS_X - 1)
             target_coord[:, 1] *= -1.0
-            ax1.plot(target_coord[:, 0]+10, target_coord[:, 1]+10, 'g*', ms=8)
+            ax1.plot(target_coord[:, 0], target_coord[:, 1], 'g*', ms=8)
         ax1.set_title('Training Sample \n Targets and Estimates')
         plt.pause(0.0001)
 
@@ -740,7 +554,7 @@ class PhysicalTrainer():
             target_coord = targets_val[:, :2] / INTER_SENSOR_DISTANCE
             target_coord[:, 1] -= (NUMOFTAXELS_X - 1)
             target_coord[:, 1] *= -1.0
-            ax2.plot(target_coord[:, 0]+10, target_coord[:, 1]+10, 'y*', ms=8)
+            ax2.plot(target_coord[:, 0], target_coord[:, 1], 'y*', ms=8)
         plt.pause(0.0001)
 
         # Visualize estimated from training set
@@ -750,7 +564,7 @@ class PhysicalTrainer():
             target_coord = scores_val[:, :2] / INTER_SENSOR_DISTANCE
             target_coord[:, 1] -= (NUMOFTAXELS_X - 1)
             target_coord[:, 1] *= -1.0
-            ax2.plot(target_coord[:, 0]+10, target_coord[:, 1]+10, 'g*', ms=8)
+            ax2.plot(target_coord[:, 0], target_coord[:, 1], 'g*', ms=8)
         ax2.set_title('Validation Sample \n Targets and Estimates')
         plt.pause(0.0001)
 
@@ -895,9 +709,17 @@ if __name__ == "__main__":
             opt.subject7Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_7/p_files/trainval_sitting_120rh_lh_rl_ll.p'
             opt.subject8Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_8/p_files/trainval_sitting_120rh_lh_rl_ll.p'
 
+        elif opt.armsup == True:
+            opt.subject1Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_1/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head.p'
+            opt.subject2Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_2/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head.p'
+            opt.subject3Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_3/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head.p'
+            opt.subject4Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_4/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head.p'
+            opt.subject5Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_5/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head.p'
+            opt.subject6Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_6/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head.p'
+            opt.subject7Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_7/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head.p'
+            opt.subject8Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_8/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head.p'
+
         else:
-            opt.testPath = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/basic_test_dataset_select.p'
-            opt.trainPath = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/basic_train_dataset_select.p'
             opt.subject1Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_1/p_files/trainval_200rh1_lh1_rl_ll.p'
             opt.subject2Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_2/p_files/trainval_200rh1_lh1_rl_ll.p'
             opt.subject3Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_3/p_files/trainval_200rh1_lh1_rl_ll.p'

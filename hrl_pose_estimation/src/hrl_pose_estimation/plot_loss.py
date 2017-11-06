@@ -63,9 +63,10 @@ class DataVisualizer():
     cutting up the pressure maps and creating synthetic database'''
     def __init__(self, pkl_directory):
 
-        self.sitting = True
-        self.subject = 4
+        self.sitting = False
+        self.subject = 1
         self.armsup = True
+        self.alldata = False
         # Set initial parameters
         self.dump_path = pkl_directory.rstrip('/')
 
@@ -73,6 +74,7 @@ class DataVisualizer():
         self.output_size = (NUMOFOUTPUTNODES, NUMOFOUTPUTDIMS)
 
         train_val_loss = load_pickle(self.dump_path + '/train_val_losses.p')
+        train_val_loss_desk = load_pickle(self.dump_path + '/train_val_losses_hcdesktop.p')
 
         #handles, labels = plt.get_legend_handles_labels()
         #plt.legend(handles, labels)
@@ -81,14 +83,24 @@ class DataVisualizer():
         if self.subject == 1:
             #plt.plot(train_val_loss['epoch_flip_1'], train_val_loss['train_flip_1'],'b')
             #plt.plot(train_val_loss['epoch_1'], train_val_loss['train_1'], 'g')
-            plt.plot(train_val_loss['epoch_1'], train_val_loss['val_1'], 'k')
+            #plt.plot(train_val_loss['epoch_1'], train_val_loss['val_1'], 'k')
             #plt.plot(train_val_loss['epoch_flip_1'], train_val_loss['val_flip_1'], 'r')
             #plt.plot(train_val_loss['epoch_flip_shift_1'], train_val_loss['train_flip_shift_1'], 'g')
             #plt.plot(train_val_loss['epoch_flip_shift_1'], train_val_loss['val_flip_shift_1'], 'g')
             #plt.plot(train_val_loss['epoch_flip_shift_nd_1'], train_val_loss['val_flip_shift_nd_1'], 'g')
-            plt.plot(train_val_loss['epoch_flip_shift_nd_nohome_1'], train_val_loss['val_flip_shift_nd_nohome_1'], 'y')
+            #plt.plot(train_val_loss['epoch_flip_shift_nd_nohome_1'], train_val_loss['val_flip_shift_nd_nohome_1'], 'y')
             #plt.plot(train_val_loss['epoch_armsup_flip_shift_scale5_nd_nohome_1'], train_val_loss['train_armsup_flip_shift_scale5_nd_nohome_1'], 'b')
             #plt.plot(train_val_loss['epoch_armsup_flip_shift_scale5_nd_nohome_1'], train_val_loss['val_armsup_flip_shift_scale5_nd_nohome_1'], 'r')
+
+            plt.plot(train_val_loss_desk['epoch_armsup_700e_1'], train_val_loss_desk['val_armsup_700e_1'], 'k',label='Raw Pressure Map Input')
+            #plt.plot(train_val_loss['epoch_sitting_flip_700e_4'], train_val_loss['val_sitting_flip_700e_4'], 'c',label='Synthetic Flipping: $Pr(X=flip)=0.5$')
+            #plt.plot(train_val_loss_desk['epoch_armsup_flip_shift_scale10_700e_1'],train_val_loss_desk['val_armsup_flip_shift_scale10_700e_1'], 'g',label='Synthetic Flipping+Shifting: $X,Y \sim N(\mu,\sigma), \mu = 0 cm, \sigma \~= 9 cm$')
+            plt.plot(train_val_loss_desk['epoch_armsup_flip_shift_scale5_nd_nohome_700e_1'],train_val_loss_desk['val_armsup_flip_shift_scale5_nd_nohome_700e_1'], 'y', label='Synthetic Flipping+Shifting+Scaling: $S_C \sim N(\mu,\sigma), \mu = 1, \sigma \~= 1.02$')
+            plt.legend()
+            plt.ylabel('Mean squared error loss over 30 joint vectors')
+            plt.xlabel('Epochs, where 700 epochs ~ 4 hours')
+            plt.title('Subject 1 laying validation Loss, training performed on subjects 2, 3, 4, 5, 6, 7, 8')
+
 
         elif self.subject == 4:
             #plt.plot(train_val_loss['epoch_flip_4'], train_val_loss['train_flip_4'], 'g')
@@ -101,7 +113,9 @@ class DataVisualizer():
             plt.plot(train_val_loss['epoch_sitting_700e_4'],train_val_loss['val_sitting_700e_4'],'k', label='Raw Pressure Map Input')
             plt.plot(train_val_loss['epoch_sitting_flip_700e_4'], train_val_loss['val_sitting_flip_700e_4'], 'c', label='Synthetic Flipping: $Pr(X=flip)=0.5$')
             plt.plot(train_val_loss['epoch_sitting_flip_shift_nd_700e4'],train_val_loss['val_sitting_flip_shift_nd_700e4'], 'g', label='Synthetic Flipping+Shifting: $X,Y \sim N(\mu,\sigma), \mu = 0 cm, \sigma \~= 9 cm$')
-            plt.plot(train_val_loss['epoch_sitting_flip_shift_scale5_nd_4'],train_val_loss['val_sitting_flip_shift_scale5_nd_4'], 'y', label='Synthetic Flipping+Shifting+Scaling: $S_C \sim N(\mu,\sigma), \mu = 1, \sigma \~= 1.02$')
+            plt.plot(train_val_loss['epoch_sitting_flip_shift_scale10_700e_4'],train_val_loss['val_sitting_flip_shift_scale10_700e_4'], 'y', label='Synthetic Flipping+Shifting+Scaling: $S_C \sim N(\mu,\sigma), \mu = 1, \sigma \~= 1.02$')
+            plt.plot(train_val_loss['epoch_alldata_flip_shift_scale5_nd_nohome_500e_4'],train_val_loss['val_alldata_flip_shift_scale5_nd_nohome_500e_4'], 'r',label='Standing+Sitting: Synthetic Flipping+Shifting+Scaling: $S_C \sim N(\mu,\sigma), \mu = 1, \sigma \~= 1.02$')
+
             plt.legend()
             plt.ylabel('Mean squared error loss over 30 joint vectors')
             plt.xlabel('Epochs, where 700 epochs ~ 4 hours')
@@ -119,6 +133,11 @@ class DataVisualizer():
 
         for key in train_val_loss:
             print key
+        print '###########################  done with laptop #################'
+        for key in train_val_loss_desk:
+            print key
+        print '###########################  done with desktop ################'
+
 
     def validate_model(self):
 
@@ -126,6 +145,8 @@ class DataVisualizer():
             validation_set = load_pickle(self.dump_path + '/subject_'+str(self.subject)+'/p_files/trainval_sitting_120rh_lh_rl_ll.p')
         elif self.armsup == True:
             validation_set = load_pickle(self.dump_path + '/subject_' + str(self.subject) + '/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head.p')
+        elif self.alldata == True:
+            validation_set = load_pickle(self.dump_path + '/subject_' + str(self.subject) + '/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head_sit120rh_lh_rl_ll.p')
         else:
             validation_set = load_pickle(self.dump_path + '/subject_'+str(self.subject)+'/p_files/trainval_200rh1_lh1_rl_ll.p')
 
@@ -136,8 +157,11 @@ class DataVisualizer():
             self.test_x_flat.append(test_dat[entry][0])
         test_x = self.preprocessing_pressure_array_resize(self.test_x_flat)
         test_x = np.array(test_x)
-        #print test_x.shape
         test_x = self.pad_pressure_mats(test_x)
+
+
+
+
 
 
         self.test_x_tensor = torch.Tensor(test_x)
@@ -159,11 +183,14 @@ class DataVisualizer():
 
 
         if self.sitting == True:
-            model = torch.load(self.dump_path + '/subject_'+str(self.subject)+'/p_files/convnet_sitting_1to8_700e.pt')
+            model = torch.load(self.dump_path + '/subject_'+str(self.subject)+'/p_files/convnet_sitting_1to8_flip_shift_scale5_700e.pt')
         elif self.armsup == True:
-            model = torch.load(self.dump_path + '/subject_' + str(self.subject) + '/p_files/convnet_1to8_flip_shift_scale5_armsup.pt')
+            model = torch.load(self.dump_path + '/subject_' + str(self.subject) + '/p_files/convnet_1to8_armsup_700e.pt')
+        elif self.alldata == True:
+            model = torch.load(self.dump_path + '/subject_' + str(self.subject) + '/p_files/convnet_1to8_alldata_flip_shift_scale_300e.pt')
+
         else:
-            model = torch.load(self.dump_path + '/subject_'+str(self.subject)+'/p_files/convnet_1to8_flip_shift_scale5_armsup.pt')
+            model = torch.load(self.dump_path + '/subject_'+str(self.subject)+'/p_files/convnet_1to8_flip_shift_nodrop_nohome.pt')
 
         count = 0
         for batch_idx, batch in enumerate(self.test_loader):
@@ -190,69 +217,7 @@ class DataVisualizer():
             self.sc_sample = np.squeeze(self.sc_sample[0, :]) / 1000
             self.sc_sample = np.reshape(self.sc_sample, self.output_size)
 
-
-
-
-
-            x = np.arange(0.85, 1.15, 0.01)
-            xU, xL = x + 0.05, x - 0.05
-            prob = ss.norm.cdf(xU, scale=3) - ss.norm.cdf(xL, scale=3)
-            prob = prob / prob.sum()  # normalize the probabilities so their sum is 1
-            multiplier = np.random.choice(x, size=1, p=prob)[0]
-
-            print multiplier
-
-
-            #multiplier = 1.2
-            #print self.im_sample[0:50, 10:30].astype(int), 'orig'
-            resized = zoom(self.im_sample, multiplier)
-            resized = np.clip(resized, 0, 100)
-            #print resized[0:50, 10:30].astype(int)
-            print resized.shape
-            rl_diff = resized.shape[1]-self.im_sample.shape[1]
-            ud_diff = resized.shape[0]-self.im_sample.shape[0]
-            l_clip = np.int(math.ceil((rl_diff)/2))
-            r_clip = rl_diff - l_clip
-            u_clip = np.int(math.ceil((ud_diff)/2))
-            d_clip = ud_diff - u_clip
-
-            print l_clip, r_clip, u_clip, d_clip
-
-            if rl_diff < 0: #if less than 0, we'll have to add some padding in to get back up to normal size
-                resized_adjusted = np.zeros_like(self.im_sample)
-                resized_adjusted[-u_clip:-u_clip+resized.shape[0],-l_clip:-l_clip+resized.shape[1]] = resized
-                resized = resized_adjusted
-                shift_factor_x = 0.0286*-l_clip
-            elif rl_diff > 0:
-                resized_adjusted = resized[u_clip:u_clip+self.im_sample.shape[0],l_clip:l_clip+self.im_sample.shape[1]]
-                resized = resized_adjusted
-                shift_factor_x = 0.0286*-l_clip
-            else:
-                shift_factor_x = 0
-
-            if ud_diff < 0:
-                shift_factor_y = 0.0286 * u_clip
-            elif ud_diff > 0:
-                shift_factor_y = 0.0286 * u_clip
-            else:
-                shift_factor_y = 0
-
-
-            resized_tar = np.copy(self.tar_sample)
-            resized_tar = np.reshape(resized_tar, (len(resized_tar) / 3, 3))
-            #print resized_tar.shape
-            resized_tar = (resized_tar+0.286)*multiplier
-
-            resized_tar[:,0] = resized_tar[:,0] - 0.286 + shift_factor_x
-            #resized_tar2 = np.copy(resized_tar)
-            resized_tar[:,1] = resized_tar[:,1] + 84*(1-multiplier)*.0286 - .286 + shift_factor_y
-            #resized_tar[7,:] = [-0.286,0,0]
-
-
-
-
-
-            self.visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample, p_map_val=resized, targets_val=resized_tar)
+            self.visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample)
 
 
 
@@ -326,28 +291,31 @@ class DataVisualizer():
         plt.pause(0.0001)
 
         # set options
-        ax1 = fig.add_subplot(1, 2, 1)
-        ax2 = fig.add_subplot(1, 2, 2)
+        ax1 = fig.add_subplot(1, 1, 1)
+        #ax2 = fig.add_subplot(1, 2, 2)
 
 
         xlim = [-2.0, 49.0]
         ylim = [86.0, -2.0]
         ax1.set_xlim(xlim)
         ax1.set_ylim(ylim)
-        ax2.set_xlim(xlim)
-        ax2.set_ylim(ylim)
+        #
 
         # background
         ax1.set_axis_bgcolor('cyan')
-        ax2.set_axis_bgcolor('cyan')
+        #
 
         # Visualize pressure maps
         ax1.imshow(p_map, interpolation='nearest', cmap=
         plt.cm.bwr, origin='upper', vmin=0, vmax=100)
 
         if p_map_val is not None:
+            ax2.set_xlim(xlim)
+            ax2.set_ylim(ylim)
+            ax2.set_axis_bgcolor('cyan')
             ax2.imshow(p_map_val, interpolation='nearest', cmap=
             plt.cm.bwr, origin='upper', vmin=0, vmax=100)
+            ax2.set_title('Validation Sample \n Targets and Estimates')
 
         # Visualize targets of training set
         if targets_raw is not None:
@@ -364,7 +332,7 @@ class DataVisualizer():
             target_coord = targets_raw[:, :2] / INTER_SENSOR_DISTANCE
             target_coord[:, 1] -= (NUMOFTAXELS_X - 1)
             target_coord[:, 1] *= -1.0
-            ax1.plot(target_coord[:, 0]+10, target_coord[:, 1]+10, 'y*', ms=8)
+            ax1.plot(target_coord[:, 0]+10, target_coord[:, 1]+10, marker = 'o', linestyle='None', markerfacecolor = 'green',markeredgecolor='black', ms=8)
 
         plt.pause(0.0001)
 
@@ -375,7 +343,7 @@ class DataVisualizer():
             target_coord = scores_raw[:, :2] / INTER_SENSOR_DISTANCE
             target_coord[:, 1] -= (NUMOFTAXELS_X - 1)
             target_coord[:, 1] *= -1.0
-            ax1.plot(target_coord[:, 0]+10, target_coord[:, 1]+10, 'g*', ms=8)
+            ax1.plot(target_coord[:, 0]+10, target_coord[:, 1]+10, marker = 'o', linestyle='None', markerfacecolor = 'white',markeredgecolor='black', ms=8)
         ax1.set_title('Training Sample \n Targets and Estimates')
         plt.pause(0.0001)
 
@@ -397,7 +365,7 @@ class DataVisualizer():
             target_coord[:, 1] -= (NUMOFTAXELS_X - 1)
             target_coord[:, 1] *= -1.0
             ax2.plot(target_coord[:, 0]+10, target_coord[:, 1]+10, 'g*', ms=8)
-        ax2.set_title('Validation Sample \n Targets and Estimates')
+
         plt.pause(0.5)
 
 
@@ -409,8 +377,8 @@ class DataVisualizer():
         #plt.title('Distance above Bed')
         #plt.pause(0.0001)
 
-        #plt.show()
-        plt.show(block = False)
+        plt.show()
+        #plt.show(block = False)
 
         return
 

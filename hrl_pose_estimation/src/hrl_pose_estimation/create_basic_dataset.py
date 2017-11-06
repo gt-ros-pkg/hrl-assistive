@@ -4,6 +4,8 @@ import os
 import numpy as np
 import cPickle as pkl
 import random
+import math
+from scipy.stats import mode
 
 # ROS
 #import roslib; roslib.load_manifest('hrl_pose_estimation')
@@ -33,8 +35,8 @@ from create_dataset_lib import CreateDatasetLib
 MAT_WIDTH = 0.762 #metres
 MAT_HEIGHT = 1.854 #metres
 MAT_HALF_WIDTH = MAT_WIDTH/2 
-NUMOFTAXELS_X = 64#73 #taxels
-NUMOFTAXELS_Y = 27#30 
+NUMOFTAXELS_X = 84#73 #taxels
+NUMOFTAXELS_Y = 47#30
 INTER_SENSOR_DISTANCE = 0.0286#metres
 LOW_TAXEL_THRESH_X = 0
 LOW_TAXEL_THRESH_Y = 0
@@ -69,7 +71,8 @@ class DatabaseCreator():
 
         print self.training_dump_path
         [self.p_world_mat, self.R_world_mat] = load_pickle('/home/henryclever/hrl_file_server/Autobed/pose_estimation_data/mat_axes15.p')
-        self.mat_size = (NUMOFTAXELS_X, NUMOFTAXELS_Y)
+        self.mat_size_orig = (NUMOFTAXELS_X - 20, NUMOFTAXELS_Y - 20)
+        self.mat_size = (NUMOFTAXELS_X,NUMOFTAXELS_Y)
         self.individual_dataset = {}
 
 
@@ -100,6 +103,7 @@ class DatabaseCreator():
 
     def visualize_single_pressure_map(self, p_map_raw, targets_raw=None):
         print p_map_raw.shape, 'pressure mat size'
+        print targets_raw, 'targets ra'
 
         p_map = np.asarray(np.reshape(p_map_raw, self.mat_size))
         fig = plt.figure()
@@ -108,8 +112,8 @@ class DatabaseCreator():
         ax1 = fig.add_subplot(1, 2, 1)
         ax2 = fig.add_subplot(1, 2, 2)
 
-        xlim = [-10.0, 35.0]
-        ylim = [70.0, -10.0]
+        xlim = [-2.0, 49.0]
+        ylim = [86.0, -2.0]
         ax1.set_xlim(xlim)
         ax1.set_ylim(ylim)
 
@@ -158,6 +162,17 @@ class DatabaseCreator():
         return
 
 
+
+    def pad_pressure_mats(self,HxWimages):
+        HxWimages = np.asarray(HxWimages)
+        HxWimages = np.reshape(HxWimages, self.mat_size_orig)
+
+        padded = np.zeros((HxWimages.shape[0]+20,HxWimages.shape[1]+20))
+        padded[10:74,10:37] = HxWimages
+        HxWimages = list(padded.flatten())
+
+        return HxWimages
+
     def discard(self, event):
         plt.close()
         self.keep_image = False
@@ -176,12 +191,12 @@ class DatabaseCreator():
         '''Creates a database using the raw pressure values(full_body) and only
         transforms world frame coordinates to mat coordinates'''
 
-        for subject in [1,2,3,4,5,6,7,8]:
+        #for subject in [2,3,4,5,6,7,8]:
         #for subject in [4, 9, 15, 16, 17, 18]:
-        #for subject in [4, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]:
-
-            #for movement in ['RH1','RH2','RH3','LH1','LH2','LH3','head','LL','RL']:
-            for movement in ['head']:
+        for subject in [2,3,4,5,6,7,8]:
+            self.final_dataset = []
+            #for movement in ['RH_sitting','LH_sitting','RL_sitting','LL_sitting','RH1','RH2','RH3','LH1','LH2','LH3','head','LL','RL']:
+            for movement in ['RH_sitting','LH_sitting','RL_sitting','LL_sitting']:
             #self.training_dump_path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_'+str(subject)
             #print self.training_dump_path
 
@@ -197,58 +212,96 @@ class DatabaseCreator():
 
 
                 if movement == 'head':
-                    num_samp = 10
+                    num_samp = 100
                 elif movement == 'RH1' or movement == 'LH1' or movement == 'RL' or movement == 'LL':
                     num_samp = 200
-                elif movement == 'RH_sitting' or movement == 'LH_sitting' or movement == 'RL_sitting' or movement == 'LL_sitting':
+                elif movement == 'RH_sitting' or movement == 'LH_sitting' :
+                    num_samp = 120
+                elif movement == 'RL_sitting' or movement == 'LL_sitting':
                     num_samp = 120
                 else:
                     num_samp = 100
 
                 print 'working on subject: ',subject, '  movement type:', movement, '  length: ',len(p_file), '  Number sampled: ',num_samp
 
+
+                self.index_queue = []
+
                 for i in np.arange(num_samp):
-        
+
+
                 #for [p_map_raw, target_raw, _] in p_file:
                     #print len(LH_sup) #100+, this is a list
                     #print len(LH_sup[4]) #2, this is a list
                     #print len(LH_sup[4][0]) #1728 #this is a list
+
+                    #print len(p_file[i])
                     #print LH_sup[4][1].shape  #this is an array
                     #break
 
                     #this try/except block trys to keep popping things out of the first index, unless it runs out.
-                    # if it runs out more than once, you've probably set your num samp too high.
+                    # if it runs out more than once, you've probably set your num samp too high
+
+
                     try:
                         index = indexlist.pop()
                     except:
                         print 'resetting index list'
                         indexlist = self.rand_index_p_length(p_file)
                         index = indexlist.pop()
-                    print i, index
+
+
+
+                    #this little statement tries to filter the angle data. Some of the angle data is messed up, so we make a queue and take the mode.
+                    if self.index_queue == []:
+                        self.index_queue = np.zeros(5)
+                        if p_file[index][2][0][0] > 350:
+                            self.index_queue = self.index_queue + math.ceil(p_file[index][2][0][0])-360
+                        else:
+                            self.index_queue = self.index_queue + math.ceil(p_file[index][2][0][0])
+                        angle = mode(self.index_queue)[0][0]
+                    else:
+                        self.index_queue[1:5] = self.index_queue[0:4]
+                        if p_file[index][2][0][0] > 350:
+                            self.index_queue[0] = math.ceil(p_file[index][2][0][0]) - 360
+                        else:
+                            self.index_queue[0] = math.ceil(p_file[index][2][0][0])
+                        angle = mode(self.index_queue)[0][0]
+
+
                     p_map_raw, target_raw, _ = p_file[index]
+
+                    p_map_raw = self.pad_pressure_mats(p_map_raw)
 
                     self.keep_image = False
                     target_mat = self.world_to_mat(target_raw, self.p_world_mat, self.R_world_mat)
                     rot_p_map = np.array(p_map_raw)
+
+
+
                     rot_target_mat = target_mat
 
-                    if i < 5:
+
+
+
+
+                    if i < 0:
                         self.visualize_single_pressure_map(rot_p_map, rot_target_mat)
-                        if self.keep_image == True: self.final_dataset.append([list(rot_p_map.flatten()), rot_target_mat.flatten()])
+                        if self.keep_image == True: self.final_dataset.append([list(rot_p_map.flatten()), rot_target_mat.flatten(), angle])
                     elif self.select == True:
                         self.visualize_single_pressure_map(rot_p_map, rot_target_mat)
-                        if self.keep_image == True: self.final_dataset.append([list(rot_p_map.flatten()), rot_target_mat.flatten()])
+                        if self.keep_image == True: self.final_dataset.append([list(rot_p_map.flatten()), rot_target_mat.flatten(), angle])
                     else:
-                        self.final_dataset.append([list(rot_p_map.flatten()), rot_target_mat.flatten()])
+                        self.final_dataset.append([list(rot_p_map.flatten()), rot_target_mat.flatten(), angle])
                     count += 1
 
+                print np.array(self.final_dataset).shape
+            print 'Output file size: ~', int(len(self.final_dataset) * 0.08958031837*3948/1728), 'Mb'
+            print "Saving final_dataset"
+            pkl.dump(self.final_dataset, open(os.path.join(self.training_dump_path+str(subject)+'/p_files/trainval_sitting_120rh_lh_rl_ll.p'), 'wb'))
+                #pkl.dump(self.individual_dataset, open(os.path.join(self.training_dump_path, 'individual_database.p'), 'wb'))
 
-        print 'Output file size: ~', int(len(self.final_dataset) * 0.08958031837), 'Mb'
-        print "Saving final_dataset"
-        pkl.dump(self.final_dataset, open(os.path.join(self.training_dump_path+str(subject)+'/p_files/trainval_50_head_test.p'), 'wb'))
-            #pkl.dump(self.individual_dataset, open(os.path.join(self.training_dump_path, 'individual_database.p'), 'wb'))
-        
-        print 'Done.'
+            print 'Done.'
         return
 
 
