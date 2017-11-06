@@ -65,7 +65,7 @@ class armReachAction(mpcBaseAction):
         self.highBowlDiff = np.array([0, 0, 0])
         self.bowlPosition = np.array([0, 0, 0])
         # vertical x side x depth
-        self.mouthManOffset = np.array([-0.03, 0.0, 0.04]) # -0.03, 0., 0.05
+        self.mouthManOffset = np.array([-0.03, 0.0, 0.03]) # -0.03, 0., 0.05
         self.mouthNoise     = np.array([0., 0., 0.])
         self.mouthOffset    = self.mouthManOffset+self.mouthNoise 
 
@@ -400,7 +400,45 @@ class armReachAction(mpcBaseAction):
         ['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], -0.15+self.mouthOffset[2], 0., -0.2, 0.]',
          4., 'self.mouth_frame']]
 
+        """
+        ## Wiping Motions ---------------------------------------------------------
+        self.motions['initWiping1'] = {}
+        self.motions['initWiping1']['left'] = \
+          [['MOVEJ', '[0.5447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 1.0291]', 5.0]]
+        self.motions['initWiping1']['right'] = \
+          [['TOOL', 0],
+           ['MOVES', '[0.22, 0., -0.55, 0., -1.85, 0.]', 5., 'self.mouth_frame'],
+           ['TOOL', self.org_tool]]
 
+        self.motions['initWiping2'] = {}
+        self.motions['initWiping2']['left'] = \
+          [['MOVEL', '[-0.06, -0.1, -0.2, -0.6, 0., 0.]', 5., 'self.mouth_frame']]
+
+        self.motions['initWiping3'] = {}
+        self.motions['initWiping3']['left'] = \
+          [['MOVEL', '[-0.005+self.mouthOffset[0], self.mouthOffset[1], -0.15+self.mouthOffset[2], 0., 0., 0.]',
+            5., 'self.mouth_frame'],\
+           ['PAUSE', 1.0]]
+        self.motions['initWiping4'] = {}
+        self.motions['initWiping4']['left'] = \
+          [['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], -0.15+self.mouthOffset[2], np.pi / 10, 0., 0.]', 3.,
+            'self.mouth_frame']]
+        self.motions['initWiping5'] = {}
+        self.motions['initWiping5']['left'] = \
+          [['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], 0.05+self.mouthOffset[2], np.pi / 10, 0., 0.]', 3.,
+            'self.mouth_frame']]
+
+        self.motions['initWiping13'] = {}
+        self.motions['initWiping13']['left'] = \
+          [self.motions['initWiping1']['left'][0] + self.motions['initWiping3']['left'][0]]
+        self.motions['initWiping13']['right'] = \
+          [['PAUSE', 4.0] + self.motions['initWiping1']['right'][0]]
+        self.motions['retractWiping'] = {}
+        self.motions['retractWiping']['left'] = \
+          [['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], -0.15+self.mouthOffset[2], np.pi / 10, 0., 0.]', 4.,
+           'self.mouth_frame']]
+        """
+        
         rospy.loginfo("Parameters are loaded.")
 
     def serverCallback(self, req):

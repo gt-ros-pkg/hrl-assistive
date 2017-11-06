@@ -486,6 +486,59 @@ class armReacherGUI:
         leftProc.start(); rightProc.start()
         leftProc.join(); rightProc.join()
 
+    """
+    def wiping(self, armReachActionLeft, armReachActionRight, log, detection_flag, isolation_flag):
+
+        while not self.emergencyStatus and not rospy.is_shutdown():
+            if self.log != None:
+                self.log.setTask('feeding' )
+                self.log.initParams()
+
+            if self.WipeNumber < 1:
+                ## Wiping -----------------------------------
+                rospy.loginfo("Initializing left arm for wiping")
+                self.proceedPub.publish("Set: , Wiping 1, Wiping 2")
+                if self.renew_mouth:
+                    self.ServiceCallLeft("initWiping1")
+                    self.ServiceCallRight("getHeadPos")
+                    self.ServiceCallRight("initWiping1")
+                    if self.emergencyStatus: break
+                    self.WipeNumber = 1
+                    self.proceedPub.publish("Set: Wiping 1, Wiping 2, Wiping 3")
+                else:
+                    leftProc = multiprocessing.Process(target=self.ServiceCallLeft,
+                                                       args=("initWiping13",))
+                    rightProc = multiprocessing.Process(target=self.ServiceCallRight,
+                                                        args=("initWiping13",))
+                    leftProc.start(); rightProc.start()
+                    leftProc.join(); rightProc.join()
+                    if self.emergencyStatus: break
+                    self.WipeNumber = 3
+                    self.proceedPub.publish("Set: Feeding 1, Feeding 4, retrieving")
+                    
+            if self.WipeNumber < 2:
+                rospy.loginfo("Detect a mouth")
+                if self.renew_mouth:
+                    rospy.sleep(1.0)
+                    self.ServiceCallLeft("getHeadPos")
+                    self.renew_mouth = False
+                self.ServiceCallLeft("initWiping2")
+
+            self.WipeOANumber = 0
+
+            ## # temp
+            ## rospy.loginfo("Running feeding")
+            ## if self.log is not None:   
+            ##     self.log.log_start()
+            ## self.proceedPub.publish("Done")
+            ## self.guiStatusPub.publish("request feedback")
+            ## print "before logging"
+            ## self.log.log_stop()
+            ## self.log.close_log_file_GUI()
+            ## self.motion_complete = True
+            
+            break
+    """
             
     def ServiceCallLeft(self, cmd):
         if self.left_mtx is not True:

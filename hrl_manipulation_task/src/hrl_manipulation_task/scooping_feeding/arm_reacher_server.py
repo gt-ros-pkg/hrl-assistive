@@ -326,6 +326,40 @@ class armReachAction(mpcBaseAction):
           ['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], -0.15+self.mouthOffset[2], 0., 0., 0.]', 4.,
            'self.mouth_frame']]
 
+        ## Wiping Motions ---------------------------------------------------------
+        self.motions['initWiping'] = {}
+        self.motions['initWiping']['left'] = \
+          [['MOVEJ', '[0.327, 0.205, 1.05, -2.08, 2.57, -1.29, 0.576]', 5.0]]
+        self.motions['initWiping']['right'] = \
+          [['MOVES', '[0.22, 0., -0.55, 0., -1.85, 0.]', 5., 'self.mouth_frame'],
+           ['PAUSE', 2.0]]
+
+        self.motions['initWiping1'] = {}
+        self.motions['initWiping1']['left'] = \
+          [['MOVEJ', '[0.6447, 0.1256, 0.721, -2.12, 1.574, -0.7956, 1.1291]', 5.0],]        
+
+        self.motions['initWiping2'] = {}
+        self.motions['initWiping2']['left'] = \
+          [['MOVEL', '[-0.06, -0.1, -0.2, -0.6, 0., 0.]', 5., 'self.mouth_frame']]
+
+        self.motions['initWiping3'] = {}
+        self.motions['initWiping3']['left'] = \
+          [['MOVEL', '[-0.005+self.mouthOffset[0], self.mouthOffset[1], -0.15+self.mouthOffset[2], 0., 0., 0.]',
+            5., 'self.mouth_frame'],\
+           ['PAUSE', 1.0]]
+        self.motions['initWiping4'] = {}
+        self.motions['initWiping4']['left'] = \
+          [['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], -0.15+self.mouthOffset[2], np.pi / 10, 0., 0.]', 3.,
+            'self.mouth_frame']]
+        self.motions['initWiping5'] = {}
+        self.motions['initWiping5']['left'] = \
+          [['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], 0.05+self.mouthOffset[2], np.pi / 10, 0., 0.]', 3.,
+            'self.mouth_frame']]
+        self.motions['retractWiping'] = {}
+        self.motions['retractWiping']['left'] = \
+          [['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], -0.15+self.mouthOffset[2], np.pi / 10, 0., 0.]', 4.,
+           'self.mouth_frame']]
+
         rospy.loginfo("Parameters are loaded.")
 
     def serverCallback(self, req):
