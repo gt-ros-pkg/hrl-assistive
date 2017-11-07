@@ -47,8 +47,8 @@ from torch.autograd import Variable
 MAT_WIDTH = 0.762 #metres
 MAT_HEIGHT = 1.854 #metres
 MAT_HALF_WIDTH = MAT_WIDTH/2
-NUMOFTAXELS_X = 64#73 #taxels
-NUMOFTAXELS_Y = 27#30
+NUMOFTAXELS_X = 84#73 #taxels
+NUMOFTAXELS_Y = 47#30
 NUMOFOUTPUTDIMS = 3
 NUMOFOUTPUTNODES = 10
 INTER_SENSOR_DISTANCE = 0.0286#metres
@@ -63,9 +63,9 @@ class DataVisualizer():
     cutting up the pressure maps and creating synthetic database'''
     def __init__(self, pkl_directory):
 
-        self.sitting = False
-        self.subject = 1
-        self.armsup = True
+        self.sitting = True
+        self.subject = 4
+        self.armsup = False
         self.alldata = False
         # Set initial parameters
         self.dump_path = pkl_directory.rstrip('/')
@@ -75,10 +75,22 @@ class DataVisualizer():
 
         train_val_loss = load_pickle(self.dump_path + '/train_val_losses.p')
         train_val_loss_desk = load_pickle(self.dump_path + '/train_val_losses_hcdesktop.p')
+        train_val_loss_171106 = load_pickle(self.dump_path + '/train_val_losses_171106.p')
 
         #handles, labels = plt.get_legend_handles_labels()
         #plt.legend(handles, labels)
         #print train_val_loss
+
+        for key in train_val_loss:
+            print key
+        print '###########################  done with laptop #################'
+        for key in train_val_loss_desk:
+            print key
+        print '###########################  done with desktop ################'
+        for key in train_val_loss_171106:
+            print key
+        print '###########################  done with 171106 ################'
+
 
         if self.subject == 1:
             #plt.plot(train_val_loss['epoch_flip_1'], train_val_loss['train_flip_1'],'b')
@@ -110,11 +122,15 @@ class DataVisualizer():
             #plt.plot(train_val_loss['epoch_flip_shift_nd_4'], train_val_loss['val_flip_shift_nd_4'], 'b')
             #plt.plot(train_val_loss['epoch_flip_shift_nd_nohome_4'], train_val_loss['val_flip_shift_nd_nohome_4'], 'y')
 
-            plt.plot(train_val_loss['epoch_sitting_700e_4'],train_val_loss['val_sitting_700e_4'],'k', label='Raw Pressure Map Input')
-            plt.plot(train_val_loss['epoch_sitting_flip_700e_4'], train_val_loss['val_sitting_flip_700e_4'], 'c', label='Synthetic Flipping: $Pr(X=flip)=0.5$')
-            plt.plot(train_val_loss['epoch_sitting_flip_shift_nd_700e4'],train_val_loss['val_sitting_flip_shift_nd_700e4'], 'g', label='Synthetic Flipping+Shifting: $X,Y \sim N(\mu,\sigma), \mu = 0 cm, \sigma \~= 9 cm$')
-            plt.plot(train_val_loss['epoch_sitting_flip_shift_scale10_700e_4'],train_val_loss['val_sitting_flip_shift_scale10_700e_4'], 'y', label='Synthetic Flipping+Shifting+Scaling: $S_C \sim N(\mu,\sigma), \mu = 1, \sigma \~= 1.02$')
-            plt.plot(train_val_loss['epoch_alldata_flip_shift_scale5_nd_nohome_500e_4'],train_val_loss['val_alldata_flip_shift_scale5_nd_nohome_500e_4'], 'r',label='Standing+Sitting: Synthetic Flipping+Shifting+Scaling: $S_C \sim N(\mu,\sigma), \mu = 1, \sigma \~= 1.02$')
+            if True: #results presented to hrl dressing 171106
+                plt.plot(train_val_loss['epoch_sitting_700e_4'],train_val_loss['val_sitting_700e_4'],'k', label='Raw Pressure Map Input')
+                plt.plot(train_val_loss['epoch_sitting_flip_700e_4'], train_val_loss['val_sitting_flip_700e_4'], 'c', label='Synthetic Flipping: $Pr(X=flip)=0.5$')
+                plt.plot(train_val_loss['epoch_sitting_flip_shift_nd_700e4'],train_val_loss['val_sitting_flip_shift_nd_700e4'], 'g', label='Synthetic Flipping+Shifting: $X,Y \sim N(\mu,\sigma), \mu = 0 cm, \sigma \~= 9 cm$')
+                plt.plot(train_val_loss['epoch_sitting_flip_shift_scale10_700e_4'],train_val_loss['val_sitting_flip_shift_scale10_700e_4'], 'y', label='Synthetic Flipping+Shifting+Scaling: $S_C \sim N(\mu,\sigma), \mu = 1, \sigma \~= 1.02$')
+                plt.plot(train_val_loss['epoch_alldata_flip_shift_scale5_nd_nohome_500e_4'],train_val_loss['val_alldata_flip_shift_scale5_nd_nohome_500e_4'], 'r',label='Standing+Sitting: Synthetic Flipping+Shifting+Scaling: $S_C \sim N(\mu,\sigma), \mu = 1, \sigma \~= 1.02$')
+            #plt.plot(train_val_loss['epoch_sitting_flip_shift_scale5_700e_4'],train_val_loss['val_sitting_flip_shift_scale_700e_4'], 'y',label='Synthetic Flipping+Shifting+Scaling: $S_C \sim N(\mu,\sigma), \mu = 1, \sigma \~= 1.02$')
+
+            plt.plot(train_val_loss_171106['epoch_sitting_flip_shift_scale5_b50_700e_4'],train_val_loss_171106['train_sitting_flip_shift_scale5_b50_700e_4'], 'b', label='Synthetic Flipping+Shifting+Scaling: $S_C \sim N(\mu,\sigma), \mu = 1, \sigma \~= 1.02$')
 
             plt.legend()
             plt.ylabel('Mean squared error loss over 30 joint vectors')
@@ -131,12 +147,6 @@ class DataVisualizer():
 
 
 
-        for key in train_val_loss:
-            print key
-        print '###########################  done with laptop #################'
-        for key in train_val_loss_desk:
-            print key
-        print '###########################  done with desktop ################'
 
 
     def validate_model(self):
@@ -157,7 +167,7 @@ class DataVisualizer():
             self.test_x_flat.append(test_dat[entry][0])
         test_x = self.preprocessing_pressure_array_resize(self.test_x_flat)
         test_x = np.array(test_x)
-        test_x = self.pad_pressure_mats(test_x)
+        #test_x = self.pad_pressure_mats(test_x)
 
 
 

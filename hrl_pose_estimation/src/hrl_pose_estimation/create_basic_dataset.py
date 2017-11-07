@@ -192,11 +192,11 @@ class DatabaseCreator():
         transforms world frame coordinates to mat coordinates'''
 
         #for subject in [2,3,4,5,6,7,8]:
-        #for subject in [4, 9, 15, 16, 17, 18]:
-        for subject in [2,3,4,5,6,7,8]:
+        for subject in [12]:
+        #for subject in [2,3,4,5,6,7,8]:
             self.final_dataset = []
-            #for movement in ['RH_sitting','LH_sitting','RL_sitting','LL_sitting','RH1','RH2','RH3','LH1','LH2','LH3','head','LL','RL']:
-            for movement in ['RH_sitting','LH_sitting','RL_sitting','LL_sitting']:
+            for movement in ['RH_sitting','LH_sitting','RL_sitting','LL_sitting','RH1','RH2','RH3','LH1','LH2','LH3','head','LL','RL']:
+            #for movement in ['RH_sitting','LH_sitting','RL_sitting','LL_sitting']:
             #self.training_dump_path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_'+str(subject)
             #print self.training_dump_path
 
@@ -285,7 +285,7 @@ class DatabaseCreator():
 
 
 
-                    if i < 0:
+                    if i < 3:
                         self.visualize_single_pressure_map(rot_p_map, rot_target_mat)
                         if self.keep_image == True: self.final_dataset.append([list(rot_p_map.flatten()), rot_target_mat.flatten(), angle])
                     elif self.select == True:
@@ -298,7 +298,7 @@ class DatabaseCreator():
                 print np.array(self.final_dataset).shape
             print 'Output file size: ~', int(len(self.final_dataset) * 0.08958031837*3948/1728), 'Mb'
             print "Saving final_dataset"
-            pkl.dump(self.final_dataset, open(os.path.join(self.training_dump_path+str(subject)+'/p_files/trainval_sitting_120rh_lh_rl_ll.p'), 'wb'))
+            pkl.dump(self.final_dataset, open(os.path.join(self.training_dump_path+str(subject)+'/p_files/test.p'), 'wb'))
                 #pkl.dump(self.individual_dataset, open(os.path.join(self.training_dump_path, 'individual_database.p'), 'wb'))
 
             print 'Done.'

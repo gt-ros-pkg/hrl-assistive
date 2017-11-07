@@ -75,6 +75,7 @@ class PhysicalTrainer():
         #we'll be loading this later
         if self.opt.lab_harddrive == True:
             self.train_val_losses = load_pickle('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/train_val_losses.p')
+            self.train_val_losses = {}
         else:
             self.train_val_losses = load_pickle('/home/henryclever/hrl_file_server/Autobed/train_val_losses.p')
 
@@ -82,9 +83,9 @@ class PhysicalTrainer():
 
         if self.opt.sitting == True:
             print 'appending to sitting losses'
-            self.train_val_losses['train_sitting_flip_shift_scale10_M90_700e_' + str(self.opt.leaveOut)] = []
-            self.train_val_losses['val_sitting_flip_shift_scale10_M90_700e_' + str(self.opt.leaveOut)] = []
-            self.train_val_losses['epoch_sitting_flip_shift_scale10_M90_700e_' + str(self.opt.leaveOut)] = []
+            self.train_val_losses['train_sitting_flip_shift_scale5_700e_' + str(self.opt.leaveOut)] = []
+            self.train_val_losses['val_sitting_flip_shift_scale5_700e_' + str(self.opt.leaveOut)] = []
+            self.train_val_losses['epoch_sitting_flip_shift_scale5_700e_' + str(self.opt.leaveOut)] = []
         elif self.opt.armsup == True:
             print 'appending to armsup losses'
             self.train_val_losses['train_armsup_flip_shift_scale5_nd_nohome_700e_'+str(self.opt.leaveOut)] = []
@@ -292,7 +293,7 @@ class PhysicalTrainer():
             else:
                 torch.save(self.model, '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_'+str(self.opt.leaveOut)+'/p_files/'+opt.trainingType + '.pt')
             pkl.dump(self.train_val_losses,
-                     open(os.path.join('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/train_val_losses.p'), 'wb'))
+                     open(os.path.join('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/train_val_losses_171106.p'), 'wb'))
 
 
         else:
@@ -301,7 +302,7 @@ class PhysicalTrainer():
             else:
                 torch.save(self.model, '/home/henryclever/hrl_file_server/Autobed/subject_'+str(self.opt.leaveOut)+'/p_files/'+opt.trainingType + '.pt')
             pkl.dump(self.train_val_losses,
-                     open(os.path.join('/home/henryclever/hrl_file_server/Autobed/train_val_losses.p'), 'wb'))
+                     open(os.path.join('/home/henryclever/hrl_file_server/Autobed/train_val_losses_171106.p'), 'wb'))
 
 
     def train(self, epoch):
@@ -372,9 +373,9 @@ class PhysicalTrainer():
 
                 if self.opt.sitting == True:
                     print 'appending to sitting losses'
-                    self.train_val_losses['train_sitting_flip_shift_scale10_M90_700e_' + str(self.opt.leaveOut)].append(train_loss)
-                    self.train_val_losses['val_sitting_flip_shift_scale10_M90_700e_' + str(self.opt.leaveOut)].append(val_loss)
-                    self.train_val_losses['epoch_sitting_flip_shift_scale10_M90_700e_' + str(self.opt.leaveOut)].append(epoch)
+                    self.train_val_losses['train_sitting_flip_shift_scale5_700e_' + str(self.opt.leaveOut)].append(train_loss)
+                    self.train_val_losses['val_sitting_flip_shift_scale5_700e_' + str(self.opt.leaveOut)].append(val_loss)
+                    self.train_val_losses['epoch_sitting_flip_shift_scale5_700e_' + str(self.opt.leaveOut)].append(epoch)
                 elif self.opt.armsup == True:
                     print 'appending to armsup losses'
                     self.train_val_losses['train_armsup_flip_shift_scale5_nd_nohome_700e_' + str(self.opt.leaveOut)].append(train_loss)
