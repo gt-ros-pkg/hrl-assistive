@@ -259,7 +259,7 @@ class MoveArmState(PDDLSmachState):
     def publish_goal(self):
         goal = PoseStamped()
         if self.model.upper() == 'AUTOBED':
-            if self.task.upper() == 'SCRATCHING' or self.task.upper() == 'BLANKET':
+            if self.task.upper() == 'SCRATCHING' or self.task.upper() == 'BLANKET' or self.task.upper() == 'BATHING':
                 self.goal_position = [0.28, 0, -0.1]
                 self.goal_orientation = [0.,   0.,   1., 0.]
                 self.reference_frame = '/'+str(self.model.lower())+'/knee_left_link'
@@ -272,6 +272,42 @@ class MoveArmState(PDDLSmachState):
                 goal.pose.orientation.w = self.goal_orientation[3]
                 goal.header.frame_id = self.reference_frame
                 rospy.loginfo('[%s] Reaching to left knee.' % rospy.get_name())
+                self.ignore_next_goal_pose = True
+                self.l_arm_pose_pub.publish(goal)
+            elif self.task.upper() == 'FEEDING' or self.task.upper() == 'SHAVING':
+                self.goal_position = [0.25, 0., -0.1]
+                self.goal_orientation = [0., 0., 1., 0.]
+                self.reference_frame = '/'+str(self.model.lower())+'/head_link'
+                goal.pose.position.x = self.goal_position[0]
+                goal.pose.position.y = self.goal_position[1]
+                goal.pose.position.z = self.goal_position[2]
+                goal.pose.orientation.x = self.goal_orientation[0]
+                goal.pose.orientation.y = self.goal_orientation[1]
+                goal.pose.orientation.z = self.goal_orientation[2]
+                goal.pose.orientation.w = self.goal_orientation[3]
+                goal.header.frame_id = self.reference_frame
+                rospy.loginfo('[%s] Reaching to head.' % rospy.get_name())
+                self.ignore_next_goal_pose = True
+                self.l_arm_pose_pub.publish(goal)
+            elif self.task.upper() == 'DRESSING':
+                current_position, current_orientation = self.listener.lookupTransform('/autobed/base_link',
+                                                                                      '/base_link',
+                                                                                      rospy.Time(0))
+                if current_position[1] > 0:
+                    self.reference_frame = '/' + str(self.model.lower()) + '/upper_arm_right_link'
+                else:
+                    self.reference_frame = '/' + str(self.model.lower()) + '/upper_arm_left_link'
+                self.goal_position = [0.15, 0., -0.19]
+                self.goal_orientation = [0., 0., 1., 0.]
+                goal.pose.position.x = self.goal_position[0]
+                goal.pose.position.y = self.goal_position[1]
+                goal.pose.position.z = self.goal_position[2]
+                goal.pose.orientation.x = self.goal_orientation[0]
+                goal.pose.orientation.y = self.goal_orientation[1]
+                goal.pose.orientation.z = self.goal_orientation[2]
+                goal.pose.orientation.w = self.goal_orientation[3]
+                goal.header.frame_id = self.reference_frame
+                rospy.loginfo('[%s] Reaching to arm.' % rospy.get_name())
                 self.ignore_next_goal_pose = True
                 self.l_arm_pose_pub.publish(goal)
             elif self.task.upper() == 'WIPING_MOUTH' or self.task.upper() == 'FOREHEAD':
@@ -518,6 +554,14 @@ class CallBaseSelectionState(PDDLSmachState):
             local_task_name = 'blanket_feet_knees'
         elif self.task.upper() == 'FOREHEAD':
             local_task_name = 'wiping_forehead'
+        elif self.task.upper() == 'FEEDING':
+            local_task_name = 'feeding_trajectory'
+        elif self.task.upper() == 'BATHING':
+            local_task_name = 'bathe_legs'
+        elif self.task.upper() == 'DRESSING':
+            local_task_name = 'arm_cuffs'
+        elif self.task.upper() == 'SHAVING':
+            local_task_name = 'shaving'
 
         if self.model.upper() == 'AUTOBED':
             try:
@@ -533,19 +577,26 @@ class CallBaseSelectionState(PDDLSmachState):
             except rospy.ServiceException as se:
                 rospy.logerr(se)
                 return [None, None]
-        return resp.base_goal, resp.configuration_goal
+        return resp.base_goal, resp.configuration_goal, resp.distance_to_goal
 
     def on_execute(self, ud):
         rospy.sleep(1.)
         base_goals = []
         configuration_goals = []
-        goal_array, config_array = self.call_base_selection()
+        goal_array, config_array, distance_array = self.call_base_selection()
         if goal_array == None or config_array == None:
             print "Base Selection Returned None"
             return 'aborted'
-        for item in goal_array[:7]:
+        # if len(distance_array) == 1:
+        #     for item in goal_array[:7]:
+        #         base_goals.append(item)
+        #     for item in config_array[:3]:
+        #         configuration_goals.append(item)
+        # elif len(distance_array) == 2:
+        config_num_closest = np.argmin(distance_array)
+        for item in goal_array[config_num_closest*7:(config_num_closest*7+7)]:
             base_goals.append(item)
-        for item in config_array[:3]:
+        for item in config_array[config_num_closest*3:(config_num_closest*3+3)]:
             configuration_goals.append(item)
         print "Base Goals returned:\r\n", base_goals
         print "Configuration Goals returned:\r\n", configuration_goals
@@ -557,7 +608,7 @@ class CallBaseSelectionState(PDDLSmachState):
         try:
             rospy.set_param('/pddl_tasks/%s/configuration_goals' % self.domain, configuration_goals)
         except:
-            rospy.logwarn("[%s] CallBaseSelectionState - Cannot place autoebed and torso height config on parameter server", rospy.get_name())
+            rospy.logwarn("[%s] CallBaseSelectionState - Cannot place autobed and torso height config on parameter server", rospy.get_name())
             return 'aborted'
         state_update = PDDLState()
         state_update.domain = self.domain
@@ -634,9 +685,8 @@ class ConfigureModelRobotState(PDDLSmachState):
         self.r_reset_traj.points.append(r_reset_traj_point)
         l_reset_traj_point = JointTrajectoryPoint()
 
-
         # l_reset_traj_point.positions = [(3.14/2 + 3.14/4), -0.6, m.radians(0), m.radians(-150.), m.radians(150.), m.radians(-110.), 0.0]
-        if self.task.upper() == 'SCRATCHING' or self.task.upper() == 'BLANKET':
+        if self.task.upper() == 'SCRATCHING' or self.task.upper() == 'BLANKET' or True:
             l_reset_traj_point.positions = [(3.14/2 + 3.14/4), -0.6, m.radians(20), m.radians(-150.), m.radians(150.), m.radians(-110.), 0.0]
         else:
             l_reset_traj_point.positions = [1.8, 0.4, 1.9, -3.0, -3.5, -0.5, 0.0]

@@ -35,6 +35,7 @@ roslib.load_manifest('hrl_lib')
 from hrl_lib.util import save_pickle, load_pickle
 #from sPickle import Pickler
 import tf.transformations as tft
+# from score_generator_cma_mannequin import ScoreGenerator
 from score_generator_cma import ScoreGenerator
 #import data_clustering as clust
 #import joblib
@@ -227,8 +228,8 @@ class DataReader(object):
         print 'There are ', len(myGoals), ' goals being sent to score generator.'
         selector = ScoreGenerator(visualize=visualize, targets=mytargets, reference_names=myReferenceNames,
                                   goals=myGoals, model=self.model, task=self.task)#, tf_listener=self.tf_listener)
-        if viz_rviz:
-            selector.show_rviz()
+        # if viz_rviz:
+        #     selector.show_rviz()
         score_sheet = selector.handle_score_generation(plot=plot)
 
         # default_is_zero = False

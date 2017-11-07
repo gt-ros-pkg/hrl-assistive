@@ -1,18 +1,18 @@
 <?xml version="1.0"?>
-<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="bed_and_environment_cali_parameterized_tray">
-<xacro:property name="body_len" value="1.9" />
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="bed_and_environment_mannequin">
+<xacro:property name="body_len" value="1.7" />
 <xacro:property name="comp_len" value="1.755" />
 <xacro:property name="torso_thickness" value="${body_len/comp_len*0.18}" />
 <xacro:property name="leg_thickness" value="${body_len/comp_len*0.16}" />
-<xacro:property name="rotated_torso" value="${0.41-clavicle_len}" />
+<xacro:property name="rotated_torso" value="${0.35-clavicle_len}" />
 <xacro:property name="missing_neck_len" value="${0.05761}" />
 <xacro:property name="missing_neck_width" value="${0.155}" />
 <xacro:property name="missing_neck_thickness" value="${0.11}" />
 <xacro:property name="clavicle_len" value="${body_len/comp_len*0.053}" />
 <xacro:property name="torso_len" value="${body_len/comp_len*0.460}" />
 <xacro:property name="leg_len" value="${body_len/comp_len*0.927}" />
-<xacro:property name="thigh_len" value="${body_len/comp_len*0.927}" />
-<xacro:property name="shank_len" value="${body_len/comp_len*0.927}" />
+<!--<xacro:property name="thigh_len" value="${body_len/comp_len*0.927}" />-->
+<!--<xacro:property name="shank_len" value="${body_len/comp_len*0.927}" />-->
 <xacro:property name="leg_len" value="${body_len/comp_len*0.927}" />
 <xacro:property name="upper_arm_len" value="${body_len/comp_len*0.279}" />
 <xacro:property name="fore_arm_len" value="${body_len/comp_len*0.257}" />
@@ -29,7 +29,7 @@
 <!--<xacro:property name="leg_len" value="1.1" />-->
 
 <!--<robot-->
-  <!--name="bed_and_environment_cali_parameterized_tray">-->
+  <!--name="bed_and_environment_mannequin">-->
   <link
    name="autobed/base_link">
     <inertial>
@@ -52,7 +52,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/base_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_mannequin/meshes/base_link.STL" />
       </geometry>
     </visual>
     <collision>
@@ -61,25 +61,25 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/base_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_mannequin/meshes/base_link.STL" />
       </geometry>
     </collision>
   </link>
-    <link
-   name="autobed/wall_link">
-<inertial>
+  <link
+    name="autobed/wall_link">
+    <inertial>
       <origin
-        xyz="1.87797370531369 0.344853002331874 0.50260600946241"
+        xyz="2.4980018054066E-16 -2.86807614694845E-14 1.25"
         rpy="0 0 0" />
       <mass
-        value="3357.24028579199" />
+        value="99.9999999999957" />
       <inertia
-        ixx="6116.11427029265"
-        ixy="3215.70073716445"
-        ixz="-7.36787327233699"
-        iyy="7061.83554462804"
-        iyz="404.207480292852"
-        izz="12009.0931540893" />
+        ixx="185.416666666659"
+        ixy="-1.56829121448581E-14"
+        ixz="2.50089301119983E-17"
+        iyy="52.0841666666644"
+        iyz="7.40148683083435E-15"
+        izz="133.334166666661" />
     </inertial>
     <visual>
       <origin
@@ -87,7 +87,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/wall_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_mannequin/meshes/wall_link.STL" />
       </geometry>
     </visual>
     <collision>
@@ -96,7 +96,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/wall_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_mannequin/meshes/wall_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -104,8 +104,8 @@
    name="autobed/origin_wall_joint"
     type="fixed">
     <origin
-      xyz="-0.121553494210093 -0.00360284373118887 0"
-      rpy="-6.12323399573677E-17 -2.86271466643222E-16 -0.0588984739444681" />
+      xyz="-0.07 0 0"
+      rpy="0 0 0" />
     <parent
       link="autobed/base_link" />
     <child
@@ -113,73 +113,6 @@
     <axis
       xyz="0 0 0" />
   </joint>
-
-  <!--<joint-->
-   <!--name="autobed/test_length_joint"-->
-    <!--type="fixed">-->
-    <!--<origin-->
-      <!--xyz="1.1565 0 0"-->
-      <!--rpy="0 0 0" />-->
-    <!--<parent-->
-      <!--link="autobed/base_link" />-->
-    <!--<child-->
-      <!--link="autobed/test_length_link" />-->
-    <!--<axis-->
-      <!--xyz="0 0 0" />-->
-  <!--</joint>-->
-  <!--<link-->
-   <!--name="autobed/test_length_link">-->
-    <!--<visual>-->
-      <!--<origin-->
-        <!--xyz="0 0 0"-->
-        <!--rpy="0 0 0" />-->
-      <!--<geometry>-->
-        <!--<box size="4.66 ${0.914*2} 0.1"/>-->
-      <!--</geometry>-->
-    <!--</visual>-->
-    <!--<collision>-->
-      <!--<origin-->
-        <!--xyz="0 0 0"-->
-        <!--rpy="0 0 0" />-->
-      <!--<geometry>-->
-        <!--<box size="4.66 ${0.914*2} 0.1"/>-->
-      <!--</geometry>-->
-    <!--</collision>-->
-  <!--</link>-->
-
-  <!--<joint-->
-   <!--name="autobed/test_spot_joint"-->
-    <!--type="fixed">-->
-    <!--<origin-->
-      <!--xyz="1.1565 0.4552 0"-->
-      <!--rpy="0 0 0" />-->
-    <!--<parent-->
-      <!--link="autobed/base_link" />-->
-    <!--<child-->
-      <!--link="autobed/test_spot_link" />-->
-    <!--<axis-->
-      <!--xyz="0 0 0" />-->
-  <!--</joint>-->
-  <!--<link-->
-   <!--name="autobed/test_spot_link">-->
-    <!--<visual>-->
-      <!--<origin-->
-        <!--xyz="0 0 0"-->
-        <!--rpy="0 0 0" />-->
-      <!--<geometry>-->
-        <!--<box size="0.1 0.1 0.1"/>-->
-      <!--</geometry>-->
-    <!--</visual>-->
-    <!--<collision>-->
-      <!--<origin-->
-        <!--xyz="0 0 0"-->
-        <!--rpy="0 0 0" />-->
-      <!--<geometry>-->
-        <!--<box size="0.1 0.1 0.1"/>-->
-      <!--</geometry>-->
-    <!--</collision>-->
-  <!--</link>-->
-
   <link
    name="autobed/bed_frame_link">
     <inertial>
@@ -202,7 +135,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/bed_frame_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_mannequin/meshes/bed_frame_link.STL" />
       </geometry>
     </visual>
     <collision>
@@ -211,7 +144,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/bed_frame_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_mannequin/meshes/bed_frame_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -255,7 +188,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/leg_rest_upper.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_mannequin/meshes/leg_rest_upper.STL" />
       </geometry>
     </visual>
     <collision>
@@ -264,7 +197,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/leg_rest_upper.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_mannequin/meshes/leg_rest_upper.STL" />
       </geometry>
     </collision>
   </link>
@@ -308,7 +241,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/leg_rest_lower.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_mannequin/meshes/leg_rest_lower.STL" />
       </geometry>
     </visual>
     <collision>
@@ -317,7 +250,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/leg_rest_lower.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_mannequin/meshes/leg_rest_lower.STL" />
       </geometry>
     </collision>
   </link>
@@ -339,136 +272,6 @@
       effort="0"
       velocity="0" />
   </joint>
-  <joint
-   name="autobed/leg_rest_lower_overbed_tray_y_joint"
-    type="prismatic">
-    <origin
-      xyz="1.1264 0.209999999999999 0.0"
-      rpy="-1.5707963267949 -7.65430446472183E-16 -1.84377299293393E-16" />
-    <parent
-      link="autobed/leg_rest_upper" />
-    <child
-      link="autobed/overbed_tray_y_link" />
-    <axis
-      xyz="0 1 0" />
-    <limit
-      lower="-2"
-      upper="2"
-      effort="0"
-      velocity="0" />
-  </joint>
-  <link
-   name="autobed/overbed_tray_y_link">
-  </link>
-  <joint
-   name="autobed/leg_rest_lower_overbed_tray_x_joint"
-    type="prismatic">
-    <origin
-      xyz="0 0 0"
-      rpy="0 0 0" />
-    <parent
-      link="autobed/overbed_tray_y_link" />
-    <child
-      link="autobed/overbed_tray_link" />
-    <axis
-      xyz="1 0 0" />
-    <limit
-      lower="-2"
-      upper="2"
-      effort="0"
-      velocity="0" />
-  </joint>
-  <link
-   name="autobed/overbed_tray_link">
-    <inertial>
-      <origin
-        xyz="-0.126831334555388 -2.39391839684799E-16 0.292487182922541"
-        rpy="0 0 0" />
-      <mass
-        value="45.8804418306016" />
-      <inertia
-        ixx="2.25610644406934"
-        ixy="5.89980014167489E-16"
-        ixz="0.245785758241238"
-        iyy="1.17395227790145"
-        iyz="9.18641561642936E-16"
-        izz="1.88004614377697" />
-    </inertial>
-    <visual>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <geometry>
-        <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/overbed_tray_link.STL" />
-      </geometry>
-    </visual>
-    <collision>
-      <origin
-        xyz="0 0 0"
-        rpy="0 0 0" />
-      <geometry>
-        <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/overbed_tray_link.STL" />
-      </geometry>
-    </collision>
-  </link>
-  <joint
-    name="autobed/tray_screen_bottom_left_joint"
-    type="fixed">
-    <origin
-      xyz="-0.15408 0.27686 0.26419"
-      rpy="0 0 0" />
-    <parent
-      link="autobed/overbed_tray_link" />
-    <child
-      link="autobed/screen_bottom_left_link" />
-  </joint>
-  <link
-    name="autobed/screen_bottom_left_link">
-  </link>
-  <joint
-    name="autobed/tray_screen_bottom_right_joint"
-    type="fixed">
-    <origin
-      xyz="-0.15408 -0.27686 0.26419"
-      rpy="0 0 0" />
-    <parent
-      link="autobed/overbed_tray_link" />
-    <child
-      link="autobed/screen_bottom_right_link" />
-  </joint>
-  <link
-    name="autobed/screen_bottom_right_link">
-  </link>
-  <joint
-    name="autobed/tray_screen_top_left_joint"
-    type="fixed">
-    <origin
-      xyz="-0.15408 0.27686 0.53419"
-      rpy="0 0 0" />
-    <parent
-      link="autobed/overbed_tray_link" />
-    <child
-      link="autobed/screen_top_left_link" />
-  </joint>
-  <link
-    name="autobed/screen_top_left_link">
-  </link>
-  <joint
-    name="autobed/tray_screen_top_right_joint"
-    type="fixed">
-    <origin
-      xyz="-0.15408 -0.27686 0.53419"
-      rpy="0 0 0" />
-    <parent
-      link="autobed/overbed_tray_link" />
-    <child
-      link="autobed/screen_top_right_link" />
-  </joint>
-  <link
-    name="autobed/screen_top_right_link">
-  </link>
   <link
    name="autobed/head_rest_link">
     <inertial>
@@ -487,20 +290,20 @@
     </inertial>
     <visual>
       <origin
-        xyz="0 0 0"
+        xyz="0 ${0.21-0.04} 0"
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/head_rest_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_mannequin/meshes/head_rest_link.STL" />
       </geometry>
     </visual>
     <collision>
       <origin
-        xyz="0 0 0"
+        xyz="0 ${0.21-0.04} 0"
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/head_rest_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_mannequin/meshes/head_rest_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -508,7 +311,7 @@
    name="autobed/head_rest_hinge"
     type="revolute">
     <origin
-      xyz="0.835 0 0.21"
+      xyz="0.835 0 ${0.04}"
       rpy="1.5708 0 -3.1416" />
     <parent
       link="autobed/bed_frame_link" />
@@ -529,7 +332,7 @@
     name="autobed/headrest_bed_to_worldframe_joint"
     type="revolute">
     <origin
-      xyz="${rotated_torso+clavicle_len} 0.15 0"
+      xyz="${rotated_torso+clavicle_len} ${0.15+0.21-0.12} 0"
       rpy="0. 0. 0." />
     <!--<origin-->
       <!--xyz="0.40949 0.05 0"-->
@@ -680,7 +483,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/neck_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_mannequin/meshes/neck_link.STL" />
       </geometry>
       <material
         name="">
@@ -694,7 +497,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/neck_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_mannequin/meshes/neck_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -781,7 +584,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/head_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_mannequin/meshes/head_link.STL" />
       </geometry>
       <material
         name="">
@@ -795,7 +598,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/head_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_environment_mannequin/meshes/head_link.STL" />
       </geometry>
     </collision>
   </link>
@@ -1422,7 +1225,7 @@
         <!--rpy="0 0 0" />-->
       <!--<geometry>-->
         <!--<mesh-->
-          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/upper_body_link.STL" />-->
+          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_mannequin/meshes/upper_body_link.STL" />-->
       <!--</geometry>-->
       <!--<material-->
         <!--name="">-->
@@ -1436,7 +1239,7 @@
         <!--rpy="0 0 0" />-->
       <!--<geometry>-->
         <!--<mesh-->
-          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/upper_body_link.STL" />-->
+          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_mannequin/meshes/upper_body_link.STL" />-->
       <!--</geometry>-->
     <!--</collision>-->
   <!--</link>-->
@@ -1466,7 +1269,7 @@
         <!--rpy="0 0 0" />-->
       <!--<geometry>-->
         <!--<mesh-->
-          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/mid_body_link.STL" />-->
+          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_mannequin/meshes/mid_body_link.STL" />-->
       <!--</geometry>-->
       <!--<material-->
         <!--name="">-->
@@ -1480,7 +1283,7 @@
         <!--rpy="0 0 0" />-->
       <!--<geometry>-->
         <!--<mesh-->
-          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/mid_body_link.STL" />-->
+          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_mannequin/meshes/mid_body_link.STL" />-->
       <!--</geometry>-->
     <!--</collision>-->
   <!--</link>-->
@@ -1510,7 +1313,7 @@
         <!--rpy="0 0 0" />-->
       <!--<geometry>-->
         <!--<mesh-->
-          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/lower_body_link.STL" />-->
+          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_mannequin/meshes/lower_body_link.STL" />-->
       <!--</geometry>-->
       <!--<material-->
         <!--name="">-->
@@ -1524,7 +1327,7 @@
         <!--rpy="0 0 0" />-->
       <!--<geometry>-->
         <!--<mesh-->
-          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/lower_body_link.STL" />-->
+          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_mannequin/meshes/lower_body_link.STL" />-->
       <!--</geometry>-->
     <!--</collision>-->
   <!--</link>-->
@@ -1554,7 +1357,7 @@
         <!--rpy="0 0 0" />-->
       <!--<geometry>-->
         <!--<mesh-->
-          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/quad_left_link.STL" />-->
+          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_mannequin/meshes/quad_left_link.STL" />-->
       <!--</geometry>-->
       <!--<material-->
         <!--name="">-->
@@ -1568,7 +1371,7 @@
         <!--rpy="0 0 0" />-->
       <!--<geometry>-->
         <!--<mesh-->
-          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/quad_left_link.STL" />-->
+          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_mannequin/meshes/quad_left_link.STL" />-->
       <!--</geometry>-->
     <!--</collision>-->
   <!--</link>-->
@@ -1598,7 +1401,7 @@
         <!--rpy="0 0 0" />-->
       <!--<geometry>-->
         <!--<mesh-->
-          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/calf_left_link.STL" />-->
+          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_mannequin/meshes/calf_left_link.STL" />-->
       <!--</geometry>-->
       <!--<material-->
         <!--name="">-->
@@ -1612,7 +1415,7 @@
         <!--rpy="0 0 0" />-->
       <!--<geometry>-->
         <!--<mesh-->
-          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/calf_left_link.STL" />-->
+          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_mannequin/meshes/calf_left_link.STL" />-->
       <!--</geometry>-->
     <!--</collision>-->
   <!--</link>-->
@@ -1642,7 +1445,7 @@
         <!--rpy="0 0 0" />-->
       <!--<geometry>-->
         <!--<mesh-->
-          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/foot_left_link.STL" />-->
+          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_mannequin/meshes/foot_left_link.STL" />-->
       <!--</geometry>-->
       <!--<material-->
         <!--name="">-->
@@ -1656,7 +1459,7 @@
         <!--rpy="0 0 0" />-->
       <!--<geometry>-->
         <!--<mesh-->
-          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/foot_left_link.STL" />-->
+          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_mannequin/meshes/foot_left_link.STL" />-->
       <!--</geometry>-->
     <!--</collision>-->
   <!--</link>-->
@@ -1686,7 +1489,7 @@
         <!--rpy="0 0 0" />-->
       <!--<geometry>-->
         <!--<mesh-->
-          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/quad_right_link.STL" />-->
+          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_mannequin/meshes/quad_right_link.STL" />-->
       <!--</geometry>-->
       <!--<material-->
         <!--name="">-->
@@ -1700,7 +1503,7 @@
         <!--rpy="0 0 0" />-->
       <!--<geometry>-->
         <!--<mesh-->
-          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/quad_right_link.STL" />-->
+          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_mannequin/meshes/quad_right_link.STL" />-->
       <!--</geometry>-->
     <!--</collision>-->
   <!--</link>-->
@@ -1730,7 +1533,7 @@
         <!--rpy="0 0 0" />-->
       <!--<geometry>-->
         <!--<mesh-->
-          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/calf_right_link.STL" />-->
+          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_mannequin/meshes/calf_right_link.STL" />-->
       <!--</geometry>-->
       <!--<material-->
         <!--name="">-->
@@ -1744,7 +1547,7 @@
         <!--rpy="0 0 0" />-->
       <!--<geometry>-->
         <!--<mesh-->
-          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/calf_right_link.STL" />-->
+          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_mannequin/meshes/calf_right_link.STL" />-->
       <!--</geometry>-->
     <!--</collision>-->
   <!--</link>-->
@@ -1774,7 +1577,7 @@
         <!--rpy="0 0 0" />-->
       <!--<geometry>-->
         <!--<mesh-->
-          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/foot_right_link.STL" />-->
+          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_mannequin/meshes/foot_right_link.STL" />-->
       <!--</geometry>-->
       <!--<material-->
         <!--name="">-->
@@ -1788,7 +1591,7 @@
         <!--rpy="0 0 0" />-->
       <!--<geometry>-->
         <!--<mesh-->
-          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/foot_right_link.STL" />-->
+          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_mannequin/meshes/foot_right_link.STL" />-->
       <!--</geometry>-->
     <!--</collision>-->
   <!--</link>-->
@@ -1818,7 +1621,7 @@
         <!--rpy="0 0 0" />-->
       <!--<geometry>-->
         <!--<mesh-->
-          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/arm_left_link.STL" />-->
+          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_mannequin/meshes/arm_left_link.STL" />-->
       <!--</geometry>-->
       <!--<material-->
         <!--name="">-->
@@ -1832,7 +1635,7 @@
         <!--rpy="0 0 0" />-->
       <!--<geometry>-->
         <!--<mesh-->
-          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/arm_left_link.STL" />-->
+          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_mannequin/meshes/arm_left_link.STL" />-->
       <!--</geometry>-->
     <!--</collision>-->
   <!--</link>-->
@@ -1884,7 +1687,7 @@
         <!--rpy="0 0 0" />-->
       <!--<geometry>-->
         <!--<mesh-->
-          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/forearm_left_link.STL" />-->
+          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_mannequin/meshes/forearm_left_link.STL" />-->
       <!--</geometry>-->
       <!--<material-->
         <!--name="">-->
@@ -1898,7 +1701,7 @@
         <!--rpy="0 0 0" />-->
       <!--<geometry>-->
         <!--<mesh-->
-          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/forearm_left_link.STL" />-->
+          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_mannequin/meshes/forearm_left_link.STL" />-->
       <!--</geometry>-->
     <!--</collision>-->
   <!--</link>-->
@@ -1928,7 +1731,7 @@
         <!--rpy="0 0 0" />-->
       <!--<geometry>-->
         <!--<mesh-->
-          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/hand_left_link.STL" />-->
+          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_mannequin/meshes/hand_left_link.STL" />-->
       <!--</geometry>-->
       <!--<material-->
         <!--name="">-->
@@ -1942,7 +1745,7 @@
         <!--rpy="0 0 0" />-->
       <!--<geometry>-->
         <!--<mesh-->
-          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/hand_left_link.STL" />-->
+          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_mannequin/meshes/hand_left_link.STL" />-->
       <!--</geometry>-->
     <!--</collision>-->
   <!--</link>-->
@@ -1972,7 +1775,7 @@
         <!--rpy="0 0 0" />-->
       <!--<geometry>-->
         <!--<mesh-->
-          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/arm_right_link.STL" />-->
+          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_mannequin/meshes/arm_right_link.STL" />-->
       <!--</geometry>-->
       <!--<material-->
         <!--name="">-->
@@ -1986,7 +1789,7 @@
         <!--rpy="0 0 0" />-->
       <!--<geometry>-->
         <!--<mesh-->
-          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/arm_right_link.STL" />-->
+          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_mannequin/meshes/arm_right_link.STL" />-->
       <!--</geometry>-->
     <!--</collision>-->
   <!--</link>-->
@@ -2016,7 +1819,7 @@
         <!--rpy="0 0 0" />-->
       <!--<geometry>-->
         <!--<mesh-->
-          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/forearm_right_link.STL" />-->
+          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_mannequin/meshes/forearm_right_link.STL" />-->
       <!--</geometry>-->
       <!--<material-->
         <!--name="">-->
@@ -2030,7 +1833,7 @@
         <!--rpy="0 0 0" />-->
       <!--<geometry>-->
         <!--<mesh-->
-          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/forearm_right_link.STL" />-->
+          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_mannequin/meshes/forearm_right_link.STL" />-->
       <!--</geometry>-->
     <!--</collision>-->
   <!--</link>-->
@@ -2060,7 +1863,7 @@
         <!--rpy="0 0 0" />-->
       <!--<geometry>-->
         <!--<mesh-->
-          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/hand_right_link.STL" />-->
+          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_mannequin/meshes/hand_right_link.STL" />-->
       <!--</geometry>-->
       <!--<material-->
         <!--name="">-->
@@ -2074,7 +1877,7 @@
         <!--rpy="0 0 0" />-->
       <!--<geometry>-->
         <!--<mesh-->
-          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/meshes/hand_right_link.STL" />-->
+          <!--filename="package://hrl_base_selection/urdf/bed_and_environment_mannequin/meshes/hand_right_link.STL" />-->
       <!--</geometry>-->
     <!--</collision>-->
   <!--</link>-->

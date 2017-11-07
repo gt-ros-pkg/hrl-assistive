@@ -487,7 +487,7 @@
     </inertial>
     <visual>
       <origin
-        xyz="0 0 0"
+        xyz="0 ${0.21-0.04} 0"
         rpy="0 0 0" />
       <geometry>
         <mesh
@@ -496,7 +496,7 @@
     </visual>
     <collision>
       <origin
-        xyz="0 0 0"
+        xyz="0 ${0.21-0.04} 0"
         rpy="0 0 0" />
       <geometry>
         <mesh
@@ -508,7 +508,7 @@
    name="autobed/head_rest_hinge"
     type="revolute">
     <origin
-      xyz="0.835 0 0.21"
+      xyz="0.835 0 ${0.04}"
       rpy="1.5708 0 -3.1416" />
     <parent
       link="autobed/bed_frame_link" />
@@ -529,7 +529,7 @@
     name="autobed/headrest_bed_to_worldframe_joint"
     type="revolute">
     <origin
-      xyz="${rotated_torso+clavicle_len} 0.15 0"
+      xyz="${rotated_torso+clavicle_len} ${0.15+0.21-0.04} 0"
       rpy="0. 0. 0." />
     <!--<origin-->
       <!--xyz="0.40949 0.05 0"-->
@@ -851,7 +851,7 @@
       <geometry>
         <!--<box size="0.5 0.5 .2"/>-->
         <!--<box size="${0.55*body_len/comp_len*2} 0.35 ${0.5*body_len/comp_len*2} "/>-->
-        <box size="${missing_neck_len*4} ${missing_neck_thickness*2} ${missing_neck_width*2} "/>
+        <box size="${missing_neck_len*2} ${missing_neck_thickness} ${missing_neck_width} "/>
       </geometry>
     </visual>
     <collision>
@@ -861,7 +861,7 @@
       <geometry>
         <!--<box size="0.5 0.5 .2"/>-->
         <!--<box size="${0.6*body_len/comp_len*2} 0.35 ${0.5*body_len/comp_len*2}"/>-->
-        <box size="${missing_neck_len*4} ${missing_neck_thickness*2} ${missing_neck_width*2} "/>
+        <box size="${missing_neck_len*2} ${missing_neck_thickness} ${missing_neck_width} "/>
       </geometry>
     </collision>
   </link>
@@ -885,7 +885,7 @@
       <geometry>
         <!--<box size="0.5 0.5 .2"/>-->
         <!--<box size="${0.55*body_len/comp_len*2} 0.35 ${0.5*body_len/comp_len*2} "/>-->
-        <box size="${rotated_torso*2} ${torso_thickness*2} ${(chest_width-torso_thickness)*2} "/>
+        <box size="${rotated_torso} ${torso_thickness} ${(chest_width-torso_thickness)} "/>
       </geometry>
     </visual>
     <collision>
@@ -895,7 +895,7 @@
       <geometry>
         <!--<box size="0.5 0.5 .2"/>-->
         <!--<box size="${0.6*body_len/comp_len*2} 0.35 ${0.5*body_len/comp_len*2}"/>-->
-        <box size="${rotated_torso*2} ${torso_thickness*2} ${(chest_width-torso_thickness)*2} "/>
+        <box size="${rotated_torso} ${torso_thickness} ${(chest_width-torso_thickness)} "/>
       </geometry>
     </collision>
   </link>
@@ -1028,7 +1028,7 @@
       <geometry>
         <!--<box size="0.5 0.5 .2"/>-->
         <!--<box size="${1.2*body_len/comp_len*2} 0.35 ${0.5*body_len/comp_len*2}"/>-->
-        <box size="${(leg_len+torso_len-rotated_torso)*2} ${leg_thickness*2} ${(hip_width-leg_thickness)*2} "/>
+        <box size="${(leg_len+torso_len-rotated_torso)} ${leg_thickness} ${(hip_width-leg_thickness)} "/>
       </geometry>
     </visual>
     <collision>
@@ -1038,7 +1038,7 @@
       <geometry>
         <!--<box size="0.5 0.5 .2"/>-->
         <!--<box size="${1.2*body_len/comp_len*2} 0.35 ${0.5*body_len/comp_len*2}"/>-->
-        <box size="${(leg_len+torso_len-rotated_torso)*2} ${leg_thickness*2} ${(hip_width-leg_thickness)*2} "/>
+        <box size="${(leg_len+torso_len-rotated_torso)} ${leg_thickness} ${(hip_width-leg_thickness)} "/>
       </geometry>
     </collision>
   </link>

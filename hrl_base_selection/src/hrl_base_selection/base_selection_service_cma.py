@@ -142,6 +142,18 @@ class BaseSelector(object):
             else:
                 print 'Paper work is only with Autobed. Error!'
                 return
+        elif load == 'mannequin':
+            print 'Using Mannequin mode. This is loading the tasks for the mannequin'
+            self.user_height = '1.75'
+            model = 'autobed'
+            self.scores_dict[model, 'scratching_knee_left'] = self.load_task('scratching_knee_left', model)
+            self.scores_dict[model, 'wiping_forehead'] = self.load_task('wiping_forehead', model)
+            self.scores_dict[model, 'blanket_feet_knees'] = self.load_task('blanket_feet_knees', model)
+            self.scores_dict[model, 'wiping_mouth'] = self.load_task('wiping_mouth', model)
+            self.scores_dict[model, 'bathe_legs'] = self.load_task('bathe_legs', model)
+            self.scores_dict[model, 'arm_cuffs'] = self.load_task('arm_cuffs', model)
+            self.scores_dict[model, 'feeding_trajectory'] = self.load_task('feeding_trajectory', model)
+#            self.scores_dict[model, 'shaving'] = self.load_task('shaving', model)
         elif load == 'henry':
             model = 'chair'
             #self.scores_dict[model, 'shaving'] = self.load_task('shaving', model)
@@ -364,7 +376,6 @@ class BaseSelector(object):
         else:
             return self.handle_returning_base_goals()
 
-
     # The service call function that determines a good base location to be able to reach the goal location.
     # Takes as input the service's inputs. Outputs lists with initial configurations.
     def handle_select_base(self, req):
@@ -376,14 +387,14 @@ class BaseSelector(object):
         self.task = task
 
         # Check if we have previously loaded this task/model (assuming the data file exists).
-        if self.load == 'henry':
+        if self.load == 'henry' or self.load == 'mannequin':
             self.model = model
         else:
             if self.model != model:
                 print 'The model in the service request differs from what was given to the service on initialization. As' \
                       'a result, data for a user in that location (autobed/chair) has not been loaded!'
         if self.load != 'all':
-            if self.load != task and self.load != 'paper' and self.load != 'henry':
+            if self.load != task and self.load != 'paper' and self.load != 'henry' and self.load != 'mannequin':
                 print 'The task asked of the service request differs from what was given to the service on ' \
                       'initialization. As a result, data for that task has not been loaded!'
                 # print 'As a result, only the runtime version of base selection is active.'
@@ -561,8 +572,6 @@ class BaseSelector(object):
             heady_neigh.fit(np.reshape(heady_possibilities,[len(heady_possibilities),1]), heady_possibilities)
             heady = heady_neigh.predict(int(model_B_head[1, 3]*1000))[0]*.001
 
-
-
             headx = 0.
             #heady = 0.
             print 'The nearest neighbor to the current head_y position is:', heady
@@ -611,7 +620,7 @@ class BaseSelector(object):
         else:
             all_scores = self.scores_dict[model, task]
         #scores = all_scores[headx, heady]
-        max_num_configs = 1
+        max_num_configs = 2
 
         head_rest_angle = -10
         allow_bed_movement = 1
@@ -622,11 +631,11 @@ class BaseSelector(object):
                 head_rest_neigh.fit(np.reshape(head_rest_possibilities, [len(head_rest_possibilities),1]), head_rest_possibilities)
                 head_rest_angle = head_rest_neigh.predict(np.degrees(self.bed_state_head_theta))[0]
 
-            self.score = all_scores[model, max_num_configs, head_rest_angle, headx, heady, 1, self.user_height]
+            self.score = all_scores[model, max_num_configs, head_rest_angle, headx, heady, 0, self.user_height]
         else:
             self.score = all_scores[model, max_num_configs, 0,0,0,0, self.user_height]
         if np.shape(self.score)==(2,) and self.model=='autobed':
-            self.score = [[[self.score[0][0]], [self.score[0][1]], [self.score[0][2]], [self.score[0][3]], [self.score[0][4]], [self.score[0][5]]], self.score[1]]
+            self.score = [[self.score[0][0], self.score[0][1], self.score[0][2], self.score[0][3], self.score[0][4], self.score[0][5]], self.score[1]]
         elif np.shape(self.score)==(2,) and self.model=='chair':
             self.score = [[[self.score[0][0]], [self.score[0][1]], [self.score[0][2]], [self.score[0][3]], [0], [0]], self.score[1]]
         # self.score_length = len(self.score_sheet)
@@ -748,6 +757,7 @@ class BaseSelector(object):
         print list(flatten(pr2_base_output))
         print list(flatten(configuration_output))
         print distance_output
+        print 'The number of configurations coming from Base Selection is ', len(distance_output)
         return list(flatten(pr2_base_output)), list(flatten(configuration_output)), distance_output
 
     # This function is deprecated. Do not use it for now. It is to plot in 2D the score sheet after it gets updated
