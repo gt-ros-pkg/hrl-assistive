@@ -68,12 +68,12 @@ class PhysicalTrainer():
         self.opt = opt
         self.synthetic_master = SyntheticLib().synthetic_master
         self.batch_size = 250
-        self.num_epochs = 700
+        self.num_epochs = 800
 
         print test_file
         #Entire pressure dataset with coordinates in world frame
 
-        self.save_name = '_9to18_all_fss_250b_rmsprop_700e_'
+        self.save_name = '_9to18_all_fss_250b_rmsprop_800e_'
 
         #we'll be loading this later
         if self.opt.lab_harddrive == True:
@@ -297,14 +297,16 @@ class PhysicalTrainer():
 
         self.model = convnet.CNN(self.mat_size, self.output_size, hidden_dim, kernel_size)
         self.criterion = F.cross_entropy
-        self.optimizer = optim.SGD(self.model.parameters(), lr=0.00000012, momentum=0.7, weight_decay=0.0005)
-        #self.optimizer = optim.RMSprop(self.model.parameters(), lr=0.0000015, momentum=0.7, weight_decay=0.0005)
+        self.optimizer2 = optim.Adam(self.model.parameters(), lr=0.00000015, weight_decay=0.0005)
+        self.optimizer = optim.RMSprop(self.model.parameters(), lr=0.000015, momentum=0.7, weight_decay=0.0005)
 
         # train the model one epoch at a time
         for epoch in range(1, num_epochs + 1):
             self.t1 = time.time()
 
             self.train(epoch)
+
+            if epoch > 20: self.optimizer = self.optimizer2
 
             try:
                 self.t2 = time.time() - self.t1

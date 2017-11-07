@@ -23,9 +23,9 @@ class CNN(nn.Module):
 
 
         hidden_dim1= 16
-        hidden_dim2 = 32
-        hidden_dim3 = 64
-        hidden_dim4 = 64
+        hidden_dim2 = 16
+        hidden_dim3 = 24
+        hidden_dim4 = 24
         hidden_dim5 = 64
 
         self.CNN_pack1 = nn.Sequential(
@@ -60,8 +60,8 @@ class CNN(nn.Module):
 
         print 'x'
         self.CNN_fc = nn.Sequential(
-            torch.nn.Linear(8704, 3000),
-            torch.nn.Linear(3000, 1000),
+            torch.nn.Linear(3264, 2000),
+            torch.nn.Linear(2000, 1000),
             torch.nn.Linear(1000, 200),
             torch.nn.Linear(200, 30),
         )
