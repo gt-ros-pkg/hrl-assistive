@@ -6,7 +6,6 @@
       <gravity>0 0 0</gravity>
       <collision_detector>bullet</collision_detector>
     </physics>
-    
     <skeleton name="ground skeleton">
       <mobile>false</mobile>
       <body name="ground">
@@ -33,7 +32,6 @@
         <child>ground</child>
       </joint>
     </skeleton>
-    
     <skeleton name="fullbody1">
       <transformation>0 0 0 0 0 0</transformation>
       <body name="h_pelvis1">
@@ -42,10 +40,43 @@
           <mass>5.6154</mass>
           <offset>0.0 0 0.0</offset>
         </inertia>
-      
       </body>
-      
       <body name="h_pelvis">
+        <transformation>0 0 0 0 0 0</transformation>
+        <inertia>
+          <mass>5.6154</mass>
+          <offset>0.0 0 0.0</offset>
+        </inertia>
+        <visualization_shape>
+					<geometry>
+						<multi_sphere>
+							<sphere>
+								<radius>0.147437049218</radius>
+								<position>0 0 0</position>
+							</sphere>
+							<sphere>
+								<radius>0.1644364425985</radius>
+								<position>0.0 0.0566793548508 0.0</position>
+							</sphere>
+						</multi_sphere>
+					</geometry>
+				</visualization_shape>
+				<collision_shape>
+					<geometry>
+						<multi_sphere>
+							<sphere>
+								<radius>0.147437049218</radius>
+								<position>0 0 0</position>
+							</sphere>
+							<sphere>
+								<radius>0.1644364425985</radius>
+								<position>0.0 0.0566793548508 0.0</position>
+							</sphere>
+						</multi_sphere>
+					</geometry>
+				</collision_shape>
+      </body>
+      <body name="h_pelvis_left">
         <transformation>0 0 0 0 0 0</transformation>
         <inertia>
           <mass>5.6154</mass>
@@ -79,6 +110,41 @@
             </multi_sphere>
           </geometry>
         </collision_shape>
+      </body>
+      <body name="h_pelvis_right">
+        <transformation>0 0 0 0 0 0</transformation>
+        <inertia>
+          <mass>5.6154</mass>
+          <offset>0.0 0 0.0</offset>
+        </inertia>
+        <visualization_shape>
+          <geometry>
+            <multi_sphere>
+              <sphere>
+                <radius>0.147437049218</radius>
+                <position>0 0 0</position>
+              </sphere>
+              <sphere>
+                <radius>0.10713232705</radius>
+                <position>0.01649408 -0.0611151927357 0.0931083893835</position>
+              </sphere>
+            </multi_sphere>
+          </geometry>
+        </visualization_shape>
+				<collision_shape>
+					<geometry>
+						<multi_sphere>
+							<sphere>
+								<radius>0.147437049218</radius>
+								<position>0 0 0</position>
+							</sphere>
+							<sphere>
+								<radius>0.10713232705</radius>
+								<position>0.01649408 -0.0611151927357 0.0931083893835</position>
+							</sphere>
+						</multi_sphere>
+					</geometry>
+				</collision_shape>
       </body>
       <body name="h_thigh_left">
         <transformation>0.01649408 -0.0611151927357 -0.0931083893835 0.0 0.0 0.0</transformation>
@@ -200,7 +266,7 @@
               </sphere>
               <sphere>
                 <radius>0.02319553445095</radius>
-                <position>0.1 0 0</position>
+                <position>0.07680446554905 0 0</position>
               </sphere>
             </multi_sphere>
           </geometry>
@@ -214,7 +280,7 @@
               </sphere>
               <sphere>
                 <radius>0.02319553445095</radius>
-                <position>0.1 0 0</position>
+                <position>0.07680446554905 0 0</position>
               </sphere>
             </multi_sphere>
           </geometry>
@@ -340,7 +406,7 @@
               </sphere>
               <sphere>
                 <radius>0.02319553445095</radius>
-                <position>0.1 0 0</position>
+                <position>0.07680446554905 0 0</position>
               </sphere>
             </multi_sphere>
           </geometry>
@@ -354,7 +420,7 @@
               </sphere>
               <sphere>
                 <radius>0.02319553445095</radius>
-                <position>0.1 0 0</position>
+                <position>0.07680446554905 0 0</position>
               </sphere>
             </multi_sphere>
           </geometry>
@@ -445,7 +511,7 @@
               </sphere>
               <sphere>
                 <radius>0.090860730923</radius>
-                <position>0 0.284161208224 0</position>
+                <position>0 0.19330047730099997 0</position>
               </sphere>
             </multi_sphere>
           </geometry>
@@ -459,7 +525,7 @@
               </sphere>
               <sphere>
                 <radius>0.090860730923</radius>
-                <position>0 0.284161208224 0</position>
+                <position>0 0.19330047730099997 0</position>
               </sphere>
             </multi_sphere>
           </geometry>
@@ -836,9 +902,25 @@
         <init_pos>0 0 1.570796</init_pos>
         <init_vel>0 0 0</init_vel>
       </joint>
-      <joint name="j_thigh_left" type="euler">
+      <joint name="j_pelvis_left" type="euler">
         <transformation>0.0 0.0 0.0 0.0 0.0 0.0</transformation>
         <parent>h_pelvis</parent>
+        <child>h_pelvis_left</child>
+        <axis_order>zyx</axis_order>
+        <init_pos>0 0 0</init_pos>
+        <init_vel>0 0 0</init_vel>
+      </joint>
+      <joint name="j_pelvis_right" type="euler">
+        <transformation>0.0 0.0 0.0 0.0 0.0 0.0</transformation>
+        <parent>h_pelvis</parent>
+        <child>h_pelvis_right</child>
+        <axis_order>zyx</axis_order>
+        <init_pos>0 0 0</init_pos>
+        <init_vel>0 0 0</init_vel>
+      </joint>
+      <joint name="j_thigh_left" type="euler">
+        <transformation>0.0 0.0 0.0 0.0 0.0 0.0</transformation>
+        <parent>h_pelvis_left</parent>
         <child>h_thigh_left</child>
         <axis_order>zyx</axis_order>
         <init_pos>0 0 0</init_pos>
@@ -913,7 +995,7 @@
       </joint>
       <joint name="j_thigh_right" type="euler">
         <transformation>0.0 0.0 0.0 0.0 0.0 0.0</transformation>
-        <parent>h_pelvis</parent>
+        <parent>h_pelvis_right</parent>
         <child>h_thigh_right</child>
         <axis_order>zyx</axis_order>
         <init_pos>0 0 0</init_pos>

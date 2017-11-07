@@ -25,6 +25,7 @@ from std_msgs.msg import String
 roslib.load_manifest('hrl_base_selection')
 from hrl_base_selection.helper_functions import createBMatrix, Bmat_to_pos_quat, calc_axis_angle
 from hrl_base_selection.dart_setup import DartDressingWorld
+from hrl_base_selection.graph_search_functions import SimpleGraph, a_star_search, reconstruct_path
 from hrl_base_selection.msg import PhysxOutcome
 from hrl_base_selection.srv import InitPhysxBodyModel, PhysxInput, IKService, PhysxOutput, PhysxInputWaypoints
 
@@ -36,11 +37,15 @@ import random, threading
 import openravepy as op
 from openravepy.misc import InitOpenRAVELogging
 
+from sklearn.neighbors import NearestNeighbors
+
 import tf.transformations as tft
 
 import pickle as pkl
 roslib.load_manifest('hrl_lib')
 from hrl_lib.util import save_pickle, load_pickle
+
+import gc
 
 import cma
 
@@ -58,7 +63,7 @@ class ScoreGeneratorDressingwithPhysx(object):
         self.human_arm = None
         self.human_opposite_arm = None
 
-
+        self.optimization_results = dict()
 
         self.start_traj = []
         self.end_traj = []
@@ -69,7 +74,13 @@ class ScoreGeneratorDressingwithPhysx(object):
         rospack = rospkg.RosPack()
         self.pkg_path = rospack.get_path('hrl_base_selection')
 
+        self.stretch_allowable = []
+
         self.human_rot_correction = None
+
+        self.fixed_points = []
+        self.add_new_fixed_point = False
+        self.fixed_points_to_use = []
 
         # self.model = None
         self.force_cost = 0.
@@ -81,8 +92,8 @@ class ScoreGeneratorDressingwithPhysx(object):
 
         self.reference_names = None
 
-        self.best_physx_score = 100.
-        self.best_pr2_results = [[], []]
+        self.best_physx_score = dict() #100.
+        self.best_pr2_results = dict()
 
         self.arm_traj_parameters = []
         self.pr2_parameters = []
@@ -114,13 +125,23 @@ class ScoreGeneratorDressingwithPhysx(object):
         self.physx_output = False
         self.physx_outcome = None
 
-        if standard_mode:
+        self.standard_mode = standard_mode
+
+        if self.standard_mode:
             self.setup_openrave()
 
             self.set_robot_arm(robot_arm)
             self.set_human_arm(human_arm)
 
-            self.setup_dart()
+            self.setup_dart(filename='fullbody_50percentile_capsule.skel')
+
+            self.arm_configs_eval = load_pickle(rospack.get_path('hrl_dressing') +
+                                               '/data/forearm_trajectory_evaluation/entire_results_list.pkl')
+            self.arm_configs_checked = []
+            for line in self.arm_configs_eval:
+                self.arm_configs_checked.append(line[0:4])
+            self.arm_knn = NearestNeighbors(8, m.radians(15.))
+            self.arm_knn.fit(self.arm_configs_checked)
 
             # self.setup_ik_service()
             self.setup_physx()
@@ -339,23 +360,48 @@ class ScoreGeneratorDressingwithPhysx(object):
             self.force_cost = copy.copy(temp_force_cost)
             print 'Force cost from physx: ', self.force_cost
             self.physx_output = True
-            print 'Physx simulation outcome: ', self.physx_outcome
-            print 'Physx simulation outcome (circle path): ', self.physx_outcome_method2
+            print 'Physx simulation outcome (single-contact rays): ', self.physx_outcome
+            print 'Physx simulation outcome (point-in-polygon): ', self.physx_outcome_method2
             return True
 
-    def run_interleaving_optimization_outer_level(self, maxiter=30, popsize=100):
+    def optimize_entire_dressing_task(self):
+        self.set_robot_arm('rightarm')
+        subtask_list = ['rightarm', 'leftarm']
+
+        self.fixed_points = []
+
+        for subtask_number, subtask in enumerate(subtask_list):
+
+            if 'right' in subtask or 'left' in subtask:
+                self.set_human_arm(subtask)
+            self.best_pr2_results[subtask_number] = [[], []]
+            if subtask_number == 0:
+                self.fixed_points_to_use = []
+                self.stretch_allowable = []
+                self.add_new_fixed_point = True
+                self.run_interleaving_optimization_outer_level(subtask=subtask, subtask_step=subtask_number,
+                                                               maxiter=5, popsize=5)
+            else:
+                if subtask_number == 1:
+                    self.fixed_points_to_use = [0]
+                    self.stretch_allowable = [0.5]
+                    self.add_new_fixed_point = True
+                self.run_interleaving_optimization_outer_level(subtask=subtask, subtask_step=subtask_number,
+                                                               maxiter=20, popsize=500)
+
+    def run_interleaving_optimization_outer_level(self, maxiter=8, popsize=40, subtask='', subtask_step=0):
+        self.subtask_step = subtask_step
+        self.best_physx_score[self.subtask_step] = 100.
 
         # maxiter = 30/
         # popsize = m.pow(5, 2)*100
-        maxiter = 8
-        popsize = 40
+        # maxiter = 8
+        # popsize = 40
 
         ### Current: Two positions, first with respect to the fist, second with respect to the upper arm, centered at
         # the shoulder and pointing X down the upper arm
-        # cma parameters: [end_effector_trajectory_start_position (from fist): x,y,z,
-        #                  end_effector_trajectory_end_position (centered at shoulder, pointing down arm): x, y, z,
-        #                  human_arm_elbow_angle,
-        #                  human_upper_arm_quaternion(euler:xzy): r, y, p ]
+        # cma parameters: [human_upper_arm_quaternion(euler:xzy): r, y, p
+        #                  human_arm_elbow_angle]
 
         parameters_min = np.array([m.radians(-5.), m.radians(-10.), m.radians(-10.),
                                    0.])
@@ -374,19 +420,23 @@ class ScoreGeneratorDressingwithPhysx(object):
                  'bounds': [list(parameters_min), list(parameters_max)]}
 
         # optimization_results[<model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_bed_movement>]
-        self.optimization_results = cma.fmin(self.objective_function_traj_and_arm_config,
-                                        list(parameters_initialization),
-                                        1.,
-                                        options=opts1)
+        self.optimization_results[self.subtask_step] = cma.fmin(self.objective_function_traj_and_arm_config,
+                                                      list(parameters_initialization),
+                                                      1.,
+                                                      options=opts1)
 
         print 'Outcome is: '
         print self.optimization_results
-        print 'Best trajectory and arm config: \n', self.optimization_results[0]
-        print 'Associated score: ', self.optimization_results[1]
-        print 'Best PR2 configuration: \n', self.best_pr2_results[0]
-        print 'Associated score: ', self.best_pr2_results[1]
-        optimized_traj_arm_output = [self.optimization_results[0], self.optimization_results[1]]
-        optimized_pr2_output = [self.best_pr2_results[0], self.best_pr2_results[1]]
+        print 'Best trajectory and arm config for ',subtask, 'subtask: \n', self.optimization_results[self.subtask_step][0]
+        print 'Associated score: ', self.optimization_results[self.subtask_step][1]
+        print 'Best PR2 configuration: \n', self.best_pr2_results[self.subtask_step][0]
+        print 'Associated score: ', self.best_pr2_results[self.subtask_step][1]
+        optimized_traj_arm_output = []
+        for key in self.optimization_results.keys():
+            optimized_traj_arm_output.append([self.optimization_results[key][0], self.optimization_results[key][1]])
+        optimized_pr2_output = []
+        for key in self.best_pr2_results.keys():
+            optimized_pr2_output.append([self.best_pr2_results[key][0], self.best_pr2_results[key][1]])
 
         save_pickle(optimized_traj_arm_output, self.pkg_path+'/data/best_trajectory_and_arm_config.pkl')
         save_pickle(optimized_pr2_output, self.pkg_path+'/data/best_pr2_config.pkl')
@@ -402,8 +452,9 @@ class ScoreGeneratorDressingwithPhysx(object):
         origin_B_upperarmbase[0:3, 0:3] = origin_B_pelvis[0:3, 0:3]
         origin_B_upperarm = np.matrix(self.human.bodynode('h_bicep_' + arm).world_transform())
         origin_B_forearm = np.matrix(self.human.bodynode('h_forearm_' + arm).world_transform())
+        origin_B_wrist = np.matrix(self.human.bodynode('h_hand_' + arm).world_transform())
         origin_B_hand = np.matrix(self.human.bodynode('h_hand_' + arm+'2').world_transform())
-        print 'origin_B_upperarm\n', origin_B_upperarm
+        #print 'origin_B_upperarm\n', origin_B_upperarm
         z_origin = np.array([0., 0., 1.])
         x_vector = (-1 * np.array(origin_B_hand)[0:3, 1])
         x_vector /= np.linalg.norm(x_vector)
@@ -423,7 +474,7 @@ class ScoreGeneratorDressingwithPhysx(object):
 
         traj_y_offset, traj_z_offset = self.get_best_traj_offset()
 
-        hand_rotated_B_traj_start_pos = np.matrix([[m.cos(rev), -m.sin(rev), 0., 0.3],
+        hand_rotated_B_traj_start_pos = np.matrix([[m.cos(rev), -m.sin(rev), 0., 0.042],
                                                    [m.sin(rev), m.cos(rev), 0., traj_y_offset],
                                                    [0., 0., 1., traj_z_offset],
                                                    [0., 0., 0., 1.]])
@@ -472,7 +523,7 @@ class ScoreGeneratorDressingwithPhysx(object):
                                                                 [0., 0., 0., 1.]])
         origin_B_elbow_reference = origin_B_forearm_pointed_down_arm * forearm_pointed_down_arm_B_elbow_reference
         rev = m.radians(180.)
-        forearm_pointed_down_arm_B_traj_end = np.matrix([[m.cos(rev), -m.sin(rev), 0., -0.09],
+        forearm_pointed_down_arm_B_traj_end = np.matrix([[m.cos(rev), -m.sin(rev), 0., -0.03],
                                                          [m.sin(rev), m.cos(rev), 0., traj_y_offset],
                                                          [0., 0., 1., traj_z_offset],
                                                          [0., 0., 0., 1.]])
@@ -497,14 +548,12 @@ class ScoreGeneratorDressingwithPhysx(object):
         origin_B_upperarm_pointed_down_shoulder[0:3, 3] = np.array(origin_B_upperarm_world)[0:3, 3]
         origin_B_rotated_pointed_down_shoulder = np.matrix(origin_B_upperarm_pointed_down_shoulder)
 
-
-
         upperarm_pointed_down_shoulder_B_traj_end_pos = np.eye(4)
         upperarm_pointed_down_shoulder_B_traj_end_pos[0:3, 3] = [-0.05, traj_y_offset, traj_z_offset]
         upperarm_pointed_down_shoulder_B_traj_end_pos = np.matrix(upperarm_pointed_down_shoulder_B_traj_end_pos)
         rev = m.radians(180.)
         upperarm_pointed_down_shoulder_B_traj_upper_end = np.matrix([[m.cos(rev), -m.sin(rev), 0., -0.05],
-                                                                     [m.sin(rev), m.cos(rev), 0., -0.05],
+                                                                     [m.sin(rev), m.cos(rev), 0., -0.0],
                                                                      [0., 0., 1., traj_z_offset],
                                                                      [0., 0., 0., 1.]])
 
@@ -515,14 +564,33 @@ class ScoreGeneratorDressingwithPhysx(object):
 
         forearm_B_upper_arm = origin_B_elbow_reference.I*origin_B_traj_upper_start
 
-        rev = m.radians(180.)
-        shoulder_position_B_traj_final_end = np.matrix([[m.cos(rev), -m.sin(rev), 0., -0.03],
-                                                        [m.sin(rev), m.cos(rev), 0., -0.02],
-                                                        [0., 0., 1., 0.12],
-                                                        [0., 0., 0., 1.]])
+        # Calculation of goal at the top of the shoulder. Parallel to the ground, but pointing opposite direction of
+        # the upper arm.
+        # print 'origin_B_traj_upper_end\n', origin_B_traj_upper_end
+        origin_B_traj_final_end = np.eye(4)
+        z_vector = np.array([0., 0., 1.])
+        original_x_vector = np.array(origin_B_traj_upper_end)[0:3, 0]
+        # x_vector /= np.linalg.norm(x_vector)
+        y_orth = np.cross(z_vector, original_x_vector)
+        y_orth = y_orth / np.linalg.norm(y_orth)
+        x_vector = np.cross(y_orth, z_vector)
+        x_vector = x_vector / np.linalg.norm(x_vector)
+        origin_B_traj_final_end[0:3, 0] = x_vector
+        origin_B_traj_final_end[0:3, 1] = y_orth
+        origin_B_traj_final_end[0:3, 2] = z_vector
+        origin_B_traj_final_end[0:3, 3] = np.array([0.0, 0.0, traj_z_offset]) + \
+                                          np.array(origin_B_upperarm_world)[0:3, 3]
+        # print 'origin_B_traj_final_end\n', origin_B_traj_final_end
+        # origin_B_rotated_pointed_down_shoulder = np.matrix(origin_B_upperarm_pointed_down_shoulder)
+
+        # rev = m.radians(180.)
+        # shoulder_position_B_traj_final_end = np.matrix([[m.cos(rev), -m.sin(rev), 0., 0.0],
+        #                                                 [m.sin(rev), m.cos(rev), 0., -0.0],
+        #                                                 [0., 0., 1., traj_z_offset],
+        #                                                 [0., 0., 0., 1.]])
         origin_B_shoulder_position = np.eye(4)
         origin_B_shoulder_position[0:3, 3] = np.array(origin_B_upperarm)[0:3, 3]
-        origin_B_traj_final_end = np.matrix(origin_B_shoulder_position) * shoulder_position_B_traj_final_end
+        # origin_B_traj_final_end = np.matrix(origin_B_shoulder_position) * shoulder_position_B_traj_final_end
 
         origin_B_traj_start = origin_B_traj_start_pos
 
@@ -531,7 +599,7 @@ class ScoreGeneratorDressingwithPhysx(object):
         # Goals along forearm
         path_distance = np.linalg.norm(np.array(origin_B_traj_start)[0:3, 3] -
                                        np.array(origin_B_traj_forearm_end)[0:3, 3])
-        path_waypoints = np.arange(0.15, path_distance + path_distance * 0.01, (path_distance - 0.15) / 2.)
+        path_waypoints = np.arange(0., path_distance + path_distance * 0.01, (path_distance - 0.15) / 2.)
         for goal in path_waypoints:
             traj_start_B_traj_waypoint = np.matrix(np.eye(4))
             traj_start_B_traj_waypoint[0, 3] = goal
@@ -555,6 +623,11 @@ class ScoreGeneratorDressingwithPhysx(object):
         goals.append(copy.copy(origin_B_traj_waypoint))
         goals.append(copy.copy(origin_B_traj_final_end))
 
+        # for goal in goals:
+        #     print goal
+
+
+
         # path_distance = np.linalg.norm(np.array(origin_B_traj_upper_end)[0:3, 3] -
         #                                np.array(origin_B_traj_final_end)[0:3, 3])
         # path_waypoints = np.arange(path_distance,  0.0 - path_distance * 0.01, -path_distance / 1.)
@@ -564,40 +637,132 @@ class ScoreGeneratorDressingwithPhysx(object):
         #     origin_B_traj_waypoint = copy.copy(np.matrix(origin_B_traj_final_end) *
         #                                        np.matrix(traj_start_B_traj_waypoint))
         #     goals.append(copy.copy(origin_B_traj_waypoint))
+        fixed_point_exceeded_amount = 0.
+        # print 'stretch allowable:\n', self.stretch_allowable
+        if self.add_new_fixed_point:
+            self.add_new_fixed_point = False
+            self.fixed_points.append(np.array(goals[-1])[0:3, 3])
+        for point_i in self.fixed_points_to_use:
+            fixed_point = self.fixed_points[point_i]
+            # fixed_position = np.array(fixed_point)[0:3, 3]
+            # print 'fixed point:\n', fixed_point
+            for goal in goals:
+                goal_position = np.array(goal)[0:3, 3]
+                # print 'goal_position:\n', goal_position
+                # print 'stretch allowable:\n', self.stretch_allowable
+                # print 'amount stretched:\n', np.linalg.norm(fixed_point - goal_position)
+                # print 'amount exceeded by this goal:\n', np.linalg.norm(fixed_point - goal_position) - self.stretch_allowable[point_i]
+                fixed_point_exceeded_amount = np.max([fixed_point_exceeded_amount, np.linalg.norm(fixed_point - goal_position) - self.stretch_allowable[point_i]])
+            # if fixed_point_exceeded_amount > 0.:
+            #     print 'The gown is being stretched too much to try to do the next part of the task.'
 
-        return goals, origin_B_forearm_pointed_down_arm, origin_B_upperarm_pointed_down_shoulder, \
-               origin_B_traj_start, origin_B_traj_forearm_end, origin_B_traj_upper_end, \
-               origin_B_traj_final_end, angle_from_horizontal, \
-               forearm_B_upper_arm
+        # print 'fixed_point_exceeded_amount:', fixed_point_exceeded_amount
+        return goals, np.matrix(origin_B_forearm_pointed_down_arm), np.matrix(origin_B_upperarm_pointed_down_shoulder), \
+               np.matrix(origin_B_hand), np.matrix(origin_B_wrist), \
+               np.matrix(origin_B_traj_start), np.matrix(origin_B_traj_forearm_end), np.matrix(origin_B_traj_upper_end), \
+               np.matrix(origin_B_traj_final_end), angle_from_horizontal, \
+               np.matrix(forearm_B_upper_arm), fixed_point_exceeded_amount
 
     def objective_function_traj_and_arm_config(self, params):
         # params[7:] = [0., 0., 1.]
         # params = [0.1, 0.,  0.1,
         #           -0.1,  0.0, 0.1,
         #           0.,
-        # params = [m.radians(90.0),  m.radians(0.), m.radians(0.), m.radians(0.)]
+        # params = [m.radians(90.0),  m.radians(0.), m.radians(45.), m.radians(0.)]
+        # print 'doing subtask', self.subtask_step
+        # print 'params:\n', params
+        if self.subtask_step == 0 or False:
+            # params = [1.41876758,  0.13962405,  1.47350044,  0.95524629]  # old solution with joint jump
+            # params = [1.73983062, -0.13343737,  0.42208647,  0.26249355]  # solution with arm snaking
+            # params = [0.3654207,  0.80081779,  0.44793856,  1.83270078]  # without checking with phsyx
+            params = [0.9679925, 0.18266905, 0.87995157, 0.77562143]
 
-        params = [1.41876758,  0.13962405,  1.47350044,  0.95524629]
+        neigh_distances, neighbors = self.arm_knn.kneighbors([params], 8)
+        for neigh_dist, neighbor in zip(neigh_distances[0], neighbors[0]):
+            if np.max(np.abs(np.array(self.arm_configs_checked[neighbor] - np.array(params)))) < m.radians(15.):
+                if not self.arm_configs_eval[neighbor][5] == 'good':
+                    # print 'arm evaluation found this configuration to be bad'
+                    return 10. + 2. + random.random()
 
+        print 'arm config is not bad'
         arm = self.human_arm.split('a')[0]
 
         testing = False
 
         # path_distance = np.linalg.norm(np.array(params[0:3])-np.array(params[3:6]))
-        print 'params'
-        print params
+        # print 'params'
+        # print params
+        self.set_human_model_dof_dart([0, 0, 0, 0], self.human_opposite_arm)
+        # self.set_human_model_dof_dart([params[0], params[1], params[2], params[3]], self.human_opposite_arm)
         self.set_human_model_dof_dart([params[0], params[1], params[2], params[3]], self.human_arm)
+
         # self.set_human_model_dof_dart([params[0], params[1], params[2], params[3]], 'leftarm')
+
+        if self.is_human_in_self_collision():
+            return 10. + 1. + random.random()
+
+        print 'arm config is not in self collision'
 
         self.goals, \
         origin_B_forearm_pointed_down_arm, \
         origin_B_upperarm_pointed_down_shoulder, \
+        origin_B_hand, \
+        origin_B_wrist, \
         origin_B_traj_start, \
         origin_B_traj_forearm_end, \
         origin_B_traj_upper_end, \
         origin_B_traj_final_end, \
         angle_from_horizontal, \
-        forearm_B_upper_arm= self.find_reference_coordinate_frames_and_goals(arm)
+        forearm_B_upper_arm, \
+        fixed_points_exceeded_amount = self.find_reference_coordinate_frames_and_goals(arm)
+        print 'arm does not break fixed_points requirement'
+
+
+        ############################################
+        # Body mass from https://msis.jsc.nasa.gov/sections/section03.htm for average human male
+        # upper arm: 2.500 kg
+        # fore arm: 1.450 kg
+        # hand: 0.530 kg
+        upper_arm_force = np.array([0, 0, 2.5*-9.8])
+        forearm_force = np.array([0., 0., 1.45*-9.8])
+        hand_force = np.array([0., 0., 0.53*-9.8])
+        shoulder_to_upper_arm_midpoint = (np.array(origin_B_forearm_pointed_down_arm)[0:3, 3] -
+                                          np.array(origin_B_upperarm_pointed_down_shoulder)[0:3, 3])/2.
+        shoulder_to_forearm = (np.array(origin_B_forearm_pointed_down_arm)[0:3, 3] -
+                               np.array(origin_B_upperarm_pointed_down_shoulder)[0:3, 3])
+        shoulder_to_forearm_midpoint = (np.array(origin_B_forearm_pointed_down_arm)[0:3, 3] -
+                                        np.array(origin_B_upperarm_pointed_down_shoulder)[0:3, 3]) + \
+                                       (np.array(origin_B_wrist)[0:3, 3] -
+                                        np.array(origin_B_forearm_pointed_down_arm)[0:3, 3]) / 2.
+        shoulder_to_hand_midpoint = (np.array(origin_B_hand)[0:3, 3] -
+                                     np.array(origin_B_upperarm_pointed_down_shoulder)[0:3, 3])
+        # elbow_to_forearm_midpoint = (np.array(origin_B_wrist)[0:3, 3] -
+        #                              np.array(origin_B_forearm_pointed_down_arm)[0:3, 3]) / 2.
+        # elbow_to_hand_midpoint = (np.array(origin_B_hand)[0:3, 3] -
+        #                           np.array(origin_B_forearm_pointed_down_arm)[0:3, 3])
+        # print 'shoulder_to_upper_arm_midpoint\n', shoulder_to_upper_arm_midpoint
+        # print 'shoulder_to_forearm\n', shoulder_to_forearm
+        # print 'shoulder_to_forearm_midpoint\n', shoulder_to_forearm_midpoint
+        # print 'shoulder_to_hand_midpoint\n', shoulder_to_hand_midpoint
+        torque_at_shoulder = np.cross(-1*shoulder_to_upper_arm_midpoint, upper_arm_force) + \
+                             np.cross(-1 * shoulder_to_forearm_midpoint, forearm_force) + \
+                             np.cross(-1 * shoulder_to_hand_midpoint, hand_force)
+        # torque_at_elbow = np.cross(-1 * elbow_to_forearm_midpoint, forearm_force) + \
+        #                   np.cross(-1 * elbow_to_hand_midpoint, hand_force)
+                             # forearm_mass*np.linalg.norm(shoulder_to_forearm_midpoint[0:2]) + \
+                             # hand_mass*np.linalg.norm(shoulder_to_hand_midpoint[0:2])
+        torque_magnitude = np.linalg.norm(torque_at_shoulder) #+ np.linalg.norm(torque_at_elbow)
+        max_possible_torque = 12.376665  # found manually with arm straight out from arm
+        # print 'torque_at_shoulder\n', torque_at_shoulder
+        # print 'torque_magnitude\n', torque_magnitude
+        torque_cost = torque_magnitude/max_possible_torque
+
+        ############################################
+
+        if fixed_points_exceeded_amount > 0.:
+            # print 'The gown is being stretched too much to try to do the next part of the task.'
+            return 10. + 1. + 10. * fixed_points_exceeded_amount
+
 
         print 'angle from horizontal = ', angle_from_horizontal
         if abs(angle_from_horizontal) > 30.:
@@ -610,11 +775,16 @@ class ScoreGeneratorDressingwithPhysx(object):
         # print self.origin_B_grasps
         maxiter = 5
         popsize = 200#4*20
+        if self.subtask_step == 0 or False:
+            maxiter = 5
+            popsize = 5
+
         # cma parameters: [pr2_base_x, pr2_base_y, pr2_base_theta, pr2_base_height,
         # human_arm_dof_1, human_arm_dof_2, human_arm_dof_3, human_arm_dof_4, human_arm_dof_5,
         # human_arm_dof_6, human_arm_dof_7]
-        parameters_min = np.array([-2.2, -2.2, -2.5/3.*m.pi-.001, 0.25])
-        parameters_max = np.array([2.2, 2.2, 2.5/3.*m.pi+.001, 0.3])
+        parameters_min = np.array([-1.5, -1.5, -2.5*m.pi-.001, 0.0])
+        parameters_max = np.array([1.5, 1.5, 2.5*m.pi+.001, 0.3])
+        # [0.3, -0.9, 1.57 * m.pi / 3., 0.3]
         # parameters_min = np.array([-0.1, -1.0, m.pi/2. - .001, 0.2])
         # parameters_max = np.array([0.8, -0.3, 2.5*m.pi/2. + .001, 0.3])
         parameters_scaling = (parameters_max-parameters_min)/2.
@@ -632,6 +802,7 @@ class ScoreGeneratorDressingwithPhysx(object):
 
         self.pr2_parameters.append([self.kinematics_optimization_results[0], self.kinematics_optimization_results[1]])
         save_pickle(self.pr2_parameters, self.pkg_path+'/data/all_pr2_configs.pkl')
+        gc.collect()
         elapsed_time = rospy.Time.now()-start_time
         print 'Done with openrave round. Time elapsed:', elapsed_time.to_sec()
         print 'Openrave results:'
@@ -670,25 +841,29 @@ class ScoreGeneratorDressingwithPhysx(object):
                 with self.frame_lock:
                     alpha = 1.  # cost on forces
                     beta = 1.  # cost on manipulability
-                    physx_score = self.force_cost*alpha + self.kinematics_optimization_results[1]*beta
-                    if physx_score < self.best_physx_score:
-                        self.best_physx_score = physx_score
-                        self.best_pr2_results = self.kinematics_optimization_results
+                    zeta = 0.5  # cost on torque
+                    physx_score = self.force_cost*alpha + self.kinematics_optimization_results[1]*beta + torque_cost*zeta
+                    if physx_score < self.best_physx_score[self.subtask_step]:
+                        self.best_physx_score[self.subtask_step] = physx_score
+                        self.best_pr2_results[self.subtask_step] = self.kinematics_optimization_results
                     self.arm_traj_parameters.append([params, physx_score])
 
                     save_pickle(self.arm_traj_parameters, self.pkg_path+'/data/all_arm_traj_configs.pkl')
                     print 'Force cost was: ', self.force_cost
+                    print 'Torque score was: ', torque_cost
                     print 'Physx score was: ', physx_score
                     return physx_score
         self.physx_outcome = None
         self.physx_output = False
         alpha = 1.  # cost on forces
         beta = 1.  # cost on manipulability
-        self.arm_traj_parameters.append([params, 10. + self.force_cost*alpha + self.kinematics_optimization_results[1]*beta])
+        zeta = 0.5  # cost on torque
+        self.arm_traj_parameters.append([params, 10. + self.force_cost*alpha + self.kinematics_optimization_results[1]*beta + torque_cost*zeta])
         save_pickle(self.arm_traj_parameters, self.pkg_path+'/data/all_arm_traj_configs.pkl')
-        physx_score = 10. + self.force_cost*alpha + self.kinematics_optimization_results[1]*beta
+        physx_score = 10. + self.force_cost*alpha + self.kinematics_optimization_results[1]*beta + torque_cost*zeta
         print 'Force cost was: ', self.force_cost
         print 'Kinematics score was: ', self.kinematics_optimization_results[1]
+        print 'Torque score was: ', torque_cost
         print 'Total score was: ', physx_score
         return physx_score
 
@@ -834,10 +1009,18 @@ class ScoreGeneratorDressingwithPhysx(object):
         # Set human arm for dressing
         print 'Setting the human arm being used by base selection to ', arm
         if 'left' in arm:
+            self.gripper_B_tool = np.matrix([[0., 1., 0., 0.03],
+                                             [-1., 0., 0., 0.0],
+                                             [0., 0., 1., -0.05],
+                                             [0., 0., 0., 1.]])
             self.human_arm = 'leftarm'
             self.human_opposite_arm = 'rightarm'
             return True
         elif 'right' in arm:
+            self.gripper_B_tool = np.matrix([[0., -1., 0., 0.03],
+                                             [1., 0., 0., 0.0],
+                                             [0., 0., 1., -0.05],
+                                             [0., 0., 0., 1.]])
             self.human_arm = 'rightarm'
             self.human_opposite_arm = 'leftarm'
             return True
@@ -848,9 +1031,13 @@ class ScoreGeneratorDressingwithPhysx(object):
 
     def objective_function_one_config(self, current_parameters):
         # start_time = rospy.Time.now()
-        # current_parameters = [0.3, -0.9, 2.5*m.pi/3., 0.3]
-        current_parameters = [0.2743685, -0.71015745, 0.20439603, 0.29904425]
-        current_parameters = [0.2743685, -0.71015745, 2.2043960252256807, 0.29904425]
+        # current_parameters = [0.3, -0.9, 1.57*m.pi/3., 0.3]
+        if self.subtask_step == 0 or False:
+            # current_parameters = [0.2743685, -0.71015745, 0.20439603, 0.29904425]
+            # current_parameters = [0.2743685, -0.71015745, 2.2043960252256807, 0.29904425]  # old solution with joint jump
+            # current_parameters = [2.5305254, -0.6124738, -2.37421411, 0.02080042]  # solution with arm snaking
+            # current_parameters = [0.44534457, -0.85069379, 2.95625035, 0.07931574]  # solution with arm in lap, no physx
+            current_parameters = [-0.00917182, -0.8680934,   1.58936071,  0.045496]
         x = current_parameters[0]
         y = current_parameters[1]
         th = current_parameters[2]
@@ -862,6 +1049,12 @@ class ScoreGeneratorDressingwithPhysx(object):
                                   [        0.,         0.,     0.,        1.]])
         # print 'pr2_B_origin\n', origin_B_pr2.I
         v = self.robot.positions()
+
+        # For a solution for a bit to get screenshots, etc. Check colllision removes old collision markers.
+        if False:
+            self.dart_world.check_collision()
+            rospy.sleep(20)
+
         v['rootJoint_pos_x'] = x
         v['rootJoint_pos_y'] = y
         v['rootJoint_pos_z'] = 0.
@@ -893,6 +1086,8 @@ class ScoreGeneratorDressingwithPhysx(object):
         v['torso_lift_joint'] = z
 
         self.robot.set_positions(v)
+
+
         # self.dart_world.set_gown()
 
         # PR2 is too close to the person (who is at the origin). PR2 base is 0.668m x 0.668m
@@ -985,6 +1180,12 @@ class ScoreGeneratorDressingwithPhysx(object):
         if not close_to_collision and not base_in_collision:
             reached = np.zeros(len(self.origin_B_grasps))
             manip = np.zeros(len(self.origin_B_grasps))
+            is_smooth_ik_possible, joint_change_amount = self.check_smooth_ik_feasiblity(self.origin_B_grasps)
+            if not is_smooth_ik_possible:
+                return 10. + 1. + joint_change_amount
+            all_sols = []
+            all_jacobians = []
+
             for num, origin_B_grasp in enumerate(self.origin_B_grasps):
                 pr2_B_grasp = origin_B_pr2.I * origin_B_grasp
 
@@ -1003,43 +1204,109 @@ class ScoreGeneratorDressingwithPhysx(object):
                 #     sols = []
                 #     jacobians = []
                 # sols = self.manip.FindIKSolutions(pr2_B_grasp, filteroptions=op.IkFilterOptions.CheckEnvCollisions)
-                sols, jacobians = self.ik_request(pr2_B_grasp, z)
-                print sols
-                if list(sols):  # not None:
-                    # print 'final sols'
-                    # print sols
-                    for i in xrange(len(sols)):
-                        v = self.robot.q
-                        v[self.robot_arm[0] + '_shoulder_pan_joint'] = sols[i][0]
-                        v[self.robot_arm[0] + '_shoulder_lift_joint'] = sols[i][1]
-                        v[self.robot_arm[0] + '_upper_arm_roll_joint'] = sols[i][2]
-                        v[self.robot_arm[0] + '_elbow_flex_joint'] = sols[i][3]
-                        v[self.robot_arm[0] + '_forearm_roll_joint'] = sols[i][4]
-                        v[self.robot_arm[0] + '_wrist_flex_joint'] = sols[i][5]
-                        v[self.robot_arm[0] + '_wrist_roll_joint'] = sols[i][6]
-                        self.robot.set_positions(v)
-                        self.dart_world.set_gown([self.robot_arm])
-                        if not self.is_dart_in_collision():
-                            reached[num] = 1.
-                            J = np.matrix(jacobians[i])
-                            try:
-                                joint_limit_weight = self.gen_joint_limit_weight(sols[i], self.robot_arm)
-                                new_manip = (m.pow(np.linalg.det(J * joint_limit_weight * J.T), (1. / 6.))) / (np.trace(J * joint_limit_weight * J.T) / 6.)
-                                if num == 0 and new_manip > manip[num]:
-                                    best_ik = copy.copy(sols[i])
-                                manip[num] = np.max([copy.copy((m.pow(np.linalg.det(J*joint_limit_weight*J.T), (1./6.)))/(np.trace(J*joint_limit_weight*J.T)/6.)), manip[num]])
-                            except ValueError:
-                                print 'WARNING!!'
-                                print 'Jacobian may be singular or close to singular'
-                                print 'Determinant of J*JT is: ', np.linalg.det(J*J.T)
+                single_goal_sols, single_goal_jacobians = self.ik_request(pr2_B_grasp, z)
+                all_sols.append(list(single_goal_sols))
+                all_jacobians.append(list(single_goal_jacobians))
 
-                                manip[num] = np.max([0., manip[num]])
-                if self.visualize:
-                    rospy.sleep(0.5)
-            for num in xrange(len(reached)):
-                manip_score += copy.copy(reached[num] * manip[num])
-                reach_score += copy.copy(reached[num])
-            print 'Best IK:\n', best_ik
+            graph = SimpleGraph()
+            graph.edges['start'] = []
+            graph.value['start'] = 0
+            graph.edges['end'] = []
+            graph.value['end'] = 0
+            for goal_i in xrange(len(all_sols)):
+                for sol_i in xrange(len(all_sols[goal_i])):
+                    v = self.robot.q
+                    v[self.robot_arm[0] + '_shoulder_pan_joint'] = all_sols[goal_i][sol_i][0]
+                    v[self.robot_arm[0] + '_shoulder_lift_joint'] = all_sols[goal_i][sol_i][1]
+                    v[self.robot_arm[0] + '_upper_arm_roll_joint'] = all_sols[goal_i][sol_i][2]
+                    v[self.robot_arm[0] + '_elbow_flex_joint'] = all_sols[goal_i][sol_i][3]
+                    v[self.robot_arm[0] + '_forearm_roll_joint'] = all_sols[goal_i][sol_i][4]
+                    v[self.robot_arm[0] + '_wrist_flex_joint'] = all_sols[goal_i][sol_i][5]
+                    v[self.robot_arm[0] + '_wrist_roll_joint'] = all_sols[goal_i][sol_i][6]
+                    self.robot.set_positions(v)
+                    self.dart_world.set_gown([self.robot_arm])
+                    if not self.is_dart_in_collision():
+                        graph.edges[str(goal_i)+'-'+str(sol_i)] = []
+                        J = np.matrix(all_jacobians[goal_i][sol_i])
+                        joint_limit_weight = self.gen_joint_limit_weight(all_sols[goal_i][sol_i], self.robot_arm)
+                        manip = (m.pow(np.linalg.det(J * joint_limit_weight * J.T), (1. / 6.))) / (np.trace(J * joint_limit_weight * J.T) / 6.)
+                        graph.value[str(goal_i)+'-'+str(sol_i)] = manip
+            # print sorted(graph.edges)
+            for node in graph.edges.keys():
+                if not node == 'start' and not node == 'end':
+                    goal_i = int(node.split('-')[0])
+                    sol_i = int(node.split('-')[1])
+                    if goal_i == 0:
+                        graph.edges['start'].append(str(goal_i)+'-'+str(sol_i))
+                    if goal_i == len(all_sols) - 1:
+                        graph.edges[str(goal_i)+'-'+str(sol_i)].append('end')
+                    else:
+                        possible_next_nodes = [t for t in (a
+                                                           for a in graph.edges.keys())
+                                               if str(goal_i+1) in t.split('-')[0]
+                                               ]
+                        for next_node in possible_next_nodes:
+                            goal_j = int(next_node.split('-')[0])
+                            sol_j = int(next_node.split('-')[1])
+                            if np.max(np.abs(np.array(all_sols[goal_j][sol_j])[0:3]-np.array(all_sols[goal_i][sol_i])[0:3])) < m.radians(40.):
+                                graph.edges[str(goal_i)+'-'+str(sol_i)].append(str(goal_j)+'-'+str(sol_j))
+
+            came_from, value_so_far = a_star_search(graph, 'start', 'end')
+            # print 'came_from\n', came_from
+            path = reconstruct_path(came_from, 'start', 'end')
+            # print sorted(graph.edges)
+
+            # print 'path\n', path
+            if not path:
+                if len(value_so_far) == 1:
+                    reach_score = 0.
+                    manip_score = 0.
+                else:
+                    value_so_far.pop('start')
+                    furthest_reached = np.argmax([t for t in ((int(a[0].split('-')[0]))
+                                                                for a in value_so_far.items())
+                                                 ])
+                    # print value_so_far.keys()
+                    # print 'furthest reached', furthest_reached
+                    # print value_so_far.items()[furthest_reached]
+                    reach_score = 1.*int(value_so_far.items()[furthest_reached][0].split('-')[0])/len(self.origin_B_grasps)
+                    manip_score = 1.*value_so_far.items()[furthest_reached][1]/len(self.origin_B_grasps)
+            else:
+                # print 'I FOUND A SOLUTION'
+                # print 'value_so_far[end]:', value_so_far['end']
+                path.pop(0)
+                path.pop(path.index('end'))
+                reach_score = 1.
+                manip_score = value_so_far['end']/len(self.origin_B_grasps)
+
+
+
+            if self.visualize or (not self.subtask_step == 0 or False):
+                if path:
+                    prev_sol = np.zeros(7)
+                    print 'Solution being visualized:'
+                for path_step in path:
+                    # if not path_step == 'start' and not path_step == 'end':
+                    goal_i = int(path_step.split('-')[0])
+                    sol_i = int(path_step.split('-')[1])
+                    print 'solution:\n', all_sols[goal_i][sol_i]
+                    print 'diff:\n', np.abs(np.array(all_sols[goal_i][sol_i]) - prev_sol)
+                    print 'max diff:\n', np.degrees(np.max(np.abs(np.array(all_sols[goal_i][sol_i]) - prev_sol)))
+                    prev_sol = np.array(all_sols[goal_i][sol_i])
+
+                    v = self.robot.q
+                    v[self.robot_arm[0] + '_shoulder_pan_joint'] = all_sols[goal_i][sol_i][0]
+                    v[self.robot_arm[0] + '_shoulder_lift_joint'] = all_sols[goal_i][sol_i][1]
+                    v[self.robot_arm[0] + '_upper_arm_roll_joint'] = all_sols[goal_i][sol_i][2]
+                    v[self.robot_arm[0] + '_elbow_flex_joint'] = all_sols[goal_i][sol_i][3]
+                    v[self.robot_arm[0] + '_forearm_roll_joint'] = all_sols[goal_i][sol_i][4]
+                    v[self.robot_arm[0] + '_wrist_flex_joint'] = all_sols[goal_i][sol_i][5]
+                    v[self.robot_arm[0] + '_wrist_roll_joint'] = all_sols[goal_i][sol_i][6]
+                    self.robot.set_positions(v)
+                    self.dart_world.displace_gown()
+                    self.dart_world.check_collision()
+                    self.dart_world.set_gown([self.robot_arm])
+                    rospy.sleep(1.5)
         else:
             # print 'In base collision! single config distance: ', distance
             if distance < 2.0:
@@ -1057,8 +1324,8 @@ class ScoreGeneratorDressingwithPhysx(object):
         # print 'reached'
         # print reached
 
-        reach_score /= len(self.goals)
-        manip_score /= len(self.goals)
+        # reach_score /= len(self.goals)
+        # manip_score /= len(self.goals)
 
         # print 'reach_score'
         # print reach_score
@@ -1077,6 +1344,8 @@ class ScoreGeneratorDressingwithPhysx(object):
             if reach_score == 1.:
                 if self.visualize:
                     rospy.sleep(2.0)
+            # print 'reach_score:', reach_score
+            # print 'manip_score:', manip_score
             return 10.-beta*reach_score-gamma*manip_score #+ zeta*angle_cost
 
     def is_dart_base_in_collision(self):
@@ -1099,6 +1368,25 @@ class ScoreGeneratorDressingwithPhysx(object):
                     ((self.robot == contact.skel1 or self.robot == contact.skel2) and
                          (self.gown_rightarm == contact.skel1 or self.gown_rightarm == contact.skel2)):
                 return True
+        return False
+
+    def is_human_in_self_collision(self):
+        self.dart_world.human.set_self_collision_check(True)
+        self.dart_world.check_collision()
+        arm = self.human_arm.split('a')[0]
+        arm_parts = [self.human.bodynode('h_bicep_'+arm),
+                     self.human.bodynode('h_forearm_'+arm),
+                     self.human.bodynode('h_hand_'+arm),
+                     self.human.bodynode('h_hand_'+arm+'2')]
+        for contact in self.dart_world.collision_result.contacts:
+            contacts = [contact.bodynode1, contact.bodynode2]
+            for arm_part in arm_parts:
+                if arm_part in contacts and self.human == contact.skel1 and self.human == contact.skel2:
+                    contacts.remove(arm_part)
+                    if contacts:
+                        if contacts[0] not in arm_parts and not contacts[0] == self.human.bodynode('h_scapula_'+arm):
+                            return True
+        self.human.set_self_collision_check(False)
         return False
 
     def visualize_dart(self):
@@ -1268,6 +1556,12 @@ class ScoreGeneratorDressingwithPhysx(object):
         pos, quat = Bmat_to_pos_quat(Bmat)
         return self.ik_service(pos, quat, pr2_height, self.robot_arm)
 
+    def check_smooth_ik_feasiblity(self, goal_poses):
+
+        max_joint_change = 1.0
+        feasible_ik = True
+        return feasible_ik, max_joint_change
+
     # Setup physx services and initialized the human in Physx
     def setup_physx(self):
         print 'Setting up services and looking for Physx services'
@@ -1384,7 +1678,7 @@ class ScoreGeneratorDressingwithPhysx(object):
             traj_forearm_end = list(flatten(np.array(traj_forearm_end)))
             traj_upper_end = list(flatten(np.array(traj_upper_end)))
             traj_final_end = list(flatten(np.array(traj_final_end)))
-            print 'right here'
+            # print 'right here'
             resp = self.update_physx_config_service(spheres_x, spheres_y, spheres_z, spheres_r, first_sphere_list,
                                                     second_sphere_list, traj_start, traj_forearm_end, traj_upper_end,
                                                     traj_final_end, origin_B_forearm_pointed_down_arm,
@@ -1665,7 +1959,8 @@ if __name__ == "__main__":
     selector = ScoreGeneratorDressingwithPhysx(human_arm='rightarm', visualize=True)
     # selector.visualize_many_configurations()
     # selector.output_results_for_use()
-    selector.run_interleaving_optimization_outer_level()
+    # selector.run_interleaving_optimization_outer_level()
+    selector.optimize_entire_dressing_task()
     outer_elapsed_time = rospy.Time.now()-outer_start_time
     print 'Everything is complete!'
     print 'Done with optimization. Total time elapsed:', outer_elapsed_time.to_sec()

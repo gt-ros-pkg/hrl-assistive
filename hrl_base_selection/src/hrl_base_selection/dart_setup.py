@@ -1,5 +1,6 @@
 import pydart2 as pydart
 import numpy as np
+import math as m
 import copy
 import rospkg
 import time
@@ -33,6 +34,7 @@ class DartDressingWorld(pydart.World):
 
         pydart.World.__init__(self, 1.0 / 2000.0, skel_file_name)
         print('pydart create_world OK')
+        self.ground = self.skeletons[0]
 
         self.human = self.skeletons[1]
         self.set_collision_detector(pydart.World.BULLET_COLLISION_DETECTOR)
@@ -60,6 +62,23 @@ class DartDressingWorld(pydart.World):
         positions['rootJoint_pos_z'] = 0.
         positions['rootJoint_rot_z'] = 3.14
         self.robot.set_positions(positions)
+
+        q = self.human.q
+        q['j_thigh_right_z'] = m.radians(90.)
+        q['j_thigh_right_y'] = m.radians(0.)
+        q['j_thigh_right_x'] = m.radians(0.)
+        q['j_thigh_left_z'] = m.radians(90.)
+        q['j_thigh_left_y'] = m.radians(0.)
+        q['j_thigh_left_x'] = m.radians(0.)
+
+        q['j_shin_right'] = m.radians(-100.)
+        q['j_shin_left'] = m.radians(-100.)
+
+        q['j_heel_right_1'] = m.radians(10.)
+        q['j_heel_right_2'] = m.radians(00.)
+        q['j_heel_left_1'] = m.radians(10.)
+        q['j_heel_left_2'] = m.radians(00.)
+        self.human.set_positions(q)
 
         # self.world_B_gripper = self.robot.bodynode('r_gripper_tool_frame').world_transform()
         # self.gripper_B_gown = np.matrix([[0., -1., 0., 0.03],

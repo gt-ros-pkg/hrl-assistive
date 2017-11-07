@@ -50,7 +50,8 @@ class MyWorld(pydart.World):
         print('pydart create_world OK')
         rospack = rospkg.RosPack()
         pkg_path = rospack.get_path('hrl_base_selection')
-        skel_file = '/home/ari/git/catkin_ws/src/hrl-assistive/hrl_base_selection/models/fullbody_alex_capsule.skel'
+        # skel_file = '/home/ari/git/catkin_ws/src/hrl-assistive/hrl_base_selection/models/fullbody_alex_capsule.skel'
+        skel_file = '/home/ari/git/catkin_ws/src/hrl-assistive/hrl_base_selection/models/fullbody_50percentile_capsule.skel'
         # pydart.World.__init__(self, 1.0 / 2000.0, '/home/ari/git/catkin_ws/src/hrl-assistive/hrl_base_selection/models/world_and_human.skel')
         pydart.World.__init__(self, 1.0 / 2000.0, skel_file)
         # pydart.World.__init__(self, 1.0 / 2000.0, '/home/ari/git/catkin_ws/src/hrl-assistive/hrl_base_selection/models/fullbody1_wenhao_optimized.skel')
@@ -70,7 +71,7 @@ class MyWorld(pydart.World):
 
         # Move bit lower (for camera)
         positions = self.robot.positions()
-        positions['rootJoint_pos_x'] = 0.75
+        positions['rootJoint_pos_x'] = 2.75
         positions['rootJoint_pos_y'] = 0.
         positions['rootJoint_pos_z'] = 0.1
         positions['rootJoint_rot_z'] = 3.14
@@ -82,7 +83,7 @@ class MyWorld(pydart.World):
         positions['j_pelvis1_z'] = 1.
         self.human.set_positions(positions)
 
-        print self.human.body
+        # print self.human.body
 
         # print 'human self collision check'
         # print self.human.self_collision_check()
@@ -100,6 +101,23 @@ class MyWorld(pydart.World):
         # q['j_forearm_right_1'] = 0.
         # q['j_forearm_right_2'] = 0.5
         # q['j_shin_left'] = -2.
+
+        q['j_thigh_right_z'] = m.radians(90.)
+        q['j_thigh_right_y'] = m.radians(0.)
+        q['j_thigh_right_x'] = m.radians(0.)
+        q['j_thigh_left_z'] = m.radians(90.)
+        q['j_thigh_left_y'] = m.radians(0.)
+        q['j_thigh_left_x'] = m.radians(0.)
+
+        q['j_shin_right'] = m.radians(-100.)
+        q['j_shin_left'] = m.radians(-100.)
+
+        q['j_heel_right_1'] = m.radians(10.)
+        q['j_heel_right_2'] = m.radians(00.)
+        q['j_heel_left_1'] = m.radians(10.)
+        q['j_heel_left_2'] = m.radians(00.)
+
+
         q['j_bicep_right_x'] = -1*m.radians(25.0)
         q['j_bicep_right_y'] = m.radians(10.)
         q['j_bicep_right_z'] = m.radians(45.00)
@@ -107,11 +125,11 @@ class MyWorld(pydart.World):
         q['j_forearm_right_1'] = m.radians(00.)
         q['j_forearm_right_2'] = 0.
 
-        q['j_bicep_left_x'] = m.radians(25.0)
-        q['j_bicep_left_y'] = -1*m.radians(10.)
-        q['j_bicep_left_z'] = m.radians(45.00)
+        q['j_bicep_left_x'] = m.radians(0.0)
+        q['j_bicep_left_y'] = -1*m.radians(20.)
+        q['j_bicep_left_z'] = m.radians(00.00)
         # q['j_bicep_left_roll'] = -1*m.radians(0.00)
-        q['j_forearm_left_1'] = m.radians(0.)
+        q['j_forearm_left_1'] = m.radians(45.)
         q['j_forearm_left_2'] = 0.
 
         self.human.set_positions(q)
@@ -143,7 +161,7 @@ class MyWorld(pydart.World):
         self.robot.set_positions(v)
 
         print 'world collision list'
-        # print self.robot.set_self_collision_check(True)
+        print self.human.set_self_collision_check(True)
         self.check_collision()
 
         # print self.robot.self_collision_check()
@@ -155,6 +173,21 @@ class MyWorld(pydart.World):
                 print contact.skel1
                 print contact.bodynode1
                 print contact#.skel1, contact.skel2
+
+        arm_parts = [self.human.bodynode('h_bicep_left'),
+                     self.human.bodynode('h_forearm_left'),
+                     self.human.bodynode('h_hand_left'),
+                     self.human.bodynode('h_hand_left2')]
+        for contact in self.collision_result.contacts:
+            contacts = [contact.bodynode1, contact.bodynode2]
+            for arm_part in arm_parts:
+                if arm_part in contacts and self.human == contact.skel1 and self.human == contact.skel2:
+                    contacts.remove(arm_part)
+                    if contacts:
+                        if contacts[0] not in arm_parts and not contacts[0] == self.human.bodynode('h_scapula_left'):
+                            print contact.skel1
+                            print contact.bodynode1
+                            print contact  # .skel1, contact.skel2
 
         # print 'number of contacts:'
         # print len(self.collision_result.contacts)
@@ -180,12 +213,12 @@ class MyWorld(pydart.World):
                 self.joint_to_floor_z = float(bodypart['visualization_shape']['geometry']['multi_sphere']['sphere'][0]['radius'])
         self.estimate_center_floor_point()
 
-        # positions = self.human.positions()
-        # positions['j_pelvis1_x'] -= self.human_reference_center_floor_point[0]
-        # positions['j_pelvis1_y'] -= self.human_reference_center_floor_point[1]
-        # positions['j_pelvis1_z'] -= self.human_reference_center_floor_point[2]
-        # self.human.set_positions(positions)
-        # self.estimate_center_floor_point()
+        positions = self.human.positions()
+        positions['j_pelvis1_x'] -= self.human_reference_center_floor_point[0]
+        positions['j_pelvis1_y'] -= self.human_reference_center_floor_point[1]
+        positions['j_pelvis1_z'] -= self.human_reference_center_floor_point[2]
+        self.human.set_positions(positions)
+        self.estimate_center_floor_point()
 
     def estimate_center_floor_point(self):
         x_position = self.human.joint(self.skel_joints[self.center_reference_joint_index]['@name']).position_in_world_frame()[0]
