@@ -67,10 +67,13 @@ class PhysicalTrainer():
         self.verbose = opt.verbose
         self.opt = opt
         self.synthetic_master = SyntheticLib().synthetic_master
+        self.batch_size = 250
+        self.num_epochs = 700
 
         print test_file
         #Entire pressure dataset with coordinates in world frame
 
+        self.save_name = '_9to18_all_fss_250b_rmsprop_700e_'
 
         #we'll be loading this later
         if self.opt.lab_harddrive == True:
@@ -80,17 +83,16 @@ class PhysicalTrainer():
                 self.train_val_losses_all = {}
         else:
             try:
-                self.train_val_losses_all = load_pickle('/home/henryclever/hrl_file_server/Autobed/train_val_losses_alldata.p')
+                self.train_val_losses_all = load_pickle('/home/henryclever/hrl_file_server/Autobed/train_val_losses_all.p')
             except:
                 print 'starting anew'
-            self.train_val_losses_all = {}
 
 
 
-        print 'appending to alldata losses'
-        self.train_val_losses_all['train_alldata_flip_shift_scale5_700e_'+str(self.opt.leaveOut)] = []
-        self.train_val_losses_all['val_alldata_flip_shift_scale5_700e_'+str(self.opt.leaveOut)] = []
-        self.train_val_losses_all['epoch_alldata_flip_shift_scale5_700e_' + str(self.opt.leaveOut)] = []
+        print 'appending to','train'+self.save_name+str(self.opt.leaveOut)
+        self.train_val_losses_all['train'+self.save_name+str(self.opt.leaveOut)] = []
+        self.train_val_losses_all['val'+self.save_name+str(self.opt.leaveOut)] = []
+        self.train_val_losses_all['epoch'+self.save_name + str(self.opt.leaveOut)] = []
 
 
 
@@ -277,8 +279,8 @@ class PhysicalTrainer():
 
 
 
-        batch_size = 200
-        num_epochs = 700
+        batch_size = self.batch_size
+        num_epochs = self.num_epochs
         hidden_dim = 12
         kernel_size = 10
 
@@ -295,7 +297,7 @@ class PhysicalTrainer():
 
         self.model = convnet.CNN(self.mat_size, self.output_size, hidden_dim, kernel_size)
         self.criterion = F.cross_entropy
-        self.optimizer = optim.SGD(self.model.parameters(), lr=0.00000015, momentum=0.7, weight_decay=0.0005)
+        self.optimizer = optim.SGD(self.model.parameters(), lr=0.00000012, momentum=0.7, weight_decay=0.0005)
         #self.optimizer = optim.RMSprop(self.model.parameters(), lr=0.0000015, momentum=0.7, weight_decay=0.0005)
 
         # train the model one epoch at a time
@@ -327,7 +329,7 @@ class PhysicalTrainer():
                      open(os.path.join('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/train_val_losses_all.p'), 'wb'))
 
         else:
-            torch.save(self.model, '/home/henryclever/hrl_file_server/Autobed/subject_'+str(self.opt.leaveOut)+'/p_files/convnet_all.pt')
+            torch.save(self.model, '/home/henryclever/hrl_file_server/Autobed/subject_'+str(self.opt.leaveOut)+'/p_files/convnet'++self.save_name+'.pt')
             pkl.dump(self.train_val_losses_all,
                      open(os.path.join('/home/henryclever/hrl_file_server/Autobed/train_val_losses_all.p'), 'wb'))
 
@@ -402,9 +404,9 @@ class PhysicalTrainer():
 
 
                 print 'appending to alldata losses'
-                self.train_val_losses_all['train_alldata_flip_shift_scale5_700e_' + str(self.opt.leaveOut)].append(train_loss)
-                self.train_val_losses_all['val_alldata_flip_shift_scale5_700e_' + str(self.opt.leaveOut)].append(val_loss)
-                self.train_val_losses_all['epoch_alldata_flip_shift_scale5_700e_' + str(self.opt.leaveOut)].append(epoch)
+                self.train_val_losses_all['train'+self.save_name + str(self.opt.leaveOut)].append(train_loss)
+                self.train_val_losses_all['val'+self.save_name + str(self.opt.leaveOut)].append(val_loss)
+                self.train_val_losses_all['epoch'+self.save_name + str(self.opt.leaveOut)].append(epoch)
 
 
 
@@ -742,6 +744,7 @@ if __name__ == "__main__":
         opt.subject18Path = '/home/henryclever/hrl_file_server/Autobed/subject_18/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head_sit120rh_lh_rl_ll.p'
 
         training_database_file = []
+
 
 
 
