@@ -61,35 +61,45 @@ HIGH_TAXEL_THRESH_Y = (NUMOFTAXELS_Y - 1)
 class DataVisualizer():
     '''Gets the directory of pkl database and iteratively go through each file,
     cutting up the pressure maps and creating synthetic database'''
-    def __init__(self, pkl_directory):
+    def __init__(self, pkl_directory, pathkey):
 
-        self.sitting = True
-        self.subject = 4
+        self.sitting = False
+        self.subject = 10
         self.armsup = False
-        self.alldata = False
+        self.alldata = True
+        self.verbose = True
+        self.old = False
         # Set initial parameters
         self.dump_path = pkl_directory.rstrip('/')
 
         self.mat_size = (NUMOFTAXELS_X, NUMOFTAXELS_Y)
         self.output_size = (NUMOFOUTPUTNODES, NUMOFOUTPUTDIMS)
+        if pathkey == 'lab_hd':
+            train_val_loss = load_pickle(self.dump_path + '/train_val_losses.p')
+            train_val_loss_desk = load_pickle(self.dump_path + '/train_val_losses_hcdesktop.p')
+            train_val_loss_171106 = load_pickle(self.dump_path + '/train_val_losses_171106.p')
+            for key in train_val_loss:
+                print key
+            print '###########################  done with laptop #################'
+            for key in train_val_loss_desk:
+                print key
+            print '###########################  done with desktop ################'
+            for key in train_val_loss_171106:
+                print key
+            print '###########################  done with 171106 ################'
 
-        train_val_loss = load_pickle(self.dump_path + '/train_val_losses.p')
-        train_val_loss_desk = load_pickle(self.dump_path + '/train_val_losses_hcdesktop.p')
-        train_val_loss_171106 = load_pickle(self.dump_path + '/train_val_losses_171106.p')
+
+
+        elif pathkey == 'hc_desktop':
+            train_val_loss_all = load_pickle(self.dump_path + '/train_val_losses_all.p')
+            for key in train_val_loss_all:
+                print key
+            print '###########################  done with desktop ################'
 
         #handles, labels = plt.get_legend_handles_labels()
         #plt.legend(handles, labels)
         #print train_val_loss
 
-        for key in train_val_loss:
-            print key
-        print '###########################  done with laptop #################'
-        for key in train_val_loss_desk:
-            print key
-        print '###########################  done with desktop ################'
-        for key in train_val_loss_171106:
-            print key
-        print '###########################  done with 171106 ################'
 
 
         if self.subject == 1:
@@ -122,7 +132,7 @@ class DataVisualizer():
             #plt.plot(train_val_loss['epoch_flip_shift_nd_4'], train_val_loss['val_flip_shift_nd_4'], 'b')
             #plt.plot(train_val_loss['epoch_flip_shift_nd_nohome_4'], train_val_loss['val_flip_shift_nd_nohome_4'], 'y')
 
-            if True: #results presented to hrl dressing 171106
+            if pathkey == 'lab_hd': #results presented to hrl dressing 171106
                 plt.plot(train_val_loss['epoch_sitting_700e_4'],train_val_loss['val_sitting_700e_4'],'k', label='Raw Pressure Map Input')
                 plt.plot(train_val_loss['epoch_sitting_flip_700e_4'], train_val_loss['val_sitting_flip_700e_4'], 'c', label='Synthetic Flipping: $Pr(X=flip)=0.5$')
                 plt.plot(train_val_loss['epoch_sitting_flip_shift_nd_700e4'],train_val_loss['val_sitting_flip_shift_nd_700e4'], 'g', label='Synthetic Flipping+Shifting: $X,Y \sim N(\mu,\sigma), \mu = 0 cm, \sigma \~= 9 cm$')
@@ -130,18 +140,26 @@ class DataVisualizer():
                 plt.plot(train_val_loss['epoch_alldata_flip_shift_scale5_nd_nohome_500e_4'],train_val_loss['val_alldata_flip_shift_scale5_nd_nohome_500e_4'], 'r',label='Standing+Sitting: Synthetic Flipping+Shifting+Scaling: $S_C \sim N(\mu,\sigma), \mu = 1, \sigma \~= 1.02$')
             #plt.plot(train_val_loss['epoch_sitting_flip_shift_scale5_700e_4'],train_val_loss['val_sitting_flip_shift_scale_700e_4'], 'y',label='Synthetic Flipping+Shifting+Scaling: $S_C \sim N(\mu,\sigma), \mu = 1, \sigma \~= 1.02$')
 
-            plt.plot(train_val_loss_171106['epoch_sitting_flip_shift_scale5_b50_700e_4'],train_val_loss_171106['train_sitting_flip_shift_scale5_b50_700e_4'], 'b', label='Synthetic Flipping+Shifting+Scaling: $S_C \sim N(\mu,\sigma), \mu = 1, \sigma \~= 1.02$')
+                plt.plot(train_val_loss_171106['epoch_sitting_flip_shift_scale5_b50_700e_4'],train_val_loss_171106['train_sitting_flip_shift_scale5_b50_700e_4'], 'b', label='Synthetic Flipping+Shifting+Scaling: $S_C \sim N(\mu,\sigma), \mu = 1, \sigma \~= 1.02$')
+                plt.legend()
+                plt.ylabel('Mean squared error loss over 30 joint vectors')
+                plt.xlabel('Epochs, where 700 epochs ~ 4 hours')
+                plt.title('Subject 4 sitting validation Loss, training performed on subjects 2, 3, 5, 6, 7, 8')
 
-            plt.legend()
-            plt.ylabel('Mean squared error loss over 30 joint vectors')
-            plt.xlabel('Epochs, where 700 epochs ~ 4 hours')
-            plt.title('Subject 4 sitting validation Loss, training performed on subjects 2, 3, 5, 6, 7, 8')
+
+
+
+        elif self.subject == 10:
+            if pathkey == 'hc_desktop':
+                plt.plot(train_val_loss_all['epoch_alldata_flip_shift_scale5_700e_10'],train_val_loss_all['train_alldata_flip_shift_scale5_700e_10'], 'g',label='Synthetic Flipping+Shifting+Scaling: $S_C \sim N(\mu,\sigma), \mu = 1, \sigma \~= 1.02$')
+                plt.plot(train_val_loss_all['epoch_alldata_flip_shift_scale5_700e_10'],train_val_loss_all['val_alldata_flip_shift_scale5_700e_10'], 'y',label='Synthetic Flipping+Shifting+Scaling: $S_C \sim N(\mu,\sigma), \mu = 1, \sigma \~= 1.02$')
+
 
             #plt.plot(train_val_loss['epoch_flip_2'], train_val_loss['train_flip_2'], 'y')
             #plt.plot(train_val_loss['epoch_flip_2'], train_val_loss['val_flip_2'], 'g')
             #plt.plot(train_val_loss['epoch_flip_shift_nd_2'], train_val_loss['val_flip_shift_nd_2'], 'y')
 
-        plt.axis([0,700,0,20000])
+        plt.axis([0,200,0,20000])
         plt.show()
 
 
@@ -156,7 +174,7 @@ class DataVisualizer():
         elif self.armsup == True:
             validation_set = load_pickle(self.dump_path + '/subject_' + str(self.subject) + '/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head.p')
         elif self.alldata == True:
-            validation_set = load_pickle(self.dump_path + '/subject_' + str(self.subject) + '/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head_sit120rh_lh_rl_ll.p')
+            validation_set = load_pickle(self.dump_path + '/subject_' + str(2) + '/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head_sit120rh_lh_rl_ll.p')
         else:
             validation_set = load_pickle(self.dump_path + '/subject_'+str(self.subject)+'/p_files/trainval_200rh1_lh1_rl_ll.p')
 
@@ -167,14 +185,23 @@ class DataVisualizer():
             self.test_x_flat.append(test_dat[entry][0])
         test_x = self.preprocessing_pressure_array_resize(self.test_x_flat)
         test_x = np.array(test_x)
-        #test_x = self.pad_pressure_mats(test_x)
+
+        self.old = False
+        if self.old == True:
+            test_x = self.pad_pressure_mats(test_x)
+            self.test_x_tensor = torch.Tensor(test_x)
+        else:
+            self.test_a_flat = []  # Initialize the testing pressure mat angle list
+            for entry in range(len(test_dat)):
+                self.test_a_flat.append(test_dat[entry][2])
+            test_xa = self.preprocessing_create_pressure_angle_stack(self.test_x_flat, self.test_a_flat)
+            test_xa = np.array(test_xa)
+            self.test_x_tensor = torch.Tensor(test_xa)
 
 
 
 
 
-
-        self.test_x_tensor = torch.Tensor(test_x)
         print self.test_x_tensor.shape
 
         self.test_y_flat = []  # Initialize the ground truth list
@@ -185,9 +212,10 @@ class DataVisualizer():
 
 
         #print len(validation_set)
-        batch_size = 850
+        batch_size = 1780
 
-        self.test_x_tensor = self.test_x_tensor.unsqueeze(1)
+        if self.old == True:
+            self.test_x_tensor = self.test_x_tensor.unsqueeze(1)
         self.test_dataset = torch.utils.data.TensorDataset(self.test_x_tensor, self.test_y_tensor)
         self.test_loader = torch.utils.data.DataLoader(self.test_dataset, batch_size, shuffle=True)
 
@@ -197,7 +225,7 @@ class DataVisualizer():
         elif self.armsup == True:
             model = torch.load(self.dump_path + '/subject_' + str(self.subject) + '/p_files/convnet_1to8_armsup_700e.pt')
         elif self.alldata == True:
-            model = torch.load(self.dump_path + '/subject_' + str(self.subject) + '/p_files/convnet_1to8_alldata_flip_shift_scale_300e.pt')
+            model = torch.load(self.dump_path + '/subject_' + str(self.subject) + '/p_files/convnet_all.pt')
 
         else:
             model = torch.load(self.dump_path + '/subject_'+str(self.subject)+'/p_files/convnet_1to8_flip_shift_nodrop_nohome.pt')
@@ -206,9 +234,6 @@ class DataVisualizer():
         for batch_idx, batch in enumerate(self.test_loader):
             count += 1
             #print count
-            # prepare data
-            #batch[0], batch[1] = self.synthesizetest(batch[0],batch[1])
-
 
             images, targets = Variable(batch[0]), Variable(batch[1])
 
@@ -254,8 +279,21 @@ class DataVisualizer():
         print len(p_map_dataset[0]),'x',len(p_map_dataset[0][0]), 'size of a resized pressure map'
         return p_map_dataset
 
-    def synthesizetest(self, image_tensor,target_tensor):
-        return image_tensor, target_tensor
+    def preprocessing_create_pressure_angle_stack(self,x_data,a_data):
+        p_map_dataset = []
+        for map_index in range(len(x_data)):
+            # print map_index, self.mat_size, 'mapidx'
+            # Resize mat to make into a matrix
+            p_map = np.reshape(x_data[map_index], self.mat_size)
+            a_map = np.zeros_like(p_map) + a_data[map_index]
+
+
+            p_map_dataset.append([p_map, a_map])
+        if self.verbose: print len(x_data[0]), 'x', 1, 'size of an incoming pressure map'
+        if self.verbose: print len(p_map_dataset[0][0]), 'x', len(p_map_dataset[0][0][0]), 'size of a resized pressure map'
+        if self.verbose: print len(p_map_dataset[0][1]), 'x', len(p_map_dataset[0][1][0]), 'size of the stacked angle mat'
+
+        return p_map_dataset
 
 
 
@@ -288,7 +326,11 @@ class DataVisualizer():
 
     def visualize_pressure_map(self, p_map, targets_raw=None, scores_raw = None, p_map_val = None, targets_val = None, scores_val = None):
         print p_map.shape, 'pressure mat size', targets_raw.shape, 'target shape'
-        #p_map = fliplr(p_map)
+
+        if self.old == False:
+            p_map = p_map[0,:,:]
+            if p_map_val is not None:
+                p_map_val = p_map_val[0,:,:]
 
         plt.close()
         plt.pause(0.0001)
@@ -342,7 +384,7 @@ class DataVisualizer():
             target_coord = targets_raw[:, :2] / INTER_SENSOR_DISTANCE
             target_coord[:, 1] -= (NUMOFTAXELS_X - 1)
             target_coord[:, 1] *= -1.0
-            ax1.plot(target_coord[:, 0]+10, target_coord[:, 1]+10, marker = 'o', linestyle='None', markerfacecolor = 'green',markeredgecolor='black', ms=8)
+            ax1.plot(target_coord[:, 0], target_coord[:, 1], marker = 'o', linestyle='None', markerfacecolor = 'green',markeredgecolor='black', ms=8)
 
         plt.pause(0.0001)
 
@@ -353,7 +395,7 @@ class DataVisualizer():
             target_coord = scores_raw[:, :2] / INTER_SENSOR_DISTANCE
             target_coord[:, 1] -= (NUMOFTAXELS_X - 1)
             target_coord[:, 1] *= -1.0
-            ax1.plot(target_coord[:, 0]+10, target_coord[:, 1]+10, marker = 'o', linestyle='None', markerfacecolor = 'white',markeredgecolor='black', ms=8)
+            ax1.plot(target_coord[:, 0], target_coord[:, 1], marker = 'o', linestyle='None', markerfacecolor = 'white',markeredgecolor='black', ms=8)
         ax1.set_title('Training Sample \n Targets and Estimates')
         plt.pause(0.0001)
 
@@ -364,7 +406,7 @@ class DataVisualizer():
             target_coord = targets_val[:, :2] / INTER_SENSOR_DISTANCE
             target_coord[:, 1] -= (NUMOFTAXELS_X - 1)
             target_coord[:, 1] *= -1.0
-            ax2.plot(target_coord[:, 0]+10, target_coord[:, 1]+10, 'y*', ms=8)
+            ax2.plot(target_coord[:, 0], target_coord[:, 1], 'y*', ms=8)
         plt.pause(0.0001)
 
         # Visualize estimated from training set
@@ -374,7 +416,7 @@ class DataVisualizer():
             target_coord = scores_val[:, :2] / INTER_SENSOR_DISTANCE
             target_coord[:, 1] -= (NUMOFTAXELS_X - 1)
             target_coord[:, 1] *= -1.0
-            ax2.plot(target_coord[:, 0]+10, target_coord[:, 1]+10, 'g*', ms=8)
+            ax2.plot(target_coord[:, 0], target_coord[:, 1], 'g*', ms=8)
 
         plt.pause(0.5)
 
@@ -417,12 +459,19 @@ if __name__ == "__main__":
 
 
 
-    Path =  '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/'
-    ##Path = '/home/henryclever/hrl_file_server/Autobed/'
+
+    PathKey = 'hc_desktop'
+
+    if PathKey == 'lab_hd':
+        Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/'
+    elif PathKey == 'hc_desktop':
+        Path = '/home/henryclever/hrl_file_server/Autobed/'
+    else:
+        Path = None
 
     print Path
 
     #Initialize trainer with a training database file
-    p = DataVisualizer(pkl_directory=Path)
+    p = DataVisualizer(pkl_directory=Path, pathkey = PathKey)
     p.run()
     sys.exit()

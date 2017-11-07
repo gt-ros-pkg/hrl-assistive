@@ -74,34 +74,23 @@ class PhysicalTrainer():
 
         #we'll be loading this later
         if self.opt.lab_harddrive == True:
-            self.train_val_losses = load_pickle('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/train_val_losses.p')
+            try:
+                self.train_val_losses_all = load_pickle('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/train_val_losses_alldata.p')
+            except:
+                self.train_val_losses_all = {}
         else:
-            self.train_val_losses = load_pickle('/home/henryclever/hrl_file_server/Autobed/train_val_losses.p')
-
-        #print self.train_val_losses
-
-        if self.opt.sitting == True:
-            print 'appending to sitting losses'
-            self.train_val_losses['train_sitting_flip_shift_scale10_stack_700e_' + str(self.opt.leaveOut)] = []
-            self.train_val_losses['val_sitting_flip_shift_scale10_stack_700e_' + str(self.opt.leaveOut)] = []
-            self.train_val_losses['epoch_sitting_flip_shift_scale10_stack_700e_' + str(self.opt.leaveOut)] = []
-        elif self.opt.armsup == True:
-            print 'appending to armsup losses'
-            self.train_val_losses['train_armsup_flip_shift_scale5_nd_nohome_700e_'+str(self.opt.leaveOut)] = []
-            self.train_val_losses['val_armsup_flip_shift_scale5_nd_nohome_700e_'+str(self.opt.leaveOut)] = []
-            self.train_val_losses['epoch_armsup_flip_shift_scale5_nd_nohome_700e_' + str(self.opt.leaveOut)] = []
-        elif self.opt.alldata == True:
-            print 'appending to armsup losses'
-            self.train_val_losses['train_alldata_flip_shift_scale5_nd_nohome_500e_'+str(self.opt.leaveOut)] = []
-            self.train_val_losses['val_alldata_flip_shift_scale5_nd_nohome_500e_'+str(self.opt.leaveOut)] = []
-            self.train_val_losses['epoch_alldata_flip_shift_scale5_nd_nohome_500e_' + str(self.opt.leaveOut)] = []
-        else:
-            print 'appending to laying losses'
-            self.train_val_losses['train_flip_shift_nd_nohome_1000e_'+str(self.opt.leaveOut)] = []
-            self.train_val_losses['val_flip_shift_nd_nohome_1000e_'+str(self.opt.leaveOut)] = []
-            self.train_val_losses['epoch_flip_shift_nd_nohome_1000e_' + str(self.opt.leaveOut)] = []
+            try:
+                self.train_val_losses_all = load_pickle('/home/henryclever/hrl_file_server/Autobed/train_val_losses_alldata.p')
+            except:
+                print 'starting anew'
+            self.train_val_losses_all = {}
 
 
+
+        print 'appending to alldata losses'
+        self.train_val_losses_all['train_alldata_flip_shift_scale5_700e_'+str(self.opt.leaveOut)] = []
+        self.train_val_losses_all['val_alldata_flip_shift_scale5_700e_'+str(self.opt.leaveOut)] = []
+        self.train_val_losses_all['epoch_alldata_flip_shift_scale5_700e_' + str(self.opt.leaveOut)] = []
 
 
 
@@ -109,6 +98,7 @@ class PhysicalTrainer():
         #Here we concatenate all subjects in the training database in to one file
         dat = []
         for some_subject in training_database_file:
+            print some_subject
             dat_curr = load_pickle(some_subject)
             for inputgoalset in np.arange(len(dat_curr)):
                 dat.append(dat_curr[inputgoalset])
@@ -287,8 +277,8 @@ class PhysicalTrainer():
 
 
 
-        batch_size = 150
-        num_epochs = 300
+        batch_size = 200
+        num_epochs = 700
         hidden_dim = 12
         kernel_size = 10
 
@@ -305,8 +295,8 @@ class PhysicalTrainer():
 
         self.model = convnet.CNN(self.mat_size, self.output_size, hidden_dim, kernel_size)
         self.criterion = F.cross_entropy
-        #self.optimizer = optim.SGD(self.model.parameters(), lr=0.00000015, momentum=0.7, weight_decay=0.0005)
-        self.optimizer = optim.RMSprop(self.model.parameters(), lr=0.0000015, momentum=0.7, weight_decay=0.0005)
+        self.optimizer = optim.SGD(self.model.parameters(), lr=0.00000015, momentum=0.7, weight_decay=0.0005)
+        #self.optimizer = optim.RMSprop(self.model.parameters(), lr=0.0000015, momentum=0.7, weight_decay=0.0005)
 
         # train the model one epoch at a time
         for epoch in range(1, num_epochs + 1):
@@ -328,25 +318,18 @@ class PhysicalTrainer():
         print 'done with epochs, now evaluating'
         self.evaluate('test', verbose=True)
 
-        print self.train_val_losses, 'trainval'
+        print self.train_val_losses_all, 'trainval'
         # Save the model (architecture and weights)
 
         if self.opt.lab_harddrive == True:
-            if self.opt.sitting == True:
-                torch.save(self.model,'/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leaveOut) + '/p_files/' + opt.trainingType + '_sitting' + '.pt')
-            else:
-                torch.save(self.model, '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_'+str(self.opt.leaveOut)+'/p_files/'+opt.trainingType + '.pt')
-            pkl.dump(self.train_val_losses,
-                     open(os.path.join('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/train_val_losses.p'), 'wb'))
-
+            torch.save(self.model, '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_'+str(self.opt.leaveOut)+'/p_files/convnet_all.pt')
+            pkl.dump(self.train_val_losses_all,
+                     open(os.path.join('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/train_val_losses_all.p'), 'wb'))
 
         else:
-            if self.opt.sitting == True:
-                torch.save(self.model,'/home/henryclever/hrl_file_server/Autobed/subject_' + str(self.opt.leaveOut) + '/p_files/' + opt.trainingType + '_sitting' + '.pt')
-            else:
-                torch.save(self.model, '/home/henryclever/hrl_file_server/Autobed/subject_'+str(self.opt.leaveOut)+'/p_files/'+opt.trainingType + '.pt')
-            pkl.dump(self.train_val_losses,
-                     open(os.path.join('/home/henryclever/hrl_file_server/Autobed/train_val_losses.p'), 'wb'))
+            torch.save(self.model, '/home/henryclever/hrl_file_server/Autobed/subject_'+str(self.opt.leaveOut)+'/p_files/convnet_all.pt')
+            pkl.dump(self.train_val_losses_all,
+                     open(os.path.join('/home/henryclever/hrl_file_server/Autobed/train_val_losses_all.p'), 'wb'))
 
 
     def train(self, epoch):
@@ -359,7 +342,6 @@ class PhysicalTrainer():
         self.model.train()
         scores = 0
 
-        print opt.trainingType, 'opt model'
 
         #This will loop a total = training_images/batch_size times
         for batch_idx, batch in enumerate(self.train_loader):
@@ -418,26 +400,12 @@ class PhysicalTrainer():
                     epoch, examples_this_epoch, len(self.train_loader.dataset),
                     epoch_progress, train_loss, val_loss))
 
-                if self.opt.sitting == True:
-                    print 'appending to sitting losses'
-                    self.train_val_losses['train_sitting_flip_shift_scale10_stack_700e_' + str(self.opt.leaveOut)].append(train_loss)
-                    self.train_val_losses['val_sitting_flip_shift_scale10_stack_700e_' + str(self.opt.leaveOut)].append(val_loss)
-                    self.train_val_losses['epoch_sitting_flip_shift_scale10_stack_700e_' + str(self.opt.leaveOut)].append(epoch)
-                elif self.opt.armsup == True:
-                    print 'appending to armsup losses'
-                    self.train_val_losses['train_armsup_flip_shift_scale5_nd_nohome_700e_' + str(self.opt.leaveOut)].append(train_loss)
-                    self.train_val_losses['val_armsup_flip_shift_scale5_nd_nohome_700e_' + str(self.opt.leaveOut)].append(val_loss)
-                    self.train_val_losses['epoch_armsup_flip_shift_scale5_nd_nohome_700e_' + str(self.opt.leaveOut)].append(epoch)
-                elif self.opt.alldata == True:
-                    print 'appending to alldata losses'
-                    self.train_val_losses['train_alldata_flip_shift_scale5_nd_nohome_500e_' + str(self.opt.leaveOut)].append(train_loss)
-                    self.train_val_losses['val_alldata_flip_shift_scale5_nd_nohome_500e_' + str(self.opt.leaveOut)].append(val_loss)
-                    self.train_val_losses['epoch_alldata_flip_shift_scale5_nd_nohome_500e_' + str(self.opt.leaveOut)].append(epoch)
 
-                else:
-                    self.train_val_losses['train_flip_shift_scale5_nd_nohome_700e_' + str(self.opt.leaveOut)].append(train_loss)
-                    self.train_val_losses['val_flip_shift_scale5_nd_nohome_700e_' + str(self.opt.leaveOut)].append(val_loss)
-                    self.train_val_losses['epoch_flip_shift_scale5_nd_nohome_700e_' + str(self.opt.leaveOut)].append(epoch)
+                print 'appending to alldata losses'
+                self.train_val_losses_all['train_alldata_flip_shift_scale5_700e_' + str(self.opt.leaveOut)].append(train_loss)
+                self.train_val_losses_all['val_alldata_flip_shift_scale5_700e_' + str(self.opt.leaveOut)].append(val_loss)
+                self.train_val_losses_all['epoch_alldata_flip_shift_scale5_700e_' + str(self.opt.leaveOut)].append(epoch)
+
 
 
 
@@ -755,13 +723,23 @@ if __name__ == "__main__":
         training_database_file = []
     else:
 
-        opt.subject2Path = '/home/henryclever/hrl_file_server/Autobed/subject_2/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p'
-        opt.subject3Path = '/home/henryclever/hrl_file_server/Autobed/subject_3/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p'
-        opt.subject4Path = '/home/henryclever/hrl_file_server/Autobed/subject_4/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p'
-        opt.subject5Path = '/home/henryclever/hrl_file_server/Autobed/subject_5/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p'
-        opt.subject6Path = '/home/henryclever/hrl_file_server/Autobed/subject_6/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p'
-        opt.subject7Path = '/home/henryclever/hrl_file_server/Autobed/subject_7/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p'
-        opt.subject8Path = '/home/henryclever/hrl_file_server/Autobed/subject_8/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p'
+        opt.subject2Path = '/home/henryclever/hrl_file_server/Autobed/subject_2/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head_sit120rh_lh_rl_ll.p'
+        opt.subject3Path = '/home/henryclever/hrl_file_server/Autobed/subject_3/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head_sit120rh_lh_rl_ll.p'
+        opt.subject4Path = '/home/henryclever/hrl_file_server/Autobed/subject_4/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head_sit120rh_lh_rl_ll.p'
+        opt.subject5Path = '/home/henryclever/hrl_file_server/Autobed/subject_5/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head_sit120rh_lh_rl_ll.p'
+        opt.subject6Path = '/home/henryclever/hrl_file_server/Autobed/subject_6/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head_sit120rh_lh_rl_ll.p'
+        opt.subject7Path = '/home/henryclever/hrl_file_server/Autobed/subject_7/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head_sit120rh_lh_rl_ll.p'
+        opt.subject8Path = '/home/henryclever/hrl_file_server/Autobed/subject_8/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head_sit120rh_lh_rl_ll.p'
+        opt.subject9Path = '/home/henryclever/hrl_file_server/Autobed/subject_9/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head_sit120rh_lh_rl_ll.p'
+        opt.subject10Path = '/home/henryclever/hrl_file_server/Autobed/subject_10/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head_sit120rh_lh_rl_ll.p'
+        opt.subject11Path = '/home/henryclever/hrl_file_server/Autobed/subject_11/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head_sit120rh_lh_rl_ll.p'
+        opt.subject12Path = '/home/henryclever/hrl_file_server/Autobed/subject_12/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head_sit120rh_lh_rl_ll.p'
+        opt.subject13Path = '/home/henryclever/hrl_file_server/Autobed/subject_13/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head_sit120rh_lh_rl_ll.p'
+        opt.subject14Path = '/home/henryclever/hrl_file_server/Autobed/subject_14/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head_sit120rh_lh_rl_ll.p'
+        opt.subject15Path = '/home/henryclever/hrl_file_server/Autobed/subject_15/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head_sit120rh_lh_rl_ll.p'
+        opt.subject16Path = '/home/henryclever/hrl_file_server/Autobed/subject_16/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head_sit120rh_lh_rl_ll.p'
+        opt.subject17Path = '/home/henryclever/hrl_file_server/Autobed/subject_17/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head_sit120rh_lh_rl_ll.p'
+        opt.subject18Path = '/home/henryclever/hrl_file_server/Autobed/subject_18/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head_sit120rh_lh_rl_ll.p'
 
         training_database_file = []
 
@@ -799,6 +777,18 @@ if __name__ == "__main__":
         training_database_file.append(opt.subject7Path)
         training_database_file.append(opt.subject8Path)
 
+    elif opt.leaveOut == 10:
+        test_database_file = opt.subject10Path
+        training_database_file.append(opt.subject9Path)
+        training_database_file.append(opt.subject11Path)
+        training_database_file.append(opt.subject12Path)
+        training_database_file.append(opt.subject13Path)
+        training_database_file.append(opt.subject14Path)
+        training_database_file.append(opt.subject15Path)
+        training_database_file.append(opt.subject16Path)
+        training_database_file.append(opt.subject17Path)
+        training_database_file.append(opt.subject18Path)
+
     else:
         print 'please specify which subject to leave out for validation using --leave_out _'
 
@@ -809,12 +799,10 @@ if __name__ == "__main__":
 
 
 
-    training_type = opt.trainingType #Type of algorithm you want to train with
     test_bool = opt.only_test#Whether you want only testing done
 
 
     print test_bool, 'test_bool'
-    print training_type, 'training_type'
     print test_database_file, 'test database file'
 
     p = PhysicalTrainer(training_database_file, test_database_file, opt)
@@ -826,13 +814,6 @@ if __name__ == "__main__":
     else:
         if opt.verbose == True: print 'Beginning Learning'
 
-        if training_type == 'HoG_KNN':
-            #p.person_based_loocv()
-            regr = p.train_hog_knn()
-            #if opt.testPath is not None:
-                #p.test_learning_algorithm(regr)
-#                sys.exit()
-            sys.exit()
 
 
         #if training_type == 'convnet_2':
