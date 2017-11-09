@@ -657,12 +657,13 @@ def get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
                   = dm.LOPO_data_index(td['successDataList'], td['failureDataList'],\
                                        td['successFileList'], td['failureFileList'])
             else:
-                (td['successData'], td['success_image_list']), (td['failureData'], td['failure_image_list']), \
-                  td['success_files'], td['failure_files'], td['kFoldList'] \
+                (td['successData'], td['success_image_list'], td['success_d_image_list']),(td['failureData'], td['failure_image_list'], td['failure_d_image_list']), td['success_files'], td['failure_files'], td['kFoldList'] \
                   = dm.LOPO_data_index(td['successDataList'], td['failureDataList'],\
                                        td['successFileList'], td['failureFileList'],\
                                        success_image_list = td['success_image_list'], \
-                                       failure_image_list = td['failure_image_list'])
+                                       failure_image_list = td['failure_image_list'],\
+                                       success_d_image_list = td['success_d_image_list'], \
+                                       failure_d_image_list = td['failure_d_image_list'])
                                        
         else:
             # Extract data from designated location
@@ -683,12 +684,15 @@ def get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
                   = dm.LOPO_data_index(td['successRawDataList'], td['failureRawDataList'],\
                                        td['successFileList'], td['failureFileList'])
             else:                
-                (td['successData'], td['success_image_list']), (td['failureData'], td['failure_image_list']), \
+                (td['successData'], td['success_image_list'], td['success_d_image_list']),\
+                (td['failureData'], td['failure_image_list'], td['failure_d_image_list']), \
                   td['success_files'], td['failure_files'], td['kFoldList'] \
                   = dm.LOPO_data_index(td['successRawDataList'], td['failureRawDataList'],\
                                        td['successFileList'], td['failureFileList'],\
                                        success_image_list = td['success_image_list'], \
-                                       failure_image_list = td['failure_image_list'])
+                                       failure_image_list = td['failure_image_list'],\
+                                       success_d_image_list = td['success_d_image_list'], \
+                                       failure_d_image_list = td['failure_d_image_list'])
 
 
         def get_label_from_filename(file_names):
@@ -717,8 +721,10 @@ def get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
 
     if ros_bag_image :
         print "complement data"
-        print np.shape(td['successData']), np.shape(td['success_files']), np.shape(td['success_image_list'])
-        print np.shape(td['failureData']), np.shape(td['failure_files']), np.shape(td['failure_image_list'])
+        print np.shape(td['successData']), np.shape(td['success_files']),\
+        np.shape(td['success_image_list']), np.shape(td['success_d_image_list'])
+        print np.shape(td['failureData']), np.shape(td['failure_files']),\
+        np.shape(td['failure_image_list']), np.shape(td['failure_d_image_list'])
 
     return td
 

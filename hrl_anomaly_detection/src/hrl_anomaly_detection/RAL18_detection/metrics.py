@@ -153,3 +153,32 @@ def get_lower_bound(x, x_mean, x_std, z_std, enc_z_mean, enc_z_logvar, nDim, met
         return [np.mean(xent_loss + kl_loss)], z_mean, z_log_var
     else:
         return xent_loss + kl_loss, z_mean, z_log_var
+
+
+def get_err_vec(x, x_mean, x_std, nDim, method=None, p=None, alpha=None):
+    '''
+    No fixed batch
+    x: batch x length x dim
+    '''
+    if len(np.shape(x))>2:
+        if (method.find('lstm_vae_custom')>=0 or method.find('lstm_dvae_custom')>=0 or \
+            method.find('phase')>=0) and method.find('pred')<0 and method.find('input')<0:
+            x_in = np.concatenate((x, p), axis=-1)
+        elif method.find('pred')>=0 or method.find('input')>=0:
+            x_in = np.concatenate((x, p, x), axis=-1) 
+        else:
+            x_in = x
+        
+        batch_size = len(x)
+        x = x[0]
+
+    if alpha is None: alpha = np.array([1.0]*nDim)
+
+    # x: length x dim ?
+    log_p_x_z = -0.5 * ( np.sum( (alpha*(x-x_mean)/x_std)**2, axis=-1) \
+                         + float(nDim) * np.log(2.0*np.pi) + np.sum(np.log(x_std**2), axis=-1) )
+
+    print np.shape(log_p_x_z)
+    sys.exit()
+
+    return log_p_x_z

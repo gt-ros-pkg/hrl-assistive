@@ -65,8 +65,8 @@ matplotlib.rcParams['pdf.fonttype'] = 42
 matplotlib.rcParams['ps.fonttype'] = 42 
 
 
-dist_min = 0.35
-dist_max = 1.2
+dist_min = 0.3
+dist_max = 0.8
 
 class BagSubscriber(message_filters.SimpleFilter):
     def __init__(self):
@@ -257,8 +257,15 @@ class rosbagExtractor():
         except CvBridgeError, e:
             print e
 
-        cv_image = np.array(cv_image * 255, dtype = np.uint8)
-        cv_array = cv2.threshold(cv_image, int(255*dist_min), int(255*dist_max), cv2.THRESH_TOZERO)[1]
+        print np.nanmax(cv_image), np.nanmin(cv_image)               
+        cv_array = cv2.threshold(cv_image, dist_min, 0, cv2.THRESH_TOZERO)[1]
+        cv_array = cv2.threshold(cv_array, dist_max, 0, cv2.THRESH_TOZERO_INV)[1]
+        print np.nanmax(cv_array), np.nanmin(cv_array), " d "
+        cv_array = cv2.threshold(cv_array, 0, 255, cv2.THRESH_BINARY)[1]
+        ## cv_array = np.array(cv_array * 255, dtype = np.uint8)
+        ## cv_image = np.array(cv_image * 255, dtype = np.uint8)
+        ## cv_array = cv2.threshold(cv_image, int(255.*dist_min), int(255.*dist_max), cv2.THRESH_TOZERO)[1]
+
         #kernel = np.ones((8,8),np.uint8)
         #cv_array = cv2.dilate(cv_array,kernel,iterations = 2)
         cv_array = cv2.GaussianBlur(cv_array, (11, 11), 0)
@@ -306,6 +313,8 @@ def extract_rosbag_subfolders(subject_path, depth=False, depth_rgb=False, rot=Fa
 
     if not(os.path.isdir(subject_path)): return
     list_dir = os.listdir(subject_path)
+    extract_rosbag(subject_path, depth=depth, depth_rgb=depth_rgb, rot=rot)
+    
     for l in list_dir:
         extract_rosbag(os.path.join(subject_path,l), depth=depth, depth_rgb=depth_rgb, rot=rot)
         extract_rosbag_subfolders(os.path.join(subject_path,l), depth=depth, depth_rgb=depth_rgb,
@@ -319,7 +328,7 @@ def extract_rosbag(subject_path, depth=False, depth_rgb=False, rot=False):
     if not(os.path.isdir(subject_path)): return
 
     # get rosbags path
-    bag_files = os.listdir(subject_path)
+    bag_files = os.listdir(subject_path)    
         
     # For loop
     for idx, f in enumerate(bag_files):
@@ -346,7 +355,8 @@ def extract_rosbag(subject_path, depth=False, depth_rgb=False, rot=False):
         rosbagExtractor(save_dir, bag_file, depth=depth, depth_rgb=depth_rgb, rot=rot)
 
         #temp
-        break
+        ## print "break!!!!!!!!!!!!!!!!!!"
+        ## break
 
     return 
 
@@ -550,9 +560,9 @@ if __name__ == '__main__':
     else:                                                                  
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/JOURNAL_ISOL/'+opt.task+'_1'
-        ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RAW_DATA/ICRA2017/'
-        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RAW_DATA/ICRA2018/day14_feeding'
-        #save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RAW_DATA/ICRA2018'
+        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RAW_DATA/AURO2016/'
+        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RAW_DATA/ICRA2018/day11_feeding'
+        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RAW_DATA/AURO2016' #/s4_feeding_rosbag'
 
         rospy.init_node("export_data")
         rospy.sleep(1)

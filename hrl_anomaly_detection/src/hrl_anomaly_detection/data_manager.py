@@ -111,6 +111,9 @@ def LOPO_data_index(success_data_list, failure_data_list, \
             if 'success_image_list' in kwargs.keys() and len(kwargs['success_image_list'])>0:
                 success_image_data = kwargs['success_image_list'][i];
                 failure_image_data = kwargs['failure_image_list'][i];            
+            if 'success_d_image_list' in kwargs.keys() and len(kwargs['success_d_image_list'])>0:
+                success_d_image_data = kwargs['success_d_image_list'][i];
+                failure_d_image_data = kwargs['failure_d_image_list'][i];            
         else:
             success_data = np.vstack([ np.swapaxes(success_data,0,1), \
                                       np.swapaxes(success_data_list[i], 0,1)])
@@ -121,6 +124,9 @@ def LOPO_data_index(success_data_list, failure_data_list, \
             if 'success_image_list' in kwargs.keys() and len(kwargs['success_image_list'])>0:
                 success_image_data += kwargs['success_image_list'][i]
                 failure_image_data += kwargs['failure_image_list'][i]
+            if 'success_d_image_list' in kwargs.keys() and len(kwargs['success_d_image_list'])>0:
+                success_d_image_data += kwargs['success_d_image_list'][i]
+                failure_d_image_data += kwargs['failure_d_image_list'][i]
             
             if len(failure_data_list[i])>0:
                 failure_data = np.vstack([ np.swapaxes(failure_data,0,1), \
@@ -191,11 +197,10 @@ def LOPO_data_index(success_data_list, failure_data_list, \
 
             kFold_list.append([ normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx])
 
-    if 'success_image_list' not in kwargs.keys() and len(kwargs['success_image_list'])==0:
-        return success_data, failure_data, success_files, failure_files, kFold_list
+    if 'success_image_list' in kwargs.keys() and len(kwargs['success_image_list'])>0:
+        return (success_data, success_image_data, success_d_image_data), (failure_data, failure_image_data, failure_d_image_data), success_files, failure_files, kFold_list
     else:
-        return (success_data, success_image_data), (failure_data, failure_image_data),\
-          success_files, failure_files, kFold_list
+        return success_data, failure_data, success_files, failure_files, kFold_list
         
 
 
@@ -300,6 +305,7 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path,
         param_dict      = data_dict['param_dict']
 
     else:
+        # pkl files
         success_list, failure_list = util.getSubjectFileList(raw_data_path, subject_names, task_name,\
                                                              time_sort=time_sort)
 
@@ -333,17 +339,19 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path,
             allData, param_dict = extractHandFeature(all_data_dict, handFeatures,\
                                                      cut_data=cut_data)
         print " --------------------- Success -----------------------------"  
-        successData, _      = extractHandFeature(success_data_dict, handFeatures, \
-                                                 init_param_dict=param_dict, cut_data=cut_data)
+        successData, _ = extractHandFeature(success_data_dict, handFeatures, \
+                                            init_param_dict=param_dict, cut_data=cut_data)
         print " --------------------- Failure -----------------------------"  
-        failureData, _      = extractHandFeature(failure_data_dict, handFeatures, \
-                                                 init_param_dict=param_dict, cut_data=cut_data)
+        failureData, _ = extractHandFeature(failure_data_dict, handFeatures, \
+                                            init_param_dict=param_dict, cut_data=cut_data)
 
         success_image_list = []
         failure_image_list = []
+        success_d_image_list = []
+        failure_d_image_list = []
         if ros_bag_image:
             new_success_list = []
-            for f in success_list:
+            for f in success_list: #pkl
                 root_dir = os.path.split(f)[0]+'_rosbag'
                 sub_dir  = os.path.split(f)[1].split('.pkl')[0]
                 new_success_list.append( os.path.join(root_dir, sub_dir) )
@@ -353,11 +361,19 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path,
                 sub_dir  = os.path.split(f)[1].split('.pkl')[0]
                 new_failure_list.append( os.path.join(root_dir, sub_dir) )
 
+                
             success_image_list.append(export_images(new_success_list, success_data_dict, \
                                                     downSampleSize) )
             failure_image_list.append(export_images(new_failure_list, failure_data_dict, \
                                                     downSampleSize) )
+            # depth
+            success_d_image_list.append(export_images(new_success_list, success_data_dict, \
+                                                      downSampleSize, depth=True) )
+            failure_d_image_list.append(export_images(new_failure_list, failure_data_dict, \
+                                                      downSampleSize, depth=True) )
 
+
+                
 
         data_dict = {}
         data_dict['allData']      = allData = np.array(allData)
@@ -367,6 +383,8 @@ def getDataSet(subject_names, task_name, raw_data_path, processed_data_path,
         data_dict['failureFiles'] = failure_list
         data_dict['success_image_list'] = success_image_list
         data_dict['failure_image_list'] = failure_image_list
+        data_dict['success_d_image_list'] = success_d_image_list
+        data_dict['failure_d_image_list'] = failure_d_image_list
         data_dict['param_dict'] = param_dict
 
         if rndFold:
@@ -749,7 +767,6 @@ def getRawDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
 
     if os.path.isdir(processed_data_path) is False:
         os.system('mkdir -p '+processed_data_path)
-
     save_pkl = os.path.join(processed_data_path, pkl_prefix+'feature_extraction_'+str(id_num) )
             
     if os.path.isfile(save_pkl) and data_renew is False :
@@ -757,22 +774,9 @@ def getRawDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
         print "Load saved data"
         print "--------------------------------------"
         data_dict = ut.load_pickle(save_pkl)
-        # Task-oriented hand-crafted features
-        successDataList    = data_dict['successDataList']
-        failureDataList    = data_dict['failureDataList']
-        successRawDataList = data_dict['successRawDataList']
-        failureRawDataList = data_dict['failureRawDataList']
-        param_dict         = data_dict['param_dict']
-        raw_param_dict     = data_dict['raw_param_dict']
-        successFileList     = data_dict.get('successFileList',[])
-        failureFileList     = data_dict.get('failureFileList',[])
-        success_image_list  = data_dict.get('success_image_list',[])
-        failure_image_list  = data_dict.get('failure_image_list',[])
-
     else:
         file_list = util.getSubjectFileList(raw_data_path, subject_names, task_name,\
                                             time_sort=time_sort, no_split=True, depth=depth)
-
         print "start to load data"
         # Task-oriented hand-crafted features
         if init_param_dict is not None:
@@ -791,8 +795,6 @@ def getRawDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
 
             _, raw_param_dict = extractRawFeature(all_data_dict, rawFeatures, \
                                                   cut_data=cut_data)
-                                                     
-
         print "max time is ", max_time
 
         # leave-one-person-out
@@ -804,6 +806,8 @@ def getRawDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
         failureFileList = []
         success_image_list = []
         failure_image_list = []
+        success_d_image_list = []
+        failure_d_image_list = []
         for i in xrange(len(subject_names)):
 
             success_list, failure_list = util.getSubjectFileList(raw_data_path, [subject_names[i]], \
@@ -863,12 +867,16 @@ def getRawDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
                                                         downSampleSize) )
                 failure_image_list.append(export_images(new_failure_list, failure_data_dict, \
                                                         downSampleSize) )
-            
+                #depth
+                success_d_image_list.append(export_images(new_success_list, success_data_dict, \
+                                                        downSampleSize, depth=True) )
+                failure_d_image_list.append(export_images(new_failure_list, failure_data_dict, \
+                                                        downSampleSize, depth=True) )
 
         data_dict = {}        
         data_dict['successDataList'] = successDataList
         data_dict['failureDataList'] = failureDataList
-        data_dict['successRawDataList'] = successRawDataList
+        data_dict['successRawDataList'] = successRawDataList # Task-oriented hand-crafted features
         data_dict['failureRawDataList'] = failureRawDataList
         data_dict['param_dict']      = param_dict
         data_dict['raw_param_dict']  = raw_param_dict
@@ -876,11 +884,13 @@ def getRawDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
         data_dict['failureFileList'] = failureFileList        
         data_dict['success_image_list'] = success_image_list
         data_dict['failure_image_list'] = failure_image_list
+        data_dict['success_d_image_list'] = success_d_image_list
+        data_dict['failure_d_image_list'] = failure_d_image_list
         
         ut.save_pickle(data_dict, save_pkl)
 
     print "---------------------------------------------------"
-    print "s/f data: ", np.shape(successRawDataList), np.shape(failureRawDataList)
+    print "s/f data: ", np.shape(data_dict['successRawDataList']), np.shape(data_dict['failureRawDataList'])
     print "---------------------------------------------------"
     return data_dict
 
@@ -899,12 +909,6 @@ def getAEdataSet(idx, rawSuccessData, rawFailureData, handSuccessData, handFailu
                  # PCA param
                  pca_gamma=5.0,\
                  verbose=False, renew=False, preTrainModel=None ):
-
-    ## if os.path.isfile(AE_proc_data) and not renew:        
-    ##     d = ut.load_pickle(AE_proc_data)
-    ##     ## d['handFeatureNames'] = handParam['feature_names']
-    ##     ## ut.save_pickle(d, AE_proc_data)
-    ##     return d
 
     # dim x sample x length
     normalTrainData   = rawSuccessData[:, normalTrainIdx, :] 
@@ -2782,7 +2786,7 @@ def extractRawFeature(d, feature_list, init_param_dict=None, cut_data=None, verb
 
 
 
-def export_images(folder_list, data_dict, downSampleSize):
+def export_images(folder_list, data_dict, downSampleSize, depth=False):
     ''' Get list of images between start and end time '''
 
     assert len(data_dict['timesList']) == len(folder_list)
@@ -2791,10 +2795,11 @@ def export_images(folder_list, data_dict, downSampleSize):
     for idx, f in enumerate(folder_list):
 
         des_time_list = data_dict['timesList'][idx]
+        if depth: f += '_depth' 
 
         # get image folder
         try:
-            files = os.listdir(f)
+            files = os.listdir(f)            
         except:
             print "No path exists: ", f
             images.append([])

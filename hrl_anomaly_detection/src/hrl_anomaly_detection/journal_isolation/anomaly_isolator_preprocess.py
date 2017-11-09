@@ -61,9 +61,6 @@ def get_data(subject_names, task_name, raw_data_path, save_data_path, param_dict
     data_dict  = param_dict['data_param']
     AE_dict    = param_dict['AE']
     data_renew = data_dict['renew']
-    ae_renew   = param_dict['HMM']['renew']
-    method     = param_dict['ROC']['methods'][0]
-    nPoints    = param_dict['ROC']['nPoints']
     
     #------------------------------------------
     if os.path.isdir(save_data_path) is False:
@@ -86,20 +83,23 @@ def get_data(subject_names, task_name, raw_data_path, save_data_path, param_dict
                               data_renew=data_renew, max_time=data_dict['max_time'],
                               ros_bag_image=True)
 
-        (d['successData'], d['success_image_list']), (d['failureData'], d['failure_image_list']), \
+        (d['successData'], d['success_image_list'], d['success_d_image_list']),\
+            (d['failureData'], d['failure_image_list'], d['failure_d_image_list']), \
           d['success_files'], d['failure_files'], d['kFoldList'] \
           = dm.LOPO_data_index(d['successRawDataList'], d['failureRawDataList'],\
                                d['successFileList'], d['failureFileList'],\
                                success_image_list = d['success_image_list'], \
-                               failure_image_list = d['failure_image_list'])
+                               failure_image_list = d['failure_image_list'], \
+                               success_d_image_list = d['success_d_image_list'], \
+                               failure_d_image_list = d['failure_d_image_list'])
 
         d['failure_labels']  = get_label_from_filename(d['failure_files'])
 
         ut.save_pickle(d, crossVal_pkl)
 
     print "Main data"
-    print np.shape(d['successData']), np.shape(d['success_image_list'])
-    print np.shape(d['failureData']), np.shape(d['failure_image_list'])
+    print np.shape(d['successData']), np.shape(d['success_image_list']), np.shape(d['success_d_image_list'])
+    print np.shape(d['failureData']), np.shape(d['failure_image_list']), np.shape(d['failure_d_image_list'])
 
     ## if fine_tuning is False:
     td1, td2, td3 = vutil.get_ext_feeding_data(task_name, save_data_path, param_dict, d,
@@ -109,6 +109,7 @@ def get_data(subject_names, task_name, raw_data_path, save_data_path, param_dict
     td = {}
     for key in td1.keys():
         if key in ['success_image_list', 'failure_image_list',
+                   'success_d_image_list', 'failure_d_image_list',
                    'successRawDataList', 'failureRawDataList',
                    'successFileList', 'failureFileList',
                    'success_files', 'failure_files',
@@ -133,19 +134,16 @@ def get_label_from_filename(file_names):
 
     
 
-def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=False, renew=False):
+def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=False, renew=False,
+                      fine_tuning=False):
     
     # load params (param_dict)
-    data_dict  = param_dict['data_param']
-    AE_dict    = param_dict['AE']
-    data_renew = data_dict['renew']
     ae_renew   = param_dict['HMM']['renew']
     method     = param_dict['ROC']['methods'][0]
     nPoints    = param_dict['ROC']['nPoints']
     
     if ae_renew: clf_renew = True
     else:        clf_renew = param_dict['SVM']['renew']
-    fine_tuning = False
 
     # Check the list of temporal data and images
     nDim = len(main_data['successData'])
@@ -154,8 +152,8 @@ def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=F
     tn_ll = [[] for i in xrange(nPoints)]
     fn_ll = [[] for i in xrange(nPoints)]
     roc_l = []
-    train_idx_ll = []
-    test_idx_ll  = []
+    train_a_idx_ll = []
+    test_a_idx_ll  = []
 
     detection_pkl = os.path.join(save_data_path, 'anomaly_idx.pkl')
 
@@ -205,8 +203,8 @@ def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=F
         weights_path = os.path.join(save_data_path,'model_weights_'+method+'_'+str(idx)+'.h5')
         
         if (method.find('lstm_vae')>=0 or method.find('lstm_dvae')>=0):
-            dyn_ths     = True
-            ad_method   = 'lower_bound'
+            dyn_ths   = True
+            ad_method = 'lower_bound'
             
             from hrl_execution_monitor.keras_util import lstm_dvae_phase as km
 
@@ -225,7 +223,7 @@ def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=F
 
         from hrl_anomaly_detection.journal_isolation import detector as dt
         save_pkl = os.path.join(save_data_path, 'model_ad_scores_'+str(idx)+'.pkl')
-        tp_l, tn_l, fp_l, fn_l, roc, train_anomaly_idx_l, test_anomaly_idx_l = \
+        tp_l, tn_l, fp_l, fn_l, roc, ad_dict = \
           dt.anomaly_detection(autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generator,
                                normalTrainData, valData[0], abnormalTrainData,\
                                normalTestData, abnormalTestData, \
@@ -239,9 +237,11 @@ def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=F
                                           np.array(main_data['failure_files'])[abnormalTestIdx]),\
                                return_idx=True)
 
+        
+
         roc_l.append(roc)
-        train_idx_ll.append(train_anomaly_idx_l)
-        test_idx_ll.append(test_anomaly_idx_l)
+        train_a_idx_ll.append(ad_dict['tr_a_idx'])
+        test_a_idx_ll.append(ad_dict['te_a_idx'])
 
         for i in xrange(len(ths_l)):
             tp_ll[i] += tp_l[i]
@@ -266,6 +266,7 @@ def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=F
         from sklearn import metrics
         print "roc: ", metrics.auc(fpr_l, tpr_l, True)  
 
+        # f-scores
         fs_l = []
         for i in xrange(len(ths_l)):
             fs_l.append( (2.0*float(np.sum(tp_ll[i])))/ (2.0*float(np.sum(tp_ll[i])) + float(np.sum(fn_ll[i])) + float(np.sum(fp_ll[i]))) )
@@ -276,8 +277,8 @@ def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=F
         dd['tn_ll'] = tn_ll
         dd['fn_ll'] = fn_ll
         ## d['roc_l'] = roc_l
-        dd['train_idx_ll'] = train_idx_ll
-        dd['test_idx_ll']  = test_idx_ll
+        dd['train_idx_ll'] = train_a_idx_ll
+        dd['test_idx_ll']  = test_a_idx_ll
         dd['fs_l']  = fs_l
         dd['kFoldList'] = main_data['kFoldList']
         ut.save_pickle(dd, detection_pkl)
@@ -287,10 +288,25 @@ def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=F
     return dd['train_idx_ll'], dd['test_idx_ll'], dd['fs_l']
 
     
-def get_isolation_data(save_data_path, main_data, sub_data,
-                       train_idx_list, test_idx_list, ths_idx, param_dict):
+def get_isolation_data(subject_names, task_name, raw_data_path, save_data_path, param_dict):
+                       #main_data, sub_data,
+                       #train_idx_list, test_idx_list, ths_idx, param_dict):
 
+    main_data, sub_data = get_data(subject_names, task_name, raw_data_path, save_data_path, param_dict)
+    sys.exit()
 
+    train_idx_list, test_idx_list, fs_l = get_detection_idx(save_data_path, main_data, sub_data,
+                                                            param_dict, verbose=False, renew=False)
+
+    x_train_s = []
+    x_train_i = []
+    x_train_d = []
+    y_train   = []
+
+    x_test_s = []
+    x_test_i = []
+    x_test_d = []
+    y_test   = []
     
     #-----------------------------------------------------------------------------------------
     # Data extraction
@@ -299,146 +315,54 @@ def get_isolation_data(save_data_path, main_data, sub_data,
       in enumerate(main_data['kFoldList']):
         print "==================== ", idx, " ========================"
 
-        # detection indices
+        # Find an index given maximum f-score
+        ths_idx = np.argmax(fs_l[idx])
+    
+        # Detection indices
         train_idx = train_idx_list[idx][ths_idx]
         test_idx  = test_idx_list[idx][ths_idx]
 
-
+        # ------------------------------------------------------------------------------------------         
         #Signal data
-        abnormalTrainData = main_data['failureData'][:, abnormalTrainIdx, :]
-        abnormalTrainData = np.hstack([abnormalTrainData,
-                                       copy.deepcopy(sub_data['failureData'])])
-        abnormalTrainLabels = np.array(main_data['failure_labels'])[abnormalTrainIdx].tolist()+\
-          sub_data['failure_labels']
-          
-        abnormalTestData   = main_data['failureData'][:, abnormalTestIdx, :]
-        abnormalTestLabels = np.array(main_data['failure_labels'])[abnormalTestIdx].tolist()
+        x_train_s.append( np.hstack([main_data['failureData'][:, abnormalTrainIdx, :],
+                                     copy.deepcopy(sub_data['failureData'])]) )          
+        x_test_s.append( main_data['failureData'][:, abnormalTestIdx, :] )
 
-        ## print np.shape(train_idx_list)
-        ## print np.shape(test_idx_list)
-        ## print np.shape(abnormalTrainData), np.shape(abnormalTrainLabels)
-        ## print np.shape(abnormalTestData), np.shape(abnormalTestLabels)
-
-        #Image data
-
-        #Extra images
-
+        # ------------------------------------------------------------------------------------------         
+        #Image data selection
+        x_train_i.append( main_data['failure_image_list'][abnormalTrainIdx] 
+        + copy.deepcopy(sub_data['failure_image_list']) )
+        x_test_i.append( main_data['failure_image_list'][abnormalTestIdx])
         
-        sys.exit()
+        x_train_d.append( main_data['failure_d_image_list'][abnormalTrainIdx]
+        + copy.deepcopy(sub_data['failure_d_image_list']) )
+        x_test_d.append( main_data['failure_d_image_list'][abnormalTestIdx] )
+        
+        # ------------------------------------------------------------------------------------------         
+        # Labels
+        y_train.append( np.array(main_data['failure_labels'])[abnormalTrainIdx].tolist()+\
+          sub_data['failure_labels'] )
+        y_test.append( np.array(main_data['failure_labels'])[abnormalTestIdx].tolist()+\
+          sub_data['failure_labels'])
+
+
+        # feature extraction by index based on IROS17_isolation/isolation_util.py's feature_extraction
+        feature_extraction()
+
+        #1) Individual features reconstruction probability?
+
+        #2) Image list
+        
+
+    return [x_train, x_train_img], y_train, [x_test, x_test_img], y_test    
+
+
+def feature_extraction():
 
     
-    return train_data, test_data
+
+    return sig, img, d_img
                       
-    # split data with 80:20 ratio, 3set
-    kFold_list = d['kFold_list'][:1]
-
-    # flattening image list
-    success_image_list = autil.image_list_flatten( d.get('success_image_list',[]) )
-    failure_image_list = autil.image_list_flatten( d.get('failure_image_list',[]) )
-
-    failure_labels = []
-    for f in d['failureFiles']:
-        failure_labels.append( int( f.split('/')[-1].split('_')[0] ) )
-    failure_labels = np.array( failure_labels )
-
-    # Static feature selection for isolation
-    feature_list = []
-    for feature in param_dict['data_param']['staticFeatures']:
-        idx = [ i for i, x in enumerate(param_dict['data_param']['isolationFeatures']) if feature == x][0]
-        feature_list.append(idx)
-    successData_static = np.array(d['successData'])[feature_list]
-    failureData_static = np.array(d['failureData'])[feature_list]
-    
-    #-----------------------------------------------------------------------------------------
-    # Dynamic feature selection for detection and isolation
-    feature_idx_list = []
-    success_data_ad = []
-    failure_data_ad = []
-    nDetector = len(param_dict['data_param']['handFeatures'])
-    for i in xrange(nDetector):
-        
-        feature_idx_list.append([])
-        for feature in param_dict['data_param']['handFeatures'][i]:
-            feature_idx_list[i].append(data_dict['isolationFeatures'].index(feature))
-
-        success_data_ad.append( copy.copy(d['successData'][feature_idx_list[i]]) )
-        failure_data_ad.append( copy.copy(d['failureData'][feature_idx_list[i]]) )
-        HMM_dict_local = copy.deepcopy(HMM_dict)
-        HMM_dict_local['scale'] = param_dict['HMM']['scale'][i]
-        
-        # Training HMM, and getting classifier training and testing data
-        dm.saveHMMinducedFeatures(kFold_list, success_data_ad[i], failure_data_ad[i],\
-                                  task_name, save_data_path,\
-                                  HMM_dict_local, data_renew, startIdx, nState, cov, \
-                                  success_files=d['successFiles'], failure_files=d['failureFiles'],\
-                                  noise_mag=noise_mag[i], suffix=str(i),\
-                                  verbose=verbose, one_class=False)
-
-    del d
-
-    # ---------------------------------------------------------------
-    # get data
-    data_dict = {}
-    data_pkl = os.path.join(save_data_path, 'isol_data.pkl')
-    if os.path.isfile(data_pkl) is False or HMM_dict['renew'] or SVM_dict['renew']:
-
-        l_data = Parallel(n_jobs=1, verbose=10)\
-          (delayed(iutil.get_hmm_isolation_data)(idx, kFold_list[idx], failure_data_ad, \
-                                                 failureData_static, \
-                                                 failure_labels,\
-                                                 failure_image_list,\
-                                                 task_name, save_data_path, param_dict, weight,\
-                                                 single_detector=single_detector,\
-                                                 n_jobs=-1, window_steps=window_steps, verbose=verbose\
-                                                 ) for idx in xrange(len(kFold_list)) )
-        
-        data_dict = {}
-        for i in xrange(len(l_data)):
-            idx = l_data[i][0]
-            data_dict[idx] = (l_data[i][1],l_data[i][2],l_data[i][3],l_data[i][4] )
-            
-        print "save pkl: ", data_pkl
-        ut.save_pickle(data_dict, data_pkl)            
-    else:
-        data_dict = ut.load_pickle(data_pkl)
-    
-
-    # ---------------------------------------------------------------
-    scores = []
-    for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
-      in enumerate(kFold_list):
-        print "kFold_list: ", idx
-
-        (x_trains, y_train, x_tests, y_test) = data_dict[idx]         
-        x_train = x_trains[0] 
-        x_test  = x_tests[0] 
-        print np.shape(x_train), np.shape(x_test)
-
-        scaler = preprocessing.StandardScaler()
-        x_train = scaler.fit_transform(x_train)
-        x_test  = scaler.transform(x_test)
-
-        if type(x_train) is np.ndarray:
-            x_train = x_train.tolist()
-            x_test  = x_test.tolist()
-        if type(y_train) is np.ndarray:
-            y_train  = y_train.tolist()
-            y_test   = y_test.tolist()
-        
-        ## from sklearn.svm import SVC
-        ## clf = SVC(C=1.0, kernel='rbf') #, decision_function_shape='ovo')
-        from sklearn.ensemble import RandomForestClassifier
-        clf = RandomForestClassifier(n_estimators=400, n_jobs=-1)
-
-        clf.fit(x_train, y_train)
-        ## y_pred = clf.predict(x_test.tolist())
-        score = clf.score(x_test, y_test)
-        scores.append( score )
-        print idx, " : score = ", score
-
-
-    print scores
-    print "Score mean = ", np.mean(scores), np.std(scores)
 
 if __name__ == '__main__':
 
@@ -461,15 +385,11 @@ if __name__ == '__main__':
     nb_classes = 12
 
 
-    get_isolation_data(subject_names, task_name, raw_data_path, save_data_path,
-                       param_dict, weight=1.0, single_detector=single_detector,
-                       window_steps=window_steps, verbose=False)
+    get_isolation_data(subject_names, task_name, raw_data_path, save_data_path, param_dict)
+
+    #, weight=1.0, single_detector=single_detector,
+    #                   window_steps=window_steps, verbose=False)
 
 
 
 
-## def get_isolation_data(idx, failureData, failureImages, failureLabels, failureIdx):
-
-
-
-##     return idx, [x_train, x_train_img], y_train, [x_test, x_test_img], y_test

@@ -66,31 +66,38 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
                                                  x_std_div=x_std_div, x_std_offset=x_std_offset,
                                                  z_std=z_std, batch_info=batch_info, valData=normalValData,
                                                  phase=phase, train_flag=True)        
-        scores_tr_a, zs_tr_a = get_anomaly_score(abnormalTrainData, vae_mean, enc_z_mean, enc_z_logvar,
-                                                 window_size, alpha, ad_method, method, stateful=stateful,
-                                                 x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,
-                                                 phase=phase,\
-                                                 batch_info=batch_info, ref_scores=scores_tr_n)
+        scores_tr_a, zs_tr_a, err_tr_a = get_anomaly_score(abnormalTrainData, vae_mean, enc_z_mean, enc_z_logvar,
+                                                           window_size, alpha, ad_method, method,
+                                                           stateful=stateful, x_std_div=x_std_div,
+                                                           x_std_offset=x_std_offset, z_std=z_std,
+                                                           phase=phase,\
+                                                           batch_info=batch_info, ref_scores=scores_tr_n,
+                                                           return_err=True)
         scores_te_n, zs_te_n = get_anomaly_score(normalTestData, vae_mean, enc_z_mean, enc_z_logvar,
                                                  window_size, alpha, ad_method, method, stateful=stateful,
                                                  x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,
                                                  phase=phase,\
                                                  batch_info=batch_info, ref_scores=scores_tr_n)
-        scores_te_a, zs_te_a = get_anomaly_score(abnormalTestData, vae_mean, enc_z_mean, enc_z_logvar,
-                                                 window_size, alpha, ad_method, method, stateful=stateful,
-                                                 x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,
-                                                 phase=phase,\
-                                                 batch_info=batch_info, ref_scores=scores_tr_n)
+        scores_te_a, zs_te_a, err_te_a = get_anomaly_score(abnormalTestData, vae_mean, enc_z_mean, enc_z_logvar,
+                                                           window_size, alpha, ad_method, method,
+                                                           stateful=stateful,
+                                                           x_std_div=x_std_div, x_std_offset=x_std_offset,
+                                                           z_std=z_std,
+                                                           phase=phase,\
+                                                           batch_info=batch_info, ref_scores=scores_tr_n,
+                                                           return_err=True)
 
         d = {}
         d['scores_tr_n'] = scores_tr_n
         d['zs_tr_n']     = zs_tr_n #sample x length x dim
         d['scores_tr_a'] = scores_tr_a
         d['zs_tr_a']     = zs_tr_a #sample x length x dim
+        d['err_tr_a']    = err_tr_a
         d['scores_te_n'] = scores_te_n
         d['zs_te_n']     = zs_te_n
         d['scores_te_a'] = scores_te_a
         d['zs_te_a']     = zs_te_a
+        d['err_te_a']    = err_te_a
         ut.save_pickle(d, save_pkl)
 
     # temp
@@ -104,10 +111,10 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
     ## ut.save_pickle(d, save_pkl)
 
 
-    zs_tr_n = np.array(d['zs_tr_n'])
-    zs_tr_a = np.array(d['zs_tr_a'])
-    zs_te_n = np.array(d['zs_te_n'])
-    zs_te_a = np.array(d['zs_te_a'])
+    zs_tr_n     = np.array(d['zs_tr_n'])
+    zs_tr_a     = np.array(d['zs_tr_a'])
+    zs_te_n     = np.array(d['zs_te_n'])
+    zs_te_a     = np.array(d['zs_te_a'])
     scores_tr_n = np.array(d['scores_tr_n'])
     scores_tr_a = np.array(d['scores_tr_a'])
     scores_te_n = np.array(d['scores_te_n'])
@@ -250,17 +257,189 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
 
     return_idx = kwargs.get('return_idx', False)
     if return_idx:
-        return tp_ll, tn_ll, fp_ll, fn_ll, roc, tr_a_idx_ll, te_a_idx_ll
+        d = {}
+        d['tr_a_idx'] = tr_a_idx_ll
+        d['te_a_idx'] = te_a_idx_ll
+        d['tr_a_err'] = err_tr_a
+        d['te_a_err'] = err_te_a
+        return tp_ll, tn_ll, fp_ll, fn_ll, roc, d
     else:
         return tp_ll, tn_ll, fp_ll, fn_ll, roc
 
 
 
 def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_method, method,\
-                      nSample=1000,\
-                      stateful=False, x_std_div=1, x_std_offset=1e-10, z_std=0.5,\
-                      phase=1.0,\
-                      batch_info=(False,None), ref_scores=None, **kwargs):
+                      nSample=1000, stateful=False, x_std_div=1, x_std_offset=1e-10, z_std=0.5,\
+                      phase=1.0, batch_info=(False,None), ref_scores=None, **kwargs):
+
+    x_dim  = len(X[0][0])
+    length = len(X[0])
+    train_flag = kwargs.get('train_flag', False)
+    valData    = kwargs.get('valData', None)
+    return_err = kwargs.get('return_err', False)
+
+
+    scores = []
+    zs = []
+    es = []
+    for i in xrange(len(X)): # per sample
+        #print "sample: ", i+1, " out of ", len(X)
+        np.random.seed(3334 + i)
+            
+        if window_size>0:
+            if method.find('pred')>=0:                
+                x,y = vutil.create_dataset(X[i], window_size, 1)
+            else:
+                x = vutil.sampleWithWindow(X[i:i+1], window=window_size)
+        else:
+            x = X[i:i+1]
+        if type(x) is list: x = np.array(x)
+
+        if method == 'rnd':            
+            scores.append( np.zeros(len(x)) )            
+            continue
+
+        if stateful:
+            vae.reset_states()
+            if enc_z_mean is not None: enc_z_mean.reset_states()
+            if enc_z_logvar is not None: enc_z_logvar.reset_states()                
+
+        z = []
+        s = []
+        e = []
+        last_inputs = None
+        for j in xrange(len(x)): # per window
+            # anomaly score per timesteps in an window            
+            # pdf prediction
+            if batch_info[0]:
+                if window_size>1:
+                    xx = x[j:j+1]
+                    for k in xrange(batch_info[1]-1):
+                        xx = np.vstack([xx, x[j:j+1] ])
+                else:
+                    xx = np.expand_dims(x[j:j+1,0], axis=0)
+                    for k in xrange(batch_info[1]-1):
+                        xx = np.vstack([xx, np.expand_dims(x[j:j+1,0], axis=0) ])                    
+            else:
+                xx = x[j:j+1]
+
+            # Get prediction
+            if (method.find('lstm_vae_custom')>=0 or method.find('lstm_dvae_custom')>=0 or\
+                method.find('phase')>=0) and method.find('pred')<0 and method.find('input')<0:
+                x_true = np.concatenate((xx, np.zeros((len(xx), len(xx[0]),1))), axis=-1)
+            elif method.find('input')>=0:
+                if last_inputs is None: last_inputs = xx
+                x_true = np.concatenate((xx, np.zeros((len(xx), len(xx[0]),1)), last_inputs),
+                                        axis=-1)                
+                last_inputs = xx
+            elif method.find('pred')>=0:
+                x_true = np.concatenate((xx, np.zeros((len(xx), len(xx[0]),1)),xx), axis=-1)
+            elif method == 'ae' or method == 'vae':
+                x_true = xx.reshape((-1,window_size*x_dim))
+                batch_info = (None, 1)
+            else:
+                x_true = xx
+            x_pred  = vae.predict(x_true, batch_size=batch_info[1])
+
+            # Get mean and std
+            x_mean = None; x_std = None
+            if method == 'lstm_vae_custom3':
+                x_mean = np.mean(x_pred, axis=0) #length x dim
+                x_std  = np.std(x_pred, axis=0)
+            elif method == 'ae':
+                x_mean = x_pred.reshape((-1,x_dim))
+                ## x_mean = np.expand_dims(x_pred.reshape((-1,x_dim)), axis=0)
+                
+            else:
+                x_pred = x_pred[0]
+                # length x dim
+                x_mean = x_pred[:,:x_dim]
+                if enc_z_logvar is not None or len(x_pred[0])>x_dim:
+                    x_std  = np.sqrt(x_pred[:,x_dim:]/x_std_div+x_std_offset)
+
+            #---------------------------------------------------------------
+            if ad_method == 'recon_prob':
+                # Method 1: Reconstruction probability
+                l = get_reconstruction_err_prob(xx, x_mean, x_std, alpha=alpha)
+                s.append(l)
+                z.append( enc_z_mean.predict(xx, batch_size=batch_info[1])[0].tolist() )                
+            elif ad_method == 'recon_err':
+                # Method 1: Reconstruction error
+                s.append( get_reconstruction_err(xx, x_mean, alpha=alpha) )
+                z.append( enc_z_mean.predict(xx, batch_size=batch_info[1])[0].tolist() )                
+            elif ad_method == 'recon_err_vec':
+                # Method 1: Reconstruction prob from vectors?
+                l = get_reconstruction_err_prob(y[j], x_mean, x_std, alpha=alpha)
+                s.append(l)
+            elif ad_method == 'recon_err_lld':
+                # Method 1: Reconstruction likelihhod
+                if ref_scores is not None:
+
+                    #maximum likelihood-based fitting of MVN?
+                    ## import mvn
+                    ## mu, cov = mvn.fit_mvn_param( np.array(ref_scores).reshape((-1,x_dim)) )
+                    ## print np.shape(mu)
+                    ## print np.shape(cov)
+                    
+                    #instead we use diagonal co-variance                   
+                    mu  = np.mean(np.array(ref_scores).reshape((-1,x_dim)), axis=0)
+                    var = cov = np.var(np.array(ref_scores).reshape((-1,x_dim)), axis=0)
+                    e   = abs(xx[0]-x_mean)
+
+                    ## from scipy.stats import multivariate_normal
+                    ## ss = multivariate_normal.pdf(e, mean=mu, cov=cov)
+                                        
+                    a_score = np.mean(np.sum( ((e-mu)**2)/var, axis=-1))
+                    s.append( a_score )
+                else:
+                    e = abs(xx[0]-x_mean)
+                    #print np.shape(xx[0]), np.shape(x_mean)                    
+                    # it returns sample x (length x window_size) x dim?
+                    # it should return sample x window
+                    if len(s) == 0: s = e
+                    else:           s = np.concatenate((s,e), axis=0)
+            elif ad_method == 'lower_bound':
+
+                if method.find('lstm_vae_custom')>=0 or method.find('lstm_dvae_custom')>=0 or\
+                    method.find('phase')>=0 or method.find('pred')>=0:
+                    p = float(j)/float(length-window_size+1) *2.0*phase-phase
+                    if train_flag:
+                        p = p*np.ones((batch_info[1], window_size, 1))
+                    else:
+                        #temp
+                        p = p*np.ones((batch_info[1], window_size, 1))
+                        ## p = np.zeros((len(x), len(x[0]),1))
+                else:
+                    p = None
+                
+                # Method 2: Lower bound
+                l, z_mean, z_log_var = ad_metrics.get_lower_bound(xx, x_mean, x_std, z_std,
+                                                                  enc_z_mean, enc_z_logvar,\
+                                                                  x_dim, method, p, alpha=alpha)
+                if return_err:
+                    err = ad_metrics.get_err_vec(xx, x_mean, x_std, z_std,
+                                                 enc_z_mean, enc_z_logvar,\
+                                                 x_dim, method, p, alpha=alpha)
+                                                                  
+                s.append(l)
+                z.append(z_mean.tolist()) # + z_log_var.tolist())
+                e.append(err.tolist())
+
+        ## s = np.cumsum(s)
+        ## if len(np.shape(s))<2: s = np.expand_dims(s, axis=1)
+        scores.append(s) # s is scalers
+        zs.append(z)
+        es.append(e)
+
+    if return_err: return scores, zs, es
+    else:          return scores, zs
+
+
+def get_err_vec(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_method, method,\
+                nSample=1000,\
+                stateful=False, x_std_div=1, x_std_offset=1e-10, z_std=0.5,\
+                phase=1.0,\
+                batch_info=(False,None), ref_scores=None, **kwargs):
 
     x_dim = len(X[0][0])
     length = len(X[0])
@@ -413,7 +592,6 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
         zs.append(z)
 
     return scores, zs
-
 
 
 
