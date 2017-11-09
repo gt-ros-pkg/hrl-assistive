@@ -243,7 +243,7 @@ class PhysicalTrainer():
 
 
 
-        batch_size = 150
+        batch_size = 250
         num_epochs = 700
         hidden_dim = 12
         kernel_size = 10
@@ -261,14 +261,17 @@ class PhysicalTrainer():
 
         self.model = convnet.CNN(self.mat_size, self.output_size, hidden_dim, kernel_size)
         self.criterion = F.cross_entropy
-        self.optimizer = optim.SGD(self.model.parameters(), lr=0.00000015, momentum=0.7, weight_decay=0.0005)
-        #self.optimizer = optim.RMSprop(self.model.parameters(), lr=0.000015, momentum=0.9, weight_decay=0.0005)
+        #self.optimizer = optim.SGD(self.model.parameters(), lr=0.00000015, momentum=0.7, weight_decay=0.0005)
+        self.optimizer2 = optim.Adam(self.model.parameters(), lr=0.0000015, weight_decay=0.0005)
+        self.optimizer = optim.RMSprop(self.model.parameters(), lr=0.000015, momentum=0.9, weight_decay=0.0005)
 
         # train the model one epoch at a time
         for epoch in range(1, num_epochs + 1):
             self.t1 = time.time()
 
             self.train(epoch)
+
+            if epoch > 10: self.optimizer = self.optimizer2
 
             try:
                 self.t2 = time.time() - self.t1
