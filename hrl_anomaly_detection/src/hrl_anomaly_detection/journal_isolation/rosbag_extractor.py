@@ -245,6 +245,12 @@ class rosbagExtractor():
             cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
         except CvBridgeError, e:
             print e
+
+        if self.rot:
+            rows,cols,_ = cv_image.shape
+            M = cv2.getRotationMatrix2D((cols/2,rows/2),180,1)
+            cv_image = cv2.warpAffine(cv_image,M,(cols,rows))
+            
         timestr = "%.6f" % msg.header.stamp.to_sec()
         image_name = str(self.save_dir)+"/image_"+timestr+".jpg"
         cv2.imwrite(image_name, cv_image)
@@ -559,8 +565,8 @@ if __name__ == '__main__':
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/JOURNAL_ISOL/'+opt.task+'_1'
         save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RAW_DATA/AURO2016/'
-        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RAW_DATA/ICRA2018/day11_feeding'
-        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RAW_DATA/HENRY2017' #/s4_feeding_rosbag'
+        ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RAW_DATA/ICRA2018/day11_feeding'
+        ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RAW_DATA/HENRY2017' #/s4_feeding_rosbag'
 
         rospy.init_node("export_data")
         rospy.sleep(1)

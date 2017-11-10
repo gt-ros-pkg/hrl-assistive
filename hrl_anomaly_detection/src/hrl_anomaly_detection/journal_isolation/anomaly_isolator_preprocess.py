@@ -105,35 +105,38 @@ def get_data(subject_names, task_name, raw_data_path, save_data_path, param_dict
     ## td1, td2, td3 = vutil.get_ext_feeding_data(task_name, save_data_path, param_dict, d,
     ##                                            raw_feature=True, ros_bag_image=True)
 
-    # Get main and sub data dictionary
-    ## td = {}
-    ## for key in td1.keys():
-    ##     if key in ['success_image_list', 'failure_image_list',
-    ##                'success_d_image_list', 'failure_d_image_list',
-    ##                'successRawDataList', 'failureRawDataList',
-    ##                'successFileList', 'failureFileList',
-    ##                'success_files', 'failure_files',
-    ##                'failure_labels']:
-    ##         td[key] = td1[key]+td2[key]+td3[key]
-    ##     elif key in ['successData', 'failureData']:
-    ##         td[key] = np.vstack([np.swapaxes(td1[key],0,1),
-    ##                              np.swapaxes(td2[key],0,1),
-    ##                              np.swapaxes(td3[key],0,1)])
-    ##         td[key] = np.swapaxes(td[key],0,1)
 
     subjects = ['Andrew', 'Britteney', 'Joshua', 'Jun', 'Kihan', 'Lichard', 'Shingshing', 'Sid', 'Tao']
     raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/CORL2017/'
-    td = vutil.get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
+    td1 = vutil.get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
                             init_param_dict=d['param_dict'], init_raw_param_dict=d['raw_param_dict'],
                             depth=True, id_num=1, raw_feature=True, ros_bag_image=True)
 
     subjects = ['s1','s2','s3','s4','s5','s6']
     raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/HENRY2017/'
-    td = vutil.get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
+    td4 = vutil.get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
                             init_param_dict=d['param_dict'], init_raw_param_dict=d['raw_param_dict'],
-                            depth=True, id_num=4, raw_feature=True, ros_bag_image=True)
+                            depth=False, id_num=4, raw_feature=True, ros_bag_image=True)
 
     # Manually selected data?
+    
+    # Get main and sub data dictionary
+    td = {}
+    for key in td1.keys():
+        if key in ['success_image_list', 'failure_image_list',
+                   'success_d_image_list', 'failure_d_image_list',
+                   'successRawDataList', 'failureRawDataList',
+                   'successFileList', 'failureFileList',
+                   'success_files', 'failure_files',
+                   'failure_labels']:
+            td[key] = td1[key]+td4[key]
+            ## td[key] = td1[key]+td2[key]+td3[key]
+        elif key in ['successData', 'failureData']:
+            td[key] = np.vstack([np.swapaxes(td1[key],0,1),
+                                 np.swapaxes(td4[key],0,1)])
+                                 ## np.swapaxes(td2[key],0,1),
+                                 ## np.swapaxes(td3[key],0,1)])
+            td[key] = np.swapaxes(td[key],0,1)
 
     return d, td
 
