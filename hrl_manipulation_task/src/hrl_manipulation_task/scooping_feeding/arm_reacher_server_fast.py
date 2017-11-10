@@ -65,7 +65,7 @@ class armReachAction(mpcBaseAction):
         self.highBowlDiff = np.array([0, 0, 0])
         self.bowlPosition = np.array([0, 0, 0])
         # vertical x side x depth
-        self.mouthManOffset = np.array([-0.03, 0.0, 0.03]) # -0.03, 0., 0.05
+        self.mouthManOffset = np.array([-0.03, 0.0, 0.05]) # -0.03, 0., 0.05
         self.mouthNoise     = np.array([0., 0., 0.])
         self.mouthOffset    = self.mouthManOffset+self.mouthNoise 
 
@@ -399,7 +399,6 @@ class armReachAction(mpcBaseAction):
         ['PAUSE', 0.0],
         ['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], -0.15+self.mouthOffset[2], 0., -0.2, 0.]',
          4., 'self.mouth_frame']]
-
         """
         ## Wiping Motions ---------------------------------------------------------
         self.motions['initWiping1'] = {}
@@ -416,18 +415,24 @@ class armReachAction(mpcBaseAction):
 
         self.motions['initWiping3'] = {}
         self.motions['initWiping3']['left'] = \
-          [['MOVEL', '[-0.005+self.mouthOffset[0], self.mouthOffset[1], -0.15+self.mouthOffset[2], 0., 0., 0.]',
+          [['MOVEL', '[-0.005+self.mouthOffset[0], self.mouthOffset[1], -0.15+self.mouthOffset[2], 0., 0.0, 0.]',
             5., 'self.mouth_frame'],\
            ['PAUSE', 1.0]]
         self.motions['initWiping4'] = {}
         self.motions['initWiping4']['left'] = \
-          [['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], -0.15+self.mouthOffset[2], np.pi / 10, 0., 0.]', 3.,
-            'self.mouth_frame']]
+          [['TOOL', 0],\
+           ['MOVEL', '[-0.005+ self.mouthOffset[0], self.mouthOffset[1], -0.25+self.mouthOffset[2], 0., -np.pi, 0.]', 3.,
+            'self.mouth_frame'],\
+          ['TOOL', self.org_tool]]
         self.motions['initWiping5'] = {}
         self.motions['initWiping5']['left'] = \
-          [['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], 0.05+self.mouthOffset[2], np.pi / 10, 0., 0.]', 3.,
-            'self.mouth_frame']]
-
+          [['TOOL', 0],\
+           ['MOVEL', '[-0.005 + self.mouthOffset[0], self.mouthOffset[1], -0.02+self.mouthOffset[2], 0., -np.pi, 0.]', 3.,
+            'self.mouth_frame'],\
+          ['TOOL', self.org_tool]]
+        self.motions['WaitWiping'] = {}
+        self.motions['WaitWiping']['left'] = \
+          [['PAUSE', 1.0]]
         self.motions['initWiping13'] = {}
         self.motions['initWiping13']['left'] = \
           [self.motions['initWiping1']['left'][0] + self.motions['initWiping3']['left'][0]]
@@ -435,10 +440,13 @@ class armReachAction(mpcBaseAction):
           [['PAUSE', 4.0] + self.motions['initWiping1']['right'][0]]
         self.motions['retractWiping'] = {}
         self.motions['retractWiping']['left'] = \
-          [['MOVEL', '[self.mouthOffset[0], self.mouthOffset[1], -0.15+self.mouthOffset[2], np.pi / 10, 0., 0.]', 4.,
+          [['TOOL', 0],\
+           ['MOVEL', '[-0.005+self.mouthOffset[0], self.mouthOffset[1], -0.25+self.mouthOffset[2], 0., -np.pi, 0.]', 4.,
+           'self.mouth_frame'],\
+           ['TOOL', self.org_tool],\
+           ['MOVEL', '[-0.005+self.mouthOffset[0], self.mouthOffset[1], -0.15+self.mouthOffset[2], 0., 0., 0.]', 4.,
            'self.mouth_frame']]
         """
-        
         rospy.loginfo("Parameters are loaded.")
 
     def serverCallback(self, req):
@@ -509,7 +517,7 @@ class armReachAction(mpcBaseAction):
             elif task.find('initFeeding')>=0:
                 self.kinect_pause.publish('pause')
             self.parsingMovements(self.motions[task][self.arm_name])
-            return "Completed to execute "+task
+            return self.arm_name+" arm completed to execute "+task
 
 
     def highestBowlPointCallback(self, data):

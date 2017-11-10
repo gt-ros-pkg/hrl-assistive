@@ -38,11 +38,6 @@
   <script type="text/javascript" src="js/ad_slider.js"></script>
   <!--script type="text/javascript" src="js/tasks.js"></script-->
 
-  <link href="js/keyboard/css/keyboard.css" rel="stylesheet">
-  <script src="js/keyboard/js/jquery.keyboard.js"></script>
-  <link type="text/css" href="css/rfh_interface.css"
-        rel="stylesheet"/>
-
   <script>
    $(function(){$("#stabbingTasks").load("stabbing_tab_interface.html"); });
   </script>
@@ -50,6 +45,10 @@
    $(function(){$("#calibTasks").load("calib_tab_interface.html"); });
   </script>
 
+  <link href="js/keyboard/css/keyboard.css" rel="stylesheet">
+  <script src="js/keyboard/js/jquery.keyboard.js"></script>
+  <link type="text/css" href="css/rfh_interface.css"
+        rel="stylesheet"/>
 
 </head>
 
@@ -60,43 +59,7 @@
         <label style="font-size:120%">
           Please provide feedback <br>
         </label>
-      </div>
-      <table id="scooping_questions" style="width:100%;table-layout:fixed">
-        <tr>
-          <td colspan='5'>
-            Did the robot scoop yogurt?
-          </td>
-          <td style="text-align:center" id="scooping_questions1_yes" onclick="manTask_yes(this.id)" value="false">
-            <label> yes </label>
-          </td>
-          <td style="text-align:center" id="scooping_questions1_no" onclick="manTask_no(this.id)" value="false" >
-            <label> no </label>
-          </td>
-        </tr>
-        <tr>
-          <td colspan='5'>
-            Did any unexpected collisions occur?
-          </td>
-          <td style="text-align:center" id="scooping_questions2_yes" onclick="manTask_yes(this.id)" value="false">
-            <label> yes </label>
-          </td>
-          <td style="text-align:center" id="scooping_questions2_no" onclick="manTask_no(this.id)" value="false">
-            <label> no </label>
-          </td>
-        </tr>
-        <tr>
-          <td colspan='5'>
-            Was there unexpected noise during scooping? <br>
-            (excluding noise from the robot)
-          </td>
-          <td style="text-align:center" id="scooping_questions3_yes" onclick="manTask_yes(this.id)" value="false">
-            <label> yes </label>
-          </td>
-          <td style="text-align:center" id="scooping_questions3_no" onclick="manTask_no(this.id)" value="false">
-            <label> no </label>
-          </td>
-        </tr>
-      </table>
+      </div>      
       <table id="feeding_questions" style="width:100%;table-layout:fixed">
         <tr>
           <td colspan='5'>
@@ -109,31 +72,6 @@
             <label> no </label>
           </td>
         </tr>
-	<!--
-        <tr>
-          <td colspan='5'>
-            Did the robot generate a beep (anomaly detection)?
-          </td>
-          <td style="text-align:center" id="feeding_questions2_yes" onclick="manTask_yes(this.id)" value="false">
-            <label> yes </label>
-          </td>
-          <td style="text-align:center" id="feeding_questions2_no" onclick="manTask_no(this.id)" value="false">
-            <label> no </label> 
-          </td>
-        </tr>
-        <tr>
-          <td colspan='5'>
-            If the robot generated a beep, was there any unexpected
-            collision, noise, uncomfortable contact, etc?
-          </td>
-          <td style="text-align:center" id="feeding_questions3_yes" onclick="manTask_yes(this.id)" value="false">
-            <label> yes </label>
-          </td>
-          <td style="text-align:center" id="feeding_questions3_no" onclick="manTask_no(this.id)" value="false">
-            <label> no </label> 
-          </td>
-        </tr>
-	-->
       </table>
       <p>
       </p>
@@ -361,19 +299,18 @@
                           <tr>
                             <td colspan='1' align="left">
                               <button class="centered man_task_cont" id='man_task_Scooping'
-                                      style="font-size:190%;height:150px;width:220px;text-align: center">Scooping</button>
+                                      style="font-size:150%;height:150px;width:220px;text-align:center;">Scooping</button>
                             </td>
                             <td colspan='1' align="right">
                               <button class="centered man_task_cont" id='man_task_Feeding' 
-                                      style="font-size:200%;height:150px;width:220px;text-align: center">Feeding</button>
+                                      style="font-size:160%;height:150px;width:220px;text-align:center;">Feeding</button>
                             </td>
                           </tr>
-                          <tr>
-                          </tr>
+                          <tr style="height:10px"> <td> </td></tr>
                           <tr>
                             <td colspan='2' align="center">
                               <button class="centered man_task_cont" id='man_task_Clean' 
-                                      style="font-size:200%;height:150px;width:220px;text-align: center">Clean Spoon</button>
+                                      style="font-size:160%;height:150px;width:220px;text-align:center;">Clean Spoon</button>
                             </td>
                           </tr>
                         </table>

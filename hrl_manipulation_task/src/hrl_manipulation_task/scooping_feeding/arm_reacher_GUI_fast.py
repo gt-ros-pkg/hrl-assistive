@@ -59,6 +59,7 @@ class armReacherGUI:
         self.actionStatus = 'Init'
         self.ScoopNumber = 0
         self.FeedNumber = 0
+        self.WipeNumber = 0
         self.encountered_emergency = 0
         self.expected_emergency = 0
         self.guiStatusReady = False
@@ -136,10 +137,9 @@ class armReacherGUI:
         temp_gui_status = self.gui_status
         if self.gui_status == "in motion": self.guiStatusPub.publish("stopping")
             
-        rospy.loginfo("Emergency received")
         if self.log is not None:
             if self.log.getLogStatus(): self.log.log_stop()
-        
+
         # Waiting aborting Sequence
         emergency_wait_rate = rospy.Rate(30)
         while not rospy.is_shutdown():
@@ -153,8 +153,8 @@ class armReacherGUI:
         if self.gui_status == "stopping": self.guiStatusPub.publish("stopped")
         else:                             print self.gui_status
             
+        rospy.sleep(2.0) # Do not remove!!
         self.emergencyStatus = False            
-        rospy.sleep(2.0)
 
     def feedbackCallback(self, msg):
         '''
@@ -230,6 +230,13 @@ class armReacherGUI:
                 # TODO: cleaning motion
                 self.cleanMotion(self.armReachActionLeft, self.armReachActionRight)
                 self.guiStatusPub.publish("select task")
+            elif self.inputStatus and self.actionStatus == 'Wiping':
+                self.inputStatus = False
+                rospy.loginfo("Wiping Starting....")
+                self.wiping(self.armReachActionLeft, self.armReachActionRight, self.log, self.detection_flag,
+                             self.isolation_flag)
+                if self.feedback_received:
+                    self.guiStatusPub.publish("select task")
             rate.sleep()
 
 
@@ -486,7 +493,6 @@ class armReacherGUI:
         leftProc.start(); rightProc.start()
         leftProc.join(); rightProc.join()
 
-    """
     def wiping(self, armReachActionLeft, armReachActionRight, log, detection_flag, isolation_flag):
 
         while not self.emergencyStatus and not rospy.is_shutdown():
@@ -514,7 +520,7 @@ class armReacherGUI:
                     leftProc.join(); rightProc.join()
                     if self.emergencyStatus: break
                     self.WipeNumber = 3
-                    self.proceedPub.publish("Set: Feeding 1, Feeding 4, retrieving")
+                    self.proceedPub.publish("Set: Wiping 1, Wiping 4, retrieving")
                     
             if self.WipeNumber < 2:
                 rospy.loginfo("Detect a mouth")
@@ -523,8 +529,35 @@ class armReacherGUI:
                     self.ServiceCallLeft("getHeadPos")
                     self.renew_mouth = False
                 self.ServiceCallLeft("initWiping2")
+                if self.emergencyStatus: break
+                self.WipeNumber = 2
+                self.proceedPub.publish("Set: Wiping 2, Wiping 3, Wiping 4")
 
-            self.WipeOANumber = 0
+            if self.WipeNumber < 3:
+                self.ServiceCallLeft("initWiping3")
+                if self.emergencyStatus: break
+                self.WipeNumber = 3
+                self.proceedPub.publish("Set: Wiping 3, Wiping 4, Wiping 5")
+
+            if self.WipeNumber < 4:
+                self.ServiceCallLeft("initWiping4")
+                if self.emergencyStatus: break
+                self.WipeNumber = 4
+                self.proceedPub.publish("Set: Wiping 4, Wiping 5, Done")
+                
+            if self.WipeNumber < 5:
+                self.proceedPub.publish("Done")
+                self.ServiceCallLeft("initWiping5")
+                emergencyStatus = self.emergencyStatus
+                rate = rospy.Rate(10)
+                while not self.emergencyStatus and not rospy.is_shutdown():
+                    rate.sleep()
+                self.ServiceCallLeft("retractWiping")
+                self.guiStatusPub.publish("select task")
+                self.motion_complete = True
+                if emergencyStatus or self.emergencyStatus: break
+
+            self.WipeNumber = 0
 
             ## # temp
             ## rospy.loginfo("Running feeding")
@@ -538,7 +571,6 @@ class armReacherGUI:
             ## self.motion_complete = True
             
             break
-    """
             
     def ServiceCallLeft(self, cmd):
         if self.left_mtx is not True:
@@ -562,6 +594,7 @@ class armReacherGUI:
         
             
     def safetyMotion(self, armReachActionLeft, armReachActionRight):
+        rospy.loginfo("Run safety motions")
 
         if self.actionStatus == 'Scooping':
             print "Scoop Number : ", self.ScoopNumber

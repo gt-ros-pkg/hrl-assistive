@@ -120,6 +120,20 @@ var ManipulationTask = function (ros) {
         }
     };
 
+    manTask.wipe = function () {
+        if (manTask.available) {
+            var msg = new manTask.ros.Message({
+                data: 'Wiping'
+            });
+            assistive_teleop.log('Please, follow the step 2 to select the action.');
+            manTask.statusPub.publish(msg);
+            manTask.available=false
+            return true;
+        } else {
+            return false;
+        }
+    };
+
 
     //Publisher used for start, stop, and continue
     manTask.userInputPub = new manTask.ros.Topic({
@@ -609,6 +623,11 @@ var initManTaskTab = function() {
             assistive_teleop.manTask.both();
         }
     });
+    $('#man_task_Wiping').click(function(){
+        if(assistive_teleop.manTask.handshaked) {
+            assistive_teleop.manTask.wipe();
+        }
+    });
 
     // need?
     $('#man_task_start').click(function(){
@@ -635,11 +654,6 @@ var initManTaskTab = function() {
     $('#question_send').click(function() {
         assistive_teleop.manTask.question_send();
     });
-    manTask_yes("scooping_questions1_yes");
-    manTask_no("scooping_questions2_no");
-    manTask_no("scooping_questions3_no");
     manTask_yes("feeding_questions1_yes");
-    manTask_no("feeding_questions2_no");
-    manTask_no("feeding_questions3_no");
     
 }
