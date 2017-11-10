@@ -100,26 +100,40 @@ def get_data(subject_names, task_name, raw_data_path, save_data_path, param_dict
     print "Main data"
     print np.shape(d['successData']), np.shape(d['success_image_list']), np.shape(d['success_d_image_list'])
     print np.shape(d['failureData']), np.shape(d['failure_image_list']), np.shape(d['failure_d_image_list'])
-
+    
     ## if fine_tuning is False:
-    td1, td2, td3 = vutil.get_ext_feeding_data(task_name, save_data_path, param_dict, d,
-                                               raw_feature=True, ros_bag_image=True)
+    ## td1, td2, td3 = vutil.get_ext_feeding_data(task_name, save_data_path, param_dict, d,
+    ##                                            raw_feature=True, ros_bag_image=True)
 
     # Get main and sub data dictionary
-    td = {}
-    for key in td1.keys():
-        if key in ['success_image_list', 'failure_image_list',
-                   'success_d_image_list', 'failure_d_image_list',
-                   'successRawDataList', 'failureRawDataList',
-                   'successFileList', 'failureFileList',
-                   'success_files', 'failure_files',
-                   'failure_labels']:
-            td[key] = td1[key]+td2[key]+td3[key]
-        elif key in ['successData', 'failureData']:
-            td[key] = np.vstack([np.swapaxes(td1[key],0,1),
-                                 np.swapaxes(td2[key],0,1),
-                                 np.swapaxes(td3[key],0,1)])
-            td[key] = np.swapaxes(td[key],0,1)
+    ## td = {}
+    ## for key in td1.keys():
+    ##     if key in ['success_image_list', 'failure_image_list',
+    ##                'success_d_image_list', 'failure_d_image_list',
+    ##                'successRawDataList', 'failureRawDataList',
+    ##                'successFileList', 'failureFileList',
+    ##                'success_files', 'failure_files',
+    ##                'failure_labels']:
+    ##         td[key] = td1[key]+td2[key]+td3[key]
+    ##     elif key in ['successData', 'failureData']:
+    ##         td[key] = np.vstack([np.swapaxes(td1[key],0,1),
+    ##                              np.swapaxes(td2[key],0,1),
+    ##                              np.swapaxes(td3[key],0,1)])
+    ##         td[key] = np.swapaxes(td[key],0,1)
+
+    subjects = ['Andrew', 'Britteney', 'Joshua', 'Jun', 'Kihan', 'Lichard', 'Shingshing', 'Sid', 'Tao']
+    raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/CORL2017/'
+    td = vutil.get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
+                            init_param_dict=d['param_dict'], init_raw_param_dict=d['raw_param_dict'],
+                            depth=True, id_num=1, raw_feature=True, ros_bag_image=True)
+
+    subjects = ['s1','s2','s3','s4','s5','s6']
+    raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/HENRY2017/'
+    td = vutil.get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
+                            init_param_dict=d['param_dict'], init_raw_param_dict=d['raw_param_dict'],
+                            depth=True, id_num=4, raw_feature=True, ros_bag_image=True)
+
+    # Manually selected data?
 
     return d, td
 
@@ -134,15 +148,14 @@ def get_label_from_filename(file_names):
 
     
 
-def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=False, renew=False,
+def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=False,
                       fine_tuning=False):
     
     # load params (param_dict)
-    ae_renew   = param_dict['HMM']['renew']
     method     = param_dict['ROC']['methods'][0]
     nPoints    = param_dict['ROC']['nPoints']
     
-    if ae_renew: clf_renew = True
+    if param_dict['HMM']['renew']: clf_renew = True
     else:        clf_renew = param_dict['SVM']['renew']
 
     # Check the list of temporal data and images
@@ -154,6 +167,8 @@ def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=F
     roc_l = []
     train_a_idx_ll = []
     test_a_idx_ll  = []
+    train_a_err_ll = []
+    test_a_err_ll  = []
 
     detection_pkl = os.path.join(save_data_path, 'anomaly_idx.pkl')
 
@@ -164,19 +179,24 @@ def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=F
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(main_data['kFoldList']):
 
-        if renew is False and os.path.isfile(detection_pkl) : break
+        if clf_renew is False and os.path.isfile(detection_pkl) : break
         print "==================== ", idx, " ========================"
         
         # ------------------------------------------------------------------------------------------         
         # dim x sample x length
-        normalTrainData   = main_data['successData'][:, normalTrainIdx, :]
-        abnormalTrainData = main_data['failureData'][:, abnormalTrainIdx, :]
-        normalTestData    = main_data['successData'][:, normalTestIdx, :]
-        abnormalTestData  = main_data['failureData'][:, abnormalTestIdx, :]
+        normalTrainData     = main_data['successData'][:, normalTrainIdx, :]
+        abnormalTrainData   = main_data['failureData'][:, abnormalTrainIdx, :]
+        abnormalTrainLabels = [main_data['failure_labels'][i] for i in abnormalTrainIdx]
+        
+        normalTestData      = main_data['successData'][:, normalTestIdx, :]
+        abnormalTestData    = main_data['failureData'][:, abnormalTestIdx, :]
+        abnormalTestLabels  = [main_data['failure_labels'][i] for i in abnormalTestIdx]
+        
         normalTrainData   = np.hstack([normalTrainData,
                                        copy.deepcopy(sub_data['successData'])])
         abnormalTrainData = np.hstack([abnormalTrainData,
                                        copy.deepcopy(sub_data['failureData'])])
+        abnormalTrainLabels = abnormalTrainLabels + sub_data['failure_labels']
 
         # shuffle
         np.random.seed(3334+idx)
@@ -192,7 +212,7 @@ def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=F
                      [0]*len(normalTrainData[:int(len(normalTrainData)*0.7)])]
         valData   = [normalTrainData[int(len(normalTrainData)*0.7):],
                      [0]*len(normalTrainData[int(len(normalTrainData)*0.7):])]
-        testData  = [normalTestData, [0]*len(normalTestData)]
+        ## testData  = [normalTestData, [0]*len(normalTestData)]
 
         # ------------------------------------------------------------------------------------------         
         # scaling info to reconstruct the original scale of data
@@ -203,7 +223,7 @@ def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=F
         weights_path = os.path.join(save_data_path,'model_weights_'+method+'_'+str(idx)+'.h5')
         
         if (method.find('lstm_vae')>=0 or method.find('lstm_dvae')>=0):
-            dyn_ths   = True
+            dyn_ths   = False #True #temp
             ad_method = 'lower_bound'
             
             from hrl_execution_monitor.keras_util import lstm_dvae_phase as km
@@ -213,7 +233,7 @@ def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=F
                           noise_mag=0.05, timesteps=1, sam_epoch=40,
                           x_std_div=4., x_std_offset=0.1, z_std=1.0,\
                           phase=1., z_dim=3, h1_dim=4, \
-                          renew=ae_renew, fine_tuning=fine_tuning, plot=False,\
+                          renew=param_dict['HMM']['renew'], fine_tuning=fine_tuning, plot=False,\
                           scaler_dict=scaler_dict)
         else:
             sys.exit()
@@ -239,9 +259,11 @@ def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=F
 
         
 
-        roc_l.append(roc)
+        roc_l.append(roc)        
         train_a_idx_ll.append(ad_dict['tr_a_idx'])
         test_a_idx_ll.append(ad_dict['te_a_idx'])
+        train_a_err_ll.append(ad_dict['tr_a_err'])
+        test_a_err_ll.append(ad_dict['te_a_err'])
 
         for i in xrange(len(ths_l)):
             tp_ll[i] += tp_l[i]
@@ -250,7 +272,7 @@ def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=F
             fn_ll[i] += fn_l[i]
    
     #--------------------------------------------------------------------
-    if renew or os.path.isfile(detection_pkl) is False:
+    if clf_renew or os.path.isfile(detection_pkl) is False:
         print "roc list ", roc_l
         tpr_l = []
         fpr_l = []
@@ -279,24 +301,33 @@ def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=F
         ## d['roc_l'] = roc_l
         dd['train_idx_ll'] = train_a_idx_ll
         dd['test_idx_ll']  = test_a_idx_ll
+        dd['train_err_ll'] = train_a_err_ll
+        dd['test_err_ll']  = test_a_err_ll
+        dd['train_labels'] = abnormalTrainLabels
+        dd['test_labels']  = abnormalTestLabels
         dd['fs_l']  = fs_l
         dd['kFoldList'] = main_data['kFoldList']
         ut.save_pickle(dd, detection_pkl)
     else:
         dd = ut.load_pickle(detection_pkl)
 
-    return dd['train_idx_ll'], dd['test_idx_ll'], dd['fs_l']
+    return dd['train_err_ll'], dd['test_err_ll'], dd['train_idx_ll'], dd['test_idx_ll'], dd['fs_l']
 
     
 def get_isolation_data(subject_names, task_name, raw_data_path, save_data_path, param_dict):
                        #main_data, sub_data,
                        #train_idx_list, test_idx_list, ths_idx, param_dict):
 
+    # Raw Data Collection
     main_data, sub_data = get_data(subject_names, task_name, raw_data_path, save_data_path, param_dict)
+
+    # Data Selection 
+    train_idx_list, test_idx_list, fs_l = get_detection_idx(save_data_path, main_data, sub_data,
+                                                            param_dict, verbose=False)
+    print "00000000000000000000000"
     sys.exit()
 
-    train_idx_list, test_idx_list, fs_l = get_detection_idx(save_data_path, main_data, sub_data,
-                                                            param_dict, verbose=False, renew=False)
+    # Classification?
 
     x_train_s = []
     x_train_i = []
@@ -330,13 +361,13 @@ def get_isolation_data(subject_names, task_name, raw_data_path, save_data_path, 
 
         # ------------------------------------------------------------------------------------------         
         #Image data selection
-        x_train_i.append( main_data['failure_image_list'][abnormalTrainIdx] 
+        x_train_i.append( [main_data['failure_image_list'][i] for i in abnormalTrainIdx] 
         + copy.deepcopy(sub_data['failure_image_list']) )
-        x_test_i.append( main_data['failure_image_list'][abnormalTestIdx])
+        x_test_i.append( [main_data['failure_image_list'][i] for i in abnormalTestIdx])
         
-        x_train_d.append( main_data['failure_d_image_list'][abnormalTrainIdx]
+        x_train_d.append( [main_data['failure_d_image_list'][i] for i in abnormalTrainIdx]
         + copy.deepcopy(sub_data['failure_d_image_list']) )
-        x_test_d.append( main_data['failure_d_image_list'][abnormalTestIdx] )
+        x_test_d.append( [main_data['failure_d_image_list'][i] for i in abnormalTestIdx] )
         
         # ------------------------------------------------------------------------------------------         
         # Labels
@@ -347,7 +378,7 @@ def get_isolation_data(subject_names, task_name, raw_data_path, save_data_path, 
 
 
         # feature extraction by index based on IROS17_isolation/isolation_util.py's feature_extraction
-        feature_extraction()
+        ## feature_extraction()
 
         #1) Individual features reconstruction probability?
 
@@ -357,11 +388,8 @@ def get_isolation_data(subject_names, task_name, raw_data_path, save_data_path, 
     return [x_train, x_train_img], y_train, [x_test, x_test_img], y_test    
 
 
-def feature_extraction():
-
-    
-
-    return sig, img, d_img
+## def feature_extraction():
+##     return sig, img, d_img
                       
 
 if __name__ == '__main__':

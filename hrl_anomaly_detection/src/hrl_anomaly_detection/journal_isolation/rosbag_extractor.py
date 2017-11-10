@@ -257,10 +257,8 @@ class rosbagExtractor():
         except CvBridgeError, e:
             print e
 
-        print np.nanmax(cv_image), np.nanmin(cv_image)               
         cv_array = cv2.threshold(cv_image, dist_min, 0, cv2.THRESH_TOZERO)[1]
         cv_array = cv2.threshold(cv_array, dist_max, 0, cv2.THRESH_TOZERO_INV)[1]
-        print np.nanmax(cv_array), np.nanmin(cv_array), " d "
         cv_array = cv2.threshold(cv_array, 0, 255, cv2.THRESH_BINARY)[1]
         ## cv_array = np.array(cv_array * 255, dtype = np.uint8)
         ## cv_image = np.array(cv_image * 255, dtype = np.uint8)
@@ -562,7 +560,7 @@ if __name__ == '__main__':
         ##   '/hrl_file_server/dpark_data/anomaly/JOURNAL_ISOL/'+opt.task+'_1'
         save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RAW_DATA/AURO2016/'
         save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RAW_DATA/ICRA2018/day11_feeding'
-        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RAW_DATA/AURO2016' #/s4_feeding_rosbag'
+        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RAW_DATA/HENRY2017' #/s4_feeding_rosbag'
 
         rospy.init_node("export_data")
         rospy.sleep(1)

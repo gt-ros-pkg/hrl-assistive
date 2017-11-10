@@ -59,6 +59,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
                       
     print "Start to get anomaly scores"
     if os.path.isfile(save_pkl) and renew is False :
+        print "Load anomaly detection results"
         d = ut.load_pickle(save_pkl)
     else:
         scores_tr_n, zs_tr_n = get_anomaly_score(normalTrainData, vae_mean, enc_z_mean, enc_z_logvar,
@@ -99,16 +100,6 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         d['zs_te_a']     = zs_te_a
         d['err_te_a']    = err_te_a
         ut.save_pickle(d, save_pkl)
-
-    # temp
-    ## scores_tr_a, zs_tr_a = get_anomaly_score(abnormalTrainData, vae_mean, enc_z_mean, enc_z_logvar,
-    ##                                          window_size, alpha, ad_method, method, stateful=stateful,
-    ##                                          x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,
-    ##                                          phase=phase,\
-    ##                                          batch_info=batch_info, ref_scores=d['scores_tr_n'])
-    ## d['scores_tr_a'] = scores_tr_a
-    ## d['zs_tr_a']     = zs_tr_a #sample x length x dim
-    ## ut.save_pickle(d, save_pkl)
 
 
     zs_tr_n     = np.array(d['zs_tr_n'])
@@ -417,13 +408,12 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
                                                                   enc_z_mean, enc_z_logvar,\
                                                                   x_dim, method, p, alpha=alpha)
                 if return_err:
-                    err = ad_metrics.get_err_vec(xx, x_mean, x_std, z_std,
-                                                 enc_z_mean, enc_z_logvar,\
-                                                 x_dim, method, p, alpha=alpha)
+                    print "Start to get error vectors"
+                    err = ad_metrics.get_err_vec(xx, x_mean, x_std, x_dim, method, p=p, alpha=alpha)
+                    e.append(err.tolist())
                                                                   
                 s.append(l)
                 z.append(z_mean.tolist()) # + z_log_var.tolist())
-                e.append(err.tolist())
 
         ## s = np.cumsum(s)
         ## if len(np.shape(s))<2: s = np.expand_dims(s, axis=1)
