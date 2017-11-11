@@ -68,6 +68,10 @@ matplotlib.rcParams['ps.fonttype'] = 42
 dist_min = 0.3
 dist_max = 0.8
 
+## dist_min = 0.0
+## dist_max = 2.2
+
+
 class BagSubscriber(message_filters.SimpleFilter):
     def __init__(self):
         super(BagSubscriber, self).__init__()
@@ -139,102 +143,54 @@ class rosbagExtractor():
     def tsCallback(self, rgb_msg, d_msg):
         with self.lock:
             try:
-                cv_rgb_image = self.bridge.imgmsg_to_cv2(rgb_msg, "bgr8")
-                cv_d_image   = self.bridge.imgmsg_to_cv2(d_msg, "passthrough")
+                rgb_img = self.bridge.imgmsg_to_cv2(rgb_msg, "bgr8")
+                d_img   = self.bridge.imgmsg_to_cv2(d_msg, "passthrough")
             except CvBridgeError, e:
                 print e
-
+            
             # For depth image
-            cv_d_image = np.array(cv_d_image, dtype=np.float32)
-            #cv_d_image[np.logical_or(cv_d_image>dist_max, cv_d_image<dist_min)] = 0
-            #cv_d_image[np.isnan(cv_d_image)]                           = 0
-            cv_d_image = np.array(cv_d_image * 255, dtype = np.uint8)
-            ## thresh = cv2.threshold(cv_d_image, int(0*dist_min), int(255*dist_max), cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
-
-            ## kernel = np.ones((1,1),np.uint8)
-            ## thresh = cv2.erode(thresh,kernel,iterations = 1)
-            kernel = np.ones((8,8),np.uint8)
-            thresh = cv2.dilate(cv_d_image,kernel,iterations = 4)
-            #thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
-
-            thresh = cv2.threshold(thresh, int(255*dist_min), int(255*dist_max), cv2.THRESH_BINARY_INV)[1]
-            ## d_cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL,
-            ##                         cv2.CHAIN_APPROX_SIMPLE)[-2]
-
-            h, w = thresh.shape[:2]
-            mask = np.zeros((h+2, w+2), np.uint8)
-            cv2.floodFill(thresh, mask, (0,0), 255);
-                        
-            ## thresh = ndimage.gaussian_filter(thresh, 4)
-            thresh = cv2.threshold(thresh, 0, 255, cv2.THRESH_BINARY_INV)[1]
-
-            for i in range(3):
-                cv_rgb_image[:,:,i] = cv_rgb_image[:,:,i] & thresh 
-
-            ## grey = cv2.cvtColor(cv_rgb_image, cv2.COLOR_BGR2GRAY) 
-            ## ## cv_d_image = np.array(cv_d_image, dtype=np.float32)
-            ## #cv_d_image[np.logical_or(cv_d_image>dist_max, cv_d_image<dist_min)] = 0
-            ## #cv_d_image[np.isnan(cv_d_image)]                           = 0
-            ## ## cv_d_image = np.array(cv_d_image * 255, dtype = np.uint8)
-            ## thresh = cv2.threshold(grey, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
-            ## c_cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL,
-            ##                         cv2.CHAIN_APPROX_SIMPLE)[-2]
-
-            ## # loop over the contours
-            ## for (i, c) in enumerate(c_cnts):
-            ##     # draw the contour
-            ##     ((x, y), _) = cv2.minEnclosingCircle(c)
-            ##     ## cv2.putText(cv_rgb_image, "#{}".format(i + 1), (int(x) - 10, int(y)),
-            ##     ##             cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
-            ##     cv2.drawContours(cv_rgb_image, [c], -1, (255, 0, 0), 2)
-
-
-            # loop over the contours
-            ## for (i, c) in enumerate(d_cnts):
-            ##     # draw the contour
-            ##     #((x, y), _) = cv2.minEnclosingCircle(c)
-            ##     ## cv2.putText(cv_rgb_image, "#{}".format(i + 1), (int(x) - 10, int(y)),
-            ##     ##             cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
-            ##     cv2.drawContours(cv_rgb_image, [c], -1, (0, 255, 0), 2)
-
-
-            # show the output image
-            ## cv2.imshow("Image", cv_rgb_image)
-            ## cv2.waitKey(0)
-
-            ## cv_d_image = cv2.GaussianBlur(cv_d_image, (25, 25), 0)
-            ## thresh = cv2.adaptiveThreshold(cv_d_image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-            ##                                    cv2.THRESH_BINARY_INV, 11, 1)
-            ## kernel = np.ones((8, 8), np.uint8)
-            ## cv_d_image = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel, iterations=10)
-
-            ## self.image_list.append(cv_d_image.tolist())                
-            ## if len(self.image_list) == 7:
-            ##     del self.image_list[0]
-            ## if len(self.image_list) > 1:                
-            ##     cv_d_image = np.sum(self.image_list, axis=0)
-
-                
+            new_mask = cv2.threshold(d_img, dist_min, 0, cv2.THRESH_TOZERO)[1]
+            new_mask = cv2.threshold(new_mask, dist_max, 0, cv2.THRESH_TOZERO_INV)[1]
+            #new_mask = cv2.threshold(new_mask, 0, 255, cv2.THRESH_BINARY)[1]
+            ## mask[(new_mask<dist_min*1.1) & (new_mask>0)] = 3
+            ## mask[new_mask>dist_max*0.9] = 3
+            ## mask[(new_mask>=dist_min*1.1) & (new_mask<dist_max*0.9)] = 1
+            new_mask2 = cv2.GaussianBlur(new_mask, (11, 11), 0)
             
-            ## cv_rgb_image = np.array(cv_rgb_image, dtype=np.float32)
+            mask     = np.zeros(rgb_img.shape[:2],np.uint8)+2 # set as PR_BG
+            ## mask[new_mask==0] = 0 # cv2.GC_BGD
+            ## mask[d_img>0]    = 3 # PR_FG
+            mask[new_mask2>0] = 3
+            mask[new_mask>0]  = 1 # cv2.GC_FGD
+            mask[-5:,:]       = 0 #top
+            mask[:50,:50]     = 0 #bowl cover
+            mask[:30,:len(mask)*5/6] = 0 #bowl
+            mask[:,:10]      = 0
             
-            ## for i in range(3):
-            ##     temp = cv_rgb_image[:,:,i]
-            ##     #temp[np.logical_or(cv_d_image>dist_max, cv_d_image<dist_min)] = np.nan
-            ##     #temp[np.isnan(cv_d_image)]                           = np.nan
-            ##     temp[cv_d_image==0] = np.nan
-            ##     cv_rgb_image[:,:,i] = temp
+            bgdModel = np.zeros((1,65),np.float64)
+            fgdModel = np.zeros((1,65),np.float64)
+            cv2.grabCut(rgb_img,mask,None,bgdModel,fgdModel,1,cv2.GC_INIT_WITH_MASK)
+            
+            mask2   = np.where((mask==1) + (mask==3),255,0).astype('uint8')
+            rgb_img = cv2.bitwise_and(rgb_img,rgb_img,mask=mask2)
+
+            ## rgb_img[-5:,:] = 255
 
             if self.rot:
-                rows,cols,_ = cv_rgb_image.shape
+                rows,cols,_ = rgb_img.shape
                 M = cv2.getRotationMatrix2D((cols/2,rows/2),180,1)
-                cv_rgb_image = cv2.warpAffine(cv_rgb_image,M,(cols,rows))
+                rgb_img = cv2.warpAffine(rgb_img,M,(cols,rows))
+
+            ## cv2.imshow("Image", rgb_img)
+            ## cv2.waitKey(0)
+            ## plt.imshow(img),plt.colorbar(),plt.show()
+            ## sys.exit()
 
             timestr = "%.6f" % d_msg.header.stamp.to_sec()
             image_name = str(self.save_dir)+"/image_"+timestr+".jpg"
-            cv2.imwrite(image_name, cv_rgb_image)
+            cv2.imwrite(image_name, rgb_img)
 
-            print "     ", self.ts_count
+            ## print "     ", self.ts_count
             self.ts_count+=1
 
         
@@ -258,7 +214,6 @@ class rosbagExtractor():
     def extract_depth_image(self, msg):
         # Use a CvBridge to convert ROS images to OpenCV images so they can be saved.
         try:
-            #cv_image = self.bridge.imgmsg_to_cv2(msg, "32FC1")
             cv_image = self.bridge.imgmsg_to_cv2(msg, "passthrough")
         except CvBridgeError, e:
             print e
@@ -266,40 +221,11 @@ class rosbagExtractor():
         cv_array = cv2.threshold(cv_image, dist_min, 0, cv2.THRESH_TOZERO)[1]
         cv_array = cv2.threshold(cv_array, dist_max, 0, cv2.THRESH_TOZERO_INV)[1]
         cv_array = cv2.threshold(cv_array, 0, 255, cv2.THRESH_BINARY)[1]
-        ## cv_array = np.array(cv_array * 255, dtype = np.uint8)
-        ## cv_image = np.array(cv_image * 255, dtype = np.uint8)
-        ## cv_array = cv2.threshold(cv_image, int(255.*dist_min), int(255.*dist_max), cv2.THRESH_TOZERO)[1]
 
-        #kernel = np.ones((8,8),np.uint8)
-        #cv_array = cv2.dilate(cv_array,kernel,iterations = 2)
+        ## kernel = np.ones((8,8),np.uint8)
+        ## cv_array = cv2.dilate(cv_array,kernel,iterations = 2)
         cv_array = cv2.GaussianBlur(cv_array, (11, 11), 0)
         #cv_array = cv2.medianBlur(cv_array, 5)
-
-        ## #cv_array = cv_image
-        ## cnts = cv2.findContours(cv_array.copy(), cv2.RETR_EXTERNAL,
-        ##                           cv2.CHAIN_APPROX_SIMPLE)[-2]
-        
-        ## # loop over the contours
-        ## for i, c in enumerate(cnts):
-        ##     # draw the contour
-        ##     #((x, y), _) = cv2.minEnclosingCircle(c)
-        ##     ## cv2.putText(cv_rgb_image, "#{}".format(i + 1), (int(x) - 10, int(y)),
-        ##     ##             cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
-        ##     epsilon = 0.01*cv2.arcLength(c,True)
-        ##     approx = cv2.approxPolyDP(c,epsilon,True)
-        ##     cv2.drawContours(cv_array, [approx], -1, (255), 3)
-            
-        ## ## cv2.drawContours(cv_array, cnts, -1, (255), 3)
-        
-
-        ## cv_array = np.array(cv_image, dtype=np.float32)
-        ## cv_array[cv_array>dist_max] = np.nan
-        ## cv_array[cv_array<dist_min] = np.nan
-        #cv2.normalize(cv_array, cv_array, 0, 1, cv2.NORM_MINMAX)
-        ## cv_array = (cv_array-np.nanmin(cv_array))/(np.nanmax(cv_array)-np.nanmin(cv_array))*255
-        ## cv_array = np.array(cv_array, dtype=np.float32)
-        ## cv_array /= np.nanmax(cv_array)
-        ## cv_array = np.array(cv_array * 255, dtype = np.uint8)
 
         if self.rot:
             rows,cols = cv_array.shape
@@ -360,6 +286,7 @@ def extract_rosbag(subject_path, depth=False, depth_rgb=False, rot=False):
 
         #temp
         ## print "break!!!!!!!!!!!!!!!!!!"
+        ## sys.exit()
         ## break
 
     return 
@@ -560,18 +487,22 @@ if __name__ == '__main__':
 
     if opt.bFeaturePlot:
         animate_features(opt, param_dict, bSave=True)
-          
-    else:                                                                  
+        
+    else:
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/JOURNAL_ISOL/'+opt.task+'_1'
         save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RAW_DATA/AURO2016/'
         ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RAW_DATA/ICRA2018/day11_feeding'
-        ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RAW_DATA/HENRY2017' #/s4_feeding_rosbag'
-
+        #save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RAW_DATA/CORL2017/Andrew_feeding/day3_feeding/rosbag'
+        #save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/TEST/test_rosbag'
+        
         rospy.init_node("export_data")
         rospy.sleep(1)
-
+        
         # extract data
         extract_rosbag_subfolders(save_data_path, depth=opt.depth, depth_rgb=opt.depth_rgb, rot=opt.rot)
         #extract_rosbag(save_data_path)
-        ## extract_rosbag(sys.argv[1])
+        ## extract_rosbag(sys.argv[1])     
+        
+        
+        
