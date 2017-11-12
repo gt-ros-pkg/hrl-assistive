@@ -72,7 +72,7 @@ dist_max = 0.8
 ## dist_max = 2.2
 
 
-class BagSubscriber(message_filters.SimpleFilter):
+class BagSubscriber(message_filters.SimpleFilter, object):
     def __init__(self):
         super(BagSubscriber, self).__init__()
         
@@ -111,11 +111,9 @@ class rosbagExtractor():
                     with self.lock:
                         if topic == "/SR300/rgb/image_raw":
                             self.rgb_sub.newMessage(msg)
-                            print count
                             count += 1
                         elif topic == "/SR300/depth_registered/sw_registered/image_rect":
                             self.d_sub.newMessage(msg)
-                            print count
                             count += 1
                             
                 else:
@@ -166,10 +164,20 @@ class rosbagExtractor():
             mask[:50,:50]     = 0 #bowl cover
             mask[:30,:len(mask)*5/6] = 0 #bowl
             mask[:,:10]      = 0
+
+            if np.sum(new_mask2) <=0:
+                self.ts_count+=1
+                return
             
             bgdModel = np.zeros((1,65),np.float64)
             fgdModel = np.zeros((1,65),np.float64)
-            cv2.grabCut(rgb_img,mask,None,bgdModel,fgdModel,1,cv2.GC_INIT_WITH_MASK)
+
+            try:
+                cv2.grabCut(rgb_img,mask,None,bgdModel,fgdModel,1,cv2.GC_INIT_WITH_MASK)
+            except:
+                self.ts_count+=1
+                return
+                
             
             mask2   = np.where((mask==1) + (mask==3),255,0).astype('uint8')
             rgb_img = cv2.bitwise_and(rgb_img,rgb_img,mask=mask2)
@@ -493,7 +501,7 @@ if __name__ == '__main__':
         ##   '/hrl_file_server/dpark_data/anomaly/JOURNAL_ISOL/'+opt.task+'_1'
         save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RAW_DATA/AURO2016/'
         ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RAW_DATA/ICRA2018/day11_feeding'
-        #save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RAW_DATA/CORL2017/Andrew_feeding/day3_feeding/rosbag'
+        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RAW_DATA/CORL2017/Kihan_feeding'
         #save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/TEST/test_rosbag'
         
         rospy.init_node("export_data")
