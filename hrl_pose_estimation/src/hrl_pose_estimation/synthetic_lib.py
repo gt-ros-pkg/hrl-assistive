@@ -175,9 +175,15 @@ class SyntheticLib():
 
         # swap in the z
         dummy = zeros((tar_mod.shape))
-        dummy[:, [2, 4, 6, 8], :] = tar_mod[:, [2, 4, 6, 8], :]
-        tar_mod[:, [2, 4, 6, 8], :] = tar_mod[:, [3, 5, 7, 9], :]
-        tar_mod[:, [3, 5, 7, 9], :] = dummy[:, [2, 4, 6, 8], :]
+
+        if self.arms_only == True:
+            dummy[:, [0, 2], :] = tar_mod[:, [0, 2], :]
+            tar_mod[:, [0, 2], :] = tar_mod[:, [1, 3], :]
+            tar_mod[:, [1, 3], :] = dummy[:, [0, 2], :]
+        else:
+            dummy[:, [2, 4, 6, 8], :] = tar_mod[:, [2, 4, 6, 8], :]
+            tar_mod[:, [2, 4, 6, 8], :] = tar_mod[:, [3, 5, 7, 9], :]
+            tar_mod[:, [3, 5, 7, 9], :] = dummy[:, [2, 4, 6, 8], :]
         # print dummy[0,:,2], tar_mod[0,:,2]
 
         tar_mod = np.reshape(tar_mod, (tar_mod.shape[0], tar_orig.shape[1]))
@@ -188,7 +194,9 @@ class SyntheticLib():
         return images, targets
 
 
-    def synthetic_master(self, images_tensor, targets_tensor, flip=False, shift=False, scale=False, bedangle = False):
+    def synthetic_master(self, images_tensor, targets_tensor, flip=False, shift=False, scale=False, bedangle = False, arms_only = False, include_inter = False):
+        self.arms_only = arms_only
+        self.include_inter = include_inter
         self.t1 = time.time()
         images_tensor = torch.squeeze(images_tensor)
         # images_tensor.torch.Tensor.permute(1,2,0)
@@ -196,7 +204,10 @@ class SyntheticLib():
         targets = targets_tensor.numpy()
 
         if bedangle == True:
-            images = imagesangles[:,0,:,:]
+            if include_inter == True:
+                images = imagesangles[:, 0:2, :, :]
+            else:
+                images = imagesangles[:,0,:,:]
         else:
             images = imagesangles
         #print images.shape, targets.shape, 'shapes'
@@ -211,7 +222,10 @@ class SyntheticLib():
         # print images[0, 10:15, 20:25]
 
         if bedangle == True:
-            imagesangles[:,0,:,:] = images
+            if include_inter == True:
+                imagesangles[:,0:2,:,:] = images
+            else:
+                imagesangles[:,0,:,:] = images
             images_tensor = torch.Tensor(imagesangles)
         else:
             imagesangles = images

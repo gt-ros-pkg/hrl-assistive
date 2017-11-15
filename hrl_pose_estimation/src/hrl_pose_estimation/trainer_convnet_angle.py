@@ -17,11 +17,14 @@ from skimage import data, color, exposure
 
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import scale
+from sklearn.preprocessing import normalize
 from sklearn import svm, linear_model, decomposition, kernel_ridge, neighbors
 from sklearn import metrics, cross_validation
 from sklearn.utils import shuffle
 
 import convnet_angle as convnet
+import convnet_angle_armsonly as convnet_armsonly
+
 
 import pickle
 from hrl_lib.util import load_pickle
@@ -67,26 +70,32 @@ class PhysicalTrainer():
         self.verbose = opt.verbose
         self.opt = opt
         self.synthetic_master = SyntheticLib().synthetic_master
-        self.batch_size = 250
-        self.num_epochs = 800
+        self.batch_size = 115
+        self.num_epochs = 200
+        self.include_inter = False
 
         print test_file
         #Entire pressure dataset with coordinates in world frame
 
-        self.save_name = '_9to18_all_fss_250b_rmsprop_800e_'
+        if self.opt.arms_only == True:
+            self.save_name = '_2to8_all_armsonly_fss_' + str(self.batch_size) + 'b_adam_' + str(self.num_epochs) + 'e_sm1_'
+
+        else:
+            self.save_name = '_2to8_all_fss_'+str(self.batch_size)+'b_adam_'+str(self.num_epochs)+'e_'
+
+
+
 
         #we'll be loading this later
         if self.opt.lab_harddrive == True:
-            try:
-                self.train_val_losses_all = load_pickle('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/train_val_losses_alldata.p')
-            except:
-                self.train_val_losses_all = {}
+            #try:
+            self.train_val_losses_all = load_pickle('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/train_val_losses_all.p')
+
         else:
             try:
                 self.train_val_losses_all = load_pickle('/home/henryclever/hrl_file_server/Autobed/train_val_losses_all.p')
             except:
                 print 'starting anew'
-
 
 
         print 'appending to','train'+self.save_name+str(self.opt.leaveOut)
@@ -115,7 +124,10 @@ class PhysicalTrainer():
        
         #TODO:Write code for the dataset to store these vals
         self.mat_size = (NUMOFTAXELS_X, NUMOFTAXELS_Y)
-        self.output_size = (NUMOFOUTPUTNODES, NUMOFOUTPUTDIMS)
+        if self.opt.arms_only == True:
+            self.output_size = (NUMOFOUTPUTNODES-6, NUMOFOUTPUTDIMS)
+        else:
+            self.output_size = (NUMOFOUTPUTNODES, NUMOFOUTPUTDIMS)
 
 
         #Randomize the dataset entries
@@ -133,9 +145,9 @@ class PhysicalTrainer():
         self.train_x_flat = [] #Initialize the training pressure mat list
         for entry in range(len(dat_rand)):
             self.train_x_flat.append(dat_rand[entry][0])
-        train_x = self.preprocessing_pressure_array_resize(self.train_x_flat)
-        train_x = np.array(train_x)
-        self.train_x_tensor = torch.Tensor(train_x)
+        #train_x = self.preprocessing_pressure_array_resize(self.train_x_flat)
+        #train_x = np.array(train_x)
+        #self.train_x_tensor = torch.Tensor(train_x)
 
 
         self.train_a_flat = [] #Initialize the training pressure mat angle list
@@ -148,8 +160,10 @@ class PhysicalTrainer():
 
         self.train_y_flat = [] #Initialize the training ground truth list
         for entry in range(len(dat_rand)):
-            self.train_y_flat.append(dat_rand[entry][1])
-        #train_y = self.preprocessing_output_resize(self.train_y_flat)
+            if self.opt.arms_only == True:
+                self.train_y_flat.append(dat_rand[entry][1][6:18])
+            else:
+                self.train_y_flat.append(dat_rand[entry][1])
         self.train_y_tensor = torch.Tensor(self.train_y_flat)
         self.train_y_tensor = torch.mul(self.train_y_tensor, 1000)
 
@@ -159,9 +173,9 @@ class PhysicalTrainer():
         self.test_x_flat = [] #Initialize the testing pressure mat list
         for entry in range(len(test_dat)):
             self.test_x_flat.append(test_dat[entry][0])
-        test_x = self.preprocessing_pressure_array_resize(self.test_x_flat)
-        test_x = np.array(test_x)
-        self.test_x_tensor = torch.Tensor(test_x)
+        #test_x = self.preprocessing_pressure_array_resize(self.test_x_flat)
+        #test_x = np.array(test_x)
+        #self.test_x_tensor = torch.Tensor(test_x)
 
 
         self.test_a_flat = []  # Initialize the testing pressure mat angle list
@@ -174,7 +188,10 @@ class PhysicalTrainer():
 
         self.test_y_flat = [] #Initialize the ground truth list
         for entry in range(len(test_dat)):
-            self.test_y_flat.append(test_dat[entry][1])
+            if self.opt.arms_only == True:
+                self.test_y_flat.append(test_dat[entry][1][6:18])
+            else:
+                self.test_y_flat.append(test_dat[entry][1])
         #test_y = self.preprocessing_output_resize(self.test_y_flat)
         self.test_y_tensor = torch.Tensor(self.test_y_flat)
         self.test_y_tensor = torch.mul(self.test_y_tensor, 1000)
@@ -206,7 +223,9 @@ class PhysicalTrainer():
             #print map_index, self.mat_size, 'mapidx'
             #Resize mat to make into a matrix
             p_map = np.reshape(data[map_index], self.mat_size)
+            #print p_map
             p_map_dataset.append(p_map)
+            #print p_map.shape
         if self.verbose: print len(data[0]),'x',1, 'size of an incoming pressure map'
         if self.verbose: print len(p_map_dataset[0]),'x',len(p_map_dataset[0][0]), 'size of a resized pressure map'
         return p_map_dataset
@@ -219,10 +238,15 @@ class PhysicalTrainer():
             # print map_index, self.mat_size, 'mapidx'
             # Resize mat to make into a matrix
             p_map = np.reshape(x_data[map_index], self.mat_size)
+
+
             a_map = zeros_like(p_map) + a_data[map_index]
 
-
-            p_map_dataset.append([p_map, a_map])
+            if self.include_inter == True:
+                p_map_inter = 100-2*np.abs(p_map - 50)
+                p_map_dataset.append([p_map, p_map_inter, a_map])
+            else:
+                p_map_dataset.append([p_map, a_map])
         if self.verbose: print len(x_data[0]), 'x', 1, 'size of an incoming pressure map'
         if self.verbose: print len(p_map_dataset[0][0]), 'x', len(p_map_dataset[0][0][0]), 'size of a resized pressure map'
         if self.verbose: print len(p_map_dataset[0][1]), 'x', len(p_map_dataset[0][1][0]), 'size of the stacked angle mat'
@@ -295,9 +319,13 @@ class PhysicalTrainer():
         self.test_loader = torch.utils.data.DataLoader(self.test_dataset, batch_size, shuffle=True)
 
 
-        self.model = convnet.CNN(self.mat_size, self.output_size, hidden_dim, kernel_size)
+        output_size = self.output_size[0]*self.output_size[1]
+        if self.opt.arms_only == True:
+            self.model = convnet_armsonly.CNN(self.mat_size, output_size, hidden_dim, kernel_size)
+        else:
+            self.model = convnet.CNN(self.mat_size, output_size, hidden_dim, kernel_size)
         self.criterion = F.cross_entropy
-        self.optimizer2 = optim.Adam(self.model.parameters(), lr=0.00000015, weight_decay=0.0005)
+        self.optimizer2 = optim.Adam(self.model.parameters(), lr=0.00001, weight_decay=0.0005)
         self.optimizer = optim.RMSprop(self.model.parameters(), lr=0.000015, momentum=0.7, weight_decay=0.0005)
 
         # train the model one epoch at a time
@@ -306,7 +334,7 @@ class PhysicalTrainer():
 
             self.train(epoch)
 
-            if epoch > 20: self.optimizer = self.optimizer2
+            if epoch > 10: self.optimizer = self.optimizer2
 
             try:
                 self.t2 = time.time() - self.t1
@@ -326,12 +354,12 @@ class PhysicalTrainer():
         # Save the model (architecture and weights)
 
         if self.opt.lab_harddrive == True:
-            torch.save(self.model, '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_'+str(self.opt.leaveOut)+'/p_files/convnet_all.pt')
+            torch.save(self.model, '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_'+str(self.opt.leaveOut)+'/p_files/convnet'+self.save_name+'.pt')
             pkl.dump(self.train_val_losses_all,
                      open(os.path.join('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/train_val_losses_all.p'), 'wb'))
 
         else:
-            torch.save(self.model, '/home/henryclever/hrl_file_server/Autobed/subject_'+str(self.opt.leaveOut)+'/p_files/convnet'++self.save_name+'.pt')
+            torch.save(self.model, '/home/henryclever/hrl_file_server/Autobed/subject_'+str(self.opt.leaveOut)+'/p_files/convnet'+self.save_name+'.pt')
             pkl.dump(self.train_val_losses_all,
                      open(os.path.join('/home/henryclever/hrl_file_server/Autobed/train_val_losses_all.p'), 'wb'))
 
@@ -352,7 +380,7 @@ class PhysicalTrainer():
 
 
             #print batch[0].shape
-            batch[0],batch[1] = self.synthetic_master(batch[0], batch[1], flip=True, shift=True, scale=True, bedangle=True)
+            batch[0],batch[1] = self.synthetic_master(batch[0], batch[1], flip=True, shift=True, scale=True, bedangle=True, arms_only = self.opt.arms_only, include_inter = self.include_inter)
 
 
             sc_last = scores
@@ -459,7 +487,7 @@ class PhysicalTrainer():
         self.sc_sampleval = output.data.numpy()
         self.sc_sampleval = np.squeeze(self.sc_sampleval[0, :]) / 1000
         self.sc_sampleval = np.reshape(self.sc_sampleval, self.output_size)
-        self.visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample, self.im_sampleval, self.tar_sampleval, self.sc_sampleval)
+        #self.visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample, self.im_sampleval, self.tar_sampleval, self.sc_sampleval)
 
 
 
@@ -477,21 +505,30 @@ class PhysicalTrainer():
         error_avg = np.reshape(error_avg, self.output_size)
         error_avg = np.reshape(np.array(["%.2f" % w for w in error_avg.reshape(error_avg.size)]),
                                self.output_size)
-        error_avg = np.transpose(np.concatenate(([['Average Error for Last Batch', '       ', 'Head   ',
-                                                   'Torso  ', 'R Elbow', 'L Elbow', 'R Hand ', 'L Hand ',
-                                                   'R Knee ', 'L Knee ', 'R Foot ', 'L Foot ']], np.transpose(
-            np.concatenate(([['', '', ''], [' x, cm ', ' y, cm ', ' z, cm ']], error_avg))))))
+        if self.opt.arms_only == True:
+            error_avg = np.transpose(np.concatenate(([['Average Error for Last Batch', '       ', 'R Elbow', 'L Elbow', 'R Hand ', 'L Hand ']], np.transpose(
+                np.concatenate(([['', '', ''], [' x, cm ', ' y, cm ', ' z, cm ']], error_avg))))))
+        else:
+            error_avg = np.transpose(np.concatenate(([['Average Error for Last Batch', '       ', 'Head   ',
+                                                       'Torso  ', 'R Elbow', 'L Elbow', 'R Hand ', 'L Hand ',
+                                                       'R Knee ', 'L Knee ', 'R Foot ', 'L Foot ']], np.transpose(
+                np.concatenate(([['', '', ''], [' x, cm ', ' y, cm ', ' z, cm ']], error_avg))))))
         print data, error_avg
 
         error_std = np.std(error, axis=0) / 10
         error_std = np.reshape(error_std, self.output_size)
         error_std = np.reshape(np.array(["%.2f" % w for w in error_std.reshape(error_std.size)]),
                                self.output_size)
-        error_std = np.transpose(
-            np.concatenate(([['Error Standard Deviation for Last Batch', '       ', 'Head   ', 'Torso  ',
-                              'R Elbow', 'L Elbow', 'R Hand ', 'L Hand ', 'R Knee ', 'L Knee ',
-                              'R Foot ', 'L Foot ']], np.transpose(
+
+        if self.opt.arms_only == True:
+            error_std = np.transpose(np.concatenate(([['Error Standard Deviation for Last Batch', '       ','R Elbow', 'L Elbow', 'R Hand ', 'L Hand ']], np.transpose(
                 np.concatenate(([['', '', ''], ['x, cm', 'y, cm', 'z, cm']], error_std))))))
+        else:
+            error_std = np.transpose(
+                np.concatenate(([['Error Standard Deviation for Last Batch', '       ', 'Head   ', 'Torso  ',
+                                  'R Elbow', 'L Elbow', 'R Hand ', 'L Hand ', 'R Knee ', 'L Knee ',
+                                  'R Foot ', 'L Foot ']], np.transpose(
+                    np.concatenate(([['', '', ''], ['x, cm', 'y, cm', 'z, cm']], error_std))))))
         print data, error_std
 
 
@@ -706,6 +743,11 @@ if __name__ == "__main__":
                  dest='lab_harddrive', \
                  default=False, \
                  help='Set path to the training database on lab harddrive.')
+    p.add_option('--arms_only', action='store_true',
+                 dest='arms_only', \
+                 default=False, \
+                 help='Train only on data from the arms, both sitting and laying.')
+
     p.add_option('--verbose', '--v',  action='store_true', dest='verbose',
                  default=False, help='Printout everything (under construction).')
     p.add_option('--log_interval', type=int, default=10, metavar='N',
@@ -715,14 +757,33 @@ if __name__ == "__main__":
 
     if opt.lab_harddrive == True:
 
+        if opt.arms_only == True:
+            opt.subject2Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_2/p_files/trainval_200rh1_lh1_100rh23_lh23_sit120rh_lh.p'
+            opt.subject3Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_3/p_files/trainval_200rh1_lh1_100rh23_lh23_sit120rh_lh.p'
+            opt.subject4Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_4/p_files/trainval_200rh1_lh1_100rh23_lh23_sit120rh_lh.p'
+            opt.subject5Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_5/p_files/trainval_200rh1_lh1_100rh23_lh23_sit120rh_lh.p'
+            opt.subject6Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_6/p_files/trainval_200rh1_lh1_100rh23_lh23_sit120rh_lh.p'
+            opt.subject7Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_7/p_files/trainval_200rh1_lh1_100rh23_lh23_sit120rh_lh.p'
+            opt.subject8Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_8/p_files/trainval_200rh1_lh1_100rh23_lh23_sit120rh_lh.p'
+            opt.subject9Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_9/p_files/trainval_200rh1_lh1_100rh23_lh23_sit120rh_lh.p'
+            opt.subject10Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_10/p_files/trainval_200rh1_lh1_100rh23_lh23_sit120rh_lh.p'
+            opt.subject11Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_11/p_files/trainval_200rh1_lh1_100rh23_lh23_sit120rh_lh.p'
+            opt.subject12Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_12/p_files/trainval_200rh1_lh1_100rh23_lh23_sit120rh_lh.p'
+            opt.subject13Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_13/p_files/trainval_200rh1_lh1_100rh23_lh23_sit120rh_lh.p'
+            opt.subject14Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_14/p_files/trainval_200rh1_lh1_100rh23_lh23_sit120rh_lh.p'
+            opt.subject15Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_15/p_files/trainval_200rh1_lh1_100rh23_lh23_sit120rh_lh.p'
+            opt.subject16Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_16/p_files/trainval_200rh1_lh1_100rh23_lh23_sit120rh_lh.p'
+            opt.subject17Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_17/p_files/trainval_200rh1_lh1_100rh23_lh23_sit120rh_lh.p'
+            opt.subject18Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_18/p_files/trainval_200rh1_lh1_100rh23_lh23_sit120rh_lh.p'
 
-        opt.subject2Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_2/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head_sit120rh_lh_rl_ll.p'
-        opt.subject3Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_3/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head_sit120rh_lh_rl_ll.p'
-        opt.subject4Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_4/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head_sit120rh_lh_rl_ll.p'
-        opt.subject5Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_5/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head_sit120rh_lh_rl_ll.p'
-        opt.subject6Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_6/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head_sit120rh_lh_rl_ll.p'
-        opt.subject7Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_7/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head_sit120rh_lh_rl_ll.p'
-        opt.subject8Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_8/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head_sit120rh_lh_rl_ll.p'
+        else:
+            opt.subject2Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_2/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head_sit120rh_lh_rl_ll.p'
+            opt.subject3Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_3/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head_sit120rh_lh_rl_ll.p'
+            opt.subject4Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_4/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head_sit120rh_lh_rl_ll.p'
+            opt.subject5Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_5/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head_sit120rh_lh_rl_ll.p'
+            opt.subject6Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_6/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head_sit120rh_lh_rl_ll.p'
+            opt.subject7Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_7/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head_sit120rh_lh_rl_ll.p'
+            opt.subject8Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_8/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head_sit120rh_lh_rl_ll.p'
 
         training_database_file = []
     else:
@@ -761,6 +822,16 @@ if __name__ == "__main__":
         training_database_file.append(opt.subject6Path)
         training_database_file.append(opt.subject7Path)
         training_database_file.append(opt.subject8Path)
+        # training_database_file.append(opt.subject9Path)
+        # training_database_file.append(opt.subject10Path)
+        # training_database_file.append(opt.subject11Path)
+        # training_database_file.append(opt.subject12Path)
+        # training_database_file.append(opt.subject13Path)
+        # training_database_file.append(opt.subject14Path)
+        # training_database_file.append(opt.subject15Path)
+        # training_database_file.append(opt.subject16Path)
+        # training_database_file.append(opt.subject17Path)
+        # training_database_file.append(opt.subject18Path)
 
     elif opt.leaveOut == 1:
         test_database_file = opt.subject1Path
