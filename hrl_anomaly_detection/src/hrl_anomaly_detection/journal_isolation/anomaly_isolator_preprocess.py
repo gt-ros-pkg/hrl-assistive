@@ -229,7 +229,7 @@ def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=F
             dyn_ths   = True 
             ad_method = 'lower_bound'
             
-            from hrl_execution_monitor.keras_util import lstm_dvae_phase as km
+            from hrl_anomaly_detection.RAL18_detection.models import lstm_dvae_phase2 as km
 
             autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
               km.lstm_vae(trainData, valData, weights_path, patience=4, batch_size=256,

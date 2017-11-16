@@ -46,7 +46,7 @@ from hrl_anomaly_detection.RAL18_detection import util as vutil
 
 # Private learners
 import hrl_anomaly_detection.data_viz as dv
-from hrl_anomaly_detection.RA-L18_detection import keras_models as km
+from hrl_anomaly_detection.RAL18_detection import keras_models as km
 
 # visualization
 import matplotlib
@@ -121,7 +121,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(d['kFoldList']):
         #if (idx == 0 or idx==7): continue
-        if idx != 3: continue
+        ## if idx != 3: continue
         
         print "==================== ", idx, " ========================"
 
