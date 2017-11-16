@@ -99,44 +99,59 @@ def LOPO_data_index(success_data_list, failure_data_list, \
     success_files = []
     failure_files = []
     last_failure_idx = 0
+    failure_data = None
+
+    success_image_data = []
+    failure_image_data = []
+    success_d_image_data = []
+    failure_d_image_data = []
+    
     for i in xrange(nSubject):
 
         if i == 0:
-            assert len(failure_data_list[i]) > 0, "# of first failure data should be more than one"
+            #assert len(failure_data_list[i]) > 0, "# of first failure data should be more than one"
             success_data = success_data_list[i]
             successIdx.append( range(len(success_data_list[i][0])) )
-            failure_data = failure_data_list[i]
-            failureIdx.append( range(len(failure_data_list[i][0])) )
-            last_failure_idx = failureIdx[-1][-1]
-            if 'success_image_list' in kwargs.keys() and len(kwargs['success_image_list'])>0:
-                success_image_data = kwargs['success_image_list'][i];
-                failure_image_data = kwargs['failure_image_list'][i];            
-            if 'success_d_image_list' in kwargs.keys() and len(kwargs['success_d_image_list'])>0:
-                success_d_image_data = kwargs['success_d_image_list'][i];
-                failure_d_image_data = kwargs['failure_d_image_list'][i];            
+            if len(failure_data_list[i])>0:
+                failure_data = failure_data_list[i]
+                failureIdx.append( range(len(failure_data_list[i][0])) )
+                last_failure_idx = failureIdx[-1][-1]
+            else:
+                failureIdx.append([])
+                
+            ## if 'success_image_list' in kwargs.keys() and len(kwargs['success_image_list'])>0:
+            ##     success_image_data = kwargs['success_image_list'][i];
+            ##     failure_image_data = kwargs['failure_image_list'][i];            
+            ## if 'success_d_image_list' in kwargs.keys() and len(kwargs['success_d_image_list'])>0:
+            ##     success_d_image_data = kwargs['success_d_image_list'][i];
+            ##     failure_d_image_data = kwargs['failure_d_image_list'][i];            
         else:
             success_data = np.vstack([ np.swapaxes(success_data,0,1), \
                                       np.swapaxes(success_data_list[i], 0,1)])
             success_data = np.swapaxes(success_data, 0, 1)
             successIdx.append( range(successIdx[-1][-1]+1, successIdx[-1][-1]+1+\
                                      len(success_data_list[i][0])) )
-
-            if 'success_image_list' in kwargs.keys() and len(kwargs['success_image_list'])>0:
-                success_image_data += kwargs['success_image_list'][i]
-                failure_image_data += kwargs['failure_image_list'][i]
-            if 'success_d_image_list' in kwargs.keys() and len(kwargs['success_d_image_list'])>0:
-                success_d_image_data += kwargs['success_d_image_list'][i]
-                failure_d_image_data += kwargs['failure_d_image_list'][i]
             
             if len(failure_data_list[i])>0:
-                failure_data = np.vstack([ np.swapaxes(failure_data,0,1), \
-                                      np.swapaxes(failure_data_list[i], 0,1)])
-                failure_data = np.swapaxes(failure_data, 0, 1)
+                if failure_data is None:
+                    failure_data = failure_data_list[i]
+                else:
+                    failure_data = np.vstack([ np.swapaxes(failure_data,0,1), \
+                                               np.swapaxes(failure_data_list[i], 0,1)])
+                    failure_data = np.swapaxes(failure_data, 0, 1)
                 failureIdx.append( range(last_failure_idx+1, last_failure_idx+1+\
                                          len(failure_data_list[i][0])) )
                 last_failure_idx += len(failure_data_list[i][0])
             else:
                 failureIdx.append([])
+
+        if 'success_image_list' in kwargs.keys() and len(kwargs['success_image_list'])>0:
+            success_image_data += kwargs['success_image_list'][i]
+            failure_image_data += kwargs['failure_image_list'][i]
+        if 'success_d_image_list' in kwargs.keys() and len(kwargs['success_d_image_list'])>0:
+            success_d_image_data += kwargs['success_d_image_list'][i]
+            failure_d_image_data += kwargs['failure_d_image_list'][i]
+
 
         success_files += success_file_list[i]
         if len(failure_data_list[i])>0:
@@ -223,6 +238,23 @@ def rnd_fold_index(nNormal, nAbnormal, train_ratio=0.8, nSet=1):
 
     return kFold_list
 
+
+## def flatten_LOPO_data(success_data_list, failure_data_list, \
+##                       success_file_list, failure_file_list, **kwargs):
+
+##     nSubject = len(success_data_list)
+##     successIdx = []
+##     failureIdx = []
+##     success_files = []
+##     failure_files = []
+##     last_failure_idx = 0
+##     for i in xrange(nSubject):
+
+##         if i == 0:
+
+    
+
+##     return 
 
 #-------------------------------------------------------------------------------------------------
 def getDataList(fileNames, param_dict=None, rf_center='kinEEPos', local_range=10.0, downSampleSize=200, \
@@ -862,12 +894,12 @@ def getRawDataLOPO(subject_names, task_name, raw_data_path, processed_data_path,
                         root_dir = os.path.join(os.path.split(f)[0],'rosbag')                        
                     sub_dir  = os.path.split(f)[1].split('.pkl')[0]
                     new_failure_list.append( os.path.join(root_dir, sub_dir) )
-                    
+                                    
                 success_image_list.append(export_images(new_success_list, success_data_dict, \
                                                         downSampleSize) )
                 failure_image_list.append(export_images(new_failure_list, failure_data_dict, \
                                                         downSampleSize) )
-                #depth
+                #rgbd_filtered image
                 success_d_image_list.append(export_images(new_success_list, success_data_dict, \
                                                         downSampleSize, depth=True) )
                 failure_d_image_list.append(export_images(new_failure_list, failure_data_dict, \
@@ -2795,7 +2827,7 @@ def export_images(folder_list, data_dict, downSampleSize, depth=False):
     for idx, f in enumerate(folder_list):
 
         des_time_list = data_dict['timesList'][idx]
-        if depth: f += '_depth' 
+        if depth: f += '_depth_rgb' 
 
         # get image folder
         try:

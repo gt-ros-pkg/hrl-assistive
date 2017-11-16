@@ -499,9 +499,9 @@ if __name__ == '__main__':
     else:
         ## save_data_path = os.path.expanduser('~')+\
         ##   '/hrl_file_server/dpark_data/anomaly/JOURNAL_ISOL/'+opt.task+'_1'
-        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RAW_DATA/AURO2016/'
+        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RAW_DATA/AURO2016/s7_feeding_rosbag'
         ## save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RAW_DATA/ICRA2018/day11_feeding'
-        save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RAW_DATA/CORL2017/Kihan_feeding'
+        #save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/RAW_DATA/CORL2017/Sid_feeding'
         #save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/TEST/test_rosbag'
         
         rospy.init_node("export_data")

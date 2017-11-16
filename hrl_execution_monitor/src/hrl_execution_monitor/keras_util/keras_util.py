@@ -104,34 +104,54 @@ class sigGenerator():
 
         self.augmentation  = augmentation
         self.noise_mag     = noise_mag
+        self.total_batches_seen = 0
+        self.batch_index        = 0
         pass
 
-    def flow(self, x, y, batch_size=32, shuffle=True):
+    def reset(self):
+        self.batch_index = 0
+
+    def flow(self, x, y, batch_size=32, shuffle=True, seed=None):
 
         assert len(x) == len(y), "data should have the same length"
         
         if type(x) is not np.ndarray: x = np.array(x)
         if type(y) is not np.ndarray: y = np.array(y)
-        
+
+        # Ensure self.batch_index is 0.
+        self.reset()        
+        n = len(x)
+            
         while 1:
 
-            idx_list = range(len(x))
-            if shuffle: random.shuffle(idx_list)
-            
-            x_new = copy.copy(x[idx_list])
-            y_new = y[idx_list]
+            if seed is not None:
+                np.random.seed(seed + self.total_batches_seen)
 
+            if self.batch_index == 0:                
+                idx_list = range(n)
+                if shuffle: random.shuffle(idx_list)            
+                x_new = x[idx_list]
+                y_new = y[idx_list]
+
+            current_index = (self.batch_index * batch_size) % n
+            if n > current_index + batch_size:
+                current_batch_size = batch_size
+                self.batch_index += 1
+            else:
+                current_batch_size = n - current_index
+                self.batch_index = 0
+                
+
+            self.total_batches_seen += 1
             if self.augmentation:
-                x_new += np.random.normal(0.0, self.noise_mag, \
-                                          np.shape(x_new)) 
+                noise = np.random.normal(0.0, self.noise_mag,
+                                         np.shape(x_new[current_index:current_index+current_batch_size]))
+            else:
+                noise = 0
+                
+            yield x_new[current_index:current_index+current_batch_size]+noise, \
+              y_new[current_index:current_index+current_batch_size]
             
-            for idx in range(0,len(y_new), batch_size):
-                if idx >= len(y_new):
-                    break
-                else:
-                    yield x_new[idx:idx+batch_size], y_new[idx:idx+batch_size]
-
-            gc.collect()
 
 
 

@@ -613,7 +613,7 @@ def graph_score_distribution(scores_n, scores_a, param_dict, save_pdf=False):
 
 def get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
                  init_param_dict=None, init_raw_param_dict=None, id_num=0, raw_feature=False,
-                 depth=False, ros_bag_image=False):
+                 depth=False, ros_bag_image=False, kfold_split=True):
     from hrl_anomaly_detection import data_manager as dm
     
     ## Parameters # data
@@ -678,21 +678,39 @@ def get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
                                    pkl_prefix='tgt_', depth=depth, id_num=id_num,
                                    ros_bag_image=ros_bag_image)
 
-            # Get flatten array
-            if ros_bag_image is False:
-                td['successData'], td['failureData'], td['success_files'], td['failure_files'], td['kFoldList'] \
-                  = dm.LOPO_data_index(td['successRawDataList'], td['failureRawDataList'],\
-                                       td['successFileList'], td['failureFileList'])
-            else:                
-                (td['successData'], td['success_image_list'], td['success_d_image_list']),\
-                (td['failureData'], td['failure_image_list'], td['failure_d_image_list']), \
-                  td['success_files'], td['failure_files'], td['kFoldList'] \
-                  = dm.LOPO_data_index(td['successRawDataList'], td['failureRawDataList'],\
-                                       td['successFileList'], td['failureFileList'],\
-                                       success_image_list = td['success_image_list'], \
-                                       failure_image_list = td['failure_image_list'],\
-                                       success_d_image_list = td['success_d_image_list'], \
-                                       failure_d_image_list = td['failure_d_image_list'])
+            if kfold_split:
+                # Get flatten array
+                if ros_bag_image is False:
+                    td['successData'], td['failureData'], td['success_files'], td['failure_files'],\
+                    td['kFoldList'] \
+                      = dm.LOPO_data_index(td['successRawDataList'], td['failureRawDataList'],\
+                                           td['successFileList'], td['failureFileList'])
+                else:                
+                    (td['successData'], td['success_image_list'], td['success_d_image_list']),\
+                      (td['failureData'], td['failure_image_list'], td['failure_d_image_list']), \
+                      td['success_files'], td['failure_files'], td['kFoldList'] \
+                      = dm.LOPO_data_index(td['successRawDataList'], td['failureRawDataList'],\
+                                           td['successFileList'], td['failureFileList'],\
+                                           success_image_list = td['success_image_list'], \
+                                           failure_image_list = td['failure_image_list'],\
+                                           success_d_image_list = td['success_d_image_list'], \
+                                           failure_d_image_list = td['failure_d_image_list'])
+            else:
+                if ros_bag_image is False:
+                    print "Not implemented"
+                    sys.exit()
+                else:
+                    print "Not implemented"
+                    sys.exit()
+                    ## (td['successData'], td['success_image_list'], td['sucess_d_image_list']),\
+                    ##   (td['failureData'], td['failure_image_list'], td['failure_d_image_list'])\
+                    ##   td['success_files'], td['failure_files']
+                    ##   = dm.flatten_LOPO_data(td['successRawDataList'], td['failureRawDataList'],\
+                    ##                          td['successFileList'], td['failureFileList'],\
+                    ##                          success_image_list = td['success_image_list'], \
+                    ##                          failure_image_list = td['failure_image_list'],\
+                    ##                          success_d_image_list = td['success_d_image_list'], \
+                    ##                          failure_d_image_list = td['failure_d_image_list'])
 
 
         def get_label_from_filename(file_names):

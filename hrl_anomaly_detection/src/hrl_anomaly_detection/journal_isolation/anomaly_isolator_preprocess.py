@@ -110,13 +110,13 @@ def get_data(subject_names, task_name, raw_data_path, save_data_path, param_dict
     raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/CORL2017/'
     td1 = vutil.get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
                             init_param_dict=d['param_dict'], init_raw_param_dict=d['raw_param_dict'],
-                            depth=True, id_num=1, raw_feature=True, ros_bag_image=True)
+                            depth=True, id_num=1, raw_feature=True, ros_bag_image=True, kfold_split=True)
 
     subjects = ['s1','s2','s3','s4','s5','s6']
     raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/HENRY2017/'
     td4 = vutil.get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
                             init_param_dict=d['param_dict'], init_raw_param_dict=d['raw_param_dict'],
-                            depth=False, id_num=4, raw_feature=True, ros_bag_image=True)
+                            depth=False, id_num=4, raw_feature=True, ros_bag_image=True, kfold_split=True)
 
     # Manually selected data?
     
@@ -226,7 +226,7 @@ def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=F
         weights_path = os.path.join(save_data_path,'model_weights_'+method+'_'+str(idx)+'.h5')
         
         if (method.find('lstm_vae')>=0 or method.find('lstm_dvae')>=0):
-            dyn_ths   = False #True #temp
+            dyn_ths   = True 
             ad_method = 'lower_bound'
             
             from hrl_execution_monitor.keras_util import lstm_dvae_phase as km
@@ -314,7 +314,7 @@ def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=F
     else:
         dd = ut.load_pickle(detection_pkl)
 
-    return dd['train_err_ll'], dd['test_err_ll'], dd['train_idx_ll'], dd['test_idx_ll'], dd['fs_l']
+    return dd
 
     
 def get_isolation_data(subject_names, task_name, raw_data_path, save_data_path, param_dict):
@@ -324,14 +324,13 @@ def get_isolation_data(subject_names, task_name, raw_data_path, save_data_path, 
     # Raw Data Collection
     main_data, sub_data = get_data(subject_names, task_name, raw_data_path, save_data_path, param_dict)
 
+    #temp
+    main_data['kFoldList'] = main_data['kFoldList'][0:1]
+
     # Data Selection 
-    train_idx_list, test_idx_list, fs_l = get_detection_idx(save_data_path, main_data, sub_data,
-                                                            param_dict, verbose=False)
-    print "00000000000000000000000"
-    sys.exit()
+    dt_dict = get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=False)
 
     # Classification?
-
     x_train_s = []
     x_train_i = []
     x_train_d = []
@@ -346,27 +345,26 @@ def get_isolation_data(subject_names, task_name, raw_data_path, save_data_path, 
     # Data extraction
     #-----------------------------------------------------------------------------------------        
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
-      in enumerate(main_data['kFoldList']):
+      in enumerate(dt_dict['kFoldList']):
         print "==================== ", idx, " ========================"
 
         # Find an index given maximum f-score
-        ths_idx = np.argmax(fs_l[idx])
+        ths_idx = np.argmax(dt_dict['fs_l'][idx])
     
         # Detection indices
-        train_idx = train_idx_list[idx][ths_idx]
-        test_idx  = test_idx_list[idx][ths_idx]
+        train_idx = dt_dict['train_idx_ll'][idx][ths_idx]
+        test_idx  = dt_dict['test_idx_ll'][idx][ths_idx]
 
         # ------------------------------------------------------------------------------------------         
         #Signal data
-        x_train_s.append( np.hstack([main_data['failureData'][:, abnormalTrainIdx, :],
-                                     copy.deepcopy(sub_data['failureData'])]) )          
-        x_test_s.append( main_data['failureData'][:, abnormalTestIdx, :] )
+        x_train_s.append( dt_dict['train_err_ll'][idx] )          
+        x_test_s.append( dt_dict['test_err_ll'][idx])
 
         # ------------------------------------------------------------------------------------------         
         #Image data selection
-        x_train_i.append( [main_data['failure_image_list'][i] for i in abnormalTrainIdx] 
-        + copy.deepcopy(sub_data['failure_image_list']) )
-        x_test_i.append( [main_data['failure_image_list'][i] for i in abnormalTestIdx])
+        ## x_train_i.append( [main_data['failure_image_list'][i] for i in abnormalTrainIdx] 
+        ## + copy.deepcopy(sub_data['failure_image_list']) )
+        ## x_test_i.append( [main_data['failure_image_list'][i] for i in abnormalTestIdx])
         
         x_train_d.append( [main_data['failure_d_image_list'][i] for i in abnormalTrainIdx]
         + copy.deepcopy(sub_data['failure_d_image_list']) )
@@ -386,6 +384,20 @@ def get_isolation_data(subject_names, task_name, raw_data_path, save_data_path, 
         #1) Individual features reconstruction probability?
 
         #2) Image list
+
+        print np.shape(x_train_s), np.shape(y_train), np.shape(x_test_s), np.shape(y_test) 
+        print "00000000000000000000000"
+        sys.exit()
+
+        # pyramid pooling? (1,4,8)
+        
+
+
+        # train sig net
+        sig_weights_file=os.path.join(save_data_path,'sig_weights_'+str(idx)+'.h5')
+        sig_net([x_train_s, y_train], [x_test_s, y_test], noise_mag=0,
+                save_weights_file=sig_weights_file)
+        
         
 
     return [x_train, x_train_img], y_train, [x_test, x_test_img], y_test    

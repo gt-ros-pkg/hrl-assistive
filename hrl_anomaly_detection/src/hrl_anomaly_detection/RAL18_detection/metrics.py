@@ -30,6 +30,7 @@
 
 import numpy as np
 import scipy
+import sys
 
 def get_reconstruction_err_prob(x, x_mean, x_std, alpha=1.0):
     '''
@@ -175,10 +176,7 @@ def get_err_vec(x, x_mean, x_std, nDim, method=None, p=None, alpha=None):
     if alpha is None: alpha = np.array([1.0]*nDim)
 
     # x: length x dim ?
-    log_p_x_z = -0.5 * ( np.sum( (alpha*(x-x_mean)/x_std)**2, axis=-1) \
-                         + float(nDim) * np.log(2.0*np.pi) + np.sum(np.log(x_std**2), axis=-1) )
-
-    print np.shape(log_p_x_z)
-    sys.exit()
+    log_p_x_z = -0.5 * ( (alpha*(x-x_mean)/x_std)**2 \
+                         + float(nDim) * np.log(2.0*np.pi) + np.log(x_std**2) )
 
     return log_p_x_z

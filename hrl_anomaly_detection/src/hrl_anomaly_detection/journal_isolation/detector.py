@@ -410,6 +410,7 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
                 if return_err:
                     print "Start to get error vectors"
                     err = ad_metrics.get_err_vec(xx, x_mean, x_std, x_dim, method, p=p, alpha=alpha)
+                    err = np.squeeze(err)
                     e.append(err.tolist())
                                                                   
                 s.append(l)
