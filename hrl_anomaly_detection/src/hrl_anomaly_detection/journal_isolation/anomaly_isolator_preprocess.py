@@ -277,19 +277,6 @@ def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=F
     #--------------------------------------------------------------------
     if clf_renew or os.path.isfile(detection_pkl) is False:
         print "roc list ", roc_l
-        tpr_l = []
-        fpr_l = []
-        for i in xrange(len(ths_l)):
-            tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
-            fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 ) 
-
-        print roc_l
-        print "------------------------------------------------------"
-        print tpr_l
-        print fpr_l
-
-        from sklearn import metrics
-        print "roc: ", metrics.auc(fpr_l, tpr_l, True)  
 
         # f-scores
         fs_l = []
@@ -313,6 +300,20 @@ def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=F
         ut.save_pickle(dd, detection_pkl)
     else:
         dd = ut.load_pickle(detection_pkl)
+
+
+    tpr_l = []
+    fpr_l = []
+    for i in xrange(nPoints):
+        tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
+        fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 ) 
+
+    print "------------------------------------------------------"
+    print tpr_l
+    print fpr_l
+
+    from sklearn import metrics
+    print "roc: ", metrics.auc(fpr_l, tpr_l, True)  
 
     return dd
 
