@@ -37,9 +37,9 @@ import hrl_lib.util as ut
 ## from hrl_anomaly_detection.util_viz import *
 from hrl_anomaly_detection import util as util
 from hrl_anomaly_detection import data_manager as dm
+
 import hrl_anomaly_detection.IROS17_isolation.isolation_util as iutil
 from hrl_execution_monitor import util as autil
-
 from hrl_anomaly_detection.RAL18_detection import util as vutil
 
 
@@ -322,13 +322,14 @@ def get_isolation_data(subject_names, task_name, raw_data_path, save_data_path, 
                        #main_data, sub_data,
                        #train_idx_list, test_idx_list, ths_idx, param_dict):
 
-    # Raw Data Collection
+    # Get Raw Data
     main_data, sub_data = get_data(subject_names, task_name, raw_data_path, save_data_path, param_dict)
+    # Get a trained detector
 
     #temp
     main_data['kFoldList'] = main_data['kFoldList'][0:1]
 
-    # Data Selection 
+    # Get detection indices and corresponding features
     dt_dict = get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=False)
 
     # Classification?
@@ -375,8 +376,7 @@ def get_isolation_data(subject_names, task_name, raw_data_path, save_data_path, 
         # Labels
         y_train.append( np.array(main_data['failure_labels'])[abnormalTrainIdx].tolist()+\
           sub_data['failure_labels'] )
-        y_test.append( np.array(main_data['failure_labels'])[abnormalTestIdx].tolist()+\
-          sub_data['failure_labels'])
+        y_test.append( np.array(main_data['failure_labels'])[abnormalTestIdx].tolist())
 
 
         # feature extraction by index based on IROS17_isolation/isolation_util.py's feature_extraction
@@ -386,8 +386,10 @@ def get_isolation_data(subject_names, task_name, raw_data_path, save_data_path, 
 
         #2) Image list
 
-        print np.shape(x_train_s), np.shape(y_train), np.shape(x_test_s), np.shape(y_test) 
+        print np.shape(x_train_s), np.shape(y_train), np.shape(x_test_s), np.shape(y_test)        
         print "00000000000000000000000"
+
+        iutil.save_data_labels(x_train_s[0], y_train[0])        
         sys.exit()
 
         # pyramid pooling? (1,4,8)
@@ -404,8 +406,131 @@ def get_isolation_data(subject_names, task_name, raw_data_path, save_data_path, 
     return [x_train, x_train_img], y_train, [x_test, x_test_img], y_test    
 
 
-## def feature_extraction():
-##     return sig, img, d_img
+def feature_extraction(idx, anomaly_idx_list, abnormalData, abnormalData_s, \
+                       abnormalLabel, abnormalData_img,\
+                       task_name, processed_data_path, param_dict,\
+                       window_step=10, verbose=False, plot=False,\
+                       window=False, delta_flag=False):
+    ''' Get conditional probability vector when anomalies are detected '''
+    nDetector = len(abnormalData)
+    if len(abnormalData_img)==0: abnormalData_img = None
+
+    # Load a generative model from anomaly detector
+    ml_list    = []
+    scale_list = []
+    for ii in xrange(nDetector):
+        if nDetector > 1:
+            modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'_c'+\
+                                        str(ii)+'.pkl')
+        else:
+            modeling_pkl = os.path.join(processed_data_path, 'hmm_'+task_name+'_'+str(idx)+'.pkl')
+        d = ut.load_pickle(modeling_pkl)
+        for k, v in d.iteritems():
+            # Ignore predefined test data in the hmm object
+            if not(k.find('test')>=0):
+                exec '%s = v' % k
+
+        ml = hmm.learning_hmm(nState, nEmissionDim, verbose=verbose) 
+        ml.set_hmm_object(A,B,pi)
+        ml_list.append(ml)
+        scale_list.append( param_dict['HMM']['scale'][ii] )
+
+    if delta_flag is False: max_step = 1
+    else:                   max_step = 8
+
+
+    x = []
+    y = []
+    x_img = []
+    for i, d_idx in enumerate(anomaly_idx_list):
+        # Skip undetected anomaly
+        if d_idx is None: continue
+
+        if window:
+            for j in range(-window_step, window_step):
+                ## for j in range(0, window_step):
+                if d_idx+j <= 4: continue
+                if d_idx+j > len(abnormalData[0][0,i]): continue
+
+                vs = None # step x feature
+                for ii in xrange(nDetector):
+                    v = temporal_features(abnormalData[ii][:,i], d_idx+j, max_step, ml_list[ii],
+                                          scale_list[ii])
+                    if vs is None: vs = v
+                    else: vs = np.hstack([vs, v])
+
+                if delta_flag:
+                    #2,4,8
+                    cp_vecs = np.amin(vs[:1], axis=0)
+                    cp_vecs = np.vstack([ cp_vecs, np.amin(vs[:4], axis=0) ])
+                    cp_vecs = np.vstack([ cp_vecs, np.amin(vs[:8], axis=0) ])
+                    cp_vecs = cp_vecs.flatten()
+                else:
+                    cp_vecs = np.amin(vs[:1], axis=0)
+
+                s_idx = d_idx+j-20
+                if s_idx <0: s_idx = 0
+                max_vals = np.amax(abnormalData_s[:,i,s_idx:d_idx+j], axis=1)
+                min_vals = np.amin(abnormalData_s[:,i,s_idx:d_idx+j], axis=1)
+                vals = [mx if abs(mx) > abs(mi) else mi for (mx, mi) in zip(max_vals, min_vals) ]
+
+                cp_vecs = cp_vecs.tolist()+ vals
+                if np.isnan(cp_vecs).any() or np.isinf(cp_vecs).any():
+                    print "NaN in cp_vecs ", i, d_idx
+                    sys.exit()
+
+                x.append( cp_vecs )
+                y.append( abnormalLabel[i] )
+                if abnormalData_img is not None and abnormalData_img[i] is not None:
+                    x_img.append( abnormalData_img[i][d_idx+j-1] )
+                else:
+                    x_img.append(None)
+
+        else:
+            if d_idx <= 0: continue
+            if d_idx > len(abnormalData[0][0,i]): continue                    
+
+            vs = None # step x feature
+            for ii in xrange(nDetector):
+                v = temporal_features(abnormalData[ii][:,i], d_idx, max_step, ml_list[ii],
+                                      scale_list[ii])
+                if vs is None: vs = v
+                else: vs = np.hstack([vs, v])
+
+            if delta_flag:
+                #1,4,8
+                cp_vecs = np.amin(vs[:1], axis=0)
+                cp_vecs = np.vstack([ cp_vecs, np.amin(vs[:4], axis=0) ])
+                cp_vecs = np.vstack([ cp_vecs, np.amin(vs[:8], axis=0) ])
+                cp_vecs = cp_vecs.flatten()
+            else:
+                cp_vecs = np.amin(vs[:1], axis=0)
+
+
+            s_idx = d_idx-20
+            if s_idx <0: s_idx = 0
+            max_vals = np.amax(abnormalData_s[:,i,s_idx:d_idx], axis=1)
+            min_vals = np.amin(abnormalData_s[:,i,s_idx:d_idx], axis=1)
+            vals = [mx if abs(mx) > abs(mi) else mi for (mx, mi) in zip(max_vals, min_vals) ]
+
+            cp_vecs = cp_vecs.tolist()+ vals
+            x.append( cp_vecs )
+            y.append( abnormalLabel[i] )
+            if abnormalData_img is not None and abnormalData_img[i] is not None:
+                x_img.append( abnormalData_img[i][d_idx-1] )
+            else:
+                x_img.append( None )
+
+
+        if len(x_img) == 0:
+            print "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            print np.shape(abnormalData_img)
+            print x_img
+            print "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+
+    return x, y, x_img
+    ## return sig, img, d_img
+
                       
 
 if __name__ == '__main__':
