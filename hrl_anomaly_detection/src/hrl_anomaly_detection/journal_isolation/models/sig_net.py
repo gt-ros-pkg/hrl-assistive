@@ -37,7 +37,7 @@ import scipy
 # Keras
 import h5py 
 from keras.models import Sequential, Model
-from keras.layers import Merge, Input, TimeDistributed, Layer
+from keras.layers import Input, TimeDistributed, Layer
 from keras.layers import Activation, Dropout, Flatten, Dense, merge, Lambda, GaussianNoise
 from keras.utils.np_utils import to_categorical
 from keras.optimizers import SGD, Adagrad, Adadelta, RMSprop

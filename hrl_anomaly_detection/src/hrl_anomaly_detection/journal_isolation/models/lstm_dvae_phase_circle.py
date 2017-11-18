@@ -111,7 +111,6 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                                                                                axis=-1) )
             xent_loss = K.mean(-log_p_x_z, axis=-1)
 
-
             kl_loss = - 0.5 * K.sum( - K.exp(z_log_var)/(z_std*z_std)
                                      - K.square((z_mean-p)/(z_std*z_std))
                                      + 1.
@@ -124,7 +123,8 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
             x_d_mean = args[1][:,:,:input_dim]
             x_d_std  = args[1][:,:,input_dim:]/x_std_div + x_std_offset
 
-            p = K.concatenate([K.zeros(shape=(batch_size, z_dim-1)),p], axis=-1)
+            p = K.concatenate([K.sin(p*2.0*np.pi)*2.0,K.cos(p*2.0*np.pi)*2.0], axis=-1)
+            ## p = K.concatenate([K.zeros(shape=(batch_size, z_dim-1)),p], axis=-1)
             
             loss = self.vae_loss(x, x_d_mean, x_d_std, p)
             self.add_loss(loss, inputs=args)
@@ -207,8 +207,8 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                         x = x_train[i:i+batch_size]
 
 
-                    for j in xrange(len(x[0])-timesteps+1): # per window
-                        p = float(j)/float(length-timesteps+1) *2.0*phase - phase
+                    for j in xrange(len(x[0])-timesteps+1): # per window 
+                        p = float(j)/float(length-timesteps+1) #*2.0*np.pi #phase - phase #[-1,1]
                         tr_loss = vae_autoencoder.train_on_batch(
                             np.concatenate((x[:,j:j+timesteps],
                                             p*np.ones((len(x), timesteps, 1))), axis=-1),
@@ -242,7 +242,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                     x = x_test[i:i+batch_size]
                 
                 for j in xrange(len(x[0])-timesteps+1):
-                    p = float(j)/float(length-timesteps+1) * 2.0* phase - phase
+                    p = float(j)/float(length-timesteps+1) #* 2.0* np.pi # phase - phase
                     te_loss = vae_autoencoder.test_on_batch(
                         np.concatenate((x[:,j:j+timesteps],
                                         p*np.ones((len(x), timesteps,1))), axis=-1),
