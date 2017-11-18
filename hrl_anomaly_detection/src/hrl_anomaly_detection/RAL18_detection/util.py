@@ -748,7 +748,7 @@ def get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
 
 
 def get_scaled_data(normalTrainData, abnormalTrainData, normalTestData, abnormalTestData, aligned=True,
-                    scale=1.8):
+                    scale=1.8, scaler=None):
     '''
     Remove outlier and scale into 0-1 range
     '''
@@ -769,11 +769,13 @@ def get_scaled_data(normalTrainData, abnormalTrainData, normalTestData, abnormal
 
     # normalization => (sample x dim) ----------------------------------
     from sklearn import preprocessing
-    ## scaler = preprocessing.MinMaxScaler(feature_range=(0, 1))
-    scaler = preprocessing.StandardScaler() 
-
-
-    normalTrainData_scaled   = scaler.fit_transform(normalTrainData.reshape(-1,len(normalTrainData[0][0])))
+    if scaler is None:
+        ## scaler = preprocessing.MinMaxScaler(feature_range=(0, 1))
+        scaler = preprocessing.StandardScaler() 
+        normalTrainData_scaled   = scaler.fit_transform(normalTrainData.reshape(-1,len(normalTrainData[0][0])))
+    else:
+        normalTrainData_scaled   = scaler.transform(normalTrainData.reshape(-1,len(normalTrainData[0][0])))
+            
     abnormalTrainData_scaled = scaler.transform(abnormalTrainData.reshape(-1,len(abnormalTrainData[0][0])))
     normalTestData_scaled    = scaler.transform(normalTestData.reshape(-1,len(normalTestData[0][0])))
     abnormalTestData_scaled  = scaler.transform(abnormalTestData.reshape(-1,len(abnormalTestData[0][0])))

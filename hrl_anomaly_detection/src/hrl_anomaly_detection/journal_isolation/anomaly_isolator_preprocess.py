@@ -55,7 +55,7 @@ random.seed(3334)
 np.random.seed(3334)
 
 
-def get_data(subject_names, task_name, raw_data_path, save_data_path, param_dict):
+def get_data(subject_names, task_name, raw_data_path, save_data_path, param_dict, fine_tuning=False):
 
     # load params (param_dict)
     data_dict  = param_dict['data_param']
@@ -98,45 +98,48 @@ def get_data(subject_names, task_name, raw_data_path, save_data_path, param_dict
         ut.save_pickle(d, crossVal_pkl)
 
     print "Main data"
-    print np.shape(d['successData']), np.shape(d['success_image_list']), np.shape(d['success_d_image_list'])
-    print np.shape(d['failureData']), np.shape(d['failure_image_list']), np.shape(d['failure_d_image_list'])
-    
-    ## if fine_tuning is False:
-    ## td1, td2, td3 = vutil.get_ext_feeding_data(task_name, save_data_path, param_dict, d,
-    ##                                            raw_feature=True, ros_bag_image=True)
+    ## print np.shape(d['successData']), np.shape(d['success_image_list']), np.shape(d['success_d_image_list'])
+    ## print np.shape(d['failureData']), np.shape(d['failure_image_list']), np.shape(d['failure_d_image_list'])
+    d['failure_labels']  = get_label_from_filename(d['failure_files'])
 
+    if fine_tuning is False:
+        td1, td2, td3 = vutil.get_ext_feeding_data(task_name, save_data_path, param_dict, d,
+                                                   raw_feature=True, ros_bag_image=False)
 
-    subjects = ['Andrew', 'Britteney', 'Joshua', 'Jun', 'Kihan', 'Lichard', 'Shingshing', 'Sid', 'Tao']
-    raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/CORL2017/'
-    td1 = vutil.get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
-                            init_param_dict=d['param_dict'], init_raw_param_dict=d['raw_param_dict'],
-                            depth=True, id_num=1, raw_feature=True, ros_bag_image=True, kfold_split=True)
+        ## subjects = ['Andrew', 'Britteney', 'Joshua', 'Jun', 'Kihan', 'Lichard', 'Shingshing', 'Sid', 'Tao']
+        ## raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/CORL2017/'
+        ## td1 = vutil.get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
+        ##                         init_param_dict=d['param_dict'], init_raw_param_dict=d['raw_param_dict'],
+        ##                         depth=True, id_num=1, raw_feature=True, ros_bag_image=True, kfold_split=True)
 
-    subjects = ['s1','s2','s3','s4','s5','s6']
-    raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/HENRY2017/'
-    td4 = vutil.get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
-                            init_param_dict=d['param_dict'], init_raw_param_dict=d['raw_param_dict'],
-                            depth=False, id_num=4, raw_feature=True, ros_bag_image=True, kfold_split=True)
+        ## subjects = ['s1','s2','s3','s4','s5','s6']
+        ## raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/HENRY2017/'
+        ## td4 = vutil.get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
+        ##                         init_param_dict=d['param_dict'], init_raw_param_dict=d['raw_param_dict'],
+        ##                         depth=False, id_num=4, raw_feature=True, ros_bag_image=True, kfold_split=True)
 
-    # Manually selected data?
-    
-    # Get main and sub data dictionary
-    td = {}
-    for key in td1.keys():
-        if key in ['success_image_list', 'failure_image_list',
-                   'success_d_image_list', 'failure_d_image_list',
-                   'successRawDataList', 'failureRawDataList',
-                   'successFileList', 'failureFileList',
-                   'success_files', 'failure_files',
-                   'failure_labels']:
-            td[key] = td1[key]+td4[key]
-            ## td[key] = td1[key]+td2[key]+td3[key]
-        elif key in ['successData', 'failureData']:
-            td[key] = np.vstack([np.swapaxes(td1[key],0,1),
-                                 np.swapaxes(td4[key],0,1)])
-                                 ## np.swapaxes(td2[key],0,1),
-                                 ## np.swapaxes(td3[key],0,1)])
-            td[key] = np.swapaxes(td[key],0,1)
+        # Manually selected data?
+
+        # Get main and sub data dictionary
+        td = {}
+        for key in td1.keys():
+            if key in ['success_image_list', 'failure_image_list',
+                       'success_d_image_list', 'failure_d_image_list',
+                       'successRawDataList', 'failureRawDataList',
+                       'successFileList', 'failureFileList',
+                       'success_files', 'failure_files',
+                       'failure_labels']:
+                td[key] = td1[key]+td2[key]+td3[key]
+                #td[key] = td1[key]+td4[key]
+            elif key in ['successData', 'failureData']:
+                td[key] = np.vstack([np.swapaxes(td1[key],0,1),
+                                     np.swapaxes(td2[key],0,1),
+                                     np.swapaxes(td3[key],0,1)])
+                ## td[key] = np.vstack([np.swapaxes(td1[key],0,1),
+                ##                      np.swapaxes(td4[key],0,1)])
+                td[key] = np.swapaxes(td[key],0,1)
+    else:
+        td = None
 
     return d, td
 
@@ -159,7 +162,7 @@ def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=F
     nPoints    = param_dict['ROC']['nPoints']
     
     if param_dict['HMM']['renew']: clf_renew = True
-    else:        clf_renew = param_dict['SVM']['renew']
+    else:                          clf_renew = param_dict['SVM']['renew']
 
     # Check the list of temporal data and images
     nDim = len(main_data['successData'])
@@ -207,9 +210,18 @@ def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=F
         np.random.shuffle(idx_list)
         normalTrainData = normalTrainData[:,idx_list]
 
-        normalTrainData, abnormalTrainData, normalTestData, abnormalTestData, scaler =\
-          vutil.get_scaled_data(normalTrainData, abnormalTrainData,
-                                normalTestData, abnormalTestData, aligned=False)
+        method       = 'lstm_dvae_phase'
+        scaler_file = os.path.join(save_data_path,'scaler_'+method+'_'+str(idx)+'.pkl')
+        if os.path.isfile(scaler_file):
+            scaler_dict = ut.load_pickle(scaler_file)            
+            normalTrainData, abnormalTrainData, normalTestData, abnormalTestData, scaler =\
+              vutil.get_scaled_data(normalTrainData, abnormalTrainData,
+                                    normalTestData, abnormalTestData, aligned=False,
+                                    scaler=scaler_dict['scaler'], )
+        else:
+            normalTrainData, abnormalTrainData, normalTestData, abnormalTestData, scaler =\
+              vutil.get_scaled_data(normalTrainData, abnormalTrainData,
+                                    normalTestData, abnormalTestData, aligned=False)
 
         trainData = [normalTrainData[:int(len(normalTrainData)*0.7)],
                      [0]*len(normalTrainData[:int(len(normalTrainData)*0.7)])]
@@ -220,30 +232,75 @@ def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=F
         # ------------------------------------------------------------------------------------------         
         # scaling info to reconstruct the original scale of data
         scaler_dict  = {'scaler': scaler, 'scale': 1, 'param_dict': main_data['raw_param_dict']}
-        method       = 'lstm_dvae_phase'
+
+        ae_renew   = False
+        vae_mean   = None
+        vae_logvar = None
+        enc_z_mean = enc_z_std = None
+        generator  = None
+        x_std_div   = None
+        x_std_offset= None
+        z_std      = None
+        dyn_ths    = False
+        
+        window_size = 1
+        batch_size  = 256
+        fixed_batch_size = True
+        noise_mag   = 0.05
+        sam_epoch   = 40
+        patience    = 4
+        h1_dim      = nDim
+        z_dim       = 2
+        phase       = 1.0
+        stateful    = None
+        ad_method   = None
         vae_logvar   = None
 
         weights_path = os.path.join(save_data_path,'model_weights_'+method+'_'+str(idx)+'.h5')
         
-        if (method.find('lstm_vae')>=0 or method.find('lstm_dvae')>=0):
-            dyn_ths   = True 
-            ad_method = 'lower_bound'
-            
-            from hrl_anomaly_detection.RAL18_detection.models import lstm_dvae_phase2 as km
+        dyn_ths   = True 
+        ad_method = 'lower_bound'
+        stateful    = True
+        x_std_div   = 4.
+        x_std_offset= 0.1
+        z_std       = 1.0 
+        h1_dim      = 4 #nDim
+        z_dim       = 2 #3
+        phase       = 1.0
+        sam_epoch   = 40
+        plot = False
+        fixed_batch_size = True
+        batch_size  = 256
 
-            autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
-              km.lstm_vae(trainData, valData, weights_path, patience=4, batch_size=256,
-                          noise_mag=0.05, timesteps=1, sam_epoch=40,
-                          x_std_div=4., x_std_offset=0.1, z_std=1.0,\
-                          phase=1., z_dim=3, h1_dim=4, \
-                          renew=param_dict['HMM']['renew'], fine_tuning=fine_tuning, plot=False,\
-                          scaler_dict=scaler_dict)
-        else:
-            sys.exit()
+
+        from hrl_anomaly_detection.journal_isolation.models import lstm_dvae_phase_circle as km
+        ## from hrl_anomaly_detection.RAL18_detection.models import lstm_dvae_phase2 as km
+        ## autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
+        ##   km.lstm_vae(trainData, valData, weights_path, patience=4, batch_size=256,
+        ##               noise_mag=0.05, timesteps=1, sam_epoch=40,
+        ##               x_std_div=4., x_std_offset=0.1, z_std=1.0,\
+        ##               phase=1., z_dim=3, h1_dim=4, \
+        ##               renew=param_dict['HMM']['renew'], fine_tuning=fine_tuning, plot=False,\
+        ##               scaler_dict=scaler_dict)
+
+        autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
+          km.lstm_vae(trainData, valData, weights_path, patience=patience, batch_size=batch_size,
+                      noise_mag=noise_mag, timesteps=window_size, sam_epoch=sam_epoch,
+                      x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,\
+                      phase=phase, z_dim=z_dim, h1_dim=h1_dim, \
+                      renew=ae_renew, fine_tuning=fine_tuning, plot=plot,\
+                      scaler_dict=scaler_dict)
+                      
+        #------------------------------------------------------------------------------------
+        ## vutil.graph_latent_space(normalTestData, abnormalTestData, enc_z_mean,
+        ##                          timesteps=window_size, batch_size=batch_size,
+        ##                          method=method)
+        ## sys.exit()
 
         alpha = np.array([1.0]*nDim) #/float(nDim)
-        ## ths_l = np.logspace(-1.0,2.4,nPoints) - 0.2
-        ths_l = np.logspace(0,1.1,nPoints) 
+        alpha[0] = 1.
+        ths_l = np.logspace(0.,1.3,nPoints) #- 0.12
+        ths_l = np.logspace(0.3,1.4,nPoints) #- 0.12
 
         from hrl_anomaly_detection.journal_isolation import detector as dt
         save_pkl = os.path.join(save_data_path, 'model_ad_scores_'+str(idx)+'.pkl')
@@ -252,22 +309,36 @@ def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=F
                                normalTrainData, valData[0], abnormalTrainData,\
                                normalTestData, abnormalTestData, \
                                ad_method, method,
-                               1, alpha, ths_l=ths_l, save_pkl=save_pkl, stateful=True,
-                               x_std_div = 4, x_std_offset=0.1, z_std=1.0, \
-                               phase=1.0, plot=False, \
-                               renew=clf_renew, dyn_ths=dyn_ths, batch_info=(True,256),\
+                               window_size, alpha, ths_l=ths_l, save_pkl=save_pkl, stateful=True,
+                               x_std_div = x_std_div, x_std_offset=x_std_offset, z_std=z_std, \
+                               phase=phase, plot=False, \
+                               renew=clf_renew, dyn_ths=dyn_ths, batch_info=(True,batch_size),\
                                param_dict=main_data['param_dict'], scaler_dict=scaler_dict,\
                                filenames=(np.array(main_data['success_files'])[normalTestIdx],
                                           np.array(main_data['failure_files'])[abnormalTestIdx]),\
                                return_idx=True)
 
+        ## from hrl_anomaly_detection.RAL18_detection import detector as dt
+        ## save_pkl = os.path.join(save_data_path, 'model_ad_scores_'+str(idx)+'.pkl')
+        ## tp_l, tn_l, fp_l, fn_l, roc = \
+        ##   dt.anomaly_detection(autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generator,
+        ##                        normalTrainData, valData[0],\
+        ##                        normalTestData, abnormalTestData, \
+        ##                        ad_method, method,
+        ##                        1, alpha, ths_l=ths_l, save_pkl=save_pkl, stateful=stateful,
+        ##                        x_std_div = x_std_div, x_std_offset=x_std_offset, z_std=z_std, \
+        ##                        phase=phase, plot=plot, \
+        ##                        renew=clf_renew, dyn_ths=dyn_ths, batch_info=(fixed_batch_size,batch_size),\
+        ##                        param_dict=main_data['param_dict'], scaler_dict=scaler_dict,\
+        ##                        filenames=(np.array(main_data['success_files'])[normalTestIdx],
+        ##                                   np.array(main_data['failure_files'])[abnormalTestIdx]))
         
 
         roc_l.append(roc)        
-        train_a_idx_ll.append(ad_dict['tr_a_idx'])
-        test_a_idx_ll.append(ad_dict['te_a_idx'])
-        train_a_err_ll.append(ad_dict['tr_a_err'])
-        test_a_err_ll.append(ad_dict['te_a_err'])
+        ## train_a_idx_ll.append(ad_dict['tr_a_idx'])
+        ## test_a_idx_ll.append(ad_dict['te_a_idx'])
+        ## train_a_err_ll.append(ad_dict['tr_a_err'])
+        ## test_a_err_ll.append(ad_dict['te_a_err'])
 
         for i in xrange(len(ths_l)):
             tp_ll[i] += tp_l[i]
@@ -278,19 +349,6 @@ def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=F
     #--------------------------------------------------------------------
     if clf_renew or os.path.isfile(detection_pkl) is False:
         print "roc list ", roc_l
-        tpr_l = []
-        fpr_l = []
-        for i in xrange(len(ths_l)):
-            tpr_l.append( float(np.sum(tp_ll[i]))/float(np.sum(tp_ll[i])+np.sum(fn_ll[i]))*100.0 )
-            fpr_l.append( float(np.sum(fp_ll[i]))/float(np.sum(fp_ll[i])+np.sum(tn_ll[i]))*100.0 ) 
-
-        print roc_l
-        print "------------------------------------------------------"
-        print tpr_l
-        print fpr_l
-
-        from sklearn import metrics
-        print "roc: ", metrics.auc(fpr_l, tpr_l, True)  
 
         # f-scores
         fs_l = []
@@ -315,22 +373,39 @@ def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=F
     else:
         dd = ut.load_pickle(detection_pkl)
 
+
+    tpr_l = []
+    fpr_l = []
+    for i in xrange(nPoints):
+        tpr_l.append( float(np.sum(dd['tp_ll'][i]))/float(np.sum(dd['tp_ll'][i])+np.sum(dd['fn_ll'][i]))*100.0 )
+        fpr_l.append( float(np.sum(dd['fp_ll'][i]))/float(np.sum(dd['fp_ll'][i])+np.sum(dd['tn_ll'][i]))*100.0 ) 
+
+    print "------------------------------------------------------"
+    print tpr_l
+    print fpr_l
+
+    from sklearn import metrics
+    print "roc: ", metrics.auc(fpr_l, tpr_l, True)  
+
     return dd
 
     
-def get_isolation_data(subject_names, task_name, raw_data_path, save_data_path, param_dict):
+def get_isolation_data(subject_names, task_name, raw_data_path, save_data_path, param_dict,
+                       fine_tuning=False):
                        #main_data, sub_data,
                        #train_idx_list, test_idx_list, ths_idx, param_dict):
 
     # Get Raw Data
-    main_data, sub_data = get_data(subject_names, task_name, raw_data_path, save_data_path, param_dict)
+    main_data, sub_data = get_data(subject_names, task_name, raw_data_path, save_data_path, param_dict,
+                                   fine_tuning=fine_tuning)
     # Get a trained detector
 
     #temp
-    main_data['kFoldList'] = main_data['kFoldList'][0:1]
+    #main_data['kFoldList'] = main_data['kFoldList'][0:1]
 
     # Get detection indices and corresponding features
-    dt_dict = get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=False)
+    dt_dict = get_detection_idx(save_data_path, main_data, sub_data, param_dict, fine_tuning=fine_tuning,
+                                verbose=False)
 
     # Classification?
     x_train_s = []
@@ -545,14 +620,12 @@ if __name__ == '__main__':
 
     window_steps= 5
     task_name = 'feeding'
-    single_detector=True
     nb_classes = 12
 
 
     get_isolation_data(subject_names, task_name, raw_data_path, save_data_path, param_dict)
 
-    #, weight=1.0, single_detector=single_detector,
-    #                   window_steps=window_steps, verbose=False)
+    #, weight=1.0, window_steps=window_steps, verbose=False)
 
 
 

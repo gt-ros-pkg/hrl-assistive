@@ -158,11 +158,14 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
 
         # scaling info to reconstruct the original scale of data
         scaler_dict = {'scaler': scaler, 'scale': scale, 'param_dict': d['raw_param_dict']}
+        
 
         # ------------------------------------------------------------------------------------------
         # ------------------------------------------------------------------------------------------        
         method      = 'lstm_dvae_phase'
         #method      = 'osvm'
+        ## scaler_file = os.path.join(save_data_path,'scaler_'+method+'_'+str(idx)+'.pkl')
+        ## ut.save_pickle(scaler_dict, scaler_file)
          
         weights_path = os.path.join(save_data_path,'model_weights_'+method+'_'+str(idx)+'.h5')
         vae_mean   = None
@@ -500,12 +503,14 @@ if __name__ == '__main__':
     if opt.bNoUpdate: param_dict['ROC']['update_list'] = []
     subjects = ['s2', 's3','s4','s5', 's6','s7','s8', 's9']
 
-    if os.uname()[1] == 'monty1':
+    if os.uname()[1] == 'monty1' and False:
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_osvm_raw'
     else:
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_dvae_phase_raw'
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_dvae_phase_raw_temp'
 
 
     param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
