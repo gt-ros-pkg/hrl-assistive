@@ -57,7 +57,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
              patience=20, fine_tuning=False, save_weights_file=None, \
              noise_mag=0.0, timesteps=4, sam_epoch=1, \
              x_std_div=1, x_std_offset=0.001, z_std=0.5,\
-             phase=1.0,\
+             phase=1.0, min_lr=1e-6,\
              re_load=False, renew=False, plot=True, trainable=None, **kwargs):
     """
     Variational Autoencoder with two LSTMs and one fully-connected layer
@@ -123,7 +123,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
             x_d_mean = args[1][:,:,:input_dim]
             x_d_std  = args[1][:,:,input_dim:]/x_std_div + x_std_offset
 
-            p = K.concatenate([K.sin(p*2.0*np.pi)*0.5,K.cos(p*2.0*np.pi)*0.5], axis=-1)
+            p = K.concatenate([K.sin(p*2.0*np.pi), K.cos(p*2.0*np.pi)], axis=-1)
             ## p = K.concatenate([K.zeros(shape=(batch_size, z_dim-1)),p], axis=-1)
             
             loss = self.vae_loss(x, x_d_mean, x_d_std, p)
@@ -270,7 +270,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
             else:
                 if wait > patience:
                     print "Over patience!"
-                    break
+                    break 
                 else:
                     wait += 1
                     plateau_wait += 1
@@ -279,6 +279,9 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
             if plateau_wait > 2:
                 old_lr = float(K.get_value(vae_autoencoder.optimizer.lr))
                 new_lr = old_lr * 0.2
+                if new_lr < min_lr:
+                    print "Too small learning rate!"
+                    break
                 K.set_value(vae_autoencoder.optimizer.lr, new_lr)
                 plateau_wait = 0
                 print 'Reduced learning rate {} to {}'.format(old_lr, new_lr)

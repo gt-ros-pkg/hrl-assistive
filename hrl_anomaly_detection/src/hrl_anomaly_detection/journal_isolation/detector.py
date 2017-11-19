@@ -58,7 +58,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
                       dyn_ths=False, plot=False, renew=False, batch_info=(False,None), **kwargs):
                       
     print "Start to get anomaly scores"
-    if (os.path.isfile(save_pkl) and renew is False): # or True:
+    if (os.path.isfile(save_pkl) and renew is False):
         print "Load anomaly detection results"
         d = ut.load_pickle(save_pkl)
     else:

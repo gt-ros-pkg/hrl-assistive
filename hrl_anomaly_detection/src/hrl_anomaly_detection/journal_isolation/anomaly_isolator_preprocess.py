@@ -54,7 +54,7 @@ import gc
 random.seed(3334)
 np.random.seed(3334)
 
-IROS_TEST = True
+IROS_TEST = False
 
 def get_data(subject_names, task_name, raw_data_path, save_data_path, param_dict, fine_tuning=False):
 
@@ -253,13 +253,13 @@ def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=F
         vae_logvar = None
         window_size = 1
         noise_mag   = 0.05
-        patience    = 4
+        patience    = 10
         
         ad_method = 'lower_bound'
         stateful    = True
         x_std_div   = 4.
         x_std_offset= 0.1
-        z_std       = 0.5 #1.0 
+        z_std       = 1.0 #1.0 
         h1_dim      = 4 #nDim
         z_dim       = 2 #3
         phase       = 1.0
@@ -400,7 +400,8 @@ def get_isolation_data(subject_names, task_name, raw_data_path, save_data_path, 
 
         print np.shape(dt_dict['train_err_ll'][idx]), np.shape(dt_dict['train_labels']),
         print np.shape(dt_dict['test_err_ll'][idx]), np.shape(dt_dict['test_labels'])        
-        print "00000000000000000000000"        
+        print "00000000000000000000000"
+        sys.exit()
         ## iutil.save_data_labels(dt_dict['train_err_ll'][idx], dt_dict['train_labels'])        
 
         # feature extraction by index based on IROS17_isolation/isolation_util.py's feature_extraction
@@ -587,10 +588,12 @@ if __name__ == '__main__':
     subject_names = ['s2', 's3','s4','s5', 's6','s7','s8', 's9']
     raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
                                                           opt.bHMMRenew, opt.bCLFRenew)
-    save_data_path = os.path.expanduser('~')+\
-    '/hrl_file_server/dpark_data/anomaly/JOURNAL_ISOL/'+opt.task+'_1'
-    ## save_data_path = os.path.expanduser('~')+\
-    ##   '/hrl_file_server/dpark_data/anomaly/JOURNAL_ISOL/'+opt.task+'_2'
+    if os.uname()[1] == 'monty1':
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/JOURNAL_ISOL/'+opt.task+'_1'
+    else:
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/JOURNAL_ISOL/'+opt.task+'_2'
 
 
     window_steps= 5
