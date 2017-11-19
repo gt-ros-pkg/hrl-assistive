@@ -272,8 +272,8 @@ def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=F
 
         alpha = np.array([1.0]*nDim) #/float(nDim)
         alpha[0] = 1.
-        ths_l = np.logspace(0. , 1.3, nPoints) #- 0.12
-        ths_l = np.logspace(0.3, 1.4, nPoints) #- 0.12
+        ths_l = np.logspace(0.,1.3,nPoints) #- 0.12
+        ths_l = np.logspace(-1.0,2.0,nPoints) - 0.1
 
         from hrl_anomaly_detection.journal_isolation import detector as dt
         save_pkl = os.path.join(save_data_path, 'model_ad_scores_'+str(idx)+'.pkl')
@@ -289,7 +289,7 @@ def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=F
                                param_dict=main_data['param_dict'], scaler_dict=scaler_dict,\
                                filenames=(np.array(main_data['success_files'])[normalTestIdx],
                                           np.array(main_data['failure_files'])[abnormalTestIdx]),\
-                               return_idx=True)
+                               return_idx=True)        
 
         roc_l.append(roc)        
         train_a_idx_ll.append(ad_dict['tr_a_idx'])
@@ -348,14 +348,13 @@ def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=F
 
     
 def get_isolation_data(subject_names, task_name, raw_data_path, save_data_path, param_dict,
-                       fine_tuning=True):
+                       fine_tuning=False):
 
     # Get Raw Data
     main_data, sub_data = get_data(subject_names, task_name, raw_data_path, save_data_path, param_dict,
                                    fine_tuning=fine_tuning)
-    # Get a trained detector
-
-    #temp
+    
+    # Get a trained detector #temp
     main_data['kFoldList'] = main_data['kFoldList'][0:1]
 
     # Get detection indices and corresponding features
@@ -562,6 +561,8 @@ if __name__ == '__main__':
     import optparse
     p = optparse.OptionParser()
     util.initialiseOptParser(p)
+    p.add_option('--fint_tuning', '--ftn', action='store_true', dest='bFineTune',
+                 default=False, help='Run fine tuning.')
     opt, args = p.parse_args()
 
     from hrl_anomaly_detection.journal_isolation.isolation_param import *
@@ -569,8 +570,10 @@ if __name__ == '__main__':
     subject_names = ['s2', 's3','s4','s5', 's6','s7','s8', 's9']
     raw_data_path, save_data_path, param_dict = getParams(opt.task, opt.bDataRenew, \
                                                           opt.bHMMRenew, opt.bCLFRenew)
-    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/JOURNAL_ISOL/'+opt.task+'_1'
-    save_data_path = '/home/dpark/hrl_file_server/dpark_data/anomaly/JOURNAL_ISOL/'+opt.task+'_2'
+    save_data_path = os.path.expanduser('~')+\
+    '/hrl_file_server/dpark_data/anomaly/JOURNAL_ISOL/'+opt.task+'_1'
+    save_data_path = os.path.expanduser('~')+\
+      '/hrl_file_server/dpark_data/anomaly/JOURNAL_ISOL/'+opt.task+'_2'
 
 
     window_steps= 5
@@ -578,7 +581,8 @@ if __name__ == '__main__':
     nb_classes = 12
 
 
-    get_isolation_data(subject_names, task_name, raw_data_path, save_data_path, param_dict)
+    get_isolation_data(subject_names, task_name, raw_data_path, save_data_path, param_dict,
+                       fine_tuning=opt.bFineTune)
 
     #, weight=1.0, window_steps=window_steps, verbose=False)
 
