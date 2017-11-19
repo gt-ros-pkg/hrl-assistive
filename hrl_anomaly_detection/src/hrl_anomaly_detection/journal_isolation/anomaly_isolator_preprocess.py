@@ -171,7 +171,7 @@ def get_label_from_filename(file_names):
     
 
 def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=False,
-                      fine_tuning=False):
+                      dyn_ths=False, fine_tuning=False):
     
     # load params (param_dict)
     method     = param_dict['ROC']['methods'][0]
@@ -255,7 +255,6 @@ def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=F
         noise_mag   = 0.05
         patience    = 4
         
-        dyn_ths   = True 
         ad_method = 'lower_bound'
         stateful    = True
         x_std_div   = 4.
@@ -364,7 +363,7 @@ def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=F
 
     
 def get_isolation_data(subject_names, task_name, raw_data_path, save_data_path, param_dict,
-                       fine_tuning=False):
+                       fine_tuning=False, dyn_ths=False):
 
     # Get Raw Data
     main_data, sub_data = get_data(subject_names, task_name, raw_data_path, save_data_path, param_dict,
@@ -375,7 +374,7 @@ def get_isolation_data(subject_names, task_name, raw_data_path, save_data_path, 
 
     # Get detection indices and corresponding features
     dt_dict = get_detection_idx(save_data_path, main_data, sub_data, param_dict, fine_tuning=fine_tuning,
-                                verbose=False)
+                                dyn_ths=dyn_ths, verbose=False)
 
     # Classification?
     x_train_s = []
@@ -579,6 +578,8 @@ if __name__ == '__main__':
     util.initialiseOptParser(p)
     p.add_option('--fint_tuning', '--ftn', action='store_true', dest='bFineTune',
                  default=False, help='Run fine tuning.')
+    p.add_option('--dyn_ths', '--dt', action='store_true', dest='bDynThs',
+                 default=False, help='Run dynamic threshold.')
     opt, args = p.parse_args()
 
     from hrl_anomaly_detection.journal_isolation.isolation_param import *
@@ -598,7 +599,7 @@ if __name__ == '__main__':
 
 
     get_isolation_data(subject_names, task_name, raw_data_path, save_data_path, param_dict,
-                       fine_tuning=opt.bFineTune)
+                       fine_tuning=opt.bFineTune, dyn_ths=opt.bDynThs)
 
     #, weight=1.0, window_steps=window_steps, verbose=False)
 
