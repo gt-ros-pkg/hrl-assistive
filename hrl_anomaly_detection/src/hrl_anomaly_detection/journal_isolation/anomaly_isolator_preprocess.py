@@ -54,6 +54,7 @@ import gc
 random.seed(3334)
 np.random.seed(3334)
 
+IROS_TEST = True
 
 def get_data(subject_names, task_name, raw_data_path, save_data_path, param_dict, fine_tuning=False):
 
@@ -61,6 +62,8 @@ def get_data(subject_names, task_name, raw_data_path, save_data_path, param_dict
     data_dict  = param_dict['data_param']
     AE_dict    = param_dict['AE']
     data_renew = data_dict['renew']
+    if IROS_TEST: ros_bag_image = False
+    else: ros_bag_image = True
     
     #------------------------------------------
     if os.path.isdir(save_data_path) is False:
@@ -81,7 +84,7 @@ def get_data(subject_names, task_name, raw_data_path, save_data_path, param_dict
                               rawFeatures=AE_dict['rawFeatures'], \
                               cut_data=data_dict['cut_data'], \
                               data_renew=data_renew, max_time=data_dict['max_time'],
-                              ros_bag_image=True)
+                              ros_bag_image=ros_bag_image)
 
         (d['successData'], d['success_image_list'], d['success_d_image_list']),\
             (d['failureData'], d['failure_image_list'], d['failure_d_image_list']), \
@@ -98,25 +101,33 @@ def get_data(subject_names, task_name, raw_data_path, save_data_path, param_dict
         ut.save_pickle(d, crossVal_pkl)
 
     print "Main data"
-    print np.shape(d['successData']), np.shape(d['success_image_list']), np.shape(d['success_d_image_list'])
-    print np.shape(d['failureData']), np.shape(d['failure_image_list']), np.shape(d['failure_d_image_list'])
-    ## d['failure_labels']  = get_label_from_filename(d['failure_files'])
+    if IROS_TEST:
+        d['failure_labels']  = get_label_from_filename(d['failure_files'])
+    else:
+        print np.shape(d['successData']), np.shape(d['success_image_list']), np.shape(d['success_d_image_list'])
+        print np.shape(d['failureData']), np.shape(d['failure_image_list']), np.shape(d['failure_d_image_list'])
 
     if fine_tuning is False:
-        ## td1, td2, td3 = vutil.get_ext_feeding_data(task_name, save_data_path, param_dict, d,
-        ##                                            raw_feature=True, ros_bag_image=True)
+        if IROS_TEST:        
+            td1, td2, td3 = vutil.get_ext_feeding_data(task_name, save_data_path, param_dict, d,
+                                                       raw_feature=True, ros_bag_image=ros_bag_image)
+            td1['failure_labels']  = get_label_from_filename(td1['failure_files'])
+            td2['failure_labels']  = get_label_from_filename(td2['failure_files'])
+            td3['failure_labels']  = get_label_from_filename(td3['failure_files'])
+        else:
+            subjects = ['Andrew', 'Britteney', 'Joshua', 'Jun', 'Kihan', 'Lichard', 'Shingshing', 'Sid', 'Tao']
+            raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/CORL2017/'
+            td1 = vutil.get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
+                                    init_param_dict=d['param_dict'], init_raw_param_dict=d['raw_param_dict'],
+                                    depth=True, id_num=1, raw_feature=True,
+                                    ros_bag_image=ros_bag_image, kfold_split=True)
 
-        subjects = ['Andrew', 'Britteney', 'Joshua', 'Jun', 'Kihan', 'Lichard', 'Shingshing', 'Sid', 'Tao']
-        raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/CORL2017/'
-        td1 = vutil.get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
-                                init_param_dict=d['param_dict'], init_raw_param_dict=d['raw_param_dict'],
-                                depth=True, id_num=1, raw_feature=True, ros_bag_image=True, kfold_split=True)
-
-        subjects = ['s1','s2','s3','s4','s5','s6']
-        raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/HENRY2017/'
-        td4 = vutil.get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
-                                init_param_dict=d['param_dict'], init_raw_param_dict=d['raw_param_dict'],
-                                depth=False, id_num=4, raw_feature=True, ros_bag_image=True, kfold_split=True)
+            subjects = ['s1','s2','s3','s4','s5','s6']
+            raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/HENRY2017/'
+            td4 = vutil.get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
+                                    init_param_dict=d['param_dict'], init_raw_param_dict=d['raw_param_dict'],
+                                    depth=False, id_num=4, raw_feature=True,
+                                    ros_bag_image=ros_bag_image, kfold_split=True)
 
         # Manually selected data?
 
@@ -129,14 +140,16 @@ def get_data(subject_names, task_name, raw_data_path, save_data_path, param_dict
                        'successFileList', 'failureFileList',
                        'success_files', 'failure_files',
                        'failure_labels']:
-                ## td[key] = td1[key]+td2[key]+td3[key]
-                td[key] = td1[key]+td4[key]
+                if IROS_TEST: td[key] = td1[key]+td2[key]+td3[key]
+                else:         td[key] = td1[key]+td4[key]
             elif key in ['successData', 'failureData']:
-                ## td[key] = np.vstack([np.swapaxes(td1[key],0,1),
-                ##                      np.swapaxes(td2[key],0,1),
-                ##                      np.swapaxes(td3[key],0,1)])
-                td[key] = np.vstack([np.swapaxes(td1[key],0,1),
-                                     np.swapaxes(td4[key],0,1)])
+                if IROS_TEST:
+                    td[key] = np.vstack([np.swapaxes(td1[key],0,1),
+                                         np.swapaxes(td2[key],0,1),
+                                         np.swapaxes(td3[key],0,1)])
+                else:
+                    td[key] = np.vstack([np.swapaxes(td1[key],0,1),
+                                         np.swapaxes(td4[key],0,1)])
                 td[key] = np.swapaxes(td[key],0,1)
     else:
         td = None
@@ -148,7 +161,10 @@ def get_label_from_filename(file_names):
 
     labels = []
     for f in file_names:
-        labels.append( int(f.split('/')[-1].split('_')[0]) )
+        try:
+            labels.append( int(f.split('/')[-1].split('_')[0]) )
+        except:
+            labels.append(None)
 
     return labels
 
@@ -572,8 +588,8 @@ if __name__ == '__main__':
                                                           opt.bHMMRenew, opt.bCLFRenew)
     save_data_path = os.path.expanduser('~')+\
     '/hrl_file_server/dpark_data/anomaly/JOURNAL_ISOL/'+opt.task+'_1'
-    save_data_path = os.path.expanduser('~')+\
-      '/hrl_file_server/dpark_data/anomaly/JOURNAL_ISOL/'+opt.task+'_2'
+    ## save_data_path = os.path.expanduser('~')+\
+    ##   '/hrl_file_server/dpark_data/anomaly/JOURNAL_ISOL/'+opt.task+'_2'
 
 
     window_steps= 5
