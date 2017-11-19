@@ -591,6 +591,9 @@ if __name__ == '__main__':
     if os.uname()[1] == 'monty1':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/JOURNAL_ISOL/'+opt.task+'_1'
+    elif os.uname()[1] == 'colossus12':
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/JOURNAL_ISOL/'+opt.task+'_3'
     else:
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/JOURNAL_ISOL/'+opt.task+'_2'
@@ -599,6 +602,7 @@ if __name__ == '__main__':
     window_steps= 5
     task_name = 'feeding'
     nb_classes = 12
+    IROS_TEST = False
 
 
     get_isolation_data(subject_names, task_name, raw_data_path, save_data_path, param_dict,

@@ -36,7 +36,8 @@ import scipy
 np.random.seed(1337)
 
 # Keras
-import h5py 
+import h5py
+import keras
 from keras.models import Sequential, Model
 from keras.layers import Input, TimeDistributed, Layer
 from keras.layers import Activation, Dropout, Flatten, Dense, merge, Lambda, RepeatVector, LSTM, GaussianNoise
@@ -49,6 +50,7 @@ from keras import objectives
 from hrl_anomaly_detection.RAL18_detection import keras_util as ku
 from hrl_anomaly_detection.RAL18_detection import util as vutil
 
+from distutils.version import LooseVersion, StrictVersion
 import gc
 
 
@@ -208,11 +210,15 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
 
 
                     for j in xrange(len(x[0])-timesteps+1): # per window 
-                        p = float(j)/float(length-timesteps+1) 
+                        p = float(j)/float(length-timesteps+1)
+                        if keras.__version < LooseVersion("2.1.0"):
+                            y = x[:,j:j+timesteps]
+                        else:
+                            y = None
+                            
                         tr_loss = vae_autoencoder.train_on_batch(
                             np.concatenate((x[:,j:j+timesteps],
-                                            p*np.ones((len(x), timesteps, 1))), axis=-1),
-                            x[:,j:j+timesteps] )
+                                            p*np.ones((len(x), timesteps, 1))), axis=-1), y)
 
                         seq_tr_loss.append(tr_loss)
                     mean_tr_loss.append( np.mean(seq_tr_loss) )
@@ -242,11 +248,15 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                     x = x_test[i:i+batch_size]
                 
                 for j in xrange(len(x[0])-timesteps+1):
-                    p = float(j)/float(length-timesteps+1) 
+                    p = float(j)/float(length-timesteps+1)
+                        if keras.__version < LooseVersion("2.1.0"):
+                            y = x[:,j:j+timesteps]
+                        else:
+                            y = None
+                    
                     te_loss = vae_autoencoder.test_on_batch(
                         np.concatenate((x[:,j:j+timesteps],
-                                        p*np.ones((len(x), timesteps,1))), axis=-1),
-                        x[:,j:j+timesteps] )
+                                        p*np.ones((len(x), timesteps,1))), axis=-1), y)
                     seq_te_loss.append(te_loss)
                 mean_te_loss.append( np.mean(seq_te_loss) )
                 vae_autoencoder.reset_states()
