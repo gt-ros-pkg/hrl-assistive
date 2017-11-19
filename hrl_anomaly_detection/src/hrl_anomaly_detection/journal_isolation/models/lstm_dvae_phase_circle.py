@@ -123,7 +123,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
             x_d_mean = args[1][:,:,:input_dim]
             x_d_std  = args[1][:,:,input_dim:]/x_std_div + x_std_offset
 
-            p = K.concatenate([K.sin(p*2.0*np.pi)*2.0,K.cos(p*2.0*np.pi)*2.0], axis=-1)
+            p = K.concatenate([K.sin(p*2.0*np.pi)*0.5,K.cos(p*2.0*np.pi)*0.5], axis=-1)
             ## p = K.concatenate([K.zeros(shape=(batch_size, z_dim-1)),p], axis=-1)
             
             loss = self.vae_loss(x, x_d_mean, x_d_std, p)
@@ -208,7 +208,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
 
 
                     for j in xrange(len(x[0])-timesteps+1): # per window 
-                        p = float(j)/float(length-timesteps+1) #*2.0*np.pi #phase - phase #[-1,1]
+                        p = float(j)/float(length-timesteps+1) 
                         tr_loss = vae_autoencoder.train_on_batch(
                             np.concatenate((x[:,j:j+timesteps],
                                             p*np.ones((len(x), timesteps, 1))), axis=-1),
@@ -242,7 +242,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                     x = x_test[i:i+batch_size]
                 
                 for j in xrange(len(x[0])-timesteps+1):
-                    p = float(j)/float(length-timesteps+1) #* 2.0* np.pi # phase - phase
+                    p = float(j)/float(length-timesteps+1) 
                     te_loss = vae_autoencoder.test_on_batch(
                         np.concatenate((x[:,j:j+timesteps],
                                         p*np.ones((len(x), timesteps,1))), axis=-1),
@@ -292,8 +292,6 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
         nDim = len(x_test[0,0]) 
         
         for i in xrange(len(x_test)):
-            #if i!=6: continue #for data viz lstm_vae_custom -4 
-
             x_pred_mean, x_pred_std = predict(x_test[i:i+1], vae_mean_std, nDim, batch_size, timesteps,\
                                               x_std_div, x_std_offset)
             vutil.graph_variations(x_test[i], x_pred_mean, x_pred_std, scaler_dict=kwargs['scaler_dict'])

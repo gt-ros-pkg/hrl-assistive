@@ -233,28 +233,11 @@ def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=F
         # scaling info to reconstruct the original scale of data
         scaler_dict  = {'scaler': scaler, 'scale': 1, 'param_dict': main_data['raw_param_dict']}
 
-        ae_renew   = False
-        vae_mean   = None
         vae_logvar = None
-        enc_z_mean = enc_z_std = None
-        generator  = None
-        x_std_div   = None
-        x_std_offset= None
-        z_std      = None
-        dyn_ths    = False
         
         window_size = 1
-        batch_size  = 256
-        fixed_batch_size = True
         noise_mag   = 0.05
-        sam_epoch   = 40
-        patience    = 4
-        h1_dim      = nDim
-        z_dim       = 2
-        phase       = 1.0
-        stateful    = None
-        ad_method   = None
-        vae_logvar   = None
+        patience    = 4 #10
 
         weights_path = os.path.join(save_data_path,'model_weights_'+method+'_'+str(idx)+'.h5')
         
@@ -263,7 +246,7 @@ def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=F
         stateful    = True
         x_std_div   = 4.
         x_std_offset= 0.1
-        z_std       = 1.0 
+        z_std       = 0.5 #1.0 
         h1_dim      = 4 #nDim
         z_dim       = 2 #3
         phase       = 1.0
@@ -274,21 +257,12 @@ def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=F
 
 
         from hrl_anomaly_detection.journal_isolation.models import lstm_dvae_phase_circle as km
-        ## from hrl_anomaly_detection.RAL18_detection.models import lstm_dvae_phase2 as km
-        ## autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
-        ##   km.lstm_vae(trainData, valData, weights_path, patience=4, batch_size=256,
-        ##               noise_mag=0.05, timesteps=1, sam_epoch=40,
-        ##               x_std_div=4., x_std_offset=0.1, z_std=1.0,\
-        ##               phase=1., z_dim=3, h1_dim=4, \
-        ##               renew=param_dict['HMM']['renew'], fine_tuning=fine_tuning, plot=False,\
-        ##               scaler_dict=scaler_dict)
-
         autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
           km.lstm_vae(trainData, valData, weights_path, patience=patience, batch_size=batch_size,
                       noise_mag=noise_mag, timesteps=window_size, sam_epoch=sam_epoch,
                       x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,\
                       phase=phase, z_dim=z_dim, h1_dim=h1_dim, \
-                      renew=ae_renew, fine_tuning=fine_tuning, plot=plot,\
+                      renew=param_dict['HMM']['renew'], fine_tuning=fine_tuning, plot=plot,\
                       scaler_dict=scaler_dict)
                       
         #------------------------------------------------------------------------------------
@@ -300,7 +274,7 @@ def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=F
         alpha = np.array([1.0]*nDim) #/float(nDim)
         alpha[0] = 1.
         ths_l = np.logspace(0.,1.3,nPoints) #- 0.12
-        ths_l = np.logspace(0.3,1.4,nPoints) #- 0.12
+        ths_l = np.logspace(-1.0,2.0,nPoints) - 0.1
 
         from hrl_anomaly_detection.journal_isolation import detector as dt
         save_pkl = os.path.join(save_data_path, 'model_ad_scores_'+str(idx)+'.pkl')
@@ -316,23 +290,7 @@ def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=F
                                param_dict=main_data['param_dict'], scaler_dict=scaler_dict,\
                                filenames=(np.array(main_data['success_files'])[normalTestIdx],
                                           np.array(main_data['failure_files'])[abnormalTestIdx]),\
-                               return_idx=True)
-
-        ## from hrl_anomaly_detection.RAL18_detection import detector as dt
-        ## save_pkl = os.path.join(save_data_path, 'model_ad_scores_'+str(idx)+'.pkl')
-        ## tp_l, tn_l, fp_l, fn_l, roc = \
-        ##   dt.anomaly_detection(autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generator,
-        ##                        normalTrainData, valData[0],\
-        ##                        normalTestData, abnormalTestData, \
-        ##                        ad_method, method,
-        ##                        1, alpha, ths_l=ths_l, save_pkl=save_pkl, stateful=stateful,
-        ##                        x_std_div = x_std_div, x_std_offset=x_std_offset, z_std=z_std, \
-        ##                        phase=phase, plot=plot, \
-        ##                        renew=clf_renew, dyn_ths=dyn_ths, batch_info=(fixed_batch_size,batch_size),\
-        ##                        param_dict=main_data['param_dict'], scaler_dict=scaler_dict,\
-        ##                        filenames=(np.array(main_data['success_files'])[normalTestIdx],
-        ##                                   np.array(main_data['failure_files'])[abnormalTestIdx]))
-        
+                               return_idx=True)        
 
         roc_l.append(roc)        
         ## train_a_idx_ll.append(ad_dict['tr_a_idx'])

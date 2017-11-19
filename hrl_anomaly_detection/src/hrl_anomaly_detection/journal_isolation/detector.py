@@ -58,7 +58,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
                       dyn_ths=False, plot=False, renew=False, batch_info=(False,None), **kwargs):
                       
     print "Start to get anomaly scores"
-    if os.path.isfile(save_pkl) and renew is False:
+    if (os.path.isfile(save_pkl) and renew is False): # or True:
         print "Load anomaly detection results"
         d = ut.load_pickle(save_pkl)
     else:
@@ -139,7 +139,6 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
                                                    normalize=True, nugget=1)
 
             u, idx = np.unique(x,axis=0,return_index=True)
-            print np.shape(x), len(idx)
             x = x[idx]
             y = y[idx]
                         
@@ -152,13 +151,12 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
                 y = y[:10000]
 
         from sklearn import preprocessing
-        scaler = preprocessing.StandardScaler()
+        #scaler = preprocessing.StandardScaler()
         scaler = preprocessing.MinMaxScaler()
         x = scaler.fit_transform(x)            
             
-        print np.shape(x), np.shape(y)
+        ## print np.shape(x), np.shape(y)
         clf.fit(x, y)
-        print "-----------------------------------------"
 
     #--------------------------------------------------------------------
     def get_pos_neg(zs, scores, method=None):
@@ -250,12 +248,12 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
 
     return_idx = kwargs.get('return_idx', False)
     if return_idx:
-        d = {}
-        d['tr_a_idx'] = tr_a_idx_ll
-        d['te_a_idx'] = te_a_idx_ll
-        ## d['tr_a_err'] = err_tr_a
-        ## d['te_a_err'] = err_te_a
-        return tp_ll, tn_ll, fp_ll, fn_ll, roc, d
+        dd = {}
+        dd['tr_a_idx'] = tr_a_idx_ll
+        dd['te_a_idx'] = te_a_idx_ll
+        ## dd['tr_a_err'] = err_tr_a
+        ## dd['te_a_err'] = err_te_a
+        return tp_ll, tn_ll, fp_ll, fn_ll, roc, dd
     else:
         return tp_ll, tn_ll, fp_ll, fn_ll, roc
 
@@ -415,7 +413,7 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
                                                                   enc_z_mean, enc_z_logvar,\
                                                                   x_dim, method, p, alpha=alpha)
                 if return_err:
-                    print "Start to get error vectors"
+                    ## print "Start to get error vectors"
                     err = ad_metrics.get_err_vec(xx, x_mean, x_std, x_dim, method, p=p, alpha=alpha)
                     err = np.squeeze(err)
                     e.append(err.tolist())
