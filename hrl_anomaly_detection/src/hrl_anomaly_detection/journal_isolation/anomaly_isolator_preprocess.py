@@ -55,6 +55,7 @@ random.seed(3334)
 np.random.seed(3334)
 
 IROS_TEST = False
+JOURNAL_TEST = False
 
 def get_data(subject_names, task_name, raw_data_path, save_data_path, param_dict, fine_tuning=False):
 
@@ -63,6 +64,7 @@ def get_data(subject_names, task_name, raw_data_path, save_data_path, param_dict
     AE_dict    = param_dict['AE']
     data_renew = data_dict['renew']
     if IROS_TEST: ros_bag_image = False
+    elif JOURNAL_TEST: ros_bag_image = False
     else: ros_bag_image = True
     
     #------------------------------------------
@@ -101,14 +103,14 @@ def get_data(subject_names, task_name, raw_data_path, save_data_path, param_dict
         ut.save_pickle(d, crossVal_pkl)
 
     print "Main data"
-    if IROS_TEST:
+    if IROS_TEST or JOURNAL_TEST:
         d['failure_labels']  = get_label_from_filename(d['failure_files'])
     else:
         print np.shape(d['successData']), np.shape(d['success_image_list']), np.shape(d['success_d_image_list'])
         print np.shape(d['failureData']), np.shape(d['failure_image_list']), np.shape(d['failure_d_image_list'])
 
     if fine_tuning is False:
-        if IROS_TEST:        
+        if IROS_TEST or JOURNAL_TEST:        
             td1, td2, td3 = vutil.get_ext_feeding_data(task_name, save_data_path, param_dict, d,
                                                        raw_feature=True, ros_bag_image=ros_bag_image)
             td1['failure_labels']  = get_label_from_filename(td1['failure_files'])
@@ -122,13 +124,15 @@ def get_data(subject_names, task_name, raw_data_path, save_data_path, param_dict
                                     depth=True, id_num=1, raw_feature=True,
                                     ros_bag_image=ros_bag_image, kfold_split=True)
 
-            subjects = ['s1','s2','s3','s4','s5','s6']
-            raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/HENRY2017/'
-            td4 = vutil.get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
-                                    init_param_dict=d['param_dict'], init_raw_param_dict=d['raw_param_dict'],
-                                    depth=False, id_num=4, raw_feature=True,
-                                    ros_bag_image=ros_bag_image, kfold_split=True)
-
+        subjects = ['s1','s2','s3','s4','s5','s6']
+        raw_data_path  = os.path.expanduser('~')+'/hrl_file_server/dpark_data/anomaly/RAW_DATA/HENRY2017/'
+        td4 = vutil.get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
+                                 init_param_dict=d['param_dict'], init_raw_param_dict=d['raw_param_dict'],
+                                 depth=False, id_num=4, raw_feature=True,
+                                 ros_bag_image=ros_bag_image, kfold_split=True)
+        td4['failure_labels']  = get_label_from_filename(td4['failure_files'])
+                    
+        
         # Manually selected data?
 
         # Get main and sub data dictionary
@@ -141,12 +145,18 @@ def get_data(subject_names, task_name, raw_data_path, save_data_path, param_dict
                        'success_files', 'failure_files',
                        'failure_labels']:
                 if IROS_TEST: td[key] = td1[key]+td2[key]+td3[key]
+                elif JOURNAL_TEST:  td[key] = td1[key]+td2[key]+td3[key]+td4[key]
                 else:         td[key] = td1[key]+td4[key]
             elif key in ['successData', 'failureData']:
                 if IROS_TEST:
                     td[key] = np.vstack([np.swapaxes(td1[key],0,1),
                                          np.swapaxes(td2[key],0,1),
                                          np.swapaxes(td3[key],0,1)])
+                elif JOURNAL_TEST:
+                    td[key] = np.vstack([np.swapaxes(td1[key],0,1),
+                                         np.swapaxes(td2[key],0,1),
+                                         np.swapaxes(td3[key],0,1),
+                                         np.swapaxes(td4[key],0,1)])
                 else:
                     td[key] = np.vstack([np.swapaxes(td1[key],0,1),
                                          np.swapaxes(td4[key],0,1)])
@@ -171,7 +181,7 @@ def get_label_from_filename(file_names):
     
 
 def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=False,
-                      dyn_ths=False, fine_tuning=False):
+                      dyn_ths=False, scale=1.8, fine_tuning=False):
     
     # load params (param_dict)
     method     = param_dict['ROC']['methods'][0]
@@ -238,7 +248,7 @@ def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=F
         else:
             normalTrainData, abnormalTrainData, normalTestData, abnormalTestData, scaler =\
               vutil.get_scaled_data(normalTrainData, abnormalTrainData,
-                                    normalTestData, abnormalTestData, aligned=False)
+                                    normalTestData, abnormalTestData, aligned=False, scale=scale)
 
         trainData = [normalTrainData[:int(len(normalTrainData)*0.7)],
                      [0]*len(normalTrainData[:int(len(normalTrainData)*0.7)])]
@@ -374,7 +384,7 @@ def get_isolation_data(subject_names, task_name, raw_data_path, save_data_path, 
 
     # Get detection indices and corresponding features
     dt_dict = get_detection_idx(save_data_path, main_data, sub_data, param_dict, fine_tuning=fine_tuning,
-                                dyn_ths=dyn_ths, verbose=False)
+                                dyn_ths=dyn_ths, scale=1.8, verbose=False)
 
     # Classification?
     x_train_s = []
@@ -603,6 +613,7 @@ if __name__ == '__main__':
     task_name = 'feeding'
     nb_classes = 12
     IROS_TEST = False
+    JOURNAL_TEST = False
 
 
     get_isolation_data(subject_names, task_name, raw_data_path, save_data_path, param_dict,

@@ -131,7 +131,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         elif clf_method == 'KNN':
             print "Start to fit KNN"
             from sklearn.neighbors import KNeighborsRegressor 
-            clf = KNeighborsRegressor(n_neighbors=10, n_jobs=1)
+            clf = KNeighborsRegressor(n_neighbors=5, n_jobs=1)
         elif clf_method=='GP':
             from sklearn import gaussian_process
             clf = gaussian_process.GaussianProcess(regr='linear', theta0=5.0, \

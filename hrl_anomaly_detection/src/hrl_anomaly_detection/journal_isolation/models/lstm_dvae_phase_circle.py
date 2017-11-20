@@ -211,7 +211,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
 
                     for j in xrange(len(x[0])-timesteps+1): # per window 
                         p = float(j)/float(length-timesteps+1)
-                        if keras.__version < LooseVersion("2.1.0"):
+                        if keras.__version__ < LooseVersion("2.1.0"):
                             y = x[:,j:j+timesteps]
                         else:
                             y = None
@@ -249,10 +249,10 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                 
                 for j in xrange(len(x[0])-timesteps+1):
                     p = float(j)/float(length-timesteps+1)
-                        if keras.__version < LooseVersion("2.1.0"):
-                            y = x[:,j:j+timesteps]
-                        else:
-                            y = None
+                    if keras.__version__ < LooseVersion("2.1.0"):
+                        y = x[:,j:j+timesteps]
+                    else:
+                        y = None
                     
                     te_loss = vae_autoencoder.test_on_batch(
                         np.concatenate((x[:,j:j+timesteps],
