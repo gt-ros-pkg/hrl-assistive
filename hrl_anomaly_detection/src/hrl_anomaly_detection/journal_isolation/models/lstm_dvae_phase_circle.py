@@ -94,7 +94,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
     # we initiate these layers to reuse later.
     decoded_h1 = Dense(h1_dim) 
     decoded_h2 = RepeatVector(timesteps)
-    decoded_L1 = LSTM(input_dim, return_sequences=True, activation='tanh', stateful=True)
+    decoded_L1 = LSTM(input_dim, return_sequences=True, activation='tanh', stateful=True, recurrent_dropout=0.3)
     decoded_mu    = TimeDistributed(Dense(input_dim, activation='linear'))
     decoded_sigma = TimeDistributed(Dense(input_dim, activation='softplus')) 
 

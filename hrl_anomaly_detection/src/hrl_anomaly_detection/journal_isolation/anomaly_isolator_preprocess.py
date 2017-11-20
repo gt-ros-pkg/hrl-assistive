@@ -181,7 +181,7 @@ def get_label_from_filename(file_names):
     
 
 def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=False,
-                      dyn_ths=False, scale=1.8, fine_tuning=False):
+                      dyn_ths=False, scale=1.8, fine_tuning=False, tr_only=False):
     
     # load params (param_dict)
     method     = param_dict['ROC']['methods'][0]
@@ -274,7 +274,7 @@ def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=F
         z_dim       = 2 #3
         phase       = 1.0
         sam_epoch   = 40
-        plot = False
+        plot = True
         fixed_batch_size = True
         batch_size  = 256
 
@@ -288,6 +288,7 @@ def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=F
                       phase=phase, z_dim=z_dim, h1_dim=h1_dim, \
                       renew=param_dict['HMM']['renew'], fine_tuning=fine_tuning, plot=plot,\
                       scaler_dict=scaler_dict)
+        if tr_only: continue
                       
         #------------------------------------------------------------------------------------
         ## vutil.graph_latent_space(normalTestData, abnormalTestData, enc_z_mean,
@@ -329,6 +330,7 @@ def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=F
             fn_ll[i] += fn_l[i]
    
     #--------------------------------------------------------------------
+    if tr_only: return {}        
     if clf_renew or os.path.isfile(detection_pkl) is False:
         print "roc list ", roc_l
 
@@ -373,7 +375,7 @@ def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=F
 
     
 def get_isolation_data(subject_names, task_name, raw_data_path, save_data_path, param_dict,
-                       fine_tuning=False, dyn_ths=False):
+                       fine_tuning=False, dyn_ths=False, tr_only=False):
 
     # Get Raw Data
     main_data, sub_data = get_data(subject_names, task_name, raw_data_path, save_data_path, param_dict,
@@ -384,7 +386,8 @@ def get_isolation_data(subject_names, task_name, raw_data_path, save_data_path, 
 
     # Get detection indices and corresponding features
     dt_dict = get_detection_idx(save_data_path, main_data, sub_data, param_dict, fine_tuning=fine_tuning,
-                                dyn_ths=dyn_ths, scale=1.8, verbose=False)
+                                dyn_ths=dyn_ths, scale=1.8, tr_only=tr_only, verbose=False)
+    if tr_only: return
 
     # Classification?
     x_train_s = []
@@ -591,6 +594,8 @@ if __name__ == '__main__':
                  default=False, help='Run fine tuning.')
     p.add_option('--dyn_ths', '--dt', action='store_true', dest='bDynThs',
                  default=False, help='Run dynamic threshold.')
+    p.add_option('--training_only', '--to', action='store_true', dest='bTrainOnly',
+                 default=False, help='Run dynamic threshold.')
     opt, args = p.parse_args()
 
     from hrl_anomaly_detection.journal_isolation.isolation_param import *
@@ -617,7 +622,7 @@ if __name__ == '__main__':
 
 
     get_isolation_data(subject_names, task_name, raw_data_path, save_data_path, param_dict,
-                       fine_tuning=opt.bFineTune, dyn_ths=opt.bDynThs)
+                       fine_tuning=opt.bFineTune, dyn_ths=opt.bDynThs, tr_only=opt.bTrainOnly)
 
     #, weight=1.0, window_steps=window_steps, verbose=False)
 
