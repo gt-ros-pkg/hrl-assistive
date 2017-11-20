@@ -78,11 +78,13 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
     h1_dim = kwargs.get('h1_dim', input_dim)
     z_dim  = kwargs.get('z_dim', 2)
            
-    inputs = Input(batch_shape=(batch_size, timesteps, input_dim+1))
+    inputs     = Input(batch_shape=(batch_size, timesteps, input_dim+1))
+    w_kl_var   = K.variable([0.0])
+    w_kl_input = Input(tensor=w_kl_var)
     def slicing(x): return x[:,:,:input_dim]
     encoded = Lambda(slicing)(inputs)     
     encoded = GaussianNoise(noise_mag)(encoded)
-    encoded = LSTM(h1_dim, return_sequences=False, activation='tanh', stateful=True, dropout=0.1)(encoded)
+    encoded = LSTM(h1_dim, return_sequences=False, activation='tanh', stateful=True, dropout=0.0)(encoded)
     z_mean  = Dense(z_dim)(encoded) 
     z_log_var = Dense(z_dim)(encoded) 
     
@@ -104,7 +106,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
             self.is_placeholder = True
             super(CustomVariationalLayer, self).__init__(**kwargs)
 
-        def vae_loss(self, x, x_d_mean, x_d_std, p):
+        def vae_loss(self, x, x_d_mean, x_d_std, p, w_kl):
             '''
             p : phase variable
             '''
@@ -117,18 +119,19 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                                      - K.square((z_mean-p)/(z_std*z_std))
                                      + 1.
                                      - K.log(z_std*z_std) + z_log_var, axis=-1)  
-            return K.mean(xent_loss + kl_loss) 
+            return K.mean(xent_loss + w_kl * kl_loss) 
 
         def call(self, args):
             x = args[0][:,:,:input_dim]
             p = args[0][:,0,input_dim:input_dim+1]
             x_d_mean = args[1][:,:,:input_dim]
             x_d_std  = args[1][:,:,input_dim:]/x_std_div + x_std_offset
+            w_kl     = args[2]
 
             p = K.concatenate([K.sin(p*2.0*np.pi), K.cos(p*2.0*np.pi)], axis=-1)
             ## p = K.concatenate([K.zeros(shape=(batch_size, z_dim-1)),p], axis=-1)
             
-            loss = self.vae_loss(x, x_d_mean, x_d_std, p)
+            loss = self.vae_loss(x, x_d_mean, x_d_std, p, w_kl)
             self.add_loss(loss, inputs=args)
             # We won't actually use the output.
             return x_d_mean
@@ -141,20 +144,20 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
     decoded1 = decoded_mu(decoded)
     decoded2 = decoded_sigma(decoded)
     decoded = merge([decoded1, decoded2], mode='concat')  
-    outputs = CustomVariationalLayer()([inputs, decoded])
+    outputs = CustomVariationalLayer()([inputs, decoded, w_kl_input])
 
-    vae_autoencoder = Model(inputs, outputs)
+    vae_autoencoder = Model([inputs, w_kl_input], outputs)
     print(vae_autoencoder.summary())
 
     # Encoder --------------------------------------------------
-    vae_encoder_mean = Model(inputs, z_mean)
-    vae_encoder_var  = Model(inputs, z_log_var)
+    vae_encoder_mean = Model([inputs, w_kl_input], z_mean)
+    vae_encoder_var  = Model([inputs, w_kl_input], z_log_var)
 
     # Decoder (generator) --------------------------------------
     generator = None
 
     # VAE --------------------------------------
-    vae_mean_std = Model(inputs, decoded)
+    vae_mean_std = Model([inputs, w_kl_input], decoded)
 
     if weights_file is not None and os.path.isfile(weights_file) and fine_tuning is False and\
         re_load is False and renew is False:
@@ -183,7 +186,9 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
         min_loss = 1e+15
         np.random.seed(3334)
         for epoch in xrange(nb_epoch):
-            print 
+            print
+
+            K.set_value(w_kl_var,[custom_weight( float(epoch) )])
 
             mean_tr_loss = []
             for sample in xrange(sam_epoch):
@@ -337,6 +342,17 @@ def predict(x_test, vae_mean_std, nDim, batch_size, timesteps=1, x_std_div=4, x_
         x_pred_std.append(x_pred[0,-1,nDim:]/x_std_div*1.5+x_std_offset)
 
     return x_pred_mean, x_pred_std
+
+
+def sigmoid(x):
+      return 1 / (1 + math.exp(-x))
+
+def custom_weight(x):
+
+    if x>20:
+        return return 1.0
+    else
+        return 1/20.0*x
 
 
 ## class ResetStatesCallback(Callback):

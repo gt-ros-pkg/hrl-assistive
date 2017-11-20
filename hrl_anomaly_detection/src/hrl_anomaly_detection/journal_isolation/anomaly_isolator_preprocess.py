@@ -180,7 +180,7 @@ def get_label_from_filename(file_names):
 
     
 
-def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=False,
+def get_detection_idx(method, save_data_path, main_data, sub_data, param_dict, verbose=False,
                       dyn_ths=False, scale=1.8, fine_tuning=False, tr_only=False):
     
     # load params (param_dict)
@@ -237,7 +237,6 @@ def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=F
         np.random.shuffle(idx_list)
         normalTrainData = normalTrainData[:,idx_list]
 
-        method       = 'lstm_dvae_phase'
         scaler_file = os.path.join(save_data_path,'scaler_'+method+'_'+str(idx)+'.pkl')
         if os.path.isfile(scaler_file):
             scaler_dict = ut.load_pickle(scaler_file)            
@@ -274,12 +273,15 @@ def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=F
         z_dim       = 2 #3
         phase       = 1.0
         sam_epoch   = 40
-        plot = True
+        plot = False
         fixed_batch_size = True
         batch_size  = 256
 
-
-        from hrl_anomaly_detection.journal_isolation.models import lstm_dvae_phase_circle as km
+        if method == 'lstm_dvae_phase_kl':
+            from hrl_anomaly_detection.journal_isolation.models import lstm_dvae_phase_circle_kl as km
+        else:
+            from hrl_anomaly_detection.journal_isolation.models import lstm_dvae_phase_circle as km
+            
         weights_path = os.path.join(save_data_path,'model_weights_'+method+'_'+str(idx)+'.h5')
         autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
           km.lstm_vae(trainData, valData, weights_path, patience=patience, batch_size=batch_size,
@@ -374,7 +376,7 @@ def get_detection_idx(save_data_path, main_data, sub_data, param_dict, verbose=F
     return dd
 
     
-def get_isolation_data(subject_names, task_name, raw_data_path, save_data_path, param_dict,
+def get_isolation_data(method, subject_names, task_name, raw_data_path, save_data_path, param_dict,
                        fine_tuning=False, dyn_ths=False, tr_only=False):
 
     # Get Raw Data
@@ -385,7 +387,8 @@ def get_isolation_data(subject_names, task_name, raw_data_path, save_data_path, 
     main_data['kFoldList'] = main_data['kFoldList'][0:1]
 
     # Get detection indices and corresponding features
-    dt_dict = get_detection_idx(save_data_path, main_data, sub_data, param_dict, fine_tuning=fine_tuning,
+    dt_dict = get_detection_idx(method, save_data_path, main_data, sub_data, param_dict,
+                                fine_tuning=fine_tuning,
                                 dyn_ths=dyn_ths, scale=1.8, tr_only=tr_only, verbose=False)
     if tr_only: return
 
@@ -617,11 +620,12 @@ if __name__ == '__main__':
     window_steps= 5
     task_name = 'feeding'
     nb_classes = 12
+    method       = 'lstm_dvae_phase_kl'
     IROS_TEST = False
     JOURNAL_TEST = False
 
 
-    get_isolation_data(subject_names, task_name, raw_data_path, save_data_path, param_dict,
+    get_isolation_data(method, subject_names, task_name, raw_data_path, save_data_path, param_dict,
                        fine_tuning=opt.bFineTune, dyn_ths=opt.bDynThs, tr_only=opt.bTrainOnly)
 
     #, weight=1.0, window_steps=window_steps, verbose=False)
