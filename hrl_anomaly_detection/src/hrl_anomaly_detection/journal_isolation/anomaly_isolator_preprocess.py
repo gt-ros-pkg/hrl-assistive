@@ -261,7 +261,7 @@ def get_detection_idx(method, save_data_path, main_data, sub_data, param_dict, v
         vae_logvar = None
         window_size = 1
         noise_mag   = 0.05
-        patience    = 10
+        patience    = 20
         
         ad_method = 'lower_bound'
         stateful    = True
@@ -271,7 +271,7 @@ def get_detection_idx(method, save_data_path, main_data, sub_data, param_dict, v
         h1_dim      = 4 #nDim
         z_dim       = 2 #3
         phase       = 1.0
-        sam_epoch   = 40
+        sam_epoch   = 60
         plot = False
         fixed_batch_size = True
         batch_size  = 256

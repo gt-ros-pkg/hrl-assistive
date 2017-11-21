@@ -291,7 +291,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                     plateau_wait += 1
 
             #ReduceLROnPlateau
-            if plateau_wait > 2:
+            if plateau_wait > 5:
                 old_lr = float(K.get_value(vae_autoencoder.optimizer.lr))
                 new_lr = old_lr * 0.2
                 if new_lr < min_lr:
@@ -350,8 +350,8 @@ def sigmoid(x):
 def custom_weight(x):
 
     if x>20:
-        return return 1.0
-    else
+        return 1.0
+    else:
         return 1/20.0*x
 
 
