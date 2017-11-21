@@ -184,7 +184,6 @@ def get_detection_idx(method, save_data_path, main_data, sub_data, param_dict, v
                       dyn_ths=False, scale=1.8, fine_tuning=False, tr_only=False):
     
     # load params (param_dict)
-    method     = param_dict['ROC']['methods'][0]
     nPoints    = param_dict['ROC']['nPoints']
     
     if param_dict['HMM']['renew']: clf_renew = True
