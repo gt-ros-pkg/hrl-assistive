@@ -261,17 +261,17 @@ def get_detection_idx(method, save_data_path, main_data, sub_data, param_dict, v
         vae_logvar = None
         window_size = 1
         noise_mag   = 0.05
-        patience    = 20
+        patience    = 10
         
         ad_method = 'lower_bound'
         stateful    = True
         x_std_div   = 4.
         x_std_offset= 0.1
         z_std       = 1.0 #1.0 
-        h1_dim      = 4 #nDim
+        h1_dim      = 6 #nDim
         z_dim       = 2 #3
         phase       = 1.0
-        sam_epoch   = 60
+        sam_epoch   = 10
         plot = False
         fixed_batch_size = True
         batch_size  = 256
@@ -300,7 +300,7 @@ def get_detection_idx(method, save_data_path, main_data, sub_data, param_dict, v
         alpha = np.array([1.0]*nDim) #/float(nDim)
         alpha[0] = 1.
         ths_l = np.logspace(0.,1.3,nPoints) #- 0.12
-        ths_l = np.logspace(-1.0,2.0,nPoints) - 0.1
+        ths_l = np.logspace(-0.3,1.4,nPoints) - 0.1
 
         from hrl_anomaly_detection.journal_isolation import detector as dt
         save_pkl = os.path.join(save_data_path, 'model_ad_scores_'+str(idx)+'.pkl')
@@ -611,6 +611,9 @@ if __name__ == '__main__':
     elif os.uname()[1] == 'colossus12':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/JOURNAL_ISOL/'+opt.task+'_3'
+    elif os.uname()[1] == 'colossus8':
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/JOURNAL_ISOL/'+opt.task+'_4'
     else:
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/JOURNAL_ISOL/'+opt.task+'_2'
@@ -619,7 +622,7 @@ if __name__ == '__main__':
     window_steps= 5
     task_name = 'feeding'
     nb_classes = 12
-    method       = 'lstm_dvae_phase_kl'
+    method       = 'lstm_dvae_phase'
     IROS_TEST = False
     JOURNAL_TEST = False
 
