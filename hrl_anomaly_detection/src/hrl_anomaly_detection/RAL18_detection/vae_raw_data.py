@@ -164,6 +164,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         # ------------------------------------------------------------------------------------------        
         method      = 'lstm_dvae_phase'
         method      = 'osvm'
+        #method      = 'encdec_ad'
         ## scaler_file = os.path.join(save_data_path,'scaler_'+method+'_'+str(idx)+'.pkl')
         ## ut.save_pickle(scaler_dict, scaler_file)
          
@@ -288,7 +289,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                           
         elif method == 'ae':
             from hrl_anomaly_detection.RAL18_detection.models import ae
-            window_size  = 3
+            window_size  = 6 #3
             batch_size   = 256
             sam_epoch    = 20
             noise_mag    = 0.05
@@ -316,7 +317,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         elif method == 'encdec_ad':
             # EncDec-AD from Malhortra
             from hrl_anomaly_detection.RAL18_detection.models import encdec_ad as km
-            window_size = 3
+            window_size = 6 
             sam_epoch   = 40
             batch_size  = 256
             noise_mag   = 0.05
@@ -511,6 +512,7 @@ if __name__ == '__main__':
           '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_dvae_phase_raw'
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_osvm_raw_win6'
+          #'/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_encdec_ad_raw_6d'
 
 
     param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
