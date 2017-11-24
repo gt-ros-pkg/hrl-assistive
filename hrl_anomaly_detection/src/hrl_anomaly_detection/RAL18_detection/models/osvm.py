@@ -36,8 +36,8 @@ import scipy
 np.random.seed(3334)
 
 import hrl_lib.util as ut
-from hrl_anomaly_detection.vae import util as vutil
-from hrl_anomaly_detection.vae import keras_util as ku
+from hrl_anomaly_detection.RAL18_detection import util as vutil
+from hrl_anomaly_detection.RAL18_detection import keras_util as ku
 
 from sklearn  import svm
 

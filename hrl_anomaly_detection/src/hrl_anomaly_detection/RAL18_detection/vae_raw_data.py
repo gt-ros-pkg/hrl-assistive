@@ -163,7 +163,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         # ------------------------------------------------------------------------------------------
         # ------------------------------------------------------------------------------------------        
         method      = 'lstm_dvae_phase'
-        #method      = 'osvm'
+        method      = 'osvm'
         ## scaler_file = os.path.join(save_data_path,'scaler_'+method+'_'+str(idx)+'.pkl')
         ## ut.save_pickle(scaler_dict, scaler_file)
          
@@ -353,7 +353,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             window_size = 1
             ths_l = np.linspace(0.0,1.0,40)
         elif method == 'osvm':
-            window_size = 3
+            window_size = 6 #3
             fixed_batch_size = False
             ad_method   = None
             ths_l = np.linspace(3e-1, 1.0, 40)
@@ -509,8 +509,8 @@ if __name__ == '__main__':
     else:
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_dvae_phase_raw'
-        ## save_data_path = os.path.expanduser('~')+\
-        ##   '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_dvae_phase_raw_temp'
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_osvm_raw_win6'
 
 
     param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
