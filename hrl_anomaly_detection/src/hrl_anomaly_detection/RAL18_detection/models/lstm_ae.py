@@ -93,8 +93,7 @@ def lstm_ae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=50
       renew is False:
         ae.load_weights(weights_file)
     else:
-        if fine_tuning:
-            ae.load_weights(weights_file)
+        if fine_tuning: ae.load_weights(weights_file)
         ae.compile(loss='mean_squared_error', optimizer='adam')
 
         # ---------------------------------------------------------------------------------
