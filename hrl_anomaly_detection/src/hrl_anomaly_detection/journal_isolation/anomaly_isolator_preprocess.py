@@ -261,7 +261,7 @@ def get_detection_idx(method, save_data_path, main_data, sub_data, param_dict, v
         vae_logvar = None
         window_size = 1
         noise_mag   = 0.05
-        patience    = 20
+        patience    = 10
         
         ad_method = 'lower_bound'
         stateful    = True
@@ -271,7 +271,7 @@ def get_detection_idx(method, save_data_path, main_data, sub_data, param_dict, v
         h1_dim      = 4 #nDim
         z_dim       = 2 #3
         phase       = 1.0
-        sam_epoch   = 60
+        sam_epoch   = 100
         plot = False
         fixed_batch_size = True
         batch_size  = 256
@@ -280,6 +280,7 @@ def get_detection_idx(method, save_data_path, main_data, sub_data, param_dict, v
             from hrl_anomaly_detection.journal_isolation.models import lstm_dvae_phase_circle_kl as km
         else:
             from hrl_anomaly_detection.journal_isolation.models import lstm_dvae_phase_circle as km
+            #from hrl_anomaly_detection.journal_isolation.models import lstm_dvae_phase2 as km 
             
         weights_path = os.path.join(save_data_path,'model_weights_'+method+'_'+str(idx)+'.h5')
         autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
@@ -619,7 +620,7 @@ if __name__ == '__main__':
     window_steps= 5
     task_name = 'feeding'
     nb_classes = 12
-    method       = 'lstm_dvae_phase_kl'
+    method       = 'lstm_dvae_phase'
     IROS_TEST = False
     JOURNAL_TEST = False
 

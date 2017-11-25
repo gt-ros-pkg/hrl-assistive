@@ -82,7 +82,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
     def slicing(x): return x[:,:,:input_dim]
     encoded = Lambda(slicing)(inputs)     
     encoded = GaussianNoise(noise_mag)(encoded)
-    encoded = LSTM(h1_dim, return_sequences=False, activation='tanh', stateful=True, dropout=0.1)(encoded)
+    encoded = LSTM(h1_dim, return_sequences=False, activation='tanh', stateful=True, dropout=0.00)(encoded)
     z_mean  = Dense(z_dim)(encoded) 
     z_log_var = Dense(z_dim)(encoded) 
     
@@ -94,7 +94,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
     # we initiate these layers to reuse later.
     decoded_h1 = Dense(h1_dim) 
     decoded_h2 = RepeatVector(timesteps)
-    decoded_L1 = LSTM(input_dim, return_sequences=True, activation='tanh', stateful=True, recurrent_dropout=0.0)
+    decoded_L1 = LSTM(input_dim, return_sequences=True, activation='tanh', stateful=True, recurrent_dropout=0.1)
     decoded_mu    = TimeDistributed(Dense(input_dim, activation='linear'))
     decoded_sigma = TimeDistributed(Dense(input_dim, activation='softplus')) 
 
@@ -286,7 +286,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                     plateau_wait += 1
 
             #ReduceLROnPlateau
-            if plateau_wait > 2:
+            if plateau_wait > 3:
                 old_lr = float(K.get_value(vae_autoencoder.optimizer.lr))
                 new_lr = old_lr * 0.2
                 if new_lr < min_lr:

@@ -84,7 +84,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
     def slicing(x): return x[:,:,:input_dim]
     encoded = Lambda(slicing)(inputs)     
     encoded = GaussianNoise(noise_mag)(encoded)
-    encoded = LSTM(h1_dim, return_sequences=False, activation='tanh', stateful=True, dropout=0.0)(encoded)
+    encoded = LSTM(h1_dim, return_sequences=False, activation='tanh', stateful=True, dropout=0.3)(encoded)
     z_mean  = Dense(z_dim)(encoded) 
     z_log_var = Dense(z_dim)(encoded) 
     
@@ -96,7 +96,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
     # we initiate these layers to reuse later.
     decoded_h1 = Dense(h1_dim) 
     decoded_h2 = RepeatVector(timesteps)
-    decoded_L1 = LSTM(input_dim, return_sequences=True, activation='tanh', stateful=True, recurrent_dropout=0.0)
+    decoded_L1 = LSTM(input_dim, return_sequences=True, activation='tanh', stateful=True, recurrent_dropout=0.3)
     decoded_mu    = TimeDistributed(Dense(input_dim, activation='linear'))
     decoded_sigma = TimeDistributed(Dense(input_dim, activation='softplus')) 
 
@@ -119,7 +119,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                                      - K.square((z_mean-p)/(z_std*z_std))
                                      + 1.
                                      - K.log(z_std*z_std) + z_log_var, axis=-1)  
-            return K.mean(xent_loss + w_kl * kl_loss) 
+            return K.mean(w_kl * xent_loss + kl_loss) 
 
         def call(self, args):
             x = args[0][:,:,:input_dim]
@@ -349,7 +349,7 @@ def sigmoid(x):
 
 def custom_weight(x):
 
-    if x>20:
+    if x>40:
         return 1.0
     else:
         return 1/20.0*x
