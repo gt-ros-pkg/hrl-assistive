@@ -1,0 +1,43 @@
+<robot
+  name="wheelchair_simulation_normal">
+  <link
+    name="base_link">
+    <inertial>
+      <origin
+        xyz="0.516850733885454 -9.79327374737309E-05 0.538794679550697"
+        rpy="0 0 0" />
+      <mass
+        value="261.77353773938" />
+      <inertia
+        ixx="0"
+        ixy="0"
+        ixz="0"
+        iyy="0"
+        iyz="0"
+        izz="0" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://wheelchair_simulation_normal/meshes/base_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://wheelchair_simulation_normal/meshes/base_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+</robot>

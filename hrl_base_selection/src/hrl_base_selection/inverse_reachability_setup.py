@@ -33,14 +33,16 @@ class InverseReachabilitySetup(object):
     # Base pose is [x, y, theta, z_height] in world frame
     # Goal grasp is homogeneous transform in world frame
     def find_reachability_of_grasp_from_pose(self, goal_grasps, base_pose):
+        # print 'goal_grasps',goal_grasps
+        # print 'base_pose',base_pose
         goal_grasps = np.array(goal_grasps)
         if len(goal_grasps.shape) == 2:
-            goal_grasps = np.array([goal_grasps])
+            goal_grasps = np.array([np.array(goal_grasps)])
         if not len(goal_grasps.shape) == 3:
             print 'The size of the grasps matrix is wrong. Should be a list of 4x4 homogeneous transforms!'
             return None
-        print 'goal_B_gripper\n', goal_grasps
-        print 'base_pose\n', base_pose
+        # print 'goal_B_gripper\n', goal_grasps
+        # print 'base_pose\n', base_pose
 
         v = self.robot.GetActiveDOFValues()
         v[self.robot.GetJoint('torso_lift_joint').GetDOFIndex()] = base_pose[3]
@@ -55,9 +57,9 @@ class InverseReachabilitySetup(object):
                                   [0., 0., 1., 0.],
                                   [0., 0., 0., 1.]])
         base_B_grasps = np.array([np.matrix(origin_B_pr2).I*np.matrix(i) for i in goal_grasps])
-        print 'base_B_grasps\n', base_B_grasps
+        # print 'base_B_grasps\n', base_B_grasps
         self.robot.SetTransform(np.array(origin_B_pr2))
-        print 'robot location\n', self.robot.GetTransform()
+        # print 'robot location\n', self.robot.GetTransform()
 
 
 
@@ -66,12 +68,12 @@ class InverseReachabilitySetup(object):
         # world_B_arm_base[0:3, 3] = arm_base
         arm_base = np.array(origin_B_pr2*np.matrix(pr2_B_arm_base))[0:3, 3]
 
-        print 'arm_base\n', arm_base
+        # print 'arm_base\n', arm_base
         # print base_B_grasps[:, 0:3, 3]
         world_B_grasps = goal_grasps
         # grasp_relative_translation = base_B_grasps[:, 0:3, 3] - np.tile(baseanchor, (len(base_B_grasps),1))
         grasp_relative_translation = world_B_grasps[:, 0:3, 3] - np.tile(arm_base, (len(base_B_grasps), 1))
-        print 'grasp_relative_translation\n', grasp_relative_translation
+        # print 'grasp_relative_translation\n', grasp_relative_translation
         # print np.tile(baseanchor, (len(base_B_grasps),1))
         # print self.pointscale[0]*(base_B_grasps[:, 0:3, 3] - np.tile(baseanchor, (len(base_B_grasps), 1)))
         # reach_score_location = np.rint(self.pointscale[0]*(base_B_grasps[:, 0:3, 3] - np.tile(arm_base, (len(base_B_grasps),1))) + self.pointscale[1]).astype(int)
@@ -88,7 +90,8 @@ class InverseReachabilitySetup(object):
         # reach_score = np.zeroes([len(goal_grasps), 3])
         # for i in xrange(reach_score_location):
         #     reach_score = [reach3d[i[0], i[1],i[2] for i in reach_score_location]
-        print reach_score_locations
+        # print reach_score_locations
+        # print 'reachability scores:',[reach3d[i[0], i[1], i[2]] if np.all(i<=51) and np.all(i>=0) else 0. for i in reach_score_locations]
         return [reach3d[i[0], i[1], i[2]] if np.all(i<=51) and np.all(i>=0) else 0. for i in reach_score_locations]
 
     # goal_grasps should be a list of goal grasps. Each grasp is a 4x4 homogeneous transform as a numpy array.

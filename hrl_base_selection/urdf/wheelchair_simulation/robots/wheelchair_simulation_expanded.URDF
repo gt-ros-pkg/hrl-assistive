@@ -1,0 +1,967 @@
+<?xml version="1.0"?>
+<robot
+  name="wheelchair_simulation_expanded">
+  <link
+    name="wheelchair/base_link">
+    <inertial>
+      <origin
+        xyz="0.53211 -9.4007E-05 0.52163"
+        rpy="0 0 0" />
+      <mass
+        value="272.65" />
+      <inertia
+        ixx="34.793"
+        ixy="-0.011261"
+        ixz="-5.7617"
+        iyy="44.037"
+        iyz="-0.013729"
+        izz="36.587" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/expanded/base_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/expanded/base_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+   name="wheelchair/body_x_move_joint"
+    type="prismatic">
+    <origin
+      xyz="0.332 0 1.25"
+      rpy="0 0 0" />
+    <parent
+      link="wheelchair/base_link" />
+    <child
+      link="wheelchair/body_x_move_link" />
+    <axis
+      xyz="1 0 0" />
+    <limit
+      lower="-1"
+      upper="1"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="wheelchair/body_x_move_link">
+  </link>
+  <joint
+   name="wheelchair/body_y_move_joint"
+    type="prismatic">
+    <origin
+      xyz="0.0 0.0 0.0"
+      rpy="0 0 0" />
+    <parent
+      link="wheelchair/body_x_move_link" />
+    <child
+      link="wheelchair/body_y_move_link" />
+    <axis
+      xyz="0 1 0" />
+    <limit
+      lower="-1"
+      upper="1"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="wheelchair/body_y_move_link">
+  </link>
+  <joint
+   name="wheelchair/body_theta_move_joint"
+    type="revolute">
+    <origin
+      xyz="0.0 0.0 0.0"
+      rpy="0 0 0" />
+    <parent
+      link="wheelchair/body_y_move_link" />
+    <child
+      link="wheelchair/body_theta_move_link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-3"
+      upper="3"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="wheelchair/body_theta_move_link">
+  </link>
+  <joint
+    name="wheelchair/origin_to_neck_base_joint"
+    type="fixed">
+    <origin
+      xyz="0.0 0.0 0.0"
+      rpy="1.570795 1.570795 0" />
+    <parent
+      link="wheelchair/body_theta_move_link" />
+    <child
+      link="wheelchair/neck_base_link" />
+  </joint>
+  <link
+    name="wheelchair/neck_base_link">
+  </link>
+  <link
+    name="wheelchair/neck_twist_link">
+  </link>
+  <joint
+    name="wheelchair/neck_twist_joint"
+    type="revolute">
+    <origin
+      xyz="0.0 0.0 0"
+      rpy="0. 0. 0." />
+    <parent
+      link="wheelchair/neck_base_link" />
+    <child
+      link="wheelchair/neck_twist_link" />
+    <axis
+      xyz="1 0 0" />
+    <limit
+      lower="-2"
+      upper="2"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="wheelchair/neck_tilt_link">
+  </link>
+  <joint
+    name="wheelchair/neck_tilt_joint"
+    type="revolute">
+    <origin
+      xyz="0.0 0.0 0"
+      rpy="0. 0. 0." />
+    <parent
+      link="wheelchair/neck_twist_link" />
+    <child
+      link="wheelchair/neck_tilt_link" />
+    <axis
+      xyz="0 0 -1" />
+    <limit
+      lower="-2"
+      upper="2"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="wheelchair/neck_link">
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/neck_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/neck_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="wheelchair/neck_to_neck_top_joint"
+    type="fixed">
+    <origin
+      xyz="-0.07239 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="wheelchair/neck_tilt_link" />
+    <child
+      link="wheelchair/neck_link" />
+  </joint>
+  <link
+    name="wheelchair/neck_top_rotated_link">
+  </link>
+  <joint
+    name="wheelchair/neck_rotation_fixed_joint"
+    type="fixed">
+    <origin
+      xyz="0 0 0"
+      rpy="-1.570796 0 1.570796" />
+    <parent
+      link="wheelchair/neck_link" />
+    <child
+      link="wheelchair/neck_top_rotated_link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-2"
+      upper="2"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="wheelchair/head_roty_link">
+  </link>
+  <joint
+    name="wheelchair/neck_head_roty_joint"
+    type="revolute">
+    <origin
+      xyz="0.0154 0 0.07779"
+      rpy="0 0 0" />
+    <parent
+      link="wheelchair/neck_top_rotated_link" />
+    <child
+      link="wheelchair/head_roty_link" />
+    <axis
+      xyz="0 1 0" />
+    <limit
+      lower="-2"
+      upper="2"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="wheelchair/head_rotz_link">
+  </link>
+  <joint
+    name="wheelchair/neck_head_rotz_joint"
+    type="revolute">
+    <origin
+      xyz="0 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="wheelchair/head_roty_link" />
+    <child
+      link="wheelchair/head_rotz_link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-2"
+      upper="2"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="wheelchair/head_link">
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/head_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/head_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="wheelchair/neck_head_rotx_joint"
+    type="revolute">
+    <origin
+      xyz="0 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="wheelchair/head_rotz_link" />
+    <child
+      link="wheelchair/head_link" />
+    <axis
+      xyz="1 0 0" />
+    <limit
+      lower="-2"
+      upper="2"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="wheelchair/upper_body_link">
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/upper_body_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/upper_body_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="wheelchair/neck_body_joint"
+    type="revolute">
+    <origin
+      xyz="0.00 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="wheelchair/neck_base_link" />
+    <child
+      link="wheelchair/upper_body_link" />
+    <axis
+      xyz="0 0 -1" />
+    <limit
+      lower="-2"
+      upper="2"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="wheelchair/mid_body_link">
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/mid_body_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/mid_body_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="wheelchair/upper_mid_body_joint"
+    type="revolute">
+    <origin
+      xyz="0.35052 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="wheelchair/upper_body_link" />
+    <child
+      link="wheelchair/mid_body_link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-2"
+      upper="2"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="wheelchair/lower_body_link">
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/lower_body_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/lower_body_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="wheelchair/mid_lower_body_joint"
+    type="revolute">
+    <origin
+      xyz="0.15113 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="wheelchair/mid_body_link" />
+    <child
+      link="wheelchair/lower_body_link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-2"
+      upper="2"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="wheelchair/quad_left_link">
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/quad_left_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/quad_left_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="wheelchair/body_quad_left_joint"
+    type="revolute">
+    <origin
+      xyz="0.05207 0 -0.08636"
+      rpy="0 0 -.25" />
+    <parent
+      link="wheelchair/lower_body_link" />
+    <child
+      link="wheelchair/quad_left_link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-3."
+      upper="3."
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="wheelchair/calf_left_link">
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/calf_left_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/calf_left_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="wheelchair/quad_calf_left_joint"
+    type="revolute">
+    <origin
+      xyz="0.41218 0.11044 0"
+      rpy="3.14159 0 3.43" />
+    <parent
+      link="wheelchair/quad_left_link" />
+    <child
+      link="wheelchair/calf_left_link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-3."
+      upper="3."
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="wheelchair/foot_left_link">
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/foot_left_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/foot_left_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="wheelchair/calf_foot_left_joint"
+    type="revolute">
+    <origin
+      xyz="-0.41279 -0.03188 0"
+      rpy="0 0 0.09" />
+    <parent
+      link="wheelchair/calf_left_link" />
+    <child
+      link="wheelchair/foot_left_link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-3."
+      upper="3."
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="wheelchair/quad_right_link">
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/quad_right_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/quad_right_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="wheelchair/body_quad_right_joint"
+    type="revolute">
+    <origin
+      xyz="0.05207 0 0.08636"
+      rpy="0 0 -.25" />
+    <parent
+      link="wheelchair/lower_body_link" />
+    <child
+      link="wheelchair/quad_right_link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-3"
+      upper="3"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="wheelchair/calf_right_link">
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/calf_right_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/calf_right_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="wheelchair/quad_calf_right_joint"
+    type="revolute">
+    <origin
+      xyz="0.41218 0.11044 0"
+      rpy="3.14159 0 3.43" />
+    <parent
+      link="wheelchair/quad_right_link" />
+    <child
+      link="wheelchair/calf_right_link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-3"
+      upper="3"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="wheelchair/foot_right_link">
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/foot_right_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/foot_right_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="wheelchair/calf_foot_right_joint"
+    type="revolute">
+    <origin
+      xyz="-0.41279 -0.03188 0"
+      rpy="0 0 0.09" />
+    <parent
+      link="wheelchair/calf_right_link" />
+    <child
+      link="wheelchair/foot_right_link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-3"
+      upper="3"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="wheelchair/arm_left_link">
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/arm_left_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/arm_left_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="wheelchair/body_arm_left_joint"
+    type="revolute">
+    <origin
+      xyz="0.09652 0 -0.17526"
+      rpy="0 0 0" />
+    <parent
+      link="wheelchair/upper_body_link" />
+    <child
+      link="wheelchair/arm_left_link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-3"
+      upper="3"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="wheelchair/forearm_left_link">
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/forearm_left_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/forearm_left_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="wheelchair/arm_forearm_left_joint"
+    type="revolute">
+    <origin
+      xyz="0.28174 -0.0106 -0.04953"
+      rpy="0 0 0" />
+    <parent
+      link="wheelchair/arm_left_link" />
+    <child
+      link="wheelchair/forearm_left_link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-3"
+      upper="3"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="wheelchair/hand_left_link">
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/hand_left_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/hand_left_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="wheelchair/forearm_hand_left_joint"
+    type="revolute">
+    <origin
+      xyz="0.25146 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="wheelchair/forearm_left_link" />
+    <child
+      link="wheelchair/hand_left_link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-3"
+      upper="3"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="wheelchair/arm_right_link">
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/arm_right_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/arm_right_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="wheelchair/body_arm_right_joint"
+    type="revolute">
+    <origin
+      xyz="0.09652 0 0.17526"
+      rpy="0 0 0" />
+    <parent
+      link="wheelchair/upper_body_link" />
+    <child
+      link="wheelchair/arm_right_link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-3"
+      upper="3"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="wheelchair/forearm_right_link">
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/forearm_right_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/forearm_right_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="wheelchair/arm_forearm_right_joint"
+    type="revolute">
+    <origin
+      xyz="0.28194 0 0.04953"
+      rpy="0 0 0" />
+    <parent
+      link="wheelchair/arm_right_link" />
+    <child
+      link="wheelchair/forearm_right_link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-3"
+      upper="3"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="wheelchair/hand_right_link">
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/hand_right_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/hand_right_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="wheelchair/forearm_hand_right_joint"
+    type="revolute">
+    <origin
+      xyz="0.25146 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="wheelchair/forearm_right_link" />
+    <child
+      link="wheelchair/hand_right_link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-3"
+      upper="3"
+      effort="0"
+      velocity="0" />
+  </joint>
+</robot>

@@ -37,8 +37,8 @@ from hrl_lib.util import save_pickle, load_pickle
 import tf.transformations as tft
 from score_generator_cma import ScoreGenerator
 #import data_clustering as clust
-import joblib
-from joblib import Memory
+# import joblib
+# from joblib import Memory
 from tempfile import mkdtemp
 import hrl_lib.util as ut
 
@@ -218,7 +218,7 @@ class DataReader(object):
     def generate_score(self, viz_rviz=False, visualize=False, plot=False):
         cachedir = mkdtemp()
         # memory = Memory(cachedir=cachedir, verbose=0)
-        memory = Memory(cachedir=cachedir, mmap_mode='r')
+        # memory = Memory(cachedir=cachedir, mmap_mode='r')
         self.num_base_locations = 1
         mytargets = 'all_goals'
         mytask = self.task

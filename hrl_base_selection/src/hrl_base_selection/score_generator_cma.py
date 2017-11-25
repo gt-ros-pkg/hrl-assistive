@@ -44,7 +44,7 @@ import sensor_msgs.point_cloud2 as pc2
 
 import cma
 
-from joblib import Parallel, delayed
+# from joblib import Parallel, delayed
 
 
 class ScoreGenerator(object):
@@ -401,14 +401,14 @@ class ScoreGenerator(object):
         self.a_model_is_loaded = True
         return True
 
-    def handle_score_generation(self, plot=False):
+    def handle_score_generation(self, plot=False, method='toc', sampling='cma'):
         scoring_start_time = time.time()
         if not self.a_model_is_loaded:
             print 'Somehow a model has not been loaded. This is bad!'
             return None
         print 'Starting to generate the score. This is going to take a while.'
         # Results are stored in the following format:
-        # optimization_results[<model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_bed_movement>]
+        # optimization_results[<method>, <model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_bed_movement>]
         # Negative head read angle means head rest angle is a free DoF.
 
         head_x_range = [0.]

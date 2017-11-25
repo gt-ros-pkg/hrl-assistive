@@ -47,7 +47,7 @@ for i in xrange(3001):
     weights = np.zeros(7)
     for joint in xrange(len(weights)):
         # My weighting function. Should be altered to max at 0.5?
-        weights[joint] = (1. - m.pow(0.5, ((l_range[joint])/2. - np.abs((l_range[joint])/2. - q[joint] + l_min[joint]))/(l_range[joint]/40.)))
+        weights[joint] = (1. - m.pow(0.5, ((l_range[joint])/2. - np.abs((l_range[joint])/2. - q[joint] + l_min[joint]))/(l_range[joint]/40.)+1))
 
         # From Vahrencamp work on joint limit weighting
         # weights[joint] = (m.pow((q[joint]-l_min[joint]), 2.0)*(2*q[joint]-l_min[joint]-l_max[joint]))/(4.*m.pow((l_max[joint]-q[joint]), 2.0)*m.pow((q[joint]-l_min[joint]), 2.0))
