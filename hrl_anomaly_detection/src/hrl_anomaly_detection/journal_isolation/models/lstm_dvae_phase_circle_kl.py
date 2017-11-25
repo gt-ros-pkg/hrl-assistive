@@ -84,7 +84,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
     def slicing(x): return x[:,:,:input_dim]
     encoded = Lambda(slicing)(inputs)     
     encoded = GaussianNoise(noise_mag)(encoded)
-    encoded = LSTM(h1_dim, return_sequences=False, activation='tanh', stateful=True, dropout=0.3)(encoded)
+    encoded = LSTM(h1_dim, return_sequences=False, activation='tanh', stateful=True, dropout=0.)(encoded)
     z_mean  = Dense(z_dim)(encoded) 
     z_log_var = Dense(z_dim)(encoded) 
     

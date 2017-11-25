@@ -71,8 +71,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
                                                  window_size, alpha, ad_method, method, stateful=stateful,
                                                  x_std_div=x_std_div, x_std_offset=x_std_offset,
                                                  z_std=z_std, batch_info=batch_info, valData=normalValData,
-                                                 phase=phase,\
-                                                 train_flag=True)        
+                                                 phase=phase, train_flag=True)        
         scores_te_n, zs_te_n = get_anomaly_score(normalTestData, vae_mean, enc_z_mean, enc_z_logvar,
                                                     window_size, alpha, ad_method, method, stateful=stateful,
                                                     x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,
@@ -393,8 +392,7 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
                 x_std  = np.std(x_pred, axis=0)
             elif method == 'ae':
                 x_mean = x_pred.reshape((-1,x_dim))
-                ## x_mean = np.expand_dims(x_pred.reshape((-1,x_dim)), axis=0)
-                
+                ## x_mean = np.expand_dims(x_pred.reshape((-1,x_dim)), axis=0)                
             else:
                 x_pred = x_pred[0]
                 # length x dim
@@ -410,7 +408,7 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
                 z.append( enc_z_mean.predict(xx, batch_size=batch_info[1])[0].tolist() )                
             elif ad_method == 'recon_err':
                 # Method 1: Reconstruction error
-                s.append( get_reconstruction_err(xx, x_mean, alpha=alpha) )
+                s.append( ad_metrics.get_reconstruction_err(xx, x_mean, alpha=alpha) )
                 z.append( enc_z_mean.predict(xx, batch_size=batch_info[1])[0].tolist() )                
             elif ad_method == 'recon_err_vec':
                 # Method 1: Reconstruction prob from vectors?

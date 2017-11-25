@@ -33,117 +33,191 @@ import os, sys, copy, random
 import numpy
 import numpy as np
 import scipy
+np.random.seed(1337)
 
 # Keras
-import h5py 
+import h5py
+import keras
 from keras.models import Sequential, Model
-from keras.layers import Merge, Input, TimeDistributed, Layer
-from keras.layers import Activation, Dropout, Flatten, Dense, merge, Lambda, RepeatVector, LSTM
+from keras.layers import Input, TimeDistributed, Layer
+from keras.layers import Activation, Dropout, Flatten, Dense, Lambda, RepeatVector, LSTM, GaussianNoise
 from keras.layers.advanced_activations import PReLU, LeakyReLU
 from keras.utils.np_utils import to_categorical
 from keras.optimizers import SGD, Adagrad, Adadelta, RMSprop, Adam
 from keras import backend as K
 from keras import objectives
 
-from hrl_anomaly_detection.vae import keras_util as ku
+from hrl_anomaly_detection.RAL18_detection import keras_util as ku
+from distutils.version import LooseVersion, StrictVersion
+import gc
 
-def lstm_ae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=500, patience=20,
-             fine_tuning=False, save_weights_file=None):
+
+def lstm_ae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=500, sam_epoch=40,\
+            patience=20, timesteps=4,\
+            fine_tuning=False, save_weights_file=None, noise_mag=0.0, renew=False, **kwargs):
     """
-    Variational Autoencoder with two LSTMs and one fully-connected layer
+    Autoencoder with one LSTM and one fully-connected layer
     x_train is (sample x length x dim)
     x_test is (sample x length x dim)
-
-    Note: it uses offline data.
-    This code based on "https://gist.github.com/tushuhei/e684c2a5382c324880532aded9faf4e6"
     """
     x_train = trainData[0]
     y_train = trainData[1]
     x_test = testData[0]
     y_test = testData[1]
 
-    timesteps = len(x_train[0])
+    length = len(x_train[0])
     input_dim = len(x_train[0][0])
-
-    h1_dim = input_dim
-    z_dim  = 2
+    z_dim  = kwargs.get('z_dim', 2) 
     
-    inputs = Input(shape=(timesteps, input_dim))
-    encoded = LSTM(h1_dim, return_sequences=True, activation='tanh')(inputs)
-    encoded = LSTM(z_dim, return_sequences=False, activation='tanh')(encoded)
+    inputs = Input(batch_shape=(batch_size, timesteps, input_dim))
+    encoded = GaussianNoise(noise_mag)(inputs)
+    encoded = LSTM(z_dim, return_sequences=False, activation='tanh', stateful=True)(encoded)
         
     # we initiate these layers to reuse later.
-    decoded_H2 = RepeatVector(timesteps, name='H_2')
-    decoded_L1 = LSTM(h1_dim, return_sequences=True, activation='tanh', name='L_1')
-    decoded_L2 = LSTM(input_dim, return_sequences=True, activation='tanh', name='L_2')
-
-    decoded = decoded_H2(encoded)
+    decoded_H1 = RepeatVector(timesteps)
+    decoded_L1 = LSTM(input_dim, return_sequences=True, activation='tanh', stateful=True)
+    decoded_mu = TimeDistributed(Dense(input_dim, activation='linear'))
+    decoded = decoded_H1(encoded)
     decoded = decoded_L1(decoded)
-    decoded = decoded_L2(decoded)
+    decoded = decoded_mu(decoded)
     
     ae = Model(inputs, decoded)
     print(ae.summary())
 
-    if weights_file is not None and os.path.isfile(weights_file) and fine_tuning is False:
+    # Encoder --------------------------------------------------
+    encoder_mean = Model(inputs, encoded)
+
+
+
+    if weights_file is not None and os.path.isfile(weights_file) and fine_tuning is False and \
+      renew is False:
         ae.load_weights(weights_file)
-        #generator.load_weights(weights_file, by_name=True)
-        return ae
     else:
         if fine_tuning:
             ae.load_weights(weights_file)
-            lr = 0.001
-        else:
-            lr = 0.1
-        ## optimizer = RMSprop(lr=lr, rho=0.9, epsilon=1e-08, decay=0.0001)
-        ## #optimizer = Adam(lr=lr)                
-        ## ae.compile(optimizer=optimizer, loss='mse')
         ae.compile(loss='mean_squared_error', optimizer='adam')
-        #ae.compile(loss=vae_loss, optimizer='adam')
-            
-        ## vae_autoencoder.load_weights(weights_file)
-        from keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
-        callbacks = [EarlyStopping(monitor='val_loss', min_delta=0, patience=patience,
-                                   verbose=0, mode='auto'),
-                    ModelCheckpoint(weights_file,
-                                    save_best_only=True,
-                                    save_weights_only=True,
-                                    monitor='val_loss'),
-                    ReduceLROnPlateau(monitor='val_loss', factor=0.2,
-                                      patience=5, min_lr=0.0001)]
 
-        train_datagen = ku.sigGenerator(augmentation=True, noise_mag=0.05 )
-        #test_datagen = ku.sigGenerator(augmentation=False)
-        train_generator = train_datagen.flow(x_train, x_train, batch_size=batch_size)
-        #test_generator = test_datagen.flow(x_test, x_test, batch_size=batch_size, shuffle=False)
+        # ---------------------------------------------------------------------------------
+        nDim         = len(x_train[0][0])
+        wait         = 0
+        plateau_wait = 0
+        min_loss = 1e+15
+        np.random.seed(3334)
+        for epoch in xrange(nb_epoch):
+            print 
 
-        hist = ae.fit_generator(train_generator,
-                                samples_per_epoch=512,
-                                epochs=nb_epoch,
-                                validation_data=(x_test, x_test),
-                                #validation_data=test_generator,
-                                #nb_val_samples=len(x_test),
-                                callbacks=callbacks) #, class_weight=class_weight)
+            mean_tr_loss = []
+            for sample in xrange(sam_epoch):
 
-        ## ae.fit(x_train, x_train,
-        ##        shuffle=True,
-        ##        epochs=nb_epoch,
-        ##        batch_size=batch_size,
-        ##        callbacks=callbacks,
-        ##        validation_data=(x_test, x_test))
-        ## if save_weights_file is not None:
-        ##     ae.save_weights(save_weights_file)
-        ## else:
-        ##     ae.save_weights(weights_file)
+                # shuffle
+                idx_list = range(len(x_train))
+                np.random.shuffle(idx_list)
+                x_train = x_train[idx_list]
+                
+                for i in xrange(0,len(x_train),batch_size):
+                    seq_tr_loss = []
+
+                    if i+batch_size > len(x_train):
+                        r = (i+batch_size-len(x_train))%len(x_train)
+                        idx_list = range(len(x_train))
+                        random.shuffle(idx_list)
+                        x = np.vstack([x_train[i:],
+                                       x_train[idx_list[:r]]])
+                        while True:
+                            if len(x)<batch_size: x = np.vstack([x, x_train])
+                            else:                 break
+                    else:
+                        x = x_train[i:i+batch_size]
+
+
+                    for j in xrange(len(x[0])-timesteps+1): # per window
+                        tr_loss = ae.train_on_batch(x[:,j:j+timesteps], x[:,j:j+timesteps] )
+                        seq_tr_loss.append(tr_loss)
+                    mean_tr_loss.append( np.mean(seq_tr_loss) )
+                    ae.reset_states()
+
+                sys.stdout.write('Epoch {} / {} : loss training = {} , loss validating = {}\r'.format(epoch, nb_epoch, np.mean(mean_tr_loss), 0))
+                sys.stdout.flush()   
+
+            mean_te_loss = []
+            for i in xrange(0,len(x_test),batch_size):
+                seq_te_loss = []
+
+                # batch augmentation
+                if i+batch_size > len(x_test):
+                    x = x_test[i:]
+                    r = i+batch_size-len(x_test)
+
+                    for k in xrange(r/len(x_test)):
+                        x = np.vstack([x, x_test])
+                    
+                    if (r%len(x_test)>0):
+                        idx_list = range(len(x_test))
+                        random.shuffle(idx_list)
+                        x = np.vstack([x, x_test[idx_list[:r%len(x_test)]]])
+                else:
+                    x = x_test[i:i+batch_size]
+                
+                for j in xrange(len(x[0])-timesteps+1):
+                    te_loss = ae.test_on_batch(x[:,j:j+timesteps], x[:,j:j+timesteps] )
+                    seq_te_loss.append(te_loss)
+                mean_te_loss.append( np.mean(seq_te_loss) )
+                ae.reset_states()
+
+            val_loss = np.mean(mean_te_loss)
+            sys.stdout.write('Epoch {} / {} : loss training = {} , loss validating = {}\r'.format(epoch, nb_epoch, np.mean(mean_tr_loss), val_loss))
+            sys.stdout.flush()   
+
+
+            # Early Stopping
+            if val_loss <= min_loss:
+                min_loss = val_loss
+                wait         = 0
+                plateau_wait = 0
+
+                if save_weights_file is not None:
+                    ae.save_weights(save_weights_file)
+                else:
+                    ae.save_weights(weights_file)
+                
+            else:
+                if wait > patience:
+                    print "Over patience!"
+                    break
+                else:
+                    wait += 1
+                    plateau_wait += 1
+
+            #ReduceLROnPlateau
+            if plateau_wait > 2:
+                old_lr = float(K.get_value(ae.optimizer.lr))
+                new_lr = old_lr * 0.2
+                K.set_value(ae.optimizer.lr, new_lr)
+                plateau_wait = 0
+                print 'Reduced learning rate {} to {}'.format(old_lr, new_lr)
 
         gc.collect()
         
-        return ae
+        return ae, encoder_mean
 
 
-if __name__ == '__main__':
+def predict(x_test, ae, nDim, batch_size, timesteps=1 ):
+    '''
+    x_test: 1 x timestep x dim
+    '''
 
-    print "N/A"
+    ae.reset_states()
+
+    x = x_test
+    for j in xrange(batch_size-1):
+        x = np.vstack([x,x_test])
     
+    x_pred_mean = []
+    for j in xrange(len(x[0])-timesteps+1):
+        x_pred = ae.predict(x[:,j:j+timesteps], batch_size=batch_size)
+        x_pred_mean.append(x_pred[0,-1])
+
+    return x_pred_mean
 
 
     

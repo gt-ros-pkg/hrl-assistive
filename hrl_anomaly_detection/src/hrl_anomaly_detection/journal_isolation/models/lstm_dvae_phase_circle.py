@@ -138,6 +138,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
     decoded = decoded_h1(z)
     decoded = decoded_h2(decoded)
     decoded = decoded_L1(decoded)
+    decoded = decoded_L2(decoded)
     decoded1 = decoded_mu(decoded)
     decoded2 = decoded_sigma(decoded)
     decoded = merge([decoded1, decoded2], mode='concat')  
@@ -288,7 +289,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
             #ReduceLROnPlateau
             if plateau_wait > 3:
                 old_lr = float(K.get_value(vae_autoencoder.optimizer.lr))
-                new_lr = old_lr * 0.2
+                new_lr = old_lr * 0.5
                 if new_lr < min_lr:
                     print "Too small learning rate!"
                     break
