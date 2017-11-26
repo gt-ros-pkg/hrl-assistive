@@ -27,7 +27,7 @@ import gc
 ################################################
 
 #Use these config only in main
-BATCH_SIZE = 32
+BATCH_SIZE = 256
 PRED_BATCH_SIZE = 1
 TIMESTEP_IN = 1
 TIMESTEP_OUT = 10
@@ -38,7 +38,8 @@ TEST_SHIFT = 0
 LOAD_WEIGHT = True
 WEIGHT_FILE = './models/stateful-tanh-denoise-1D-2D-lab.h5'
 PLOT = True
-NUM_BATCH = 100 #Total #samples = Num_batch x Batch_size
+NUM_BATCH = 200 #Total #samples = Num_batch x Batch_size
+DENSE = True
 
 def data_generator():
 	dataset = generate_sincos() 
@@ -241,12 +242,15 @@ def generate_sincos():
 def define_network(batch_size, time_in, time_out, input_dim, n_neurons, load_weight=False):
 	model = Sequential()
 	model.add(LSTM(input_dim*time_out, batch_input_shape=(batch_size, time_in, input_dim),
-					stateful=True, activation='tanh'))
+					stateful=True, return_sequences=True, activation='tanh'))
+	model.add(LSTM(input_dim*time_out, stateful=True, return_sequences=True, activation='tanh'))
+	model.add(TimeDistributed(Dense(input_dim*time_out, activation='linear')))
+
 	if load_weight:
 		model.load_weights(WEIGHT_FILE)
-	optimizer = optimizers.Adam(lr=0.001)
-	loss = 'mean_squared_error'
-	model.compile(loss=loss, optimizer=optimizer)
+	# optimizer = optimizers.Adam(lr=0.001)
+	# loss = 'mean_squared_error'
+	model.compile(loss='mse', optimizer='RMSprop')
 	print model.summary()
 	print "Inputs: {}".format(model.input_shape)
 	print "Outputs: {}".format(model.output_shape)
@@ -360,23 +364,23 @@ def predict(new_model):
 	# x1 = 0.8*np.cos(t+TEST_SHIFT) + np.random.normal(-0.033, 0.033, np.shape(t) ) #+ 0.05
 	# x2 = 0.8*np.sin(t+TEST_SHIFT) + np.random.normal(-0.033, 0.033, np.shape(t) ) #+ 0.05
 	# Test2
-	x1 = 0.82*np.cos(t)
-	x2 = 0.82*np.sin(8*t) 
-	x2 = x2[0:7]
-	pad = np.zeros(48,dtype=float32)
-	x2 = np.concatenate((pad, x2))
-	pad = np.zeros(45,dtype=float32)
-	x2 = np.concatenate((x2, pad))
-	x1 = np.concatenate(([0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82], x1))
-	x2 = np.concatenate(([0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00], x2))	# Test3 -- same as training
-	# Test3
-	# x1 = 0.8*np.cos(t)
-	# x2 = 0.8*np.sin(8*t) 
+	# x1 = 0.82*np.cos(t)
+	# x2 = 0.82*np.sin(8*t) 
 	# x2 = x2[0:7]
 	# pad = np.zeros(48,dtype=float32)
 	# x2 = np.concatenate((pad, x2))
 	# pad = np.zeros(45,dtype=float32)
 	# x2 = np.concatenate((x2, pad))
+	# x1 = np.concatenate(([0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82,0.82], x1))
+	# x2 = np.concatenate(([0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00], x2))	# Test3 -- same as training
+	# Test3
+	x1 = 0.8*np.cos(t)
+	x2 = 0.8*np.sin(8*t) 
+	x2 = x2[0:7]
+	pad = np.zeros(48,dtype=float32)
+	x2 = np.concatenate((pad, x2))
+	pad = np.zeros(45,dtype=float32)
+	x2 = np.concatenate((x2, pad))
 	# Test4 
 	# x1 = 1.1*cos(8*t) + 1
 	# x2 = 1.1*sin(8*t) - 2
@@ -445,8 +449,12 @@ def main():
 	X = add_noise(X)
 
 	# flatten data to shape into lstm
-	y = y.reshape(y.shape[0], y.shape[1], y.shape[2]*y.shape[3])
-	print y.shape
+	if DENSE:
+		y = y.reshape(y.shape[0], y.shape[1], 1, y.shape[2]*y.shape[3])
+		print y.shape
+	else:
+		y = y.reshape(y.shape[0], y.shape[1], y.shape[2]*y.shape[3])
+		print y.shape
 
 	X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 	print X_train.shape, X_test.shape, y_train.shape, y_test.shape
@@ -458,7 +466,7 @@ def main():
  #  	  pyplot.plot(y_test[i,:,:])
 	# pyplot.show()
 
-	# np.random.seed(3334)
+	np.random.seed(3334)
 	#train phase
 	lstm_model = define_network(BATCH_SIZE, TIMESTEP_IN, TIMESTEP_OUT, INPUT_DIM, N_NEURONS, False)
 	# lstm_model = fit_lstm(lstm_model, X_train, X_test, y_train, y_test)
