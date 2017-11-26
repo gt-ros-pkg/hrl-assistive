@@ -158,13 +158,12 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
 
         # scaling info to reconstruct the original scale of data
         scaler_dict = {'scaler': scaler, 'scale': scale, 'param_dict': d['raw_param_dict']}
+        
 
         # ------------------------------------------------------------------------------------------
         # ------------------------------------------------------------------------------------------        
         method      = 'lstm_dvae_phase'
-        method      = 'osvm'
-        method      = 'encdec_ad'
-        method      = 'lstm_ae'
+        #method      = 'osvm'
         ## scaler_file = os.path.join(save_data_path,'scaler_'+method+'_'+str(idx)+'.pkl')
         ## ut.save_pickle(scaler_dict, scaler_file)
          
@@ -289,47 +288,44 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                           
         elif method == 'ae':
             from hrl_anomaly_detection.RAL18_detection.models import ae
-            window_size  = 6 #3
+            window_size  = 3
             batch_size   = 256
             sam_epoch    = 20
+            noise_mag    = 0.05
             fixed_batch_size = False
             stateful     = False
             ad_method    = 'recon_err_lld' #'recon_err_lld'
             ths_l = np.logspace(-1.0,4.0,40)  
             autoencoder, enc_z_mean, generator = \
-              ae.autoencoder(trainData, valData, weights_path, patience=patience, batch_size=batch_size,
+              ae.autoencoder(trainData, valData, weights_path, patience=5, batch_size=batch_size,
                              noise_mag=noise_mag, sam_epoch=sam_epoch, timesteps=window_size,\
                              renew=ae_renew, fine_tuning=fine_tuning, plot=plot)
             vae_mean = autoencoder
 
-        elif method == 'lstm_ae':            
-            # LSTM-AE (DAE)
-            from hrl_anomaly_detection.RAL18_detection.models import lstm_ae as km
-            ## from hrl_anomaly_detection.RAL18_detection.models import lstm_ae_state_batch as km
-            dyn_ths  = True
+        elif method == 'lstm_ae':
+            # LSTM-AE (Confirmed) %74.99
+            from hrl_anomaly_detection.RAL18_detection.models import lstm_ae_state_batch as km
             stateful = True
             ad_method   = 'recon_err'
-            ths_l = np.logspace(-1.0,1.8,40) -0.5
-            z_dim       = 3
-            sam_epoch   = 40
-            window_size = 1
-            autoencoder, enc_z_mean = \
-              km.lstm_ae(trainData, valData, weights_file=weights_path, batch_size=batch_size,
-                         sam_epoch=sam_epoch, patience=patience, timesteps=window_size,
-                         fine_tuning=fine_tuning, noise_mag=noise_mag, renew=ae_renew, z_dim=z_dim )
+            ths_l = np.logspace(-1.0,1.8,40) -0.5 
+            autoencoder,_,_, enc_z_mean = \
+              km.lstm_ae(trainData, valData, weights_path, patience=4, batch_size=batch_size,
+                         noise_mag=noise_mag, timesteps=window_size, sam_epoch=sam_epoch,
+                         re_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot)
             vae_mean = autoencoder
         elif method == 'encdec_ad':
             # EncDec-AD from Malhortra
             from hrl_anomaly_detection.RAL18_detection.models import encdec_ad as km
-            window_size = 6 
+            window_size = 3
             sam_epoch   = 40
             batch_size  = 256
+            noise_mag   = 0.05
             fixed_batch_size = False
             stateful = False
             ad_method   = 'recon_err_lld'
             ths_l = np.logspace(-1.0,4.0,40) 
             autoencoder = \
-              km.lstm_ae(trainData, valData, weights_path, patience=patience, batch_size=batch_size,
+              km.lstm_ae(trainData, valData, weights_path, patience=4, batch_size=batch_size,
                          noise_mag=noise_mag, timesteps=window_size, sam_epoch=sam_epoch,
                          renew=ae_renew, fine_tuning=fine_tuning, plot=plot)
             vae_mean = autoencoder
@@ -347,7 +343,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             ad_method    = 'lower_bound'
             ths_l = np.logspace(-1.0,0.6,40)-1.0  
             autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
-              km.lstm_vae(trainData, valData, weights_path, patience=patience, batch_size=batch_size,
+              km.lstm_vae(trainData, valData, weights_path, patience=5, batch_size=batch_size,
                           noise_mag=noise_mag, sam_epoch=sam_epoch,
                           x_std_div=x_std_div, x_std_offset=x_std_offset, z_std=z_std,\
                           remo_load=re_load, renew=ae_renew, fine_tuning=fine_tuning, plot=plot)
@@ -357,7 +353,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             window_size = 1
             ths_l = np.linspace(0.0,1.0,40)
         elif method == 'osvm':
-            window_size = 6 #3
+            window_size = 3
             fixed_batch_size = False
             ad_method   = None
             ths_l = np.linspace(3e-1, 1.0, 40)
@@ -511,20 +507,18 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_osvm_raw'
     else:
-        #save_data_path = os.path.expanduser('~')+\
-        #  '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_dvae_phase_raw'
-        #save_data_path = os.path.expanduser('~')+\
-        #  '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_osvm_raw_win6'
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_encdec_ad_raw_6d'
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_ae_raw'
-
+          '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_dvae_phase_raw_reduced'
 
     param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \
                                                 'unimodal_kinJntEff_1',\
                                                 'unimodal_ftForce_integ',\
                                                 'crossmodal_landmarkEEDist']
+
+    param_dict['AE']['rawFeatures'] = ['wristAudio',\
+                                       'kinJntEff',\
+                                       'landmarkPos']
+                                                
 
     if opt.lstm_test:
         lstm_test(subjects, opt.task, raw_data_path, save_data_path, param_dict, plot=not opt.bNoPlot,

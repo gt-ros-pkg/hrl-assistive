@@ -2580,18 +2580,18 @@ def extractRawFeature(d, feature_list, init_param_dict=None, cut_data=None, verb
         ##         param_dict['feature_names'].append('kinEEPosY')
         ##         param_dict['feature_names'].append('kinEEPosZ')
 
-        ## # Current Effort (Kinematics) --------------------------------------
-        ## if 'kinJntEff' in feature_list:
-        ##     kinJntEff = d['kinJntEffList'][idx]
+        # Current Effort (Kinematics) --------------------------------------
+        if 'kinJntEff' in feature_list:
+            kinJntEff = d['kinJntEffList'][idx]
 
-        ##     if offset_flag:
-        ##         kinJntEff -= np.mean(kinJntEff[:,:startOffsetSize], axis=-1)
+            ## if offset_flag:
+            ##     kinJntEff -= np.mean(kinJntEff[:,:startOffsetSize], axis=-1)
 
-        ##     if dataSample is None: dataSample = np.array( kinJntEff )
-        ##     else: dataSample = np.vstack([ dataSample, kinJntEff])
-        ##     if 'kinJntEff_'+str(jnt_idx+1) not in param_dict['feature_names']:           
-        ##         for jnt_idx in xrange(7):
-        ##             param_dict['feature_names'].append( 'kinJntEff_'+str(jnt_idx+1) )
+            if dataSample is None: dataSample = np.array( kinJntEff )
+            else: dataSample = np.vstack([ dataSample, kinJntEff])
+            if 'kinJntEff_1' not in param_dict['feature_names']:           
+                for jnt_idx in xrange(7):
+                    param_dict['feature_names'].append( 'kinJntEff_'+str(jnt_idx+1) )
 
 
 
@@ -2661,7 +2661,6 @@ def extractRawFeature(d, feature_list, init_param_dict=None, cut_data=None, verb
             ##     param_dict['feature_names'].append('kinVel_y')
             ##     param_dict['feature_names'].append('kinVel_z')
                 
-
         # landmark motion --------------------------
         if 'landmarkPos' in feature_list:
             kinEEPos          = d['kinEEPosList'][idx]

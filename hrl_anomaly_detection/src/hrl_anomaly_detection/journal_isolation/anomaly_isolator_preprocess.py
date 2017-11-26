@@ -210,6 +210,8 @@ def get_detection_idx(method, save_data_path, main_data, sub_data, param_dict, v
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(main_data['kFoldList']):
 
+        if idx>=2: continue
+
         if clf_renew is False and os.path.isfile(detection_pkl): break
         print "==================== ", idx, " ========================"
         
@@ -261,7 +263,7 @@ def get_detection_idx(method, save_data_path, main_data, sub_data, param_dict, v
         vae_logvar = None
         window_size = 1
         noise_mag   = 0.05
-        patience    = 20
+        patience    = 10
         
         ad_method = 'lower_bound'
         stateful    = True
@@ -271,7 +273,7 @@ def get_detection_idx(method, save_data_path, main_data, sub_data, param_dict, v
         h1_dim      = 4 #nDim
         z_dim       = 2 #3
         phase       = 1.0
-        sam_epoch   = 60
+        sam_epoch   = 100
         plot = False
         fixed_batch_size = True
         batch_size  = 256
@@ -280,6 +282,7 @@ def get_detection_idx(method, save_data_path, main_data, sub_data, param_dict, v
             from hrl_anomaly_detection.journal_isolation.models import lstm_dvae_phase_circle_kl as km
         else:
             from hrl_anomaly_detection.journal_isolation.models import lstm_dvae_phase_circle as km
+            #from hrl_anomaly_detection.journal_isolation.models import lstm_dvae_phase2 as km 
             
         weights_path = os.path.join(save_data_path,'model_weights_'+method+'_'+str(idx)+'.h5')
         autoencoder, vae_mean, _, enc_z_mean, enc_z_std, generator = \
@@ -300,7 +303,7 @@ def get_detection_idx(method, save_data_path, main_data, sub_data, param_dict, v
         alpha = np.array([1.0]*nDim) #/float(nDim)
         alpha[0] = 1.
         ths_l = np.logspace(0.,1.3,nPoints) #- 0.12
-        ths_l = np.logspace(-1.0,2.0,nPoints) - 0.1
+        ths_l = np.logspace(-1.0,2.0,nPoints) - 0.2
 
         from hrl_anomaly_detection.journal_isolation import detector as dt
         save_pkl = os.path.join(save_data_path, 'model_ad_scores_'+str(idx)+'.pkl')
@@ -376,15 +379,12 @@ def get_detection_idx(method, save_data_path, main_data, sub_data, param_dict, v
 
     
 def get_isolation_data(method, subject_names, task_name, raw_data_path, save_data_path, param_dict,
-                       fine_tuning=False, dyn_ths=False, tr_only=False):
+                       fine_tuning=False, dyn_ths=False, tr_only=False, te_only=False):
 
     # Get Raw Data
     main_data, sub_data = get_data(subject_names, task_name, raw_data_path, save_data_path, param_dict,
                                    fine_tuning=fine_tuning)
     
-    # Get a trained detector #temp
-    main_data['kFoldList'] = main_data['kFoldList'][0:1]
-
     # Get detection indices and corresponding features
     dt_dict = get_detection_idx(method, save_data_path, main_data, sub_data, param_dict,
                                 fine_tuning=fine_tuning,
@@ -598,6 +598,8 @@ if __name__ == '__main__':
                  default=False, help='Run dynamic threshold.')
     p.add_option('--training_only', '--to', action='store_true', dest='bTrainOnly',
                  default=False, help='Run dynamic threshold.')
+    p.add_option('--testing_only', '--te', action='store_true', dest='bTestOnly',
+                 default=False, help='Run dynamic threshold.')         
     opt, args = p.parse_args()
 
     from hrl_anomaly_detection.journal_isolation.isolation_param import *
@@ -611,6 +613,9 @@ if __name__ == '__main__':
     elif os.uname()[1] == 'colossus12':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/JOURNAL_ISOL/'+opt.task+'_3'
+    elif os.uname()[1] == 'colossus8':
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/JOURNAL_ISOL/'+opt.task+'_4'
     else:
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/JOURNAL_ISOL/'+opt.task+'_2'
@@ -619,13 +624,13 @@ if __name__ == '__main__':
     window_steps= 5
     task_name = 'feeding'
     nb_classes = 12
-    method       = 'lstm_dvae_phase_kl'
-    IROS_TEST = False
+    method       = 'lstm_dvae_phase'
+    IROS_TEST = True
     JOURNAL_TEST = False
 
 
     get_isolation_data(method, subject_names, task_name, raw_data_path, save_data_path, param_dict,
-                       fine_tuning=opt.bFineTune, dyn_ths=opt.bDynThs, tr_only=opt.bTrainOnly)
+                       fine_tuning=opt.bFineTune, dyn_ths=opt.bDynThs, tr_only=opt.bTrainOnly, te_only=opt.bTestOnly)
 
     #, weight=1.0, window_steps=window_steps, verbose=False)
 
