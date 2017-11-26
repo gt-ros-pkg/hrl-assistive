@@ -210,6 +210,8 @@ def get_detection_idx(method, save_data_path, main_data, sub_data, param_dict, v
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(main_data['kFoldList']):
 
+        if idx>=2: continue
+
         if clf_renew is False and os.path.isfile(detection_pkl): break
         print "==================== ", idx, " ========================"
         
@@ -268,7 +270,7 @@ def get_detection_idx(method, save_data_path, main_data, sub_data, param_dict, v
         x_std_div   = 4.
         x_std_offset= 0.1
         z_std       = 1.0 #1.0 
-        h1_dim      = 6 #nDim
+        h1_dim      = 4 #nDim
         z_dim       = 2 #3
         phase       = 1.0
         sam_epoch   = 100
@@ -301,7 +303,7 @@ def get_detection_idx(method, save_data_path, main_data, sub_data, param_dict, v
         alpha = np.array([1.0]*nDim) #/float(nDim)
         alpha[0] = 1.
         ths_l = np.logspace(0.,1.3,nPoints) #- 0.12
-        ths_l = np.logspace(-0.3,1.4,nPoints) - 0.1
+        ths_l = np.logspace(-1.0,2.0,nPoints) - 0.2
 
         from hrl_anomaly_detection.journal_isolation import detector as dt
         save_pkl = os.path.join(save_data_path, 'model_ad_scores_'+str(idx)+'.pkl')
@@ -377,15 +379,12 @@ def get_detection_idx(method, save_data_path, main_data, sub_data, param_dict, v
 
     
 def get_isolation_data(method, subject_names, task_name, raw_data_path, save_data_path, param_dict,
-                       fine_tuning=False, dyn_ths=False, tr_only=False):
+                       fine_tuning=False, dyn_ths=False, tr_only=False, te_only=False):
 
     # Get Raw Data
     main_data, sub_data = get_data(subject_names, task_name, raw_data_path, save_data_path, param_dict,
                                    fine_tuning=fine_tuning)
     
-    # Get a trained detector #temp
-    main_data['kFoldList'] = main_data['kFoldList'][0:1]
-
     # Get detection indices and corresponding features
     dt_dict = get_detection_idx(method, save_data_path, main_data, sub_data, param_dict,
                                 fine_tuning=fine_tuning,
@@ -599,6 +598,8 @@ if __name__ == '__main__':
                  default=False, help='Run dynamic threshold.')
     p.add_option('--training_only', '--to', action='store_true', dest='bTrainOnly',
                  default=False, help='Run dynamic threshold.')
+    p.add_option('--testing_only', '--te', action='store_true', dest='bTestOnly',
+                 default=False, help='Run dynamic threshold.')         
     opt, args = p.parse_args()
 
     from hrl_anomaly_detection.journal_isolation.isolation_param import *
@@ -624,12 +625,12 @@ if __name__ == '__main__':
     task_name = 'feeding'
     nb_classes = 12
     method       = 'lstm_dvae_phase'
-    IROS_TEST = False
+    IROS_TEST = True
     JOURNAL_TEST = False
 
 
     get_isolation_data(method, subject_names, task_name, raw_data_path, save_data_path, param_dict,
-                       fine_tuning=opt.bFineTune, dyn_ths=opt.bDynThs, tr_only=opt.bTrainOnly)
+                       fine_tuning=opt.bFineTune, dyn_ths=opt.bDynThs, tr_only=opt.bTrainOnly, te_only=opt.bTestOnly)
 
     #, weight=1.0, window_steps=window_steps, verbose=False)
 
