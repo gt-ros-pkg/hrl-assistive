@@ -51,13 +51,15 @@ import cma
 class ScoreGenerator(object):
 
     def __init__(self, visualize=False, targets='all_goals', reference_names=['head'], goals=None, model='autobed',
-                 tf_listener=None, task='shaving'):
+                 tf_listener=None, task='shaving', training=True):
         # if tf_listener is None:
         #     self.tf_listener = tf.TransformListener()
         # else:
         #     self.tf_listener = tf_listener
         self.visualize = visualize
         self.model = model
+
+        self.training = training
 
         self.arm = 'leftarm'
         self.opposite_arm = 'rightarm'
@@ -729,6 +731,7 @@ class ScoreGenerator(object):
                             score = self.best_score
                         print 'Config: ', config
                         print 'Score: ', score
+                        print 'Time to find scores for this set of parameters: %fs' % ((rospy.Time.now()-parameter_start_time).to_sec())
                         #score_stuff = dict()
                         # optimization_results[<method>, <sampling>, <model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_bed_movement>]
                         score_stuff[parameters] = [config, score, (rospy.Time.now() - parameter_start_time).to_sec()]
@@ -775,8 +778,12 @@ class ScoreGenerator(object):
                             self.best_config = None
                             self.best_score = 1000.
                             random_state = np.random.RandomState(seed=seed)
-                            samples = random_state.uniform(parameters_min, parameters_max,
-                                                           [maxiter*popsize,len(parameters_min)])
+                            samples = np.hstack([random_state.uniform(parameters_min[0:(len(parameters_min) / 2)],
+                                                                      parameters_max[0:(len(parameters_min) / 2)],
+                                                                      [maxiter*popsize,len(parameters_min)/2]),
+                                                 random_state.uniform(parameters_min[0:(len(parameters_min) / 2)],
+                                                                      parameters_max[0:(len(parameters_min) / 2)],
+                                                                      [maxiter * popsize, len(parameters_min) / 2])])
                             if method == 'toc':
                                 for sample in samples:
                                     self.objective_function_two_config_toc_sample(sample)
@@ -790,8 +797,12 @@ class ScoreGenerator(object):
                             self.best_config = None
                             self.best_score = 1000.
                             random_state = np.random.RandomState(seed=seed)
-                            samples = random_state.normal(parameters_initialization, parameters_scaling,
-                                                          [maxiter * popsize, len(parameters_scaling)])
+                            samples = np.hstack([random_state.normal(parameters_initialization[0:(len(parameters_scaling) / 2)],
+                                                                     parameters_scaling[0:(len(parameters_scaling) / 2)],
+                                                                     [maxiter * popsize, len(parameters_scaling) / 2]),
+                                                 random_state.normal(parameters_initialization[0:(len(parameters_scaling) / 2)],
+                                                                     parameters_scaling[0:(len(parameters_scaling) / 2)],
+                                                                     [maxiter * popsize, len(parameters_scaling) / 2])])
                             if method == 'toc':
                                 for sample in samples:
                                     self.objective_function_two_config_toc_sample(sample)
@@ -803,6 +814,7 @@ class ScoreGenerator(object):
                             scores = self.best_scores
                         print 'Config: ', config
                         print 'Score: ', score
+                        print 'Time to find scores for this set of parameters: %fs' % ((rospy.Time.now()-parameter_start_time).to_sec())
                         config = np.insert(config, 4, 0.)
                         config = np.insert(config, 4, 0.)
                         config = np.insert(config, 10, 0.)
@@ -893,8 +905,12 @@ class ScoreGenerator(object):
                             self.best_config = None
                             self.best_score = 1000.
                             random_state = np.random.RandomState(seed=seed)
-                            samples = random_state.uniform(parameters_min, parameters_max,
-                                                           [maxiter*popsize,len(parameters_min)])
+                            samples = np.hstack([random_state.uniform(parameters_min[0:(len(parameters_min) / 2)],
+                                                                      parameters_max[0:(len(parameters_min) / 2)],
+                                                                      [maxiter * popsize, len(parameters_min) / 2]),
+                                                 random_state.uniform(parameters_min[0:(len(parameters_min) / 2)],
+                                                                      parameters_max[0:(len(parameters_min) / 2)],
+                                                                      [maxiter * popsize, len(parameters_min) / 2])])
                             if method == 'toc':
                                 for sample in samples:
                                     self.objective_function_two_config_toc_sample(sample)
@@ -908,8 +924,13 @@ class ScoreGenerator(object):
                             self.best_config = None
                             self.best_score = 1000.
                             random_state = np.random.RandomState(seed=seed)
-                            samples = random_state.normal(parameters_initialization, parameters_scaling,
-                                                          [maxiter * popsize, len(parameters_scaling)])
+                            samples = np.hstack(
+                                [random_state.normal(parameters_initialization[0:(len(parameters_scaling) / 2)],
+                                                     parameters_scaling[0:(len(parameters_scaling) / 2)],
+                                                     [maxiter * popsize, len(parameters_scaling) / 2]),
+                                 random_state.normal(parameters_initialization[0:(len(parameters_scaling) / 2)],
+                                                     parameters_scaling[0:(len(parameters_scaling) / 2)],
+                                                     [maxiter * popsize, len(parameters_scaling) / 2])])
                             if method == 'toc':
                                 for sample in samples:
                                     self.objective_function_two_config_toc_sample(sample)
@@ -921,9 +942,9 @@ class ScoreGenerator(object):
                             scores = self.best_scores
                         # optimization_results[parameters] = [config, score]
                     # optimization_results[parameters].append((rospy.Time.now()-parameter_start_time).to_sec())
-                    print config
-                    print score
-                    print scores
+                    print 'Config:', config
+                    print 'Score:',score
+                    print 'Scores:',scores
 
                     # score_stuff[self.heady, self.distance] = self.compare_results_one_vs_two_configs(optimization_results[1, self.heady, self.distance], optimization_results[2, self.heady, self.distance])
                     config, score = self.check_which_num_base_is_better(config, scores)
@@ -937,7 +958,7 @@ class ScoreGenerator(object):
 
         print 'SCORE RESULTS:'
         for item in score_stuff:
-            print '(<model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_bed_movement>):', item
+            print '(<model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_bed_movement>):\n', item
             print '[[[x], [y], [th], [z], [bz], [bth]], score, time]'
             print 'Or, if there are two configurations:'
             print '[[[x1, x2], [y1, y2], [th1, th2], [z1, z2], [bz1, bz2], [bth1, bth2]], score, time]'
@@ -1779,7 +1800,7 @@ class ScoreGenerator(object):
             self.best_score = this_score
             self.best_scores = outputs
 
-        print self.best_scores
+        #print self.best_scores
         return this_score
         # return 10.-beta*reach_score-gamma*manip_score  # +zeta*self.distance
 
@@ -3983,7 +4004,7 @@ class ScoreGenerator(object):
         print 'Time to score this initial configuration: %fs' % (time.time()-start_time)
         return score
 
-    def mc_eval_init_config(self, init_config, goal_data, reference_names, model=None, task=None, seed=None):
+    def mc_eval_init_config(self, init_config, goal_data, reference_names, model=None, task=None, seed=None, error=None):
         # print init_config
         # init_config = np.array([[ 1.10995678,  0.47979084],
         #                         [ 0.6339488 , -0.82258422],
@@ -4025,12 +4046,12 @@ class ScoreGenerator(object):
         h_e = random_state.normal(0., (m.pi/18)/2)
 
         # self.reference_names = reference_options
-
-        if self.model == 'chair':
-            error = np.array([x_e, y_e, th_e, pr2_x_e, pr2_y_e, pr2_th_e])
-        elif self.model == 'autobed':
-            # modeling_error = np.array([[x_e, y_e, m_x_e, m_y_e, m_th_e]])
-            error = np.array([x_e, y_e, 0., pr2_x_e, pr2_y_e, pr2_th_e])
+        if error is None:
+            if self.model == 'chair':
+                error = np.array([x_e, y_e, th_e, pr2_x_e, pr2_y_e, pr2_th_e])
+            elif self.model == 'autobed':
+                # modeling_error = np.array([[x_e, y_e, m_x_e, m_y_e, m_th_e]])
+                error = np.array([x_e, y_e, 0., pr2_x_e, pr2_y_e, pr2_th_e])
         # error = np.zeros(6)
         total_length = len(goal_data)
         # for error in modeling_error:
@@ -4148,6 +4169,7 @@ class ScoreGenerator(object):
                 elif self.model == 'autobed':
                     self.set_autobed(bz, bth, error[0], error[1])
                     self.env.UpdatePublishedBodies()
+                    rospy.sleep(0.05)
                     self.selection_mat = np.zeros(len(self.goals))
                     self.goal_list = np.zeros([len(self.goals), 4, 4])
                     headmodel = self.autobed.GetLink('autobed/head_link')
@@ -4332,7 +4354,7 @@ class ScoreGenerator(object):
                             reached += this_reached
 
                 # print 'goal list: ', self.goals
-                print 'delete list: ', delete_index
+                # print 'delete list: ', delete_index
                 if len(self.goals) > 0:
                     self.goals = np.delete(self.goals, delete_index, 0)
         accuracy = float(reached)/total_number_of_goals
@@ -4343,7 +4365,7 @@ class ScoreGenerator(object):
         # if score < 0.9:
         #     print 'Score was less than 0.9. The error added was: ', modeling_error
         # print 'Score is (% of reached goals): ', score
-        print 'success:', success
+        # print 'success:', success
         # print 'Time to score this initial configuration: %fs' % (time.time()-start_time)
         return accuracy, success
 
@@ -4498,8 +4520,12 @@ class ScoreGenerator(object):
             if True:
                 # Normal is for testing
                 # Expanded is for training
-                self.env.Load(''.join([pkg_path, '/collada/wheelchair_simulation_normal_rounded.dae']))
-                # self.env.Load(''.join([pkg_path, '/collada/wheelchair_simulation_expanded_rounded.dae']))
+                if not self.training:
+                    print 'Loading normal non-expanded version of wheelchair'
+                    self.env.Load(''.join([pkg_path, '/collada/wheelchair_simulation_normal_rounded.dae']))
+                else:
+                    print 'Loading expanded version of wheelchair used for training'
+                    self.env.Load(''.join([pkg_path, '/collada/wheelchair_simulation_expanded_rounded.dae']))
                 rospy.sleep(0.05)
                 print self.env.GetRobots()
                 self.wheelchair = self.env.GetRobots()[1]
@@ -4571,8 +4597,12 @@ class ScoreGenerator(object):
                 # Normal is for testing
                 # Expanded is for training
                 # rospy.sleep(0.05)
-                self.env.Load(''.join([pkg_path, '/collada/autobed_simulation_normal_rounded.dae']))
-                # self.env.Load(''.join([pkg_path, '/collada/autobed_simulation_expanded_rounded.dae']))
+                if not self.training:
+                    print 'Loading normal non-expanded version of autobed'
+                    self.env.Load(''.join([pkg_path, '/collada/autobed_simulation_normal_rounded.dae']))
+                else:
+                    print 'Loading expanded version of autobed used for training'
+                    self.env.Load(''.join([pkg_path, '/collada/autobed_simulation_expanded_rounded.dae']))
             else:  # Height must be of the form X.X in meters.
                 parsed_number = str(height)[0] + '_' + str(height)[2] + 'm'
                 self.env.Load(''.join([pkg_path,
@@ -4703,6 +4733,7 @@ class ScoreGenerator(object):
         print 'OpenRave has succesfully been initialized. \n'
 
     def set_autobed(self, z, headrest_th, head_x, head_y):
+        # print head_x, head_y
         with self.env:
             bz = z
             # print headrest_th
@@ -4722,7 +4753,7 @@ class ScoreGenerator(object):
                 # 0 degrees, 0 height
             if (bth >= 0.) and (bth <= 40.):  # between 0 and 40 degrees
                 v[self.autobed.GetJoint('autobed/bed_neck_worldframe_updown_joint').GetDOFIndex()] = (bth / 40) * (
-                0.03 - 0) + 0 + shift
+                0.03 - 0) + 0 + shift + head_x
                 v[self.autobed.GetJoint('autobed/bed_neck_base_updown_bedframe_joint').GetDOFIndex()] = (bth / 40) * (
                 -0.13 - 0) + 0
                 v[self.autobed.GetJoint('autobed/head_rest_hinge').GetDOFIndex()] = m.radians(bth)
@@ -4756,7 +4787,7 @@ class ScoreGenerator(object):
                 v[self.autobed.GetJoint('autobed/bed_neck_worldframe_updown_joint').GetDOFIndex()] = ((
                                                                                                       bth - 40) / 40) * (
                                                                                                      0.03 - (0.03)) + (
-                                                                                                     0.03) + shift
+                                                                                                     0.03) + shift + head_x
                 v[self.autobed.GetJoint('autobed/bed_neck_base_updown_bedframe_joint').GetDOFIndex()] = (bth / 40) * (
                 -0.18 - (-0.13)) + (-0.13)
                 v[self.autobed.GetJoint('autobed/head_rest_hinge').GetDOFIndex()] = m.radians(bth)

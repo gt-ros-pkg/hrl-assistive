@@ -619,19 +619,18 @@ if __name__ == "__main__":
     else:
         seed = 1
         for model in ['autobed']:  # 'autobed', 'chair'
-            for task in ['wiping_mouth', 'wiping_forehead', 'scratching_knee_left', 'scratching_knee_right',
-                         'scratching_upper_arm_left', 'scratching_upper_arm_right',
-                         'scratching_thigh_left', 'scratching_thigh_right',
-                         'feeding_trajectory', 'bathe_legs', 'arm_cuffs', 'brushing', 'shaving']:
+            for task in [ 'bathe_legs','scratching_knee_left', 'scratching_knee_right',
+                         'scratching_upper_arm_left', 'scratching_upper_arm_right','brushing']: # Complete: 'shaving', 'arm_cuffs','wiping_mouth','scratching_thigh_left', 'scratching_thigh_right',   'feeding_trajectory',
                           #'wiping_face', 'scratching_knee_left', 'scratching_forearm_left','scratching_upper_arm_left']:#'scratching_knee_left', 'scratching_knee_right', 'scratching_thigh_left', 'scratching_thigh_right']:
             # for task in ['shaving', 'scratching_thigh_left', 'scratching_thigh_right', 'shaving']: #'wiping_forehead','feeding_trajectory',
 # 'bathe_legs', 'arm_cuffs', 'brushing', 'wiping_mouth',, 'scratching_knee_left','scratching_knee_right','scratching_thigh_left', 'scratching_thigh_right'
                 subject = 'any_subject'
                 for method in ['toc', 'ik', 'inverse_reachability', 'inverse_reachability_collision']:  # 'ik', 'toc','inverse_reachability', 'inverse_reachability_collision'
-                    for sampling in ['uniform', 'cma', 'gaussian']:  # 'cma','uniform','gaussian'
+                    for sampling in ['cma']:  # 'cma','uniform','gaussian'
                         this_start_time = time.time()
                         shaving_data_reader = DataReader_Task(task, model, optimization, visualize=False)
                         shaving_data_reader.generate_score(method=method, sampling=sampling, seed=seed)
                         print 'Done! Time to generate all scores for this task, method, and sampling: %fs' % (time.time() - this_start_time)
+                        shaving_data_reader = None
                         gc.collect()
             print 'Done! Time to generate all scores for all tasks: %fs' % (time.time() - full_start_time)

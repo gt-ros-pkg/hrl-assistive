@@ -230,7 +230,7 @@ class DataReader(object):
         myGoals = copy.copy(self.goal_unique)  # [self.data_start:self.data_finish]
         print 'There are ', len(myGoals), ' goals being sent to score generator.'
         selector = ScoreGenerator(visualize=visualize, targets=mytargets, reference_names=myReferenceNames,
-                                  goals=myGoals, model=self.model, task=self.task)#, tf_listener=self.tf_listener)
+                                  goals=myGoals, model=self.model, task=self.task, training=True)#, tf_listener=self.tf_listener)
         if viz_rviz:
             selector.show_rviz()
         score_sheet = selector.handle_score_generation(plot=plot, method=method, sampling=sampling, seed=self.seed)
