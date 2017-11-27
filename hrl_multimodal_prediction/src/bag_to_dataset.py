@@ -72,7 +72,7 @@ ROSBAG_UNPACK_PATH = './bagfiles/unpacked/'
 UNPACK = False
 
 #Set TRUE for prediction data, FALSE for training data
-TESTDATA = False
+TESTDATA = True
 
 class dataset_creator:
     FRAME_SIZE = 4096 # frame per buffer
