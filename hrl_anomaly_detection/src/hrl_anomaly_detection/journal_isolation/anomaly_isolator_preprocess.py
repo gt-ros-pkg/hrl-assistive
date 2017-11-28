@@ -210,7 +210,7 @@ def get_detection_idx(method, save_data_path, main_data, sub_data, param_dict, v
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(main_data['kFoldList']):
 
-        if idx>=2: continue
+        if idx>=1: continue
 
         if clf_renew is False and os.path.isfile(detection_pkl): break
         print "==================== ", idx, " ========================"
@@ -612,7 +612,7 @@ if __name__ == '__main__':
           '/hrl_file_server/dpark_data/anomaly/JOURNAL_ISOL/'+opt.task+'_1'
     elif os.uname()[1] == 'colossus12':
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/JOURNAL_ISOL/'+opt.task+'_3'
+          '/hrl_file_server/dpark_data/anomaly/JOURNAL_ISOL/'+opt.task+'_2'
     elif os.uname()[1] == 'colossus8':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/JOURNAL_ISOL/'+opt.task+'_4'

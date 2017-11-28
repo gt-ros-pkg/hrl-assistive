@@ -121,7 +121,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(d['kFoldList']):
         #if (idx == 0 or idx==7): continue
-        ## if idx != 3: continue
+        if idx != 2: continue
         
         print "==================== ", idx, " ========================"
 
@@ -163,8 +163,8 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         # ------------------------------------------------------------------------------------------        
         method      = 'lstm_dvae_phase'
         method      = 'osvm'
-        method      = 'encdec_ad'
-        method      = 'lstm_ae'
+        #method      = 'encdec_ad'
+        #method      = 'lstm_ae'
         ## scaler_file = os.path.join(save_data_path,'scaler_'+method+'_'+str(idx)+'.pkl')
         ## ut.save_pickle(scaler_dict, scaler_file)
          
@@ -360,7 +360,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             window_size = 6 #3
             fixed_batch_size = False
             ad_method   = None
-            ths_l = np.linspace(3e-1, 1.0, 40)
+            ths_l = np.logspace(-0.05, 0, 3)
             autoencoder = None
             #autoencoder = km.osvm(trainData, valData, weights_path, timesteps=window_size,
             #                      renew=ae_renew)
@@ -450,7 +450,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     plt.plot(fpr_l, tpr_l, '-*b', ms=5, mec='b')
     plt.xlim([0,100])
     plt.ylim([0,100])
-    plt.show()
+    #plt.show()
 
 
 def ad_score_viz(task_name, raw_data_path, processed_data_path, param_dict):
@@ -513,12 +513,12 @@ if __name__ == '__main__':
     else:
         #save_data_path = os.path.expanduser('~')+\
         #  '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_dvae_phase_raw'
+        save_data_path = os.path.expanduser('~')+\
+          '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_osvm_raw_win6'
         #save_data_path = os.path.expanduser('~')+\
-        #  '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_osvm_raw_win6'
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_encdec_ad_raw_6d'
-        save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_ae_raw'
+        #  '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_encdec_ad_raw_6d'
+        #save_data_path = os.path.expanduser('~')+\
+        #  '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_ae_raw'
 
 
     param_dict['data_param']['handFeatures'] = ['unimodal_audioWristRMS',  \

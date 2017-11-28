@@ -288,7 +288,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
             #ReduceLROnPlateau
             if plateau_wait > 3:
                 old_lr = float(K.get_value(vae_autoencoder.optimizer.lr))
-                new_lr = old_lr * 0.2
+                new_lr = old_lr * 0.2 #0.5
                 if new_lr < min_lr:
                     print "Too small learning rate!"
                     break

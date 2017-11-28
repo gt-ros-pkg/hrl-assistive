@@ -197,7 +197,7 @@ def lstm_ae(trainData, testData, weights_file=None, batch_size=1024, nb_epoch=50
 
         gc.collect()
         
-        return ae, encoder_mean
+    return ae, encoder_mean
 
 
 def predict(x_test, ae, nDim, batch_size, timesteps=1 ):
