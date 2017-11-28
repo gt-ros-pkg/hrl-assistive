@@ -55,24 +55,30 @@ import scipy.interpolate
 import re
 import optparse
 
+from matplotlib import pyplot 
+
 #Psuedo
 # First read in all rosbag files from the folder (check)
-# find the peak and +- 1s --> audio for one bag (check)
+# find the peak and +- 2s --> audio for one bag (check)
 # Downsample, increase window size for one bag
 # Plot and check for one bag (check)
 # Convert to MFCC and reconstruct for one bag if not good, adjust 3
 # Do 2,3,4 for all bags
 
-# Once this is done, train and predict
-# Then predict with ros for real time demo, with subscriber node
-
 ROSBAG_PATH = './bagfiles/'
 ROSBAG_TEST_PATH = './bagfiles/testbag/'
 ROSBAG_UNPACK_PATH = './bagfiles/unpacked/'
 UNPACK = False
+PROCESSED_DATA_PATH = './processed_data/combined'
 
 #Set TRUE for prediction data, FALSE for training data
-TESTDATA = True
+TESTDATA = False
+
+# MFCC Params
+N_MEL = 128
+N_FFT = 4096
+HOP_LENGTH = N_FFT/4 
+N_MFCC = 3
 
 class dataset_creator:
     FRAME_SIZE = 4096 # frame per buffer
@@ -85,19 +91,16 @@ class dataset_creator:
     WINDOW_SIZE_OUT = 1 
 
     def convert_bag2dataset(self):         
-        audio_dataX = []
-        audio_dataY = []
-        image_dataX = []
-        image_dataY = []
-        combined_dataX = []
-        combined_dataY = []
+        audio_data = []
+        image_data = []
+        combined_data = []
 
         if TESTDATA:
             path = ROSBAG_TEST_PATH
         else:
             path = ROSBAG_PATH
 
-        for filename in glob.glob(os.path.join(path, '*.bag')):
+        for filename in sorted(glob.glob(os.path.join(path, '*.bag'))):
             num = re.findall(r'\d+', filename)
             # bagfile  = ROSBAG_PATH + 'data1.bag'
             # wavfile  = ROSBAG_PATH + 'data1.wav'
@@ -120,10 +123,12 @@ class dataset_creator:
             for topic, msg, t in rosbag.Bag(bagfile).read_messages():
                 #print msg
                 if msg._type == 'hrl_anomaly_detection/audio':
+                    # print np.array(msg.audio_data, dtype=np.int16).shape
                     audio_store.append(np.array(msg.audio_data, dtype=np.int16))
                     audio_t.append(t)
                 elif msg._type == 'visualization_msgs/Marker':
                     if msg.id == 0: #id 0 = static
+                        # print np.array([msg.pose.position.x, msg.pose.position.y, msg.pose.position.z]).shape
                         static_ar.append([msg.pose.position.x, msg.pose.position.y, msg.pose.position.z])
                         ars_t.append(t)
                     elif msg.id == 9: #id 9 = dynamic
@@ -133,6 +138,9 @@ class dataset_creator:
             
             static_ar = np.array(static_ar, dtype=np.float64)
             dynamic_ar = np.array(dynamic_ar, dtype=np.float64)
+            # print np.array(audio_store).shape
+            # print static_ar.shape
+            # print dynamic_ar.shape
 
             ##################################
             # Find max of the raw data to find peak and +-88200 samples
@@ -143,13 +151,15 @@ class dataset_creator:
             npmax = np.max(audio_store)
             npmin =  np.min(audio_store)
             print 'before crop'
-            print audio_store.shape
-            
+            # print audio_store.shape
+            # print dynamic_ar.shape
+
             ############################################
             ### Interpolate xyz and get relative pos ###
             ############################################
+            #audio 
+            new_length = audio_store.shape[0] #upsampling a lot for images but doesn't matter
             #static
-            new_length = audio_store.shape[0] 
             static_ar_intp = self.interpolate(static_ar, new_length)
             #dynamic
             dynamic_ar_intp = self.interpolate(dynamic_ar, new_length) 
@@ -173,13 +183,14 @@ class dataset_creator:
             #audio
             peak_idx = audio_store.tolist().index(npmax)
             audio_store = self.crop2s(audio_store, peak_idx)
-            audio_store = self.normalize(audio_store)
+
+            # audio_store = self.normalize(audio_store)
             if UNPACK:
                 librosa.output.write_wav(wavfile, audio_store, self.RATE)
 
             #relative position
             relative_position = self.crop2s(relative_position, peak_idx)
-            relative_position = self.normalize(relative_position)
+            # relative_position = self.normalize(relative_position)
             if UNPACK:
                np.savetxt(txtfile, relative_position)
 
@@ -187,9 +198,7 @@ class dataset_creator:
             y = audio_store
             sr = self.RATE
             # Original #
-            mfccs = librosa.feature.mfcc(y=y, sr=self.RATE, hop_length=512, n_fft=2048, n_mfcc=3)# default hop_length=512, hop_length=int(0.01*sr))
-            print 'mfcc'
-            print mfccs.shape
+            mfccs = librosa.feature.mfcc(y=y, sr=self.RATE, hop_length=HOP_LENGTH, n_fft=N_FFT, n_mfcc=N_MFCC)# default hop_length=512, hop_length=int(0.01*sr))
             mfcc_len = mfccs.shape[1]
             ############################
 
@@ -202,93 +211,84 @@ class dataset_creator:
             if UNPACK:
                 self.reconstruct_mfcc(mfccs, y, wavfileMFCC)        
 
-            #window over entire dataset - mfcc
+            # Fact:: mfcc_len = (sr*sec)/hop_length = (sr*sec)/(n_fft/4)
+            print mfccs.shape
+            print relative_position_intp.shape
+            print '------ ------'
+
             mfccs = np.rollaxis(mfccs, 1, 0)
-            aX, aY = self.construct_dataset(mfccs)
-            audio_dataX.append(aX)
-            audio_dataY.append(aY)
-            #window over entire dataset - xyz
-            iX, iY = self.construct_dataset(relative_position_intp)
-            image_dataX.append(iX)
-            image_dataY.append(iY)
+            audio_data.append(mfccs)
+            image_data.append(relative_position_intp)
+
+            # print filename
+            # pyplot.plot(mfccs[:,0])
+            # pyplot.plot(mfccs[:,1])
+            # pyplot.plot(mfccs[:,2])
+            # pyplot.show()
+            # pyplot.plot(relative_position_intp[:,0])
+            # pyplot.plot(relative_position_intp[:,1])
+            # pyplot.plot(relative_position_intp[:,2])
+            # pyplot.show()
 
         #Below here should be outside the loop
-        audio_dataX = np.array(audio_dataX)
-        audio_dataY = np.array(audio_dataY)
-        image_dataX = np.array(image_dataX)
-        image_dataY = np.array(image_dataY)
-        print audio_dataX.shape
-        print audio_dataY.shape
-        print image_dataX.shape
-        print image_dataY.shape
+        audio_data = np.array(audio_data)
+        image_data = np.array(image_data)
+        print audio_data.shape
+        print image_data.shape
 
         #concatenate for number of experiment samples
-        audio_dataX2 = audio_dataX[0]
-        audio_dataY2 = audio_dataY[0]
-        image_dataX2 = image_dataX[0]
-        image_dataY2 = image_dataY[0]
-        for i in range(1, audio_dataX.shape[0]):
-            audio_dataX2 = np.concatenate((audio_dataX2, audio_dataX[i]), axis=0)
-            audio_dataY2 = np.concatenate((audio_dataY2, audio_dataY[i]), axis=0)
-            image_dataX2 = np.concatenate((image_dataX2, image_dataX[i]), axis=0)
-            image_dataY2 = np.concatenate((image_dataY2, image_dataY[i]), axis=0)
-        audio_dataX = audio_dataX2
-        audio_dataY = audio_dataY2
-        image_dataX = image_dataX2
-        image_dataY = image_dataY2
-        print audio_dataX.shape
-        print audio_dataY.shape
-        print image_dataX.shape
-        print image_dataY.shape
-
-        image_vel_dataX, image_vel_dataY = self.calculate_velocity(image_dataX, image_dataY)
+        # audio_dataX2 = audio_dataX[0]
+        # audio_dataY2 = audio_dataY[0]
+        # image_dataX2 = image_dataX[0]
+        # image_dataY2 = image_dataY[0]
+        # for i in range(1, audio_dataX.shape[0]):
+        #     audio_dataX2 = np.concatenate((audio_dataX2, audio_dataX[i]), axis=0)
+        #     audio_dataY2 = np.concatenate((audio_dataY2, audio_dataY[i]), axis=0)
+        #     image_dataX2 = np.concatenate((image_dataX2, image_dataX[i]), axis=0)
+        #     image_dataY2 = np.concatenate((image_dataY2, image_dataY[i]), axis=0)
+        # audio_dataX = audio_dataX2
+        # audio_dataY = audio_dataY2
+        # image_dataX = image_dataX2
+        # image_dataY = image_dataY2
+        # print audio_dataX.shape
+        # print audio_dataY.shape
+        # print image_dataX.shape
+        # print image_dataY.shape
 
         #normalize by feature
-        a_max = np.max(audio_dataX)
-        a_min =  np.min(audio_dataX)
-        i_max = np.max(image_dataX)
-        i_min =  np.min(image_dataX)
-        audio_dataX = self.normalize(audio_dataX) 
-        audio_dataY = self.normalize(audio_dataY)
-        image_dataX = self.normalize(image_dataX) 
-        image_dataY = self.normalize(image_dataY)
-        audio_dataX = np.array(audio_dataX, dtype=float)
-        audio_dataY = np.array(audio_dataY, dtype=float) 
-        image_dataX = np.array(image_dataX, dtype=float)
-        image_dataY = np.array(image_dataY, dtype=float)
+        # a_max = np.max(audio_dataX)
+        # a_min =  np.min(audio_dataX)
+        # i_max = np.max(image_dataX)
+        # i_min =  np.min(image_dataX)
+        # audio_dataX = self.normalize(audio_dataX) 
+        # audio_dataY = self.normalize(audio_dataY)
+        # image_dataX = self.normalize(image_dataX) 
+        # image_dataY = self.normalize(image_dataY)
+        # audio_dataX = np.array(audio_dataX, dtype=float)
+        # audio_dataY = np.array(audio_dataY, dtype=float) 
+        # image_dataX = np.array(image_dataX, dtype=float)
+        # image_dataY = np.array(image_dataY, dtype=float)
 
         #combine
-        combined_dataX = np.concatenate((audio_dataX, image_dataX), axis=2)
-        combined_dataY = np.concatenate((audio_dataY, image_dataY), axis=1)
+        combined_data = np.concatenate((audio_data, image_data), axis=2)
+        # combined_dataY = np.concatenate((audio_dataY, image_dataY), axis=1)
         print 'audio image combined'
-        print combined_dataX.shape
-        print combined_dataY.shape
+        print combined_data.shape
+        # print combined_dataY.shape
 
-        a_minmax = []
-        a_minmax.append(a_min)
-        a_minmax.append(a_max)
-        a_minmax = np.array(a_minmax)
-        i_minmax = []
-        i_minmax.append(i_min)
-        i_minmax.append(i_max)
-        i_minmax = np.array(i_minmax)
+        # a_minmax = []
+        # a_minmax.append(a_min)
+        # a_minmax.append(a_max)
+        # a_minmax = np.array(a_minmax)
+        # i_minmax = []
+        # i_minmax.append(i_min)
+        # i_minmax.append(i_max)
+        # i_minmax = np.array(i_minmax)
         #save as np
         if TESTDATA:
-            np.save('./processed_data/combined_test'+'_x', combined_dataX)
-            np.save('./processed_data/combined_test'+'_y', combined_dataY)
-            np.save('./processed_data/combined_test_AudioMinMax'+'_x', a_minmax)
-            np.save('./processed_data/combined_test_ImageMinMax'+'_x', i_minmax)
+            np.save(PROCESSED_DATA_PATH + '_test', combined_data)
         else: 
-            #training data
-            np.save('./processed_data/combined'+'_x', combined_dataX)
-            np.save('./processed_data/combined'+'_y', combined_dataY)
-
-    def calculate_velocity(self, image_dataX, image_dataY):
-        print 'velocity'
-        print image_dataX.shape
-        print image_dataY.shape
-
-        return image_dataX, image_dataY
+            np.save(PROCESSED_DATA_PATH + '_train', combined_data)
 
     def construct_dataset(self, data):
         # Create a windowed set dX_audio, dY_audio, concatenate, normalize(91,mfcc)
@@ -327,10 +327,10 @@ class dataset_creator:
     def reconstruct_mfcc(self, mfccs, y, wavfileMFCC):
         #build reconstruction mappings
         n_mfcc = mfccs.shape[0]
-        n_mel = 128
+        n_mel = N_MEL
         dctm = librosa.filters.dct(n_mfcc, n_mel)
-        n_fft = 2048
-        mel_basis = librosa.filters.mel(self.RATE, n_fft)
+        n_fft = N_FFT
+        mel_basis = librosa.filters.mel(self.RATE, n_fft, n_mels=n_mel)
 
         #Empirical scaling of channels to get ~flat amplitude mapping.
         bin_scaling = 1.0/np.maximum(0.0005, np.sum(np.dot(mel_basis.T, mel_basis), axis=0))
@@ -338,7 +338,7 @@ class dataset_creator:
         recon_stft = bin_scaling[:, np.newaxis] * np.dot(mel_basis.T, self.invlogamplitude(np.dot(dctm.T, mfccs)))
         #Impose reconstructed magnitude on white noise STFT.
         excitation = np.random.randn(y.shape[0])
-        E = librosa.stft(excitation)
+        E = librosa.stft(excitation, n_fft=n_fft)
         recon = librosa.istft(E/np.abs(E)*np.sqrt(recon_stft))
         #print recon
         #print recon.shape

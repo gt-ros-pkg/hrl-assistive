@@ -51,7 +51,7 @@ from scipy import signal, fftpack, conj, stats
 QUEUE_SIZE = 10
 
 class wrist_audio_collector:
-    FRAME_SIZE = 4096 #512 #4096 # frame per buffer
+    FRAME_SIZE = 4096 #512 #4096 # sample points per frame/buffer
     RATE       = 44100 # sampling rate
     CHANNEL    = 1 # number of channels
     FORMAT     = pyaudio.paInt16

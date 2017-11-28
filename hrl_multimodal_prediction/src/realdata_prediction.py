@@ -39,7 +39,7 @@ LOAD_WEIGHT = True
 WEIGHT_FILE = './weights/stateful-tanh-denoise-2stack-Tdense-2D-lab.h5'
 PLOT = True
 NUM_BATCH = 200 #Total #samples = Num_batch x Batch_size
-DENSE = True
+DENSE = True #True if TimeDistributedDense layer is used
 
 def data_generator():
 	dataset = generate_sincos() 
