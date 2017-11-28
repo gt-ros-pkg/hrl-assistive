@@ -75,6 +75,8 @@ WEIGHT_FILE = './weights/real_data.h5'
 PLOT = True
 DENSE = True #True if TimeDistributedDense layer is used
 
+PROCESSED_DATA_PATH = './processed_data/'
+
 def define_network(batch_size, time_in, time_out, input_dim, n_neurons, load_weight=False):
     model = Sequential()
     model.add(LSTM(input_dim*time_out, batch_input_shape=(batch_size, time_in, input_dim),
@@ -176,55 +178,22 @@ def main():
     '''
     dataset.shape:: (num_window, batch x N, window_size, dim)
     '''
-
-    #####-------Loading Preprocessed Data--------##########
-    inputFile = './processed_data/combined'
-    #Load up the training data
     print ('Loading training data')
-    X_train = np.load(inputFile + '_x.npy')
-    y_train = np.load(inputFile + '_y.npy')
+    X_train = np.load(PROCESSED_DATA_PATH + 'X_train.npy')
+    y_train = np.load(PROCESSED_DATA_PATH + 'y_train.npy')
+    X_test = np.load(PROCESSED_DATA_PATH + 'X_test.npy')
+    y_test = np.load(PROCESSED_DATA_PATH + 'y_test.npy')
     print ('Finished loading training data')
     print(X_train.shape)
-    print(y_train.shape)   
-
-    X, y = data_generator() #generates entire dataset to be used shape is listed above
-
-    X = X.reshape(X.shape[0],X.shape[1],X.shape[2],INPUT_DIM)
-    y = y.reshape(y.shape[0],y.shape[1],y.shape[2],INPUT_DIM) #comment input_dim for 1D
-    X = np.swapaxes(X, 0, 1)
-    y = np.swapaxes(y, 0, 1)
-    print 'in main'
-    print X.shape, y.shape
-
-    X = add_noise(X)
-    ########################################################################
-
-    # flatten data to shape into lstm
-    if DENSE:
-        y = y.reshape(y.shape[0], y.shape[1], 1, y.shape[2]*y.shape[3])
-        print y.shape
-    else:
-        y = y.reshape(y.shape[0], y.shape[1], y.shape[2]*y.shape[3])
-        print y.shape
-
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
-    print X_train.shape, X_test.shape, y_train.shape, y_test.shape
-
-    # for i in range(X_test.shape[0]):
-    #   pyplot.plot(X_test[i,:,:,0])
-    # pyplot.show()
-    # for i in range(y_test.shape[0]):
- #        pyplot.plot(y_test[i,:,:])
-    # pyplot.show()
+    print(y_train.shape)
+    print(X_test.shape)
+    print(y_test.shape)   
 
     np.random.seed(3334)
     print('creating model...')
-    #train phase
     lstm_model = define_network(BATCH_SIZE, TIMESTEP_IN, TIMESTEP_OUT, INPUT_DIM, N_NEURONS, False)
     print('training model...')
     lstm_model = fit_lstm(lstm_model, X_train, X_test, y_train, y_test)
-
-
 
 if __name__ == '__main__':
     main()
