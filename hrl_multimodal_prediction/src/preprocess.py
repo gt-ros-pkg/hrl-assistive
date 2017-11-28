@@ -18,6 +18,7 @@ from matplotlib.pylab import *
 from mpl_toolkits.axes_grid1 import host_subplot
 import matplotlib.animation as animation
 from sklearn.model_selection import train_test_split
+from sklearn import preprocessing
 import gc
 
 ################################################
@@ -60,8 +61,21 @@ def add_noise(X):
 	# pyplot.show()
 	return X
 
+def rescale(dataset):
+	# rescale values to -1, 1 for tanh
+	scaler = preprocessing.MinMaxScaler(feature_range=(-1,1))
+	dim1 = dataset.shape[0]
+	dim2 = dataset.shape[1]
+	dim3 = dataset.shape[2]
+	dataset = dataset.reshape(dim1*dim2, dim3)
+	dataset[:,0:3] = scaler.fit_transform(dataset[:,0:3])
+	dataset[:,3:6] = scaler.fit_transform(dataset[:,3:6])
+	dataset = dataset.reshape(dim1, dim2, dim3)
+	return dataset
+
 def data_generator(dataset):
-	dataset = augment_data(dataset) 
+	dataset = augment_data(dataset)
+	dataset = rescale(dataset)
 	X, y = format_data(dataset) # X.shape=(Batch=256,10,2), y.shape=(256,10,2)
 	return X,y #(num_window, batch, window_size, dim)
 
@@ -124,12 +138,10 @@ def main():
 	y = np.swapaxes(y, 0, 1)
 	print 'in main'
 	print X.shape, y.shape
+	gc.collect()
 
 	# train, validation split, noise-denoise
 	# X = add_noise(X)
-
-	# rescale values to -1, 1 for tanh
-
 
 	# flatten data to shape into lstm
 	if DENSE:
@@ -146,9 +158,9 @@ def main():
 	pyplot.plot(X_test[0,:,:,1])
 	pyplot.plot(X_test[0,:,:,2])
 	pyplot.show()
-	pyplot.plot(y_test[0,:,0,:])
-	pyplot.plot(y_test[0,:,0,:])
-	pyplot.plot(y_test[0,:,0,:])
+	pyplot.plot(X_test[0,:,:,3])
+	pyplot.plot(X_test[0,:,:,4])
+	pyplot.plot(X_test[0,:,:,5])
 	pyplot.show()
 
 	np.save(PROCESSED_DATA_PATH + 'X_train', X_train)

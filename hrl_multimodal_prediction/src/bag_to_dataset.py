@@ -76,7 +76,7 @@ TESTDATA = False
 
 # MFCC Params
 N_MEL = 128
-N_FFT = 4096
+N_FFT = 8192
 HOP_LENGTH = N_FFT/4 
 N_MFCC = 3
 
@@ -184,8 +184,8 @@ class dataset_creator:
             peak_idx = audio_store.tolist().index(npmax)
             audio_store = self.crop2s(audio_store, peak_idx)
 
-            # audio_store = self.normalize(audio_store)
             if UNPACK:
+                audio_store = self.normalize(audio_store)
                 librosa.output.write_wav(wavfile, audio_store, self.RATE)
 
             #relative position

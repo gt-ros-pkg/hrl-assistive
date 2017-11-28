@@ -71,7 +71,7 @@ NUM_BATCH = 200 #Total #samples = Num_batch x Batch_size
 NB_EPOCH = 500
 PRED_BATCH_SIZE = 1
 
-WEIGHT_FILE = './weights/stateful-tanh-denoise-2stack-Tdense-2D-lab.h5'
+WEIGHT_FILE = './weights/real_data.h5'
 PLOT = True
 DENSE = True #True if TimeDistributedDense layer is used
 
