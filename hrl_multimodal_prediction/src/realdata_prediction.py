@@ -36,10 +36,10 @@ NB_EPOCH = 500
 N_NEURONS = TIMESTEP_OUT
 TEST_SHIFT = 0
 LOAD_WEIGHT = True
-WEIGHT_FILE = './models/stateful-tanh-denoise-1D-2D-lab.h5'
+WEIGHT_FILE = './weights/stateful-tanh-denoise-2stack-Tdense-2D-lab.h5'
 PLOT = True
 NUM_BATCH = 200 #Total #samples = Num_batch x Batch_size
-DENSE = True
+DENSE = True #True if TimeDistributedDense layer is used
 
 def data_generator():
 	dataset = generate_sincos() 
@@ -469,7 +469,7 @@ def main():
 	np.random.seed(3334)
 	#train phase
 	lstm_model = define_network(BATCH_SIZE, TIMESTEP_IN, TIMESTEP_OUT, INPUT_DIM, N_NEURONS, False)
-	# lstm_model = fit_lstm(lstm_model, X_train, X_test, y_train, y_test)
+	lstm_model = fit_lstm(lstm_model, X_train, X_test, y_train, y_test)
 	#predict phase
 	new_model = define_network(PRED_BATCH_SIZE, TIMESTEP_IN, TIMESTEP_OUT, INPUT_DIM, N_NEURONS, LOAD_WEIGHT)
 	predict(new_model)

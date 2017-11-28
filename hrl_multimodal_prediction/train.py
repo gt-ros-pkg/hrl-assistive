@@ -53,25 +53,21 @@ from keras.callbacks import EarlyStopping, CSVLogger, ModelCheckpoint
 I_DIM = 3 #image dimension
 N_MFCC = 3 #audio dimension
 NUM_FEATURE = N_MFCC + I_DIM #total dimension in LSTM
-WINDOW_SIZE_IN = 5
+WINDOW_SIZE_IN = 1
 WINDOW_SIZE_OUT = 1 
-LOAD_WEIGHT = False
 
 def create_model():
     model = Sequential()
     model.add(LSTM(output_dim=NUM_FEATURE, input_shape=(WINDOW_SIZE_IN, NUM_FEATURE)))
     model.add(Activation('linear'))  
-
-    if LOAD_WEIGHT:
-        model.load_weights('./models/combined.hdf5')
-
-    model.compile(loss='mean_squared_error', optimizer='rmsprop', metrics=['accuracy'])  
+    optimizer = RMSprop(lr=0.01) 
+    model.compile(loss='mean_squared_error', optimizer=optimizer, metrics=['accuracy'])  
     return model
 
 def train_model(model, dataX, dataY):
-    csv_logger = CSVLogger('training_audio.log')
+    csv_logger = CSVLogger('./processed_data/training_audio.log')
     escb = EarlyStopping(monitor='val_loss', patience=2, verbose=1)
-    checkpoint = ModelCheckpoint("models/combined-{epoch:02d}-{val_loss:.2f}.hdf5", 
+    checkpoint = ModelCheckpoint("models/zcombined-{epoch:02d}-{val_loss:.2f}.hdf5", 
         monitor='val_loss', save_best_only=True, verbose=1) #, period=2)
 
     model.fit(dataX, dataY, shuffle=True, batch_size=256, verbose=1, #initial_epoch=50,
