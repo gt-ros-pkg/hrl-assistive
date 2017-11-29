@@ -72,11 +72,11 @@ UNPACK = False
 PROCESSED_DATA_PATH = './processed_data/combined'
 
 #Set TRUE for prediction data, FALSE for training data
-TESTDATA = True
+TESTDATA = False
 
 # MFCC Params
 N_MEL = 128
-N_FFT = 4096
+N_FFT = 8192
 HOP_LENGTH = N_FFT/4 
 N_MFCC = 3
 
