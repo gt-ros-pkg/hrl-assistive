@@ -39,6 +39,7 @@ from matplotlib.pylab import *
 from mpl_toolkits.axes_grid1 import host_subplot
 import matplotlib.animation as animation
 from sklearn.model_selection import train_test_split
+from sklearn.utils import shuffle
 import gc
 import librosa
 import os, copy, sys
@@ -67,7 +68,7 @@ TIMESTEP_OUT = 10
 N_NEURONS = TIMESTEP_OUT
 
 BATCH_SIZE = 256
-NUM_BATCH = 200 #Total #samples = Num_batch x Batch_size
+NUM_BATCH = 100
 NB_EPOCH = 500
 PRED_BATCH_SIZE = 1
 
@@ -89,6 +90,21 @@ def define_network(batch_size, time_in, time_out, input_dim, n_neurons, load_wei
     print "Outputs: {}".format(model.output_shape)
     return model
 
+# def add_noise(X):
+#     print 'add_noise to X'
+#     print X.shape
+#     batch_size = BATCH_SIZE #32,64,128,256,512,1024,2048
+#     n = batch_size/16 
+#     for j in range(NUM_BATCH): 
+#         for i in xrange(batch_size):
+#             X[i,:,:,:] = X[i,:,:,:] + np.random.normal(0.0, 0.0025, (X.shape[1], X.shape[2], X.shape[3]) ) 
+
+#     # for j in range(NUM_BATCH): 
+#     #   for i in range(batch_size):
+#     #     pyplot.plot(X[i,:,:,0])
+#     # pyplot.show()
+#     return X
+
 def fit_lstm(model, x_train, x_test, y_train, y_test):
     wait         = 0
     plateau_wait = 0
@@ -96,16 +112,38 @@ def fit_lstm(model, x_train, x_test, y_train, y_test):
     patience = 5
     plot_tr_loss = []
     plot_te_loss = []
+
+    pyplot.plot(x_train[0,:,:,0])
+    pyplot.plot(x_train[0,:,:,1])
+    pyplot.plot(x_train[0,:,:,2])
+    pyplot.show()
+    pyplot.plot(x_train[0,:,:,3])
+    pyplot.plot(x_train[0,:,:,4])
+    pyplot.plot(x_train[0,:,:,5])
+    pyplot.show()
+    y = y_train.reshape((256,77,10,6))
+    pyplot.plot(y[0,:,:,0])
+    pyplot.plot(y[0,:,:,1])
+    pyplot.plot(y[0,:,:,2])
+    pyplot.show()
+    pyplot.plot(y[0,:,:,3])
+    pyplot.plot(y[0,:,:,4])
+    pyplot.plot(y[0,:,:,5])
+    pyplot.show()
+
     for epoch in range(NB_EPOCH):
         #train
         mean_tr_loss = []
-        for i in range(0,x_train.shape[0], BATCH_SIZE):
+        for i in range(0,x_train.shape[0]*NUM_BATCH*2, BATCH_SIZE): #x_train.shape=BATCH_SIZE
             #per window
             seq_tr_loss = []
-            x = x_train[i:i+BATCH_SIZE]
-            y = y_train[i:i+BATCH_SIZE]
+            # x = x_train[i:i+BATCH_SIZE]
+            # y = y_train[i:i+BATCH_SIZE]
+            x, y = x_train, y_train
             x = np.swapaxes(x, 0, 1)
             y = np.swapaxes(y, 0, 1)
+
+            # This loop is for number of windows - swap above necessary
             for j in range(x.shape[0]):
                 tr_loss = model.train_on_batch(x[j], y[j])
                 seq_tr_loss.append(tr_loss)
@@ -116,14 +154,19 @@ def fit_lstm(model, x_train, x_test, y_train, y_test):
         sys.stdout.flush()
         plot_tr_loss.append(tr_loss)
 
-        #test  
+        #test(Validation)
+        # This loop is for taking a batch from a large test data
+        # Currently just using same data
         mean_te_loss = []
-        for i in xrange(0, x_test.shape[0], BATCH_SIZE):
+        for i in xrange(0, x_test.shape[0]*NUM_BATCH, BATCH_SIZE):
             seq_te_loss = []
-            x = x_test[i:i+BATCH_SIZE]
-            y = y_test[i:i+BATCH_SIZE]
+            # x = x_test[i:i+BATCH_SIZE]
+            # y = y_test[i:i+BATCH_SIZE]
+            x, y = x_test, y_test
             x = np.swapaxes(x, 0, 1)
             y = np.swapaxes(y, 0, 1)
+
+            # This loop is for number of windows - swap above necessary
             for j in xrange(x.shape[0]):
                 te_loss = model.test_on_batch(x[j], y[j])
                 seq_te_loss.append(te_loss)

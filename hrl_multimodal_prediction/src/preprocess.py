@@ -48,6 +48,7 @@ from mpl_toolkits.axes_grid1 import host_subplot
 import matplotlib.animation as animation
 from sklearn.model_selection import train_test_split
 from sklearn import preprocessing
+from sklearn.utils import shuffle
 import gc
 
 ################################################
@@ -65,7 +66,7 @@ TIMESTEP_OUT = 10
 N_NEURONS = TIMESTEP_OUT
 
 BATCH_SIZE = 256
-NUM_BATCH = 200 #Total #samples = Num_batch x Batch_size
+# NUM_BATCH = 300 #Total #samples = Num_batch x Batch_size
 NB_EPOCH = 500
 PRED_BATCH_SIZE = 1
 
@@ -75,20 +76,20 @@ DENSE = True #True if TimeDistributedDense layer is used
 
 PROCESSED_DATA_PATH = './processed_data/'
 
-def add_noise(X):
-	print 'add_noise to X'
-	print X.shape
-	batch_size = BATCH_SIZE #32,64,128,256,512,1024,2048
-	n = batch_size/16 
-	for j in range(NUM_BATCH): 
-		for i in xrange(batch_size):
-			X[i,:,:,:] = X[i,:,:,:] + np.random.normal(0.0, 0.0025, (X.shape[1], X.shape[2], X.shape[3]) ) 
+# def add_noise(X):
+# 	print 'add_noise to X'
+# 	print X.shape
+# 	batch_size = BATCH_SIZE #32,64,128,256,512,1024,2048
+# 	n = batch_size/16 
+# 	for j in range(NUM_BATCH): 
+# 		for i in xrange(batch_size):
+# 			X[i,:,:,:] = X[i,:,:,:] + np.random.normal(0.0, 0.0025, (X.shape[1], X.shape[2], X.shape[3]) ) 
 
-	# for j in range(NUM_BATCH): 
-	# 	for i in range(batch_size):
-	# 	  pyplot.plot(X[i,:,:,0])
-	# pyplot.show()
-	return X
+# 	# for j in range(NUM_BATCH): 
+# 	# 	for i in range(batch_size):
+# 	# 	  pyplot.plot(X[i,:,:,0])
+# 	# pyplot.show()
+# 	return X
 
 def rescale(dataset):
 	# rescale values to -1, 1 for tanh
@@ -121,15 +122,26 @@ def augment_data(dataset):
 
 	# Randomness present within the collected data already
 	# comback and augment later if necessary
+	# Original - has memory issue
+	# more_data = dataset
+	# while len(more_data) < BATCH_SIZE*NUM_BATCH - dataset.shape[0]:
+	# 	more_data = np.concatenate((more_data, dataset), axis=0)
+	# print more_data.shape
+	# diff = BATCH_SIZE*NUM_BATCH - more_data.shape[0]
+	# more_data = np.concatenate((more_data, dataset[0:diff,:,:]), axis=0)
+	# print more_data.shape
+
 	more_data = dataset
-	while len(more_data) < BATCH_SIZE*NUM_BATCH - dataset.shape[0]:
+	while more_data.shape[0] < BATCH_SIZE - dataset.shape[0]:
 		more_data = np.concatenate((more_data, dataset), axis=0)
 	print more_data.shape
-	diff = BATCH_SIZE*NUM_BATCH - more_data.shape[0]
+
+	diff = BATCH_SIZE - more_data.shape[0]
 	more_data = np.concatenate((more_data, dataset[0:diff,:,:]), axis=0)
 	print more_data.shape
 
 	return more_data
+
 
 def format_data(dataset): #dataset.shape=(batchsize=256, datapoints=100, dim=2)
 	X, y = [], []
@@ -175,13 +187,26 @@ def main():
 	# flatten data to shape into lstm
 	if DENSE:
 		y = y.reshape(y.shape[0], y.shape[1], 1, y.shape[2]*y.shape[3])
-		print y.shape
 	else:
 		y = y.reshape(y.shape[0], y.shape[1], y.shape[2]*y.shape[3])
-		print y.shape
+	print X.shape, y.shape
 
-	X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+	# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+	# print X_train.shape, X_test.shape, y_train.shape, y_test.shape
+	# Manual way but roughly 1/3 for validation set
+	# X_train = np.concatenate((X, X), axis=0)
+	# y_train = np.concatenate((y, y), axis=0)
+	# X_train = shuffle(X_train, random_state=42)
+	# X_train = shuffle(X_train, random_state=42)
+
+	# X_train = shuffle(X, random_state=42)
+	# y_train = shuffle(y, random_state=42)	
+	# X_test = shuffle(X, random_state=42)
+	# y_test = shuffle(y, random_state=42)
+
+	X_train, X_test, y_train, y_test = X, X, y, y
 	print X_train.shape, X_test.shape, y_train.shape, y_test.shape
+
 
 	pyplot.plot(X_test[0,:,:,0])
 	pyplot.plot(X_test[0,:,:,1])
