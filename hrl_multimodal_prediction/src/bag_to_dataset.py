@@ -76,7 +76,7 @@ TESTDATA = False
 
 # MFCC Params
 N_MEL = 128
-N_FFT = 8192
+N_FFT = 1024
 HOP_LENGTH = N_FFT/4 
 N_MFCC = 3
 
