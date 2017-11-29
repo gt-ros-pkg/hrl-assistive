@@ -9,6 +9,11 @@ from matplotlib.pylab import *
 from mpl_toolkits.axes_grid1 import host_subplot
 import matplotlib.animation as animation
 
+# TODO
+# Visualizer and Audio Player might have to run on different threads
+# In that case do I need a semaphore? and a scheduler?
+# Do I even need a mutex??
+
 class visualizer():
 	def reconstruct_mfcc(self, mfccs):
 		#build reconstruction mappings
