@@ -223,7 +223,7 @@ class ScoreGenerator(object):
                 self.env.Remove(self.env.GetRobots()[1])
                 self.model = model
                 self.setup_human_model()
-        if self.task == 'wiping_mouth' and self.model == 'chair':
+        if (self.task == 'wiping_mouth' or self.task == 'shaving' or self.task == 'feeding_trajectory' or self.task == 'brushing') and self.model == 'chair':
             self.head_angles = np.array([[68, 10], [68, 0], [68, -10], [0, 0], [-68, 10], [68, 0], [-68, -10]])
             self.head_angles = np.array([[60., 0.], [0., 0.], [-60., 0.]])
         else:
@@ -484,7 +484,7 @@ class ScoreGenerator(object):
                                              )
                                  ])
         elif self.model == 'chair':
-            if self.task == 'wiping_mouth':
+            if self.task == 'wiping_mouth' or self.task == 'shaving' or self.task == 'feeding_trajectory' or self.task == 'brushing':
                 self.head_angles = np.array([[68, 10], [68, 0], [68, -10], [0, 0], [-68, 10], [68, 0], [-68, -10]])
                 self.head_angles = np.array([[60., 0.], [0., 0.], [-60., 0.]])
             score_parameters = ([t for t in ((tuple([self.task, method, sampling, self.model, num_configs, 0, 0, 0, 0]))
@@ -4029,11 +4029,11 @@ class ScoreGenerator(object):
                 self.model = model
                 self.setup_human_model()
                 # rospy.sleep(0.1)
-        if self.task == 'wiping_mouth' and self.model == 'chair':
-            self.head_angles = np.array([[68, 10], [68, 0], [68, -10], [0, 0], [-68, 10], [68, 0], [-68, -10]])
-            self.head_angles = np.array([[60., 0.], [0., 0.],  [-60., 0.]])
-        else:
-            self.head_angles = np.array([[0., 0.]])
+                if (self.task == 'wiping_mouth' or self.task == 'shaving' or self.task == 'feeding_trajectory' or self.task == 'brushing') and self.model == 'chair':
+                    self.head_angles = np.array([[68, 10], [68, 0], [68, -10], [0, 0], [-68, 10], [68, 0], [-68, -10]])
+                    self.head_angles = np.array([[60., 0.], [0., 0.],  [-60., 0.]])
+                else:
+                    self.head_angles = np.array([[0., 0.]])
         start_time = time.time()
         reached = 0.
         total_number_of_goals = len(goal_data)
