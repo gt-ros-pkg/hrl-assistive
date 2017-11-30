@@ -20,11 +20,11 @@ from keras.layers import Dense, Activation, LSTM, Dropout, RepeatVector, TimeDis
 from keras.models import Sequential, Model
 from keras import optimizers
 
-from predict_subscriber import predict_subscriber #filename
 import config as cf
-from threading import Thread, Lock
-import predmutex as pm
+import pyaudio
+from std_msgs.msg import String, Float64
 
+from predict_subscriber import predict_subscriber
 # Predictor and visualizer go hand in hand
 # Predict 10 time steps and save in a variable
 # unlock mutex_viz
@@ -81,29 +81,72 @@ class predictor():
 		rst = np.array(rst)
 		return rst
 	
-	def run():
-		psub = predict_subscriber()
-		r = rospy.Rate(8) # 8hz
-		while not rospy.is_shutdown():
-			pm.mutex_viz.acquire()
-			if not psub.Audio_buffer() and not psub.RelPos_buffer():
-				mfcc = psub.Audio_buffer().pop() # takes the last element
-				relpos = psub.RelPos_buffer().pop()
-				g_actual_mfcc = mfcc_scaler
-				g_actual_relpos = relpos
-				comb_data, mfcc_scaler, relpos_scaler = preprocess(mfcc, relpos)
-				model = define_network(cf.PRED_BATCH_SIZE, cf.TIMESTEP_IN, cf.TIMESTEP_OUT, cf.INPUT_DIM, cf.N_NEURONS)
-				pred = predict(model, comb_data)
-				scale_back(pred, mfcc_scaler, relpos_scaler)
-			else:
-				print 'circular buffer empty'
-			pm.mutex_viz.release()
-			r.sleep()
+	def reconstruct_mfcc(self, mfccs):
+		#build reconstruction mappings
+		n_mfcc = mfccs.shape[0]
+		n_mel = cf.N_MEL
+		dctm = librosa.filters.dct(n_mfcc, n_mel)
+		n_fft = cf.N_FFT
+		mel_basis = librosa.filters.mel(self.RATE, n_fft, n_mels=n_mel)
+
+		#Empirical scaling of channels to get ~flat amplitude mapping.
+		bin_scaling = 1.0/np.maximum(0.0005, np.sum(np.dot(mel_basis.T, mel_basis), axis=0))
+		#Reconstruct the approximate STFT squared-magnitude from the MFCCs.
+		recon_stft = bin_scaling[:, np.newaxis] * np.dot(mel_basis.T, self.invlogamplitude(np.dot(dctm.T, mfccs)))
+		#Impose reconstructed magnitude on white noise STFT.
+		excitation = np.random.randn(y.shape[0]) # this will be constant--based on one msgsize
+		E = librosa.stft(excitation, n_fft=cf.N_FFT)
+		recon = librosa.istft(E/np.abs(E)*np.sqrt(recon_stft))
+		#print recon
+		#print recon.shape
+		wav.write('reconsturct.wav', cf.RATE, recon)
+		return recon
+
+	def invlogamplitude(self, S):
+	#"""librosa.logamplitude is actually 10_log10, so invert that."""
+		return 10.0**(S/10.0)
+
+	def play_sound_realtime(self, mfcc):
+		recon = reconstruct_mfcc(mfcc)
+		pya = pyaudio.PyAudio()
+		stream = pya.open(format=pyaudio.paFloat32, channels=1, rate=cf.RATE, output=True)
+		stream.write(recon)
+		stream.stop_stream()
+		stream.close()
+		pya.terminate()
+
+	def m_callback(self, data):
+		print data
+
+	def a_callback(self, data):
+		print data
+
+	def run(self):
+		p = predict_subscriber()
+		while True:
+			print p.Audio_Buffer
+			print p.RelPos_Buffer
+
+		# rospy.init_node('predictor', anonymous=True)
+		# rospy.Subscriber('processed_audio', Float64, self.a_callback)
+		# rospy.Subscriber('processed_relpos', Float64, self.m_callback)
+		# rospy.spin()
+
+		# r = rospy.Rate(8) # 8hz		
+		# while not rospy.is_shutdown():
+		# 	mfcc = psub.Audio_buffer().pop() # takes the last element
+		# 	relpos = psub.RelPos_buffer().pop()
+		# 	g_actual_mfcc = mfcc_scaler
+		# 	g_actual_relpos = relpos
+		# 	comb_data, mfcc_scaler, relpos_scaler = preprocess(mfcc, relpos)
+		# 	model = define_network(cf.PRED_BATCH_SIZE, cf.TIMESTEP_IN, cf.TIMESTEP_OUT, cf.INPUT_DIM, cf.N_NEURONS)
+		# 	pred = predict(model, comb_data)
+		# 	scale_back(pred, mfcc_scaler, relpos_scaler)
+		# 	r.sleep()
 
 def main():
 	pred = predictor()
-	t = Thread(target = pred.run())
-	t.start()
+	pred.run()
 
 if __name__ == '__main__':
 	main()    

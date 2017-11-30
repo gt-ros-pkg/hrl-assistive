@@ -3,7 +3,7 @@ ROSBAG_PATH = './bagfiles/'
 ROSBAG_TEST_PATH = './bagfiles/testbag/'
 ROSBAG_UNPACK_PATH = './bagfiles/unpacked/'
 PROCESSED_DATA_PATH = './processed_data/'
-WEIGHT_FILE = './weights/realdata.h5'
+WEIGHT_FILE = './weights/real_data_overfit.h5'
 
 BAG2DATA_UNPACK = False
 BAG2DATA_TESTDATA = False
