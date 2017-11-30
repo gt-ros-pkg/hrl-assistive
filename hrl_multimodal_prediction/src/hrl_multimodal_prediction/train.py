@@ -90,20 +90,21 @@ def define_network(batch_size, time_in, time_out, input_dim, n_neurons, load_wei
     print "Outputs: {}".format(model.output_shape)
     return model
 
-# def add_noise(X):
-#     print 'add_noise to X'
-#     print X.shape
-#     batch_size = BATCH_SIZE #32,64,128,256,512,1024,2048
-#     n = batch_size/16 
-#     for j in range(NUM_BATCH): 
-#         for i in xrange(batch_size):
-#             X[i,:,:,:] = X[i,:,:,:] + np.random.normal(0.0, 0.0025, (X.shape[1], X.shape[2], X.shape[3]) ) 
-
-#     # for j in range(NUM_BATCH): 
-#     #   for i in range(batch_size):
-#     #     pyplot.plot(X[i,:,:,0])
-#     # pyplot.show()
-#     return X
+def add_noise(X):
+    # print 'add_noise to X'
+    # print X.shape
+    for i in range(X.shape[0]):
+        X[i,:,:,:] = X[i,:,:,:] + np.random.normal(0.0, 0.0025, (X.shape[1], X.shape[2], X.shape[3]) ) 
+    # for i in range(X.shape[0]):
+    #     pyplot.plot(X[i,:,:,0])
+    #     pyplot.plot(X[i,:,:,1])
+    #     pyplot.plot(X[i,:,:,2])
+    #     pyplot.show()
+    #     pyplot.plot(X[i,:,:,3])
+    #     pyplot.plot(X[i,:,:,4])
+    #     pyplot.plot(X[i,:,:,5])
+    #     pyplot.show()
+    return X
 
 def fit_lstm(model, x_train, x_test, y_train, y_test):
     wait         = 0
@@ -140,6 +141,7 @@ def fit_lstm(model, x_train, x_test, y_train, y_test):
             # x = x_train[i:i+BATCH_SIZE]
             # y = y_train[i:i+BATCH_SIZE]
             x, y = x_train, y_train
+            x = add_noise(x)
             x = np.swapaxes(x, 0, 1)
             y = np.swapaxes(y, 0, 1)
 
