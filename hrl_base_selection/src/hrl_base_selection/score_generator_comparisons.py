@@ -4169,7 +4169,7 @@ class ScoreGenerator(object):
                 elif self.model == 'autobed':
                     self.set_autobed(bz, bth, error[0], error[1])
                     self.env.UpdatePublishedBodies()
-                    rospy.sleep(0.05)
+                    rospy.sleep(0.01)
                     self.selection_mat = np.zeros(len(self.goals))
                     self.goal_list = np.zeros([len(self.goals), 4, 4])
                     headmodel = self.autobed.GetLink('autobed/head_link')
@@ -4526,7 +4526,7 @@ class ScoreGenerator(object):
                 else:
                     print 'Loading expanded version of wheelchair used for training'
                     self.env.Load(''.join([pkg_path, '/collada/wheelchair_simulation_expanded_rounded.dae']))
-                rospy.sleep(0.05)
+                rospy.sleep(0.01)
                 print self.env.GetRobots()
                 self.wheelchair = self.env.GetRobots()[1]
 
@@ -4607,7 +4607,7 @@ class ScoreGenerator(object):
                 parsed_number = str(height)[0] + '_' + str(height)[2] + 'm'
                 self.env.Load(''.join([pkg_path,
                                        '/collada/bed_and_environment_cali_' + parsed_number + '_tray_openrave_rounded.dae']))
-            rospy.sleep(0.05)
+            rospy.sleep(0.01)
             self.autobed = self.env.GetRobots()[1]
             v = self.autobed.GetActiveDOFValues()
             shift = 0.
