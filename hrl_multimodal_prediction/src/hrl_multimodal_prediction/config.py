@@ -3,7 +3,7 @@ ROSBAG_PATH = './bagfiles/'
 ROSBAG_TEST_PATH = './bagfiles/testbag/'
 ROSBAG_UNPACK_PATH = './bagfiles/unpacked/'
 PROCESSED_DATA_PATH = './processed_data/'
-WEIGHT_FILE = './weights/real_data_overfit.h5'
+WEIGHT_FILE = './weights/real_data.h5'
 
 BAG2DATA_UNPACK = False
 BAG2DATA_TESTDATA = False
@@ -30,3 +30,5 @@ PRED_BATCH_SIZE = 1
 PLOT = True
 DENSE = True #True if TimeDistributedDense layer is used
 
+# In Subscriber/Prediction modules
+P_MFCC_TIMESTEP = 3 # when data collected with 4096 and n_fft = 8192

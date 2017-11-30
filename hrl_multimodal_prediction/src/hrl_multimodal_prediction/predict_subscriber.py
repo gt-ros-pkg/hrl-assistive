@@ -4,14 +4,17 @@
 # Preprocess data to mfcc and position and save
 
 import rospy
-from std_msgs.msg import String, Float64, Float64MultiArray
 import collections
 from sklearn.preprocessing import MinMaxScaler
 import librosa
-import config as cf
-from hrl_anomaly_detection.msg import audio
-from visualization_msgs.msg import Marker
 import numpy as np
+
+import config as cf
+from std_msgs.msg import String, Float64, Float64MultiArray, MultiArrayLayout
+from hrl_multimodal_prediction.msg import audio, pub_relpos, pub_mfcc
+# from hrl_anomaly_detection.msg import audio
+from visualization_msgs.msg import Marker
+
 
 # This class simply listens to publishers and collect data into a global circular buffer
 # Saves relative position data
@@ -25,16 +28,11 @@ class predict_subscriber():
 	dynamic_ar = None
 	audio_pub = None
 	relpos_pub = None
-	MUTEX_A = False
-	MUTEX_M = False
 
 	def __init__(self):
-		self.audio_pub = rospy.Publisher('preprocessed_audio', Float64MultiArray, queue_size=10)
-		self.relpos_pub = rospy.Publisher('preprocessed_relpos', Float64MultiArray, queue_size=10)
-		# self.Audio_Buffer = None
-		# self.RelPos_Buffer = None
-		# self.MUTEX_M = False
-		# self.MUTEX_A = False
+		print 'init called'
+		self.audio_pub = rospy.Publisher('preprocessed_audio', pub_mfcc, queue_size=10)
+		self.relpos_pub = rospy.Publisher('preprocessed_relpos', pub_relpos, queue_size=10)
 
 	def m_callback(self, data):
 		if data.id == 0: #id 0 = static
@@ -47,10 +45,13 @@ class predict_subscriber():
 			self.static_ar = np.array(self.static_ar, dtype=np.float64)
 			self.dynamic_ar = np.array(self.dynamic_ar, dtype=np.float64)
 			self.RelPos_Buffer = self.static_ar - self.dynamic_ar
-			self.MUTEX_M = True
 			self.static_ar, self.dynamic_ar = None, None
-		print 'relpos'
-		print self.RelPos_Buffer
+		
+		msg = pub_relpos()
+		msg.relpos = self.RelPos_Buffer
+		self.relpos_pub.publish(msg)
+		# print 'relpos'
+		# print self.RelPos_Buffer
 
 	def a_callback(self, data):
 		# will read one msg at a time
@@ -59,11 +60,14 @@ class predict_subscriber():
 		# audio_store = np.hstack(audio_store)
 		# audio_store = np.array(audio_store, dtype=np.float64)
 		mfccs = librosa.feature.mfcc(y=audio, sr=cf.RATE, hop_length=cf.HOP_LENGTH, n_fft=cf.N_FFT, n_mfcc=cf.N_MFCC)
-		mfccs = np.array(mfccs)
+		mfccs = np.array(mfccs, dtype=np.float64)
 		self.Audio_Buffer = mfccs
-		self.MUTEX_A = True
-		print 'audio'
-		print self.Audio_Buffer
+		
+		msg = pub_mfcc()
+		msg.mfcc = self.Audio_Buffer.flatten() #Can read from subscribe and reconstruct into 2D
+		self.audio_pub.publish(msg)
+		# print 'audio'
+		# print self.Audio_Buffer.shape
 
 	def run(self):
 		rospy.init_node('predict_preprocessor', anonymous=True)
@@ -71,16 +75,10 @@ class predict_subscriber():
 		rospy.Subscriber('hrl_manipulation_task/wrist_audio', audio, self.a_callback)
 		rospy.Subscriber('visualization_marker', Marker, self.m_callback)
 		rospy.spin()
-			# self.audio_pub.publish(self.Audio_Buffer)
-			# self.relpos_pub.publish(self.RelPos_Buffer)
-
-		# rospy.spin()
-		# 	self.audio_pub.publish(self.Audio_Buffer)
-		# 	self.relpos_pub.publish(self.RelPos_Buffer)
 		
 def main():
+	rospy.init_node('predict_preprocessor', anonymous=True)
 	p_subs = predict_subscriber()
-	print 'data being preprocessed and published'
 	p_subs.run()
 
 if __name__ == '__main__':
