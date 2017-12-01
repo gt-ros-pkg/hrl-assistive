@@ -235,6 +235,13 @@ class dataset_creator:
         image_data = np.array(image_data)
         print audio_data.shape
         print image_data.shape
+        if not TESTDATA:
+            a_min, a_max = np.min(audio_data), np.max(audio_data)
+            i_min, i_max = np.min(image_data), np.max(image_data)
+            print a_min, a_max, i_min, i_max
+            minmax = [a_min, a_max, i_min, i_max]
+            print 'saving train minmax as npy'
+            np.save(PROCESSED_DATA_PATH + '_train_minmax', minmax)
 
         #concatenate for number of experiment samples
         # audio_dataX2 = audio_dataX[0]
@@ -288,6 +295,7 @@ class dataset_creator:
         if TESTDATA:
             np.save(PROCESSED_DATA_PATH + '_test', combined_data)
         else: 
+            print 'saving combined train data as npy'
             np.save(PROCESSED_DATA_PATH + '_train', combined_data)
 
     def construct_dataset(self, data):

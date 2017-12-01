@@ -58,24 +58,7 @@ from keras import optimizers
 from keras.callbacks import EarlyStopping, CSVLogger, ModelCheckpoint
 from keras import backend as K
 
-#Use these config only in main
-IMAGE_DIM = 3 #image dimension
-MFCC_DIM = 3 #audio dimension
-INPUT_DIM = MFCC_DIM + IMAGE_DIM #total dimension in LSTM
-TIMESTEP_IN = 1
-TIMESTEP_OUT = 10
-N_NEURONS = TIMESTEP_OUT
-
-BATCH_SIZE = 256
-NUM_BATCH = 100
-NB_EPOCH = 500
-PRED_BATCH_SIZE = 1
-
-WEIGHT_FILE = './weights/real_data.h5'
-PLOT = True
-DENSE = True #True if TimeDistributedDense layer is used
-
-PROCESSED_DATA_PATH = './processed_data/'
+import config as cf
 
 def define_network(batch_size, time_in, time_out, input_dim, n_neurons, load_weight=False):
     model = Sequential()
@@ -131,10 +114,10 @@ def fit_lstm(model, x_train, x_test, y_train, y_test):
     pyplot.plot(y[0,:,:,5])
     pyplot.show()
 
-    for epoch in range(NB_EPOCH):
+    for epoch in range(cf.NB_EPOCH):
         #train
         mean_tr_loss = []
-        for i in range(0,x_train.shape[0]*NUM_BATCH*2, BATCH_SIZE): #x_train.shape=BATCH_SIZE
+        for i in range(0,x_train.shape[0]*cf.NUM_BATCH*2, cf.BATCH_SIZE): #x_train.shape=BATCH_SIZE
             #per window
             seq_tr_loss = []
             # x = x_train[i:i+BATCH_SIZE]
@@ -159,7 +142,7 @@ def fit_lstm(model, x_train, x_test, y_train, y_test):
         # This loop is for taking a batch from a large test data
         # Currently just using same data
         mean_te_loss = []
-        for i in xrange(0, x_test.shape[0]*NUM_BATCH, BATCH_SIZE):
+        for i in xrange(0, x_test.shape[0]*cf.NUM_BATCH, cf.BATCH_SIZE):
             seq_te_loss = []
             # x = x_test[i:i+BATCH_SIZE]
             # y = y_test[i:i+BATCH_SIZE]
@@ -184,7 +167,7 @@ def fit_lstm(model, x_train, x_test, y_train, y_test):
             wait         = 0
             plateau_wait = 0
             print 'saving model'
-            model.save_weights(WEIGHT_FILE) 
+            model.save_weights(cf.WEIGHT_FILE) 
         else:
             if wait > patience:
                 print "Over patience!"
@@ -223,10 +206,10 @@ def main():
     dataset.shape:: (num_window, batch x N, window_size, dim)
     '''
     print ('Loading training data')
-    X_train = np.load(PROCESSED_DATA_PATH + 'X_train.npy')
-    y_train = np.load(PROCESSED_DATA_PATH + 'y_train.npy')
-    X_test = np.load(PROCESSED_DATA_PATH + 'X_test.npy')
-    y_test = np.load(PROCESSED_DATA_PATH + 'y_test.npy')
+    X_train = np.load(cf.PROCESSED_DATA_PATH + 'X_train.npy')
+    y_train = np.load(cf.PROCESSED_DATA_PATH + 'y_train.npy')
+    X_test = np.load(cf.PROCESSED_DATA_PATH + 'X_test.npy')
+    y_test = np.load(cf.PROCESSED_DATA_PATH + 'y_test.npy')
     print ('Finished loading training data')
     print(X_train.shape)
     print(y_train.shape)
@@ -235,7 +218,7 @@ def main():
     
     np.random.seed(3334)
     print('creating model...')
-    lstm_model = define_network(BATCH_SIZE, TIMESTEP_IN, TIMESTEP_OUT, INPUT_DIM, N_NEURONS, False)
+    lstm_model = define_network(cf.BATCH_SIZE, cf.TIMESTEP_IN, cf.TIMESTEP_OUT, cf.INPUT_DIM, cf.N_NEURONS, False)
     print('training model...')
     lstm_model = fit_lstm(lstm_model, X_train, X_test, y_train, y_test)
 

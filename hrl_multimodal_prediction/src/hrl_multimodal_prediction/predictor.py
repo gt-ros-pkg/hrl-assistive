@@ -38,18 +38,26 @@ class predictor():
 	mfccUpdate = False
 	relpos = None
 	mfcc = None
-	
+	timestamp_mfcc = None
+	timestamp_relpos = None
+
 	model = None #LSTM Model
 	graph = None
 	stream = None
-	plot_pub = None
+	plot_publisher = None
 
 	def __init__(self):
+		print 'initiating...'
 		# pya = pyaudio.PyAudio()
 		# self.stream = pya.open(format=pyaudio.paFloat32, channels=1, rate=cf.RATE, output=True)		
-		
+
+		# audio and image minmax of training data
+		mm = np.load(cf.PROCESSED_DATA_PATH + 'combined_train_minmax.npy')		
+		self.a_min, self.a_max, self.i_min, self.i_max = mm[0], mm[1], mm[2], mm[3]
+		# print self.a_min, self.a_max, self.i_min, self.i_max
+
 		# must publish original and predicted for visualizer
-		# self.plot_pub = rospy.Publisher('plot_pub', plot_pub, queue_size=10)
+		self.plot_publisher = rospy.Publisher('orig_pred_plotData', plot_pub, queue_size=10)
 
 	def define_network(self, batch_size, time_in, time_out, input_dim, n_neurons):
 		model = Sequential()
@@ -97,60 +105,54 @@ class predictor():
 		# stream.stop_stream()
 		# stream.close()
 		# pya.terminate()
-
-	def rescale(self, dataset):
-		# rescale values to -1, 1 for tanh
-		scaler = preprocessing.MinMaxScaler(feature_range=(-1,1))
-		dim1 = dataset.shape[0]
-		dim2 = dataset.shape[1]
-		dim3 = dataset.shape[2]
-		dataset = dataset.reshape(dim1*dim2, dim3)
-		dataset[:,:] = scaler.fit_transform(dataset[:,:])
-		dataset = dataset.reshape(dim1, dim2, dim3)
-		return dataset, scaler
-
-	def scale_back(self, pred, mfcc_scaler, relpos_scaler):		
-		dim1 = pred.shape[0]
-		dim2 = pred.shape[1]
-		dim3 = pred.shape[2]
-		pred = pred.reshape(dim1*dim2, dim3)
-		mfcc = mfcc_scaler.inverse_transform(pred[:,0:3])
-		mfcc = mfcc.reshape(1, cf.TIMESTEP_OUT, cf.MFCC_DIM)
-		relpos = relpos_scaler.inverse_transform(pred[:,3:6])
-		relpos = relpos.reshape(1, cf.TIMESTEP_OUT, cf.IMAGE_DIM)
-		return mfcc, relpos
 	
+	def normalize(self, y, min_y, max_y):
+	    y = (y - min_y) / (max_y - min_y)
+	    return y
+
+	def scale_back(self, seq, min_y, max_y):
+	    # scale back 
+	    seq = seq * (max_y - min_y) + min_y
+	    return seq
+
 	def callback(self, data):
 		if data._type == 'hrl_multimodal_prediction/pub_mfcc':
 			self.mfcc = data.mfcc
+			self.timestamp_mfcc = data.header.stamp
 			self.mfccUpdate = True
 		elif data._type == 'hrl_multimodal_prediction/pub_relpos':
 			self.relpos = data.relpos
+			self.timestamp_relpos = data.header.stamp
 			self.posUpdate = True
 
 		if self.mfccUpdate and self.posUpdate:
 			self.posUpdate = False
 			self.mfccUpdate = False
 
+			# Timestamp for combined msg to be published
+			loc_timestamp_mfcc = self.timestamp_mfcc 
+			loc_timestamp_relpos = self.timestamp_relpos
+
 			# Convert shape to fit LSTM
-			self.mfcc = np.array(self.mfcc).reshape(1, cf.P_MFCC_TIMESTEP, cf.N_MFCC) # shape=(t, n_mfcc)
-			self.relpos = np.array(self.relpos).reshape(1, 1, cf.IMAGE_DIM) 
+			orig_mfcc = np.array(self.mfcc).reshape(1, cf.P_MFCC_TIMESTEP, cf.N_MFCC) # shape=(t, n_mfcc)
+			orig_relpos = np.array(self.relpos).reshape(1, 1, cf.IMAGE_DIM) 			
+
 			# print self.mfcc.shape, self.relpos.shape
-			tmp = self.relpos
-			for i in range(cf.P_MFCC_TIMESTEP-1): #make position data match mfcc timestep
-				self.relpos = np.concatenate((self.relpos,tmp), axis=1)
+			tmp = orig_relpos
+			for i in range(cf.P_MFCC_TIMESTEP-1): #make position data match mfcc timestep aka interpolating
+				orig_relpos = np.concatenate((orig_relpos,tmp), axis=1)
 			# print self.mfcc.shape, self.relpos.shape
 
 			# Rescale perFeature, save Scaler
-			norm_mfcc, mfcc_scaler = self.rescale(self.mfcc)
-			norm_relpos, relpos_scaler = self.rescale(self.relpos)
+			norm_mfcc = self.normalize(orig_mfcc, self.a_min, self.a_max)
+			norm_relpos = self.normalize(orig_relpos, self.i_min, self.a_max)
 
 			# Combine two modes 
 			comb_data = np.concatenate((norm_mfcc, norm_relpos), axis=2)
 			# print comb_data.shape
 			comb_data = np.array(comb_data)
 
-			# Predic -- graph default must to fix multithread bug in keras-tensorflow
+			# Predict -- graph default must to fix multithread bug in keras-tensorflow
 			with self.graph.as_default():
 				for i in range(0, cf.P_MFCC_TIMESTEP):
 					pred = self.model.predict_on_batch(comb_data[:,i:i+1,:])
@@ -162,22 +164,30 @@ class predictor():
 			#**********************************************************************
 			# SCALE - MUST BE SAVED FROM THE TRAINING DATA, SCALED BACK -- SCALE of TOTAL DATA
 			#**********************************************************************
-			sb_mfcc, sb_relpos = self.scale_back(pred, mfcc_scaler, relpos_scaler) 
+			sb_mfcc = self.scale_back(pred[:,:,0:3], self.a_min, self.a_max)
+			sb_relpos = self.scale_back(pred[:,:,3:6], self.i_min, self.a_max) 
 			# print sb_mfcc.shape, sb_relpos.shape
 
 			# Play -- Not detecting sound device, Use a Latop for this
 			# self.play_sound_realtime(sb_mfcc)
 
 			# Publish for plot
-			# processed data time stamp has delay for processing time
-			# when plotting time for prediction will be added to the processing time as plotting latency
-			print self.mfcc.shape, self.relpos.shape, sb_mfcc.shape, sb_relpos.shape
-			# msg = plot_pub()
-			# msg.orig_mfcc =
-			# msg.pred_mfcc
-			# msg.orig_relpos=
-			# msg.pred_relpos = 
-
+			# Getting the last time step of orig and pred and flattening for msg
+			sb_mfcc = np.array(sb_mfcc).reshape(cf.TIMESTEP_OUT*cf.MFCC_DIM)
+			sb_relpos = np.array(sb_relpos).reshape(cf.TIMESTEP_OUT*cf.IMAGE_DIM)
+			orig_mfcc = np.array(orig_mfcc[:,cf.P_MFCC_TIMESTEP-1,:]).reshape(cf.MFCC_DIM)
+			orig_relpos = np.array(orig_relpos[:,cf.P_MFCC_TIMESTEP-1,:]).reshape(cf.IMAGE_DIM)
+			# print orig_mfcc.shape, orig_relpos.shape, sb_mfcc.shape, sb_relpos.shape
+			
+			#received messages need to be reshaped in visualizer
+			msg = plot_pub()
+			msg.header.stamp.secs = (loc_timestamp_relpos.secs + loc_timestamp_mfcc.secs)/2
+			msg.header.stamp.nsecs = (loc_timestamp_relpos.nsecs + loc_timestamp_mfcc.nsecs)/2
+			msg.orig_mfcc = orig_mfcc
+			msg.orig_relpos = orig_relpos
+			msg.pred_mfcc = sb_mfcc
+			msg.pred_relpos = sb_relpos
+			self.plot_publisher.publish(msg)
 
 	def run(self):
 		rospy.init_node('predictor', anonymous=True)

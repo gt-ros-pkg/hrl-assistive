@@ -50,62 +50,27 @@ from sklearn.model_selection import train_test_split
 from sklearn import preprocessing
 from sklearn.utils import shuffle
 import gc
+import config as cf
 
-################################################
-# Trick from 1D to 2D is flattening!!!!!
-# First Check the base case 2-10 which worked well before
-# Then Convert it into flattened version
-################################################
 
-#Use these config only in main
-IMAGE_DIM = 3 #image dimension
-MFCC_DIM = 3 #audio dimension
-INPUT_DIM = MFCC_DIM + IMAGE_DIM #total dimension in LSTM
-TIMESTEP_IN = 1
-TIMESTEP_OUT = 10
-N_NEURONS = TIMESTEP_OUT
-
-BATCH_SIZE = 256
-# NUM_BATCH = 300 #Total #samples = Num_batch x Batch_size
-NB_EPOCH = 500
-PRED_BATCH_SIZE = 1
-
-WEIGHT_FILE = './weights/stateful-tanh-denoise-2stack-Tdense-2D-lab.h5'
-PLOT = True
-DENSE = True #True if TimeDistributedDense layer is used
-
-PROCESSED_DATA_PATH = './processed_data/'
-
-# def add_noise(X):
-# 	print 'add_noise to X'
-# 	print X.shape
-# 	batch_size = BATCH_SIZE #32,64,128,256,512,1024,2048
-# 	n = batch_size/16 
-# 	for j in range(NUM_BATCH): 
-# 		for i in xrange(batch_size):
-# 			X[i,:,:,:] = X[i,:,:,:] + np.random.normal(0.0, 0.0025, (X.shape[1], X.shape[2], X.shape[3]) ) 
-
-# 	# for j in range(NUM_BATCH): 
-# 	# 	for i in range(batch_size):
-# 	# 	  pyplot.plot(X[i,:,:,0])
-# 	# pyplot.show()
-# 	return X
-
-def rescale(dataset):
-	# rescale values to -1, 1 for tanh
-	scaler = preprocessing.MinMaxScaler(feature_range=(-1,1))
-	dim1 = dataset.shape[0]
-	dim2 = dataset.shape[1]
-	dim3 = dataset.shape[2]
-	dataset = dataset.reshape(dim1*dim2, dim3)
-	dataset[:,0:3] = scaler.fit_transform(dataset[:,0:3])
-	dataset[:,3:6] = scaler.fit_transform(dataset[:,3:6])
-	dataset = dataset.reshape(dim1, dim2, dim3)
-	return dataset
+def normalize(y, min_y, max_y):
+    y = (y - min_y) / (max_y - min_y)
+    return y
 
 def data_generator(dataset):
 	dataset = augment_data(dataset)
-	dataset = rescale(dataset)
+	# print dataset.shape
+
+	#normalize
+	mm = np.load(cf.PROCESSED_DATA_PATH + 'combined_train_minmax.npy')		
+	a_min, a_max, i_min, i_max = mm[0], mm[1], mm[2], mm[3]
+	a_data = dataset[:,:,0:3]
+	i_data = dataset[:,:,3:6]
+	a_data = normalize(a_data, a_min, a_max)
+	i_data = normalize(i_data, i_min, i_max)
+	dataset = np.concatenate((a_data, i_data), axis=2)
+	# print dataset.shape
+
 	X, y = format_data(dataset) # X.shape=(Batch=256,10,2), y.shape=(256,10,2)
 	return X,y #(num_window, batch, window_size, dim)
 
@@ -132,11 +97,11 @@ def augment_data(dataset):
 	# print more_data.shape
 
 	more_data = dataset
-	while more_data.shape[0] < BATCH_SIZE - dataset.shape[0]:
+	while more_data.shape[0] < cf.BATCH_SIZE - dataset.shape[0]:
 		more_data = np.concatenate((more_data, dataset), axis=0)
 	print more_data.shape
 
-	diff = BATCH_SIZE - more_data.shape[0]
+	diff = cf.BATCH_SIZE - more_data.shape[0]
 	more_data = np.concatenate((more_data, dataset[0:diff,:,:]), axis=0)
 	print more_data.shape
 
@@ -145,9 +110,9 @@ def augment_data(dataset):
 
 def format_data(dataset): #dataset.shape=(batchsize=256, datapoints=100, dim=2)
 	X, y = [], []
-	for i in range(dataset.shape[1] - TIMESTEP_IN - TIMESTEP_OUT + 1):
-		x_f = dataset[:, i:i+TIMESTEP_IN, :] 
-		y_f = dataset[:, i+TIMESTEP_IN:i+TIMESTEP_IN+TIMESTEP_OUT, :]
+	for i in range(dataset.shape[1] - cf.TIMESTEP_IN - cf.TIMESTEP_OUT + 1):
+		x_f = dataset[:, i:i+cf.TIMESTEP_IN, :] 
+		y_f = dataset[:, i+cf.TIMESTEP_IN : i+cf.TIMESTEP_IN+cf.TIMESTEP_OUT, :]
 		X.append(x_f)
 		y.append(y_f)
 	X = np.array(X)
@@ -161,7 +126,7 @@ def main():
 	dataset.shape:: (num_window, batch x N, window_size, dim)
 	'''
 	# Read and plot and check for all 43 data
-	inputFile = PROCESSED_DATA_PATH + 'combined_train.npy'
+	inputFile = cf.PROCESSED_DATA_PATH + 'combined_train.npy'
 	#Load up the training data
 	print ('Loading raw data read from rosbag')
 	dataset = np.load(inputFile)
@@ -173,8 +138,8 @@ def main():
 	# If the data overfits and doesn't work than comeback and either collect more data or augemnt well
 	# Skip for now
 	X, y = data_generator(dataset)
-	X = X.reshape(X.shape[0],X.shape[1],X.shape[2],INPUT_DIM)
-	y = y.reshape(y.shape[0],y.shape[1],y.shape[2],INPUT_DIM) 
+	X = X.reshape(X.shape[0],X.shape[1],X.shape[2],cf.INPUT_DIM)
+	y = y.reshape(y.shape[0],y.shape[1],y.shape[2],cf.INPUT_DIM) 
 	X = np.swapaxes(X, 0, 1)
 	y = np.swapaxes(y, 0, 1)
 	print 'in main'
@@ -185,7 +150,7 @@ def main():
 	# X = add_noise(X)
 
 	# flatten data to shape into lstm
-	if DENSE:
+	if cf.DENSE:
 		y = y.reshape(y.shape[0], y.shape[1], 1, y.shape[2]*y.shape[3])
 	else:
 		y = y.reshape(y.shape[0], y.shape[1], y.shape[2]*y.shape[3])
@@ -217,10 +182,10 @@ def main():
 	pyplot.plot(X_test[0,:,:,5])
 	pyplot.show()
 
-	np.save(PROCESSED_DATA_PATH + 'X_train', X_train)
-	np.save(PROCESSED_DATA_PATH + 'X_test', X_test)
-	np.save(PROCESSED_DATA_PATH + 'y_train', y_train)
-	np.save(PROCESSED_DATA_PATH + 'y_test', y_test)
+	np.save(cf.PROCESSED_DATA_PATH + 'X_train', X_train)
+	np.save(cf.PROCESSED_DATA_PATH + 'X_test', X_test)
+	np.save(cf.PROCESSED_DATA_PATH + 'y_train', y_train)
+	np.save(cf.PROCESSED_DATA_PATH + 'y_test', y_test)
 
 if __name__ == "__main__":
 	main()

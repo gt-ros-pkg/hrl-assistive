@@ -6,7 +6,7 @@ catkin_python_setup()
 
 add_message_files(
   DIRECTORY msg
-  FILES audio.msg pub_relpos.msg pub_mfcc.msg
+  FILES audio.msg pub_relpos.msg pub_mfcc.msg plot_pub.msg
 )
 
 generate_messages(
