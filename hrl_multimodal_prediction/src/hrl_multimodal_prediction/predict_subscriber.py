@@ -60,8 +60,9 @@ class predict_subscriber():
 		# audio_store = np.hstack(audio_store)
 		# audio_store = np.array(audio_store, dtype=np.float64)
 		mfccs = librosa.feature.mfcc(y=audio, sr=cf.RATE, hop_length=cf.HOP_LENGTH, n_fft=cf.N_FFT, n_mfcc=cf.N_MFCC)
-		mfccs = np.array(mfccs, dtype=np.float64)
-		self.Audio_Buffer = mfccs
+		mfccs = np.array(mfccs, dtype=np.float64) # shape=(n_mfcc,t)
+		mfccs = np.swapaxes(mfccs,0,1) # shape=(t, n_mfcc)
+		self.Audio_Buffer = mfccs 
 		
 		msg = pub_mfcc()
 		msg.mfcc = self.Audio_Buffer.flatten() #Can read from subscribe and reconstruct into 2D

@@ -44,7 +44,6 @@ import gc
 import librosa
 import os, copy, sys
 import tensorflow as tf
-from tqdm import tqdm
 import numpy.matlib
 import scipy.io.wavfile as wav
 import scipy as sp
@@ -233,7 +232,7 @@ def main():
     print(y_train.shape)
     print(X_test.shape)
     print(y_test.shape)   
-
+    
     np.random.seed(3334)
     print('creating model...')
     lstm_model = define_network(BATCH_SIZE, TIMESTEP_IN, TIMESTEP_OUT, INPUT_DIM, N_NEURONS, False)

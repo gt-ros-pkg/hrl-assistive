@@ -33,7 +33,7 @@ import os, copy, sys
 import librosa
 ## from hrl_msgs.msg import FloatArray
 ## from std_msgs.msg import Float64
-from hrl_anomaly_detection.msg import audio
+from hrl_multimodal_prediction.msg import audio
 
 # util
 import numpy as np
@@ -41,11 +41,11 @@ import math
 import pyaudio
 import struct
 import array
-try:
-    from features import mfcc
-except:
-    from python_speech_features import mfcc
-from scipy import signal, fftpack, conj, stats
+# try:
+#     from features import mfcc
+# except:
+#     from python_speech_features import mfcc
+# from scipy import signal, fftpack, conj, stats
 
 import scipy.io.wavfile as wav
 import glob
