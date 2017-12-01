@@ -1,81 +1,125 @@
 # One Core per thread
 # publisher nodes, predict_subscriber, predictor, visualizer all have its own core
 
-from predictor import predictor
-import config as cf
-from threading import Thread, Lock
-import predmutex as pm
-from matplotlib.pylab import *
-from mpl_toolkits.axes_grid1 import host_subplot
+import rospy
+import numpy as np
+import matplotlib.pyplot as plt
 import matplotlib.animation as animation
+# from matplotlib import style
 
-# TODO
-# Visualizer and Audio Player might have to run on different threads
-# In that case do I need a semaphore? and a scheduler?
-# Do I even need a mutex??
+import config as cf
+from std_msgs.msg import String, Float64, Float64MultiArray, MultiArrayLayout
+from hrl_multimodal_prediction.msg import audio, pub_relpos, pub_mfcc
+from visualization_msgs.msg import Marker
 
+
+#Subscribes to scaled-back Audio MFCC, and relpos data and plots in realtime 
+# Will Receive Predicted and Audio data 
 class visualizer():
-	def reconstruct_mfcc(self, mfccs):
-		#build reconstruction mappings
-		n_mfcc = mfccs.shape[0]
-		n_mel = cf.N_MEL
-		dctm = librosa.filters.dct(n_mfcc, n_mel)
-		n_fft = cf.N_FFT
-		mel_basis = librosa.filters.mel(self.RATE, n_fft, n_mels=n_mel)
+	relpos = None
+	mfcc = None
+	# Above will be combined in one message and published from the predictor
+	# Can use the same callback in that case
 
-		#Empirical scaling of channels to get ~flat amplitude mapping.
-		bin_scaling = 1.0/np.maximum(0.0005, np.sum(np.dot(mel_basis.T, mel_basis), axis=0))
-		#Reconstruct the approximate STFT squared-magnitude from the MFCCs.
-		recon_stft = bin_scaling[:, np.newaxis] * np.dot(mel_basis.T, self.invlogamplitude(np.dot(dctm.T, mfccs)))
-		#Impose reconstructed magnitude on white noise STFT.
-		excitation = np.random.randn(y.shape[0]) # this will be constant--based on one msgsize
-		E = librosa.stft(excitation, n_fft=cf.N_FFT)
-		recon = librosa.istft(E/np.abs(E)*np.sqrt(recon_stft))
-		#print recon
-		#print recon.shape
-		wav.write('reconsturct.wav', cf.RATE, recon)
-		return recon
+	xs_1, ys_1, pxs_1, pys_1 = [], [], [], []	
+	xs_2, ys_2, pxs_2, pys_2 = [], [], [], []
+	xs_3, ys_3, pxs_3, pys_3 = [], [], [], []
+	xs_4, ys_4, pxs_4, pys_4 = [], [], [], []
+	xs_5, ys_5, pxs_5, pys_5 = [], [], [], []
+	xs_6, ys_6, pxs_6, pys_6 = [], [], [], []
 
-	def invlogamplitude(self, S):
-	#"""librosa.logamplitude is actually 10_log10, so invert that."""
-		return 10.0**(S/10.0)
+	def __init__(self):
+		#initialize plotters
+		# style.use('fivethirtyeight')
+		self.fig = plt.figure()
+		self.ax1 = self.fig.add_subplot(3,2,1)
+		self.ax2 = self.fig.add_subplot(3,2,2)
+		self.ax3 = self.fig.add_subplot(3,2,3)
+		self.ax4 = self.fig.add_subplot(3,2,4)
+		self.ax5 = self.fig.add_subplot(3,2,5)
+		self.ax6 = self.fig.add_subplot(3,2,6)		
 
-	def play_sound_realtime(self, mfcc):
-		recon = reconstruct_mfcc(mfcc)
-		pya = pyaudio.PyAudio()
-		stream = pya.open(format=pyaudio.paFloat32, channels=1, rate=cf.RATE, output=True)
-		stream.write(recon)
-		stream.stop_stream()
-		stream.close()
-		pya.terminate()
-	
-	# def plot_realtime(self, p_mfcc, p_relpos, a_mfcc, a_relpos): #p for predict, a for actual
+	def animate(self,i):
+		if self.relpos is not None and self.mfcc is not None:
+			# 1,3,5 relpos
+			stamp = self.relpos.header.stamp
+			time = stamp.secs + stamp.nsecs * 1e-9
+			self.xs_1.append(time)
+			self.ys_1.append(self.relpos.relpos[0]) #x
+			self.xs_3.append(time)
+			self.ys_3.append(self.relpos.relpos[1]) #y
+			self.xs_5.append(time)
+			self.ys_5.append(self.relpos.relpos[2]) #z
+			# More for Predicted
 
+			# 2,4,6, mfcc
+			stamp = self.mfcc.header.stamp
+			time = stamp.secs + stamp.nsecs * 1e-9
+			self.xs_2.append(time)
+			self.ys_2.append(self.mfcc.mfcc[6]) 
+			self.xs_4.append(time)
+			self.ys_4.append(self.mfcc.mfcc[7]) 
+			self.xs_6.append(time)
+			self.ys_6.append(self.mfcc.mfcc[8]) 
+			# More for Predicted
+
+			# ax1,3,5 = relative position
+			self.ax1.clear()
+			self.ax1.set_title('Reletive Position')
+			self.ax1.grid(True)
+			self.ax1.set_xlabel("t")
+			self.ax1.set_ylabel("position x")
+			self.ax1.plot(self.xs_1, self.ys_1, color='blue')	#original data
+			# self.ax1.plot(self.pxs_1, self.pys_1, color='red') #predicted data
+			self.ax3.grid(True)
+			self.ax3.set_xlabel("t")
+			self.ax3.set_ylabel("position y")
+			self.ax3.plot(self.xs_3, self.ys_3, color='blue')	#original data
+			# self.ax3.plot(self.pxs_3, self.pys_3, color='red') #predicted data
+			self.ax5.grid(True)
+			self.ax5.set_xlabel("t")
+			self.ax5.set_ylabel("position z")
+			self.ax5.plot(self.xs_5, self.ys_5, color='blue')	#original data
+			# self.ax5.plot(self.pxs_5, self.pys_5, color='red') #predicted data
+
+			# ax2,4,6 = mfcc
+			self.ax2.clear()
+			self.ax2.set_title('MFCC')
+			self.ax2.grid(True)
+			self.ax2.set_xlabel("t")
+			self.ax2.set_ylabel("energy for freq range 1")
+			self.ax2.plot(self.xs_2, self.ys_2, color='blue')	#original data
+			# self.ax2.plot(self.pxs_1, self.pys_1, color='red') #predicted data
+			self.ax4.grid(True)
+			self.ax4.set_xlabel("t")
+			self.ax4.set_ylabel("energy for freq range 2")
+			self.ax4.plot(self.xs_4, self.ys_4, color='blue')	#original data
+			# self.ax4.plot(self.pxs_3, self.pys_3, color='red') #predicted data
+			self.ax6.grid(True)
+			self.ax6.set_xlabel("t")
+			self.ax6.set_ylabel("energy for freq range 3")
+			self.ax6.plot(self.xs_6, self.ys_6, color='blue')	#original data
+			# self.ax6.plot(self.pxs_5, self.pys_5, color='red') #predicted data
+
+
+	def callback(self, data):
+		self.relpos = data
+
+	def callback2(self, data):
+		self.mfcc = data
 
 	def run(self):
-		p = predictor()
-		while True:
-			pm.mutex_viz.acquire()
-			if p.g_mfcc is not None and p.g_relpos is not None:
-				play_sound_realtime(p.g_pred_mfcc)
-				# Sent for figure
-				# font = {'size'   : 9}
-				# matplotlib.rc('font', **font)
-				# # Setup figure and subplots
-				# f0 = figure(num = 0, figsize = (12, 8))#, dpi = 100)
-				# f0.suptitle("ARtag & Audio combined Prediction", fontsize=12)
-				# ax01 = subplot2grid((2, 2), (0, 0))
-				# ax02 = subplot2grid((2, 2), (1, 0))
-				# ax03 = subplot2grid((2, 2), (0, 1))
-				# ax04 = subplot2grid((2, 2), (1, 1))
-				# simulation = animation.FuncAnimation(f0, updateData, blit=False, frames=200, interval=20, repeat=False)
-				# plt.show()
-			pm.mutex_viz.release()
+		rospy.Subscriber('preprocessed_relpos', pub_relpos, self.callback)
+		rospy.Subscriber('preprocessed_audio', pub_mfcc, self.callback2)
+		ani = animation.FuncAnimation(self.fig, self.animate, interval=1000)
+		plt.show()
+		rospy.spin()
+		
 
 def main():
+	rospy.init_node('visualizer', anonymous=True)
 	viz = visualizer()
-	t = Thread(target = viz.run())
-	t.start()
+	viz.run()
 
 if __name__ == '__main__':
 	main()    

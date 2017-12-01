@@ -25,7 +25,7 @@ from keras import backend as K
 import config as cf
 import pyaudio
 from std_msgs.msg import String, Float64, Float64MultiArray, MultiArrayLayout
-from hrl_multimodal_prediction.msg import audio, pub_relpos, pub_mfcc
+from hrl_multimodal_prediction.msg import audio, pub_relpos, pub_mfcc, plot_pub
 from visualization_msgs.msg import Marker
 
 # Predictor and visualizer go hand in hand
@@ -42,11 +42,15 @@ class predictor():
 	model = None #LSTM Model
 	graph = None
 	stream = None
+	plot_pub = None
 
 	def __init__(self):
-		pya = pyaudio.PyAudio()
-		self.stream = pya.open(format=pyaudio.paFloat32, channels=1, rate=cf.RATE, output=True)
+		# pya = pyaudio.PyAudio()
+		# self.stream = pya.open(format=pyaudio.paFloat32, channels=1, rate=cf.RATE, output=True)		
 		
+		# must publish original and predicted for visualizer
+		# self.plot_pub = rospy.Publisher('plot_pub', plot_pub, queue_size=10)
+
 	def define_network(self, batch_size, time_in, time_out, input_dim, n_neurons):
 		model = Sequential()
 		model.add(LSTM(input_dim*time_out, batch_input_shape=(batch_size, time_in, input_dim),
@@ -131,11 +135,11 @@ class predictor():
 			# Convert shape to fit LSTM
 			self.mfcc = np.array(self.mfcc).reshape(1, cf.P_MFCC_TIMESTEP, cf.N_MFCC) # shape=(t, n_mfcc)
 			self.relpos = np.array(self.relpos).reshape(1, 1, cf.IMAGE_DIM) 
-			print self.mfcc.shape, self.relpos.shape
+			# print self.mfcc.shape, self.relpos.shape
 			tmp = self.relpos
 			for i in range(cf.P_MFCC_TIMESTEP-1): #make position data match mfcc timestep
 				self.relpos = np.concatenate((self.relpos,tmp), axis=1)
-			print self.mfcc.shape, self.relpos.shape
+			# print self.mfcc.shape, self.relpos.shape
 
 			# Rescale perFeature, save Scaler
 			norm_mfcc, mfcc_scaler = self.rescale(self.mfcc)
@@ -143,7 +147,7 @@ class predictor():
 
 			# Combine two modes 
 			comb_data = np.concatenate((norm_mfcc, norm_relpos), axis=2)
-			print comb_data.shape
+			# print comb_data.shape
 			comb_data = np.array(comb_data)
 
 			# Predic -- graph default must to fix multithread bug in keras-tensorflow
@@ -152,19 +156,27 @@ class predictor():
 					pred = self.model.predict_on_batch(comb_data[:,i:i+1,:])
 			#Now pred has the last value
 			pred = pred.reshape(1, cf.TIMESTEP_OUT, cf.INPUT_DIM)
-			print pred.shape
+			# print pred.shape
 
-			# # Scaleback --only the last one to play in realtime
+			# # Scaleback --only the last one to play nd plot in realtime
 			#**********************************************************************
 			# SCALE - MUST BE SAVED FROM THE TRAINING DATA, SCALED BACK -- SCALE of TOTAL DATA
 			#**********************************************************************
 			sb_mfcc, sb_relpos = self.scale_back(pred, mfcc_scaler, relpos_scaler) 
-			print sb_mfcc.shape, sb_relpos.shape
+			# print sb_mfcc.shape, sb_relpos.shape
 
-			# Play 
-			self.play_sound_realtime(sb_mfcc)
+			# Play -- Not detecting sound device, Use a Latop for this
+			# self.play_sound_realtime(sb_mfcc)
 
 			# Publish for plot
+			# processed data time stamp has delay for processing time
+			# when plotting time for prediction will be added to the processing time as plotting latency
+			print self.mfcc.shape, self.relpos.shape, sb_mfcc.shape, sb_relpos.shape
+			# msg = plot_pub()
+			# msg.orig_mfcc =
+			# msg.pred_mfcc
+			# msg.orig_relpos=
+			# msg.pred_relpos = 
 
 
 	def run(self):

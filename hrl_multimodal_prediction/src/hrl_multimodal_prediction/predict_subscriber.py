@@ -48,6 +48,7 @@ class predict_subscriber():
 			self.static_ar, self.dynamic_ar = None, None
 		
 		msg = pub_relpos()
+		msg.header.stamp = data.header.stamp
 		msg.relpos = self.RelPos_Buffer
 		self.relpos_pub.publish(msg)
 		# print 'relpos'
@@ -65,13 +66,14 @@ class predict_subscriber():
 		self.Audio_Buffer = mfccs 
 		
 		msg = pub_mfcc()
+		msg.header.stamp = data.header.stamp #processed data time stamp has delay for processing time
 		msg.mfcc = self.Audio_Buffer.flatten() #Can read from subscribe and reconstruct into 2D
 		self.audio_pub.publish(msg)
 		# print 'audio'
 		# print self.Audio_Buffer.shape
 
 	def run(self):
-		rospy.init_node('predict_preprocessor', anonymous=True)
+		# rospy.init_node('predict_preprocessor', anonymous=True)
 		# while not rospy.is_shutdown():
 		rospy.Subscriber('hrl_manipulation_task/wrist_audio', audio, self.a_callback)
 		rospy.Subscriber('visualization_marker', Marker, self.m_callback)
