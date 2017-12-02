@@ -18,7 +18,7 @@ def define_network(batch_size, time_in, time_out, input_dim, n_neurons):
 	model.add(LSTM(input_dim*time_out, stateful=True, return_sequences=True, activation='tanh'))
 	model.add(TimeDistributed(Dense(input_dim*time_out, activation='linear')))
 
-	model.load_weights('./weights/0.00482867_0.0813618real_data.h5')
+	model.load_weights('./weights/0.000549698_0.0320641real_data.h5')
 	model.compile(loss='mse', optimizer='RMSprop')
 	print model.summary()
 	print "Inputs: {}".format(model.input_shape)
@@ -47,8 +47,8 @@ def main():
 	# (1) Read Data and Combine
 	# This Assumes we are receving data from predict_subscriber.py except no data loss so 
 	# test data exactly matches train data
-	mfcc = np.load(cf.ROSBAG_UNPACK_PATH + 'data4_mfccs_.npy')
-	relpos = np.load(cf.ROSBAG_UNPACK_PATH + 'data4_relpos_intp_.npy')
+	mfcc = np.load(cf.ROSBAG_UNPACK_PATH + 'data1_mfccs_.npy')
+	relpos = np.load(cf.ROSBAG_UNPACK_PATH + 'data1_relpos_intp_.npy')
 	mfcc = np.swapaxes(mfcc, 0, 1)
 	print mfcc.shape, relpos.shape
 	combined = np.concatenate((mfcc, relpos), axis=1)

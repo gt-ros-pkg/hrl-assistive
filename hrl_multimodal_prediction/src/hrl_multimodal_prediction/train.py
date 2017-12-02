@@ -135,7 +135,7 @@ def fit_lstm(model, x_train, x_test, y_train, y_test):
 			# x = x_train[i:i+BATCH_SIZE]
 			# y = y_train[i:i+BATCH_SIZE]
 			x, y = x_train, y_train
-			x = add_noise(x)
+			# x = add_noise(x)
 			
 			# print x.shape, y.shape
 			#normalize
@@ -193,65 +193,64 @@ def fit_lstm(model, x_train, x_test, y_train, y_test):
 		#test(Validation)
 		# This loop is for taking a batch from a large test data
 		# Currently just using same data
-		if epoch%2: #validate for every other training
-			mean_te_loss = []
-			for i in xrange(0, x_test.shape[0]*cf.NUM_BATCH, cf.BATCH_SIZE):
-				seq_te_loss = []
-				# x = x_test[i:i+BATCH_SIZE]
-				# y = y_test[i:i+BATCH_SIZE]
-				x, y = x_test, y_test
+		mean_te_loss = []
+		for i in xrange(0, x_test.shape[0]*cf.NUM_BATCH, cf.BATCH_SIZE):
+			seq_te_loss = []
+			# x = x_test[i:i+BATCH_SIZE]
+			# y = y_test[i:i+BATCH_SIZE]
+			x, y = x_test, y_test
 
-				#normalize
-				a_data = x[:,:,:,0:3]
-				i_data = x[:,:,:,3:6]
-				a_data = normalize(a_data, a_min, a_max)
-				i_data = normalize(i_data, i_min, i_max)
-				x = np.concatenate((a_data, i_data), axis=3)
-				y = y.reshape(y.shape[0], y.shape[1], cf.TIMESTEP_OUT, cf.INPUT_DIM)
-				a_data = y[:,:,:,0:3]
-				i_data = y[:,:,:,3:6]
-				a_data = normalize(a_data, a_min, a_max)
-				i_data = normalize(i_data, i_min, i_max)
-				y = np.concatenate((a_data, i_data), axis=3)
-				y = y.reshape(y.shape[0], y.shape[1], 1, cf.TIMESTEP_OUT*cf.INPUT_DIM)
-				# print x.shape
+			#normalize
+			a_data = x[:,:,:,0:3]
+			i_data = x[:,:,:,3:6]
+			a_data = normalize(a_data, a_min, a_max)
+			i_data = normalize(i_data, i_min, i_max)
+			x = np.concatenate((a_data, i_data), axis=3)
+			y = y.reshape(y.shape[0], y.shape[1], cf.TIMESTEP_OUT, cf.INPUT_DIM)
+			a_data = y[:,:,:,0:3]
+			i_data = y[:,:,:,3:6]
+			a_data = normalize(a_data, a_min, a_max)
+			i_data = normalize(i_data, i_min, i_max)
+			y = np.concatenate((a_data, i_data), axis=3)
+			y = y.reshape(y.shape[0], y.shape[1], 1, cf.TIMESTEP_OUT*cf.INPUT_DIM)
+			# print x.shape
 
-				x = np.swapaxes(x, 0, 1)
-				y = np.swapaxes(y, 0, 1)
+			x = np.swapaxes(x, 0, 1)
+			y = np.swapaxes(y, 0, 1)
 
-				# This loop is for number of windows - swap above necessary
-				for j in xrange(x.shape[0]):
-					te_loss = model.test_on_batch(x[j], y[j])
-					seq_te_loss.append(te_loss)
-				mean_te_loss.append( np.mean(seq_te_loss) )
-				model.reset_states()
-			val_loss = np.mean(mean_te_loss)
-			sys.stdout.write('Epoch {} / {} : loss training = {} , loss validating = {}\n'.format(epoch, cf.NB_EPOCH, tr_loss, val_loss))
-			sys.stdout.flush()   
-			plot_te_loss.append(val_loss)
+			# This loop is for number of windows - swap above necessary
+			for j in xrange(x.shape[0]):
+				te_loss = model.test_on_batch(x[j], y[j])
+				seq_te_loss.append(te_loss)
+			mean_te_loss.append( np.mean(seq_te_loss) )
+			model.reset_states()
+		val_loss = np.mean(mean_te_loss)
+		sys.stdout.write('Epoch {} / {} : loss training = {} , loss validating = {}\n'.format(epoch, cf.NB_EPOCH, tr_loss, val_loss))
+		sys.stdout.flush()   
+		plot_te_loss.append(val_loss)
 
-			# Early Stopping
-			if val_loss <= min_loss:
-				min_loss = val_loss
-				wait         = 0
-				plateau_wait = 0
-				print 'saving model'
-				model.save_weights(cf.WEIGHT_FILE+str(tr_loss)+'_'+str(val_loss)+'real_data.h5') 
+		# Early Stopping
+		if val_loss <= min_loss:
+			min_loss = val_loss
+			wait         = 0
+			plateau_wait = 0
+			print 'saving model'
+			model.save_weights(cf.WEIGHT_FILE+str(tr_loss)+'_'+str(val_loss)+'real_data.h5') 
+		else:
+			if wait > patience:
+				print "Over patience!"
+				break
 			else:
-				if wait > patience:
-					print "Over patience!"
-					break
-				else:
-					wait += 1
-					plateau_wait += 1
+				wait += 1
+				plateau_wait += 1
 
-			#ReduceLROnPlateau
-			if plateau_wait > 2:
-				old_lr = float(K.get_value(model.optimizer.lr)) #K is a backend
-				new_lr = old_lr * 0.2
-				K.set_value(model.optimizer.lr, new_lr)
-				plateau_wait = 0
-				print 'Reduced learning rate {} to {}'.format(old_lr, new_lr)
+		#ReduceLROnPlateau
+		if plateau_wait > 2:
+			old_lr = float(K.get_value(model.optimizer.lr)) #K is a backend
+			new_lr = old_lr * 0.2
+			K.set_value(model.optimizer.lr, new_lr)
+			plateau_wait = 0
+			print 'Reduced learning rate {} to {}'.format(old_lr, new_lr)
 
 		gc.collect()    
 
