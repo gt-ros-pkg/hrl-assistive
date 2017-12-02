@@ -96,23 +96,34 @@ def fit_lstm(model, x_train, x_test, y_train, y_test):
     plot_tr_loss = []
     plot_te_loss = []
 
-    pyplot.plot(x_train[0,:,:,0])
-    pyplot.plot(x_train[0,:,:,1])
-    pyplot.plot(x_train[0,:,:,2])
+    for i in range(43):
+        pyplot.plot(x_train[i,:,:,0])
+        pyplot.plot(x_train[i,:,:,1])
+        pyplot.plot(x_train[i,:,:,2])
     pyplot.show()
-    pyplot.plot(x_train[0,:,:,3])
-    pyplot.plot(x_train[0,:,:,4])
-    pyplot.plot(x_train[0,:,:,5])
+    for i in range(43):
+        pyplot.plot(x_train[i,:,:,3])
+        pyplot.plot(x_train[i,:,:,4])
+        pyplot.plot(x_train[i,:,:,5])
     pyplot.show()
-    y = y_train.reshape((y_train.shape[0],y_train.shape[1],cf.TIMESTEP_OUT,cf.INPUT_DIM))
-    pyplot.plot(y[0,:,:,0])
-    pyplot.plot(y[0,:,:,1])
-    pyplot.plot(y[0,:,:,2])
-    pyplot.show()
-    pyplot.plot(y[0,:,:,3])
-    pyplot.plot(y[0,:,:,4])
-    pyplot.plot(y[0,:,:,5])
-    pyplot.show()
+
+    # pyplot.plot(x_train[0,:,:,0])
+    # pyplot.plot(x_train[0,:,:,1])
+    # pyplot.plot(x_train[0,:,:,2])
+    # pyplot.show()
+    # pyplot.plot(x_train[0,:,:,3])
+    # pyplot.plot(x_train[0,:,:,4])
+    # pyplot.plot(x_train[0,:,:,5])
+    # pyplot.show()
+    # y = y_train.reshape((y_train.shape[0],y_train.shape[1],cf.TIMESTEP_OUT,cf.INPUT_DIM))
+    # pyplot.plot(y[0,:,:,0])
+    # pyplot.plot(y[0,:,:,1])
+    # pyplot.plot(y[0,:,:,2])
+    # pyplot.show()
+    # pyplot.plot(y[0,:,:,3])
+    # pyplot.plot(y[0,:,:,4])
+    # pyplot.plot(y[0,:,:,5])
+    # pyplot.show()
 
     for epoch in range(cf.NB_EPOCH):
         #train

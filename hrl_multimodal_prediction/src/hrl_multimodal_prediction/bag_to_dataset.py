@@ -58,6 +58,7 @@ import optparse
 from matplotlib import pyplot 
 
 import config as cf
+import random
 
 #Psuedo
 # First read in all rosbag files from the folder (check)
@@ -159,17 +160,21 @@ class dataset_creator:
             ########################
             #### Cropping
             ########################
-            #audio
-            peak_idx = audio_store.tolist().index(npmax)
-            audio_store = self.crop2s(audio_store, peak_idx)
+            peak_idx = audio_store.tolist().index(npmax)          
+            var = 11025
+            r = random.randrange(0,var) #11025 = 0.25s, so 0.25s variation
+            b = random.randrange(0,2)
+            while (peak_idx+88200+r>audio_store.shape[0]) or (peak_idx-88200-r<0):
+                var = var - 500
+                r = random.randrange(0,var) #11025 = 0.25s, so 0.25s variation
+                b = random.randrange(0,2)
+            audio_store = self.crop2s(audio_store, peak_idx,r,b)
+            relative_position = self.crop2s(relative_position, peak_idx,r,b)
+            print audio_store.shape, relative_position.shape
 
             if cf.BAG2DATA_UNPACK:
                 audio_store = self.normalize(audio_store)
                 librosa.output.write_wav(wavfile, audio_store, cf.RATE)
-
-            #relative position
-            relative_position = self.crop2s(relative_position, peak_idx)
-            # relative_position = self.normalize(relative_position)
             if cf.BAG2DATA_UNPACK:
                np.savetxt(txtfile, relative_position)
 
@@ -291,8 +296,11 @@ class dataset_creator:
     #     data = (data - a_min) / (a_max - a_min)
     #     return data
 
-    def crop2s(self, data, peak_idx, audio_len_sample=88200): #1s=44100, 2s=88200
-        data = data[peak_idx-audio_len_sample : peak_idx+audio_len_sample]
+    def crop2s(self, data, peak_idx, r, b, audio_len_sample=88200): #1s=44100, 2s=88200
+        if b:
+            data = data[peak_idx-audio_len_sample-r : peak_idx+audio_len_sample-r]
+        else:
+            data = data[peak_idx-audio_len_sample+r : peak_idx+audio_len_sample+r]
         return data
 
     def interpolate(self, data, new_length):
