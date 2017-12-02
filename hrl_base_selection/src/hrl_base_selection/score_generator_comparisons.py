@@ -2451,6 +2451,7 @@ class ScoreGenerator(object):
                 # print 'No base collision! single config distance: ', distance
                 reached = np.zeros(len(self.origin_B_grasps))
                 manip = np.zeros(len(self.origin_B_grasps))
+                print self.head_angles
                 for head_angle in self.head_angles:
                     self.rotate_head_and_update_goals(head_angle[0], head_angle[1], origin_B_pr2)
                     for num, Tgrasp in enumerate(self.origin_B_grasps):
