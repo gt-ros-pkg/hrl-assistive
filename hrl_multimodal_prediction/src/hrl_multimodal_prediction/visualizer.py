@@ -44,55 +44,58 @@ class visualizer():
 			# print time, time+1
 
 			# 1,3,5 relpos
+			relpos_pred = np.array(self.orig_pred.pred_relpos).reshape(cf.TIMESTEP_OUT,cf.IMAGE_DIM)
+			
 			self.xs_1.append(time)
 			self.ys_1.append(self.orig_pred.orig_relpos[0]) #x
 			time_var = time
-			for i in range(0, cf.TIMESTEP_OUT*cf.IMAGE_DIM, 3): #prediction multiple timestep
+			for i in range(cf.TIMESTEP_OUT):
+				time_var += 0.2
 				self.pxs_1.append(time_var)
-				time_var += 1
-				self.pys_1.append(self.orig_pred.pred_relpos[i]) #x
+				self.pys_1.append(relpos_pred[i,0]) #x
 
 			self.xs_3.append(time)
 			self.ys_3.append(self.orig_pred.orig_relpos[1]) #y
-			# time_var = time
-			# for i in range(1, cf.TIMESTEP_OUT*cf.IMAGE_DIM, 3):
-			# 	self.pxs_3.append(time_var)
-			# 	time_var += 1
-			# 	self.pys_3.append(self.orig_pred.pred_relpos[i]) #y
-
+			time_var = time
+			for i in range(cf.TIMESTEP_OUT):
+				time_var += 0.2
+				self.pxs_3.append(time_var)
+				self.pys_3.append(relpos_pred[i,1]) #y
+			
 			self.xs_5.append(time)
 			self.ys_5.append(self.orig_pred.orig_relpos[2]) #z
-			# time_var = time
-			# for i in range(2, cf.TIMESTEP_OUT*cf.IMAGE_DIM, 3):
-			# 	self.pxs_5.append(time_var)
-			# 	time_var += 1
-			# 	self.pys_5.append(self.orig_pred.pred_relpos[i]) #z
+			time_var = time
+			for i in range(cf.TIMESTEP_OUT):
+				time_var += 0.2
+				self.pxs_5.append(time_var)
+				self.pys_5.append(relpos_pred[i,2]) #z
 
 			# 2,4,6, mfcc
-			# self.xs_2.append(time)
-			# self.ys_2.append(self.orig_pred.orig_mfcc[0]) 
-			# time_var = time
-			# for i in range(0, cf.TIMESTEP_OUT*cf.MFCC_DIM, 3):
-			# 	self.pxs_2.append(time_var)
-			# 	time_var += 1
-			# 	self.pys_2.append(self.orig_pred.pred_relpos[i]) 
+			mfcc_pred = np.array(self.orig_pred.pred_mfcc).reshape(cf.TIMESTEP_OUT,cf.MFCC_DIM)
+			
+			self.xs_2.append(time)
+			self.ys_2.append(self.orig_pred.orig_mfcc[0]) 
+			time_var = time
+			for i in range(cf.TIMESTEP_OUT):
+				time_var += 0.2
+				self.pxs_2.append(time_var)
+				self.pys_2.append(mfcc_pred[i,0]) 
+			
+			self.xs_4.append(time)
+			self.ys_4.append(self.orig_pred.orig_mfcc[1]) 
+			time_var = time
+			for i in range(cf.TIMESTEP_OUT):
+				time_var += 0.2
+				self.pxs_4.append(time_var)
+				self.pys_4.append(mfcc_pred[i,1]) 
 
-			# self.xs_4.append(time)
-			# self.ys_4.append(self.orig_pred.orig_mfcc[1]) 
-			# time_var = time
-			# for i in range(1, cf.TIMESTEP_OUT*cf.MFCC_DIM, 3):
-			# 	self.pxs_4.append(time_var)
-			# 	time_var += 1
-			# 	self.pys_4.append(self.orig_pred.pred_relpos[i]) 
-
-			# self.xs_6.append(time)
-			# self.ys_6.append(self.orig_pred.orig_mfcc[2]) 
-			# time_var = time
-			# for i in range(2, cf.TIMESTEP_OUT*cf.MFCC_DIM, 3):
-			# 	self.pxs_6.append(time_var)
-			# 	time_var += 1
-			# 	self.pys_6.append(self.orig_pred.pred_relpos[i]) 
-
+			self.xs_6.append(time)
+			self.ys_6.append(self.orig_pred.orig_mfcc[2]) 
+			time_var = time
+			for i in range(cf.TIMESTEP_OUT):
+				time_var += 0.2
+				self.pxs_6.append(time_var)
+				self.pys_6.append(mfcc_pred[i,2]) 
 
 			# ax1,3,5 = relative position
 			self.ax1.clear()
@@ -106,31 +109,31 @@ class visualizer():
 			self.ax3.set_xlabel("t")
 			self.ax3.set_ylabel("position y")
 			self.ax3.plot(self.xs_3, self.ys_3, color='blue')	#original data
-			# self.ax3.plot(self.pxs_3, self.pys_3, color='red') #predicted data
+			self.ax3.plot(self.pxs_3, self.pys_3, color='red') #predicted data
 			self.ax5.grid(True)
 			self.ax5.set_xlabel("t")
 			self.ax5.set_ylabel("position z")
 			self.ax5.plot(self.xs_5, self.ys_5, color='blue')	#original data
-			# self.ax5.plot(self.pxs_5, self.pys_5, color='red') #predicted data
+			self.ax5.plot(self.pxs_5, self.pys_5, color='red') #predicted data
 
 			# ax2,4,6 = mfcc
-			# self.ax2.clear()
-			# self.ax2.set_title('MFCC')
-			# self.ax2.grid(True)
-			# self.ax2.set_xlabel("t")
-			# self.ax2.set_ylabel("energy for freq range 1")
-			# self.ax2.plot(self.xs_2, self.ys_2, color='blue')	#original data
-			# self.ax2.plot(self.pxs_1, self.pys_1, color='red') #predicted data
-			# self.ax4.grid(True)
-			# self.ax4.set_xlabel("t")
-			# self.ax4.set_ylabel("energy for freq range 2")
-			# self.ax4.plot(self.xs_4, self.ys_4, color='blue')	#original data
-			# self.ax4.plot(self.pxs_3, self.pys_3, color='red') #predicted data
-			# self.ax6.grid(True)
-			# self.ax6.set_xlabel("t")
-			# self.ax6.set_ylabel("energy for freq range 3")
-			# self.ax6.plot(self.xs_6, self.ys_6, color='blue')	#original data
-			# self.ax6.plot(self.pxs_5, self.pys_5, color='red') #predicted data
+			self.ax2.clear()
+			self.ax2.set_title('MFCC')
+			self.ax2.grid(True)
+			self.ax2.set_xlabel("t")
+			self.ax2.set_ylabel("energy for freq range 1")
+			self.ax2.plot(self.xs_2, self.ys_2, color='blue')	#original data
+			self.ax2.plot(self.pxs_2, self.pys_2, color='red') #predicted data
+			self.ax4.grid(True)
+			self.ax4.set_xlabel("t")
+			self.ax4.set_ylabel("energy for freq range 2")
+			self.ax4.plot(self.xs_4, self.ys_4, color='blue')	#original data
+			self.ax4.plot(self.pxs_4, self.pys_4, color='red') #predicted data
+			self.ax6.grid(True)
+			self.ax6.set_xlabel("t")
+			self.ax6.set_ylabel("energy for freq range 3")
+			self.ax6.plot(self.xs_6, self.ys_6, color='blue')	#original data
+			self.ax6.plot(self.pxs_6, self.pys_6, color='red') #predicted data
 
 
 	def callback(self, data):

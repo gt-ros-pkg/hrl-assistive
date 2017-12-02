@@ -165,7 +165,7 @@ class predictor():
 			# SCALE - MUST BE SAVED FROM THE TRAINING DATA, SCALED BACK -- SCALE of TOTAL DATA
 			#**********************************************************************
 			sb_mfcc = self.scale_back(pred[:,:,0:3], self.a_min, self.a_max)
-			sb_relpos = self.scale_back(pred[:,:,3:6], self.i_min, self.a_max) 
+			sb_relpos = self.scale_back(pred[:,:,3:6], self.i_min, self.i_max) 
 			# print sb_mfcc.shape, sb_relpos.shape
 
 			# Play -- Not detecting sound device, Use a Latop for this

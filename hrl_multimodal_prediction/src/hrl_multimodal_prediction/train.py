@@ -134,7 +134,7 @@ def fit_lstm(model, x_train, x_test, y_train, y_test):
             mean_tr_loss.append( np.mean(seq_tr_loss) )
             model.reset_states()
         tr_loss = np.mean(mean_tr_loss)
-        sys.stdout.write('Epoch {} / {} : loss training = {} , loss validating = {}\n'.format(epoch, NB_EPOCH, tr_loss, 0))
+        sys.stdout.write('Epoch {} / {} : loss training = {} , loss validating = {}\n'.format(epoch, cf.NB_EPOCH, tr_loss, 0))
         sys.stdout.flush()
         plot_tr_loss.append(tr_loss)
 
@@ -157,7 +157,7 @@ def fit_lstm(model, x_train, x_test, y_train, y_test):
             mean_te_loss.append( np.mean(seq_te_loss) )
             model.reset_states()
         val_loss = np.mean(mean_te_loss)
-        sys.stdout.write('Epoch {} / {} : loss training = {} , loss validating = {}\n'.format(epoch, NB_EPOCH, tr_loss, val_loss))
+        sys.stdout.write('Epoch {} / {} : loss training = {} , loss validating = {}\n'.format(epoch, cf.NB_EPOCH, tr_loss, val_loss))
         sys.stdout.flush()   
         plot_te_loss.append(val_loss)
 
