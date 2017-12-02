@@ -62,13 +62,13 @@ def data_generator(dataset):
 	# print dataset.shape
 
 	#normalize
-	mm = np.load(cf.PROCESSED_DATA_PATH + 'combined_train_minmax.npy')		
-	a_min, a_max, i_min, i_max = mm[0], mm[1], mm[2], mm[3]
-	a_data = dataset[:,:,0:3]
-	i_data = dataset[:,:,3:6]
-	a_data = normalize(a_data, a_min, a_max)
-	i_data = normalize(i_data, i_min, i_max)
-	dataset = np.concatenate((a_data, i_data), axis=2)
+	# mm = np.load(cf.PROCESSED_DATA_PATH + 'combined_train_minmax.npy')		
+	# a_min, a_max, i_min, i_max = mm[0], mm[1], mm[2], mm[3]
+	# a_data = dataset[:,:,0:3]
+	# i_data = dataset[:,:,3:6]
+	# a_data = normalize(a_data, a_min, a_max)
+	# i_data = normalize(i_data, i_min, i_max)
+	# dataset = np.concatenate((a_data, i_data), axis=2)
 	# print dataset.shape
 
 	X, y = format_data(dataset) # X.shape=(Batch=256,10,2), y.shape=(256,10,2)

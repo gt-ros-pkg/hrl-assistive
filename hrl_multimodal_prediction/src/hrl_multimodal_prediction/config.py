@@ -11,7 +11,7 @@ BAG2DATA_TESTDATA = False
 # Audio Params
 RATE = 44100
 N_MEL = 128
-N_FFT = 2048
+N_FFT = 4096
 HOP_LENGTH = N_FFT/4 
 N_MFCC = 3
 
@@ -22,7 +22,7 @@ TIMESTEP_IN = 1
 TIMESTEP_OUT = 10
 N_NEURONS = TIMESTEP_OUT
 
-BATCH_SIZE = 256
+BATCH_SIZE = 64
 NUM_BATCH = 200 #Total #samples = Num_batch x Batch_size
 NB_EPOCH = 500
 PRED_BATCH_SIZE = 1
@@ -31,4 +31,4 @@ PLOT = True
 DENSE = True #True if TimeDistributedDense layer is used
 
 # In Subscriber/Prediction modules
-P_MFCC_TIMESTEP = 3 # when data collected with 4096 and n_fft = 8192
+P_MFCC_TIMESTEP = 5#3 # when data collected with 4096 and n_fft = 8192

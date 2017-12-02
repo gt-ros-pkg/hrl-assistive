@@ -64,7 +64,8 @@ class predict_subscriber():
 		mfccs = np.array(mfccs, dtype=np.float64) # shape=(n_mfcc,t)
 		mfccs = np.swapaxes(mfccs,0,1) # shape=(t, n_mfcc)
 		self.Audio_Buffer = mfccs 
-		
+		# print mfccs.shape
+
 		msg = pub_mfcc()
 		msg.header.stamp = data.header.stamp #processed data time stamp has delay for processing time
 		msg.mfcc = self.Audio_Buffer.flatten() #Can read from subscribe and reconstruct into 2D

@@ -106,13 +106,21 @@ class predictor():
 		# stream.close()
 		# pya.terminate()
 	
-	def normalize(self, y, min_y, max_y):
-	    y = (y - min_y) / (max_y - min_y)
+	def normalize(y, min_y, max_y):
+	    # normalize to range (-1,1)
+	    #NewValue = (((OldValue - OldMin) * (NewMax - NewMin)) / (OldMax - OldMin)) + NewMin
+	    y = (((y - min_y) * (1 + 1)) / (max_y - min_y)) -1
+
+	    # this normalizes to (0,1)
+	    # y = (y - min_y) / (max_y - min_y)
 	    return y
 
 	def scale_back(self, seq, min_y, max_y):
+		#scale back from -1 1 range
+	    seq = (((seq + 1)*(max_y - min_y)) / (1 + 1)) + min_y
+
 	    # scale back 
-	    seq = seq * (max_y - min_y) + min_y
+	    # seq = seq * (max_y - min_y) + min_y
 	    return seq
 
 	def callback(self, data):
@@ -133,6 +141,7 @@ class predictor():
 			loc_timestamp_mfcc = self.timestamp_mfcc 
 			loc_timestamp_relpos = self.timestamp_relpos
 
+			# print np.array(self.mfcc).shape
 			# Convert shape to fit LSTM
 			orig_mfcc = np.array(self.mfcc).reshape(1, cf.P_MFCC_TIMESTEP, cf.N_MFCC) # shape=(t, n_mfcc)
 			orig_relpos = np.array(self.relpos).reshape(1, 1, cf.IMAGE_DIM) 			
