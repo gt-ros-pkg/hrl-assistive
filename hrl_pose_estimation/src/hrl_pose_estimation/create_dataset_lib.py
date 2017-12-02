@@ -55,15 +55,19 @@ class CreateDatasetLib():
         B_m_w = np.concatenate((O_m_w, p_mat_world.T), axis=1)
         last_row = np.array([[0, 0, 0, 1]])
         B_m_w = np.concatenate((B_m_w, last_row), axis=0)
+
         w_data = np.hstack([w_data, np.ones([len(w_data),1])])
-        #print p_world_mat
-        #print R_world_mat
-    
+
         #Convert input to the mat frame vector
         m_data = B_m_w * w_data.T
         m_data = np.squeeze(np.asarray(m_data[:3, :].T))
-        m_data[:,0] = m_data[:,0]+10*INTER_SENSOR_DISTANCE
-        m_data[:, 1] = m_data[:, 1] + 10* INTER_SENSOR_DISTANCE
+
+        try:
+            m_data[:,0] = m_data[:,0]+10*INTER_SENSOR_DISTANCE
+            m_data[:, 1] = m_data[:, 1] + 10* INTER_SENSOR_DISTANCE
+        except:
+            m_data[0] = m_data[0] + 10*INTER_SENSOR_DISTANCE
+            m_data[1] = m_data[1] + 10*INTER_SENSOR_DISTANCE
 
         return m_data
 
