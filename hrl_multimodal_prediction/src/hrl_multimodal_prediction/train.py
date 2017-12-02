@@ -121,6 +121,9 @@ def fit_lstm(model, x_train, x_test, y_train, y_test):
         pyplot.plot(x_train[i,:,:,5])
     pyplot.show()
 
+    mm = np.load(cf.PROCESSED_DATA_PATH + 'combined_train_minmax.npy')        
+    a_min, a_max, i_min, i_max = mm[0], mm[1], mm[2], mm[3]
+
     for epoch in range(cf.NB_EPOCH):
         #train
         mean_tr_loss = []
@@ -131,27 +134,44 @@ def fit_lstm(model, x_train, x_test, y_train, y_test):
             # y = y_train[i:i+BATCH_SIZE]
             x, y = x_train, y_train
             x = add_noise(x)
+            
+            # print x.shape, y.shape
             #normalize
-            mm = np.load(cf.PROCESSED_DATA_PATH + 'combined_train_minmax.npy')        
-            a_min, a_max, i_min, i_max = mm[0], mm[1], mm[2], mm[3]
-            a_data = x[:,:,0:3]
-            i_data = x[:,:,3:6]
+            a_data = x[:,:,:,0:3]
+            i_data = x[:,:,:,3:6]
             a_data = normalize(a_data, a_min, a_max)
             i_data = normalize(i_data, i_min, i_max)
-            x = np.concatenate((a_data, i_data), axis=2)
-            print x.shape
+            x = np.concatenate((a_data, i_data), axis=3)
+            y = y.reshape(y.shape[0], y.shape[1], cf.TIMESTEP_OUT, cf.INPUT_DIM)
+            a_data = y[:,:,:,0:3]
+            i_data = y[:,:,:,3:6]
+            a_data = normalize(a_data, a_min, a_max)
+            i_data = normalize(i_data, i_min, i_max)
+            y = np.concatenate((a_data, i_data), axis=3)
+            y = y.reshape(y.shape[0], y.shape[1], 1, cf.TIMESTEP_OUT*cf.INPUT_DIM)
+            # print x.shape, y.shape
             
-            #plot after normalize
+            # plot after normalize
             # print 'after scale'
-            # for i in range(43):
+            # for i in range(cf.BATCH_SIZE):
             #     pyplot.plot(x[i,:,:,0])
             #     pyplot.plot(x[i,:,:,1])
             #     pyplot.plot(x[i,:,:,2])
             # pyplot.show()
-            # for i in range(43):
+            # for i in range(cf.BATCH_SIZE):
             #     pyplot.plot(x[i,:,:,3])
             #     pyplot.plot(x[i,:,:,4])
             #     pyplot.plot(x[i,:,:,5])
+            # pyplot.show()
+            # for i in range(cf.BATCH_SIZE):
+            #     pyplot.plot(y[i,:,:,0])
+            #     pyplot.plot(y[i,:,:,1])
+            #     pyplot.plot(y[i,:,:,2])
+            # pyplot.show()
+            # for i in range(cf.BATCH_SIZE):
+            #     pyplot.plot(y[i,:,:,3])
+            #     pyplot.plot(y[i,:,:,4])
+            #     pyplot.plot(y[i,:,:,5])
             # pyplot.show()
             
             x = np.swapaxes(x, 0, 1)
@@ -177,6 +197,22 @@ def fit_lstm(model, x_train, x_test, y_train, y_test):
             # x = x_test[i:i+BATCH_SIZE]
             # y = y_test[i:i+BATCH_SIZE]
             x, y = x_test, y_test
+
+            #normalize
+            a_data = x[:,:,:,0:3]
+            i_data = x[:,:,:,3:6]
+            a_data = normalize(a_data, a_min, a_max)
+            i_data = normalize(i_data, i_min, i_max)
+            x = np.concatenate((a_data, i_data), axis=3)
+            y = y.reshape(y.shape[0], y.shape[1], cf.TIMESTEP_OUT, cf.INPUT_DIM)
+            a_data = y[:,:,:,0:3]
+            i_data = y[:,:,:,3:6]
+            a_data = normalize(a_data, a_min, a_max)
+            i_data = normalize(i_data, i_min, i_max)
+            y = np.concatenate((a_data, i_data), axis=3)
+            y = y.reshape(y.shape[0], y.shape[1], 1, cf.TIMESTEP_OUT*cf.INPUT_DIM)
+            # print x.shape
+
             x = np.swapaxes(x, 0, 1)
             y = np.swapaxes(y, 0, 1)
 
