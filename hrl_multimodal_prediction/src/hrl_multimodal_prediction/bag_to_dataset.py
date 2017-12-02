@@ -57,6 +57,8 @@ import optparse
 
 from matplotlib import pyplot 
 
+import config as cf
+
 #Psuedo
 # First read in all rosbag files from the folder (check)
 # find the peak and +- 2s --> audio for one bag (check)
@@ -65,40 +67,17 @@ from matplotlib import pyplot
 # Convert to MFCC and reconstruct for one bag if not good, adjust 3
 # Do 2,3,4 for all bags
 
-ROSBAG_PATH = './bagfiles/'
-ROSBAG_TEST_PATH = './bagfiles/testbag/'
-ROSBAG_UNPACK_PATH = './bagfiles/unpacked/'
-UNPACK = False
-PROCESSED_DATA_PATH = './processed_data/combined'
-
-#Set TRUE for prediction data, FALSE for training data
-TESTDATA = False
-
-# MFCC Params
-N_MEL = 128
-N_FFT = 8192
-HOP_LENGTH = N_FFT/4 
-N_MFCC = 3
-
 class dataset_creator:
-    FRAME_SIZE = 4096 # frame per buffer
-    RATE       = 44100 # sampling rate
-    CHANNEL    = 1 # number of channels
-    FORMAT     = pyaudio.paInt16
-    MAX_INT    = 32768.0
-
-    WINDOW_SIZE_IN = 1
-    WINDOW_SIZE_OUT = 1 
 
     def convert_bag2dataset(self):         
         audio_data = []
         image_data = []
         combined_data = []
 
-        if TESTDATA:
-            path = ROSBAG_TEST_PATH
+        if cf.BAG2DATA_TESTDATA:
+            path = cf.ROSBAG_TEST_PATH
         else:
-            path = ROSBAG_PATH
+            path = cf.ROSBAG_PATH
 
         for filename in sorted(glob.glob(os.path.join(path, '*.bag'))):
             num = re.findall(r'\d+', filename)
@@ -107,9 +86,9 @@ class dataset_creator:
             # wavfileMFCC = ROSBAG_PATH + 'data1MFCC.wav'
             # txtfile = ROSBAG_PATH + 'data1.txt'
             bagfile  = filename
-            txtfile = ROSBAG_UNPACK_PATH + 'data' + str(num) + 'txt'
-            wavfile  = ROSBAG_UNPACK_PATH + 'data' + str(num) + '.wav'
-            wavfileMFCC = ROSBAG_UNPACK_PATH + 'data' + str(num) + 'MFCC.wav'
+            txtfile = cf.ROSBAG_UNPACK_PATH + 'data' + str(num) + 'txt'
+            wavfile  = cf.ROSBAG_UNPACK_PATH + 'data' + str(num) + '.wav'
+            wavfileMFCC = cf.ROSBAG_UNPACK_PATH + 'data' + str(num) + 'MFCC.wav'
 
             static_ar = []
             dynamic_ar = []
@@ -184,21 +163,21 @@ class dataset_creator:
             peak_idx = audio_store.tolist().index(npmax)
             audio_store = self.crop2s(audio_store, peak_idx)
 
-            if UNPACK:
+            if cf.BAG2DATA_UNPACK:
                 audio_store = self.normalize(audio_store)
-                librosa.output.write_wav(wavfile, audio_store, self.RATE)
+                librosa.output.write_wav(wavfile, audio_store, cf.RATE)
 
             #relative position
             relative_position = self.crop2s(relative_position, peak_idx)
             # relative_position = self.normalize(relative_position)
-            if UNPACK:
+            if cf.BAG2DATA_UNPACK:
                np.savetxt(txtfile, relative_position)
 
             ############### MFCC ##########################
             y = audio_store
-            sr = self.RATE
+            sr = cf.RATE
             # Original #
-            mfccs = librosa.feature.mfcc(y=y, sr=self.RATE, hop_length=HOP_LENGTH, n_fft=N_FFT, n_mfcc=N_MFCC)# default hop_length=512, hop_length=int(0.01*sr))
+            mfccs = librosa.feature.mfcc(y=y, sr=cf.RATE, hop_length=cf.HOP_LENGTH, n_fft=cf.N_FFT, n_mfcc=cf.N_MFCC)# default hop_length=512, hop_length=int(0.01*sr))
             mfcc_len = mfccs.shape[1]
             ############################
 
@@ -208,7 +187,7 @@ class dataset_creator:
             relative_position_intp = self.interpolate(relative_position, new_length) 
             ##################################
             
-            if UNPACK:
+            if cf.BAG2DATA_UNPACK:
                 self.reconstruct_mfcc(mfccs, y, wavfileMFCC)        
 
             # Fact:: mfcc_len = (sr*sec)/hop_length = (sr*sec)/(n_fft/4)
@@ -235,13 +214,13 @@ class dataset_creator:
         image_data = np.array(image_data)
         print audio_data.shape
         print image_data.shape
-        if not TESTDATA:
+        if not cf.BAG2DATA_TESTDATA:
             a_min, a_max = np.min(audio_data), np.max(audio_data)
             i_min, i_max = np.min(image_data), np.max(image_data)
             print a_min, a_max, i_min, i_max
             minmax = [a_min, a_max, i_min, i_max]
             print 'saving train minmax as npy'
-            np.save(PROCESSED_DATA_PATH + '_train_minmax', minmax)
+            np.save(cf.PROCESSED_DATA_PATH + 'combined_train_minmax', minmax)
 
         #concatenate for number of experiment samples
         # audio_dataX2 = audio_dataX[0]
@@ -292,25 +271,25 @@ class dataset_creator:
         # i_minmax.append(i_max)
         # i_minmax = np.array(i_minmax)
         #save as np
-        if TESTDATA:
-            np.save(PROCESSED_DATA_PATH + '_test', combined_data)
+        if cf.BAG2DATA_TESTDATA:
+            np.save(cf.PROCESSED_DATA_PATH + 'combined_test', combined_data)
         else: 
             print 'saving combined train data as npy'
-            np.save(PROCESSED_DATA_PATH + '_train', combined_data)
+            np.save(cf.PROCESSED_DATA_PATH + 'combined_train', combined_data)
 
-    def construct_dataset(self, data):
-        # Create a windowed set dX_audio, dY_audio, concatenate, normalize(91,mfcc)
-        dX, dY = [], []
-        for i in range(data.shape[0] - self.WINDOW_SIZE_IN):
-            dX.append(data[i:i+self.WINDOW_SIZE_IN])
-            dY.append(data[i+self.WINDOW_SIZE_IN:i+self.WINDOW_SIZE_IN+self.WINDOW_SIZE_OUT][0])
-        return dX, dY        
+    # def construct_dataset(self, data):
+    #     # Create a windowed set dX_audio, dY_audio, concatenate, normalize(91,mfcc)
+    #     dX, dY = [], []
+    #     for i in range(data.shape[0] - self.WINDOW_SIZE_IN):
+    #         dX.append(data[i:i+self.WINDOW_SIZE_IN])
+    #         dY.append(data[i+self.WINDOW_SIZE_IN:i+self.WINDOW_SIZE_IN+self.WINDOW_SIZE_OUT][0])
+    #     return dX, dY        
 
-    def normalize(self, data):
-        a_max = np.max(data)
-        a_min =  np.min(data)
-        data = (data - a_min) / (a_max - a_min)
-        return data
+    # def normalize(self, data):
+    #     a_max = np.max(data)
+    #     a_min =  np.min(data)
+    #     data = (data - a_min) / (a_max - a_min)
+    #     return data
 
     def crop2s(self, data, peak_idx, audio_len_sample=88200): #1s=44100, 2s=88200
         data = data[peak_idx-audio_len_sample : peak_idx+audio_len_sample]
@@ -332,29 +311,29 @@ class dataset_creator:
         data_intp = np.rollaxis(data_intp, 1, 0)    
         return data_intp
 
-    def reconstruct_mfcc(self, mfccs, y, wavfileMFCC):
-        #build reconstruction mappings
-        n_mfcc = mfccs.shape[0]
-        n_mel = N_MEL
-        dctm = librosa.filters.dct(n_mfcc, n_mel)
-        n_fft = N_FFT
-        mel_basis = librosa.filters.mel(self.RATE, n_fft, n_mels=n_mel)
+    # def reconstruct_mfcc(self, mfccs, y, wavfileMFCC):
+    #     #build reconstruction mappings
+    #     n_mfcc = mfccs.shape[0]
+    #     n_mel = N_MEL
+    #     dctm = librosa.filters.dct(n_mfcc, n_mel)
+    #     n_fft = N_FFT
+    #     mel_basis = librosa.filters.mel(self.RATE, n_fft, n_mels=n_mel)
 
-        #Empirical scaling of channels to get ~flat amplitude mapping.
-        bin_scaling = 1.0/np.maximum(0.0005, np.sum(np.dot(mel_basis.T, mel_basis), axis=0))
-        #Reconstruct the approximate STFT squared-magnitude from the MFCCs.
-        recon_stft = bin_scaling[:, np.newaxis] * np.dot(mel_basis.T, self.invlogamplitude(np.dot(dctm.T, mfccs)))
-        #Impose reconstructed magnitude on white noise STFT.
-        excitation = np.random.randn(y.shape[0])
-        E = librosa.stft(excitation, n_fft=n_fft)
-        recon = librosa.istft(E/np.abs(E)*np.sqrt(recon_stft))
-        #print recon
-        #print recon.shape
-        wav.write(wavfileMFCC, self.RATE, recon)
+    #     #Empirical scaling of channels to get ~flat amplitude mapping.
+    #     bin_scaling = 1.0/np.maximum(0.0005, np.sum(np.dot(mel_basis.T, mel_basis), axis=0))
+    #     #Reconstruct the approximate STFT squared-magnitude from the MFCCs.
+    #     recon_stft = bin_scaling[:, np.newaxis] * np.dot(mel_basis.T, self.invlogamplitude(np.dot(dctm.T, mfccs)))
+    #     #Impose reconstructed magnitude on white noise STFT.
+    #     excitation = np.random.randn(y.shape[0])
+    #     E = librosa.stft(excitation, n_fft=n_fft)
+    #     recon = librosa.istft(E/np.abs(E)*np.sqrt(recon_stft))
+    #     #print recon
+    #     #print recon.shape
+    #     wav.write(wavfileMFCC, self.RATE, recon)
 
-    def invlogamplitude(self, S):
-    #"""librosa.logamplitude is actually 10_log10, so invert that."""
-        return 10.0**(S/10.0)
+    # def invlogamplitude(self, S):
+    # #"""librosa.logamplitude is actually 10_log10, so invert that."""
+    #     return 10.0**(S/10.0)
 
 
 def main():

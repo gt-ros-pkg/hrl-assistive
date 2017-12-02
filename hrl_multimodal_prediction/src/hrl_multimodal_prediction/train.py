@@ -104,7 +104,7 @@ def fit_lstm(model, x_train, x_test, y_train, y_test):
     pyplot.plot(x_train[0,:,:,4])
     pyplot.plot(x_train[0,:,:,5])
     pyplot.show()
-    y = y_train.reshape((256,77,10,6))
+    y = y_train.reshape((y_train.shape[0],y_train.shape[1],cf.TIMESTEP_OUT,cf.INPUT_DIM))
     pyplot.plot(y[0,:,:,0])
     pyplot.plot(y[0,:,:,1])
     pyplot.plot(y[0,:,:,2])
