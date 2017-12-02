@@ -16,6 +16,9 @@ import copy
 import tf.transformations as tft
 import tf
 
+# Pose Estimation Libraries
+from create_dataset_lib import CreateDatasetLib
+
 roslib.load_manifest('hrl_lib')
 from hrl_lib.util import save_pickle, load_pickle
 
@@ -44,47 +47,72 @@ class HeadDetector:
         self.database_path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials'
         #self.database_path = '/home/henryclever/hrl_file_server/Autobed'
         self.head_center_2d = None
-        self.T = np.zeros((4,1))
-        self.r_S = np.zeros((4,1))
-        self.r_E = np.zeros((4,1))
-        self.r_H = np.zeros((4,1))
-        self.l_S = np.zeros((4,1))
-        self.l_E = np.zeros((4,1))
-        self.l_H = np.zeros((4,1))
+
+        self.world_to_mat = CreateDatasetLib().world_to_mat
+        [self.p_world_mat, self.R_world_mat] = load_pickle('/home/henryclever/hrl_file_server/Autobed/pose_estimation_data/mat_axes15.p')
 
         self.tf_broadcaster = tf.TransformBroadcaster()
         self.tf_listener = tf.TransformListener()
 
-        self.TrelO = tft.identity_matrix()
-        self.rSrelT = tft.identity_matrix()
-        self.rSrotrS = tft.identity_matrix()
-        self.rErelrS = tft.identity_matrix()
-        self.rHrelrE = tft.identity_matrix()
+        self.T = np.zeros((4,1))
+        self.H = np.zeros((4,1))
+
+        self.r_S = np.zeros((4,1))
+        self.r_E = np.zeros((4,1))
+        self.r_H = np.zeros((4,1))
         self.Pr_SE = np.zeros((4,1))
         self.Pr_EH = np.zeros((4,1))
-
-
         self.r_elbow_msg = None
-        self.l_elbow_msg = None
         self.r_hand_msg = None
-        self.l_hand_msg = None
         self.r_SE = np.zeros((3,1))
         self.r_SEn = np.zeros((3,1))
         self.r_SH = np.zeros((3, 1))
         self.r_SHn = np.zeros((3, 1))
         self.r_Spxn = np.zeros((3, 1))
+        self.r_Spxm = np.zeros((3, 1))
+        self.r_Spxzn = np.zeros((3,1))
+        self.r_SPxz = np.zeros((3,1))
         self.r_Spx = np.zeros((3, 1))
         self.r_SH_pp = np.zeros((3, 1))
         self.r_Spx_pp = np.zeros((3, 1))
-        self.r_ROT_OS = np.matrix('0,0,-1;0,1,0;-1,0,0')
-        self.rSrotrS[0:3,0:3] = self.r_ROT_OS#np.array([[1,0,0],[0,1,0],[0,0,1]])
+
+        self.pred_r_H = np.zeros((3, 1))
+        self.r_ROT_OS = np.matrix('0.,0.,-1.;0.,1.,0.;-1.,0.,0.')
+        self.ROT_bed = np.matrix('1.,0.,0.;0.,1.,0.;0.,0.,1.')
 
 
-        self.l_SE = np.zeros((3, 1))
-        self.l_SEn = np.zeros((3, 1))
+        self.l_S = np.zeros((4,1))
+        self.l_E = np.zeros((4,1))
+        self.l_H = np.zeros((4,1))
+        self.Pl_SE = np.zeros((4,1))
+        self.Pl_EH = np.zeros((4,1))
+        self.l_elbow_msg = None
+        self.l_hand_msg = None
+        self.l_SE = np.zeros((3,1))
+        self.l_SEn = np.zeros((3,1))
         self.l_SH = np.zeros((3, 1))
         self.l_SHn = np.zeros((3, 1))
-        self.l_ROT_OS = np.matrix('0,0,1;0,1,0;1,0,0')
+        self.l_Spxn = np.zeros((3, 1))
+        self.l_Spxm = np.zeros((3, 1))
+        self.l_Spxzn = np.zeros((3,1))
+        self.l_SPxz = np.zeros((3,1))
+        self.l_Spx = np.zeros((3, 1))
+        self.l_SH_pp = np.zeros((3, 1))
+        self.l_Spx_pp = np.zeros((3, 1))
+
+        self.l_ROT_OS = np.matrix('0.,0.,1.;0.,1.,0.;1.,0.,0.')
+
+        self.r_K = np.zeros((4,1))
+        self.r_A = np.zeros((4,1))
+
+        self.l_K = np.zeros((4,1))
+        self.l_A = np.zeros((4,1))
+
+        self.pseudoheight = {'1': 1.53, '2': 1.42, '3': 1.52, '4': 1.63, '5': 1.66, '6': 1.59, '7': 1.49, '8': 1.53,
+                         '9': 1.69, '10': 1.58, '11': 1.64, '12': 1.45, '13': 1.58, '14': 1.67, '15': 1.63, '16': 1.48,
+                         '17': 1.43, '18': 1.54}
+
+        self.bedangle = 0.
 
         self.zoom_factor = 2
         self.mat_sampled = False
@@ -92,16 +120,7 @@ class HeadDetector:
         self.head_pose = []
         self.zoom_factor = 2
         self.params_length = np.zeros((8))#torso height, torso vert, shoulder right, shoulder left, upper arm right, upper arm left, forearm right, forearm left
-        self.params_length[0] = 0.1 #torso height
-        self.params_length[1] = 0.3 #torso vert
-        self.params_length[2] = 0.15 #shoulder right
-        self.params_length[3] = 0.15 #shoulder left
         self.params_angle = np.zeros((8))  # sh right roll, sh left roll, sh right pitch, sh left pitch, sh right yaw, sh left yaw, elbow right, elbow left
-
-        self.rSrelT[0,3] = self.params_length[2]
-        self.rSrelT[1,3] = -self.params_length[1]
-        self.rSrelT[2,3] = -self.params_length[0]
-
 
 
         print "Ready to start reading bags."
@@ -135,9 +154,10 @@ class HeadDetector:
         r_shoulder_pose = rospy.Publisher("/r_shoulder/pose", PoseStamped, queue_size = 10)
         r_elbow_pose = rospy.Publisher("/r_elbow_o/pose", PoseStamped, queue_size = 10)
         r_hand_pose = rospy.Publisher("/r_hand_o/pose", PoseStamped, queue_size = 10)
-        r_forearm_pose = rospy.Publisher("/r_forearm/pose", PoseStamped, queue_size = 10)
         self.r_elbowpred_pose = rospy.Publisher("/r_elbowpred/pose", PoseStamped, queue_size = 10)
+        self.l_elbowpred_pose = rospy.Publisher("/l_elbowpred/pose", PoseStamped, queue_size = 10)
         self.r_handpred_pose = rospy.Publisher("/r_handpred/pose", PoseStamped, queue_size = 10)
+        self.l_handpred_pose = rospy.Publisher("/l_handpred/pose", PoseStamped, queue_size = 10)
         r_knee_pose = rospy.Publisher("/r_knee_o/pose", PoseStamped, queue_size = 10)
         torso_pose = rospy.Publisher("/torso_o/pose", PoseStamped, queue_size = 10)
         torso_vert_pose = rospy.Publisher("/torso_vert/pose", PoseStamped, queue_size = 10)
@@ -154,6 +174,16 @@ class HeadDetector:
         counter = 0
         rando = 0
 
+
+
+
+
+        self.params_length[0] = 0.1 #torso height
+        self.params_length[1] = 0.2065*self.pseudoheight[str(subject)] - 0.0529 #about 0.25. torso vert
+        self.params_length[2] = 0.13454*self.pseudoheight[str(subject)] - 0.03547 #about 0.15. shoulder right
+        self.params_length[3] = 0.13454*self.pseudoheight[str(subject)] - 0.03547 #about 0.15. shoulder left
+
+
         for topic, msg, t in bag.read_messages():
 
             if topic == '/fsascan':
@@ -164,204 +194,108 @@ class HeadDetector:
                 print t, 'count: ',counter, rando
             elif topic == '/abdout0':
                 self.publish_floatarr(msg,abdout)
+                self.bedangle = np.round(msg.data[0],0)
+                if self.bedangle > 180: self.bedangle = self.bedangle - 360
             elif topic == '/head_o/pose':
-                self.publish_pose(msg,head_pose)
-            elif topic == '/l_ankle_o/pose':
-                self.publish_pose(msg,l_ankle_pose)
-                rando = msg.transform.translation.x
-            elif topic == 'l_elbow_o/pose':
-                self.publish_pose(msg,l_elbow_pose)
-                self.l_elbow_msg = msg
-                self.l_E[0, 0] = msg.transform.translation.x
-                self.l_E[1, 0] = msg.transform.translation.y
-                self.l_E[2, 0] = msg.transform.translation.z
-                self.l_E[3, 0] = 1
-            elif topic == '/l_hand_o/pose':
-                self.publish_pose(msg,l_hand_pose)
-                self.l_hand_msg = msg
-                self.l_H[0, 0] = msg.transform.translation.x
-                self.l_H[1, 0] = msg.transform.translation.y
-                self.l_H[2, 0] = msg.transform.translation.z
-                self.l_H[3, 0] = 1
-            elif topic == '/l_knee_o/pose':
-                self.publish_pose(msg,l_knee_pose)
-            elif topic == '/r_ankle_o/pose':
-                self.publish_pose(msg,r_ankle_pose)
+                w2m = self.world_to_mat(np.expand_dims(
+                    np.array([msg.transform.translation.x, msg.transform.translation.y, msg.transform.translation.z]),
+                    0), self.p_world_mat, self.R_world_mat)
+                self.H[0, 0], self.H[1, 0], self.H[2, 0], self.H[3, 0] = w2m[0], w2m[1], w2m[2], 1.
+                msg.transform.translation.x = self.H[0, 0]
+                msg.transform.translation.y = self.H[1, 0]
+                msg.transform.translation.z = self.H[2, 0]
+                self.publish_pose(msg, head_pose)
+                self.head_msg = msg
+            elif topic == '/torso_o/pose':
+                w2m = self.world_to_mat(np.expand_dims(
+                    np.array([msg.transform.translation.x, msg.transform.translation.y, msg.transform.translation.z]),
+                    0), self.p_world_mat, self.R_world_mat)
+                self.T[0, 0], self.T[1, 0], self.T[2, 0], self.T[3, 0] = w2m[0], w2m[1], w2m[2], 1.
+                msg.transform.translation.x = self.T[0, 0]
+                msg.transform.translation.y = self.T[1, 0]
+                msg.transform.translation.z = self.T[2, 0]
+                self.publish_pose(msg,torso_pose)
+                self.torso_msg = msg
             elif topic == '/r_elbow_o/pose':
+                w2m = self.world_to_mat(np.expand_dims(
+                    np.array([msg.transform.translation.x, msg.transform.translation.y, msg.transform.translation.z]),
+                    0), self.p_world_mat, self.R_world_mat)
+                self.r_E[0, 0], self.r_E[1, 0], self.r_E[2, 0], self.r_E[3, 0] = w2m[0], w2m[1], w2m[2], 1.
+                msg.transform.translation.x = self.r_E[0, 0]
+                msg.transform.translation.y = self.r_E[1, 0]
+                msg.transform.translation.z = self.r_E[2, 0]
                 self.publish_pose(msg,r_elbow_pose)
                 self.r_elbow_msg = msg
-                self.r_E[0, 0] = msg.transform.translation.x
-                self.r_E[1, 0] = msg.transform.translation.y
-                self.r_E[2, 0] = msg.transform.translation.z
-                self.r_E[3, 0] = 1
+            elif topic == 'l_elbow_o/pose':
+                w2m = self.world_to_mat(np.expand_dims(
+                    np.array([msg.transform.translation.x, msg.transform.translation.y, msg.transform.translation.z]),
+                    0), self.p_world_mat, self.R_world_mat)
+                self.l_E[0, 0], self.l_E[1, 0], self.l_E[2, 0], self.l_E[3, 0] = w2m[0], w2m[1], w2m[2], 1.
+                msg.transform.translation.x = self.l_E[0, 0]
+                msg.transform.translation.y = self.l_E[1, 0]
+                msg.transform.translation.z = self.l_E[2, 0]
+                self.publish_pose(msg,l_elbow_pose)
+                self.l_elbow_msg = msg
             elif topic == '/r_hand_o/pose':
+                w2m = self.world_to_mat(np.expand_dims(
+                    np.array([msg.transform.translation.x, msg.transform.translation.y, msg.transform.translation.z]),
+                    0), self.p_world_mat, self.R_world_mat)
+                self.r_H[0, 0], self.r_H[1, 0], self.r_H[2, 0], self.r_H[3, 0] = w2m[0], w2m[1], w2m[2], 1.
+                msg.transform.translation.x = self.r_H[0, 0]
+                msg.transform.translation.y = self.r_H[1, 0]
+                msg.transform.translation.z = self.r_H[2, 0]
                 self.publish_pose(msg,r_hand_pose)
                 self.r_hand_msg = msg
-                self.r_H[0, 0] = msg.transform.translation.x
-                self.r_H[1, 0] = msg.transform.translation.y
-                self.r_H[2, 0] = msg.transform.translation.z
-                self.r_H[3, 0] = 1
-
+            elif topic == '/l_hand_o/pose':
+                w2m = self.world_to_mat(np.expand_dims(
+                    np.array([msg.transform.translation.x, msg.transform.translation.y, msg.transform.translation.z]),
+                    0), self.p_world_mat, self.R_world_mat)
+                self.l_H[0, 0], self.l_H[1, 0], self.l_H[2, 0], self.l_H[3, 0] = w2m[0], w2m[1], w2m[2], 1.
+                msg.transform.translation.x = self.l_H[0, 0]
+                msg.transform.translation.y = self.l_H[1, 0]
+                msg.transform.translation.z = self.l_H[2, 0]
+                self.publish_pose(msg,l_hand_pose)
+                self.l_hand_msg = msg
             elif topic == '/r_knee_o/pose':
+                w2m = self.world_to_mat(np.expand_dims(
+                    np.array([msg.transform.translation.x, msg.transform.translation.y, msg.transform.translation.z]),
+                    0), self.p_world_mat, self.R_world_mat)
+                self.r_K[0, 0], self.r_K[1, 0], self.r_K[2, 0], self.r_K[3, 0] = w2m[0], w2m[1], w2m[2], 1.
+                msg.transform.translation.x = self.r_K[0, 0]
+                msg.transform.translation.y = self.r_K[1, 0]
+                msg.transform.translation.z = self.r_K[2, 0]
                 self.publish_pose(msg,r_knee_pose)
-            elif topic == '/torso_o/pose':
-                msg_right_sampled = True
-                self.publish_pose(msg,torso_pose)
-                self.T[0, 0] = msg.transform.translation.x
-                self.T[1, 0] = msg.transform.translation.y
-                self.T[2, 0] = msg.transform.translation.z
-                self.T[3, 0] = 1.
-
-                self.TrelO[:,3] = self.T.T
-
-                msg_mod = msg
-                msg_mod.transform.rotation.x = 0.
-                msg_mod.transform.rotation.y = 0.
-                msg_mod.transform.rotation.z = 1.
-                msg_mod.transform.rotation.w = 1.
-                msg_mod.transform.translation.y = msg.transform.translation.y - self.params_length[1]
-                msg_mod.transform.translation.z = msg.transform.translation.z - self.params_length[0]
-                self.publish_pose(msg_mod,torso_vert_pose)
-
-                msg_right = msg_mod
-                msg_right.transform.rotation.x = 1.
-                msg_right.transform.rotation.y = 0.
-                msg_right.transform.rotation.z = 0.
-                msg_right.transform.rotation.w = 1.
-                msg_right.transform.translation.x = msg_mod.transform.translation.x + self.params_length[2]
-                self.publish_pose(msg_right, r_shoulder_pose)
-
-                self.r_S[0,0] = msg_right.transform.translation.x
-                self.r_S[1,0] = msg_right.transform.translation.y
-                self.r_S[2,0] = msg_right.transform.translation.z
-                self.r_S[3,0] = 1
-
-                # parameter for the length between hand and elbow. Should be around 0.2 meters.
-                self.params_length[6] = np.linalg.norm(self.r_H - self.r_E)
-
-                # get the length of the right shoulder to right elbow
-                self.params_length[4] = np.linalg.norm(self.r_E - self.r_S)
-
-                #get the shoulder pitch
-                SE_mag = np.copy(self.params_length[4])
-                self.r_SE = self.r_S[0:3] - self.r_E[0:3]
-                self.r_SE = np.matmul(self.r_ROT_OS, self.r_SE)
-                self.r_SEn = np.copy(self.r_SE)/SE_mag
-                self.params_angle[2] = np.degrees(np.arcsin(self.r_SEn[1,0]))
-
-                #get shoulder yaw
-                self.params_angle[4] = np.degrees(np.arctan(self.r_SEn[0,0]/self.r_SEn[2,0]))
-
-                # calculate the shoulder roll
-                SH_mag = np.linalg.norm(self.r_H - self.r_S) # first get distance between shoulder and hand
-                self.r_SH = self.r_S[0:3] - self.r_H[0:3]
-                self.r_SH = np.matmul(self.r_ROT_OS, self.r_SH)
-                self.r_SHn = np.copy(self.r_SH) / SH_mag
-                self.r_Spxn[0,0], self.r_Spxn[1,0], self.r_Spxn[2,0] = fsolve(self.equations_s_RSpx, (.5, .5, .5 ))
-                self.r_Spx = np.copy(self.r_Spxn)*SH_mag
-                self.r_SH_pp = self.r_SE*(np.dot(self.r_SE.T,self.r_SH))/(np.linalg.norm(self.r_SE)*np.linalg.norm(self.r_SE)) - self.r_SH
-                self.r_SH_pp_mag = np.linalg.norm(self.r_SH_pp)
-                self.r_Spx_pp = self.r_SE * (np.dot(self.r_SE.T, self.r_Spx)) / (np.linalg.norm(self.r_SE) * np.linalg.norm(self.r_SE)) - self.r_Spx
-                self.r_Spx_pp_mag = np.linalg.norm(self.r_Spx_pp)
-                self.params_angle[0] = np.degrees(np.arccos(np.dot(self.r_SH_pp.T,self.r_Spx_pp)/(self.r_SH_pp_mag*self.r_Spx_pp_mag)))
-
-                # get the elbow angle with the law of cosines between lengths
-                self.params_angle[6] = np.degrees(np.arccos((np.square(self.params_length[4]) + np.square(
-                    self.params_length[6]) - np.square(SH_mag)) / (2 * self.params_length[4] * self.params_length[6])))
-
-
-
-
-
-
-            #convert the the RPH back to XYZ so we can visualize a vector and make sure the calculations are correct.
-                #self.ROT_rph, self.rErelrS = self.RPH_to_XYZ(self.params_angle[0],self.params_angle[2],self.params_angle[4])
-
-                #self.Pr_SE = np.matmul(self.rErelrS,np.array([[self.params_length[4]],[0],[0],[1]]))
-
-                #self.rErelrS[0:3, 3] = -self.Pr_SE[0:3,0]
-
-                #self.rHrelrE = tft.rotation_matrix(np.deg2rad(self.params_angle[6]), (0,0,1))
-                #self.Pr_EH = np.matmul(self.rHrelrE, np.array([[self.params_length[6]], [0], [0],  [1]]))
-                #print self.Pr_EH
-                #print self.rSrelT
-                #print self.rErelrS
-
-                #print np.linalg.norm(self.r_SE[:,0]), np.sqrt(np.square(self.r_SE[1,0])+np.square(self.r_SE[0,0])+np.square(self.r_SE[2,0]))
-                #print self.r_SE[:,0], self.r_SH[:,0]
-                #print self.r_SE
-                #print self.ROT_rph
-                #print np.cross(self.r_SE[:,0].T,self.r_SH[:,0].T)/(np.linalg.norm(self.r_SE)*np.linalg.norm(self.r_SH)), 'rse cross rsh'
-                #S_H = np.cross(self.r_SE[:,0].T,self.r_SH[:,0].T)/(np.linalg.norm(np.cross(self.r_SE[:,0].T,self.r_SH[:,0].T)))
-                #S_E = self.r_SE[:,0].T/np.linalg.norm(self.r_SE[:,0].T)
-                #print S_H
-                #print S_E
-                #print np.cross(S_H,S_E)/(np.linalg.norm(np.cross(S_H,S_E))), 'end'
-                #print self.ROT_rph
-                #
-               # print self.rErelrS
-                #print self.r_S
-                #print np.matmul(np.matmul(np.matmul(self.rErelrS, self.rSrotrS), self.rSrelT), self.T)
-
-                #self.Pr_SE[0:3, 0] =  np.matrix(self.r_SE.T)
-
-
-
-
-                msg_left = msg_mod
-                msg_left.transform.rotation.x = 1
-                msg_left.transform.rotation.y = 0
-                msg_left.transform.rotation.z = 0
-                msg_left.transform.rotation.w = 1
-                msg_left.transform.translation.x = msg_mod.transform.translation.x - self.params_length[3] - self.params_length[2]
-                self.publish_pose(msg_left, l_shoulder_pose)
-
-
-                # parameter for the length between hand and elbow. Should be around 0.2 meters.
-                self.params_length[7] = np.linalg.norm(self.l_H - self.l_E)
-
-                if self.l_elbow_msg is not None:
-                    # get the length of the left shoulder to left elbow
-                    self.params_length[5] = np.sqrt(
-                        np.square(msg_left.transform.translation.x - self.l_elbow_msg.transform.translation.x) + np.square(
-                            msg_left.transform.translation.y - self.l_elbow_msg.transform.translation.y) + np.square(
-                            msg_left.transform.translation.z - self.l_elbow_msg.transform.translation.z))
-
-                    # get the shoulder pitch
-                    SE_mag = np.copy(self.params_length[5])
-                    self.l_SE[0, 0] = msg_left.transform.translation.x - self.l_elbow_msg.transform.translation.x
-                    self.l_SE[1, 0] = msg_left.transform.translation.y - self.l_elbow_msg.transform.translation.y
-                    self.l_SE[2, 0] = msg_left.transform.translation.z - self.l_elbow_msg.transform.translation.z
-                    self.l_SE = np.matmul(self.l_ROT_OS, self.l_SE)
-                    self.l_SEn = np.copy(self.l_SE) / SE_mag
-                    self.params_angle[3] = np.degrees(np.arcsin(self.l_SEn[1, 0]))
-
-                    # get shoulder yaw
-                    self.params_angle[5] = np.degrees(np.arctan(self.l_SEn[0, 0] / self.l_SEn[2, 0]))
-
-                    #get the elbow angle
-                    if self.l_hand_msg is not None:
-                        #first get distance between shoulder and hand
-                        SH_mag = np.sqrt(
-                            np.square(msg_left.transform.translation.x - self.l_hand_msg.transform.translation.x) + np.square(
-                                msg_left.transform.translation.y - self.l_hand_msg.transform.translation.y) + np.square(
-                                msg_left.transform.translation.z - self.l_hand_msg.transform.translation.z))
-                        #now apply law of cosines
-                        self.params_angle[7] = np.degrees(np.arccos((np.square(self.params_length[5]) + np.square(
-                            self.params_length[7]) - np.square(SH_mag)) / (
-                                                         2 * self.params_length[5] * self.params_length[7])))
-
-                    # calculate the shoulder roll
-                        self.l_SH[0, 0] = msg_left.transform.translation.x - self.l_hand_msg.transform.translation.x
-                        self.l_SH[1, 0] = msg_left.transform.translation.y - self.l_hand_msg.transform.translation.y
-                        self.l_SH[2, 0] = msg_left.transform.translation.z - self.l_hand_msg.transform.translation.z
-                        self.l_SH = np.matmul(self.l_ROT_OS, self.l_SH)
-                        self.l_SHn = np.copy(self.l_SH) / SH_mag
-
-
-
-
-
+                self.r_knee_msg = msg
+            elif topic == '/l_knee_o/pose':
+                w2m = self.world_to_mat(np.expand_dims(
+                    np.array([msg.transform.translation.x, msg.transform.translation.y, msg.transform.translation.z]),
+                    0), self.p_world_mat, self.R_world_mat)
+                self.l_K[0, 0], self.l_K[1, 0], self.l_K[2, 0], self.l_K[3, 0] = w2m[0], w2m[1], w2m[2], 1.
+                msg.transform.translation.x = self.l_K[0, 0]
+                msg.transform.translation.y = self.l_K[1, 0]
+                msg.transform.translation.z = self.l_K[2, 0]
+                self.publish_pose(msg,l_knee_pose)
+                self.l_knee_msg = msg
+            elif topic == '/r_ankle_o/pose':
+                w2m = self.world_to_mat(np.expand_dims(
+                    np.array([msg.transform.translation.x, msg.transform.translation.y, msg.transform.translation.z]),
+                    0), self.p_world_mat, self.R_world_mat)
+                self.r_A[0, 0], self.r_A[1, 0], self.r_A[2, 0], self.r_A[3, 0] = w2m[0], w2m[1], w2m[2], 1.
+                msg.transform.translation.x = self.r_A[0, 0]
+                msg.transform.translation.y = self.r_A[1, 0]
+                msg.transform.translation.z = self.r_A[2, 0]
+                self.publish_pose(msg,r_ankle_pose)
+                self.r_ankle_msg = msg
+            elif topic == '/l_ankle_o/pose':
+                w2m = self.world_to_mat(np.expand_dims(
+                    np.array([msg.transform.translation.x, msg.transform.translation.y, msg.transform.translation.z]),
+                    0), self.p_world_mat, self.R_world_mat)
+                self.l_A[0, 0], self.l_A[1, 0], self.l_A[2, 0], self.l_A[3, 0] = w2m[0], w2m[1], w2m[2], 1.
+                msg.transform.translation.x = self.l_A[0, 0]
+                msg.transform.translation.y = self.l_A[1, 0]
+                msg.transform.translation.z = self.l_A[2, 0]
+                self.publish_pose(msg, l_ankle_pose)
+                self.l_ankle_msg = msg
             elif topic == '/mat_o/pose':
                 self.publish_pose(msg,mat_o_pose)
             elif topic == '/mat_x/pose':
@@ -369,14 +303,197 @@ class HeadDetector:
             elif topic == '/mat_y/pose':
                 self.publish_pose(msg,mat_y_pose)
 
-            if self.r_elbow_msg is not None and self.l_hand_msg is not None:
-                self.forward_kinematics(self.params_length,self.params_angle,self.T, msg_right)
-                msg_right_sampled = False
+
+            #self.pseudoheight = (self.r_A[1,0]+self.l_A[1,0])/2 - self.H[1,0]
+
+            #here we construct pseudo ground truths for the shoulders by making fixed translations from the torso
+            vert_torso = TransformStamped()
+            vert_torso.transform.rotation.x = 0.
+            vert_torso.transform.rotation.y = np.sin(np.deg2rad(self.bedangle*0.75))
+            vert_torso.transform.rotation.z = -np.cos(np.deg2rad(self.bedangle*0.75))
+            vert_torso.transform.rotation.w = 1.
+            vert_torso.transform.translation.x = self.T[0,0]
+            vert_torso.transform.translation.y = self.T[1,0] + self.params_length[1]*np.cos(np.deg2rad(self.bedangle*0.75))
+            vert_torso.transform.translation.z = self.T[2,0] - self.params_length[0] + self.params_length[1]*np.sin(np.deg2rad(self.bedangle*0.75))
+            self.publish_pose(vert_torso,torso_vert_pose)
+
+            r_should_pose = TransformStamped()
+            r_should_pose.transform.rotation.x = 1.
+            r_should_pose.transform.rotation.y = 0.
+            r_should_pose.transform.rotation.z = 0.
+            r_should_pose.transform.rotation.w = -1.
+            r_should_pose.transform.translation.x = self.T[0,0] - self.params_length[2]
+            r_should_pose.transform.translation.y = self.T[1,0] + self.params_length[1]*np.cos(np.deg2rad(self.bedangle*0.75))
+            r_should_pose.transform.translation.z = self.T[2,0] - self.params_length[0] + self.params_length[1]*np.sin(np.deg2rad(self.bedangle*0.75))
+            self.publish_pose(r_should_pose, r_shoulder_pose)
+
+            self.r_S[0,0] = r_should_pose.transform.translation.x
+            self.r_S[1,0] = r_should_pose.transform.translation.y
+            self.r_S[2,0] = r_should_pose.transform.translation.z
+            self.r_S[3,0] = 1
+
+            l_should_pose = TransformStamped()
+            l_should_pose.transform.rotation.x = 1.
+            l_should_pose.transform.rotation.y = 0.
+            l_should_pose.transform.rotation.z = 0.
+            l_should_pose.transform.rotation.w = -1.
+            l_should_pose.transform.translation.x = self.T[0, 0] + self.params_length[2]
+            l_should_pose.transform.translation.y = self.T[1, 0] + self.params_length[1]*np.cos(np.deg2rad(self.bedangle*0.75))
+            l_should_pose.transform.translation.z = self.T[2, 0] - self.params_length[0] + self.params_length[1]*np.sin(np.deg2rad(self.bedangle*0.75))
+            self.publish_pose(l_should_pose, l_shoulder_pose)
+
+            self.l_S[0, 0] = l_should_pose.transform.translation.x
+            self.l_S[1, 0] = l_should_pose.transform.translation.y
+            self.l_S[2, 0] = l_should_pose.transform.translation.z
+            self.l_S[3, 0] = 1
+
+
+            # get the length of the right shoulder to right elbow
+            self.params_length[4] = np.linalg.norm(self.r_E - self.r_S)
+            self.params_length[5] = np.linalg.norm(self.l_E - self.l_S)
+
+            # parameter for the length between hand and elbow. Should be around 0.2 meters.
+            self.params_length[6] = np.linalg.norm(self.r_H - self.r_E)
+            self.params_length[7] = np.linalg.norm(self.l_H - self.l_E)
+
+
+            #To find the angles we also need to rotate by the bed angle
+            self.ROT_bed[1,1] = np.cos(np.deg2rad(-self.bedangle*0.75))
+            self.ROT_bed[1,2] = -np.sin(np.deg2rad(-self.bedangle*0.75))
+            self.ROT_bed[2,1] = np.sin(np.deg2rad(-self.bedangle*0.75))
+            self.ROT_bed[2,2] = np.cos(np.deg2rad(-self.bedangle*0.75))
+
+
+            #get the shoulder pitch
+            rSE_mag = np.copy(self.params_length[4])
+            self.r_SE = self.r_S[0:3] - self.r_E[0:3]
+            self.r_SE = np.matmul(np.matmul(self.r_ROT_OS, self.ROT_bed), self.r_SE)
+            if rSE_mag > 0: self.r_SEn = np.copy(self.r_SE)/rSE_mag
+            self.params_angle[2] = -np.degrees(np.arcsin(self.r_SEn[1,0]))
+
+            lSE_mag = np.copy(self.params_length[5])
+            self.l_SE = self.l_S[0:3] - self.l_E[0:3]
+            self.l_SE = np.matmul(np.matmul(self.l_ROT_OS, self.ROT_bed), self.l_SE)
+            if lSE_mag > 0: self.l_SEn = np.copy(self.l_SE)/lSE_mag
+            self.params_angle[3] = -np.degrees(np.arcsin(self.l_SEn[1,0]))
+
+            #get shoulder yaw
+            self.params_angle[4] = -np.degrees(np.arctan(self.r_SEn[0,0]/self.r_SEn[2,0]))
+            self.params_angle[5] = np.degrees(np.arctan(self.l_SEn[0,0]/self.l_SEn[2,0]))
+
+            # get the elbow angle
+            rSH_mag = np.linalg.norm(self.r_H - self.r_S)
+            # now apply law of cosines
+            self.params_angle[6] = np.degrees(np.arccos((np.square(self.params_length[4]) + np.square(
+                self.params_length[6]) - np.square(rSH_mag)) / (2 * self.params_length[4] * self.params_length[6])))
+            lSH_mag = np.linalg.norm(self.l_H - self.l_S)
+            # now apply law of cosines
+            self.params_angle[7] = np.degrees(np.arccos((np.square(self.params_length[5]) + np.square(
+                self.params_length[7]) - np.square(lSH_mag)) / (2 * self.params_length[5] * self.params_length[7])))
+
+
+            # calculate the shoulder roll
+            self.r_SH = self.r_S[0:3] - self.r_H[0:3]  # first get distance between shoulder and hand
+            self.r_SH = np.matmul(np.matmul(self.r_ROT_OS, self.ROT_bed), self.r_SH)
+            self.r_SHn = np.copy(self.r_SH) / rSH_mag
+            sEndotsHn = np.copy(
+                self.r_SEn[0, 0] * self.r_SHn[0, 0] + self.r_SEn[1, 0] * self.r_SHn[1, 0] + self.r_SEn[2, 0] *
+                self.r_SHn[2, 0] - self.r_SEn[0, 0])
+            self.r_Spxm[0, 0] = 1.
+            if np.linalg.norm(self.r_SEn) > 0:
+                self.r_Spxm[1, 0] = sEndotsHn / (self.r_SEn[1, 0] + np.square(self.r_SEn[2, 0]) / self.r_SEn[1, 0])
+                self.r_Spxm[2, 0] = sEndotsHn / (self.r_SEn[2, 0] + np.square(self.r_SEn[1, 0]) / self.r_SEn[2, 0])
+            # print self.r_Spxm, self.r_SEn
+            self.r_Spxn = np.copy(self.r_Spxm / np.linalg.norm(self.r_Spxm))
+            self.orig = np.copy(self.r_Spxn)
+            self.r_Spx = np.copy(self.r_Spxn) * rSH_mag
+            if np.linalg.norm(self.r_SE) > 0:
+                self.r_SH_pp = - self.r_SE * (
+                self.r_SE[0, 0] * self.r_SH[0, 0] + self.r_SE[1, 0] * self.r_SH[1, 0] + self.r_SE[2, 0] * self.r_SH[
+                    2, 0]) / (np.linalg.norm(self.r_SE) * np.linalg.norm(self.r_SE)) + self.r_SH
+            self.r_SH_pp_mag = np.linalg.norm(self.r_SH_pp)
+            if np.linalg.norm(self.r_SE) > 0:
+                self.r_Spx_pp = - self.r_SE * (np.dot(self.r_SE.T, self.r_Spx)) / (
+                np.linalg.norm(self.r_SE) * np.linalg.norm(self.r_SE)) + self.r_Spx
+            self.r_Spx_pp_mag = np.linalg.norm(self.r_Spx_pp)
+            self.params_angle[0] = np.degrees(np.arccos(np.dot(self.r_SH_pp.T, self.r_Spx_pp) / (
+            self.r_SH_pp_mag * self.r_Spx_pp_mag)))  # np.degrees(np.arctan2(np.cross(self.r_Spx_pp.T,self.r_SH_pp.T)[0],np.dot(self.r_SH_pp.T,self.r_Spx_pp)[0]))#
+            if np.cross(self.r_SH.T, self.r_SE.T)[0][0] < 0:
+                self.params_angle[0] = -self.params_angle[0]
+
+
+            self.l_SH = self.l_S[0:3] - self.l_H[0:3]  # first get distance between shoulder and hand
+            self.l_SH = np.matmul(np.matmul(self.l_ROT_OS, self.ROT_bed), self.l_SH)
+            self.l_SHn = np.copy(self.l_SH) / lSH_mag
+            sEndotsHn = np.copy(
+                self.l_SEn[0, 0] * self.l_SHn[0, 0] + self.l_SEn[1, 0] * self.l_SHn[1, 0] + self.l_SEn[2, 0] *
+                self.l_SHn[2, 0] - self.l_SEn[0, 0])
+            self.l_Spxm[0, 0] = 1.
+            if np.linalg.norm(self.l_SEn) > 0:
+                self.l_Spxm[1, 0] = sEndotsHn / (self.l_SEn[1, 0] + np.square(self.l_SEn[2, 0]) / self.l_SEn[1, 0])
+                self.l_Spxm[2, 0] = sEndotsHn / (self.l_SEn[2, 0] + np.square(self.l_SEn[1, 0]) / self.l_SEn[2, 0])
+            # print self.l_Spxm, self.l_SEn
+            self.l_Spxn = np.copy(self.l_Spxm / np.linalg.norm(self.l_Spxm))
+            self.orig = np.copy(self.l_Spxn)
+            self.l_Spx = np.copy(self.l_Spxn) * lSH_mag
+            if np.linalg.norm(self.l_SE) > 0:
+                self.l_SH_pp = - self.l_SE * (
+                self.l_SE[0, 0] * self.l_SH[0, 0] + self.l_SE[1, 0] * self.l_SH[1, 0] + self.l_SE[2, 0] * self.l_SH[
+                    2, 0]) / (np.linalg.norm(self.l_SE) * np.linalg.norm(self.l_SE)) + self.l_SH
+            self.l_SH_pp_mag = np.linalg.norm(self.l_SH_pp)
+            if np.linalg.norm(self.l_SE) > 0:
+                self.l_Spx_pp = - self.l_SE * (np.dot(self.l_SE.T, self.l_Spx)) / (
+                np.linalg.norm(self.l_SE) * np.linalg.norm(self.l_SE)) + self.l_Spx
+            self.l_Spx_pp_mag = np.linalg.norm(self.l_Spx_pp)
+            self.params_angle[1] = np.degrees(np.arccos(np.dot(self.l_SH_pp.T, self.l_Spx_pp) / (
+            self.l_SH_pp_mag * self.l_Spx_pp_mag)))  # np.degrees(np.arctan2(np.cross(self.l_Spx_pp.T,self.l_SH_pp.T)[0],np.dot(self.l_SH_pp.T,self.l_Spx_pp)[0]))#
+            self.params_angle[1] = (180-self.params_angle[1])
+            if np.cross(self.l_SH.T, self.l_SE.T)[0][0] < 0:
+                self.params_angle[1] = -self.params_angle[1]
+
+
+
+
+
+            #
+            #
+            # self.predRSH = self.r_S[0:3] - self.pred_r_H[0:3]
+            # self.predRSH = np.matmul(self.r_ROT_OS, self.predRSH)
+            # self.predRSHn = np.copy(self.predRSH) / rSH_mag
+            # sEndotsHn = np.copy(self.r_SEn[0, 0] * self.predRSHn[0, 0] + self.r_SEn[1, 0] * self.predRSHn[1, 0] + self.r_SEn[2, 0] * self.predRSHn[2, 0] - self.r_SEn[0,0])
+            # self.r_Spxm[0,0] = 1.
+            # if np.linalg.norm(self.r_SEn) > 0:
+            #     self.r_Spxm[1,0] = sEndotsHn / (self.r_SEn[1,0]+np.square(self.r_SEn[2,0])/self.r_SEn[1,0])
+            #     self.r_Spxm[2,0] = sEndotsHn / (self.r_SEn[2,0]+np.square(self.r_SEn[1,0])/self.r_SEn[2,0])
+            #
+            # #print self.r_Spxm, self.r_SEn
+            # self.r_Spxn = np.copy(self.r_Spxm/np.linalg.norm(self.r_Spxm))
+            #
+            #
+            # # #
+            # self.r_Spx = np.copy(self.r_Spxn) * rSH_mag
+            # if np.linalg.norm(self.r_SE) > 0:
+            #     self.r_SH_pp = - self.r_SE * (self.r_SE[0, 0] * self.predRSH[0, 0] + self.r_SE[1, 0] * self.predRSH[1, 0] + self.r_SE[2, 0] * self.predRSH[2, 0]) / (np.linalg.norm(self.r_SE) * np.linalg.norm(self.r_SE)) + self.predRSH
+            # self.predRSH_pp_mag = np.linalg.norm(self.r_SH_pp)
+            # if np.linalg.norm(self.r_SE) > 0:
+            #     self.r_Spx_pp = - self.r_SE * (np.dot(self.r_SE.T, self.r_Spx)) / (np.linalg.norm(self.r_SE) * np.linalg.norm(self.r_SE)) + self.r_Spx
+            # self.r_Spx_pp_mag = np.linalg.norm(self.r_Spx_pp)
+            # self.params_angle[1] = np.degrees(np.arccos(np.dot(self.r_SH_pp.T, self.r_Spx_pp) / (self.predRSH_pp_mag * self.r_Spx_pp_mag)))  # np.degrees(np.arctan2(np.cross(self.r_Spx_pp.T,self.r_SH_pp.T)[0],np.dot(self.r_SH_pp.T,self.r_Spx_pp)[0]))#
+            # if np.cross(self.predRSH.T, self.r_SE.T)[0][0] < 0:
+            #     self.params_angle[1]=-self.params_angle[1]
+            #
+            # #self.params_angle[1] = ((self.params_angle[1] + 35)*-1)-35
+
+
+
+            self.forward_kinematics(self.params_length,self.params_angle,self.T, self.bedangle)
 
 
             if self.mat_sampled and self.ground_truth_sampled and np.abs(latest_scan_time.to_sec() - self.latest_ground_truth_time.to_sec())<0.1:
                 print '#############################################################################'
-                print self.params_angle[0], self.params_angle[2], self.params_angle[4]
+                #print self.params_angle[0], self.params_angle[1], self.params_angle[2], self.params_angle[4], self.params_angle[6], self.params_angle[0]-self.params_angle[1], self.params_angle[0]-self.params_angle[1]-self.params_angle[4]
+
+
                 #print self.T
 
                 if count == 0:
@@ -439,7 +556,7 @@ class HeadDetector:
         print "Average Error: {}".format(mean_err)
         print "Standard Deviation : {}".format(std_err)
         # print 'Count: ', count
-        return mean_err, std_err, count, time_range
+        return #mean_err, std_err, count, time_range
 
     def publish_pose(self,msg,pose_publisher):
         self.ground_truth_sampled = True
@@ -453,65 +570,105 @@ class HeadDetector:
         pose_publisher.publish(pose)
 
 
-    def equations_s_RSpx(self,p):
-        x, y, z = p
-        return (x ** 2 + y ** 2 + z ** 2 - 1, self.r_SEn[2, 0] * y - self.r_SEn[1, 0] * z,
-                self.r_SEn[0, 0] * x + self.r_SEn[1, 0] * y + self.r_SEn[2, 0] * z - self.r_SEn[0, 0] * self.r_SHn[
-                    0, 0] - self.r_SEn[1, 0] * self.r_SHn[1, 0] - self.r_SEn[2, 0] * self.r_SHn[2, 0])
+    def forward_kinematics(self,lengths, angles, torso, bedangle):
+        #print angles, 'angles' #self.orig.T,  self.r_Spxn.T
+        #print lengths,
+        print angles[2:6], bedangle, self.r_E, self.l_E #self.pseudoheight, self.r_E
 
-    def RPH_to_XYZ(self,roll,pitch,yaw):
-        roll = np.deg2rad(roll+180)
-        pitch = np.deg2rad(pitch)
-        yaw = np.deg2rad(yaw)
-        R = np.zeros((3,3))
-        T = np.zeros((4,4))
-        R[0, 0] = np.sin(yaw) * np.cos(pitch)
-        R[0, 1] = - np.sin(yaw) * np.sin(pitch) * np.sin(roll) + np.cos(yaw) * np.cos(roll)
-        R[0, 2] = - np.sin(yaw) * np.sin(pitch) * np.cos(roll) - np.cos(yaw) * np.sin(roll)
-        R[1, 0] = np.sin(pitch)
-        R[1, 1] = np.cos(pitch) * np.sin(roll)
-        R[1, 2] = np.cos(pitch) * np.sin(roll)
-        R[2, 0] = np.cos(yaw) * np.cos(pitch)
-        R[2, 1] = - np.cos(yaw) * np.sin(pitch) * np.sin(roll) - np.sin(yaw) * np.cos(roll)
-        R[2, 2] = - np.cos(yaw) * np.sin(pitch) * np.cos(roll) + np.sin(yaw) * np.sin(roll)
-
-        T[0:3,0:3]=R
-        T[3,3] = 1
-
-        return R, T
-
-    def forward_kinematics(self,lengths, angles, torso, msg):
+        #print '_________', np.cross(self.orig.T,self.r_SE.T),  self.r_SEn[2, 0] * self.orig[1,0] - self.r_SEn[1, 0] * self.orig[2,0]
+        #if np.abs(self.r_SEn[2, 0] * self.orig[1,0] - self.r_SEn[1, 0] * self.orig[2,0]) > 0.001: sys.exit('Roll solver failed. enter different initial conditions.')
 
         TrelO = tft.identity_matrix()
-        rSrelT = tft.identity_matrix()
-        rSrotrS = tft.identity_matrix()
-        rErelrS = tft.identity_matrix()
-        Pr_SE = np.zeros((4,1))
-        Pr_EH = np.zeros((4,1))
+        TprelT = tft.identity_matrix()
 
+
+        rSrelTp = tft.rotation_matrix(np.deg2rad(bedangle*0.75), (1, 0, 0))
+        lSrelTp = tft.rotation_matrix(np.deg2rad(bedangle*0.75), (1, 0, 0))
 
 
         TrelO[:, 3] = torso.T
-        rSrelT[0,3] = lengths[2]
-        rSrelT[1,3] = -lengths[1]
-        rSrelT[2,3] = -lengths[0]
-        rSrotrS[0:3, 0:3] = np.matrix('0,0,-1;0,1,0;-1,0,0')
+        TprelT[2,3] = -lengths[0]
+        rSrelTp[0,3] = -lengths[2]
+        rSrelTp[1,3] = lengths[1] * np.cos(np.deg2rad(bedangle * 0.75))
+        rSrelTp[2,3] = lengths[1] * np.sin(np.deg2rad(bedangle * 0.75))
+        lSrelTp[0,3] = lengths[2]
+        lSrelTp[1,3] = lengths[1] * np.cos(np.deg2rad(bedangle * 0.75))
+        lSrelTp[2,3] = lengths[1] * np.sin(np.deg2rad(bedangle * 0.75))
 
-        _, rErelrS = self.RPH_to_XYZ(angles[0], angles[2], angles[4])
+
+        Pr_TS = np.matmul(np.matmul(TprelT, rSrelTp), np.array([[np.linalg.norm(self.r_S - self.T)], [0], [0], [1]]))
+
+        #shoulder to elbow
+        #rErelrS = np.matmul(tft.rotation_matrix(-np.deg2rad(angles[4]+180),(0,1,0)), tft.rotation_matrix(np.deg2rad(angles[2]), (0,0,1)))
+        rErelrS = np.matmul(np.matmul(tft.rotation_matrix(-np.deg2rad(-angles[4] + 180), (0, 1, 0)),tft.rotation_matrix(np.deg2rad(180+angles[2]), (0, 0, 1))),tft.rotation_matrix(np.deg2rad((angles[0]) + 90 + angles[4]), (-1,0,0)))
+        lErellS = np.matmul(np.matmul(tft.rotation_matrix(-np.deg2rad(angles[5] + 180), (0, 1, 0)),tft.rotation_matrix(np.deg2rad(-angles[3]), (0, 0, 1))),tft.rotation_matrix(np.deg2rad((-angles[1]) + 90 - angles[5]), (-1, 0, 0)))
+
 
         Pr_SE = np.matmul(rErelrS, np.array([[lengths[4]], [0], [0], [1]]))
+        Pl_SE = np.matmul(lErellS, np.array([[lengths[5]], [0], [0], [1]]))
 
         rErelrS[0:3, 3] = -Pr_SE[0:3, 0]
+        lErellS[0:3, 3] = -Pl_SE[0:3, 0]
 
+        #rHrelrE = np.matmul(tft.rotation_matrix(np.deg2rad(-(angles[0])), (-1,0,0)),tft.rotation_matrix(np.deg2rad(angles[6]), (0, 0, 1)))
         rHrelrE = tft.rotation_matrix(np.deg2rad(angles[6]), (0, 0, 1))
+        lHrellE = tft.rotation_matrix(np.deg2rad(angles[7]), (0, 0, 1))
+
         Pr_EH = np.matmul(rHrelrE, np.array([[lengths[6]], [0], [0], [1]]))
+        Pl_EH = np.matmul(lHrellE, np.array([[lengths[7]], [0], [0], [1]]))
 
         Pr_SE = -Pr_SE
         Pr_SE[3, 0] = 1
+        Pl_SE = -Pl_SE
+        Pl_SE[3, 0] = 1
 
-        msg.transform.translation.x = np.matrix(np.matmul(np.matmul(np.matmul(TrelO, rSrelT), rSrotrS), Pr_SE))[0, 0]
-        msg.transform.translation.y = np.matrix(np.matmul(np.matmul(np.matmul(TrelO, rSrelT), rSrotrS), Pr_SE))[1, 0]
-        msg.transform.translation.z = np.matrix(np.matmul(np.matmul(np.matmul(TrelO, rSrelT), rSrotrS), Pr_SE))[2, 0]
+        self.pred_r_E = np.matrix(np.matmul(np.matmul(np.matmul(TrelO, TprelT), rSrelTp), Pr_SE))
+        r_elbow_pose = TransformStamped()
+        r_elbow_pose.transform.translation.x = self.pred_r_E[0, 0]
+        r_elbow_pose.transform.translation.y = self.pred_r_E[1, 0]
+        r_elbow_pose.transform.translation.z = self.pred_r_E[2, 0]
+        self.publish_pose(r_elbow_pose, self.r_elbowpred_pose)
+
+        self.pred_l_E = np.matrix(np.matmul(np.matmul(np.matmul(TrelO, TprelT), lSrelTp), Pl_SE))
+        l_elbow_pose = TransformStamped()
+        l_elbow_pose.transform.translation.x = self.pred_l_E[0, 0]
+        l_elbow_pose.transform.translation.y = self.pred_l_E[1, 0]
+        l_elbow_pose.transform.translation.z = self.pred_l_E[2, 0]
+        self.publish_pose(l_elbow_pose, self.l_elbowpred_pose)
+
+
+        self.pred_r_H = np.matrix(np.matmul(np.matmul(np.matmul(np.matmul(TrelO, TprelT), rSrelTp), rErelrS), Pr_EH))
+        r_hand_pose = TransformStamped()
+        r_hand_pose.transform.translation.x = self.pred_r_H[0, 0]
+        r_hand_pose.transform.translation.y = self.pred_r_H[1, 0]
+        r_hand_pose.transform.translation.z = self.pred_r_H[2, 0]
+        self.publish_pose(r_hand_pose, self.r_handpred_pose)
+
+        self.pred_l_H = np.matrix(np.matmul(np.matmul(np.matmul(np.matmul(TrelO, TprelT), lSrelTp), lErellS), Pl_EH))
+        l_hand_pose = TransformStamped()
+        l_hand_pose.transform.translation.x = self.pred_l_H[0, 0]
+        l_hand_pose.transform.translation.y = self.pred_l_H[1, 0]
+        l_hand_pose.transform.translation.z = self.pred_l_H[2, 0]
+        self.publish_pose(l_hand_pose, self.l_handpred_pose)
+
+        targetpred = np.zeros((4, 3))
+        targetpred[0, :] = np.squeeze(self.pred_r_E[0:3, 0].T)
+        targetpred[1, :] = np.squeeze(self.pred_l_E[0:3, 0].T)
+        targetpred[2, :] = np.squeeze(self.pred_r_H[0:3, 0].T)
+        targetpred[3, :] = np.squeeze(self.pred_l_H[0:3, 0].T)
+        print np.round(targetpred,3), 'targetpred'
+
+
+
+        targets = np.zeros((4, 3))
+        targets[0, :] = np.squeeze(self.r_E[0:3, 0].T)
+        targets[1, :] = np.squeeze(self.l_E[0:3, 0].T)
+        targets[2, :] = np.squeeze(self.r_H[0:3, 0].T)
+        targets[3, :] = np.squeeze(self.l_H[0:3, 0].T)
+        print np.round(targets,3), 'targets'
+
+
+
         # The handler function for the turtle pose message broadcasts this turtle's translation and rotation, and
         # publishes it as a transform from frame "shoulder" to frame "elbow".
         #self, tf_broadcaster.sendTransform((msg.x, msg.y, msg.z),
@@ -521,70 +678,6 @@ class HeadDetector:
         #                                   "elbow",
         #                                   "shoulder")
 
-        self.publish_pose(msg, self.r_elbowpred_pose)
-
-        msg.transform.translation.x = np.matrix(np.matmul(np.matmul(np.matmul(np.matmul(TrelO, rSrelT), rSrotrS), rErelrS), Pr_EH))[0, 0]
-        msg.transform.translation.y = np.matrix(np.matmul(np.matmul(np.matmul(np.matmul(TrelO, rSrelT), rSrotrS), rErelrS), Pr_EH))[1, 0]
-        msg.transform.translation.z = np.matrix(np.matmul(np.matmul(np.matmul(np.matmul(TrelO, rSrelT), rSrotrS), rErelrS), Pr_EH))[2, 0]
-        self.publish_pose(msg, self.r_handpred_pose)
-
-
-
-
-        #should = np.zeros((4, 2))
-        #should = np.matrix(should)
-        #should[:, 0] = np.matrix(np.matmul(self.TrelO, self.rSrelT[:, 3].T)).T
-        #should[:, 1] = np.matrix(np.matmul(np.matmul(self.TrelO, self.rSrotrS), self.rSrelT[:, 3].T)).T
-        # print should,'shoulder in the origin and rotated frame'
-
-
-
-        #elbpred = np.zeros((4, 2))
-        #elbpred = np.matrix(elbpred)
-        # elbpred[:, 0] = np.matrix(np.matmul(np.matmul(np.matmul(np.matmul(self.rSrotrS.T,self.rErelrS),self.rSrotrS), self.TrelO), self.rSrelT[:,3].T)).T
-        #elbpred[:, 0] = np.matrix(np.matmul(np.matmul(np.matmul(self.TrelO, self.rSrelT), self.rSrotrS), self.Pr_SE))
-        # print elbpred, 'elbow predicted in the origin and reference frame'
-
-
-        #elb = np.zeros((4, 2))
-        #elb = np.matrix(elb)
-        #elb[:, 0] = self.r_E
-        #elb[:, 1] = np.matmul(self.rSrotrS, self.r_E)
-        # print elb, 'elbow in the origin and reference frame'
-
-
-        #handpred = np.zeros((4, 2))
-        #handpred = np.matrix(handpred)
-        # elbpred[:, 0] = np.matrix(np.matmul(np.matmul(np.matmul(np.matmul(self.rSrotrS.T,self.rErelrS),self.rSrotrS), self.TrelO), self.rSrelT[:,3].T)).T
-        #handpred[:, 0] = np.matrix(
-        #    np.matmul(np.matmul(np.matmul(np.matmul(self.TrelO, self.rSrelT), self.rSrotrS), self.rErelrS), self.Pr_EH))
-        # print handpred, self.params_length[6], np.linalg.norm(self.Pr_EH[0:3]), 'hand predicted in the origin and reference frame'
-
-
-        #hand = np.zeros((4, 2))
-        #hand = np.matrix(hand)
-        #hand[:, 0] = self.r_H
-        #hand[:, 1] = np.matmul(self.rSrotrS, self.r_H)
-        # print hand, 'hand in the origin and reference frame'
-
-
-        # shouldelbdiff = np.zeros((4,2))
-        # shouldelbdiff = np.matrix(shouldelbdiff)
-        # shouldelbdiff[:,0] = np.matmul(self.rSrelT, self.T) - self.r_E
-        # shouldelbdiff[:,1]= np.matmul(np.matmul(self.rSrotrS,self.rSrelT), self.T) - np.matmul(self.rSrotrS,self.r_E)
-        # print shouldelbdiff, np.linalg.norm(shouldelbdiff[:,1]), self.params_length[4], 'shoulder and elbow difference'
-
-
-
-
-
-        # shouldelbpreddiff = np.zeros((4, 2))
-        # shouldelbpreddiff = np.matrix(shouldelbpreddiff)
-        # shouldelbpreddiff[:, 0] = np.matrix(np.matmul(self.TrelO, self.rSrelT[:,3].T)).T - np.matrix(np.matmul(np.matmul(np.matmul(self.TrelO, self.rSrelT), self.rSrotrS), self.Pr_SE))
-        # shouldelbpreddiff[:, 1] = 0
-        # print shouldelbpreddiff, np.linalg.norm(shouldelbpreddiff[:,1]), 'shoulder and elbow predicted difference'
-        # print self.rErelrS,self.rSrotrS,self.rSrelT
-
 
     def publish_floatarr(self,msg,floatarr_publisher):
         floatarr_publisher.publish(msg)
@@ -593,34 +686,6 @@ class HeadDetector:
     def get_elapsed_time(self):
         return self.elapsed_time
 
-    def relu(self, x):
-        if x < 0:
-            return 0.0
-        else:
-            return x
-
-    def sigmoid(self, x):
-        #return 1 / (1 + math.exp(-x))
-        return ((x / (1 + abs(x))) + 1)/2
-
-    def world_to_mat(self, w_data):
-        '''Converts a vector in the world frame to a vector in the map frame.
-        Depends on the calibration of the MoCap room. Be sure to change this 
-        when the calibration file changes. This function mainly helps in
-        visualizing the joint coordinates on the pressure mat.
-        Input: w_data: which is a 3 x 1 vector in the world frame'''
-        #The homogenous transformation matrix from world to mat
-        O_w_m = np.matrix([[-1, 0, 0], [0, -1, 0], [0, 0, 1]])
-        #O_w_m = np.matrix(np.reshape(self.R_world_mat, (3, 3)))
-        O_m_w = O_w_m.T
-        p_mat_world = O_m_w.dot(-np.asarray(self.p_world_mat))
-        B_m_w = np.concatenate((O_m_w, p_mat_world.T), axis=1)
-        last_row = np.array([[0, 0, 0, 1]])
-        B_m_w = np.concatenate((B_m_w, last_row), axis=0)
-        w_data = np.append(w_data, [1.0])
-        #Convert input to the mat frame vector
-        m_data = B_m_w.dot(w_data)
-        return np.squeeze(np.asarray(m_data[0, :3]))
 
     def mat_to_taxels(self, m_data):
         ''' 
@@ -675,61 +740,8 @@ class HeadDetector:
         else:
             print 'SOMETHING HAS GONE WRONG. PRESSURE MAT IS DEAD!'
 
-    def detect_head(self):
-        '''Computes blobs in pressure map and return top
-        blob as head'''
-        # start_time = rospy.Time.now()
-        # Select top 20 pixels of pressure map
-        p_map = self.pressure_map
-        # plt.matshow(p_map)
-        # plt.show()
 
-        com = np.array(ndimage.measurements.center_of_mass(p_map))
-        com[0] = 10.0
-        # print com
-        # print "In discrete coordinates"
-        # print self.head_center_2d[0, :]
-        taxels_to_meters = np.array([MAT_HEIGHT / (NUMOFTAXELS_X * self.zoom_factor),
-                                     MAT_WIDTH / (NUMOFTAXELS_Y * self.zoom_factor),
-                                     1])
 
-        self.head_center_2d = np.append(com, 1.0)
-        # Median Filter
-        # self.head_center_2d = taxels_to_meters * self.head_center_2d
-        # print self.head_center_2d
-        # positions = self.head_pos_buf.get_array()
-        # pos = positions[positions[:, 1].argsort()]
-        y, x, r = self.head_center_2d
-
-        # mat_B_head = np.eye(4)
-        # mat_B_head[0:3, 3] = np.array([x, y, -0.05])
-        # mat_B_head[0:3, 3] = np.array([0,0,0])
-        # print "In Mat Coordinates:"
-        # print y, x
-        # head_rest_B_head = np.matrix(self.head_rest_B_mat) * np.matrix(mat_B_head)
-        # print "In head_rest_link coordinates:"
-        # print head_rest_B_head[0:3, 3]
-        # self.elapsed_time.append(rospy.Time.now() - start_time)
-        return y, x
-
-    def detect_blob(self):
-        '''Computes blobs in pressure map'''
-        #p_map = self.pressure_map[:20,:]
-        p_map = self.pressure_map
-        weights = np.zeros(np.shape(p_map))
-        for i in range(np.shape(p_map)[0]):
-            weights[i, :] = self.sigmoid((np.shape(p_map)[0]/8.533 - i))
-        p_map = np.array(weights)*np.array(p_map)
-        #plt.matshow(p_map)
-        #plt.show()
-        blobs = blob_doh(p_map, 
-                         min_sigma=1, 
-                         max_sigma=7, 
-                         threshold=20,
-                         overlap=0.1) 
-        numofblobs = np.shape(blobs)[0] 
-        # print "Number of Blobs Detected:{}".format(numofblobs)
-        return blobs
 
     def visualize_pressure_map(self, pressure_map_matrix, rotated_targets=None, fileNumber=0, plot_3d=False):
         '''Visualizing a plot of the pressure map'''        
@@ -783,51 +795,8 @@ class HeadDetector:
             plt.pause(0.05) 
             plt.clf()
 
-    def get_ground_truth(self):
-        target_raw = np.array(self.head_pose)
-        target_mat = self.world_to_mat(target_raw)
-        target_discrete = self.mat_to_taxels(target_mat) + np.array([0,3])
-        target_cont = target_mat #+ np.array([0.0, -0.0410, 0.0])
-        return target_cont[:2]
 
-    def run(self):
-        '''Runs pose estimation''' 
-        head_center = [0, 0, 0]
-        self.pos = 0
-        self.total_count = 0
-        self.count = 0 
-        self.error_array = []
-        while not rospy.is_shutdown():
-            if self.mat_sampled:
-                self.count += 1 
-                print "Iteration:{}".format(self.count)
-                blobs = self.detect_blob()
-                if blobs.any():
-                    head_center = blobs[0, :]
-                taxels_to_meters_coeff = np.array([MAT_HEIGHT/(NUMOFTAXELS_X*self.zoom_factor), 
-                                            -MAT_WIDTH/(NUMOFTAXELS_Y*self.zoom_factor), 
-                                            1])
 
-                taxels_to_meters_offset = np.array([MAT_HEIGHT, 0.0, 0.0])
-                y, x, r = (taxels_to_meters_offset - taxels_to_meters_coeff*head_center)
-                print "X:{}, Y:{}".format(x,y)
-                print "Radius:{}".format(r)
-                ground_truth = np.array(self.get_ground_truth()) 
-                print "Final Ground Truth:"
-                print ground_truth
-                #self.visualize_pressure_map(self.pressure_map, rotated_targets=[x, y, r],\
-                #                            plot_3d=False)
-                error = np.linalg.norm(np.array([x,y]) - np.array(ground_truth))
-                self.error_array.append(error)
-                if self.count == 100:
-                    mean_err = np.mean(self.error_array)
-                    std_err = np.std(self.error_array)
-                    print "Average Error: {}".format(mean_err)
-                    print "Standard Deviation : {}".format(std_err)
-                    sys.exit()
-                self.mat_sampled = False
-            else:
-                pass
 
 if __name__ == '__main__':
     rospy.init_node('calc_mean_std_of_head_detector_node')
@@ -836,17 +805,19 @@ if __name__ == '__main__':
     subject_std = []
     subject_scan_count = 0
     time_ranges = []
-    filename = '_full_trial_RH1.bag'
-    #filename = '_mat_o.bag'
+    filename = '_full_trial_RH3.bag'
+    #filename = '_full_trial_sitting_LH.bag'
     method = 'center_of_mass'  # options are: 'blob', 'center_of_mass'
-    for subject in [9,10,11,12,13,14,15,16,17,18]:
-    #for subject in [8]:
-        new_mean, new_std, new_count, new_time_range = head_blob.read_bag(subject, filename, method, visualize=False)
-        subject_means.append(new_mean)
-        subject_std.append(new_std)
-        subject_scan_count += new_count
-        a_range = new_time_range.to_sec()
-        time_ranges.append(a_range)
+    #for subject in [5,6,7,8]:
+
+    for subject in [5]:
+        #new_mean, new_std, new_count, new_time_range = \
+        head_blob.read_bag(subject, filename, method, visualize=False)
+        #subject_means.append(new_mean)
+        #subject_std.append(new_std)
+        #subject_scan_count += new_count
+        #a_range = new_time_range.to_sec()
+        #time_ranges.append(a_range)
     print 'Total error mean  over subjects is: ', np.mean(subject_means)
     print 'Total error standard deviation over subjects is: ', np.std(subject_means)
     print 'Total pressure mat scans examined: ', subject_scan_count
