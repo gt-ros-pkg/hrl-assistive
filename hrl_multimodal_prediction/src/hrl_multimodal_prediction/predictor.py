@@ -106,7 +106,7 @@ class predictor():
 		# stream.close()
 		# pya.terminate()
 	
-	def normalize(y, min_y, max_y):
+	def normalize(self, y, min_y, max_y):
 	    # normalize to range (-1,1)
 	    #NewValue = (((OldValue - OldMin) * (NewMax - NewMin)) / (OldMax - OldMin)) + NewMin
 	    y = (((y - min_y) * (1 + 1)) / (max_y - min_y)) -1
@@ -154,7 +154,7 @@ class predictor():
 
 			# Rescale perFeature, save Scaler
 			norm_mfcc = self.normalize(orig_mfcc, self.a_min, self.a_max)
-			norm_relpos = self.normalize(orig_relpos, self.i_min, self.a_max)
+			norm_relpos = self.normalize(orig_relpos, self.i_min, self.i_max)
 
 			# Combine two modes 
 			comb_data = np.concatenate((norm_mfcc, norm_relpos), axis=2)

@@ -3,9 +3,9 @@ ROSBAG_PATH = './bagfiles/'
 ROSBAG_TEST_PATH = './bagfiles/testbag/'
 ROSBAG_UNPACK_PATH = './bagfiles/unpacked/'
 PROCESSED_DATA_PATH = './processed_data/'
-WEIGHT_FILE = './weights/real_data.h5'
+WEIGHT_FILE = './weights/'
 
-BAG2DATA_UNPACK = False
+BAG2DATA_UNPACK = True
 BAG2DATA_TESTDATA = False
 
 # Audio Params
@@ -22,7 +22,7 @@ TIMESTEP_IN = 1
 TIMESTEP_OUT = 10
 N_NEURONS = TIMESTEP_OUT
 
-BATCH_SIZE = 64
+BATCH_SIZE = 128
 NUM_BATCH = 200 #Total #samples = Num_batch x Batch_size
 NB_EPOCH = 500
 PRED_BATCH_SIZE = 1
