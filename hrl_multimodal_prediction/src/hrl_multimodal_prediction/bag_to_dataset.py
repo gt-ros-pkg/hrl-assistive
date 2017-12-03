@@ -161,15 +161,17 @@ class dataset_creator:
 			#### Cropping
 			########################
 			peak_idx = audio_store.tolist().index(npmax)          
-			var = 11025
+			var = cf.RATE/8
+			peak_range = int(cf.RATE*0.75)
+			print peak_range
 			r = random.randrange(0,var) #11025 = 0.25s, so 0.25s variation
 			b = random.randrange(0,2)
-			while (peak_idx+88200+r>audio_store.shape[0]) or (peak_idx-88200-r<0):
+			while (peak_idx+peak_range+r>audio_store.shape[0]) or (peak_idx-peak_range-r<0): #RATE=1s
 				var = var - 500
 				r = random.randrange(0,var) #11025 = 0.25s, so 0.25s variation
 				b = random.randrange(0,2)
-			audio_store = self.crop2s(audio_store, peak_idx,r,b)
-			relative_position = self.crop2s(relative_position, peak_idx,r,b)
+			audio_store = self.crop2s(audio_store, peak_idx,r,b, peak_range)
+			relative_position = self.crop2s(relative_position, peak_idx,r,b, peak_range)
 			print audio_store.shape, relative_position.shape
 
 
@@ -229,6 +231,13 @@ class dataset_creator:
 			minmax = [a_min, a_max, i_min, i_max]
 			print 'saving train minmax as npy'
 			np.save(cf.PROCESSED_DATA_PATH + 'combined_train_minmax', minmax)
+		# else:
+		# 	a_min, a_max = np.min(audio_data), np.max(audio_data)
+		# 	i_min, i_max = np.min(image_data), np.max(image_data)
+		# 	print a_min, a_max, i_min, i_max
+		# 	minmax = [a_min, a_max, i_min, i_max]
+		# 	print 'saving test minmax as npy'
+		# 	np.save(cf.PROCESSED_DATA_PATH + 'combined_test_minmax', minmax)
 
 		#concatenate for number of experiment samples
 		# audio_dataX2 = audio_dataX[0]
@@ -299,11 +308,13 @@ class dataset_creator:
 		data = (data - a_min) / (a_max - a_min)
 		return data
 
-	def crop2s(self, data, peak_idx, r, b, audio_len_sample=88200): #1s=44100, 2s=88200
-		if b:
-			data = data[peak_idx-audio_len_sample-r : peak_idx+audio_len_sample-r]
-		else:
-			data = data[peak_idx-audio_len_sample+r : peak_idx+audio_len_sample+r]
+	def crop2s(self, data, peak_idx, r, b, audio_len_sample): #1s=44100, 2s=88200
+		data = data[peak_idx-audio_len_sample+r : peak_idx+audio_len_sample+r]
+
+		# if b:
+		# 	data = data[peak_idx-audio_len_sample-r : peak_idx+audio_len_sample-r]
+		# else:
+		# 	data = data[peak_idx-audio_len_sample+r : peak_idx+audio_len_sample+r]
 		return data
 
 	def interpolate(self, data, new_length):

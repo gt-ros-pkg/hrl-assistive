@@ -235,7 +235,7 @@ def fit_lstm(model, x_train, x_test, y_train, y_test):
 			wait         = 0
 			plateau_wait = 0
 			print 'saving model'
-			model.save_weights(cf.WEIGHT_FILE+str(tr_loss)+'_'+str(val_loss)+'real_data.h5') 
+			model.save_weights(cf.WEIGHT_FILE+str(val_loss)+'_'+str(tr_loss)+'real_data.h5') 
 		else:
 			if wait > patience:
 				print "Over patience!"

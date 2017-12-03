@@ -66,7 +66,7 @@ class predictor():
 		model.add(LSTM(input_dim*time_out, stateful=True, return_sequences=True, activation='tanh'))
 		model.add(TimeDistributed(Dense(input_dim*time_out, activation='linear')))
 
-		model.load_weights(cf.WEIGHT_FILE)
+		model.load_weights('./weights/0.00311671_0.0031128real_data.h5')
 		model.compile(loss='mse', optimizer='RMSprop')
 		print model.summary()
 		print "Inputs: {}".format(model.input_shape)

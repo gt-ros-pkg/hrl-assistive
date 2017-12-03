@@ -6,7 +6,7 @@ PROCESSED_DATA_PATH = './processed_data/'
 WEIGHT_FILE = './weights/'
 
 BAG2DATA_UNPACK = True
-BAG2DATA_TESTDATA = False
+BAG2DATA_TESTDATA = True
 
 # Audio Params
 RATE = 44100
