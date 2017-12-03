@@ -53,9 +53,10 @@ class predictor():
 
 	def __init__(self):
 		print 'initiating...'
-		# pya = pyaudio.PyAudio()
-		# self.stream = pya.open(format=pyaudio.paFloat32, channels=1, rate=cf.RATE, output=True)		
-
+		self.p = pyaudio.PyAudio()
+		self.stream = self.p.open(format=pyaudio.paFloat32, channels=1, rate=44100/2, 
+								output=True, input_device_index=0)
+		
 		# audio and image minmax of training data
 		mm = np.load(cf.PROCESSED_DATA_PATH + 'combined_train_minmax.npy')		
 		self.a_min, self.a_max, self.i_min, self.i_max = mm[0], mm[1], mm[2], mm[3]
@@ -91,8 +92,8 @@ class predictor():
 		#Reconstruct the approximate STFT squared-magnitude from the MFCCs.
 		recon_stft = bin_scaling[:, np.newaxis] * np.dot(mel_basis.T, self.invlogamplitude(np.dot(dctm.T, mfccs)))
 		#Impose reconstructed magnitude on white noise STFT.
-		excitation = np.random.randn(cf.HOP_LENGTH*cf.TIMESTEP_OUT-1) # this will be constant--based on one msgsize
-		E = librosa.stft(excitation, n_fft=cf.N_FFT)
+		excitation = np.random.randn(cf.HOP_LENGTH*cf.P_MFCC_TIMESTEP-1) # this will be constant--based on one msgsize
+		E = librosa.stft(excitation, n_fft=n_fft)
 		recon = librosa.istft(E/np.abs(E)*np.sqrt(recon_stft))
 		#print recon
 		#print recon.shape
@@ -104,9 +105,13 @@ class predictor():
 		return 10.0**(S/10.0)
 
 	def play_sound_realtime(self, mfcc):
-		mfcc = mfcc.reshape(cf.MFCC_DIM, cf.TIMESTEP_OUT)
+		# print mfcc.shape #(1,5,3)
+		mfcc = mfcc.reshape(cf.MFCC_DIM, cf.P_MFCC_TIMESTEP)
+		print mfcc.shape
 		recon = self.reconstruct_mfcc(mfcc)
-		self.stream.write(recon)
+		print recon.shape #(4096,)
+		data = recon.astype(np.float32).tostring()
+		self.stream.write(data)
 		# stream.stop_stream()
 		# stream.close()
 		# pya.terminate()
@@ -231,6 +236,9 @@ class predictor():
 				for i in range(cf.P_MFCC_TIMESTEP-1): #make position data match mfcc timestep aka interpolating
 					orig_relpos = np.concatenate((orig_relpos,tmp), axis=1)
 				# print self.mfcc.shape, self.relpos.shape
+
+				# Play -- Not detecting sound device, Use a Latop for this
+				self.play_sound_realtime(orig_mfcc)
 
 				# Publish for plot
 				# Getting the last time step of orig and pred and flattening for msg
