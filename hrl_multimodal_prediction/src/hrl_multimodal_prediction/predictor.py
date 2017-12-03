@@ -48,6 +48,8 @@ class predictor():
 
 	init_relpos_x = None
 	init_flag = True
+	out_p, out_m = None, None
+	init_out_flag = True
 
 	def __init__(self):
 		print 'initiating...'
@@ -243,19 +245,21 @@ class predictor():
 				msg.orig_mfcc = orig_mfcc
 				msg.orig_relpos = orig_relpos
 
-				m1 = np.full(10, orig_mfcc[0])
-				m2 = np.full(10, orig_mfcc[1])
-				m3 = np.full(10, orig_mfcc[2])
-				out_m = np.vstack((m1,m2,m3))
-				out_m = np.swapaxes(out_m, 0,1).flatten()
-				x = np.full((1,10), orig_relpos[0])
-				y = np.full((1,10), orig_relpos[1])
-				z = np.full((1,10), orig_relpos[2])
-				out_p = np.vstack((x,y,z))
-				out_p = np.swapaxes(out_p, 0,1).flatten()
+				if self.init_out_flag:
+					self.init_out_flag = False
+					m1 = np.full(10, orig_mfcc[0])
+					m2 = np.full(10, orig_mfcc[1])
+					m3 = np.full(10, orig_mfcc[2])
+					out_m = np.vstack((m1,m2,m3))
+					self.out_m = np.swapaxes(out_m, 0,1).flatten()
+					x = np.full((1,10), orig_relpos[0])
+					y = np.full((1,10), orig_relpos[1])
+					z = np.full((1,10), orig_relpos[2])
+					out_p = np.vstack((x,y,z))
+					self.out_p = np.swapaxes(out_p, 0,1).flatten()
 
-				msg.pred_mfcc = out_m
-				msg.pred_relpos = out_p
+				msg.pred_mfcc = self.out_m
+				msg.pred_relpos = self.out_p
 				self.plot_publisher.publish(msg)
 
 	def run(self):
