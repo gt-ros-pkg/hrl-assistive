@@ -140,7 +140,7 @@ class predictor():
 				self.init_flag = False
 
 		if self.mfccUpdate and self.posUpdate:
-			if (self.init_relpos_x - self.relpos[0]) > 0.01:
+			if (self.init_relpos_x - self.relpos[0]) > 0.015:
 				print 'start predict'
 				self.posUpdate = False
 				self.mfccUpdate = False
@@ -246,11 +246,13 @@ class predictor():
 				m1 = np.full(10, orig_mfcc[0])
 				m2 = np.full(10, orig_mfcc[1])
 				m3 = np.full(10, orig_mfcc[2])
-				out_m = np.vstack((m1,m2,m3)).flatten()
-				x = np.full(10, orig_mfcc[0])
-				y = np.full(10, orig_mfcc[1])
-				z = np.full(10, orig_mfcc[2])
-				out_p = np.vstack((x,y,z)).flatten()
+				out_m = np.vstack((m1,m2,m3))
+				out_m = np.swapaxes(out_m, 0,1).flatten()
+				x = np.full((1,10), orig_relpos[0])
+				y = np.full((1,10), orig_relpos[1])
+				z = np.full((1,10), orig_relpos[2])
+				out_p = np.vstack((x,y,z))
+				out_p = np.swapaxes(out_p, 0,1).flatten()
 
 				msg.pred_mfcc = out_m
 				msg.pred_relpos = out_p

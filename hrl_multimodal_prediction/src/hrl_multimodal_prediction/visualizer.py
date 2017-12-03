@@ -45,57 +45,67 @@ class visualizer():
 
 			# 1,3,5 relpos
 			relpos_pred = np.array(self.orig_pred.pred_relpos).reshape(cf.TIMESTEP_OUT,cf.IMAGE_DIM)
-			
 			self.xs_1.append(time)
 			self.ys_1.append(self.orig_pred.orig_relpos[0]) #x
-			time_var = time
-			for i in range(cf.TIMESTEP_OUT):
-				time_var += 0.2
-				self.pxs_1.append(time_var)
-				self.pys_1.append(relpos_pred[i,0]) #x
+			self.pxs_1.append(time+1)
+			self.pys_1.append(relpos_pred[9,0]) #x
+			# time_var = time
+			# for i in range(cf.TIMESTEP_OUT):
+			# 	time_var += 0.2
+			# 	self.pxs_1.append(time_var)
+			# 	self.pys_1.append(relpos_pred[i,0]) #x
 
 			self.xs_3.append(time)
 			self.ys_3.append(self.orig_pred.orig_relpos[1]) #y
-			time_var = time
-			for i in range(cf.TIMESTEP_OUT):
-				time_var += 0.2
-				self.pxs_3.append(time_var)
-				self.pys_3.append(relpos_pred[i,1]) #y
+			self.pxs_3.append(time+1)
+			self.pys_3.append(relpos_pred[9,1]) #y
+			# time_var = time
+			# for i in range(cf.TIMESTEP_OUT):
+			# 	time_var += 0.2
+			# 	self.pxs_3.append(time_var)
+			# 	self.pys_3.append(relpos_pred[i,1]) #y
 			
 			self.xs_5.append(time)
 			self.ys_5.append(self.orig_pred.orig_relpos[2]) #z
-			time_var = time
-			for i in range(cf.TIMESTEP_OUT):
-				time_var += 0.2
-				self.pxs_5.append(time_var)
-				self.pys_5.append(relpos_pred[i,2]) #z
+			self.pxs_5.append(time+1)
+			self.pys_5.append(relpos_pred[9,2]) #y
+			# time_var = time
+			# for i in range(cf.TIMESTEP_OUT):
+			# 	time_var += 0.2
+			# 	self.pxs_5.append(time_var)
+			# 	self.pys_5.append(relpos_pred[i,2]) #z
 
 			# 2,4,6, mfcc
 			mfcc_pred = np.array(self.orig_pred.pred_mfcc).reshape(cf.TIMESTEP_OUT,cf.MFCC_DIM)
-			
 			self.xs_2.append(time)
 			self.ys_2.append(self.orig_pred.orig_mfcc[0]) 
-			time_var = time
-			for i in range(cf.TIMESTEP_OUT):
-				time_var += 0.2
-				self.pxs_2.append(time_var)
-				self.pys_2.append(mfcc_pred[i,0]) 
+			self.pxs_2.append(time+1)
+			self.pys_2.append(mfcc_pred[9,0]) 
+			# time_var = time
+			# for i in range(cf.TIMESTEP_OUT):
+			# 	time_var += 0.2
+			# 	self.pxs_2.append(time_var)
+			# 	self.pys_2.append(mfcc_pred[i,0]) 
 			
 			self.xs_4.append(time)
 			self.ys_4.append(self.orig_pred.orig_mfcc[1]) 
-			time_var = time
-			for i in range(cf.TIMESTEP_OUT):
-				time_var += 0.2
-				self.pxs_4.append(time_var)
-				self.pys_4.append(mfcc_pred[i,1]) 
+			self.pxs_4.append(time+1)
+			self.pys_4.append(mfcc_pred[9,1]) 
+			# time_var = time
+			# for i in range(cf.TIMESTEP_OUT):
+			# 	time_var += 0.2
+			# 	self.pxs_4.append(time_var)
+			# 	self.pys_4.append(mfcc_pred[i,1]) 
 
 			self.xs_6.append(time)
 			self.ys_6.append(self.orig_pred.orig_mfcc[2]) 
-			time_var = time
-			for i in range(cf.TIMESTEP_OUT):
-				time_var += 0.2
-				self.pxs_6.append(time_var)
-				self.pys_6.append(mfcc_pred[i,2]) 
+			self.pxs_6.append(time+1)
+			self.pys_6.append(mfcc_pred[9,2]) 
+			# time_var = time
+			# for i in range(cf.TIMESTEP_OUT):
+			# 	time_var += 0.2
+			# 	self.pxs_6.append(time_var)
+			# 	self.pys_6.append(mfcc_pred[i,2]) 
 
 			# ax1,3,5 = relative position
 			self.ax1.clear()
