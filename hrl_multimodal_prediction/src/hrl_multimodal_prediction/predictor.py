@@ -54,7 +54,7 @@ class predictor():
 	def __init__(self):
 		print 'initiating...'
 		self.p = pyaudio.PyAudio()
-		self.stream = self.p.open(format=pyaudio.paFloat32, channels=1, rate=44100/2, 
+		self.stream = self.p.open(format=pyaudio.paFloat32, channels=1, rate=44100, 
 								output=True, input_device_index=0)
 		
 		# audio and image minmax of training data
@@ -79,7 +79,7 @@ class predictor():
 		print "Outputs: {}".format(model.output_shape)
 		return model
 
-	def reconstruct_mfcc(self, mfccs):
+	def reconstruct_mfcc(self, mfccs, timestep):
 		#build reconstruction mappings
 		n_mfcc = mfccs.shape[0]
 		n_mel = cf.N_MEL
@@ -92,7 +92,7 @@ class predictor():
 		#Reconstruct the approximate STFT squared-magnitude from the MFCCs.
 		recon_stft = bin_scaling[:, np.newaxis] * np.dot(mel_basis.T, self.invlogamplitude(np.dot(dctm.T, mfccs)))
 		#Impose reconstructed magnitude on white noise STFT.
-		excitation = np.random.randn(cf.HOP_LENGTH*cf.P_MFCC_TIMESTEP-1) # this will be constant--based on one msgsize
+		excitation = np.random.randn(cf.HOP_LENGTH*timestep-1) # this will be constant--based on one msgsize
 		E = librosa.stft(excitation, n_fft=n_fft)
 		recon = librosa.istft(E/np.abs(E)*np.sqrt(recon_stft))
 		#print recon
@@ -104,18 +104,30 @@ class predictor():
 	#"""librosa.logamplitude is actually 10_log10, so invert that."""
 		return 10.0**(S/10.0)
 
+	def normalize_recon(self, y, min_y, max_y):
+	    y = (y - min_y) / (max_y - min_y)
+	    return y
+
 	def play_sound_realtime(self, mfcc):
-		# print mfcc.shape #(1,5,3)
-		mfcc = mfcc.reshape(cf.MFCC_DIM, cf.P_MFCC_TIMESTEP)
-		print mfcc.shape
-		recon = self.reconstruct_mfcc(mfcc)
-		print recon.shape #(4096,)
-		data = recon.astype(np.float32).tostring()
-		self.stream.write(data)
-		# stream.stop_stream()
-		# stream.close()
-		# pya.terminate()
-	
+		if (self.init_relpos_x - self.relpos[0]) > 0.015:
+			# print mfcc.shape #(1,10,3)
+			mfcc = mfcc.reshape(cf.MFCC_DIM, cf.TIMESTEP_OUT)
+			# print mfcc.shape
+			recon = self.reconstruct_mfcc(mfcc, cf.TIMESTEP_OUT)
+			# print recon.shape #(4096,)
+			recon = self.normalize(recon, self.a_min, self.a_max)
+			data = recon.astype(np.float32).tostring()
+			self.stream.write(data, exception_on_underflow=False)
+		else:
+			# print mfcc.shape #(1,5,3)
+			mfcc = mfcc.reshape(cf.MFCC_DIM, cf.P_MFCC_TIMESTEP)
+			# print mfcc.shape
+			recon = self.reconstruct_mfcc(mfcc, cf.P_MFCC_TIMESTEP)
+			# print recon.shape #(4096,)
+			recon = self.normalize(recon, self.a_min, self.a_max)
+			data = recon.astype(np.float32).tostring()
+			self.stream.write(data, exception_on_underflow=False)
+		
 	def normalize(self, y, min_y, max_y):
 	    # normalize to range (-1,1)
 	    #NewValue = (((OldValue - OldMin) * (NewMax - NewMin)) / (OldMax - OldMin)) + NewMin
@@ -193,7 +205,7 @@ class predictor():
 				# print sb_mfcc.shape, sb_relpos.shape
 
 				# Play -- Not detecting sound device, Use a Latop for this
-				# self.play_sound_realtime(sb_mfcc)
+				self.play_sound_realtime(sb_mfcc)
 
 				# Publish for plot
 				# Getting the last time step of orig and pred and flattening for msg
@@ -228,6 +240,7 @@ class predictor():
 
 				# print np.array(self.mfcc).shape
 				# Convert shape to fit LSTM
+				# print self.mfcc.shape
 				orig_mfcc = np.array(self.mfcc).reshape(1, cf.P_MFCC_TIMESTEP, cf.N_MFCC) # shape=(t, n_mfcc)
 				orig_relpos = np.array(self.relpos).reshape(1, 1, cf.IMAGE_DIM) 			
 
