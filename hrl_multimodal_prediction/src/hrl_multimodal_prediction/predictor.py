@@ -27,6 +27,7 @@ import pyaudio
 from std_msgs.msg import String, Float64, Float64MultiArray, MultiArrayLayout
 from hrl_multimodal_prediction.msg import audio, pub_relpos, pub_mfcc, plot_pub
 from visualization_msgs.msg import Marker
+import hrl_lib.circular_buffer as cb
 
 # Predictor and visualizer go hand in hand
 # Predict 10 time steps and save in a variable
@@ -50,11 +51,17 @@ class predictor():
 	init_flag = True
 	out_p, out_m = None, None
 	init_out_flag = True
+	
+	init_orig_mfcc = None
+	init_mfcc_flag = True
 
 	end_relpos_x = None
 	end_flag = False
 	cnt = 0
 	
+	else_flag = True
+	posx_buf  = cb.CircularBuffer(10, (1,))
+
 	def __init__(self):
 		print 'initiating...'
 		self.p = pyaudio.PyAudio()
@@ -109,11 +116,11 @@ class predictor():
 		return 10.0**(S/10.0)
 
 	def normalize_recon(self, y, min_y, max_y):
-	    y = (y - min_y) / (max_y - min_y)
-	    return y
+		y = (y - min_y) / (max_y - min_y)
+		return y
 
 	def play_sound_realtime(self, mfcc):
-		if (self.init_relpos_x - self.relpos[0]) > 0.015:
+		if (self.init_relpos_x - self.relpos[0]) > 0.015 and self.else_flag:
 			# print mfcc.shape #(1,10,3)
 			mfcc = mfcc.reshape(cf.MFCC_DIM, cf.TIMESTEP_OUT)
 			# print mfcc.shape
@@ -133,27 +140,28 @@ class predictor():
 			self.stream.write(data, exception_on_underflow=False)
 		
 	def normalize(self, y, min_y, max_y):
-	    # normalize to range (-1,1)
-	    #NewValue = (((OldValue - OldMin) * (NewMax - NewMin)) / (OldMax - OldMin)) + NewMin
-	    y = (((y - min_y) * (1 + 1)) / (max_y - min_y)) -1
+		# normalize to range (-1,1)
+		#NewValue = (((OldValue - OldMin) * (NewMax - NewMin)) / (OldMax - OldMin)) + NewMin
+		y = (((y - min_y) * (1 + 1)) / (max_y - min_y)) -1
 
-	    # this normalizes to (0,1)
-	    # y = (y - min_y) / (max_y - min_y)
-	    return y
+		# this normalizes to (0,1)
+		# y = (y - min_y) / (max_y - min_y)
+		return y
 
 	def scale_back(self, seq, min_y, max_y):
 		#scale back from -1 1 range
-	    seq = (((seq + 1)*(max_y - min_y)) / (1 + 1)) + min_y
+		seq = (((seq + 1)*(max_y - min_y)) / (1 + 1)) + min_y
 
-	    # scale back 
-	    # seq = seq * (max_y - min_y) + min_y
-	    return seq
+		# scale back 
+		# seq = seq * (max_y - min_y) + min_y
+		return seq
 
 	def callback(self, data):
 		if data._type == 'hrl_multimodal_prediction/pub_mfcc':
 			self.mfcc = data.mfcc
 			self.timestamp_mfcc = data.header.stamp
 			self.mfccUpdate = True
+
 		elif data._type == 'hrl_multimodal_prediction/pub_relpos':
 			self.relpos = data.relpos
 			self.timestamp_relpos = data.header.stamp
@@ -162,12 +170,14 @@ class predictor():
 				self.init_relpos_x = self.relpos[0]
 				self.init_flag = False
 
-			if self.relpos[0] <= -0.0118:
-				self.init_relpos_x = self.relpos[0]	#basically a flag for audio output 'else'	
-
+			#Circular Buffer, take last 5 samples, if avg is <=-0.0103, then stop
+			self.posx_buf.append(self.relpos[0])
+			print np.mean(self.posx_buf.get_last(5))
+			if np.mean(self.posx_buf.get_last(5)) <= -0.009:
+				self.else_flag = False
 
 		if self.mfccUpdate and self.posUpdate:
-			if (self.init_relpos_x - self.relpos[0]) > 0.015:
+			if ((self.init_relpos_x - self.relpos[0]) > 0.015) and self.else_flag:
 				print 'start predict'
 				self.posUpdate = False
 				self.mfccUpdate = False
@@ -223,10 +233,10 @@ class predictor():
 				orig_relpos = np.array(orig_relpos[:,cf.P_MFCC_TIMESTEP-1,:]).reshape(cf.IMAGE_DIM)
 				# print orig_mfcc.shape, orig_relpos.shape, sb_mfcc.shape, sb_relpos.shape
 				
-				print orig_mfcc
-				print orig_relpos
-				print sb_mfcc
-				print sb_relpos
+				# print orig_mfcc
+				# print orig_relpos
+				# print sb_mfcc
+				# print sb_relpos
 				#received messages need to be reshaped in visualizer
 				msg = plot_pub()
 				msg.header.stamp.secs = (loc_timestamp_relpos.secs + loc_timestamp_mfcc.secs)/2
@@ -259,7 +269,11 @@ class predictor():
 				# print self.mfcc.shape, self.relpos.shape
 
 				# Play -- Not detecting sound device, Use a Latop for this
-				self.play_sound_realtime(orig_mfcc)
+				# self.play_sound_realtime(orig_mfcc)
+				if self.init_mfcc_flag:
+					self.init_orig_mfcc = orig_mfcc
+					self.init_mfcc_flag = False
+				self.play_sound_realtime(self.init_orig_mfcc)
 
 				# Publish for plot
 				# Getting the last time step of orig and pred and flattening for msg
@@ -281,6 +295,12 @@ class predictor():
 					m3 = np.full(10, orig_mfcc[2])
 					out_m = np.vstack((m1,m2,m3))
 					self.out_m = np.swapaxes(out_m, 0,1).flatten()
+					x = np.full((1,10), orig_relpos[0])
+					y = np.full((1,10), orig_relpos[1])
+					z = np.full((1,10), orig_relpos[2])
+					out_p = np.vstack((x,y,z))
+					self.out_p = np.swapaxes(out_p, 0,1).flatten()
+				if not self.else_flag:
 					x = np.full((1,10), orig_relpos[0])
 					y = np.full((1,10), orig_relpos[1])
 					z = np.full((1,10), orig_relpos[2])

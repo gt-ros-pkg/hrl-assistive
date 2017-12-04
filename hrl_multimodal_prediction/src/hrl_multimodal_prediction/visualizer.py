@@ -87,21 +87,21 @@ class visualizer():
 			# 	self.pxs_2.append(time_var)
 			# 	self.pys_2.append(mfcc_pred[i,0]) 
 			
-			self.xs_4.append(time)
-			self.ys_4.append(self.orig_pred.orig_mfcc[1]) 
-			self.pxs_4.append(time+1)
-			self.pys_4.append(mfcc_pred[9,1]) 
-			# time_var = time
+			# self.xs_4.append(time)
+			# self.ys_4.append(self.orig_pred.orig_mfcc[1]) 
+			# self.pxs_4.append(time+1)
+			# self.pys_4.append(mfcc_pred[9,1]) 
+			# # time_var = time
 			# for i in range(cf.TIMESTEP_OUT):
 			# 	time_var += 0.2
 			# 	self.pxs_4.append(time_var)
 			# 	self.pys_4.append(mfcc_pred[i,1]) 
 
-			self.xs_6.append(time)
-			self.ys_6.append(self.orig_pred.orig_mfcc[2]) 
-			self.pxs_6.append(time+1)
-			self.pys_6.append(mfcc_pred[9,2]) 
-			# time_var = time
+			# self.xs_6.append(time)
+			# self.ys_6.append(self.orig_pred.orig_mfcc[2]) 
+			# self.pxs_6.append(time+1)
+			# self.pys_6.append(mfcc_pred[9,2]) 
+			# # time_var = time
 			# for i in range(cf.TIMESTEP_OUT):
 			# 	time_var += 0.2
 			# 	self.pxs_6.append(time_var)
@@ -128,22 +128,22 @@ class visualizer():
 
 			# ax2,4,6 = mfcc
 			self.ax2.clear()
-			self.ax2.set_title('MFCC')
+			self.ax2.set_title('Sound')
 			self.ax2.grid(True)
 			self.ax2.set_xlabel("t")
 			self.ax2.set_ylabel("energy for freq range 1")
 			self.ax2.plot(self.xs_2, self.ys_2, color='blue')	#original data
 			self.ax2.plot(self.pxs_2, self.pys_2, color='red') #predicted data
-			self.ax4.grid(True)
-			self.ax4.set_xlabel("t")
-			self.ax4.set_ylabel("energy for freq range 2")
-			self.ax4.plot(self.xs_4, self.ys_4, color='blue')	#original data
-			self.ax4.plot(self.pxs_4, self.pys_4, color='red') #predicted data
-			self.ax6.grid(True)
-			self.ax6.set_xlabel("t")
-			self.ax6.set_ylabel("energy for freq range 3")
-			self.ax6.plot(self.xs_6, self.ys_6, color='blue')	#original data
-			self.ax6.plot(self.pxs_6, self.pys_6, color='red') #predicted data
+			# self.ax4.grid(True)
+			# self.ax4.set_xlabel("t")
+			# self.ax4.set_ylabel("energy for freq range 2")
+			# self.ax4.plot(self.xs_4, self.ys_4, color='blue')	#original data
+			# self.ax4.plot(self.pxs_4, self.pys_4, color='red') #predicted data
+			# self.ax6.grid(True)
+			# self.ax6.set_xlabel("t")
+			# self.ax6.set_ylabel("energy for freq range 3")
+			# self.ax6.plot(self.xs_6, self.ys_6, color='blue')	#original data
+			# self.ax6.plot(self.pxs_6, self.pys_6, color='red') #predicted data
 
 
 	def callback(self, data):
