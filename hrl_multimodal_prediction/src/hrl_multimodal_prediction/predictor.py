@@ -51,6 +51,10 @@ class predictor():
 	out_p, out_m = None, None
 	init_out_flag = True
 
+	end_relpos_x = None
+	end_flag = False
+	cnt = 0
+	
 	def __init__(self):
 		print 'initiating...'
 		self.p = pyaudio.PyAudio()
@@ -157,6 +161,10 @@ class predictor():
 			if self.init_flag:
 				self.init_relpos_x = self.relpos[0]
 				self.init_flag = False
+
+			if self.relpos[0] <= -0.0118:
+				self.init_relpos_x = self.relpos[0]	#basically a flag for audio output 'else'	
+
 
 		if self.mfccUpdate and self.posUpdate:
 			if (self.init_relpos_x - self.relpos[0]) > 0.015:
