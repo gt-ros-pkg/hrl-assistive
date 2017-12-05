@@ -25,50 +25,57 @@ class visualizer():
 	xs_5, ys_5, pxs_5, pys_5 = [], [], [], []
 	xs_6, ys_6, pxs_6, pys_6 = [], [], [], []
 
+	init_time = None
+	init_flag = True
 	def __init__(self):
 		#initialize plotters
 		# style.use('fivethirtyeight')
 		self.fig = plt.figure()
-		self.ax1 = self.fig.add_subplot(3,2,1)
-		self.ax2 = self.fig.add_subplot(3,2,2)
-		self.ax3 = self.fig.add_subplot(3,2,3)
-		self.ax4 = self.fig.add_subplot(3,2,4)
-		self.ax5 = self.fig.add_subplot(3,2,5)
-		self.ax6 = self.fig.add_subplot(3,2,6)		
+		# self.ax1 = self.fig.add_subplot(2,1,1)
+		self.ax2 = self.fig.add_subplot(2,1,2)
+		# self.ax3 = self.fig.add_subplot(2,1,1)
+		# self.ax4 = self.fig.add_subplot(3,2,4)
+		self.ax5 = self.fig.add_subplot(2,1,1)
+		# self.ax6 = self.fig.add_subplot(3,2,6)		
 
 	def animate(self,i):
 		if self.orig_pred is not None:
 			# Get universal time for all plotting data
 			stamp = self.orig_pred.header.stamp
 			time = stamp.secs + stamp.nsecs * 1e-9
+			if self.init_flag:
+				self.init_flag = False
+				self.init_time = time
+			time = time - self.init_time
+			# time = time - 1.51250859 *1e9
 			# print time, time+1
 
 			# 1,3,5 relpos
 			relpos_pred = np.array(self.orig_pred.pred_relpos).reshape(cf.TIMESTEP_OUT,cf.IMAGE_DIM)
-			self.xs_1.append(time)
-			self.ys_1.append(self.orig_pred.orig_relpos[0]) #x
-			self.pxs_1.append(time+1)
-			self.pys_1.append(relpos_pred[9,0]) #x
+			# self.xs_1.append(time+0.2)
+			# self.ys_1.append(self.orig_pred.orig_relpos[0]) #x
+			# self.pxs_1.append(time)
+			# self.pys_1.append(relpos_pred[9,0]) #x
 			# time_var = time
 			# for i in range(cf.TIMESTEP_OUT):
 			# 	time_var += 0.2
 			# 	self.pxs_1.append(time_var)
 			# 	self.pys_1.append(relpos_pred[i,0]) #x
 
-			self.xs_3.append(time)
-			self.ys_3.append(self.orig_pred.orig_relpos[1]) #y
-			self.pxs_3.append(time+1)
-			self.pys_3.append(relpos_pred[9,1]) #y
-			# time_var = time
-			# for i in range(cf.TIMESTEP_OUT):
-			# 	time_var += 0.2
-			# 	self.pxs_3.append(time_var)
-			# 	self.pys_3.append(relpos_pred[i,1]) #y
+			# self.xs_3.append(time+1)
+			# self.ys_3.append(self.orig_pred.orig_relpos[1]) #y
+			# self.pxs_3.append(time)
+			# self.pys_3.append(relpos_pred[9,1]) #y
+			# # time_var = time
+			# # for i in range(cf.TIMESTEP_OUT):
+			# # 	time_var += 0.2
+			# # 	self.pxs_3.append(time_var)
+			# # 	self.pys_3.append(relpos_pred[i,1]) #y
 			
-			self.xs_5.append(time)
+			self.xs_5.append(time+0.2)
 			self.ys_5.append(self.orig_pred.orig_relpos[2]) #z
-			self.pxs_5.append(time+1)
-			self.pys_5.append(relpos_pred[9,2]) #y
+			self.pxs_5.append(time)
+			self.pys_5.append(relpos_pred[9,2]) #z
 			# time_var = time
 			# for i in range(cf.TIMESTEP_OUT):
 			# 	time_var += 0.2
@@ -77,9 +84,9 @@ class visualizer():
 
 			# 2,4,6, mfcc
 			mfcc_pred = np.array(self.orig_pred.pred_mfcc).reshape(cf.TIMESTEP_OUT,cf.MFCC_DIM)
-			self.xs_2.append(time)
+			self.xs_2.append(time+0.2)
 			self.ys_2.append(self.orig_pred.orig_mfcc[0]) 
-			self.pxs_2.append(time+1)
+			self.pxs_2.append(time)
 			self.pys_2.append(mfcc_pred[9,0]) 
 			# time_var = time
 			# for i in range(cf.TIMESTEP_OUT):
@@ -108,32 +115,39 @@ class visualizer():
 			# 	self.pys_6.append(mfcc_pred[i,2]) 
 
 			# ax1,3,5 = relative position
-			self.ax1.clear()
-			self.ax1.set_title('Reletive Position')
-			self.ax1.grid(True)
-			self.ax1.set_xlabel("t")
-			self.ax1.set_ylabel("position x")
-			self.ax1.plot(self.xs_1, self.ys_1, color='blue')	#original data
-			self.ax1.plot(self.pxs_1, self.pys_1, color='red') #predicted data
-			self.ax3.grid(True)
-			self.ax3.set_xlabel("t")
-			self.ax3.set_ylabel("position y")
-			self.ax3.plot(self.xs_3, self.ys_3, color='blue')	#original data
-			self.ax3.plot(self.pxs_3, self.pys_3, color='red') #predicted data
+			# self.ax1.clear()
+			# self.ax1.set_title('Distance between two AR tags')
+			# self.ax1.grid(True)
+			# self.ax1.set_xlabel("Time [s]", fontweight='bold', fontsize=14)
+			# self.ax1.set_ylabel("Distance Between Two AR Tags", fontweight='bold', fontsize=14)
+			# self.ax1.plot(self.xs_1, self.ys_1, color='blue', label='current')	#original data
+			# self.ax1.plot(self.pxs_1, self.pys_1, color='red', label='predicted') #predicted data
+			# self.ax1.set_ylim([-0.4, 0.4])
+			# self.ax1.legend()
+			# self.ax3.grid(True)
+			# self.ax3.set_xlabel("t")
+			# self.ax3.set_ylabel("position y")
+			# self.ax3.plot(self.xs_3, self.ys_3, color='blue')	#original data
+			# self.ax3.plot(self.pxs_3, self.pys_3, color='red') #predicted data
+			self.ax5.clear()
 			self.ax5.grid(True)
-			self.ax5.set_xlabel("t")
-			self.ax5.set_ylabel("position z")
-			self.ax5.plot(self.xs_5, self.ys_5, color='blue')	#original data
-			self.ax5.plot(self.pxs_5, self.pys_5, color='red') #predicted data
+			self.ax5.set_xlabel("Time [s]", fontweight='bold', fontsize=22)
+			self.ax5.set_ylabel("Distance Between Two AR Tags", fontweight='bold', fontsize=22)
+			self.ax5.plot(self.xs_5, self.ys_5, color='blue', linewidth=7, label='current')	#original data
+			self.ax5.plot(self.pxs_5, self.pys_5, color='red', linewidth=7, label='predicted') #predicted data
+			self.ax5.set_ylim([0, 0.25])
+			self.ax5.legend(prop={'size': 22, 'weight': 'bold'})
 
 			# ax2,4,6 = mfcc
 			self.ax2.clear()
-			self.ax2.set_title('Sound')
+			# self.ax2.set_title('Sound')
 			self.ax2.grid(True)
-			self.ax2.set_xlabel("t")
-			self.ax2.set_ylabel("energy for freq range 1")
-			self.ax2.plot(self.xs_2, self.ys_2, color='blue')	#original data
-			self.ax2.plot(self.pxs_2, self.pys_2, color='red') #predicted data
+			self.ax2.set_xlabel("Time [s]", fontweight='bold', fontsize=22)
+			self.ax2.set_ylabel("Sound Energy", fontweight='bold', fontsize=22)
+			self.ax2.plot(self.xs_2, self.ys_2, color='blue', linewidth=7, label='current')	#original data
+			self.ax2.plot(self.pxs_2, self.pys_2, color='red', linewidth=7, label='predicted') #predicted data
+			self.ax2.set_ylim([300, 1100])
+			self.ax2.legend(prop={'size': 22, 'weight': 'bold'})
 			# self.ax4.grid(True)
 			# self.ax4.set_xlabel("t")
 			# self.ax4.set_ylabel("energy for freq range 2")

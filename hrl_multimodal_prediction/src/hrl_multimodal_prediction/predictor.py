@@ -28,6 +28,7 @@ from std_msgs.msg import String, Float64, Float64MultiArray, MultiArrayLayout
 from hrl_multimodal_prediction.msg import audio, pub_relpos, pub_mfcc, plot_pub
 from visualization_msgs.msg import Marker
 import hrl_lib.circular_buffer as cb
+from scipy import fft, arange, signal, fftpack
 
 # Predictor and visualizer go hand in hand
 # Predict 10 time steps and save in a variable
@@ -127,6 +128,17 @@ class predictor():
 			recon = self.reconstruct_mfcc(mfcc, cf.TIMESTEP_OUT)
 			# print recon.shape #(4096,)
 			recon = self.normalize(recon, self.a_min, self.a_max)
+			# for i in range(recon.shape[0]):
+			# 	if recon[i] < 0:
+			# 		recon[i] = -np.abs(recon[i])**(np.exp(1.3))
+			# 	else:
+			# 		recon[i] = recon[i]**(np.exp(1.3))
+			
+			# n = 1  # the larger n is, the smoother curve will be
+			# b = [1.0 / n] * n
+			# a = 1
+			# recon = signal.lfilter(b,a,recon)
+
 			data = recon.astype(np.float32).tostring()
 			self.stream.write(data, exception_on_underflow=False)
 		else:
@@ -136,6 +148,19 @@ class predictor():
 			recon = self.reconstruct_mfcc(mfcc, cf.P_MFCC_TIMESTEP)
 			# print recon.shape #(4096,)
 			recon = self.normalize(recon, self.a_min, self.a_max)
+			# for i in range(recon.shape[0]):
+			# 	if recon[i] < 0:
+			# 		recon[i] = -np.abs(recon[i])**(np.exp(1.3))
+			# 	else:
+			# 		recon[i] = recon[i]**(np.exp(1.3))
+
+			n = 1  # the larger n is, the smoother curve will be
+			b = [1.0 / n] * n
+			a = 1
+			recon = signal.lfilter(b,a,recon)
+
+			data = recon.astype(np.float32).tostring()
+			self.stream.write(data, exception_on_underflow=False)
 			data = recon.astype(np.float32).tostring()
 			self.stream.write(data, exception_on_underflow=False)
 		
@@ -171,10 +196,10 @@ class predictor():
 				self.init_flag = False
 
 			#Circular Buffer, take last 5 samples, if avg is <=-0.0103, then stop
-			self.posx_buf.append(self.relpos[0])
-			print np.mean(self.posx_buf.get_last(5))
-			if np.mean(self.posx_buf.get_last(5)) <= -0.009:
-				self.else_flag = False
+			# self.posx_buf.append(self.relpos[0])
+			# print np.mean(self.posx_buf.get_last(5))
+			# if np.mean(self.posx_buf.get_last(5)) <= -0.009:
+			# 	self.else_flag = False
 
 		if self.mfccUpdate and self.posUpdate:
 			if ((self.init_relpos_x - self.relpos[0]) > 0.015) and self.else_flag:
@@ -300,12 +325,12 @@ class predictor():
 					z = np.full((1,10), orig_relpos[2])
 					out_p = np.vstack((x,y,z))
 					self.out_p = np.swapaxes(out_p, 0,1).flatten()
-				if not self.else_flag:
-					x = np.full((1,10), orig_relpos[0])
-					y = np.full((1,10), orig_relpos[1])
-					z = np.full((1,10), orig_relpos[2])
-					out_p = np.vstack((x,y,z))
-					self.out_p = np.swapaxes(out_p, 0,1).flatten()
+				# if not self.else_flag:
+				# 	x = np.full((1,10), orig_relpos[0])
+				# 	y = np.full((1,10), orig_relpos[1])
+				# 	z = np.full((1,10), orig_relpos[2])
+				# 	out_p = np.vstack((x,y,z))
+				# 	self.out_p = np.swapaxes(out_p, 0,1).flatten()
 
 				msg.pred_mfcc = self.out_m
 				msg.pred_relpos = self.out_p
