@@ -1,0 +1,1169 @@
+<?xml version="1.0" ?>
+<sdf version="1.4">
+    <world name="default">
+        <physics type="ode">
+            <gravity>0 0 -9.81</gravity>
+            <max_step_size>0.001</max_step_size>
+            <real_time_factor>1</real_time_factor>
+            <real_time_update_rate>1000</real_time_update_rate>
+            <ode>
+                <solver>
+                    <type>quick</type>
+                    <iters>50</iters>
+                    <sor>1.4</sor>
+                </solver>
+                <constraints>
+                    <cfm>0</cfm>
+                    <erp>1</erp>
+                    <contact_max_correcting_vel>0</contact_max_correcting_vel>
+                    <contact_surface_layer>0</contact_surface_layer>
+                </constraints>
+            </ode>
+        </physics>
+
+        <state world_name='default'>
+            <sim_time>15 517000000</sim_time>
+            <real_time>15 594027395</real_time>
+            <wall_time>1423606992 994698489</wall_time>
+            <!--<insertions>-->
+            <model name='human_model'>
+
+                <pose>0 0 2 0 0 0</pose>
+
+            </model>
+            <!--</insertions>-->
+        </state>
+        
+        <model name="ground_model">
+            <static>true</static>
+            <link name="ground_link">
+                <must_be_base_link>true</must_be_base_link>
+                <visual name="visual">
+                    <pose>0 0 0 0 0 0</pose>
+                    <geometry>
+                        <box>
+                            <size>10.0 10. 0.1</size>
+                        </box>
+                    </geometry>
+                    <material>
+                        <script>Gazebo/WoodPallet</script>
+                    </material>
+                </visual>
+                <collision name="collision">
+                    <pose>0 0 0 0 0 0</pose>
+                    <geometry>
+                        <box>
+                            <size>10.0 10.0 0.1</size>
+                        </box>
+                    </geometry>
+                </collision>
+            </link>
+            <!--<joint type="fixed" name="world_to_ground_joint">-->
+                <!--<parent>world</parent>-->
+                <!--<child>ground_link</child>-->
+                <!--<pose>0 0 0 0 0 0</pose>-->
+                <!--<axis>-->
+                    <!--<xyz>1 0 0</xyz>-->
+                <!--</axis>-->
+            <!--</joint>-->
+        </model>
+
+        <model name="human_model">
+            <!--<self_collide>true</self_collide>-->
+            <!--<pose>0 0 2 1.5708 0 0</pose>-->
+            <link name="h_pelvis">
+                <self_collide>true</self_collide>
+                <pose>0 0 0 0 0 0</pose>
+                <inertial>
+                    <mass>5.6154</mass>
+                    <!--<offset>0.0 0 0.0</offset>-->
+                </inertial>
+                <visual name="visual">
+                    <pose>0.0 0 0.0 0 0 0</pose>
+                    <geometry>
+                        <box>
+                            <!--size>1.0*0.1088 1.0*0.1088 2.2*0.1088</size-->
+                            <size>0.1088 0.1088 0.23936</size>
+                        </box>
+                    </geometry>
+                </visual>
+                <collision name="collision">
+                    <pose>0.0 0 0.0 0 0 0</pose>
+                    <geometry>
+                        <box>
+                            <!--size>1.0*0.1088 1.0*0.1088 2.2*0.1088</size-->
+                            <size>0.1088 0.1088 0.23936</size>
+                        </box>
+                    </geometry>
+                </collision>                                
+            </link>
+            
+            <!-- Left Leg -->
+            <link name="h_thigh_left">
+                <self_collide>true</self_collide>
+                <pose>0.01649408 -0.05774016 -0.09072832 0.0 0.0 0.0</pose>
+                <inertial>
+                    <mass>6.5709</mass>
+                    <!--<offset>0.0 -0.18605 0.0</offset>-->
+                </inertial>
+                <visual name="visual">
+                    <pose>0.0 -0.18605 0.0 0.0 0.0 0.0</pose>
+                    <geometry>
+                        <box>
+                            <!--size>0.2500*0.3721 1.0000*0.3721 0.2500*0.3721</size-->
+                            <size>0.093025 0.3721 0.093025</size>
+                        </box>
+                    </geometry>
+                </visual>
+                <collision name="collision">
+                    <pose>0.0 -0.18605 0.0 0.0 0.0 0.0</pose>
+                    <geometry>
+                        <box>
+                            <!--size>0.2500*0.3721 1.0000*0.3721 0.2500*0.3721</size-->
+                            <size>0.093025 0.3721 0.093025</size>
+                        </box>
+                    </geometry>
+                </collision>                                
+            </link>
+
+            <link name="h_shin_left">
+                <self_collide>true</self_collide>
+                <pose>0.01649408 -0.42984016 -0.09072832 0.0 0.0 0.0</pose>
+                <inertial>
+                    <mass>1.7738</mass>
+                    <!--<offset>0.0 -0.18685 0.0</offset>-->
+                </inertial>
+                <visual name="visual">
+                    <pose>0.0 -0.18685 0.0 0.0 0.0 0.0</pose>
+                    <geometry>
+                        <box>
+                            <!--size>0.2000*0.3737 1.0000*0.3737 0.2000*0.3737</size-->
+                            <size>0.07474 0.3737 0.07474</size>
+                        </box>
+                    </geometry>
+                </visual>
+                <collision name="collision">
+                    <pose>0.0 -0.18685 0.0 0.0 0.0 0.0</pose>
+                    <geometry>
+                        <box>
+                            <!--size>0.2000*0.3737 1.0000*0.3737 0.2000*0.3737</size-->
+                            <size>0.07474 0.3737 0.07474</size>
+                        </box>
+                    </geometry>
+                </collision>                                
+            </link>
+
+            <link name="h_heel_left">
+                <self_collide>true</self_collide>
+                <pose>0.01649408 -0.80354016 -0.09072832 0.0 0.0 0.0</pose>
+                <inertial>
+                    <mass>0.5831</mass>
+                    <!--<offset>0.0216 0.0 0.0</offset>-->
+                </inertial>
+                <visual name="visual">
+                    <pose>0.0216 0.0 0.0 0.0 0.0 0.0</pose>
+                    <geometry>
+                        <box>
+                            <!--size>1.0000*0.108 0.5000*0.108 1.0000*0.108</size-->
+                            <size>0.1080 0.0540 0.1080</size>
+                        </box>
+                    </geometry>
+                    <!--<color>1.0 0.5 0.0</color>-->
+                </visual>
+                <collision name="collision">
+                    <pose>0.0216 0.0 0.0 0.0 0.0 0.0</pose>
+                    <geometry>
+                        <box>
+                            <!--size>1.0000*0.108 0.5000*0.108 1.0000*0.108</size-->
+                            <size>0.1080 0.0540 0.1080</size>
+                        </box>
+                    </geometry>
+                </collision>                                
+            </link>
+
+            <link name="h_toe_left">
+                <self_collide>true</self_collide>
+                <pose>0.12649408 -0.80354016 -0.09072832 0.0 0.0 0.0</pose>
+                <inertial>
+                    <mass>0.50</mass>
+                    <!--<offset>0.02 0.0 0.0</offset>-->
+                </inertial>
+                <visual name="visual">
+                    <pose>0.02 0.0 0.0 0.0 0.0 0.0</pose>
+                    <geometry>
+                        <box>
+                            <!--size>1.0000*0.1 0.5000*0.1 0.8000*0.1</size-->
+                            <size>0.1000 0.0500 0.0800</size>
+                        </box>
+                    </geometry>
+                    <!--<color>1.0 0.5 0.0</color>-->
+                </visual>
+                <collision name="collision">
+                    <pose>0.02 0.0 0.0 0.0 0.0 0.0</pose>
+                    <geometry>
+                        <box>
+                            <!--size>1.0000*0.1 0.5000*0.1 0.8000*0.1</size-->
+                            <size>0.1000 0.0500 0.0800</size>
+                        </box>
+                    </geometry>
+                </collision>                                
+            </link>
+
+            <!-- Right Leg -->
+            <link name="h_thigh_right">
+                <self_collide>true</self_collide>
+                <pose>0.01649408 -0.05774016 0.09072832 0.0 0.0 0.0</pose>
+                <inertial>
+                    <mass>6.5709</mass>
+                    <!--<offset>0.0 -0.18605 0.0</offset>-->
+                </inertial>
+                <visual name="visual">
+                    <pose>0.0 -0.18605 0.0 0.0 0.0 0.0</pose>
+                    <geometry>
+                        <box>
+                            <!--size>0.2500*0.3721 1.0000*0.3721 0.2500*0.3721</size-->
+                            <size>0.093025 0.3721 0.093025</size>
+                        </box>
+                    </geometry>
+                </visual>
+                <collision name="collision">
+                    <pose>0.0 -0.18605 0.0 0.0 0.0 0.0</pose>
+                    <geometry>
+                        <box>
+                            <!--size>0.2500*0.3721 1.0000*0.3721 0.2500*0.3721</size-->
+                            <size>0.093025 0.3721 0.093025</size>
+                        </box>
+                    </geometry>
+                </collision>                                
+            </link>
+
+            <link name="h_shin_right">
+                <self_collide>true</self_collide>
+                <pose>0.01649408 -0.42984016 0.09072832 0.0 0.0 0.0</pose>
+                <inertial>
+                    <mass>1.7738</mass>
+                    <!--<offset>0.0 -0.18685 0.0</offset>-->
+                </inertial>
+                <visual name="visual">
+                    <pose>0.0 -0.18685 0.0 0.0 0.0 0.0</pose>
+                    <geometry>
+                        <box>
+                            <!--size>0.2000*0.3737 1.0000*0.3737 0.2000*0.3737</size-->
+                            <size>0.07474 0.3737 0.07474</size>
+                        </box>
+                    </geometry>
+                </visual>
+                <collision name="collision">
+                    <pose>0.0 -0.18685 0.0 0.0 0.0 0.0</pose>
+                    <geometry>
+                        <box>
+                            <!--size>0.2000*0.3737 1.0000*0.3737 0.2000*0.3737</size-->
+                            <size>0.07474 0.3737 0.07474</size>
+                        </box>
+                    </geometry>
+                </collision>                                
+            </link>
+
+            <link name="h_heel_right">
+                <self_collide>true</self_collide>
+                <pose>0.01649408 -0.80354016 0.09072832 0.0 0.0 0.0</pose>
+                <inertial>
+                    <mass>0.5831</mass>
+                    <!--<offset>0.0216 0.0 0.0</offset>-->
+                </inertial>
+                <visual name="visual">
+                    <pose>0.0216 0.0 0.0 0.0 0.0 0.0</pose>
+                    <geometry>
+                        <box>
+                            <!--size>1.0000*0.108 0.5000*0.108 1.0000*0.108</size-->
+                            <size>0.1080 0.0540 0.1080</size>
+                        </box>
+                    </geometry>
+                    <!--<color>1.0 0.5 0.0</color>-->
+                </visual>
+                <collision name="collision">
+                    <pose>0.0216 0.0 0.0 0.0 0.0 0.0</pose>
+                    <geometry>
+                        <box>
+                            <!--size>1.0000*0.108 0.5000*0.108 1.0000*0.108</size-->
+                            <size>0.1080 0.0540 0.1080</size>
+                        </box>
+                    </geometry>
+                </collision>                                
+            </link>
+
+            <link name="h_toe_right">
+                <self_collide>true</self_collide>
+                <pose>0.12649408 -0.80354016 0.09072832 0.0 0.0 0.0</pose>
+                <inertial>
+                    <mass>0.50</mass>
+                    <!--<offset>0.02 0.0 0.0</offset>-->
+                </inertial>
+                <visual name="visual">
+                    <pose>0.02 0.0 0.0 0.0 0.0 0.0</pose>
+                    <geometry>
+                        <box>
+                            <!--size>1.0000*0.1 0.5000*0.1 0.8000*0.1</size-->
+                            <size>0.1000 0.0500 0.0800</size>
+                        </box>
+                    </geometry>
+                    <!--<color>1.0 0.5 0.0</color>-->
+                </visual>
+                <collision name="collision">
+                    <pose>0.02 0.0 0.0 0.0 0.0 0.0</pose>
+                    <geometry>
+                        <box>
+                            <!--size>1.0000*0.1 0.5000*0.1 0.8000*0.1</size-->
+                            <size>0.1000 0.0500 0.0800</size>
+                        </box>
+                    </geometry>
+                </collision>                                
+            </link>
+
+            <!-- Upper link -->
+            <link name="h_abdomen">
+                <self_collide>true</self_collide>
+                <pose>0.0 0.0562 0.0 0.0 0.0 0.0</pose>
+                <inertial>
+                    <mass>4.1846</mass>
+                    <!--<offset>0.0 0.12535 0.0</offset>-->
+                </inertial>
+                <visual name="visual">
+                    <pose>0.0 0.12535 0.0 0.0 0.0 0.0</pose>
+                    <geometry>
+                        <box>
+                            <!--size>0.5000*0.2507 1.0000*0.2507 0.7000*0.2507</size-->
+                            <size>0.12535 0.2507 0.17549</size>
+                        </box>
+                    </geometry>
+                </visual>
+                <collision name="collision">
+                    <pose>0.0 0.12535 0.0 0.0 0.0 0.0</pose>
+                    <geometry>
+                        <box>
+                            <!--size>0.5000*0.2507 1.0000*0.2507 0.7000*0.2507</size-->
+                            <size>0.12535 0.2507 0.17549</size>
+                        </box>
+                    </geometry>
+                </collision>                                
+            </link>
+
+            <link name="h_spine">
+                <self_collide>true</self_collide>
+                <pose>0.0 0.3069 0.0 0.0 0.0 0.0</pose>
+                <inertial>
+                    <mass>4.8608</mass>
+                    <!--<offset>0.0 0.0908 0.0</offset>-->
+                </inertial>
+                <visual name="visual">
+                    <pose>0.0 0.0908 0.0 0.0 0.0 0.0</pose>
+                    <geometry>
+                        <box>
+                            <!--size>0.5000*0.1816 1.0000*0.1816 0.5000*0.1816</size-->
+                            <size>0.0908 0.1816 0.0908</size>
+                        </box>
+                    </geometry>
+                </visual>
+                <collision name="collision">
+                    <pose>0.0 0.0908 0.0 0.0 0.0 0.0</pose>
+                    <geometry>
+                        <box>
+                            <!--size>0.5000*0.1816 1.0000*0.1816 0.5000*0.1816</size-->
+                            <size>0.0908 0.1816 0.0908</size>
+                        </box>
+                    </geometry>
+                </collision>                                
+            </link>
+
+            <link name="h_head">
+                <self_collide>true</self_collide>
+                <pose>0.0 0.4885 0.0 0.0 0.0 0.0</pose>
+                <inertial>
+                    <mass>3.92</mass>
+                    <!--<offset>0.0 0.07825 0.0</offset>-->
+                </inertial>
+                <visual name="visual">
+                    <pose>0.0 0.07825 0.0 0.0 0.0 0.0</pose>
+                    <geometry>
+                        <box>
+                            <!--size>0.6500*0.1565 1.0000*0.1565 0.8000*0.1565</size-->
+                            <size>0.101725 0.1565 0.1252</size>
+                        </box>
+                    </geometry>
+                    <!--<color>1.0 0.5 0.0</color>-->
+                </visual>
+                <collision name="collision">
+                    <pose>0.0 0.07825 0.0 0.0 0.0 0.0</pose>
+                    <geometry>
+                        <box>
+                            <!--size>0.6500*0.1565 1.0000*0.1565 0.8000*0.1565</size-->
+                            <size>0.101725 0.1565 0.1252</size>
+                        </box>
+                    </geometry>
+                </collision>                                
+            </link>
+
+            <!-- Left Arm -->
+            <link name="h_scapula_left">
+                <self_collide>true</self_collide>
+                <pose>0.0 0.3069 0.0 -0.9423 0.0 0.0</pose>
+                <inertial>
+                    <mass>2.6264</mass>
+                    <!--<offset>0.0 0.09615 0.0</offset>-->
+                </inertial>
+                <visual name="visual">
+                    <pose>0.0 0.09615 0.0 0.0 0.0 0.0</pose>
+                    <geometry>
+                        <box>
+                            <!--size>0.5000*0.1923 1.0000*0.1923 0.5000*0.1923</size-->
+                            <size>0.09615 0.1923 0.09615</size>
+                        </box>
+                    </geometry>
+                </visual>
+                <collision name="collision">
+                    <pose>0.0 0.09615 0.0 0.0 0.0 0.0</pose>
+                    <geometry>
+                        <box>
+                            <!--size>0.5000*0.1923 1.0000*0.1923 0.5000*0.1923</size-->
+                            <size>0.09615 0.1923 0.09615</size>
+                        </box>
+                    </geometry>
+                </collision>                                
+            </link>
+			
+			<link name="h_bicep_left_midjoint">
+                <self_collide>true</self_collide>
+                <pose>0.0 0.397146 -0.169809 0.0 0.0 0.0</pose>
+                <collision name="collision">
+                    <pose>0.0 -0.1308 0.0 0.0 0.0 0.0</pose>
+                    <geometry>
+                        <box>
+                            <!--size>0.3000*0.2616 1.0000*0.2616 0.3000*0.2616</size-->
+                            <size>0.07848 0.2616 0.07848</size>
+                        </box>
+                    </geometry>
+                </collision>                                
+            </link>
+
+            <link name="h_bicep_left">
+                <self_collide>true</self_collide>
+                <pose>0.0 0.397146 -0.169809 0.0 0.0 0.0</pose>
+                <inertial>
+                    <mass>1.6219</mass>
+                    <!--<offset>0.0 -0.1308 0.0</offset>-->
+                </inertial>
+                <visual name="visual">
+                    <pose>0.0 -0.1308 0.0 0.0 0.0 0.0</pose>
+                    <geometry>
+                        <box>
+                            <!--size>0.3000*0.2616 1.0000*0.2616 0.3000*0.2616</size-->
+                            <size>0.07848 0.2616 0.07848</size>
+                        </box>
+                    </geometry>
+                </visual>
+                <collision name="collision">
+                    <pose>0.0 -0.1308 0.0 0.0 0.0 0.0</pose>
+                    <geometry>
+                        <box>
+                            <!--size>0.3000*0.2616 1.0000*0.2616 0.3000*0.2616</size-->
+                            <size>0.07848 0.2616 0.07848</size>
+                        </box>
+                    </geometry>
+                </collision>                                
+            </link>
+
+            <link name="h_forearm_left">
+                <self_collide>true</self_collide>
+                <pose>0.0 0.135546 -0.169809 0.0 0.0 0.0</pose>
+                <inertial>
+                    <mass>0.6909</mass>
+                    <!--<offset>0.0 -0.1012 0.0</offset>-->
+                </inertial>
+                <visual name="visual">
+                    <pose>0.0 -0.1012 0.0 0.0 0.0 0.0</pose>
+                    <geometry>
+                        <box>
+                            <!--size>0.2500*0.2024 1.0000*0.2024 0.2500*0.2024</size-->
+                            <size>0.0506 0.2024 0.0506</size>
+                        </box>
+                    </geometry>
+                </visual>
+                <collision name="collision">
+                    <pose>0.0 -0.1012 0.0 0.0 0.0 0.0</pose>
+                    <geometry>
+                        <box>
+                            <!--size>0.2500*0.2024 1.0000*0.2024 0.2500*0.2024</size-->
+                            <size>0.0506 0.2024 0.0506</size>
+                        </box>
+                    </geometry>
+                </collision>                                
+            </link>
+			
+			<link name="h_hand_left">
+                <self_collide>true</self_collide>
+                <pose>0.0 -0.066854 -0.169809 0.0 0.0 0.0</pose>
+                <inertial>
+                    <mass>0.175</mass>
+                    <!--<offset>0.0 -0.035 0.0</offset>-->
+                </inertial>
+                <visual name="visual">
+                    <pose>0.0 -0.035 0.0 0.0 0.0 0.0</pose>
+                    <geometry>
+                        <box>
+                            <size>0.04 0.07 0.04</size>
+                        </box>
+                    </geometry>
+                    <!--<color>1.0 0.5 0.0</color>-->
+                </visual>
+                <collision name="collision">
+                    <pose>0.0 -0.035 0.0 0.0 0.0 0.0</pose>
+                    <geometry>
+                        <box>
+                            <size>0.04 0.07 0.04</size>
+                        </box>
+                    </geometry>
+                </collision>                                
+            </link>
+			
+			<link name="h_hand_left2">
+                <self_collide>true</self_collide>
+                <pose>0.0 -0.137 -0.169809 0.0 0.0 0.0</pose>
+                <inertial>
+                    <mass>0.12</mass>
+                    <!--<offset>0.0 -0.035 0.0</offset>-->
+                </inertial>
+                <visual name="visual">
+                    <pose>0.0 -0.035 0.0 0.0 0.0 0.0</pose>
+                    <geometry>
+                        <box>
+                            <size>0.03 0.07 0.03</size>
+                        </box>
+                    </geometry>
+                    <!--<color>1.0 0.5 0.0</color>-->
+                </visual>
+                <collision name="collision">
+                    <pose>0.0 -0.035 0.0 0.0 0.0 0.0</pose>
+                    <geometry>
+                        <box>
+                            <size>0.03 0.07 0.03</size>
+                        </box>
+                    </geometry>
+                </collision>                                
+            </link>
+
+            <!-- Right Arm -->
+            <link name="h_scapula_right">
+                <self_collide>true</self_collide>
+                <pose>0.0 0.3069 0.0 0.9423 0.0 0.0</pose>
+                <inertial>
+                    <mass>2.6264</mass>
+                    <!--<offset>0.0 0.09615 0.0</offset>-->
+                </inertial>
+                <visual name="visual">
+                    <pose>0.0 0.09615 0.0 0.0 0.0 0.0</pose>
+                    <geometry>
+                        <box>
+                            <!--size>0.5000*0.1923 1.0000*0.1923 0.5000*0.1923</size-->
+                            <size>0.09615 0.1923 0.09615</size>
+                        </box>
+                    </geometry>
+                </visual>
+                <collision name="collision">
+                    <pose>0.0 0.09615 0.0 0.0 0.0 0.0</pose>
+                    <geometry>
+                        <box>
+                            <!--size>0.5000*0.1923 1.0000*0.1923 0.5000*0.1923</size-->
+                            <size>0.09615 0.1923 0.09615</size>
+                        </box>
+                    </geometry>
+                </collision>                                
+            </link>
+			
+			<link name="h_bicep_right_midjoint">
+                <self_collide>true</self_collide>
+                <pose>0.0 0.397146 0.169809 0.0 0.0 0.0</pose>
+                <collision name="collision">
+                    <pose>0.0 -0.1308 0.0 0.0 0.0 0.0</pose>
+                    <geometry>
+                        <box>
+                            <!--size>0.3000*0.2616 1.0000*0.2616 0.3000*0.2616</size-->
+                            <size>0.07848 0.2616 0.07848</size>
+                        </box>
+                    </geometry>
+                </collision>                                
+            </link>
+
+            <link name="h_bicep_right">
+                <self_collide>true</self_collide>
+                <pose>0.0 0.397146 0.169809 0.0 0.0 0.0</pose>
+                <inertial>
+                    <mass>1.6219</mass>
+                    <!--<offset>0.0 -0.1308 0.0</offset>-->
+                </inertial>
+                <visual name="visual">
+                    <pose>0.0 -0.1308 0.0 0.0 0.0 0.0</pose>
+                    <geometry>
+                        <box>
+                            <!--size>0.3000*0.2616 1.0000*0.2616 0.3000*0.2616</size-->
+                            <size>0.07848 0.2616 0.07848</size>
+                        </box>
+                    </geometry>
+                </visual>
+                <collision name="collision">
+                    <pose>0.0 -0.1308 0.0 0.0 0.0 0.0</pose>
+                    <geometry>
+                        <box>
+                            <!--size>0.3000*0.2616 1.0000*0.2616 0.3000*0.2616</size-->
+                            <size>0.07848 0.2616 0.07848</size>
+                        </box>
+                    </geometry>
+                </collision>                                
+            </link>
+
+            <link name="h_forearm_right">
+                <self_collide>true</self_collide>
+                <pose>0.0 0.135546 0.169809 0.0 0.0 0.0</pose>
+                <inertial>
+                    <mass>0.6909</mass>
+                    <!--<offset>0.0 -0.1012 0.0</offset>-->
+                </inertial>
+                <visual name="visual">
+                    <pose>0.0 -0.1012 0.0 0.0 0.0 0.0</pose>
+                    <geometry>
+                        <box>
+                            <!--size>0.2500*0.2024 1.0000*0.2024 0.2500*0.2024</size-->
+                            <size>0.0506 0.2024 0.0506</size>
+                        </box>
+                    </geometry>
+                </visual>
+                <collision name="collision">
+                    <pose>0.0 -0.1012 0.0 0.0 0.0 0.0</pose>
+                    <geometry>
+                        <box>
+                            <!--size>0.2500*0.2024 1.0000*0.2024 0.2500*0.2024</size-->
+                            <size>0.0506 0.2024 0.0506</size>
+                        </box>
+                    </geometry>
+                </collision>                                
+            </link>
+
+            <link name="h_hand_right">
+                <self_collide>true</self_collide>
+                <pose>0.0 -0.066854 0.169809 0.0 0.0 0.0</pose>
+                <inertial>
+                    <mass>0.175</mass>
+                    <!--<offset>0.0 -0.035 0.0</offset>-->
+                </inertial>
+                <visual name="visual">
+                    <pose>0.0 -0.035 0.0 0.0 0.0 0.0</pose>
+                    <geometry>
+                        <box>
+                            <size>0.04 0.07 0.04</size>
+                        </box>
+                    </geometry>
+                    <!--<color>1.0 0.5 0.0</color>-->
+                </visual>
+                <collision name="collision">
+                    <pose>0.0 -0.035 0.0 0.0 0.0 0.0</pose>
+                    <geometry>
+                        <box>
+                            <size>0.04 0.07 0.04</size>
+                        </box>
+                    </geometry>
+                </collision>                                
+            </link>
+			
+			<link name="h_hand_right2">
+                <self_collide>true</self_collide>
+                <pose>0.0 -0.137 0.169809 0.0 0.0 0.0</pose>
+                <inertial>
+                    <mass>0.12</mass>
+                    <!--<offset>0.0 -0.035 0.0</offset>-->
+                </inertial>
+                <visual name="visual">
+                    <pose>0.0 -0.035 0.0 0.0 0.0 0.0</pose>
+                    <geometry>
+                        <box>
+                            <size>0.03 0.07 0.03</size>
+                        </box>
+                    </geometry>
+                    <!--<color>1.0 0.5 0.0</color>-->
+                </visual>
+                <collision name="collision">
+                    <pose>0.0 -0.035 0.0 0.0 0.0 0.0</pose>
+                    <geometry>
+                        <box>
+                            <size>0.03 0.07 0.03</size>
+                        </box>
+                    </geometry>
+                </collision>                                
+            </link>
+			
+
+            <!-- JOINT: Pelvis -->
+            <joint type="ball" name="j_pelvis">
+                <parent>world</parent>
+                <child>h_head</child>
+                <!--<init_pos>0 0 0 0 0 0</init_pos>-->
+                <!--<init_vel>0 0 0 0 0 0</init_vel>-->
+            </joint>
+
+            <!-- JOINT: Left Leg -->
+            <joint type="ball" name="j_thigh_left">
+                <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+                <parent>h_pelvis</parent>
+                <child>h_thigh_left</child>
+                <!--<axis_order>zyx</axis_order>-->
+                <!--<init_pos>0 0 0</init_pos>-->
+                <!--<init_vel>0 0 0</init_vel>-->
+				<!--<axis>-->
+					<!--<limit>-->
+						<!--<lower>-3.1416</lower>-->
+						<!--<upper>3.1416</upper>-->
+					<!--</limit>-->
+				<!--</axis>-->
+				<!--<axis2>-->
+					<!--<limit>-->
+						<!--<lower>-0.75</lower>-->
+						<!--<upper>0.75</upper>-->
+					<!--</limit>-->
+				<!--</axis2>-->
+				<!--<axis3>-->
+					<!--<limit>-->
+						<!--<lower>-3.1416</lower>-->
+						<!--<upper>3.1416</upper>-->
+					<!--</limit>-->
+				<!--</axis3>-->
+				
+            </joint>
+
+            <joint type="revolute" name="j_shin_left">
+                <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+                <parent>h_thigh_left</parent>
+                <child>h_shin_left</child>
+                <axis>
+                    <xyz>0.0 0.0 1.0</xyz>
+					<limit>
+						<lower>-2.6416</lower>
+						<upper>0</upper>
+					</limit>
+                </axis>
+                <!--<init_pos>-0.17</init_pos>-->
+                <!--<init_vel>0</init_vel>-->
+            </joint>
+
+            <joint type="revolute2" name="j_heel_left">
+                <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+                <parent>h_shin_left</parent>
+                <child>h_heel_left</child>
+                <axis>
+                    <xyz>0.0 0.0 1.0</xyz>
+					<limit>
+						<lower>-1.136</lower>
+						<upper>0.350</upper>
+					</limit>
+                </axis>
+                <axis2>
+                    <xyz>0.0 1.0 0.0</xyz>
+					<limit>
+						<lower>-0.2854</lower>
+						<upper>0.3854</upper>
+					</limit>
+                </axis2>
+                <!--<init_pos>0 0</init_pos>-->
+                <!--<init_vel>0 0</init_vel>-->
+            </joint>
+
+            <joint type="revolute" name="j_toe_left">
+                <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+                <parent>h_heel_left</parent>
+                <child>h_toe_left</child>
+                <axis>
+                    <xyz>0.0 0.0 1.0</xyz>
+					<limit>
+						<lower>-0.4236</lower>
+						<upper>0.5536</upper>
+					</limit>
+                </axis>
+                <!--<init_pos>0</init_pos>-->
+                <!--<init_vel>0</init_vel>-->
+            </joint>
+
+            <!-- JOINT: Right Leg -->
+            <joint type="ball" name="j_thigh_right">
+                <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+                <parent>h_pelvis</parent>
+                <child>h_thigh_right</child>
+                <!--<axis_order>zyx</axis_order>-->
+                <!--<init_pos>0 0 0</init_pos>-->
+                <!--<init_vel>0 0 0</init_vel>-->
+				<!--<axis>-->
+					<!--<limit>-->
+						<!--<lower>-3.1416</lower>-->
+						<!--<upper>3.1416</upper>-->
+					<!--</limit>-->
+				<!--</axis>-->
+				<!--<axis2>-->
+					<!--<limit>-->
+						<!--<lower>-0.75</lower>-->
+						<!--<upper>0.75</upper>-->
+					<!--</limit>-->
+				<!--</axis2>-->
+				<!--<axis3>-->
+					<!--<limit>-->
+						<!--<lower>-3.1416</lower>-->
+						<!--<upper>3.1416</upper>-->
+					<!--</limit>-->
+				<!--</axis3>-->
+            </joint>
+
+            <joint type="revolute" name="j_shin_right">
+                <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+                <parent>h_thigh_right</parent>
+                <child>h_shin_right</child>
+                <axis>
+                    <xyz>0.0 0.0 1.0</xyz>
+					<limit>
+						<lower>-2.6416</lower>
+						<upper>0</upper>
+					</limit>
+                </axis>
+                <!--<init_pos>-0.17</init_pos>-->
+                <!--<init_vel>0</init_vel>-->
+            </joint>
+
+            <joint type="revolute2" name="j_heel_right">
+                <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+                <parent>h_shin_right</parent>
+                <child>h_heel_right</child>
+                <axis>
+                    <xyz>0.0 0.0 1.0</xyz>
+					<limit>
+						<lower>-1.136</lower>
+						<upper>0.350</upper>
+					</limit>
+                </axis>
+                <axis2>
+                    <xyz>0.0 1.0 0.0</xyz>
+					<limit>
+						<lower>-0.2854</lower>
+						<upper>0.3854</upper>
+					</limit>
+                </axis2>
+                <!--<init_pos>0 0</init_pos>-->
+                <!--<init_vel>0 0</init_vel>-->
+            </joint>
+
+            <joint type="revolute" name="j_toe_right">
+                <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+                <parent>h_heel_right</parent>
+                <child>h_toe_right</child>
+                <axis>
+                    <xyz>0.0 0.0 1.0</xyz>
+					<limit>
+						<lower>-0.4236</lower>
+						<upper>0.5536</upper>
+					</limit>
+                </axis>
+                <!--<init_pos>0</init_pos>-->
+                <!--<init_vel>0</init_vel>-->
+            </joint>
+
+            <!-- -->
+            <joint type="revolute2" name="j_abdomen">
+                <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+                <parent>h_pelvis</parent>
+                <child>h_abdomen</child>
+                <axis>
+                    <xyz>1.0 0.0 0.0</xyz>
+					<limit>
+						<lower>-0.5</lower>
+						<upper>0.5</upper>
+					</limit>
+                </axis>
+                <axis2>
+                    <xyz>0.0 0.0 1.0</xyz>
+					<limit>
+						<lower>-0.85</lower>
+						<upper>0.5</upper>
+					</limit>
+                </axis2>
+                <!--<init_pos>0 0</init_pos>-->
+                <!--<init_vel>0 0</init_vel>-->
+            </joint>
+
+            <joint type="revolute" name="j_spine">
+                <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+                <parent>h_abdomen</parent>
+                <child>h_spine</child>
+                <axis>
+                    <xyz>0.0 1.0 0.0</xyz>
+					<limit>
+						<lower>-1</lower>
+						<upper>1</upper>
+					</limit>
+                </axis>
+                <!--<init_pos>0</init_pos>-->
+                <!--<init_vel>0</init_vel>-->
+            </joint>
+
+            <joint type="revolute2" name="j_head">
+                <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+                <parent>h_spine</parent>
+                <child>h_head</child>
+                <axis>
+                    <xyz>0.0 0.0 1.0</xyz>
+					<limit>
+						<lower>-1.0472</lower>
+						<upper>1.0472</upper>
+					</limit>
+                </axis>
+                <axis2>
+                    <xyz>1.0 0.0 0.0</xyz>
+					<limit>
+						<lower>-1.0472</lower>
+						<upper>1.0472</upper>
+					</limit>
+                </axis2>
+                <!--<init_pos>0 0</init_pos>-->
+                <!--<init_vel>0 0</init_vel>-->
+            </joint>
+
+            <!-- JOINT: Left Arm -->
+            <joint type="revolute" name="j_scapula_left">
+                <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+                <parent>h_spine</parent>
+                <child>h_scapula_left</child>
+                <axis>
+                    <xyz>1.0 0.0 0.0</xyz>
+					<limit>
+						<lower>-0.2491</lower>
+						<upper>0.2491</upper>
+					</limit>
+                </axis>
+                <!--<init_pos>0.0</init_pos>-->
+                <!--<init_vel>0</init_vel>-->
+            </joint>
+
+            <joint type="ball" name="j_bicep_left">
+                <pose>0.0 0.0 0.0 -1.2423 0.0 0.0</pose>
+                <parent>h_scapula_left</parent>
+                <child>h_bicep_left_midjoint</child>
+                <!--<axis_order>xyz</axis_order>-->
+                <!--<init_pos>0 0 0</init_pos>-->
+                <!--<init_vel>0 0 0</init_vel>-->
+				<!--<axis>-->
+					<!--<limit>-->
+						<!--<lower>-0.65</lower>-->
+						<!--<upper>2.7</upper>-->
+					<!--</limit>-->
+				<!--</axis>-->
+				<!--<axis2>-->
+					<!--<limit>-->
+						<!--<lower>-3.14</lower>-->
+						<!--<upper>1.7</upper>-->
+					<!--</limit>-->
+				<!--</axis2>-->
+				<!--<axis3>-->
+					<!--<limit>-->
+						<!--<lower>-0.001</lower>-->
+						<!--<upper>0.001</upper>-->
+					<!--</limit>-->
+				<!--</axis3>-->
+            </joint>
+			
+			<joint type="revolute" name="j_becip_left_roll">
+                <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+                <parent>h_bicep_left_midjoint</parent>
+                <child>h_bicep_left</child>
+                <axis>
+                    <xyz>0.0 1.0 0.0</xyz>
+					<limit>
+						<lower>-1.3</lower>
+						<upper>0.7</upper>
+					</limit>
+                </axis>
+                <!--<init_pos>0</init_pos>-->
+                <!--<init_vel>0</init_vel>-->
+            </joint>
+			
+			<joint type="revolute2" name="j_forearm_left">
+                <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+                <parent>h_bicep_left</parent>
+                <child>h_forearm_left</child>
+                <axis>
+                    <xyz>0.0 0.0 1.0</xyz>
+					<limit>
+						<lower>0</lower>
+						<upper>2.7</upper>
+					</limit>
+                </axis>
+                <axis2>
+                    <xyz>0.0 1.0 0.0</xyz>
+					<limit>
+						<lower>-3</lower>
+						<upper>0</upper>
+					</limit>
+                </axis2>
+                <!--<init_pos>0 0</init_pos>-->
+                <!--<init_vel>0 0</init_vel>-->
+            </joint>
+			
+			<joint type="revolute2" name="j_wrist_left">
+                <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+                <parent>h_forearm_left</parent>
+                <child>h_hand_left</child>
+                <axis>
+                    <xyz>0.0 0.0 1.0</xyz>
+					<limit>
+						<lower>-1</lower>
+						<upper>1</upper>
+					</limit>
+                </axis>
+                <axis2>
+                    <xyz>1.0 0.0 0.0</xyz>
+					<limit>
+						<lower>-0.5</lower>
+						<upper>0.5</upper>
+					</limit>
+                </axis2>
+                <!--<init_pos>0 0</init_pos>-->
+                <!--<init_vel>0 0</init_vel>-->
+            </joint>
+			
+			<joint type="revolute" name="j_hand_left">
+                <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+                <parent>h_hand_left</parent>
+                <child>h_hand_left2</child>
+                <axis>
+                    <xyz>0 0.0 1.0</xyz>
+					<limit>
+						<lower>-0.5</lower>
+						<upper>01.6</upper>
+					</limit>
+                </axis>
+                <!--<init_pos>0</init_pos>-->
+                <!--<init_vel>0</init_vel>-->
+            </joint>
+
+            <!-- JOINT: Right Arm -->
+            <joint type="revolute" name="j_scapula_right">
+                <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+                <parent>h_spine</parent>
+                <child>h_scapula_right</child>
+                <axis>
+                    <xyz>1.0 0.0 0.0</xyz>
+					<limit>
+						<lower>-0.2491</lower>
+						<upper>0.2491</upper>
+					</limit>
+                </axis>
+                <!--<init_pos>0</init_pos>-->
+                <!--<init_vel>0</init_vel>-->
+            </joint>
+
+            <joint type="ball" name="j_bicep_right">
+                <pose>0.0 0.0 0.0 1.2423 0.0 0.0</pose>
+                <parent>h_scapula_right</parent>
+                <child>h_bicep_right_midjoint</child>
+                <!--<axis_order>xyz</axis_order>-->
+                <!--<init_pos>0 0 0</init_pos>-->
+                <!--<init_vel>0 0 0</init_vel>-->
+				<!--<axis>-->
+					<!--<limit>-->
+						<!--<lower>-2.7</lower>-->
+						<!--<upper>0.65</upper>-->
+					<!--</limit>-->
+				<!--</axis>-->
+				<!--<axis2>-->
+					<!--<limit>-->
+						<!--<lower>-1.7</lower>-->
+						<!--<upper>3.14</upper>-->
+					<!--</limit>-->
+				<!--</axis2>-->
+				<!--<axis3>-->
+					<!--<limit>-->
+						<!--<lower>-0.001</lower>-->
+						<!--<upper>0.001</upper>-->
+					<!--</limit>-->
+				<!--</axis3>-->
+            </joint>
+			
+			<joint type="revolute" name="j_becip_right_roll">
+                <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+                <parent>h_bicep_right_midjoint</parent>
+                <child>h_bicep_right</child>
+                <axis>
+                    <xyz>0.0 1.0 0.0</xyz>
+					<limit>
+						<lower>-0.7</lower>
+						<upper>1.3</upper>
+					</limit>
+                </axis>
+                <!--<init_pos>0</init_pos>-->
+                <!--<init_vel>0</init_vel>-->
+            </joint>
+
+            <joint type="revolute2" name="j_forearm_right">
+                <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+                <parent>h_bicep_right</parent>
+                <child>h_forearm_right</child>
+                <axis>
+                    <xyz>0.0 0.0 1.0</xyz>
+					<limit>
+						<lower>0</lower>
+						<upper>2.7</upper>
+					</limit>
+                </axis>
+                <axis2>
+                    <xyz>0.0 1.0 0.0</xyz>
+					<limit>
+						<lower>0</lower>
+						<upper>3</upper>
+					</limit>
+                </axis2>
+                <!--<init_pos>0 0</init_pos>-->
+                <!--<init_vel>0 0</init_vel>-->
+            </joint>
+			
+			<joint type="revolute2" name="j_wrist_right">
+                <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+                <parent>h_forearm_right</parent>
+                <child>h_hand_right</child>
+                <axis>
+                    <xyz>0.0 0.0 1.0</xyz>
+					<limit>
+						<lower>-1.2</lower>
+						<upper>1.5</upper>
+					</limit>
+                </axis>
+                <axis2>
+                    <xyz>1.0 0.0 0.0</xyz>
+					<limit>
+						<lower>-0.5</lower>
+						<upper>0.5</upper>
+					</limit>
+                </axis2>
+                <!--<init_pos>0 0</init_pos>-->
+                <!--<init_vel>0 0</init_vel>-->
+            </joint>
+			
+			<joint type="revolute" name="j_hand_right">
+                <pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>
+                <parent>h_hand_right</parent>
+                <child>h_hand_right2</child>
+                <axis>
+                    <xyz>0.0 0.0 1.0</xyz>
+					<limit>
+						<lower>-0.5</lower>
+						<upper>01.6</upper>
+					</limit>
+                </axis>
+                <!--<init_pos>0</init_pos>-->
+                <!--<init_vel>0</init_vel>-->
+            </joint>
+
+        </model>
+
+    </world>
+</sdf>

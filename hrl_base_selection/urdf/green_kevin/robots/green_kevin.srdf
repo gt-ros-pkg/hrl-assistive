@@ -1,0 +1,138 @@
+<?xml version="1.0"?>
+
+<!--&lt;!&ndash; This does not replace URDF, and is not an extension of URDF.-->
+<!--This is a format for representing semantic information about the robot structure.-->
+<!--A URDF file must exist for this robot as well, where the joints and the links that are referenced are defined &ndash;&gt;-->
+<!--<robot name="green_kevin">-->
+
+<!--<group name="group1">-->
+<!--&lt;!&ndash; when a link is specified, the parent joint of that link (if it exists) is automatically included &ndash;&gt;-->
+<!--<link name="..."/>-->
+<!--<link name="..."/>-->
+
+<!--&lt;!&ndash; when a joint is specified, the child link of that joint (which will always exist) is automatically included &ndash;&gt;-->
+<!--<joint name="..." />-->
+
+<!--&lt;!&ndash; when a chain is specified, all the links along the chain (including endpoints) are included in the group. Additionally, all the joints that are parents to included links are also included. This means that joints along the chain and the parent joint of the base link are included in the group &ndash;&gt;-->
+<!--<chain base_link="l_shoulder_pan_link" tip_link="l_wrist_roll_link"/>-->
+<!--<chain base_link="r_shoulder_pan_link" tip_link="r_wrist_roll_link"/>-->
+<!--</group>-->
+
+<!--&lt;!&ndash; groups can also be formed by referencing to already defined group names &ndash;&gt;-->
+<!--<group name="arms">-->
+<!--<group name="left_arm"/>-->
+<!--<group name="right_arm"/>-->
+<!--<link name="..." />-->
+<!--</group>-->
+
+<!--&lt;!&ndash; define a named state/configuration of a group &ndash;&gt;-->
+<!--<group_state name="name of this state" group="name of group the state is for">-->
+<!--<joint name="name of joint in group" value="" />-->
+<!--&lt;!&ndash; all joints must be specified for the state to be valid &ndash;&gt;-->
+<!--</group_state>-->
+
+<!--&lt;!&ndash; Define how the robot moves in its environment, i.e., connection to robot's root link &ndash;&gt;-->
+<!--<virtual_joint name="world_joint" type="planar" parent_frame="some fixed frame" child_link="robot's root link name"/> &lt;!&ndash; type can be planar, floating or fixed &ndash;&gt;-->
+
+<!--&lt;!&ndash; We can then include the virtual joint in groups &ndash;&gt;-->
+<!--<group name="whole_body">-->
+<!--<group name="arms"/>-->
+<!--<joint name="world_joint"/>-->
+<!--</group>-->
+
+
+<!--&lt;!&ndash; define end effectors &ndash;&gt;-->
+<!--<end_effector name="some diff name" parent_link="..." group="group_name"/>-->
+
+<!--&lt;!&ndash; By default it is assumed that any link of the robot could potentially come into collision with any other link in the robot. This tag disables collision checking between a specified pair of links. There can be many such tags in this file.&ndash;&gt;-->
+<!--<disable_collisions link1="link1" link2="link2" />-->
+
+<!--</robot>-->
+
+<robot name="green_kevin">
+
+  <!--<virtual_joint name="world_joint" type="planar" parent_frame="odom" child_link="base_footprint"/>-->
+
+  <group name="rightarm">
+    <chain base_link="green_kevin/upper_body_link" tip_link="green_kevin/hand_right_link"/>
+  </group>
+
+  <group name="leftarm">
+    <chain base_link="green_kevin/upper_body_link" tip_link="green_kevin/hand_left_link"/>
+  </group>
+
+  <group name="arms">
+    <group name="leftarm"/>
+    <group name="rightarm"/>
+  </group>
+
+  <!--<group_state name="tuck_arms" group="arms">-->
+  <!--<joint name="l_shoulder_pan_joint" value="0.2" />-->
+  <!-- ... the rest of the joint values... -->
+  <!--</group_state>-->
+
+  <!--<group name="base">-->
+  <!--<joint name="world_joint"/>-->
+  <!--</group>-->
+
+  <!--<group name="whole_body">-->
+    <!--<group name="arms"/>-->
+  <!--</group>-->
+
+  <group name="l_end_effector">
+    <joint name="green_kevin/body_arm_left_rotx_joint" />
+    <joint name="green_kevin/body_arm_left_roty_joint" />
+    <joint name="green_kevin/body_arm_left_rotz_joint" />
+    <joint name="green_kevin/arm_forearm_left_joint" />
+    <joint name="green_kevin/forearm_hand_left_rotx_joint" />
+    <joint name="green_kevin/forearm_hand_left_roty_joint" />
+    <joint name="green_kevin/forearm_hand_left_rotz_joint" />
+  </group>
+
+  <group name="r_end_effector">
+    <joint name="green_kevin/body_arm_right_rotx_joint" />
+    <joint name="green_kevin/body_arm_right_roty_joint" />
+    <joint name="green_kevin/body_arm_right_rotz_joint" />
+    <joint name="green_kevin/arm_forearm_right_joint" />
+    <joint name="green_kevin/forearm_hand_right_rotx_joint" />
+    <joint name="green_kevin/forearm_hand_right_roty_joint" />
+    <joint name="green_kevin/forearm_hand_right_rotz_joint" />
+  </group>
+
+  <group name="l_hand_gripper">
+  </group>
+
+  <group name="r_hand_gripper">
+  </group>
+
+  <end_effector name="r_end_effector" parent_link="green_kevin/hand_right_link" parent_group="r_end_effector" group="r_hand_gripper"/>
+  <end_effector name="l_end_effector" parent_link="green_kevin/hand_left_link" parent_group="l_end_effector" group="l_hand_gripper"/>
+
+  <!--Disable collisions-->
+  <!--Head and Torso-->
+  <disable_collisions link1="green_kevin/head_link" link2="green_kevin/neck_link" />
+  <disable_collisions link1="green_kevin/neck_link" link2="green_kevin/upper_body_link" />
+  <disable_collisions link1="green_kevin/upper_body_link" link2="green_kevin/mid_body_link" />
+  <disable_collisions link1="green_kevin/mid_body_link" link2="green_kevin/lower_body_link" />
+
+  <!--Legs-->
+  <disable_collisions link1="green_kevin/lower_body_link" link2="green_kevin/quad_left_link" />
+  <disable_collisions link1="green_kevin/quad_left_link" link2="green_kevin/calf_left_link" />
+  <disable_collisions link1="green_kevin/calf_left_link" link2="green_kevin/foot_left_link" />
+
+  <disable_collisions link1="green_kevin/lower_body_link" link2="green_kevin/quad_right_link" />
+  <disable_collisions link1="green_kevin/quad_right_link" link2="green_kevin/calf_right_link" />
+  <disable_collisions link1="green_kevin/calf_right_link" link2="green_kevin/foot_right_link" />
+
+  <!--Arms-->
+  <disable_collisions link1="green_kevin/upper_body_link" link2="green_kevin/arm_left_link" />
+  <disable_collisions link1="green_kevin/arm_left_link" link2="green_kevin/forearm_left_link" />
+  <disable_collisions link1="green_kevin/forearm_left_link" link2="green_kevin/hand_right_link" />
+
+  <disable_collisions link1="green_kevin/upper_body_link" link2="green_kevin/arm_right_link" />
+  <disable_collisions link1="green_kevin/arm_right_link" link2="green_kevin/forearm_right_link" />
+  <disable_collisions link1="green_kevin/forearm_right_link" link2="green_kevin/hand_right_link" />
+
+  <!-- and any more disable_collisions tags -->
+
+</robot>

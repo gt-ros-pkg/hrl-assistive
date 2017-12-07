@@ -1,0 +1,1050 @@
+<?xml version="1.0"?>
+<robot
+  name="green_kevin">
+  <link
+    name="green_kevin/neck_base_link">
+  </link>
+  <link
+    name="green_kevin/neck_twist_link">
+  </link>
+  <joint
+    name="green_kevin/neck_twist_joint"
+    type="revolute">
+    <origin
+      xyz="0.0 0.0 0"
+      rpy="0. 0. 0." />
+    <parent
+      link="green_kevin/neck_base_link" />
+    <child
+      link="green_kevin/neck_twist_link" />
+    <axis
+      xyz="1 0 0" />
+    <limit
+      lower="-2"
+      upper="2"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="green_kevin/neck_tilt_link">
+  </link>
+  <joint
+    name="green_kevin/neck_tilt_joint"
+    type="revolute">
+    <origin
+      xyz="0.0 0.0 0"
+      rpy="0. 0. 0." />
+    <parent
+      link="green_kevin/neck_twist_link" />
+    <child
+      link="green_kevin/neck_tilt_link" />
+    <axis
+      xyz="0 0 -1" />
+    <limit
+      lower="-2"
+      upper="2"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="green_kevin/neck_link">
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/green_kevin/meshes/neck_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/green_kevin/meshes/neck_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="green_kevin/neck_to_neck_top_joint"
+    type="fixed">
+    <origin
+      xyz="-0.07239 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="green_kevin/neck_tilt_link" />
+    <child
+      link="green_kevin/neck_link" />
+  </joint>
+  <link
+    name="green_kevin/neck_top_rotated_link">
+  </link>
+  <joint
+    name="green_kevin/neck_rotation_fixed_joint"
+    type="fixed">
+    <origin
+      xyz="0 0 0"
+      rpy="-1.570796 0 1.570796" />
+    <parent
+      link="green_kevin/neck_link" />
+    <child
+      link="green_kevin/neck_top_rotated_link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-2"
+      upper="2"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="green_kevin/head_roty_link">
+  </link>
+  <joint
+    name="green_kevin/neck_head_roty_joint"
+    type="revolute">
+    <origin
+      xyz="0.0154 0 0.07779"
+      rpy="0 0 0" />
+    <parent
+      link="green_kevin/neck_top_rotated_link" />
+    <child
+      link="green_kevin/head_roty_link" />
+    <axis
+      xyz="0 1 0" />
+    <limit
+      lower="-2"
+      upper="2"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="green_kevin/head_rotz_link">
+  </link>
+  <joint
+    name="green_kevin/neck_head_rotz_joint"
+    type="revolute">
+    <origin
+      xyz="0 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="green_kevin/head_roty_link" />
+    <child
+      link="green_kevin/head_rotz_link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-2"
+      upper="2"
+      effort="0"
+      velocity="0" />
+  </joint>
+
+  <link
+    name="green_kevin/head_link">
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/green_kevin/meshes/head_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/green_kevin/meshes/head_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="green_kevin/neck_head_rotx_joint"
+    type="revolute">
+    <origin
+      xyz="0 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="green_kevin/head_rotz_link" />
+    <child
+      link="green_kevin/head_link" />
+    <axis
+      xyz="1 0 0" />
+    <limit
+      lower="-2"
+      upper="2"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="green_kevin/upper_body_link">
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/green_kevin/meshes/upper_body_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/green_kevin/meshes/upper_body_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="green_kevin/neck_body_joint"
+    type="revolute">
+    <origin
+      xyz="0.00 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="green_kevin/neck_base_link" />
+    <child
+      link="green_kevin/upper_body_link" />
+    <axis
+      xyz="0 0 -1" />
+    <limit
+      lower="-2"
+      upper="2"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="green_kevin/mid_body_link">
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/green_kevin/meshes/mid_body_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/green_kevin/meshes/mid_body_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="green_kevin/upper_mid_body_joint"
+    type="revolute">
+    <origin
+      xyz="0.35052 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="green_kevin/upper_body_link" />
+    <child
+      link="green_kevin/mid_body_link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-2"
+      upper="2"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="green_kevin/lower_body_link">
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/green_kevin/meshes/lower_body_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/green_kevin/meshes/lower_body_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="green_kevin/mid_lower_body_joint"
+    type="revolute">
+    <origin
+      xyz="0.15113 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="green_kevin/mid_body_link" />
+    <child
+      link="green_kevin/lower_body_link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-2"
+      upper="2"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="green_kevin/quad_left_link">
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/green_kevin/meshes/quad_left_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/green_kevin/meshes/quad_left_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="green_kevin/body_quad_left_joint"
+    type="revolute">
+    <origin
+      xyz="0.05207 0 -0.08636"
+      rpy="0 0 -.25" />
+    <parent
+      link="green_kevin/lower_body_link" />
+    <child
+      link="green_kevin/quad_left_link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-3."
+      upper="3."
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="green_kevin/calf_left_link">
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/green_kevin/meshes/calf_left_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/green_kevin/meshes/calf_left_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="green_kevin/quad_calf_left_joint"
+    type="revolute">
+    <origin
+      xyz="0.41218 0.11044 0"
+      rpy="3.14159 0 3.43" />
+    <parent
+      link="green_kevin/quad_left_link" />
+    <child
+      link="green_kevin/calf_left_link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-3."
+      upper="3."
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="green_kevin/foot_left_link">
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/green_kevin/meshes/foot_left_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/green_kevin/meshes/foot_left_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="green_kevin/calf_foot_left_joint"
+    type="revolute">
+    <origin
+      xyz="-0.41279 -0.03188 0"
+      rpy="0 0 0.09" />
+    <parent
+      link="green_kevin/calf_left_link" />
+    <child
+      link="green_kevin/foot_left_link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-3."
+      upper="3."
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="green_kevin/quad_right_link">
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/green_kevin/meshes/quad_right_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/green_kevin/meshes/quad_right_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="green_kevin/body_quad_right_joint"
+    type="revolute">
+    <origin
+      xyz="0.05207 0 0.08636"
+      rpy="0 0 -.25" />
+    <parent
+      link="green_kevin/lower_body_link" />
+    <child
+      link="green_kevin/quad_right_link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-3"
+      upper="3"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="green_kevin/calf_right_link">
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/green_kevin/meshes/calf_right_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/green_kevin/meshes/calf_right_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="green_kevin/quad_calf_right_joint"
+    type="revolute">
+    <origin
+      xyz="0.41218 0.11044 0"
+      rpy="3.14159 0 3.43" />
+    <parent
+      link="green_kevin/quad_right_link" />
+    <child
+      link="green_kevin/calf_right_link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-3"
+      upper="3"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="green_kevin/foot_right_link">
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/green_kevin/meshes/foot_right_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/green_kevin/meshes/foot_right_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="green_kevin/calf_foot_right_joint"
+    type="revolute">
+    <origin
+      xyz="-0.41279 -0.03188 0"
+      rpy="0 0 0.09" />
+    <parent
+      link="green_kevin/calf_right_link" />
+    <child
+      link="green_kevin/foot_right_link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-3"
+      upper="3"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <joint
+    name="green_kevin/body_arm_left_base_joint"
+    type="fixed">
+    <origin
+      xyz="0.09652 0 -0.17526"
+      rpy="0 0 0" />
+    <parent
+      link="green_kevin/upper_body_link" />
+    <child
+      link="green_kevin/arm_left_base_link" />
+  </joint>
+  <link
+    name="green_kevin/arm_left_base_link">
+  </link>
+  <joint
+    name="green_kevin/body_arm_left_rotx_joint"
+    type="revolute">
+    <origin
+      xyz="0 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="green_kevin/arm_left_base_link" />
+    <child
+      link="green_kevin/arm_left_rotx_link" />
+    <axis
+      xyz="1 0 0" />
+    <limit
+      lower="-3"
+      upper="3"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="green_kevin/arm_left_rotx_link">
+  </link>
+  <joint
+    name="green_kevin/body_arm_left_rotz_joint"
+    type="revolute">
+    <origin
+      xyz="0 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="green_kevin/arm_left_rotx_link" />
+    <child
+      link="green_kevin/arm_left_rotz_link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-3"
+      upper="3"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="green_kevin/arm_left_rotz_link">
+  </link>
+  <joint
+    name="green_kevin/body_arm_left_roty_joint"
+    type="revolute">
+    <origin
+      xyz="0 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="green_kevin/arm_left_rotz_link" />
+    <child
+      link="green_kevin/arm_left_link" />
+    <axis
+      xyz="0 1 0" />
+    <limit
+      lower="-3"
+      upper="3"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="green_kevin/arm_left_link">
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/green_kevin/meshes/arm_left_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/green_kevin/meshes/arm_left_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <link
+    name="green_kevin/forearm_left_link">
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/green_kevin/meshes/forearm_left_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/green_kevin/meshes/forearm_left_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="green_kevin/arm_forearm_left_joint"
+    type="revolute">
+    <origin
+      xyz="0.28174 -0.0106 -0.04953"
+      rpy="0 0 0" />
+    <parent
+      link="green_kevin/arm_left_link" />
+    <child
+      link="green_kevin/forearm_left_link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-3"
+      upper="3"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <joint
+    name="green_kevin/forearm_hand_left_rotx_joint"
+    type="revolute">
+    <origin
+      xyz="0.25146 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="green_kevin/forearm_left_link" />
+    <child
+      link="green_kevin/hand_left_rotx_link" />
+    <axis
+      xyz="-1 0 0" />
+    <limit
+      lower="-3"
+      upper="3"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="green_kevin/hand_left_rotx_link">
+  </link>
+  <joint
+    name="green_kevin/forearm_hand_left_roty_joint"
+    type="revolute">
+    <origin
+      xyz="0 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="green_kevin/hand_left_rotx_link" />
+    <child
+      link="green_kevin/hand_left_roty_link" />
+    <axis
+      xyz="0 1 0" />
+    <limit
+      lower="-3"
+      upper="3"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="green_kevin/hand_left_roty_link">
+  </link>
+  <joint
+    name="green_kevin/forearm_hand_left_rotz_joint"
+    type="revolute">
+    <origin
+      xyz="0 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="green_kevin/hand_left_roty_link" />
+    <child
+      link="green_kevin/hand_left_link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-3"
+      upper="3"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="green_kevin/hand_left_link">
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/green_kevin/meshes/hand_left_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/green_kevin/meshes/hand_left_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="green_kevin/body_arm_right_base_joint"
+    type="fixed">
+    <origin
+      xyz="0.09652 0 0.17526"
+      rpy="0 0 0" />
+    <parent
+      link="green_kevin/upper_body_link" />
+    <child
+      link="green_kevin/arm_right_base_link" />
+  </joint>
+  <link
+    name="green_kevin/arm_right_base_link">
+  </link>
+  <joint
+    name="green_kevin/body_arm_right_rotx_joint"
+    type="revolute">
+    <origin
+      xyz="0 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="green_kevin/arm_right_base_link" />
+    <child
+      link="green_kevin/arm_right_rotx_link" />
+    <axis
+      xyz="-1 0 0" />
+    <limit
+      lower="-3"
+      upper="3"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="green_kevin/arm_right_rotx_link">
+  </link>
+  <joint
+    name="green_kevin/body_arm_right_rotz_joint"
+    type="revolute">
+    <origin
+      xyz="0 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="green_kevin/arm_right_rotx_link" />
+    <child
+      link="green_kevin/arm_right_rotz_link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-3"
+      upper="3"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="green_kevin/arm_right_rotz_link">
+  </link>
+  <joint
+    name="green_kevin/body_arm_right_roty_joint"
+    type="revolute">
+    <origin
+      xyz="0 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="green_kevin/arm_right_rotz_link" />
+    <child
+      link="green_kevin/arm_right_link" />
+    <axis
+      xyz="0 -1 0" />
+    <limit
+      lower="-3"
+      upper="3"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="green_kevin/arm_right_link">
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/green_kevin/meshes/arm_right_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/green_kevin/meshes/arm_right_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <link
+    name="green_kevin/forearm_right_link">
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/green_kevin/meshes/forearm_right_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/green_kevin/meshes/forearm_right_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="green_kevin/arm_forearm_right_joint"
+    type="revolute">
+    <origin
+      xyz="0.28194 0 0.04953"
+      rpy="0 0 0" />
+    <parent
+      link="green_kevin/arm_right_link" />
+    <child
+      link="green_kevin/forearm_right_link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-3"
+      upper="3"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <joint
+    name="green_kevin/forearm_hand_right_rotx_joint"
+    type="revolute">
+    <origin
+      xyz="0.25146 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="green_kevin/forearm_right_link" />
+    <child
+      link="green_kevin/hand_right_rotx_link" />
+    <axis
+      xyz="1 0 0" />
+    <limit
+      lower="-3"
+      upper="3"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="green_kevin/hand_right_rotx_link">
+  </link>
+  <joint
+    name="green_kevin/forearm_hand_right_roty_joint"
+    type="revolute">
+    <origin
+      xyz="0 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="green_kevin/hand_right_rotx_link" />
+    <child
+      link="green_kevin/hand_right_roty_link" />
+    <axis
+      xyz="0 -1 0" />
+    <limit
+      lower="-3"
+      upper="3"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="green_kevin/hand_right_roty_link">
+  </link>
+  <joint
+    name="green_kevin/forearm_hand_right_rotz_joint"
+    type="revolute">
+    <origin
+      xyz="0 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="green_kevin/hand_right_roty_link" />
+    <child
+      link="green_kevin/hand_right_link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-3"
+      upper="3"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="green_kevin/hand_right_link">
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/green_kevin/meshes/hand_right_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://hrl_base_selection/urdf/green_kevin/meshes/hand_right_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+</robot>
