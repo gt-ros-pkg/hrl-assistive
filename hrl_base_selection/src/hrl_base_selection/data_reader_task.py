@@ -618,14 +618,17 @@ if __name__ == "__main__":
         rospy.spin()
     else:
         seed = 1
-        for model in ['chair']:  # 'autobed', 'chair'
-            for task in [ 'arm_cuffs', 'bathe_legs','scratching_knee_left', 'scratching_knee_right',
-                         'scratching_upper_arm_left', 'scratching_upper_arm_right','brushing']: # Complete: 'shaving', 'arm_cuffs','wiping_mouth','scratching_thigh_left', 'scratching_thigh_right',   'feeding_trajectory',
+        for model in ['autobed']:  # 'autobed', 'chair'
+            for task in [ 'wiping_mouth','arm_cuffs', 'bathe_legs','scratching_knee_left', 'scratching_knee_right',
+                         'scratching_upper_arm_left', 'scratching_upper_arm_right','shaving', 'wiping_mouth',
+                          'scratching_thigh_left', 'scratching_thigh_right','feeding_trajectory']: # Complete: 'shaving', 'arm_cuffs','wiping_mouth','scratching_thigh_left', 'scratching_thigh_right',   'feeding_trajectory',
                           #'wiping_face', 'scratching_knee_left', 'scratching_forearm_left','scratching_upper_arm_left']:#'scratching_knee_left', 'scratching_knee_right', 'scratching_thigh_left', 'scratching_thigh_right']:
             # for task in ['shaving', 'scratching_thigh_left', 'scratching_thigh_right', 'shaving']: #'wiping_forehead','feeding_trajectory',
 # 'bathe_legs', 'arm_cuffs', 'brushing', 'wiping_mouth',, 'scratching_knee_left','scratching_knee_right','scratching_thigh_left', 'scratching_thigh_right'
                 subject = 'any_subject'
-                for method in ['toc', 'ik', 'inverse_reachability', 'inverse_reachability_collision']:  # 'ik', 'toc','inverse_reachability', 'inverse_reachability_collision'
+                for method in [ 'ik', 'toc',
+                               'inverse_reachability',
+                               'inverse_reachability_collision']:  # 'ik', 'toc','inverse_reachability', 'inverse_reachability_collision'
                     for sampling in ['cma']:  # 'cma','uniform','gaussian'
                         this_start_time = time.time()
                         shaving_data_reader = DataReader_Task(task, model, optimization, visualize=True)

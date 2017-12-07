@@ -223,7 +223,9 @@ class ScoreGenerator(object):
                 self.env.Remove(self.env.GetRobots()[1])
                 self.model = model
                 self.setup_human_model()
-        if (self.task == 'wiping_mouth' or self.task == 'shaving' or self.task == 'feeding_trajectory' or self.task == 'brushing') and self.model == 'chair':
+        if (self.task == 'wiping_mouth' or self.task == 'shaving' or
+                    self.task == 'feeding_trajectory' or self.task == 'brushing' or
+                    self.task == 'wiping_forehead') and self.model == 'chair':
             self.head_angles = np.array([[68, 10], [68, 0], [68, -10], [0, 0], [-68, 10], [68, 0], [-68, -10]])
             self.head_angles = np.array([[60., 0.], [0., 0.], [-60., 0.]])
         else:
@@ -461,6 +463,11 @@ class ScoreGenerator(object):
                 self.ir_and_collision = False
             self.ireach = InverseReachabilitySetup(visualize=False, redo_ik=False,
                                                    redo_reachability=False, redo_ir=False, manip='leftarm')
+        if method == 'inverse_reachability' or method == 'inverse_reachability_collision' or method == 'ik':
+            bed_movement = [0, 1]
+        else:
+            bed_movement = [1]
+
 
         head_x_range = [0.]
 #        self.head_angles = np.array([[58, 18], [58, 0], [58, -18], [0, 0], [-58, 18], [-58, 0], [-58, -18]])
@@ -480,15 +487,17 @@ class ScoreGenerator(object):
                                              for head_rest_angle in head_rest_range
                                              for headx in head_x_range
                                              for heady in head_y_range
-                                             for allow_bed_movement in [1]
+                                             for allow_bed_movement in bed_movement
                                              )
                                  ])
         elif self.model == 'chair':
-            if self.task == 'wiping_mouth' or self.task == 'shaving' or self.task == 'feeding_trajectory' or self.task == 'brushing':
+            if (self.task == 'wiping_mouth' or self.task == 'shaving' or
+                        self.task == 'feeding_trajectory' or self.task == 'brushing' or
+                        self.task == 'wiping_forehead') and method == 'toc':
                 self.head_angles = np.array([[68, 10], [68, 0], [68, -10], [0, 0], [-68, 10], [68, 0], [-68, -10]])
                 self.head_angles = np.array([[60., 0.], [0., 0.], [-60., 0.]])
             score_parameters = ([t for t in ((tuple([self.task, method, sampling, self.model, num_configs, 0, 0, 0, 0]))
-                                             for num_configs in [2]
+                                             for num_configs in [1,2]
                                              )
                                  ])
         else:
@@ -645,10 +654,15 @@ class ScoreGenerator(object):
                         # popsize = 100
         #                popsize = m.pow(6, 2)*100
         #                 popsize = 1500
-                        parameters_min = np.array([0.3, -1.7, m.radians(-270.)-0.0001, 0., 0., 0.*m.pi/180.])
-                        parameters_max = np.array([3.0, 1.7, m.radians(270.)+.0001, 0.3, 0.25, 75.*m.pi/180.])
-                        parameters_scaling = (parameters_max-parameters_min)/4.
-                        parameters_scaling[5] = (parameters_max[5]-parameters_min[5])/2.
+                        if self.allow_bed_movement == 0:
+                            parameters_min = np.array([0.3, -1.7, m.radians(-270.) - 0.0001, 0.])
+                            parameters_max = np.array([3.0, 1.7, m.radians(270.) + .0001, 0.3])
+                            parameters_scaling = (parameters_max - parameters_min) / 4.
+                        else:
+                            parameters_min = np.array([0.3, -1.7, m.radians(-270.)-0.0001, 0., 0., 0.*m.pi/180.])
+                            parameters_max = np.array([3.0, 1.7, m.radians(270.)+.0001, 0.3, 0.25, 75.*m.pi/180.])
+                            parameters_scaling = (parameters_max-parameters_min)/4.
+                            parameters_scaling[5] = (parameters_max[5]-parameters_min[5])/2.
                         parameters_initialization = (parameters_max+parameters_min)/2.
 
                         if sampling == 'cma':
@@ -728,6 +742,9 @@ class ScoreGenerator(object):
                                 return False
                             config = self.best_config
                             score = self.best_score
+                        if len(config) == 4:
+                            config = np.insert(config, 4, 0.)
+                            config = np.insert(config, 4, 0.)
                         print 'Config: ', config
                         print 'Score: ', score
                         print 'Time to find scores for this set of parameters: %fs' % ((rospy.Time.now()-parameter_start_time).to_sec())
@@ -740,10 +757,10 @@ class ScoreGenerator(object):
                     # maxiter = 10
                     # popsize = m.pow(4, 2)*100
                     if self.allow_bed_movement == 0 and self.model == 'autobed':
-                        parameters_min = np.array([0.3, -2.3, m.radians(-270.) - 0.0001, 0.,
-                                                   0.3, -2.3, m.radians(-270.) - 0.0001, 0.])
-                        parameters_max = np.array([3.0, 2.3, m.radians(270.) + .0001, 0.3,
-                                                   3.0, 2.3, m.radians(270.) + .0001, 0.3])
+                        parameters_min = np.array([0.3, -1.7, m.radians(-270.) - 0.0001, 0.,
+                                                   0.3, -1.7, m.radians(-270.) - 0.0001, 0.])
+                        parameters_max = np.array([3.0, 1.7, m.radians(270.) + .0001, 0.3,
+                                                   3.0, 1.7, m.radians(270.) + .0001, 0.3])
                     if self.model == 'chair':
                         parameters_min = np.array([0., -1.7, m.radians(-270.) - 0.0001, 0.,
                                                    0., -1.7, m.radians(-270.) - 0.0001, 0.])
@@ -859,16 +876,16 @@ class ScoreGenerator(object):
                     else:
                         # maxiter = 10
                         # popsize = m.pow(6, 2)*100
-                        parameters_min = np.array([0.3, -2.3, m.radians(-270.) - 0.0001, 0., 0., 0.*m.pi/180.,
-                                                   0.3, -2.3, m.radians(-270.) - 0.0001, 0., 0., 0.*m.pi/180.])
+                        parameters_min = np.array([0.3, -1.7, m.radians(-270.) - 0.0001, 0., 0., 0.*m.pi/180.,
+                                                   0.3, -1.7, m.radians(-270.) - 0.0001, 0., 0., 0.*m.pi/180.])
                          # parameters_max = np.array([ 3.,  3.,  m.pi+.001, 0.3, 0.2, 80.*m.pi/180.,  3.,  3.,  m.pi+.001, 0.3, 0.2, 80.*m.pi/180.])
                         # Henry's bed can only rise a few centimeters because of the overbed table
-                        parameters_max = np.array([3.0, 2.3, m.radians(270.) + .0001, 0.3, 0.25, 75.*m.pi/180.,
-                                                   3.0, 2.3, m.radians(270.) + .0001, 0.3, 0.25, 75.*m.pi/180.])
+                        parameters_max = np.array([3.0, 1.7, m.radians(270.) + .0001, 0.3, 0.25, 75.*m.pi/180.,
+                                                   3.0, 1.7, m.radians(270.) + .0001, 0.3, 0.25, 75.*m.pi/180.])
                         parameters_scaling = (parameters_max-parameters_min)/4.
                         parameters_initialization = (parameters_max+parameters_min)/2.
-                        parameters_initialization[1] = 1.0
-                        parameters_initialization[7] = -1.0
+                        parameters_initialization[1] = 0.8
+                        parameters_initialization[7] = -.8
                         # Parameters are: [x, y, th, z, bz, bth]
                         if sampling == 'cma':
                             opts2 = {'seed': seed, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter, 'maxfevals': 1e8, 'CMA_cmean': 0.25,
@@ -2451,7 +2468,7 @@ class ScoreGenerator(object):
                 # print 'No base collision! single config distance: ', distance
                 reached = np.zeros(len(self.origin_B_grasps))
                 manip = np.zeros(len(self.origin_B_grasps))
-                print self.head_angles
+                # print self.head_angles
                 for head_angle in self.head_angles:
                     self.rotate_head_and_update_goals(head_angle[0], head_angle[1], origin_B_pr2)
                     for num, Tgrasp in enumerate(self.origin_B_grasps):
@@ -4385,7 +4402,9 @@ class ScoreGenerator(object):
                 self.setup_human_model()
                 # rospy.sleep(0.1)
         # print self.task
-        if (self.task == 'wiping_mouth' or self.task == 'shaving' or self.task == 'feeding_trajectory' or self.task == 'brushing') and self.model == 'chair':
+        if (self.task == 'wiping_mouth' or self.task == 'shaving' or
+                    self.task == 'feeding_trajectory' or self.task == 'brushing' or
+                    self.task == 'wiping_forehead') and self.model == 'chair' :
             self.head_angles = np.array([[68, 10], [68, 0], [68, -10], [0, 0], [-68, 10], [68, 0], [-68, -10]])
             self.head_angles = np.array([[60., 0.], [0., 0.],  [-60., 0.]])
         else:

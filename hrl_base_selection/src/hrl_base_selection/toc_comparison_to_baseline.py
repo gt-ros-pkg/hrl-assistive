@@ -485,8 +485,8 @@ class Manipulability_Testing(object):
         goal_data = read_data.generate_output_goals(test_goals=raw_data, test_number=raw_num,
                                                     test_reference=raw_references)
 
-        x_range = np.arange(0.4, 3.+ discretization_size_xy / 5., discretization_size_xy)
-        y_range = np.arange(-1., 1. + discretization_size_xy / 5., discretization_size_xy)
+        x_range = np.arange(0.0, 3.+ discretization_size_xy / 5., discretization_size_xy)
+        y_range = np.arange(-1.7, 1.7 + discretization_size_xy / 5., discretization_size_xy)
         theta_range = np.arange(0., 2.*m.pi, discretization_size_theta)
         z_range = np.arange(0., 0.3 + discretization_size_z / 5., discretization_size_z)
 
