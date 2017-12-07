@@ -618,7 +618,7 @@ if __name__ == "__main__":
         rospy.spin()
     else:
         seed = 1
-        for model in ['autobed']:  # 'autobed', 'chair'
+        for model in ['chair']:  # 'autobed', 'chair'
             for task in [ 'wiping_mouth','arm_cuffs', 'bathe_legs','scratching_knee_left', 'scratching_knee_right',
                          'scratching_upper_arm_left', 'scratching_upper_arm_right','shaving', 'wiping_mouth',
                           'scratching_thigh_left', 'scratching_thigh_right','feeding_trajectory']: # Complete: 'shaving', 'arm_cuffs','wiping_mouth','scratching_thigh_left', 'scratching_thigh_right',   'feeding_trajectory',
@@ -631,7 +631,7 @@ if __name__ == "__main__":
                                'inverse_reachability_collision']:  # 'ik', 'toc','inverse_reachability', 'inverse_reachability_collision'
                     for sampling in ['cma']:  # 'cma','uniform','gaussian'
                         this_start_time = time.time()
-                        shaving_data_reader = DataReader_Task(task, model, optimization, visualize=True)
+                        shaving_data_reader = DataReader_Task(task, model, optimization, visualize=False)
                         shaving_data_reader.generate_score(method=method, sampling=sampling, seed=seed)
                         print 'Done! Time to generate all scores for this task, method, and sampling: %fs' % (time.time() - this_start_time)
                         shaving_data_reader = None
