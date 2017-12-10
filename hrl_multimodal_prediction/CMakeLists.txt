@@ -6,7 +6,7 @@ catkin_python_setup()
 
 add_message_files(
   DIRECTORY msg
-  FILES audio.msg
+  FILES audio.msg pub_relpos.msg pub_mfcc.msg plot_pub.msg
 )
 
 generate_messages(
@@ -16,8 +16,8 @@ generate_messages(
 
 catkin_package(
     DEPENDS roscpp rospy
-    CATKIN_DEPENDS message_runtime std_msgs hrl_lib geometry_msgs hrl_srvs sound_play visualization_msgs ar_track_alvar_msgs
-    INCLUDE_DIRS 
+    CATKIN_DEPENDS message_runtime std_msgs visualization_msgs ar_track_alvar_msgs
+    INCLUDE_DIRS  
     LIBRARIES 
 )
 

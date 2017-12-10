@@ -25,7 +25,13 @@ import scipy.stats as ss
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import normalize
 
-
+#ROS libs
+import rospkg
+import roslib
+import rospy
+import tf.transformations as tft
+from visualization_msgs.msg import Marker
+from visualization_msgs.msg import MarkerArray
 
 
 # HRL libraries
@@ -36,6 +42,8 @@ from hrl_lib.util import load_pickle
 
 # Pose Estimation Libraries
 from create_dataset_lib import CreateDatasetLib
+from visualization_lib import VisualizationLib
+from kinematics_lib import KinematicsLib
 
 #PyTorch libraries
 import argparse
@@ -74,6 +82,9 @@ class DataVisualizer():
         self.verbose = True
         self.old = False
         self.normalize = True
+        self.opt.arms_only = True
+        self.include_inter = True
+        self.physical_constraints = None#'arm_angles'
         # Set initial parameters
         self.dump_path = pkl_directory.rstrip('/')
 
@@ -81,7 +92,7 @@ class DataVisualizer():
 
 
         if self.opt.arms_only == True:
-            self.output_size = (NUMOFOUTPUTNODES-6, NUMOFOUTPUTDIMS)
+            self.output_size = (NUMOFOUTPUTNODES-5, NUMOFOUTPUTDIMS)
         else:
             self.output_size = (NUMOFOUTPUTNODES, NUMOFOUTPUTDIMS)
 
@@ -151,18 +162,21 @@ class DataVisualizer():
 
                 if self.opt.arms_only == True:
                     #plt.plot(train_val_loss_all['epoch_2to8_all_armsonly_fss_100b_adam_300e_4'],train_val_loss_all['train_2to8_all_armsonly_fss_100b_adam_300e_4'],'k', label='Synthetic Flipping+Shifting+Scaling')
-                    plt.plot(train_val_loss_all['epoch_2to8_all_armsonly_fss_100b_adam_300e_4'],train_val_loss_all['val_2to8_all_armsonly_fss_100b_adam_300e_4'], 'c',label='Synthetic Flipping+Shifting+Scaling')
-                    plt.plot(train_val_loss_all['epoch_2to8_all_armsonly_fss_115b_adam_100e_4'],train_val_loss_all['val_2to8_all_armsonly_fss_115b_adam_100e_4'], 'g',label='Synthetic Flipping+Shifting+Scaling')
-                    plt.plot(train_val_loss_all['epoch_2to8_all_armsonly_fss_130b_adam_120e_4'],train_val_loss_all['val_2to8_all_armsonly_fss_130b_adam_120e_4'], 'y',label='Synthetic Flipping+Shifting+Scaling')
-                    plt.plot(train_val_loss_all['epoch_2to8_all_armsonly_fss_115b_adam_350e_4'],train_val_loss_all['val_2to8_all_armsonly_fss_115b_adam_350e_4'], 'r',label='Synthetic Flipping+Shifting+Scaling')
-                    plt.plot(train_val_loss_all['epoch_2to8_all_armsonly_fss_115b_adam_120e_lg1_4'],train_val_loss_all['val_2to8_all_armsonly_fss_115b_adam_120e_lg1_4'], 'b',label='Synthetic Flipping+Shifting+Scaling')
-                    plt.plot(train_val_loss_all['epoch_2to8_all_armsonly_fss_115b_adam_200e_sm1_4'],
-                             train_val_loss_all['val_2to8_all_armsonly_fss_115b_adam_200e_sm1_4'], 'm',
-                             label='Synthetic Flipping+Shifting+Scaling')
-
-
-
-
+                    # plt.plot(train_val_loss_all['epoch_2to8_all_armsonly_fss_100b_adam_300e_4'],train_val_loss_all['val_2to8_all_armsonly_fss_100b_adam_300e_4'], 'c',label='Synthetic Flipping+Shifting+Scaling')
+                    # plt.plot(train_val_loss_all['epoch_2to8_all_armsonly_fss_115b_adam_100e_4'],train_val_loss_all['val_2to8_all_armsonly_fss_115b_adam_100e_4'], 'g',label='Synthetic Flipping+Shifting+Scaling')
+                    # plt.plot(train_val_loss_all['epoch_2to8_all_armsonly_fss_130b_adam_120e_4'],train_val_loss_all['val_2to8_all_armsonly_fss_130b_adam_120e_4'], 'y',label='Synthetic Flipping+Shifting+Scaling')
+                    # plt.plot(train_val_loss_all['epoch_2to8_all_armsonly_fss_115b_adam_350e_4'],train_val_loss_all['val_2to8_all_armsonly_fss_115b_adam_350e_4'], 'r',label='Synthetic Flipping+Shifting+Scaling')
+                    # plt.plot(train_val_loss_all['epoch_2to8_all_armsonly_fss_115b_adam_120e_lg1_4'],train_val_loss_all['val_2to8_all_armsonly_fss_115b_adam_120e_lg1_4'], 'b',label='Synthetic Flipping+Shifting+Scaling')
+                    # plt.plot(train_val_loss_all['epoch_2to8_all_armsonly_fss_115b_adam_200e_sm1_4'],
+                    #          train_val_loss_all['val_2to8_all_armsonly_fss_115b_adam_200e_sm1_4'], 'm',
+                    #          label='Synthetic Flipping+Shifting+Scaling')
+                    plt.plot(train_val_loss_all['epoch_2to8_alldata_armsonly_direct_115b_adam_200e_4'],train_val_loss_all['val_2to8_alldata_armsonly_direct_115b_adam_200e_4'], 'k',label='Direct Joint, Synthetic Flipping+Shifting')
+                    #plt.plot(train_val_loss_all['epoch_2to8_all_armsonly_kincons_115b_adam_200e_4'],train_val_loss_all['val_2to8_all_armsonly_kincons_115b_adam_200e_4'], 'b',label='Kinematics, Synthetic Flipping+Shifting')
+                    #plt.plot(train_val_loss_all['epoch_2to8_all_armsonly_kincons_fs_5xp_115b_adam_200e_4'],train_val_loss_all['val_2to8_all_armsonly_kincons_fs_5xp_115b_adam_200e_4'], 'y',label='Kinematics, 4x pitch, Synthetic Flipping+Shifting')
+                    plt.plot(train_val_loss_all['epoch_2to8_alldata_armsonly_direct_115b_adam_100e_4_smkernel4'], train_val_loss_all['val_2to8_alldata_armsonly_direct_115b_adam_100e_4_smkernel4'], 'g', label='Kinematics, Synthetic Flipping+Shifting')
+                    plt.plot(train_val_loss_all['epoch_2to8_alldata_armsonly_direct_115b_adam_200e_4_smkernel24'],
+                             train_val_loss_all['val_2to8_alldata_armsonly_direct_115b_adam_200e_4_smkernel24'], 'y',
+                             label='Kinematics, Synthetic Flipping+Shifting')
 
 
 
@@ -188,13 +202,16 @@ class DataVisualizer():
                 plt.plot(train_val_loss_all['epoch_alldata_flip_shift_scale5_700e_10'],train_val_loss_all['train_alldata_flip_shift_scale5_700e_10'], 'g',label='Synthetic Flipping+Shifting+Scaling: $S_C \sim N(\mu,\sigma), \mu = 1, \sigma \~= 1.02$')
                 plt.plot(train_val_loss_all['epoch_alldata_flip_shift_scale5_700e_10'],train_val_loss_all['val_alldata_flip_shift_scale5_700e_10'], 'y',label='Synthetic Flipping+Shifting+Scaling: $S_C \sim N(\mu,\sigma), \mu = 1, \sigma \~= 1.02$')
 
-
             #plt.plot(train_val_loss['epoch_flip_2'], train_val_loss['train_flip_2'], 'y')
             #plt.plot(train_val_loss['epoch_flip_2'], train_val_loss['val_flip_2'], 'g')
             #plt.plot(train_val_loss['epoch_flip_shift_nd_2'], train_val_loss['val_flip_shift_nd_2'], 'y')
 
         plt.axis([0,300,0,30000])
         plt.show()
+
+        self.count = 0
+
+        rospy.init_node('calc_mean_std_of_head_detector_node')
 
 
 
@@ -208,7 +225,7 @@ class DataVisualizer():
         elif self.armsup == True:
             validation_set = load_pickle(self.dump_path + '/subject_' + str(self.subject) + '/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head.p')
         elif True:
-            validation_set = load_pickle(self.dump_path + '/subject_' + str(4) + '/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_head_sit120rh_lh_rl_ll.p')
+            validation_set = load_pickle(self.dump_path + '/subject_' + str(4) + '/p_files/trainval_150rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p')
         elif self.opt.arms_only == True:
             validation_set = load_pickle(self.dump_path + '/subject_' + str(4) + '/p_files/trainval_200rh1_lh1_100rh23_lh23_sit120rh_lh.p')
         else:
@@ -239,14 +256,14 @@ class DataVisualizer():
         self.test_y_flat = []  # Initialize the ground truth list
         for entry in range(len(test_dat)):
             if self.opt.arms_only == True:
-                self.test_y_flat.append(test_dat[entry][1][6:18])
+                c = np.concatenate((test_dat[entry][1][6:18] * 1000, test_dat[entry][3][0] * 100, test_dat[entry][3][1], np.squeeze(test_dat[entry][3][2][0:3, 0]) * 100), axis=0)
+                self.test_y_flat.append(c)
             else:
-                self.test_y_flat.append(test_dat[entry][1])
+                self.test_y_flat.append(test_dat[entry][1] * 1000)
         self.test_y_tensor = torch.Tensor(self.test_y_flat)
-        self.test_y_tensor = torch.mul(self.test_y_tensor, 1000)
 
 
-        #print len(validation_set)
+        print len(validation_set), 'size of validation set'
         batch_size = 1
 
         if self.old == True:
@@ -255,31 +272,46 @@ class DataVisualizer():
         self.test_loader = torch.utils.data.DataLoader(self.test_dataset, batch_size, shuffle=True)
 
 
-        if self.sitting == True:
-            model = torch.load(self.dump_path + '/subject_'+str(self.subject)+'/p_files/convnet_sitting_1to8_flip_shift_scale5_700e.pt')
-        elif self.armsup == True:
-            model = torch.load(self.dump_path + '/subject_' + str(self.subject) + '/p_files/convnet_1to8_armsup_700e.pt')
-        elif self.alldata == True:
-            model = torch.load(self.dump_path + '/subject_' + str(self.subject) + '/p_files/convnet_all.pt')
-        elif self.opt.arms_only == True:
-            model = torch.load(self.dump_path + '/subject_' + str(self.subject) + '/p_files/convnet_2to8_all_armsonly_fss_115b_adam_350e_4.pt')
-        else:
-            model = torch.load(self.dump_path + '/subject_'+str(self.subject)+'/p_files/convnet_1to8_flip_shift_nodrop_nohome.pt')
+
+        torso_length_model = torch.load(self.dump_path + '/subject_' + str(self.subject) + '/p_files/convnet_2to8_alldata_armsonly_torso_lengths_115b_adam_100e_4.pt')
+        angle_model = torch.load(self.dump_path + '/subject_' + str(self.subject) + '/p_files/convnet_2to8_alldata_armsonly_arm_angles_115b_adam_200e_4.pt')
+        model = torch.load(self.dump_path + '/subject_' + str(self.subject) + '/p_files/convnet_2to8_alldata_armsonly_direct_115b_adam_200e_4_smkernel2.pt')
+        #if self.sitting == True:
+        #    model = torch.load(self.dump_path + '/subject_'+str(self.subject)+'/p_files/convnet_sitting_1to8_flip_shift_scale5_700e.pt')
+        #elif self.armsup == True:
+        #    model = torch.load(self.dump_path + '/subject_' + str(self.subject) + '/p_files/convnet_1to8_armsup_700e.pt')
+        #elif self.alldata == True:
+        #    model = torch.load(self.dump_path + '/subject_' + str(self.subject) + '/p_files/convnet_all.pt')
+        #elif self.opt.arms_only == True:
+        #    model = torch.load(self.dump_path + '/subject_' + str(self.subject) + '/p_files/convnet_2to8_all_armsonly_fs_115b_adam_200e_4.pt')
+        #lse:
+        #   model = torch.load(self.dump_path + '/subject_'+str(self.subject)+'/p_files/convnet_1to8_flip_shift_nodrop_nohome.pt')
 
         count = 0
         for batch_idx, batch in enumerate(self.test_loader):
             count += 1
             #print count
 
-            images, targets = Variable(batch[0]), Variable(batch[1])
+            batch.append(batch[1][:, 12:31])  # get the constraints we'll be training on
+            #print batch[1][:, 28:31].shape, 'val'
+            #print batch[1][:, 0:12].shape, 'val'
+            batch[1] = torch.cat((torch.mul(batch[1][:, 28:31], 10), batch[1][:, 0:12]), dim=1)
+            #print batch[1].shape, 'val'
+            #print batch[2].shape, 'val'
+            batch[2] = batch[2][:, 8:16]
+            batch[2] = batch[2].numpy()
+            batch[2][:,2:4] = batch[2][:,2:4] * 4
+            batch[2] = torch.Tensor(batch[2])
 
-            #print targets.size()
+
+            images, targets, constraints = Variable(batch[0]), Variable(batch[1]), Variable(batch[2])
+
+            #print batch[0].shape
+            #print image[0].shape
+
 
             scores = model(images)
-
-            #print scores.size()
-            self.print_error(targets,scores)
-
+            VisualizationLib().print_error(targets, scores, self.output_size, self.physical_constraints, data=str(count))
             self.im_sample = batch[0].numpy()
             self.im_sample = np.squeeze(self.im_sample[0, :])
             self.tar_sample = batch[1].numpy()
@@ -287,11 +319,37 @@ class DataVisualizer():
             self.sc_sample = scores.data.numpy()
             self.sc_sample = np.squeeze(self.sc_sample[0, :]) / 1000
             self.sc_sample = np.reshape(self.sc_sample, self.output_size)
-
+            VisualizationLib().rviz_publish_input(self.im_sample[0, :, :], self.im_sample[1, 10, 10])
+            VisualizationLib().rviz_publish_output(np.reshape(self.tar_sample, self.output_size), self.sc_sample)
             self.visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample)
 
 
 
+
+            if self.physical_constraints == 'arm_angles':
+                constraint_scores = angle_model(images)
+                torso_length_scores = torso_length_model(images)
+
+                output = KinematicsLib().forward_arm_kinematics(images, torso_length_scores, constraint_scores) #remember to change this to constraint scores.
+                scores = Variable(torch.Tensor(output))
+
+            else:
+                #batch[1] = torch.cat((torch.mul(batch[1][:, 28:31], 10), batch[1][:, 0:12]), dim=1)
+                #images, targets = Variable(batch[0]), Variable(batch[1])
+                scores = model(images)
+
+            #print scores.size()
+            VisualizationLib().print_error(targets, scores, self.output_size, self.physical_constraints, data=str(count))
+            self.im_sample = batch[0].numpy()
+            self.im_sample = np.squeeze(self.im_sample[0, :])
+            self.tar_sample = batch[1].numpy()
+            self.tar_sample = np.squeeze(self.tar_sample[0, :]) / 1000
+            self.sc_sample = scores.data.numpy()
+            self.sc_sample = np.squeeze(self.sc_sample[0, :]) / 1000
+            self.sc_sample = np.reshape(self.sc_sample, self.output_size)
+            VisualizationLib().rviz_publish_input(self.im_sample[0,:,:], self.im_sample[1,10,10])
+            VisualizationLib().rviz_publish_output(np.reshape(self.tar_sample, self.output_size), self.sc_sample)
+            self.visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample)
 
 
         return mean, stdev
@@ -327,10 +385,12 @@ class DataVisualizer():
             p_map = np.reshape(x_data[map_index], self.mat_size)
             a_map = np.zeros_like(p_map) + a_data[map_index]
 
+            if self.include_inter == True:
+                p_map_inter = (100-2*np.abs(p_map - 50))*4
+                p_map_dataset.append([p_map, p_map_inter, a_map])
+            else:
+                p_map_dataset.append([p_map, a_map])
 
-
-
-            p_map_dataset.append([p_map, a_map])
         if self.verbose: print len(x_data[0]), 'x', 1, 'size of an incoming pressure map'
         if self.verbose: print len(p_map_dataset[0][0]), 'x', len(p_map_dataset[0][0][0]), 'size of a resized pressure map'
         if self.verbose: print len(p_map_dataset[0][1]), 'x', len(p_map_dataset[0][1][0]), 'size of the stacked angle mat'
@@ -338,41 +398,9 @@ class DataVisualizer():
         return p_map_dataset
 
 
-    def print_error(self, target, score, data = None):
-        error = (score - target)
-        error = error.data.numpy()
-        error_avg = np.mean(error, axis=0) / 10
-        error_avg = np.reshape(error_avg, self.output_size)
-        error_avg = np.reshape(np.array(["%.2f" % w for w in error_avg.reshape(error_avg.size)]),
-                               self.output_size)
-        if self.opt.arms_only == True:
-            error_avg = np.transpose(np.concatenate(([['Average Error for Last Batch', '       ', 'R Elbow', 'L Elbow', 'R Hand ', 'L Hand ']], np.transpose(
-                np.concatenate(([['', '', ''], [' x, cm ', ' y, cm ', ' z, cm ']], error_avg))))))
-        else:
-            error_avg = np.transpose(np.concatenate(([['Average Error for Last Batch', '       ', 'Head   ',
-                                                       'Torso  ', 'R Elbow', 'L Elbow', 'R Hand ', 'L Hand ',
-                                                       'R Knee ', 'L Knee ', 'R Foot ', 'L Foot ']], np.transpose(
-                np.concatenate(([['', '', ''], [' x, cm ', ' y, cm ', ' z, cm ']], error_avg))))))
-        print data, error_avg
-
-        error_std = np.std(error, axis=0) / 10
-        error_std = np.reshape(error_std, self.output_size)
-        error_std = np.reshape(np.array(["%.2f" % w for w in error_std.reshape(error_std.size)]),
-                               self.output_size)
-
-        if self.opt.arms_only == True:
-            error_std = np.transpose(np.concatenate(([['Error Standard Deviation for Last Batch', '       ','R Elbow', 'L Elbow', 'R Hand ', 'L Hand ']], np.transpose(
-                np.concatenate(([['', '', ''], ['x, cm', 'y, cm', 'z, cm']], error_std))))))
-        else:
-            error_std = np.transpose(
-                np.concatenate(([['Error Standard Deviation for Last Batch', '       ', 'Head   ', 'Torso  ',
-                                  'R Elbow', 'L Elbow', 'R Hand ', 'L Hand ', 'R Knee ', 'L Knee ',
-                                  'R Foot ', 'L Foot ']], np.transpose(
-                    np.concatenate(([['', '', ''], ['x, cm', 'y, cm', 'z, cm']], error_std))))))
-        print data, error_std
 
     def visualize_pressure_map(self, p_map, targets_raw=None, scores_raw = None, p_map_val = None, targets_val = None, scores_val = None):
-        print p_map.shape, 'pressure mat size', targets_raw.shape, 'target shape'
+        #print p_map.shape, 'pressure mat size', targets_raw.shape, 'target shape'
 
         if self.old == False:
             p_map = p_map[0,:,:]
@@ -387,7 +415,7 @@ class DataVisualizer():
         fig = plt.figure()
         mngr = plt.get_current_fig_manager()
         # to put it into the upper left corner for example:
-        mngr.window.setGeometry(50, 100, 840, 705)
+        #mngr.window.setGeometry(50, 100, 840, 705)
 
         plt.pause(0.0001)
 
@@ -467,7 +495,7 @@ class DataVisualizer():
             target_coord[:, 1] *= -1.0
             ax2.plot(target_coord[:, 0], target_coord[:, 1], 'g*', ms=8)
 
-        plt.pause(0.5)
+        #plt.pause(0.5)
 
 
         #targets_raw_z = []
@@ -482,7 +510,6 @@ class DataVisualizer():
         #plt.show(block = False)
 
         return
-
 
 
 

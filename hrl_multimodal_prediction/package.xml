@@ -2,14 +2,14 @@
   <name>hrl_multimodal_prediction</name>
   <version>0.0.0</version>
   <description>hrl_multimodal_prediction</description>
-  <maintainer email="deric.park@gatech.edu">Daehyung Park Advisor: Prof. Charlie Kemp.
+  <maintainer email="deric.park@gatech.edu">Michael Park
       Healthcare Robotics Lab, Georgia Tech</maintainer>
 
   <license>BSD</license>
 
   <url type="website">http://ros.org/wiki/hrl_anomaly_detection</url>
 
-  <author>Daehyung Park</author>
+  <author>Michael Park</author>
 
   <!-- Dependencies which this package needs to build itself. -->
   <buildtool_depend>catkin</buildtool_depend>
@@ -22,20 +22,8 @@
   <run_depend>message_runtime</run_depend>
   <run_depend>rospy</run_depend>
   <run_depend>std_msgs</run_depend>
-  <run_depend>hrl_lib</run_depend>
-  <run_depend>geometry_msgs</run_depend>
-  <run_depend>hrl_srvs</run_depend>
-  <run_depend>sound_play</run_depend>
   <run_depend>ar_track_alvar_msgs</run_depend>
   <run_depend>visualization_msgs</run_depend>
 </package>
-
-
-
-
-
-
-
-
 
 
