@@ -122,7 +122,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         if clf_method=='SVR':
             print "Start to fit SVR with gamma="
             from sklearn.svm import SVR
-            #clf = SVR(C=1.0, epsilon=0.2, kernel='rbf', degree=3, gamma=1.)
+            #clf = SVR(C=1.0, epsilon=0.2, kernel='rbf', degree=3, gamma=3.0)
             clf = SVR(C=1.0, epsilon=0.2, kernel='rbf', degree=3, gamma=2.5)
         elif clf_method=='RF':
             print "Start to fit RF : ", np.shape(x), np.shape(y)
@@ -142,7 +142,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
             x = x[idx]
             y = y[idx]
                         
-            if len(x)>10000:
+            if len(x)>15000 and False:
                 # random sampling
                 idx_list = range(len(x))
                 np.random.shuffle(idx_list)
@@ -153,7 +153,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         from sklearn import preprocessing
         #scaler = preprocessing.StandardScaler()
         scaler = preprocessing.MinMaxScaler()
-        x = scaler.fit_transform(x)            
+        #x = scaler.fit_transform(x)            
             
         ## print np.shape(x), np.shape(y)
         clf.fit(x, y)
@@ -165,8 +165,8 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         err_ups = []
         for i, s in enumerate(scores):
             if dyn_ths:
-                x = scaler.transform(zs[i])
-                #x = zs[i]
+                #x = scaler.transform(zs[i])
+                x = zs[i]
                 if clf_method == 'SVR' or clf_method == 'KNN':
                     s_preds.append( clf.predict(x) )
                 elif clf_method == 'RF':

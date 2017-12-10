@@ -59,7 +59,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
              patience=20, fine_tuning=False, save_weights_file=None, \
              noise_mag=0.0, timesteps=4, sam_epoch=1, \
              x_std_div=1, x_std_offset=0.001, z_std=0.5,\
-             phase=1.0, min_lr=1e-6,\
+             phase=1.0, min_lr=1e-8,\
              re_load=False, renew=False, plot=True, trainable=None, **kwargs):
     """
     Variational Autoencoder with two LSTMs and one fully-connected layer
@@ -96,7 +96,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
     # we initiate these layers to reuse later.
     decoded_h1 = Dense(h1_dim) 
     decoded_h2 = RepeatVector(timesteps)
-    decoded_L1 = LSTM(input_dim, return_sequences=True, activation='tanh', stateful=True, recurrent_dropout=0.3)
+    decoded_L1 = LSTM(input_dim, return_sequences=True, activation='tanh', stateful=True, recurrent_dropout=0.2)
     decoded_mu    = TimeDistributed(Dense(input_dim, activation='linear'))
     decoded_sigma = TimeDistributed(Dense(input_dim, activation='softplus')) 
 
@@ -167,7 +167,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
             vae_autoencoder.load_weights(weights_file)
             lr = 0.001
             optimizer = Adam(lr=lr, clipvalue=10.) #4.)# 5)
-            vae_autoencoder.compile(optimizer=optimizer, loss=None)
+            ## vae_autoencoder.compile(optimizer=optimizer, loss=None)
             vae_autoencoder.compile(optimizer='adam', loss=None)
         else:
             if re_load and os.path.isfile(weights_file):
@@ -188,7 +188,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
         for epoch in xrange(nb_epoch):
             print
 
-            K.set_value(w_kl_var,[custom_weight( float(epoch) )])
+            #K.set_value(w_kl_var,[custom_weight( float(epoch) )])
 
             mean_tr_loss = []
             for sample in xrange(sam_epoch):
@@ -220,6 +220,9 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                             y = x[:,j:j+timesteps]
                         else:
                             y = None
+
+                        K.set_value(w_kl_var,[ float(p)*2.0+1.0 ])
+                        #K.set_value(w_kl_var,[ -np.cos(float(p)*np.pi*2.0)+2.0 ])
                             
                         tr_loss = vae_autoencoder.train_on_batch(
                             np.concatenate((x[:,j:j+timesteps],
@@ -258,7 +261,9 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                         y = x[:,j:j+timesteps]
                     else:
                         y = None
-                    
+
+                    K.set_value(w_kl_var,[ float(p)*2.0+1.0 ])
+                        
                     te_loss = vae_autoencoder.test_on_batch(
                         np.concatenate((x[:,j:j+timesteps],
                                         p*np.ones((len(x), timesteps,1))), axis=-1), y)
@@ -291,7 +296,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                     plateau_wait += 1
 
             #ReduceLROnPlateau
-            if plateau_wait > 5:
+            if plateau_wait > 3:
                 old_lr = float(K.get_value(vae_autoencoder.optimizer.lr))
                 new_lr = old_lr * 0.2
                 if new_lr < min_lr:
