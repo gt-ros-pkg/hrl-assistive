@@ -56,6 +56,62 @@ HIGH_TAXEL_THRESH_Y = (NUMOFTAXELS_Y - 1)
 class KinematicsLib():
 
 
+
+    def get_bed_distance(self, images, targets, bedangle = None):
+        mat_size = (NUMOFTAXELS_X, NUMOFTAXELS_Y)
+        try:
+            images = images.data.numpy()
+            targets = targets.data.numpy()/1000
+            try:
+                test = targets.shape[2]
+            except:
+                targets = np.reshape(targets, (targets.shape[0], targets.shape[1]/3, 3))
+            bedangle = images[:, -1, 10, 10]
+
+        except:
+            images = np.expand_dims(images, axis = 0)
+            targets = np.reshape(targets, (10, 3))
+            targets = np.expand_dims(targets, axis = 0)
+            bedangle = np.expand_dims(bedangle, axis = 0)
+
+
+
+        distances = np.zeros((images.shape[0], targets.shape[1]))
+        queue_frame = np.zeros((targets.shape[0], targets.shape[1], 4))
+        queue_head = np.zeros((targets.shape[0], targets.shape[1], 4))
+
+        # get the shortest distance from the main frame of the bed. it's just the z.
+        queue_frame[:, :, 0] = targets[:, :, 2]
+
+        # get the shortest distance from the head of the bed. you have to rotate about the bending point.
+        By = (51) * 0.0286 - 0.0286 * 3 * np.sin(np.deg2rad(np.expand_dims(bedangle[:], axis = 1)))
+        queue_head[:, :, 0] = targets[:, :, 2] * np.cos(np.deg2rad(np.expand_dims(bedangle[:], axis = 1))) - (targets[:, :,1] - By) * np.sin(np.deg2rad(np.expand_dims(bedangle[:], axis = 1) ))
+
+        # Get the distance off the side of the bed.  The bed is 27 pixels wide, so things over hanging this are added
+        queue_frame[:, :, 1] = (-targets[:, :, 0] + 10 * 0.0286).clip(min=0)
+        queue_frame[:, :, 1] = queue_frame[:, :, 1] + (targets[:, :, 0] - 37 * 0.0286).clip(min=0)
+        queue_head[:, :, 1] = np.copy(queue_frame[:, :, 1])  # the x distance does not depend on bed angle.
+
+        # Now take the Euclidean for each frame and head set
+        queue_frame[:, :, 2] = np.sqrt(np.square(queue_frame[:, :, 0]) + np.square(queue_frame[:, :, 1]))
+        queue_head[:, :, 2] = np.sqrt(np.square(queue_head[:, :, 0]) + np.square(queue_head[:, :, 1]))
+
+        # however, there is still a problem.  We should zero out the distance if the x position is within the bounds
+        # of the pressure mat and the z is negative. This just indicates the person is pushing into the mat.
+        queue_frame[:, :, 3] = (queue_frame[:, :, 2] - queue_frame[:, :, 0] - queue_frame[:, :, 1] * 1000000).clip(min=0)
+        queue_head[:, :, 3] = (queue_head[:, :, 2] - queue_head[:, :, 0] - queue_frame[:, :, 1] * 1000000).clip(min=0)
+        queue_frame[:, :, 2] = (queue_frame[:, :, 2] - queue_frame[:, :, 3]).clip(min=0)  # corrected Euclidean
+        queue_head[:, :, 2] = (queue_head[:, :, 2] - queue_head[:, :, 3]).clip(min=0)  # corrected Euclidean
+
+        # Now take the minimum of the Euclideans from the head and the frame planes
+        distances[:, :] = np.amin([queue_frame[:, :, 2], queue_head[:, :, 2]], axis=0)
+
+
+        return distances
+
+
+
+
     def forward_arm_kinematics(self, images, torso_lengths, angles):
         #print images.shape, 'images shape'
         #print torso_lengths.shape, 'torso lengths shape'
@@ -82,7 +138,7 @@ class KinematicsLib():
         queue = np.zeros((5,3))
         for set in range(0, images.shape[0]):
             try: #this happens when the images are actually the images
-                bedangle = images[set, 1, 10, 10]
+                bedangle = images[set, -1, 10, 10]
             except: #this happens when you just throw an angle in there
                 bedangle = images
             TrelO = tft.identity_matrix()

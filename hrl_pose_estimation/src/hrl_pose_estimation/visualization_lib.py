@@ -56,22 +56,21 @@ HIGH_TAXEL_THRESH_Y = (NUMOFTAXELS_Y - 1)
 
 class VisualizationLib():
 
-    def print_error(self, target, score, output_size, physical_constraints = None, data = None):
+    def print_error(self, target, score, output_size, loss_vector_type = None, data = None, printerror = True):
+        if loss_vector_type == 'torso_lengths':
+            error = (score[:, 0:3] - target[:, 0:3])
+            error = error.data.numpy()
+            error_norm = np.expand_dims(np.linalg.norm(error, axis = 1),1)
+            error = np.concatenate((error, error_norm), axis = 1)
 
-        if physical_constraints == 'torso_lengths':
-            torso_error = (score[:, 0:3] - target[:, 0:3])
-            torso_error = torso_error.data.numpy()
-            torso_error_norm = np.expand_dims(np.linalg.norm(torso_error, axis = 1),1)
-            torso_error = np.concatenate((torso_error, torso_error_norm), axis = 1)
 
-
-            torso_error_avg = np.mean(torso_error, axis=0)
-            torso_error_avg = np.reshape(torso_error_avg, (output_size[0], output_size[1]+1))
-            torso_error_avg = np.reshape(np.array(["%.2f" % w for w in torso_error_avg.reshape(torso_error_avg.size)]),
+            error_avg = np.mean(error, axis=0)
+            error_avg = np.reshape(error_avg, (output_size[0], output_size[1]+1))
+            error_avg = np.reshape(np.array(["%.2f" % w for w in error_avg.reshape(error_avg.size)]),
                                          (output_size[0], output_size[1] + 1))
-            torso_error_avg = np.transpose(
+            error_avg = np.transpose(
                 np.concatenate(([['Average Torso Error for Last Batch', '       ', ' Torso ']], np.transpose(
-                    np.concatenate(([['', '', '', ''], [' x, cm ', ' y, cm ', ' z, cm ', '  norm ']], torso_error_avg))))))
+                    np.concatenate(([['', '', '', ''], [' x, cm ', ' y, cm ', ' z, cm ', '  norm ']], error_avg))))))
 
             lengths_error = (score[:, 3:11] - target[:, 3:11])
             lengths_error = lengths_error.data.numpy()
@@ -82,17 +81,18 @@ class VisualizationLib():
             lengths_error_avg = np.transpose(
                 np.concatenate(([['Average Lengths Error for Last Batch', '                 ', '     Z + Vert    ','Spine to Shoulder', '   Upper Arm     ', '   Forearm       ']], np.transpose(
                     np.concatenate(([['', ''], [' R, cm ', ' L, cm ']], lengths_error_avg))))))
-            print data, torso_error_avg
-            print lengths_error_avg
+            if printerror ==True:
+                print data, error_avg
+                print lengths_error_avg
 
 
-            torso_error_std = np.std(torso_error, axis = 0)
-            torso_error_std = np.reshape(torso_error_std, (output_size[0], output_size[1]+1))
-            torso_error_std = np.reshape(np.array(["%.2f" % w for w in torso_error_std.reshape(torso_error_std.size)]),
+            error_std = np.std(error, axis = 0)
+            error_std = np.reshape(error_std, (output_size[0], output_size[1]+1))
+            error_std = np.reshape(np.array(["%.2f" % w for w in error_std.reshape(error_std.size)]),
                                          (output_size[0], output_size[1] + 1))
-            torso_error_std = np.transpose(
+            error_std = np.transpose(
                 np.concatenate(([['Average Torso Standard Deviation for Last Batch', '       ', ' Torso ']], np.transpose(
-                    np.concatenate(([['', '', '', ''], [' x, cm ', ' y, cm ', ' z, cm ', '  norm ']], torso_error_std))))))
+                    np.concatenate(([['', '', '', ''], [' x, cm ', ' y, cm ', ' z, cm ', '  norm ']], error_std))))))
 
             lengths_error_std = np.std(lengths_error, axis=0)
             lengths_error_std = np.reshape(lengths_error_std, (4, 2))
@@ -103,8 +103,9 @@ class VisualizationLib():
                 np.concatenate(([['Average Lengths Standard Deviation for Last Batch', '                 ', '     Z + Vert    ',
                                   'Spine to Shoulder', '   Upper Arm     ', '   Forearm       ']], np.transpose(
                     np.concatenate(([['', ''], [' R, cm ', ' L, cm ']], lengths_error_std))))))
-            print data, torso_error_std
-            print lengths_error_std
+            if printerror == True:
+                print data, error_std
+                print lengths_error_std
 
 
         else:
@@ -119,11 +120,11 @@ class VisualizationLib():
             error_avg = np.reshape(np.array(["%.2f" % w for w in error_avg.reshape(error_avg.size)]),
                                          (output_size[0], output_size[1] + 1))
 
-            if physical_constraints == 'arm_angles':
+            if loss_vector_type == 'arm_angles':
                 error_avg = np.transpose(np.concatenate(([['Average Error for Last Batch', '       ', ' Torso ', 'R Elbow', 'L Elbow',
                                                            'R Hand ', 'L Hand ']], np.transpose(
                     np.concatenate(([['', '', '', ''], [' x, cm ', ' y, cm ', ' z, cm ', '  norm ']], error_avg))))))
-            elif physical_constraints == 'all_joints':
+            elif loss_vector_type == 'all_joints':
                 error_avg = np.transpose(np.concatenate(([['Average Error for Last Batch', '       ', 'Head   ',
                                                            'Torso  ', 'R Elbow', 'L Elbow', 'R Hand ', 'L Hand ',
                                                            'R Knee ', 'L Knee ', 'R Foot ', 'L Foot ']], np.transpose(
@@ -132,7 +133,8 @@ class VisualizationLib():
                 error_avg = np.transpose(np.concatenate(([['Average Error for Last Batch', '       ', ' Torso ', 'R Elbow', 'L Elbow',
                                       'R Hand ', 'L Hand ']], np.transpose(np.concatenate(
                             ([['', '', '', ''], [' x, cm ', ' y, cm ', ' z, cm ', '  norm ']], error_avg))))))
-            print data, error_avg
+            if printerror == True:
+                print data, error_avg
 
 
             error_std = np.std(error, axis=0) / 10
@@ -140,11 +142,11 @@ class VisualizationLib():
             error_std = np.reshape(np.array(["%.2f" % w for w in error_std.reshape(error_std.size)]),
                                          (output_size[0], output_size[1] + 1))
 
-            if physical_constraints == 'arm_angles':
+            if loss_vector_type == 'arm_angles':
                 error_std = np.transpose(np.concatenate(([['Error Standard Deviation for Last Batch', '       ', ' Torso ', 'R Elbow',
                                                            'L Elbow', 'R Hand ', 'L Hand ']], np.transpose(
                     np.concatenate(([['', '', '',''], ['x, cm', 'y, cm', 'z, cm', '  norm ']], error_std))))))
-            elif physical_constraints == 'all_joints':
+            elif loss_vector_type == 'all_joints':
                 error_std = np.transpose(
                     np.concatenate(([['Error Standard Deviation for Last Batch', '       ', 'Head   ', 'Torso  ',
                                       'R Elbow', 'L Elbow', 'R Hand ', 'L Hand ', 'R Knee ', 'L Knee ',
@@ -154,8 +156,116 @@ class VisualizationLib():
                 error_std = np.transpose(np.concatenate(([['Error Standard Deviation for Last Batch', '       ', ' Torso ', 'R Elbow',
                                                            'L Elbow', 'R Hand ', 'L Hand ']], np.transpose(
                     np.concatenate(([['', '', '',''], ['x, cm', 'y, cm', 'z, cm', '  norm ']], error_std))))))
+            if printerror == True:
+                print data, error_std
+            error_norm = np.squeeze(error_norm, axis = 2)
+        return error_norm
 
-            print data, error_std
+
+    def visualize_error_from_distance(self, bed_distance, error_norm):
+        plt.close()
+        fig = plt.figure()
+        ax = []
+        for joint in range(0, bed_distance.shape[1]):
+            ax.append(joint)
+            if bed_distance.shape[1] <= 5:
+                ax[joint] = fig.add_subplot(1, bed_distance.shape[1], joint + 1)
+            else:
+                print math.ceil(bed_distance.shape[1]/2.)
+                ax[joint] = fig.add_subplot(2, math.ceil(bed_distance.shape[1]/2.), joint + 1)
+            ax[joint].set_xlim([0, 0.7])
+            ax[joint].set_ylim([0, 1])
+            ax[joint].set_title('Joint ' + str(joint) + ' error')
+            ax[joint].plot(bed_distance[:, joint], error_norm[:, joint], 'r.')
+        plt.show()
+
+
+    def visualize_pressure_map(self, p_map, targets_raw=None, scores_raw = None, p_map_val = None, targets_val = None, scores_val = None, block = False):
+        p_map = p_map[0,:,:] #select the original image matrix from the intermediate amplifier matrix and the height matrix
+
+        plt.close()
+        plt.pause(0.0001)
+
+        fig = plt.figure()
+        mngr = plt.get_current_fig_manager()
+        # to put it into the upper left corner for example:
+        #mngr.window.setGeometry(50, 100, 840, 705)
+
+        plt.pause(0.0001)
+
+        # set options
+        if p_map_val is not None:
+            p_map_val = p_map_val[0, :, :] #select the original image matrix from the intermediate amplifier matrix and the height matrix
+            ax1 = fig.add_subplot(1, 2, 1)
+            ax2 = fig.add_subplot(1, 2, 2)
+            xlim = [-2.0, 49.0]
+            ylim = [86.0, -2.0]
+            ax1.set_xlim(xlim)
+            ax1.set_ylim(ylim)
+            ax2.set_xlim(xlim)
+            ax2.set_ylim(ylim)
+            ax1.set_axis_bgcolor('cyan')
+            ax2.set_axis_bgcolor('cyan')
+            ax1.imshow(p_map, interpolation='nearest', cmap=
+            plt.cm.bwr, origin='upper', vmin=0, vmax=100)
+            ax2.imshow(p_map_val, interpolation='nearest', cmap=
+            plt.cm.bwr, origin='upper', vmin=0, vmax=100)
+            ax1.set_title('Training Sample \n Targets and Estimates')
+            ax2.set_title('Validation Sample \n Targets and Estimates')
+
+
+        else:
+            ax1 = fig.add_subplot(1, 1, 1)
+            xlim = [-2.0, 49.0]
+            ylim = [86.0, -2.0]
+            ax1.set_xlim(xlim)
+            ax1.set_ylim(ylim)
+            ax1.set_axis_bgcolor('cyan')
+            ax1.imshow(p_map, interpolation='nearest', cmap=
+            plt.cm.bwr, origin='upper', vmin=0, vmax=100)
+            ax1.set_title('Validation Sample \n Targets and Estimates')
+
+        # Visualize targets of training set
+        if targets_raw is not None:
+            if len(np.shape(targets_raw)) == 1:
+                targets_raw = np.reshape(targets_raw, (len(targets_raw) / 3, 3))
+            target_coord = targets_raw[:, :2] / INTER_SENSOR_DISTANCE
+            target_coord[:, 1] -= (NUMOFTAXELS_X - 1)
+            target_coord[:, 1] *= -1.0
+            ax1.plot(target_coord[:, 0], target_coord[:, 1], marker = 'o', linestyle='None', markerfacecolor = 'green',markeredgecolor='black', ms=8)
+        plt.pause(0.0001)
+
+        #Visualize estimated from training set
+        if scores_raw is not None:
+            if len(np.shape(scores_raw)) == 1:
+                scores_raw = np.reshape(scores_raw, (len(scores_raw) / 3, 3))
+            target_coord = scores_raw[:, :2] / INTER_SENSOR_DISTANCE
+            target_coord[:, 1] -= (NUMOFTAXELS_X - 1)
+            target_coord[:, 1] *= -1.0
+            ax1.plot(target_coord[:, 0], target_coord[:, 1], marker = 'o', linestyle='None', markerfacecolor = 'white',markeredgecolor='black', ms=8)
+        plt.pause(0.0001)
+
+        # Visualize targets of validation set
+        if targets_val is not None:
+            if len(np.shape(targets_val)) == 1:
+                targets_val = np.reshape(targets_val, (len(targets_val) / 3, 3))
+            target_coord = targets_val[:, :2] / INTER_SENSOR_DISTANCE
+            target_coord[:, 1] -= (NUMOFTAXELS_X - 1)
+            target_coord[:, 1] *= -1.0
+            ax2.plot(target_coord[:, 0], target_coord[:, 1], 'y*', ms=8)
+        plt.pause(0.0001)
+
+        # Visualize estimated from training set
+        if scores_val is not None:
+            if len(np.shape(scores_val)) == 1:
+                scores_val = np.reshape(scores_val, (len(scores_val) / 3, 3))
+            target_coord = scores_val[:, :2] / INTER_SENSOR_DISTANCE
+            target_coord[:, 1] -= (NUMOFTAXELS_X - 1)
+            target_coord[:, 1] *= -1.0
+            ax2.plot(target_coord[:, 0], target_coord[:, 1], 'g*', ms=8)
+
+        plt.show(block = block)
+        return
 
 
 
@@ -163,7 +273,6 @@ class VisualizationLib():
         mat_size = (NUMOFTAXELS_X, NUMOFTAXELS_Y)
 
         image = np.reshape(image, mat_size)
-        print image.shape,'im shape'
 
         markerArray = MarkerArray()
         for j in range(10, image.shape[0]-10):
@@ -189,12 +298,15 @@ class VisualizationLib():
                 marker.pose.orientation.w = 1.0
 
                 marker.pose.position.x = i*0.0286
-                if j > 34:
+                if j > 33:
                     marker.pose.position.y = (84-j)*0.0286 - 0.0286*3*np.sin(np.deg2rad(angle))
-                    marker.pose.position.z = -0.1
+                    marker.pose.position.z = 0.#-0.1
+                    #print marker.pose.position.x, 'x'
                 else:
-                    marker.pose.position.y = (50) * 0.0286 + (34 - j) * 0.0286 * np.cos(np.deg2rad(angle)) - 0.0286*3*np.sin(np.deg2rad(angle))
-                    marker.pose.position.z = -0.1 + (34-j)*0.0286*np.sin(np.deg2rad(angle))
+
+                    marker.pose.position.y = (51) * 0.0286 + (33 - j) * 0.0286 * np.cos(np.deg2rad(angle)) - 0.0286*3*np.sin(np.deg2rad(angle))
+                    marker.pose.position.z = (33-j)*0.0286*np.sin(np.deg2rad(angle)) #-0.1
+                    #print j, marker.pose.position.z, marker.pose.position.y, 'head'
 
                 # We add the new marker to the MarkerArray, removing the oldest
                 # marker from it when necessary
@@ -214,8 +326,6 @@ class VisualizationLib():
 
 
     def rviz_publish_output(self, targets, scores, pseudotargets = None):
-        print targets
-        print scores
         TargetArray = MarkerArray()
         for joint in range(0, targets.shape[0]):
             targetPublisher = rospy.Publisher("/targets", MarkerArray)
@@ -243,7 +353,6 @@ class VisualizationLib():
 
         ScoresArray = MarkerArray()
         for joint in range(0, scores.shape[0]):
-            print joint, 'joint'
             scoresPublisher = rospy.Publisher("/scores", MarkerArray)
             Smarker = Marker()
             Smarker.header.frame_id = "autobed/base_link"

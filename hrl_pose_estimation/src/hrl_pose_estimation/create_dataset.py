@@ -75,7 +75,7 @@ class DatabaseCreator():
         except IOError:
             print 'x'
 
-        self.final_dataset = []
+        self.final_dataset = {}
 
 
         print self.training_dump_path
@@ -649,8 +649,19 @@ class DatabaseCreator():
         #for subject in [4,9,10,11,12,13,14,15,16,17,18]:
         #for subject in [12]:
         for subject in [2,3,4,5,6,7,8]:
-            self.final_dataset = []
-            for movement in ['RH_sitting','LH_sitting','RL_sitting','LL_sitting','RH1','LH1','RL','LL']:
+            self.final_dataset = {}
+            self.final_dataset['images'] = []
+            self.final_dataset['markers_xyz_m'] = []
+            self.final_dataset['marker_bed_euclideans_m'] = []
+            self.final_dataset['bed_angle_deg'] = []
+            self.final_dataset['joint_lengths_U_m'] = []
+            self.final_dataset['joint_angles_U_deg'] = []
+            self.final_dataset['joint_lengths_L_m'] = []
+            self.final_dataset['joint_angles_L_deg'] = []
+
+
+
+            for movement in ['RH_sitting','LH_sitting','RL_sitting','LL_sitting','RH1','LH1','RH2','RH3','LH2','LH3','RL','LL']:
             #for movement in ['RH_sitting','LH_sitting','RL_sitting','LL_sitting']:
             #self.training_dump_path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_'+str(subject)
             #print self.training_dump_path
@@ -746,54 +757,54 @@ class DatabaseCreator():
                     arm_targets = np.squeeze(arm_targets, axis = 0)
                     arm_targets = np.reshape(arm_targets[3:], (4,3))
 
+                    #get the distances from the bed. this will help us to do an a per instance loss and for final error evaluation,
+                    #so we can throw out joint poses that are too far away.
+                    bed_distances = KinematicsLib().get_bed_distance(rot_p_map, rot_target_mat, angle)
 
 
-                    VisualizationLib().rviz_publish_input(rot_p_map, angle)
 
-                    print rot_target_mat
-                    print arm_targets
-                    print arm_pseudotargets, 'pseudotars'
-                    VisualizationLib().rviz_publish_output(rot_target_mat, arm_targets/1000, arm_pseudotargets)
-
-
-                    #print targets, 'real targets'
-                    #print rot_target_mat[2:6,:], 'pred targets'
-                    #print joint_lengths
-                    #print joint_angles, 'angles'
-                    constraints = []
-                    constraints.append(arm_joint_lengths)
-                    constraints.append(arm_joint_angles)
-                    constraints.append(torso)
-
-                    torso = np.squeeze(torso)
-                    #print joint_lengths.shape
-                    #print joint_angles.shape
-                    #print torso.shape
-
-                    print len(constraints), 'constr shape'
-                    print np.reshape(arm_targets, (4,3))
-
-                    c = np.concatenate((arm_joint_lengths, arm_joint_angles, torso), axis=0)
-                    #print c, 'c'
-
+                    #VisualizationLib().rviz_publish_input(rot_p_map, angle)
+                    #VisualizationLib().rviz_publish_output(rot_target_mat, arm_targets/1000, arm_pseudotargets)
 
                     sleep(0.01)
 
                     if i < 0:
                         self.visualize_single_pressure_map(rot_p_map, rot_target_mat)
-                        if self.keep_image == True: self.final_dataset.append([list(rot_p_map.flatten()), rot_target_mat.flatten(), angle, constraints])
+                        if self.keep_image == True:
+                            self.final_dataset['images'].append(list(rot_p_map.flatten()))
+                            self.final_dataset['markers_xyz_m'].append(rot_target_mat.flatten())
+                            self.final_dataset['marker_bed_euclideans_m'].append(bed_distances[0])
+                            self.final_dataset['bed_angle_deg'].append(angle)
+                            self.final_dataset['joint_lengths_U_m'].append(arm_joint_lengths)
+                            self.final_dataset['joint_angles_U_deg'].append(arm_joint_angles)
                     elif self.select == True:
                         self.visualize_single_pressure_map(rot_p_map, rot_target_mat)
-                        if self.keep_image == True: self.final_dataset.append([list(rot_p_map.flatten()), rot_target_mat.flatten(), angle, constraints])
+                        if self.keep_image == True:
+                            self.final_dataset['images'].append(list(rot_p_map.flatten()))
+                            self.final_dataset['markers_xyz_m'].append(rot_target_mat.flatten())
+                            self.final_dataset['marker_bed_euclideans_m'].append(bed_distances[0])
+                            self.final_dataset['bed_angle_deg'].append(angle)
+                            self.final_dataset['joint_lengths_U_m'].append(arm_joint_lengths)
+                            self.final_dataset['joint_angles_U_deg'].append(arm_joint_angles)
                     else:
-                        self.final_dataset.append([list(rot_p_map.flatten()), rot_target_mat.flatten(), angle, constraints])
+                        self.final_dataset['images'].append(list(rot_p_map.flatten()))
+                        self.final_dataset['markers_xyz_m'].append(rot_target_mat.flatten())
+                        self.final_dataset['marker_bed_euclideans_m'].append(bed_distances[0])
+                        self.final_dataset['bed_angle_deg'].append(angle)
+                        self.final_dataset['joint_lengths_U_m'].append(arm_joint_lengths)
+                        self.final_dataset['joint_angles_U_deg'].append(arm_joint_angles)
                     count += 1
 
-                print np.array(self.final_dataset).shape
-            print 'Output file size: ~', int(len(self.final_dataset) * 0.08958031837*3948/1728), 'Mb'
+                print 'images shape: ',np.array(self.final_dataset['images']).shape
+                print 'marker xyz array shape: ', np.array(self.final_dataset['markers_xyz_m']).shape
+                print 'marker bed Euclideans shape: ', np.array(self.final_dataset['marker_bed_euclideans_m']).shape
+                print 'bed angle in degrees shape: ', np.array(self.final_dataset['bed_angle_deg']).shape
+                print 'joint lengths upper body shape: ',  np.array(self.final_dataset['joint_lengths_U_m']).shape
+                print 'joint angles upper body shape: ', np.array(self.final_dataset['joint_angles_U_deg']).shape
+
+            print 'Output file size: ~', int(len(self.final_dataset['images']) * 0.08958031837*3948/1728), 'Mb'
             print "Saving final_dataset"
-            pkl.dump(self.final_dataset, open(os.path.join(self.training_dump_path+str(subject)+'/p_files/trainval_150rh1_lh1_rl_ll_sit120rh_lh_rl_ll.p'), 'wb'))
-                #pkl.dump(self.individual_dataset, open(os.path.join(self.training_dump_path, 'individual_database.p'), 'wb'))
+            pkl.dump(self.final_dataset, open(os.path.join(self.training_dump_path+str(subject)+'/p_files/trainval_150rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p'), 'wb'))
 
             print 'Done.'
         return
