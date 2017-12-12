@@ -560,7 +560,7 @@ class ScoreGenerator(object):
     #            self.heady=0.03
 
                 maxiter = 1000
-                popsize = 30
+                popsize = 100
                 if num_config == 1:
                     if self.model == 'chair':
                         # maxiter = 15
@@ -568,13 +568,13 @@ class ScoreGenerator(object):
                         # popsize = m.pow(4, 2)*100
                         parameters_min = np.array([0.0, -1.7,  m.radians(-360.) - 0.0001, 0.])
                         parameters_max = np.array([2.5, 1.7,  m.radians(360.) + 0.0001, 0.3])
-                        parameters_scaling = (parameters_max-parameters_min)/3.
-                        parameters_scaling[2] = (parameters_max[2]-parameters_min[2])/4.
-                        parameters_scaling[3] = (parameters_max[3]-parameters_min[3])/2.
+                        parameters_scaling = (parameters_max-parameters_min)/8.
+                        #parameters_scaling[2] = (parameters_max[2]-parameters_min[2])/4.
+                        #parameters_scaling[3] = (parameters_max[3]-parameters_min[3])/2.
                         parameters_initialization = (parameters_max+parameters_min)/2.
 
                         if sampling == 'cma':
-                            opts1 = {'seed': seed, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter, 'maxfevals': 1e8, 'CMA_cmean': 0.25, 'tolfun':1e-6, 'tolfunhist':1e-12,'tolx':5e-4,
+                            opts1 = {'seed': seed, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter, 'maxfevals': 1e8, 'CMA_cmean': 0.25, 'tolfun':1e-3, 'tolfunhist':1e-12,'tolx':5e-4,'maxstd':4.0,'tolstagnation':100,
                                      'CMA_stds': list(parameters_scaling),
                                      'bounds': [list(parameters_min), list(parameters_max)]}
 
@@ -582,24 +582,24 @@ class ScoreGenerator(object):
                                 # optimization_results[<method>, <sampling>, <model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_bed_movement>]
                                 optimization_results[parameters] = cma.fmin(self.objective_function_one_config_toc_sample,
                                                                                         list(parameters_initialization),
-                                                                                        1.,restarts=1,
+                                                                                        1.,restarts=0,
                                                                                         options=opts1)
                             elif method == 'inverse_reachability' or method == 'inverse_reachability_collision':
                                 # optimization_results[<method>, <sampling>, <model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_bed_movement>]
                                 optimization_results[parameters] = cma.fmin(self.objective_function_one_config_ireach_sample,
                                                                             list(parameters_initialization),
-                                                                            1.,restarts=1,
+                                                                            1.,restarts=0,
                                                                             options=opts1)
                             elif method == 'ik':
                                 opts1 = {'seed': seed, 'ftarget': 0., 'popsize': popsize, 'maxiter': maxiter,
-                                         'maxfevals': 1e8, 'CMA_cmean': 0.25,'tolfun':1e-6, 'tolfunhist':1e-12, 'tolx':5e-4,
+                                         'maxfevals': 1e8, 'CMA_cmean': 0.25,'tolfun':1e-3, 'tolfunhist':1e-12, 'tolx':5e-4,'maxstd':4.0,'tolstagnation':100,
                                          'CMA_stds': list(parameters_scaling),
                                          'bounds': [list(parameters_min), list(parameters_max)]}
                                 # optimization_results[<method>, <sampling>, <model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_bed_movement>]
                                 optimization_results[parameters] = cma.fmin(
                                     self.objective_function_one_config_ik_sample,
                                     list(parameters_initialization),
-                                    1.,restarts=1,
+                                    1.,restarts=0,
                                     options=opts1)
                             else:
                                 print 'Unknown method!'
@@ -666,14 +666,14 @@ class ScoreGenerator(object):
                         else:
                             parameters_min = np.array([0.3, -1.7, m.radians(-360.)-0.0001, 0., 0., 0.*m.pi/180.])
                             parameters_max = np.array([3.0, 1.7, m.radians(360.)+.0001, 0.3, 0.25, 75.*m.pi/180.])
-                            parameters_scaling = (parameters_max-parameters_min)/3.
-                            parameters_scaling[5] = (parameters_max[5]-parameters_min[5])/2.
-                        parameters_scaling[2] = (parameters_max[2]-parameters_min[2])/4.
-                        parameters_scaling[3] = (parameters_max[3]-parameters_min[3])/2.
+                            parameters_scaling = (parameters_max-parameters_min)/8.
+                            #parameters_scaling[5] = (parameters_max[5]-parameters_min[5])/2.
+                        #parameters_scaling[2] = (parameters_max[2]-parameters_min[2])/4.
+                        #parameters_scaling[3] = (parameters_max[3]-parameters_min[3])/2.
                         parameters_initialization = (parameters_max+parameters_min)/2.
 
                         if sampling == 'cma':
-                            opts1 = {'seed': 1234, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter, 'maxfevals': 1e8, 'CMA_cmean': 0.25,'tolfun':1e-6, 'tolfunhist':1e-12,'tolx':5e-4,
+                            opts1 = {'seed': 1234, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter, 'maxfevals': 1e8, 'CMA_cmean': 0.25,'tolfun':1e-3, 'tolfunhist':1e-12,'tolx':5e-4,'maxstd':4.0,'tolstagnation':100,
                                      'CMA_stds': list(parameters_scaling),
                                      'bounds': [list(parameters_min),
                                                 list(parameters_max)]}
@@ -681,24 +681,24 @@ class ScoreGenerator(object):
                                 # optimization_results[<method>, <sampling>, <model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_bed_movement>]
                                 optimization_results[parameters] = cma.fmin(self.objective_function_one_config_toc_sample,
                                                                             list(parameters_initialization),
-                                                                            1.,restarts=1,
+                                                                            1.,restarts=0,
                                                                             options=opts1)
                             elif method == 'inverse_reachability' or method == 'inverse_reachability_collision':
                                 # optimization_results[<method>, <sampling>, <model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_bed_movement>]
                                 optimization_results[parameters] = cma.fmin(self.objective_function_one_config_ireach_sample,
                                                                             list(parameters_initialization),
-                                                                            1.,restarts=1,
+                                                                            1.,restarts=0,
                                                                             options=opts1)
                             elif method == 'ik':
                                 opts1 = {'seed': 1234, 'ftarget': 0., 'popsize': popsize, 'maxiter': maxiter,
-                                         'maxfevals': 1e8, 'CMA_cmean': 0.25,'tolfun':1e-6, 'tolfunhist':1e-12,'tolx':5e-4,
+                                         'maxfevals': 1e8, 'CMA_cmean': 0.25,'tolfun':1e-3, 'tolfunhist':1e-12,'tolx':5e-4,'maxstd':4.0,'tolstagnation':100,
                                          'CMA_stds': list(parameters_scaling),
                                          'bounds': [list(parameters_min), list(parameters_max)]}
                                 # optimization_results[<method>, <sampling>, <model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_bed_movement>]
                                 optimization_results[parameters] = cma.fmin(
                                     self.objective_function_one_config_ik_sample,
                                     list(parameters_initialization),
-                                    1.,restarts=1,
+                                    1.,restarts=0,
                                     options=opts1)
                             else:
                                 print 'Unknown method!'
@@ -775,18 +775,18 @@ class ScoreGenerator(object):
                         parameters_max = np.array([2.5, 1.7, m.radians(360.) + 0.0001, 0.3,
                                                    2.5, 1.7, m.radians(360.) + 0.0001, 0.3])
                     if (self.allow_bed_movement == 0 and self.model == 'autobed') or self.model == 'chair':
-                        parameters_scaling = (parameters_max-parameters_min)/3.
-                        parameters_scaling[1] = (parameters_max[1]-parameters_min[1])/8.
-                        parameters_scaling[5] = (parameters_max[5]-parameters_min[5])/8.
-                        parameters_scaling[2] = (parameters_max[2]-parameters_min[2])/4.
-                        parameters_scaling[6] = (parameters_max[6]-parameters_min[6])/4.
-                        parameters_scaling[3] = (parameters_max[3]-parameters_min[3])/2.
-                        parameters_scaling[7] = (parameters_max[7]-parameters_min[7])/2.
+                        parameters_scaling = (parameters_max-parameters_min)/8.
+                        parameters_scaling[1] = (parameters_max[1]-parameters_min[1])/16.
+                        parameters_scaling[5] = (parameters_max[5]-parameters_min[5])/16.
+                        #parameters_scaling[2] = (parameters_max[2]-parameters_min[2])/4.
+                        #parameters_scaling[6] = (parameters_max[6]-parameters_min[6])/4.
+                        #parameters_scaling[3] = (parameters_max[3]-parameters_min[3])/2.
+                        #parameters_scaling[7] = (parameters_max[7]-parameters_min[7])/2.
                         parameters_initialization = (parameters_max+parameters_min)/2.
                         parameters_initialization[1] = 0.85
                         parameters_initialization[5] = -0.85
                         if sampling == 'cma':
-                            opts2 = {'seed': seed, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter, 'maxfevals': 1e8, 'CMA_cmean': 0.25,'tolfun':1e-6, 'tolfunhist':1e-12,'tolx':5e-4,
+                            opts2 = {'seed': seed, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter, 'maxfevals': 1e8, 'CMA_cmean': 0.25,'tolfun':1e-3, 'tolfunhist':1e-12,'tolx':5e-4,'maxstd':4.0,'tolstagnation':100,
                                      'CMA_stds': list(parameters_scaling),
                                      'bounds': [list(parameters_min),
                                                 list(parameters_max)]}
@@ -798,7 +798,7 @@ class ScoreGenerator(object):
                                                                             # [0.75, 0.75, 0., 0.15, 0.75, -0.75, 0., 0.15],
                                                                             list(parameters_initialization),
                                                                             # [0., 0., 0., 0.15, 0.1, 35*m.pi/180, 0., 0., 0., 0.15, 0.1, 35*m.pi/180],
-                                                                            1.,restarts=1,
+                                                                            1.,restarts=0,
                                                                             options=opts2)
                             # print optimization_results[2, self.heady, self.start_x, self.start_y][0]
                             config = optimization_results[parameters][0]
@@ -866,7 +866,7 @@ class ScoreGenerator(object):
                         parameters_initialization = (parameters_max+parameters_min)/2.
                         parameters_initialization[1] = 1.0
                         parameters_initialization[6] = -1.0
-                        opts2 = {'seed': 1234, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter, 'maxfevals': 1e8, 'CMA_cmean': 0.25,'tolfun':1e-6, 'tolfunhist':1e-12,'tolx':5e-4,
+                        opts2 = {'seed': 1234, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter, 'maxfevals': 1e8, 'CMA_cmean': 0.25,'tolfun':1e-3, 'tolfunhist':1e-12,'tolx':5e-4,'maxstd':4.0,'tolstagnation':100,
                                  'CMA_stds': list(parameters_scaling),
                                  'bounds': [list(parameters_min),
                                             list(parameters_max)]}
@@ -896,19 +896,19 @@ class ScoreGenerator(object):
                         # Henry's bed can only rise a few centimeters because of the overbed table
                         parameters_max = np.array([3.0, 1.7, m.radians(360.) + .0001, 0.3, 0.25, 75.*m.pi/180.,
                                                    3.0, 1.7, m.radians(360.) + .0001, 0.3, 0.25, 75.*m.pi/180.])
-                        parameters_scaling = (parameters_max-parameters_min)/3.
-                        parameters_scaling[1] = (parameters_max[1]-parameters_min[1])/8.
-                        parameters_scaling[7] = (parameters_max[7]-parameters_min[7])/8.
-                        parameters_scaling[2] = (parameters_max[2]-parameters_min[2])/4.
-                        parameters_scaling[8] = (parameters_max[8]-parameters_min[8])/4.
-                        parameters_scaling[3] = (parameters_max[3]-parameters_min[3])/2.
-                        parameters_scaling[9] = (parameters_max[9]-parameters_min[9])/2.
+                        parameters_scaling = (parameters_max-parameters_min)/8.
+                        parameters_scaling[1] = (parameters_max[1]-parameters_min[1])/16.
+                        parameters_scaling[7] = (parameters_max[7]-parameters_min[7])/16.
+                        #parameters_scaling[2] = (parameters_max[2]-parameters_min[2])/4.
+                        #parameters_scaling[8] = (parameters_max[8]-parameters_min[8])/4.
+                        #parameters_scaling[3] = (parameters_max[3]-parameters_min[3])/2.
+                        #parameters_scaling[9] = (parameters_max[9]-parameters_min[9])/2.
                         parameters_initialization = (parameters_max+parameters_min)/2.
                         parameters_initialization[1] = 0.85
                         parameters_initialization[7] = -0.85
                         # Parameters are: [x, y, th, z, bz, bth]
                         if sampling == 'cma':
-                            opts2 = {'seed': seed, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter, 'maxfevals': 1e8, 'CMA_cmean': 0.25,'tolfun':1e-6, 'tolfunhist':1e-12,'tolx':5e-4,
+                            opts2 = {'seed': seed, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter, 'maxfevals': 1e8, 'CMA_cmean': 0.25,'tolfun':1e-3, 'tolfunhist':1e-12,'tolx':5e-4,'maxstd':4.0,'tolstagnation':100,
                                      'CMA_stds': list(parameters_scaling),
                                      'bounds': [list(parameters_min),
                                                 list(parameters_max)]}
@@ -985,8 +985,9 @@ class ScoreGenerator(object):
                     # score_stuff[self.heady, self.distance] = self.compare_results_one_vs_two_configs(optimization_results[1, self.heady, self.distance], optimization_results[2, self.heady, self.distance])
                     config, score = self.check_which_num_base_is_better(config, scores)
                     score_stuff[parameters] = [config, score, (rospy.Time.now()-parameter_start_time).to_sec()]
-                    print 'Time to find scores for this set of parameters: %fs' % ((rospy.Time.now()-parameter_start_time).to_sec())
-                    print 'Time elapsed so far for parameters: %fs' % ((rospy.Time.now()-scoring_start_time).to_sec())
+                print 'Time to find scores for this set of parameters: %fs' % ((rospy.Time.now()-parameter_start_time).to_sec())
+                print 'Time elapsed so far for parameters: %fs' % ((rospy.Time.now()-scoring_start_time).to_sec())
+                print 'Termination criteria triggered:\n',optimization_results[parameters][-3]
 
         # score_stuff = []  # np.zeros([len(optimization_results), 9])
         #
