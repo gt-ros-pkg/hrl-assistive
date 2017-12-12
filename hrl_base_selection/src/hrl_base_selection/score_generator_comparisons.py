@@ -644,6 +644,9 @@ class ScoreGenerator(object):
                             score = self.best_score
                         print 'Config: ', config
                         print 'Score: ', score
+                        if len(config) == 4:
+                            config = np.insert(config, 4, 0.)
+                            config = np.insert(config, 4, 0.)
                         #score_stuff = dict()
                         # optimization_results[<method>, <sampling>, <model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_bed_movement>]
                         config = np.resize(config, [6, 1])
