@@ -468,7 +468,7 @@ class ScoreGenerator(object):
         else:
             bed_movement = [1]
 
-        acceptable_termination_criteria = ['tolfun', 'tolfunhist', 'tolx']
+        acceptable_termination_criteria = ['tolfun', 'tolfunhist', 'tolx','tolstagnation','conditioncov']
 
         head_x_range = [0.]
 #        self.head_angles = np.array([[58, 18], [58, 0], [58, -18], [0, 0], [-58, 18], [-58, 0], [-58, -18]])
@@ -518,14 +518,15 @@ class ScoreGenerator(object):
             print parameters
 
             maxiter = 1000
-            popsize = 20
-
+            popsize = 40
+            this_seed = seed
             parameter_termination_satisfied = False
             while not parameter_termination_satisfied:
 
                 if parameters[1] != 'toc' and parameters[4] ==2:
                     score_stuff[parameters] = [np.zeros([6, 1]), 10.,
                                                (rospy.Time.now() - parameter_start_time).to_sec()]
+                    parameter_termination_satisfied = True
                 else:
                     self.best_config = None
                     self.best_score = 1000.
@@ -825,7 +826,7 @@ class ScoreGenerator(object):
                             config = np.insert(config, 4, 0.)
                             config = np.insert(config, 10, 0.)
                             config = np.insert(config, 10, 0.)
-                            optimization_results[parameters] = [config, score]
+                            #optimization_results[parameters] = [config, score]
                             # optimization_results[2, self.heady, self.start_x, self.start_y][0] = np.insert(optimization_results[2, self.heady, self.start_x, self.start_y][0], 4, 0.)
                             # optimization_results[2, self.heady, self.start_x, self.start_y][0] = np.insert(optimization_results[2, self.heady, self.start_x, self.start_y][0], 10, 0.)
                             # optimization_results[2, self.heady, self.start_x, self.start_y][0] = np.insert(optimization_results[2, self.heady, self.start_x, self.start_y][0], 10, 0.)
@@ -896,7 +897,7 @@ class ScoreGenerator(object):
                                                                                 list(parameters_initialization),
                                                                                 # [0.5, 0.75, 0., 0.15, 0., 35*m.pi/180, 0.5, -0.75, 0., 0.15, 0., 35*m.pi/180],
                                                                                 # [0., 0., 0., 0.15, 0.1, 35*m.pi/180, 0., 0., 0., 0.15, 0.1, 35*m.pi/180],
-                                                                                1.,restarts=1,
+                                                                                1.,restarts=0,
                                                                                 options=opts2)
                                 # for self.start_x in np.arange(start_x_min, start_x_max, start_x_int)
                                 # for self.start_y in np.arange(start_y_min, start_y_max, start_y_int)
@@ -962,10 +963,10 @@ class ScoreGenerator(object):
                         config, score = self.check_which_num_base_is_better(config, scores)
                         score_stuff[parameters] = [config, score, (rospy.Time.now()-parameter_start_time).to_sec()]
                         print 'Termination criteria triggered:\n', optimization_results[parameters][-3]
-                    if any(criteria in acceptable_termination_criteria for x in optimization_results[parameters][-3].keys()):
+                    if any(criteria in acceptable_termination_criteria for criteria in optimization_results[parameters][-3].keys()):
                         parameter_termination_satisfied = True
                     else:
-                        seed += 1
+                        this_seed += 1
                         popsize *= 2
                 print 'Time to find scores for this set of parameters: %fs' % ((rospy.Time.now()-parameter_start_time).to_sec())
                 print 'Time elapsed so far for parameters: %fs' % ((rospy.Time.now()-scoring_start_time).to_sec())
