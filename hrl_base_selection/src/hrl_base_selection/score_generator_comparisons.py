@@ -524,10 +524,12 @@ class ScoreGenerator(object):
             self.best_score = 1000.
 
             if parameters[4] == 1 and parameters[2] == 'cma':
-                init_start_positions_y = [0.85, -0.85]
+                init_start_positions_y = [-0.85, 0.85]
+                init_start_positions_th = [0., m.pi]
             else:
-                init_start_positions_y = [[0.85, -0.85]]
-            for start_position_y in init_start_positions_y:
+                init_start_positions_y = [[-0.85, 0.85]]
+                init_start_positions_th = [[0., m.pi]]
+            for start_position_i in xrange(len(init_start_positions_y)):
                 maxiter = 1000
                 popsize = 40
                 this_seed = seed
@@ -562,7 +564,8 @@ class ScoreGenerator(object):
                                 #parameters_scaling[2] = (parameters_max[2]-parameters_min[2])/4.
                                 #parameters_scaling[3] = (parameters_max[3]-parameters_min[3])/2.
                                 parameters_initialization = (parameters_max+parameters_min)/2.
-                                parameters_initialization[1] = start_position_y
+                                parameters_initialization[1] = init_start_positions_y[start_position_i]
+                                parameters_initialization[2] = init_start_positions_th[start_position_i]
                                 parameters_scaling[1] = (parameters_max[1] - parameters_min[1]) / 16.
 
                                 if sampling == 'cma':
@@ -663,7 +666,8 @@ class ScoreGenerator(object):
                                 #parameters_scaling[2] = (parameters_max[2]-parameters_min[2])/4.
                                 #parameters_scaling[3] = (parameters_max[3]-parameters_min[3])/2.
                                 parameters_initialization = (parameters_max+parameters_min)/2.
-                                parameters_initialization[1] = start_position_y
+                                parameters_initialization[1] = init_start_positions_y[start_position_i]
+                                parameters_initialization[2] = init_start_positions_th[start_position_i]
                                 parameters_scaling[1] = (parameters_max[1] - parameters_min[1]) / 16.
 
                                 if sampling == 'cma':
@@ -777,8 +781,10 @@ class ScoreGenerator(object):
                                 #parameters_scaling[3] = (parameters_max[3]-parameters_min[3])/2.
                                 #parameters_scaling[7] = (parameters_max[7]-parameters_min[7])/2.
                                 parameters_initialization = (parameters_max+parameters_min)/2.
-                                parameters_initialization[1] = start_position_y[0]
-                                parameters_initialization[5] = start_position_y[1]
+                                parameters_initialization[1] = init_start_positions_y[start_position_i][0]
+                                parameters_initialization[5] = init_start_positions_y[start_position_i][1]
+                                parameters_initialization[2] = init_start_positions_th[start_position_i][0]
+                                parameters_initialization[6] = init_start_positions_th[start_position_i][1]
                                 if sampling == 'cma':
                                     opts2 = {'seed': seed, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter, 'maxfevals': 1e8, 'CMA_cmean': 0.25,'tolfun':1e-3, 'tolfunhist':1e-12,'tolx':5e-4,'maxstd':4.0,'tolstagnation':100,
                                              'CMA_stds': list(parameters_scaling),
@@ -898,8 +904,10 @@ class ScoreGenerator(object):
                                 #parameters_scaling[3] = (parameters_max[3]-parameters_min[3])/2.
                                 #parameters_scaling[9] = (parameters_max[9]-parameters_min[9])/2.
                                 parameters_initialization = (parameters_max+parameters_min)/2.
-                                parameters_initialization[1] = start_position_y[0]
-                                parameters_initialization[7] = start_position_y[1]
+                                parameters_initialization[1] = init_start_positions_y[start_position_i][0]
+                                parameters_initialization[7] = init_start_positions_y[start_position_i][1]
+                                parameters_initialization[2] = init_start_positions_th[start_position_i][0]
+                                parameters_initialization[8] = init_start_positions_th[start_position_i][1]
                                 # Parameters are: [x, y, th, z, bz, bth]
                                 if sampling == 'cma':
                                     opts2 = {'seed': seed, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter, 'maxfevals': 1e8, 'CMA_cmean': 0.25,'tolfun':1e-3, 'tolfunhist':1e-12,'tolx':5e-4,'maxstd':4.0,'tolstagnation':100,

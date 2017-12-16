@@ -620,8 +620,7 @@ if __name__ == "__main__":
         seed = 1
         for model in ['autobed']:  # 'autobed', 'chair'
             for task in [ 'wiping_mouth','arm_cuffs', 'bathe_legs','scratching_knee_left', 'scratching_knee_right',
-                         'scratching_upper_arm_left', 'scratching_upper_arm_right','shaving', 'wiping_mouth',
-                          'feeding_trajectory']: #
+                         'scratching_upper_arm_left', 'scratching_upper_arm_right','shaving', 'feeding_trajectory']: #
                 # 'arm_cuffs', 'bathe_legs','scratching_knee_left', 'scratching_knee_right',
                 #          'scratching_upper_arm_left', 'scratching_upper_arm_right','shaving', 'wiping_mouth',
                 #           'scratching_thigh_left', 'scratching_thigh_right','feeding_trajectory'
