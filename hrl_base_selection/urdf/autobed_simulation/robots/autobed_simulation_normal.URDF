@@ -78,7 +78,7 @@
   </link>
   <joint
     name="autobed/origin_wall_joint"
-    type="fixed">
+    type="prismatic">
     <origin
       xyz="0.610627419320058 -0.155260000000016 0.574890377092541"
       rpy="-0.00650994084197508 0.0370393769946504 -0.174021765425405" />
@@ -87,7 +87,12 @@
     <child
       link="autobed/wall_link" />
     <axis
-      xyz="0 0 0" />
+      xyz="0.984220866265583 0.172903665695305 0.0375979892620764" />
+    <limit
+      lower="-3"
+      upper="3"
+      effort="0"
+      velocity="0" />
   </joint>
   <link
    name="autobed/bed_frame_link">

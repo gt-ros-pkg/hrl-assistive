@@ -56,6 +56,8 @@ class Manipulability_Testing(object):
         # self.best_base = None
         # self.raw_reference_options = None
 
+        self.fig_num = 0
+
         self.mc_sim_number = 1000
 
         self.selector = ScoreGenerator(visualize=visualize, training=False)
@@ -130,8 +132,10 @@ class Manipulability_Testing(object):
         success = np.zeros([number_samples, self.mc_sim_number])
         self.selector.ireach = InverseReachabilitySetup(visualize=False, redo_ik=False,
                                                redo_reachability=False, redo_ir=False, manip='leftarm')
+        current_seed = copy.copy(seed)
         for model in models:
             for task in tasks:
+                current_seed = copy.copy(seed)
                 # task = key[0]
                 # model = key[3]
                 # task = 'wiping_mouth'
@@ -149,7 +153,7 @@ class Manipulability_Testing(object):
                 for j in xrange(number_samples):
                     print 'IK sample', j, 'out of ', number_samples
                     self.selector.receive_new_goals(goal_data, reference_options=raw_reference_options, model=model)
-                    ik_result_dict = self.selector.handle_score_generation(method='ik', sampling='uniform')
+                    ik_result_dict = self.selector.handle_score_generation(method='ik', sampling='uniform', force_allow_bed_movement=True)
                     for key in ik_result_dict:
                         ik_result = ik_result_dict[key]
                     if (task == 'wiping_mouth' or task == 'shaving' or task == 'feeding_trajectory' or task == 'brushing')  and model == 'chair':
@@ -165,7 +169,7 @@ class Manipulability_Testing(object):
                     for i in xrange(self.mc_sim_number):
 
                         accuracy[j, i], success[j, i] = self.evaluate_configuration_mc(model, task, ik_result[0], goal_data,
-                                                                                 raw_reference_options, seed=seed)
+                                                                                 raw_reference_options, seed=current_seed)
                         if save_results:
                             with open(save_file_path + 'raw_' + save_file_name, 'a') as myfile:
                                 myfile.write(str(task) + ',' + str(model)
@@ -173,6 +177,7 @@ class Manipulability_Testing(object):
                                              + ',' + str("{:.4f}".format(success[j, i]))
                                              + ',' + str("{:.6f}".format(toc_score))
                                              + ',' + str("{:.6f}".format(ireach_score)) + '\n')
+                        current_seed += 1
                     if save_results:
                         with open(save_file_path + save_file_name, 'a') as myfile:
                             myfile.write(str(task) + ',' + str(model)
@@ -202,123 +207,126 @@ class Manipulability_Testing(object):
         accuracy = np.zeros(self.mc_sim_number)
         success = np.zeros(self.mc_sim_number)
         for key in self.loaded_scores:
-            if force_key is not None:
-                new_key = []
-                for i in key:
-                    new_key.append(i)
-                new_key[0]=force_key[0]
-                new_key[1]=force_key[1]
-                new_key[2] = force_key[2]
-                new_key[3] = force_key[3]
-                if force_key[3] == 'autobed' and force_key[1] == 'toc':
-                    new_key[4]=2
-                    new_key[5]=-10
-                    new_key[6]=0
-                    new_key[7]=0
-                    new_key[8]=1
-                elif force_key[3] == 'autobed':
-                    new_key[4] = 1
-                    new_key[5] = -10
-                    new_key[6] = 0
-                    new_key[7] = 0
-                    new_key[8] = 1
-                elif force_key[3] == 'chair' and force_key[1] == 'toc':
-                    new_key[4] = 2
-                    new_key[5] = 0
-                    new_key[6] = 0
-                    new_key[7] = 0
-                    new_key[8] = 0
-                elif force_key[3] == 'chair':
-                    new_key[4] = 1
-                    new_key[5] = 0
-                    new_key[6] = 0
-                    new_key[7] = 0
-                    new_key[8] = 0
-                key = tuple(new_key)
-            current_seed = copy.copy(seed)
-            print 'I will use data with the saved key:', key
-            loaded_score = self.loaded_scores[key]
-            print loaded_score
-            task = key[0]
-            method = key[1]
-            sampling = key[2]
-            model = key[3]
-            # task = 'wiping_mouth'
-            # method = 'toc'
-            # sampling = 'cma'
-            # model = 'chair'
-            # print loaded_scores
-            print 'Reading in raw data from the task.'
-            read_task_data = DataReader_Task(task, model, 'comparison')
-            raw_data, raw_num, raw_references, raw_reference_names = read_task_data.reset_goals()
-            # print raw_data, raw_num
-            # print raw_reference
-            # print 'raw_reference_options',raw_reference_options
-            # raw_data = read_data.get_raw_data()
-            print 'Raw data is ready!'
-            if np.size(loaded_score) == 3:
-                best_base = loaded_score[0]
-                score = loaded_score[1]
-                time_to_calc = loaded_score[2]
-            elif np.size(loaded_score) == 2:
-                best_base = loaded_score[0][0]
-                score = loaded_score[0][1]
-                time_to_calc = loaded_score[1]
-            # print 'best base is: ', best_base
-            # best_base = np.array([[ 0.64335277,  0.79439213],
-            #                       [ 0.78823877, -0.8840706 ],
-            #                       [-1.38234847, -4.67764725],
-            #                       [ 0.21458089,  0.24799169],
-            #                       [ 0.64335277,  0.79439213],
-            #                       [ 0.78823877, -0.8840706 ]])
-            # x= 1.0
-            # y = -0.65
-            # th = m.radians(90.)
-            # z = 0.3
-            # use_error = False
-            # best_base = np.reshape([x, y, th, z, 0.2, m.radians(45.)],[6,1])
+            if key[3]=='autobed' or True:
+                if force_key is not None:
+                    new_key = []
+                    for i in key:
+                        new_key.append(i)
+                    new_key[0]=force_key[0]
+                    new_key[1]=force_key[1]
+                    new_key[2] = force_key[2]
+                    new_key[3] = force_key[3]
+                    if force_key[3] == 'autobed' and force_key[1] == 'toc':
+                        new_key[4]=2
+                        new_key[5]=-10
+                        new_key[6]=0
+                        new_key[7]=0
+                        new_key[8]=1
+                    elif force_key[3] == 'autobed':
+                        new_key[4] = 1
+                        new_key[5] = -10
+                        new_key[6] = 0
+                        new_key[7] = 0
+                        new_key[8] = 0
+                    elif force_key[3] == 'chair' and force_key[1] == 'toc':
+                        new_key[4] = 2
+                        new_key[5] = 0
+                        new_key[6] = 0
+                        new_key[7] = 0
+                        new_key[8] = 0
+                    elif force_key[3] == 'chair':
+                        new_key[4] = 1
+                        new_key[5] = 0
+                        new_key[6] = 0
+                        new_key[7] = 0
+                        new_key[8] = 0
+                    key = tuple(new_key)
+                current_seed = copy.copy(seed)
+                print 'I will use data with the saved key:', key
+                loaded_score = self.loaded_scores[key]
+                print loaded_score
+                task = key[0]
+                method = key[1]
+                sampling = key[2]
+                model = key[3]
+                # task = 'wiping_mouth'
+                # method = 'toc'
+                # sampling = 'cma'
+                # model = 'chair'
+                # print loaded_scores
+                print 'Reading in raw data from the task.'
+                read_task_data = DataReader_Task(task, model, 'comparison')
+                raw_data, raw_num, raw_references, raw_reference_names = read_task_data.reset_goals()
+                # print raw_data, raw_num
+                # print raw_reference
+                # print 'raw_reference_options',raw_reference_options
+                # raw_data = read_data.get_raw_data()
+                print 'Raw data is ready!'
+                if np.size(loaded_score) == 3:
+                    best_base = loaded_score[0]
+                    score = loaded_score[1]
+                    time_to_calc = loaded_score[2]
+                elif np.size(loaded_score) == 2:
+                    best_base = loaded_score[0][0]
+                    score = loaded_score[0][1]
+                    time_to_calc = loaded_score[1]
+                # print 'best base is: ', best_base
+                # best_base = np.array([[ 0.64335277,  0.79439213],
+                #                       [ 0.78823877, -0.8840706 ],
+                #                       [-1.38234847, -4.67764725],
+                #                       [ 0.21458089,  0.24799169],
+                #                       [ 0.64335277,  0.79439213],
+                #                       [ 0.78823877, -0.8840706 ]])
+                # x= 1.0
+                # y = -0.65
+                # th = m.radians(90.)
+                # z = 0.3
+                # use_error = False
+                # best_base = np.reshape([x, y, th, z, 0.2, m.radians(45.)],[6,1])
 
-            read_data = DataReader_comparisons(reference_options=raw_reference_names,
-                                       model=model, task=task)
-            goal_data = read_data.generate_output_goals(test_goals=raw_data, test_number=raw_num, test_reference=raw_references)
-            # print 'goal_data', goal_data
-            print 'I will now see the percentage of goals reached in', self.mc_sim_number, ' Monte-carlo simulations'
+                read_data = DataReader_comparisons(reference_options=raw_reference_names,
+                                           model=model, task=task)
+                goal_data = read_data.generate_output_goals(test_goals=raw_data, test_number=raw_num, test_reference=raw_references)
+                # print 'goal_data', goal_data
+                print 'I will now see the percentage of goals reached in', self.mc_sim_number, ' Monte-carlo simulations'
 
-            for i in xrange(self.mc_sim_number):
-                # print current_seed
-                # print 'Monte-carlo simulation number', i, 'out of ', self.mc_sim_number
-                if use_error == False:
-                    accuracy[i], success[i] = self.evaluate_configuration_mc(model, task, best_base, goal_data,
-                                                                             raw_reference_names, seed=current_seed,
-                                                                             error=np.zeros(6))
-                else:
-                    accuracy[i], success[i] = self.evaluate_configuration_mc(model, task, best_base, goal_data,
-                                                                             raw_reference_names, seed=current_seed)
-                current_seed += 1
-            # print accuracy.mean()
-            # print success.mean()
-            # print str("{:.3f}".format(accuracy.mean()))
-            # print str("{:.3f}".format(success.mean()))
-            if save_results:
-                with open(save_file_path+save_file_name, 'a') as myfile:
-                    myfile.write(str(key[0]) + ',' + str(key[1]) + ',' + str(key[2]) + ',' + str(key[3])
-                                 + ',' + str(key[4]) + ',' + str(key[5]) + ',' + str(key[6])
-                                 + ',' + str(key[7]) + ',' + str(key[8])
-                                 + ',' + str("{:.3f}".format(accuracy.mean()))
-                                 + ',' + str("{:.3f}".format(accuracy.std()))
-                                 + ',' + str("{:.3f}".format(success.mean()))
-                                 + ',' + str("{:.3f}".format(success.std()))
-                                 + ',' + str("{:.5f}".format(score))
-                                 + ',' + str("{:.5f}".format(time_to_calc))
-                                 + '\n')
-            print 'Accuracy was:', accuracy.mean()
-            print 'Success was:', success.mean()
-            gc.collect()
+                for i in xrange(self.mc_sim_number):
+                    # print current_seed
+                    # print 'Monte-carlo simulation number', i, 'out of ', self.mc_sim_number
+                    if use_error == False:
+                        accuracy[i], success[i] = self.evaluate_configuration_mc(model, task, best_base, goal_data,
+                                                                                 raw_reference_names, seed=current_seed,
+                                                                                 error=np.zeros(6))
+                    else:
+                        accuracy[i], success[i] = self.evaluate_configuration_mc(model, task, best_base, goal_data,
+                                                                                 raw_reference_names, seed=current_seed)
+                    current_seed += 1
+                # print accuracy.mean()
+                # print success.mean()
+                # print str("{:.3f}".format(accuracy.mean()))
+                # print str("{:.3f}".format(success.mean()))
+                if save_results:
+                    with open(save_file_path+save_file_name, 'a') as myfile:
+                        myfile.write(str(key[0]) + ',' + str(key[1]) + ',' + str(key[2]) + ',' + str(key[3])
+                                     + ',' + str(key[4]) + ',' + str(key[5]) + ',' + str(key[6])
+                                     + ',' + str(key[7]) + ',' + str(key[8])
+                                     + ',' + str("{:.3f}".format(accuracy.mean()))
+                                     + ',' + str("{:.3f}".format(accuracy.std()))
+                                     + ',' + str("{:.3f}".format(success.mean()))
+                                     + ',' + str("{:.3f}".format(success.std()))
+                                     + ',' + str("{:.5f}".format(score))
+                                     + ',' + str("{:.5f}".format(time_to_calc))
+                                     + '\n')
+                print 'Accuracy was:', accuracy.mean()
+                print 'Success was:', success.mean()
+                gc.collect()
         print 'All done with all comparisons!!'
 
     def comparisons_monty_carlo_plotting(self):
         print 'Starting to plot the comparison between TOC and baseline algorithms'
         save_file_name = 'mc_scores.log'
+        save_file_name = 'mc_scores_good_pr2_error_included.log'
+
         save_file_path = self.pkg_path + '/data/'
         raw_loaded_data = [line.rstrip('\n').split(',') for line in open(save_file_path + save_file_name)]
         # print raw_loaded_data
@@ -336,12 +344,13 @@ class Manipulability_Testing(object):
                 loaded_data[item[0]][item[3]] = dict()
             if item[1] == 'toc':
                 loaded_data[item[0]][item[3]]['toc'+str(item[4])] = [float(i) for i in item[9:]]
-            elif int(item[4]) == 1:
+            elif int(item[4]) == 1 and int(item[8]) == 1:
                 loaded_data[item[0]][item[3]][item[1]] = [float(i) for i in item[9:]]
-
         N = len(loaded_data.keys())
-        fig_num = 0
-        for model in ['autobed','chair']:
+        # fig_num = 0
+
+        self.fig_num += 1
+        for model in ['autobed']: #'chair',
             ik_success_means = []
             ik_success_std = []
             capability_success_means = []
@@ -356,47 +365,74 @@ class Manipulability_Testing(object):
 
             # Create human-readable versions of the model names
             if model == 'autobed':
-                modelname = 'Autobed'
+                modelname = 'Robotic Bed'
             elif model == 'chair':
                 modelname = 'Wheelchair'
             else:
                 print 'Not sure what the model is'
 
+
             N = 0
             task_list = ['scratching_knee_left','scratching_knee_right',
-                         'scratching_thigh_left', 'scratching_thigh_right',
+                         # 'scratching_thigh_left', 'scratching_thigh_right',
                          'scratching_upper_arm_left', 'scratching_upper_arm_right',
                          'bathe_legs', 'feeding_trajectory',
                          'wiping_mouth', 'shaving', 'arm_cuffs']
             for task in task_list:
                 if (model == 'chair' and task not in ['brushing','scratching_thigh_right',
-                                                      'scratching_thigh_left', 'bathe_legs']) \
-                        or (model == 'autobed' and task not in ['brushing']):
+                                                      'scratching_thigh_left', 'bathe_legs', 'feeding_trajectory']) \
+                        or (model == 'autobed' and task not in ['brushing', 'feeding_trajectory']):
                     N += 1
-                    ik_success_means.append(loaded_data[task][model]['ik'][2])
-                    ik_success_std.append(loaded_data[task][model]['ik'][3])
+                    ik_success_means.append(100.*loaded_data[task][model]['ik'][2])
+                    ik_success_std.append(100.*loaded_data[task][model]['ik'][3])
 
-                    capability_success_means.append(loaded_data[task][model]['inverse_reachability'][2])
-                    capability_success_std.append(loaded_data[task][model]['inverse_reachability'][3])
+                    capability_success_means.append(100.*loaded_data[task][model]['inverse_reachability'][2])
+                    capability_success_std.append(100.*loaded_data[task][model]['inverse_reachability'][3])
 
-                    capability_collision_success_means.append(loaded_data[task][model]['inverse_reachability_collision'][2])
-                    capability_collision_success_std.append(loaded_data[task][model]['inverse_reachability_collision'][3])
+                    capability_collision_success_means.append(100.*loaded_data[task][model]['inverse_reachability_collision'][2])
+                    capability_collision_success_std.append(100.*loaded_data[task][model]['inverse_reachability_collision'][3])
 
-                    toc1_success_means.append(loaded_data[task][model]['toc1'][2])
-                    toc1_success_std.append(loaded_data[task][model]['toc1'][3])
+                    toc1_success_means.append(100.*loaded_data[task][model]['toc1'][2])
+                    toc1_success_std.append(100.*loaded_data[task][model]['toc1'][3])
 
-                    toc2_success_means.append(loaded_data[task][model]['toc2'][2])
-                    toc2_success_std.append(loaded_data[task][model]['toc2'][3])
+                    toc2_success_means.append(100.*loaded_data[task][model]['toc2'][2])
+                    toc2_success_std.append(100.*loaded_data[task][model]['toc2'][3])
 
                     # Create human-readable versions of the task names
-                    taskname = task
+                    if task == 'scratching_knee_left':
+                        taskname = 'Scratching Left Knee'
+                    elif task == 'scratching_knee_right':
+                        taskname = 'Scratching Right Knee'
+                    elif task == 'scratching_thigh_left':
+                        taskname = 'Scratching Left Thigh'
+                    elif task == 'scratching_thigh_right':
+                        taskname = 'Scratching Right Thigh'
+                    elif task == 'scratching_upper_arm_left':
+                        taskname = 'Scratching Left Upper Arm'
+                    elif task == 'scratching_upper_arm_right':
+                        taskname = 'Scratching Right Upper Arm'
+                    elif task == 'bathe_legs':
+                        taskname = 'Cleaning Legs'
+                    elif task == 'feeding_trajectory':
+                        taskname = 'Feeding'
+                    elif task == 'wiping_mouth':
+                        taskname = 'Wiping Mouth'
+                    elif task == 'shaving':
+                        taskname = 'Shaving'
+                    elif task == 'arm_cuffs':
+                        taskname = 'Cleaning Arms'
+                    else:
+                        print 'I do not know the task name'
+                        taskname = 'UNKNOWN TASK'
+
+                    # taskname = task
 
                     # Create the tick labels
                     tick_labels.append(taskname)
 
             # print N
             ind = np.arange(N)  # the x locations for the groups
-            width = 0.15  # the width of the bars
+            width = 0.16  # the width of the bars
             # print ik_success_means
             # print len(capability_success_means)
             # print len(capability_collision_success_means)
@@ -407,9 +443,9 @@ class Manipulability_Testing(object):
             # print len(capability_collision_success_std)
             # print len(toc1_success_std)
             # print len(toc2_success_std)
-            fig = plt.figure(fig_num, figsize=(24, 14))
+            fig = plt.figure(self.fig_num, figsize=(24, 14))
             ax = plt.subplot(111)
-            fig_num += 1
+            self.fig_num += 1
             co = plt.get_cmap('Accent')
             rects1 = ax.bar(ind, ik_success_means, width, color=co(0.4), yerr=ik_success_std)
             rects2 = ax.bar(ind+width, capability_success_means, width, color=co(0.3), yerr=capability_success_std)
@@ -419,7 +455,7 @@ class Manipulability_Testing(object):
 
             # add some text for labels, title and axes ticks
             ax.set_ylabel('% of Successful Trials')
-            ax.set_title('Success vs Error for '+modelname, y=1.15)
+            ax.set_title('Percent Successful Trials with State Estimation Error in '+modelname + ' Environment', y=1.15)
             ax.set_xticks(ind + width* 2.5)
             ax.set_xticklabels(tick_labels, rotation=65)
             # plt.xlim([0, N])
@@ -431,8 +467,8 @@ class Manipulability_Testing(object):
                              ax.get_xticklabels() + ax.get_yticklabels()):
                 item.set_fontsize(20)
 
-            ax.set_yticks([0, 0.25, 0.50, 0.75, 1.0])
-            ax.set_ylim(0., 1.1)
+            ax.set_yticks([0., 25., 50., 75., 100.])
+            ax.set_ylim(0., 110.)
             plt.autoscale(enable=True, axis='x', tight=True)
 
             ax.grid(True, axis='y', linestyle='dotted')
@@ -443,27 +479,30 @@ class Manipulability_Testing(object):
                       bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
                       ncol=5, mode="expand", borderaxespad=0.)
 
-            # def autolabel(rects):
-            #     """
-            #     Attach a text label above each bar displaying its height
-            #     """
-            #     for rect in rects:
-            #         height = rect.get_height()
-                    # ax.text(rect.get_x() + rect.get_width() / 2., 1.05 * height,
-                    #         '%d' % int(height),
-                    #         ha='center', va='bottom')
+            def autolabel(rects):
+                """
+                Attach a text label above each bar displaying its height
+                """
+                for rect in rects:
+                    height = rect.get_height()
+                    ax.text(rect.get_x() + rect.get_width() / 2.+0.01, height+1.5,
+                            str("{:.0f}".format(height)),
+                            # '%d' % int(height),
+                            rotation=90,
+                            fontsize=20,
+                            ha='center', va='bottom')
 
-            # autolabel(rects1)
-            # autolabel(rects2)
-            # autolabel(rects3)
-            # autolabel(rects4)
-            # autolabel(rects5)
+            autolabel(rects1)
+            autolabel(rects2)
+            autolabel(rects3)
+            autolabel(rects4)
+            autolabel(rects5)
             print 'Saving figure!'
             plt.savefig(save_file_path + 'comparison_vs_baseline_' + model + '.png', bbox_inches="tight")
 
         plt.show()
 
-        plt.figure(fig_num)
+        plt.figure(self.fig_num)
         rospy.spin()
 
     def base_brute_evaluation(self, task, model,
@@ -551,17 +590,20 @@ class Manipulability_Testing(object):
 
     def plot_base_brute_evaluation(self, task, model, discretization_size_xy):
         save_file_path = self.pkg_path + '/data/'
-        fig = plt.figure(0, figsize=(24, 10))
+        fig = plt.figure(0, figsize=(16, 11))
         if task == 'shaving':
             task_name = 'Shaving'
         elif task == 'arm_cuffs':
             task_name = 'Arm Hygiene'
         elif task == 'wiping_mouth':
             task_name = 'Wiping Mouth'
+        elif task == 'feeding_trajectory':
+            task_name == 'Feeding'
         if model == 'autobed':
             model_name = 'Autobed'
         elif model == 'chair':
             model_name = 'Wheelchair'
+        plt.suptitle(task_name + ' Task in ' + model_name + ' Environment', fontsize='26')
         # plt.suptitle('Scores for Robot Configurations for ' + task_name + ' Task in ' + model_name + ' Environment', fontsize='26')
         subplot_num = 120
         for score_type in ['accuracy', 'toc_score']:
@@ -592,7 +634,7 @@ class Manipulability_Testing(object):
             ax.set_xlabel('X-Axis Direction (m)')
             ax.set_ylabel('Y-Axis Direction (m)')
             if score_type == 'accuracy':
-                descriptor = 'IK'
+                descriptor = '% of Goals with Valid IK'
             else:
                 descriptor = 'TOC'
             ax.set_title('Scoring using '+descriptor)
@@ -604,10 +646,10 @@ class Manipulability_Testing(object):
             # if score_type == 'accuracy':
             # co = plt.get_cmap('gist_rainbow')
             cmap1 = plt.get_cmap('gist_rainbow')
-            colors1 = cmap1(np.linspace(0, 0.4, 20))
+            colors1 = cmap1(np.linspace(0, 0.39, 40))
             cmap1 = LinearSegmentedColormap.from_list('my_cmap1', colors1)
             cmap2 = plt.get_cmap('gist_rainbow')
-            colors2 = cmap2(np.linspace(0.4, 0.7, 20))
+            colors2 = cmap2(np.linspace(0.39, 0.7, 40))
             cmap2 = LinearSegmentedColormap.from_list('my_cmap2', colors2)
             # else:
             #     co1 = plt.get_cmap('gist_rainbow')
@@ -632,20 +674,23 @@ class Manipulability_Testing(object):
                         # color = co(0.4 * isc / 10.)
                         color = cmap1(isc/ 10.)
                     else:
-                        color = cmap2( (isc- np.min(filter(lambda t: t > 10., score_list))) /
-                                       (np.max(score_list)-np.min(filter(lambda t: t > 10., score_list))))
+                        # color = cmap2( (isc- np.min(filter(lambda t: t > 10., score_list))) /
+                        #                (np.max(score_list)-np.min(filter(lambda t: t > 10., score_list))))
+                        color = cmap2((isc - 10.0) / 0.4)
                 ax.add_artist(Rectangle(xy=(ix - discretization_size_xy/2., iy - discretization_size_xy/2.),
                                                color=color,
                                                width=discretization_size_xy, height=discretization_size_xy))  # Gives a square of area h*h
-            for ix, iy, ith, isc in zip(x, y, th, score_list):
-                if isc > 0.:
-                    ax.arrow(ix, iy, m.cos(ith)*discretization_size_xy/2., m.sin(ith)*discretization_size_xy/2.,
-                             width=0.002, head_width=discretization_size_xy/4., length_includes_head=True,
-                             head_length=discretization_size_xy/4., overhang=0.0)
+            plot_arrows = False
+            if plot_arrows:
+                for ix, iy, ith, isc in zip(x, y, th, score_list):
+                    if isc > 0.:
+                        ax.arrow(ix, iy, m.cos(ith)*discretization_size_xy/2., m.sin(ith)*discretization_size_xy/2.,
+                                 width=0.002, head_width=discretization_size_xy/4., length_includes_head=True,
+                                 head_length=discretization_size_xy/4., overhang=0.0)
 
             if model == 'autobed':
                 ax.add_artist(Rectangle(xy=[-0.04, -0.4515], width=2.201, height=0.903,
-                                        facecolor='gray', edgecolor='black', linewidth=3, alpha = 0.5))
+                                        facecolor='lightgray', edgecolor='black', linewidth=3, alpha = 1.0))
                 ax.add_artist(Ellipse(xy=[0.54302, 0.], width=0.20, height=0.20, angle=0.,
                                             fill=False, linewidth=3))
                 plt.text(0.66, -0.03, 'Head Location', fontsize=16)
@@ -666,18 +711,18 @@ class Manipulability_Testing(object):
 
         # ax = plt.subplot(subplot_num, aspect='equal')
         # cax = plt.axes([0.85, 0.1, 0.075, 0.8])
-        ax1 = fig.add_axes([0.47, 0.10, 0.02, 0.4])
-        ax2 = fig.add_axes([0.47, 0.5, 0.02, 0.4])
+        ax1 = fig.add_axes([0.2, 0.87, 0.3, 0.02])
+        ax2 = fig.add_axes([0.5, 0.87, 0.3, 0.02])
         # ax1 = plt.subplot(133, )
         # ax2 = fig.add_axes([0.05, 0.475, 0.9, 0.15])
         # ax3 = fig.add_axes([0.05, 0.15, 0.9, 0.15])
 
-        cmap1 = plt.get_cmap('gist_rainbow')
-        colors1 = cmap1(np.linspace(0, 0.4, 20))
-        cmap1 = LinearSegmentedColormap.from_list('my_cmap1', colors1)
-        cmap2 = plt.get_cmap('gist_rainbow')
-        colors2 = cmap2(np.linspace(0.4, 0.7, 20))
-        cmap2 = LinearSegmentedColormap.from_list('my_cmap2', colors2)
+        # cmap1 = plt.get_cmap('gist_rainbow')
+        # colors1 = cmap1(np.linspace(0, 0.4, 20))
+        # cmap1 = LinearSegmentedColormap.from_list('my_cmap1', colors1)
+        # cmap2 = plt.get_cmap('gist_rainbow')
+        # colors2 = cmap2(np.linspace(0.4, 0.7, 20))
+        # cmap2 = LinearSegmentedColormap.from_list('my_cmap2', colors2)
 
         # Set the colormap and norm to correspond to the data for which
         # the colorbar will be used.
@@ -692,16 +737,21 @@ class Manipulability_Testing(object):
         # and labels.
         cb1 = mpl.colorbar.ColorbarBase(ax1, cmap=cmap1, drawedges=False,
                                         # norm=norm,
-                                        orientation='vertical')
+                                        orientation='horizontal')
         cb1.set_ticks([0., 1.0])
-        cb1.set_ticklabels(['0.0', '1.0'])
+        cb1.set_ticklabels(['0.00', '1.00'])
 
 
         cb2 = mpl.colorbar.ColorbarBase(ax2, cmap=cmap2, drawedges=False,
                                         norm=norm,
-                                        orientation='vertical')
+                                        orientation='horizontal')
         cb2.set_ticks([1.4])
-        cb2.set_ticklabels(['1.4'])
+        cb2.set_ticklabels(['1.04'])
+        cb1.ax.xaxis.set_label_position('top')
+        cb1.set_label('Score 0 - 1.00', fontsize=20)
+
+        cb2.ax.xaxis.set_label_position('top')
+        cb2.set_label('Score 1.00 - 1.04', fontsize=20)
 
         # for item in [cb1.get_yticklabels(), cb2.get_yticklabels()]:
         #     item.set_fontsize(20)
@@ -713,6 +763,7 @@ class Manipulability_Testing(object):
         print 'Done with all plots!'
         plt.show()
         fig2 = plt.figure(2)
+        rospy.spin()
 
     def robustness_calculation(self, task, model, method, discretization_size, search_area, reset_save_file=False, save_results=False):
         save_file_path = self.pkg_path + '/data/'
@@ -756,6 +807,12 @@ class Manipulability_Testing(object):
             score = loaded_score[0][1]
             time_to_calc = loaded_score[1]
         # print best_bases
+        # best_bases = np.array([[0.18913063, 0.53040653],
+        #                        [0.85105287, -1.04501416],
+        #                        [-2.46988855, -6.09521216],
+        #                        [0.29999997, 0.3],
+        #                        [0., 0.],
+        #                        [0., 0.]])
         if len(np.shape(best_bases)) == 1:
             best_bases = np.reshape(best_bases,[len(best_bases),1])
 
@@ -778,7 +835,7 @@ class Manipulability_Testing(object):
             save_file_name = 'robustness_visualization_results_' + task + '_' + model + '_' + str(base) + '.log'
             if reset_save_file:
                 open(save_file_path + save_file_name, 'w').close()
-                open(save_file_path + 'raw_' + save_file_name, 'w').close()
+                # open(save_file_path + 'raw_' + save_file_name, 'w').close()
             if base == 0 or base == 1:
                 best_base = np.reshape(best_bases[:, base],[6,1])
             else:
@@ -796,6 +853,7 @@ class Manipulability_Testing(object):
                 for nx, i in enumerate(np.arange(-eval_range/2.,eval_range/2.+discretization_size/5., discretization_size)):
                     # location[nx,ny] = [i, j]
                     error = [i, j, 0, 0, 0, 0]
+                    # error = [0.,0.,0,0,0,0]
                     accuracy[nx,ny], success[nx,ny] = self.evaluate_configuration_mc(model, task, best_base, goal_data,
                                                                                  raw_reference_names, error=error)
                     # x[ny*num_calcs+nx] = i
@@ -821,30 +879,50 @@ class Manipulability_Testing(object):
         save_file_path = self.pkg_path + '/data/'
 
         plot_ids = []
-
+        self.fig_num += 1
         file_list = os.listdir(save_file_path)
         for item in file_list:
             if base_file_name in item:
                 item = filter(None, re.split('[_.]', item))
                 plot_ids.append(int(item[-2]))
         num_plots = np.max(plot_ids)+1
+        if plot_ids == []:
+            return
 
-        print 'Preparing plot visualization. Will make', num_plots+1, 'total plots'
-        fig_num = 0
-        fig = plt.figure(fig_num, figsize=(24, 10))
-        colors_acc = ['red', 'orange', 'yellow', 'green']
-        labels_acc = ['<0.05', '0.05 - 0.5', '0.5 - 0.99', '1.0']
+        print 'Preparing plot visualization. Will make', num_plots, 'total plots'
+
         if task == 'shaving':
             task_name = 'Shaving'
         elif task == 'arm_cuffs':
-            task_name = 'Arm Hygiene'
+            task_name = 'Cleaning Arms'
         elif task == 'wiping_mouth':
             task_name = 'Wiping Mouth'
+        elif task == 'scratching_upper_arm_left':
+            task_name = 'Scratching Left Upper Arm'
+        elif task == 'scratching_knee_left':
+            task_name = 'Scratcing Left Knee'
+        elif task == 'scratching_knee_right':
+            task_name = 'Scratcing Right Knee'
+        elif task == 'scratching_upper_arm_left':
+            task_name = 'Scratcing Left Upper Arm'
+        elif task == 'scratching_upper_arm_right':
+            task_name = 'Scratcing Right Upper Arm'
+        elif task == 'bathe_legs':
+            task_name = 'Cleaning Legs'
+        elif task == 'feeding_trajectory':
+            task_name = 'Feeding'
         if model == 'autobed':
-            model_name = 'Autobed'
+            model_name = 'Robotic Bed'
         elif model == 'chair':
             model_name = 'Wheelchair'
-        plt.suptitle('Accuracy vs Error for '+task_name + ' Task in '+model_name, fontsize='26')
+
+        if num_plots == 3:
+            fig = plt.figure(self.fig_num, figsize=(24, 10))
+            plt.suptitle('Accuracy with Human Pose Error for ' + task_name + ' Task in ' + model_name, fontsize='26')
+        else:
+            fig = plt.figure(self.fig_num)
+        colors_acc = ['red', 'orange', 'yellow', 'green']
+        labels_acc = ['<0.05', '0.05 - 0.5', '0.5 - 0.99', '1.0']
 
         for base in xrange(num_plots):
             print 'Starting plot', base+1
@@ -866,11 +944,12 @@ class Manipulability_Testing(object):
                 subplot_num = 111
 
             ax = plt.subplot(subplot_num, aspect='equal')
+
             # ax.set_title('Task Accuracy: Shaving Task')
-            ax.set_xlim(-search_area / 2.0 - discretization_size-0.5, search_area / 2.0 + discretization_size+0.5)
-            ax.set_ylim(-search_area / 2.0 - discretization_size-0.5, search_area / 2.0 + discretization_size+0.5)
-            ax.set_xlim(-1.3, 1.3)
-            ax.set_ylim(-1.3, 1.3)
+            # ax.set_xlim(-search_area / 2.0 - discretization_size-0.5, search_area / 2.0 + discretization_size+0.5)
+            # ax.set_ylim(-search_area / 2.0 - discretization_size-0.5, search_area / 2.0 + discretization_size+0.5)
+            # ax.set_xlim(-1.3, 1.3)
+            # ax.set_ylim(-1.3, 1.3)
             ax.set_xlabel('X-Axis Human Pose Error (m)')
             ax.set_ylabel('Y-Axis Human Pose Error (m)')
             ax.grid(True, linestyle='dotted')
@@ -888,30 +967,44 @@ class Manipulability_Testing(object):
             ax.set_ylim(-search_area / 2.0 - discretization_size,
                         search_area / 2.0 + discretization_size)
             co = plt.get_cmap('gist_rainbow')
-            for result in result_cluster:
-                acc_x = []
-                acc_y = []
-                for i in xrange(len(accuracy_list)):
-                    if accuracy_list[i] >= result[0] and accuracy_list[i] < result[1]:
-                        acc_x.append(x[i])
-                        acc_y.append(y[i])
 
-                for ix, iy in zip(acc_x, acc_y):
-                    plt.gca().add_artist(Rectangle(xy=(ix - 0.005, iy - 0.005),
-                                                   color=colors_acc[result_cluster.index(result)],
-                                                   label=labels_acc[result_cluster.index(result)],
-                                                   width=0.01, height=0.01))  # Gives a square of area h*h
+            # for result in result_cluster:
+            #     acc_x = []
+            #     acc_y = []
+            #     for i in xrange(len(accuracy_list)):
+            #         if accuracy_list[i] >= result[0] and accuracy_list[i] < result[1]:
+            #             acc_x.append(x[i])
+            #             acc_y.append(y[i])
+            #
+            #     for ix, iy in zip(acc_x, acc_y):
+            #         plt.gca().add_artist(Rectangle(xy=(ix - 0.005, iy - 0.005),
+            #                                        color=colors_acc[result_cluster.index(result)],
+            #                                        label=labels_acc[result_cluster.index(result)],
+            #                                        width=0.01, height=0.01))  # Gives a square of area h*h
 
-                    # ax.legend()
+            cmap1 = plt.get_cmap('gist_rainbow')
+            colors1 = cmap1(np.linspace(0, 0.7, 40))
+            cmap1 = LinearSegmentedColormap.from_list('my_cmap1', colors1)
+            # cmap2 = plt.get_cmap('gist_rainbow')
+            # colors2 = cmap2(np.linspace(0.4, 0.7, 20))
+            # cmap2 = LinearSegmentedColormap.from_list('my_cmap2', colors2)
+
+            for ix, iy, isc in zip(x, y, accuracy_list):
+                color = cmap1(isc)
+                ax.add_artist(Rectangle(xy=(ix - discretization_size/2., iy - discretization_size/2.),
+                                               color=color,
+                                               width=discretization_size, height=discretization_size))  # Gives a square of area h*h
+
             ell = Ellipse(xy=[0., 0.], width=0.2, height=0.2, angle=0., fill=False, linewidth=3)
             # ax.add_artist(ell)
 
-            colors_acc = ['red', 'orange', 'yellow', 'green']
-            labels_acc = ['<5%', '5-49%', '50-99%', '100%']
-            ax.scatter(10, 10, marker='s', s=200., edgecolors='none', label=labels_acc[0], c=colors_acc[0])
-            ax.scatter(10, 10, marker='s', s=200., edgecolors='none', label=labels_acc[1], c=colors_acc[1])
-            ax.scatter(10, 10, marker='s', s=200., edgecolors='none', label=labels_acc[2], c=colors_acc[2])
-            ax.scatter(10, 10, marker='s', s=200., edgecolors='none', label=labels_acc[3], c=colors_acc[3])
+
+            # colors_acc = ['red', 'orange', 'yellow', 'green']
+            # labels_acc = ['<5%', '5-49%', '50-99%', '100%']
+            # ax.scatter(10, 10, marker='s', s=200., edgecolors='none', label=labels_acc[0], c=colors_acc[0])
+            # ax.scatter(10, 10, marker='s', s=200., edgecolors='none', label=labels_acc[1], c=colors_acc[1])
+            # ax.scatter(10, 10, marker='s', s=200., edgecolors='none', label=labels_acc[2], c=colors_acc[2])
+            # ax.scatter(10, 10, marker='s', s=200., edgecolors='none', label=labels_acc[3], c=colors_acc[3])
             # ax.add_artist(Rectangle(xy=[10, 10], width=0.05, height=0.05,
             #                         label=labels_acc[0],
             #                         color=colors_acc[0]))
@@ -936,15 +1029,17 @@ class Manipulability_Testing(object):
             elif base == 1:
                 conf = '2nd config'
             elif base == 2:
-                conf = 'both configs'
+                conf = 'Both configs'
             else:
                 print 'ERROR: base is not what I expect based on num_plots!'
-            ax.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
-                      ncol=2, mode="expand", borderaxespad=0., fontsize=20,
-                      title='% Goals Reached: '+conf, scatterpoints = 1)
+            if num_plots == 3:
+                ax.set_title(conf, fontsize=20)
+            # ax.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
+            #           ncol=2, mode="expand", borderaxespad=0., fontsize=20,
+            #           title='% Goals Reached: '+conf, scatterpoints = 1)
             # ax.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3,loc='upper center'
             #           ncol=2, mode="expand", borderaxespad=0.)
-            ax.get_legend().get_title().set_fontsize(20)
+            # ax.get_legend().get_title().set_fontsize(20)
             # ax.legend()
             # ax.set_zorder(20)
             print 'Finished plot', base+1
@@ -960,13 +1055,37 @@ class Manipulability_Testing(object):
         # ax.add_patch(yellow_patch)
         # ax.add_patch(green_patch)
 
+
+        plt.tight_layout()
+
+        # cmap1 = plt.get_cmap('gist_rainbow')
+        # colors1 = cmap1(np.linspace(0, 0.38, 20))
+        # cmap1 = LinearSegmentedColormap.from_list('my_cmap1', colors1)
+        if num_plots == 1:
+            ax.set_title('Accuracy with State Estimation Error \nfor ' + task_name + ' in ' + model_name, fontsize='26')
+            ax1 = fig.add_axes([0.85, 0.20, 0.02, 0.7])
+            cb1 = mpl.colorbar.ColorbarBase(ax1, cmap=cmap1, drawedges=False,
+                                            orientation='vertical')
+        else:
+            ax1 = fig.add_axes([0.2, 0.88, 0.6, 0.02])
+            cb1 = mpl.colorbar.ColorbarBase(ax1, cmap=cmap1, drawedges=False,
+                                            orientation='horizontal')
+            cb1.ax.xaxis.set_label_position('top')
+        cb1.set_label('% Goals with Valid IK Solution', fontsize=20)
+        # cb1.ax.xaxis.set_label_position('top')
+
+        cb1.set_ticks([0., 0.5, 1.0])
+        cb1.set_ticklabels(['0%', '50%', '100%'])
+        cb1.ax.tick_params(labelsize=20)
+
         # ax.legend(handles=[red_patch, orange_patch, yellow_patch, green_patch], fontsize=20,
         #           bbox_to_anchor=(0.9, 1), loc=2, borderaxespad=0.)
         print 'Saving figure!'
         plt.savefig(save_file_path+'robustness_fig_'+task+'_' + model + '.png',bbox_inches="tight",)
         print 'Done with all plots!'
-        plt.show()
-        fig2 = plt.figure(2)
+        # plt.show()
+        # fig2 = plt.figure(2)
+        # rospy.spin()
 
     def evaluate_configuration_mc(self, model, task, config, goals, reference_names, seed=None, error=None):
         if seed is None:
@@ -1317,28 +1436,30 @@ if __name__ == "__main__":
     comparison_type_options = ['comparison', 'toc_correlation',
                                'robustness_visualization', 'plot_comparison',
                                'base_brute_evaluation','plot_base_brute_evaluation']
-    comparison_type = comparison_type_options[4]
+    comparison_type = comparison_type_options[3]
 
-    rospy.init_node('manipulability_test_cma'+comparison_type)
+    rospy.init_node('manipulability_test_cma'+comparison_type+str(time.time()).split('.')[0])
     myTest = Manipulability_Testing(visualize=False)
 
     if comparison_type == 'comparison':
+        print 'Doing TOC comparison'
         myTest.load_scores()
         seed = 100
         # myTest.run_comparisons_monty_carlo(reset_save_file=True, save_results=True, mc_sim_number=200, seed=seed)
         myTest.run_comparisons_monty_carlo(reset_save_file=False, save_results=False, mc_sim_number=100, seed=seed,
-                                           force_key=['wiping_mouth', 'toc', 'cma', 'autobed'], use_error=False)
+                                           force_key=['wiping_mouth', 'inverse_reachability', 'cma', 'chair'], use_error=False)
 
     if comparison_type == 'plot_comparison':
+        print 'Doing plotting of TOC comparison'
         myTest.comparisons_monty_carlo_plotting()
         rospy.spin()
 
     elif comparison_type == 'toc_correlation':
+        print 'Doing toc correlation'
         seed = 100
         models = ['autobed']  # 'autobed', 'chair'
             # for task in ['wiping_mouth', 'scratching_knee_left', 'scratching_knee_left', 'scratching_upper_arm_left', 'scratching_upper_arm_right', 'scratching_forearm_left', 'scratching_forearm_right']: #'wiping_face', 'scratching_knee_left', 'scratching_forearm_left','scratching_upper_arm_left']:#'scratching_knee_left', 'scratching_knee_right', 'scratching_thigh_left', 'scratching_thigh_right']:
-        tasks = ['wiping_mouth', 'scratching_knee_left', 'scratching_knee_right', 'scratching_thigh_left',
-                 'scratching_thigh_right']  # 'wiping_mouth', 'scratching_knee_left','scratching_knee_right','scratching_thigh_left', 'scratching_thigh_right'
+        tasks = ['wiping_mouth']  # 'wiping_mouth', 'scratching_knee_left','scratching_knee_right','scratching_thigh_left', 'scratching_thigh_right'
         this_start_time = rospy.Time.now()
         myTest.toc_correlation_evaluation(tasks, models, number_samples=100, mc_sim_number=200,
                                           reset_save_file=True, save_results=True, seed=seed)
@@ -1347,6 +1468,7 @@ if __name__ == "__main__":
         # print 'Done! Time to generate all scores for all tasks: %fs' % (time.time() - full_start_time)
 
     elif comparison_type == 'robustness_visualization':
+        print 'Doing robustness visualization'
         seed = 1000
         search_area = 0.7
         discretization_size = 0.01  # centimeters
@@ -1355,39 +1477,57 @@ if __name__ == "__main__":
         method = 'toc' #inverse_reachability_collision
         this_start_time = rospy.Time.now()
         myTest.load_scores()
-        # myTest.robustness_calculation(task, model, method, discretization_size, search_area,
-        #                               reset_save_file=True, save_results=True)
-        myTest.robustness_plotting(task, model, method, discretization_size, search_area)
+        tasks = [ 'shaving', 'arm_cuffs', 'wiping_mouth', 'scratching_knee_left', 'scratching_knee_right', 'scratching_upper_arm_left','scratching_upper_arm_right',
+                  'feeding_trajectory', 'bathe_legs']#, 'shaving' ,'wiping_mouth', 'bathe_legs']
+        models = ['chair' ]#, 'autobed' ]
+        for model in models:
+            for task in tasks:
+                # myTest.robustness_calculation(task, model, method, discretization_size, search_area,
+                #                               reset_save_file=True, save_results=True)
+                myTest.robustness_plotting(task, model, method, discretization_size, search_area)
+                gc.collect()
         print 'Done! Time to generate all scores for this task, method, and sampling:', (
         rospy.Time.now() - this_start_time).to_sec()
 
         # gc.collect()
-        rospy.spin()
+        # rospy.spin()
 
     elif comparison_type == 'base_brute_evaluation':
+        print 'Doing brute force evaluation of base locations for bed'
         discretization_size_xy = 0.05  # centimeters
         discretization_size_theta = m.radians(45.)
         discretization_size_z = 0.15
         model = 'autobed'
         task = 'wiping_mouth'  # 'shaving', 'wiping_mouth', 'arm_cuffs'
+        models = ['autobed', 'chair']
+        tasks = ['feeding_trajectory'] # 'shaving', 'wiping_mouth', 'arm_cuffs'
         method = 'toc'  # inverse_reachability_collision
         this_start_time = rospy.Time.now()
-        myTest.base_brute_evaluation(task, model,
-                              discretization_size_xy,
-                              discretization_size_theta,
-                              discretization_size_z,
-                              reset_save_file=False, save_results=False)
-        myTest.plot_base_brute_evaluation(task, model, discretization_size_xy)
+        for model in models:
+            for task in tasks:
+                myTest.base_brute_evaluation(task, model,
+                                      discretization_size_xy,
+                                      discretization_size_theta,
+                                      discretization_size_z,
+                                      reset_save_file=False, save_results=False)
+                gc.collect()
+        # myTest.base_brute_evaluation(task, model,
+        #                              discretization_size_xy,
+        #                              discretization_size_theta,
+        #                              discretization_size_z,
+        #                              reset_save_file=True, save_results=True)
+        # myTest.plot_base_brute_evaluation(task, model, discretization_size_xy)
         print 'Done! Time to generate all scores for this task, method, and sampling:', (
             rospy.Time.now() - this_start_time).to_sec()
-        rospy.spin()
+        # rospy.spin()
 
     elif comparison_type == 'plot_base_brute_evaluation':
+        print 'Plotting brute force evaluation'
         discretization_size_xy = 0.05  # centimeters
         model = 'autobed'
         task = 'wiping_mouth'  # 'shaving', 'wiping_mouth', 'arm_cuffs'
         myTest.plot_base_brute_evaluation(task, model, discretization_size_xy)
-        rospy.spin()
+        # rospy.spin()
 
 
 

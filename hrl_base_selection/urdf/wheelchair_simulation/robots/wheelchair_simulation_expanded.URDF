@@ -168,7 +168,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/neck_link.STL" />
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/neck_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
       <material
         name="">
@@ -182,7 +182,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/neck_link.STL" />
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/neck_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
     </collision>
   </link>
@@ -268,7 +268,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/head_link.STL" />
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/head_link.STL" scale="1.1 1.1 1.1"/>
       </geometry>
       <material
         name="">
@@ -282,7 +282,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/head_link.STL" />
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/head_link.STL" scale="1.1 1.1 1.1"/>
       </geometry>
     </collision>
   </link>
@@ -312,7 +312,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/upper_body_link.STL" />
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/upper_body_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
       <material
         name="">
@@ -326,7 +326,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/upper_body_link.STL" />
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/upper_body_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
     </collision>
   </link>
@@ -356,7 +356,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/mid_body_link.STL" />
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/mid_body_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
       <material
         name="">
@@ -370,7 +370,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/mid_body_link.STL" />
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/mid_body_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
     </collision>
   </link>
@@ -400,7 +400,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/lower_body_link.STL" />
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/lower_body_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
       <material
         name="">
@@ -414,7 +414,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/lower_body_link.STL" />
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/lower_body_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
     </collision>
   </link>
@@ -444,7 +444,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/quad_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/quad_left_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
       <material
         name="">
@@ -458,7 +458,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/quad_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/quad_left_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
     </collision>
   </link>
@@ -488,7 +488,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/calf_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/calf_left_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
       <material
         name="">
@@ -502,7 +502,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/calf_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/calf_left_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
     </collision>
   </link>
@@ -532,7 +532,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/foot_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/foot_left_link.STL" scale="1.5 1.2 1.5"/>
       </geometry>
       <material
         name="">
@@ -546,7 +546,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/foot_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/foot_left_link.STL" scale="1.5 1.2 1.5"/>
       </geometry>
     </collision>
   </link>
@@ -576,7 +576,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/quad_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/quad_right_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
       <material
         name="">
@@ -590,7 +590,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/quad_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/quad_right_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
     </collision>
   </link>
@@ -620,7 +620,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/calf_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/calf_right_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
       <material
         name="">
@@ -634,7 +634,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/calf_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/calf_right_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
     </collision>
   </link>
@@ -664,7 +664,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/foot_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/foot_right_link.STL" scale="1.5 1.2 1.5"/>
       </geometry>
       <material
         name="">
@@ -678,7 +678,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/foot_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/foot_right_link.STL" scale="1.5 1.2 1.5"/>
       </geometry>
     </collision>
   </link>
@@ -708,7 +708,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/arm_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/arm_left_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
       <material
         name="">
@@ -722,7 +722,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/arm_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/arm_left_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
     </collision>
   </link>
@@ -752,7 +752,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/forearm_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/forearm_left_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
       <material
         name="">
@@ -766,7 +766,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/forearm_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/forearm_left_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
     </collision>
   </link>
@@ -796,7 +796,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/hand_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/hand_left_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
       <material
         name="">
@@ -810,7 +810,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/hand_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/hand_left_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
     </collision>
   </link>
@@ -840,7 +840,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/arm_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/arm_right_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
       <material
         name="">
@@ -854,7 +854,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/arm_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/arm_right_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
     </collision>
   </link>
@@ -884,7 +884,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/forearm_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/forearm_right_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
       <material
         name="">
@@ -898,7 +898,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/forearm_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/forearm_right_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
     </collision>
   </link>
@@ -928,7 +928,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/hand_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/hand_right_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
       <material
         name="">
@@ -942,7 +942,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/hand_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/hand_right_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
     </collision>
   </link>

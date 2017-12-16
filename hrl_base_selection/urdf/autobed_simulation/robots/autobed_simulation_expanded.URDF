@@ -78,7 +78,7 @@
   </link>
   <joint
     name="autobed/origin_wall_joint"
-    type="fixed">
+    type="prismatic">
     <origin
       xyz="0.610627419320058 -0.185260000000017 0.574890377092537"
       rpy="-0.00650994084197508 0.0370393769946504 -0.174021765425405" />
@@ -87,7 +87,12 @@
     <child
       link="autobed/wall_link" />
     <axis
-      xyz="0 0 0" />
+      xyz="0.984220866265583 0.172903665695305 0.0375979892620764" />
+    <limit
+      lower="-3"
+      upper="3"
+      effort="0"
+      velocity="0" />
   </joint>
   <link
    name="autobed/bed_frame_link">
@@ -279,7 +284,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/expanded/head_rest_link.STL" />
+          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/expanded/head_rest_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
     </collision>
   </link>
@@ -459,7 +464,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/neck_link.STL" />
+          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/neck_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
       <material
         name="">
@@ -473,7 +478,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/neck_link.STL" />
+          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/neck_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
     </collision>
   </link>
@@ -560,7 +565,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/head_link.STL" />
+          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/head_link.STL" scale="1.1 1.1 1.1"/>
       </geometry>
       <material
         name="">
@@ -574,7 +579,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/head_link.STL" />
+          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/head_link.STL" scale="1.1 1.1 1.1"/>
       </geometry>
     </collision>
   </link>
@@ -604,7 +609,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/upper_body_link.STL" />
+          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/upper_body_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
       <material
         name="">
@@ -618,7 +623,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/upper_body_link.STL" />
+          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/upper_body_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
     </collision>
   </link>
@@ -648,7 +653,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/mid_body_link.STL" />
+          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/mid_body_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
       <material
         name="">
@@ -662,7 +667,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/mid_body_link.STL" />
+          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/mid_body_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
     </collision>
   </link>
@@ -692,7 +697,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/lower_body_link.STL" />
+          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/lower_body_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
       <material
         name="">
@@ -706,7 +711,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/lower_body_link.STL" />
+          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/lower_body_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
     </collision>
   </link>
@@ -736,7 +741,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/quad_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/quad_left_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
       <material
         name="">
@@ -750,7 +755,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/quad_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/quad_left_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
     </collision>
   </link>
@@ -780,7 +785,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/calf_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/calf_left_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
       <material
         name="">
@@ -794,7 +799,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/calf_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/calf_left_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
     </collision>
   </link>
@@ -824,7 +829,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/foot_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/foot_left_link.STL" scale="1.5 1.2 1.5"/>
       </geometry>
       <material
         name="">
@@ -838,7 +843,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/foot_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/foot_left_link.STL" scale="1.5 1.2 1.5"/>
       </geometry>
     </collision>
   </link>
@@ -868,7 +873,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/quad_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/quad_right_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
       <material
         name="">
@@ -882,7 +887,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/quad_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/quad_right_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
     </collision>
   </link>
@@ -912,7 +917,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/calf_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/calf_right_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
       <material
         name="">
@@ -926,7 +931,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/calf_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/calf_right_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
     </collision>
   </link>
@@ -956,7 +961,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/foot_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/foot_right_link.STL" scale="1.5 1.2 1.5"/>
       </geometry>
       <material
         name="">
@@ -970,7 +975,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/foot_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/foot_right_link.STL" scale="1.5 1.2 1.5"/>
       </geometry>
     </collision>
   </link>
@@ -1000,7 +1005,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/arm_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/arm_left_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
       <material
         name="">
@@ -1014,7 +1019,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/arm_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/arm_left_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
     </collision>
   </link>
@@ -1044,7 +1049,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/forearm_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/forearm_left_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
       <material
         name="">
@@ -1058,7 +1063,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/forearm_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/forearm_left_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
     </collision>
   </link>
@@ -1088,7 +1093,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/hand_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/hand_left_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
       <material
         name="">
@@ -1102,7 +1107,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/hand_left_link.STL" />
+          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/hand_left_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
     </collision>
   </link>
@@ -1132,7 +1137,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/arm_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/arm_right_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
       <material
         name="">
@@ -1146,7 +1151,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/arm_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/arm_right_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
     </collision>
   </link>
@@ -1176,7 +1181,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/forearm_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/forearm_right_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
       <material
         name="">
@@ -1190,7 +1195,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/forearm_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/forearm_right_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
     </collision>
   </link>
@@ -1220,7 +1225,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/hand_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/hand_right_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
       <material
         name="">
@@ -1234,7 +1239,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/hand_right_link.STL" />
+          filename="package://hrl_base_selection/urdf/autobed_simulation/meshes/hand_right_link.STL" scale="1.0 1.3 1.3"/>
       </geometry>
     </collision>
   </link>

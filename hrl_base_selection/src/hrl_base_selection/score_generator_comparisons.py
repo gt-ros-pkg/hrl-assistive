@@ -444,7 +444,7 @@ class ScoreGenerator(object):
         self.a_model_is_loaded = True
         return True
 
-    def handle_score_generation(self, plot=False, method='toc', sampling='cma', seed=None):
+    def handle_score_generation(self, plot=False, method='toc', sampling='cma', seed=None,force_allow_additional_movement=False):
         if seed is None:
             seed = int(time.time())
         scoring_start_time = rospy.Time.now()
@@ -453,7 +453,7 @@ class ScoreGenerator(object):
             return None
         print 'Starting to generate the score. This is going to take a while.'
         # Results are stored in the following format:
-        # optimization_results[<task>, <method>, <sampling>, <model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_bed_movement>]
+        # optimization_results[<task>, <method>, <sampling>, <model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_additional_movement>]
         # Negative head read angle means head rest angle is a free DoF.
         self.ir_and_collision = False
         if method == 'inverse_reachability' or method == 'inverse_reachability_collision':
@@ -463,10 +463,12 @@ class ScoreGenerator(object):
                 self.ir_and_collision = False
             self.ireach = InverseReachabilitySetup(visualize=False, redo_ik=False,
                                                    redo_reachability=False, redo_ir=False, manip='leftarm')
-        if method == 'inverse_reachability' or method == 'inverse_reachability_collision' or method == 'ik':
-            bed_movement = [0, 1]
+        if (method == 'inverse_reachability' or method == 'inverse_reachability_collision' or method == 'ik') and not force_allow_additional_movement:
+            additional_movement = [0, 1]
         else:
-            bed_movement = [1]
+            additional_movement = [0, 1]
+        start_positions_y = [0.85, -0.85]
+
 
         acceptable_termination_criteria = ['tolfun', 'tolfunhist', 'tolx','tolstagnation','conditioncov']
 
@@ -483,22 +485,23 @@ class ScoreGenerator(object):
         # score_parameters = []
         # score_parameters.append([self.model, ])
         if self.model == 'autobed':
-            score_parameters = ([t for t in ((tuple([self.task, method, sampling, self.model, num_configs, head_rest_angle, headx, heady, allow_bed_movement]))
+            score_parameters = ([t for t in ((tuple([self.task, method, sampling, self.model, num_configs, head_rest_angle, headx, heady, allow_additional_movement]))
                                              for num_configs in [1, 2]
                                              for head_rest_angle in head_rest_range
                                              for headx in head_x_range
                                              for heady in head_y_range
-                                             for allow_bed_movement in bed_movement
+                                             for allow_additional_movement in additional_movement
                                              )
                                  ])
         elif self.model == 'chair':
-            if (self.task == 'wiping_mouth' or self.task == 'shaving' or
-                        self.task == 'feeding_trajectory' or self.task == 'brushing' or
-                        self.task == 'wiping_forehead') and method == 'toc':
-                self.head_angles = np.array([[68, 10], [68, 0], [68, -10], [0, 0], [-68, 10], [68, 0], [-68, -10]])
-                self.head_angles = np.array([[60., 0.], [0., 0.], [-60., 0.]])
+            # if (self.task == 'wiping_mouth' or self.task == 'shaving' or
+            #             self.task == 'feeding_trajectory' or self.task == 'brushing' or
+            #             self.task == 'wiping_forehead') and method == 'toc':
+            #     self.head_angles = np.array([[68, 10], [68, 0], [68, -10], [0, 0], [-68, 10], [68, 0], [-68, -10]])
+            #     self.head_angles = np.array([[60., 0.], [0., 0.], [-60., 0.]])
             score_parameters = ([t for t in ((tuple([self.task, method, sampling, self.model, num_configs, 0, 0, 0, 0]))
                                              for num_configs in [1,2]
+                                             for allow_additional_movement in additional_movement
                                              )
                                  ])
         else:
@@ -510,466 +513,484 @@ class ScoreGenerator(object):
 
         optimization_results = dict.fromkeys(score_parameters)
         score_stuff = dict.fromkeys(score_parameters)
-        # optimization_results[<task>, <method>, <sampling> ,<model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_bed_movement>]
+        # optimization_results[<task>, <method>, <sampling> ,<model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_additional_movement>]
         for parameters in score_parameters:
             parameter_start_time = rospy.Time.now()
             print 'Generating score for the following parameters: '
-            print '[<task>, <method>, <sampling>,  <model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_bed_movement>]'
+            print '[<task>, <method>, <sampling>,  <model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_additional_movement>]'
             print parameters
 
-            maxiter = 1000
-            popsize = 40
-            this_seed = seed
-            parameter_termination_satisfied = False
-            while not parameter_termination_satisfied:
+            self.best_config = None
+            self.best_score = 1000.
 
-                if parameters[1] != 'toc' and parameters[4] ==2:
-                    score_stuff[parameters] = [np.zeros([6, 1]), 10.,
-                                               (rospy.Time.now() - parameter_start_time).to_sec()]
-                    parameter_termination_satisfied = True
-                else:
-                    self.best_config = None
-                    self.best_score = 1000.
+            if parameters[4] == 1 and parameters[2] == 'cma':
+                init_start_positions_y = [0.85, -0.85]
+            else:
+                init_start_positions_y = [[0.85, -0.85]]
+            for start_position_y in init_start_positions_y:
+                maxiter = 1000
+                popsize = 40
+                this_seed = seed
+                parameter_termination_satisfied = False
+                while not parameter_termination_satisfied:
 
-                    num_config = parameters[4]
-                    self.head_rest_angle = parameters[5]
-                    self.headx = parameters[6]
-                    self.heady = parameters[7]
-                    self.allow_bed_movement = parameters[8]
-        #            self.heady=0.03
+                    if parameters[1] != 'toc' and parameters[4] ==2:
+                        score_stuff[parameters] = [np.zeros([6, 1]), 10.,
+                                                   (rospy.Time.now() - parameter_start_time).to_sec()]
+                        parameter_termination_satisfied = True
+                    else:
+                        num_config = parameters[4]
+                        self.head_rest_angle = parameters[5]
+                        self.headx = parameters[6]
+                        self.heady = parameters[7]
+                        self.allow_additional_movement = parameters[8]
+            #            self.heady=0.03
 
-                    if num_config == 1:
-                        if self.model == 'chair':
-                            # maxiter = 15
-                            # popsize = 1000
-                            # popsize = m.pow(4, 2)*100
-                            parameters_min = np.array([0.0, -1.7,  m.radians(-360.) - 0.0001, 0.])
-                            parameters_max = np.array([2.5, 1.7,  m.radians(360.) + 0.0001, 0.3])
-                            parameters_scaling = (parameters_max-parameters_min)/8.
-                            #parameters_scaling[2] = (parameters_max[2]-parameters_min[2])/4.
-                            #parameters_scaling[3] = (parameters_max[3]-parameters_min[3])/2.
-                            parameters_initialization = (parameters_max+parameters_min)/2.
-
-                            if sampling == 'cma':
-                                opts1 = {'seed': seed, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter, 'maxfevals': 1e8, 'CMA_cmean': 0.25, 'tolfun':1e-3, 'tolfunhist':1e-12,'tolx':5e-4,'maxstd':4.0,'tolstagnation':100,
-                                         'CMA_stds': list(parameters_scaling),
-                                         'bounds': [list(parameters_min), list(parameters_max)]}
-
-                                if method == 'toc':
-                                    # optimization_results[<method>, <sampling>, <model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_bed_movement>]
-                                    optimization_results[parameters] = cma.fmin(self.objective_function_one_config_toc_sample,
-                                                                                            list(parameters_initialization),
-                                                                                            1.,restarts=0,
-                                                                                            options=opts1)
-                                elif method == 'inverse_reachability' or method == 'inverse_reachability_collision':
-                                    # optimization_results[<method>, <sampling>, <model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_bed_movement>]
-                                    optimization_results[parameters] = cma.fmin(self.objective_function_one_config_ireach_sample,
-                                                                                list(parameters_initialization),
-                                                                                1.,restarts=0,
-                                                                                options=opts1)
-                                elif method == 'ik':
-                                    opts1 = {'seed': seed, 'ftarget': 0., 'popsize': popsize, 'maxiter': maxiter,
-                                             'maxfevals': 1e8, 'CMA_cmean': 0.25,'tolfun':1e-3, 'tolfunhist':1e-12, 'tolx':5e-4,'maxstd':4.0,'tolstagnation':100,
-                                             'CMA_stds': list(parameters_scaling),
-                                             'bounds': [list(parameters_min), list(parameters_max)]}
-                                    # optimization_results[<method>, <sampling>, <model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_bed_movement>]
-                                    optimization_results[parameters] = cma.fmin(
-                                        self.objective_function_one_config_ik_sample,
-                                        list(parameters_initialization),
-                                        1.,restarts=0,
-                                        options=opts1)
-                                else:
-                                    print 'Unknown method!'
-                                    return False
-                                config = optimization_results[parameters][0]
-                                score = optimization_results[parameters][1]
-                            elif sampling == 'uniform':
-                                self.best_config = None
-                                self.best_score = 1000.
-                                random_state = np.random.RandomState(seed=seed)
-                                samples = random_state.uniform(parameters_min, parameters_max,
-                                                               [maxiter*popsize,len(parameters_min)])
-                                if method == 'toc':
-                                    for sample in samples:
-                                        self.objective_function_one_config_toc_sample(sample)
-                                elif method == 'inverse_reachability' or method == 'inverse_reachability_collision':
-                                    for sample in samples:
-                                        self.objective_function_one_config_ireach_sample(sample)
-                                elif method == 'ik':
-                                    for sample in samples:
-                                        self.objective_function_one_config_ik_sample(sample)
-                                        if self.best_score < 0.0001 or self.best_score == 0.:
-                                            break
-                                config = self.best_config
-                                score = self.best_score
-                            elif sampling == 'gaussian':
-                                self.best_config = None
-                                self.best_score = 1000.
-                                random_state = np.random.RandomState(seed=seed)
-                                samples = random_state.normal(parameters_initialization, parameters_scaling,
-                                                              [maxiter * popsize, len(parameters_scaling)])
-                                if method == 'toc':
-                                    for sample in samples:
-                                        self.objective_function_one_config_toc_sample(sample)
-                                elif method == 'inverse_reachability' or method == 'inverse_reachability_collision':
-                                    for sample in samples:
-                                        self.objective_function_one_config_ireach_sample(sample)
-                                elif method == 'ik':
-                                    for sample in samples:
-                                        self.objective_function_one_config_ik_sample(sample)
-                                        if self.best_score < 0.0001 or self.best_score == 0.:
-                                            break
-                                config = self.best_config
-                                score = self.best_score
-                            print 'Config: ', config
-                            print 'Score: ', score
-                            if len(config) == 4:
-                                config = np.insert(config, 4, 0.)
-                                config = np.insert(config, 4, 0.)
-                            #score_stuff = dict()
-                            # optimization_results[<method>, <sampling>, <model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_bed_movement>]
-                            config = np.resize(config, [6, 1])
-                            score_stuff[parameters] = [config, score, (rospy.Time.now() - parameter_start_time).to_sec()]
-
-                        elif self.model == 'autobed':
-                            # maxiter = 10
-                            # popsize = 100
-            #                popsize = m.pow(6, 2)*100
-            #                 popsize = 1500
-                            if self.allow_bed_movement == 0:
-                                parameters_min = np.array([0.3, -1.7, m.radians(-360.) - 0.0001, 0.])
-                                parameters_max = np.array([3.0, 1.7, m.radians(360.) + .0001, 0.3])
-                                parameters_scaling = (parameters_max - parameters_min) / 3.
-                            else:
-                                parameters_min = np.array([0.3, -1.7, m.radians(-360.)-0.0001, 0., 0., 0.*m.pi/180.])
-                                parameters_max = np.array([3.0, 1.7, m.radians(360.)+.0001, 0.3, 0.25, 75.*m.pi/180.])
-                                parameters_scaling = (parameters_max-parameters_min)/8.
-                                #parameters_scaling[5] = (parameters_max[5]-parameters_min[5])/2.
-                            #parameters_scaling[2] = (parameters_max[2]-parameters_min[2])/4.
-                            #parameters_scaling[3] = (parameters_max[3]-parameters_min[3])/2.
-                            parameters_initialization = (parameters_max+parameters_min)/2.
-
-                            if sampling == 'cma':
-                                opts1 = {'seed': 1234, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter, 'maxfevals': 1e8, 'CMA_cmean': 0.25,'tolfun':1e-3, 'tolfunhist':1e-12,'tolx':5e-4,'maxstd':4.0,'tolstagnation':100,
-                                         'CMA_stds': list(parameters_scaling),
-                                         'bounds': [list(parameters_min),
-                                                    list(parameters_max)]}
-                                if method == 'toc':
-                                    # optimization_results[<method>, <sampling>, <model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_bed_movement>]
-                                    optimization_results[parameters] = cma.fmin(self.objective_function_one_config_toc_sample,
-                                                                                list(parameters_initialization),
-                                                                                1.,restarts=0,
-                                                                                options=opts1)
-                                elif method == 'inverse_reachability' or method == 'inverse_reachability_collision':
-                                    # optimization_results[<method>, <sampling>, <model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_bed_movement>]
-                                    optimization_results[parameters] = cma.fmin(self.objective_function_one_config_ireach_sample,
-                                                                                list(parameters_initialization),
-                                                                                1.,restarts=0,
-                                                                                options=opts1)
-                                elif method == 'ik':
-                                    opts1 = {'seed': 1234, 'ftarget': 0., 'popsize': popsize, 'maxiter': maxiter,
-                                             'maxfevals': 1e8, 'CMA_cmean': 0.25,'tolfun':1e-3, 'tolfunhist':1e-12,'tolx':5e-4,'maxstd':4.0,'tolstagnation':100,
-                                             'CMA_stds': list(parameters_scaling),
-                                             'bounds': [list(parameters_min), list(parameters_max)]}
-                                    # optimization_results[<method>, <sampling>, <model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_bed_movement>]
-                                    optimization_results[parameters] = cma.fmin(
-                                        self.objective_function_one_config_ik_sample,
-                                        list(parameters_initialization),
-                                        1.,restarts=0,
-                                        options=opts1)
-                                else:
-                                    print 'Unknown method!'
-                                    return False
-                                config = optimization_results[parameters][0]
-                                score = optimization_results[parameters][1]
-                            elif sampling == 'uniform':
-                                self.best_config = None
-                                self.best_score = 1000.
-                                random_state = np.random.RandomState(seed=seed)
-                                samples = random_state.uniform(parameters_min, parameters_max,
-                                                               [maxiter*popsize,len(parameters_min)])
-                                if method == 'toc':
-                                    for sample in samples:
-                                        self.objective_function_one_config_toc_sample(sample)
-                                elif method == 'inverse_reachability' or method == 'inverse_reachability_collision':
-                                    for sample in samples:
-                                        self.objective_function_one_config_ireach_sample(sample)
-                                elif method == 'ik':
-                                    for sample in samples:
-                                        self.objective_function_one_config_ik_sample(sample)
-                                        if self.best_score < 0.0001 or self.best_score ==0.:
-                                            break
-                                else:
-                                    print 'Unknown method!'
-                                    return False
-                                config = self.best_config
-                                score = self.best_score
-                            elif sampling == 'gaussian':
-                                self.best_config = None
-                                self.best_score = 1000.
-                                random_state = np.random.RandomState(seed=seed)
-                                samples = random_state.normal(parameters_initialization, parameters_scaling,
-                                                              [maxiter * popsize, len(parameters_scaling)])
-                                if method == 'toc':
-                                    for sample in samples:
-                                        self.objective_function_one_config_toc_sample(sample)
-                                elif method == 'inverse_reachability' or method == 'inverse_reachability_collision':
-                                    for sample in samples:
-                                        self.objective_function_one_config_ireach_sample(sample)
-                                elif method == 'ik':
-                                    for sample in samples:
-                                        self.objective_function_one_config_ik_sample(sample)
-                                        if self.best_score < 0.0001 or self.best_score == 0.:
-                                            break
-                                else:
-                                    print 'Unknown method!'
-                                    return False
-                                config = self.best_config
-                                score = self.best_score
-                            if len(config) == 4:
-                                config = np.insert(config, 4, 0.)
-                                config = np.insert(config, 4, 0.)
-                            config = np.resize(config, [6, 1])
-                            print 'Config: ', config
-                            print 'Score: ', score
-                            print 'Time to find scores for this set of parameters: %fs' % ((rospy.Time.now()-parameter_start_time).to_sec())
-                            #score_stuff = dict()
-                            # optimization_results[<method>, <sampling>, <model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_bed_movement>]
-                            score_stuff[parameters] = [config, score, (rospy.Time.now() - parameter_start_time).to_sec()]
-
-                    elif num_config == 2:
-                        self.best_scores = np.array([1000., 1000., 1000.])
-                        # maxiter = 10
-                        # popsize = m.pow(4, 2)*100
-                        if self.allow_bed_movement == 0 and self.model == 'autobed':
-                            parameters_min = np.array([0.3, -1.7, m.radians(-360.) - 0.0001, 0.,
-                                                       0.3, -1.7, m.radians(-360.) - 0.0001, 0.])
-                            parameters_max = np.array([3.0, 1.7, m.radians(360.) + .0001, 0.3,
-                                                       3.0, 1.7, m.radians(360.) + .0001, 0.3])
-                        if self.model == 'chair':
-                            parameters_min = np.array([0., -1.7, m.radians(-360.) - 0.0001, 0.,
-                                                       0., -1.7, m.radians(-360.) - 0.0001, 0.])
-                            parameters_max = np.array([2.5, 1.7, m.radians(360.) + 0.0001, 0.3,
-                                                       2.5, 1.7, m.radians(360.) + 0.0001, 0.3])
-                        if (self.allow_bed_movement == 0 and self.model == 'autobed') or self.model == 'chair':
-                            parameters_scaling = (parameters_max-parameters_min)/8.
-                            parameters_scaling[1] = (parameters_max[1]-parameters_min[1])/16.
-                            parameters_scaling[5] = (parameters_max[5]-parameters_min[5])/16.
-                            #parameters_scaling[2] = (parameters_max[2]-parameters_min[2])/4.
-                            #parameters_scaling[6] = (parameters_max[6]-parameters_min[6])/4.
-                            #parameters_scaling[3] = (parameters_max[3]-parameters_min[3])/2.
-                            #parameters_scaling[7] = (parameters_max[7]-parameters_min[7])/2.
-                            parameters_initialization = (parameters_max+parameters_min)/2.
-                            parameters_initialization[1] = 0.85
-                            parameters_initialization[5] = -0.85
-                            if sampling == 'cma':
-                                opts2 = {'seed': seed, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter, 'maxfevals': 1e8, 'CMA_cmean': 0.25,'tolfun':1e-3, 'tolfunhist':1e-12,'tolx':5e-4,'maxstd':4.0,'tolstagnation':100,
-                                         'CMA_stds': list(parameters_scaling),
-                                         'bounds': [list(parameters_min),
-                                                    list(parameters_max)]}
-                                if method == 'toc':
-                                    # optimization_results[2, self.heady, self.start_x, self.start_y] = [t for t in ((cma.fmin(self.objective_function_two_config_toc_sample,
-                                    print 'Working on heady location:', self.heady
-                                    # optimization_results[<model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_bed_movement>]
-                                    optimization_results[parameters] = cma.fmin(self.objective_function_two_config_toc_sample,
-                                                                                # [0.75, 0.75, 0., 0.15, 0.75, -0.75, 0., 0.15],
-                                                                                list(parameters_initialization),
-                                                                                # [0., 0., 0., 0.15, 0.1, 35*m.pi/180, 0., 0., 0., 0.15, 0.1, 35*m.pi/180],
-                                                                                1.,restarts=0,
-                                                                                options=opts2)
-                                # print optimization_results[2, self.heady, self.start_x, self.start_y][0]
-                                config = optimization_results[parameters][0]
-                                score = optimization_results[parameters][1]
-                                scores = self.best_scores
-                            elif sampling == 'uniform':
-                                self.best_config = None
-                                self.best_score = 1000.
-                                random_state = np.random.RandomState(seed=seed)
-                                samples = np.hstack([random_state.uniform(parameters_min[0:(len(parameters_min) / 2)],
-                                                                          parameters_max[0:(len(parameters_min) / 2)],
-                                                                          [maxiter*popsize,len(parameters_min)/2]),
-                                                     random_state.uniform(parameters_min[0:(len(parameters_min) / 2)],
-                                                                          parameters_max[0:(len(parameters_min) / 2)],
-                                                                          [maxiter * popsize, len(parameters_min) / 2])])
-                                if method == 'toc':
-                                    for sample in samples:
-                                        self.objective_function_two_config_toc_sample(sample)
-                                else:
-                                    print 'Unknown method to do multiple base configurations!'
-                                    return False
-                                config = self.best_config
-                                score = self.best_score
-                                scores = self.best_scores
-                            elif sampling == 'gaussian':
-                                self.best_config = None
-                                self.best_score = 1000.
-                                random_state = np.random.RandomState(seed=seed)
-                                samples = np.hstack([random_state.normal(parameters_initialization[0:(len(parameters_scaling) / 2)],
-                                                                         parameters_scaling[0:(len(parameters_scaling) / 2)],
-                                                                         [maxiter * popsize, len(parameters_scaling) / 2]),
-                                                     random_state.normal(parameters_initialization[0:(len(parameters_scaling) / 2)],
-                                                                         parameters_scaling[0:(len(parameters_scaling) / 2)],
-                                                                         [maxiter * popsize, len(parameters_scaling) / 2])])
-                                if method == 'toc':
-                                    for sample in samples:
-                                        self.objective_function_two_config_toc_sample(sample)
-                                else:
-                                    print 'Unknown method to do multiple base configurations!'
-                                    return False
-                                config = self.best_config
-                                score = self.best_score
-                                scores = self.best_scores
-                            print 'Config: ', config
-                            print 'Score: ', score
-                            print 'Time to find scores for this set of parameters: %fs' % ((rospy.Time.now()-parameter_start_time).to_sec())
-                            config = np.insert(config, 4, 0.)
-                            config = np.insert(config, 4, 0.)
-                            config = np.insert(config, 10, 0.)
-                            config = np.insert(config, 10, 0.)
-                            #optimization_results[parameters] = [config, score]
-                            # optimization_results[2, self.heady, self.start_x, self.start_y][0] = np.insert(optimization_results[2, self.heady, self.start_x, self.start_y][0], 4, 0.)
-                            # optimization_results[2, self.heady, self.start_x, self.start_y][0] = np.insert(optimization_results[2, self.heady, self.start_x, self.start_y][0], 10, 0.)
-                            # optimization_results[2, self.heady, self.start_x, self.start_y][0] = np.insert(optimization_results[2, self.heady, self.start_x, self.start_y][0], 10, 0.)
-                        elif self.head_rest_angle > -1.:
-                            # Deactivated head rest angle
-                            # Parameters are: [x, y, th, z, bz, bth]
-                            # maxiter = 10
-                            # popsize = m.pow(5, 2)*100
-                            parameters_min = np.array([0.2, -3., -m.pi-.001, 0., 0., 0.2, -3., -m.pi-.001, 0., 0.])
-                            # parameters_max = np.array([3., 3., m.pi+.001, 0.3, 0.2, 3., 3., m.pi+.001, 0.3, 0.2])
-                            # At Henry's the bed can only range a few centimeters because of the overbed table
-                            parameters_max = np.array([3., 3., m.pi+.001, 0.3, 0.08, 3., 3., m.pi+.001, 0.3, 0.08])
-                            parameters_scaling = (parameters_max-parameters_min)/3.
-                            parameters_initialization = (parameters_max+parameters_min)/2.
-                            parameters_initialization[1] = 1.0
-                            parameters_initialization[6] = -1.0
-                            opts2 = {'seed': 1234, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter, 'maxfevals': 1e8, 'CMA_cmean': 0.25,'tolfun':1e-3, 'tolfunhist':1e-12,'tolx':5e-4,'maxstd':4.0,'tolstagnation':100,
-                                     'CMA_stds': list(parameters_scaling),
-                                     'bounds': [list(parameters_min),
-                                                list(parameters_max)]}
-
-                            # optimization_results[2, self.heady, self.start_x, self.start_y] = [t for t in ((cma.fmin(self.objective_function_two_config_toc_sample,
-                            print 'Working on heady location:', self.heady
-                            optimization_results[parameters] = cma.fmin(self.objective_function_two_config_toc_sample,
-                                                                        list(parameters_initialization),
-                                                                        # [0.75, 0.75, 0., 0.15, 0., 0.75, -0.75, 0., 0.15, 0.],
-                                                                        # [0., 0., 0., 0.15, 0.1, 35*m.pi/180, 0., 0., 0., 0.15, 0.1, 35*m.pi/180],
-                                                                        1.,restarts=1,
-                                                                        options=opts2)
-                            # for self.start_x in np.arange(start_x_min, start_x_max, start_x_int)
-                            # for self.start_y in np.arange(start_y_min, start_y_max, start_y_int)
-                            # for self.heady in np.arange(heady_min, heady_max, heady_int)
-                            config = optimization_results[parameters][0]
-                            score = optimization_results[parameters][1]
-                            config = np.insert(config, 5, np.radians(self.head_rest_angle))
-                            config = np.insert(config, 11, np.radians(self.head_rest_angle))
-                            optimization_results[parameters] = [config, score]
+                        if self.allow_additional_movement == 1 and self.model == 'chair':
+                            self.head_angles = np.array([[45., 0.], [0., 0.], [-45., 0.]])
                         else:
+                            self.head_angles = np.array([[0., 0.]])
+
+                        if num_config == 1:
+                            if self.model == 'chair':
+                                # maxiter = 15
+                                # popsize = 1000
+                                # popsize = m.pow(4, 2)*100
+                                parameters_min = np.array([0.0, -1.7,  m.radians(-360.) - 0.0001, 0.])
+                                parameters_max = np.array([2.5, 1.7,  m.radians(360.) + 0.0001, 0.3])
+                                parameters_scaling = (parameters_max-parameters_min)/8.
+                                #parameters_scaling[2] = (parameters_max[2]-parameters_min[2])/4.
+                                #parameters_scaling[3] = (parameters_max[3]-parameters_min[3])/2.
+                                parameters_initialization = (parameters_max+parameters_min)/2.
+                                parameters_initialization[1] = start_position_y
+                                parameters_scaling[1] = (parameters_max[1] - parameters_min[1]) / 16.
+
+                                if sampling == 'cma':
+                                    opts1 = {'seed': seed, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter, 'maxfevals': 1e8, 'CMA_cmean': 0.25, 'tolfun':1e-3, 'tolfunhist':1e-12,'tolx':5e-4,'maxstd':4.0,'tolstagnation':100,
+                                             'CMA_stds': list(parameters_scaling),
+                                             'bounds': [list(parameters_min), list(parameters_max)]}
+
+                                    if method == 'toc':
+                                        # optimization_results[<method>, <sampling>, <model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_additional_movement>]
+                                        optimization_results[parameters] = cma.fmin(self.objective_function_one_config_toc_sample,
+                                                                                                list(parameters_initialization),
+                                                                                                1.,restarts=0,
+                                                                                                options=opts1)
+                                    elif method == 'inverse_reachability' or method == 'inverse_reachability_collision':
+                                        # optimization_results[<method>, <sampling>, <model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_additional_movement>]
+                                        optimization_results[parameters] = cma.fmin(self.objective_function_one_config_ireach_sample,
+                                                                                    list(parameters_initialization),
+                                                                                    1.,restarts=0,
+                                                                                    options=opts1)
+                                    elif method == 'ik':
+                                        opts1 = {'seed': seed, 'ftarget': 0., 'popsize': popsize, 'maxiter': maxiter,
+                                                 'maxfevals': 1e8, 'CMA_cmean': 0.25,'tolfun':1e-3, 'tolfunhist':1e-12, 'tolx':5e-4,'maxstd':4.0,'tolstagnation':100,
+                                                 'CMA_stds': list(parameters_scaling),
+                                                 'bounds': [list(parameters_min), list(parameters_max)]}
+                                        # optimization_results[<method>, <sampling>, <model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_additional_movement>]
+                                        optimization_results[parameters] = cma.fmin(
+                                            self.objective_function_one_config_ik_sample,
+                                            list(parameters_initialization),
+                                            1.,restarts=0,
+                                            options=opts1)
+                                    else:
+                                        print 'Unknown method!'
+                                        return False
+                                    config = self.best_config
+                                    score = self.best_score
+                                elif sampling == 'uniform':
+                                    # self.best_config = None
+                                    # self.best_score = 1000.
+                                    random_state = np.random.RandomState(seed=seed)
+                                    samples = random_state.uniform(parameters_min, parameters_max,
+                                                                   [maxiter*popsize,len(parameters_min)])
+                                    if method == 'toc':
+                                        for sample in samples:
+                                            self.objective_function_one_config_toc_sample(sample)
+                                    elif method == 'inverse_reachability' or method == 'inverse_reachability_collision':
+                                        for sample in samples:
+                                            self.objective_function_one_config_ireach_sample(sample)
+                                    elif method == 'ik':
+                                        for sample in samples:
+                                            self.objective_function_one_config_ik_sample(sample)
+                                            if self.best_score < 0.0001 or self.best_score == 0.:
+                                                break
+                                    config = self.best_config
+                                    score = self.best_score
+                                elif sampling == 'gaussian':
+                                    # self.best_config = None
+                                    # self.best_score = 1000.
+                                    random_state = np.random.RandomState(seed=seed)
+                                    samples = random_state.normal(parameters_initialization, parameters_scaling,
+                                                                  [maxiter * popsize, len(parameters_scaling)])
+                                    if method == 'toc':
+                                        for sample in samples:
+                                            self.objective_function_one_config_toc_sample(sample)
+                                    elif method == 'inverse_reachability' or method == 'inverse_reachability_collision':
+                                        for sample in samples:
+                                            self.objective_function_one_config_ireach_sample(sample)
+                                    elif method == 'ik':
+                                        for sample in samples:
+                                            self.objective_function_one_config_ik_sample(sample)
+                                            if self.best_score < 0.0001 or self.best_score == 0.:
+                                                break
+                                    config = self.best_config
+                                    score = self.best_score
+                                print 'Config: ', config
+                                print 'Score: ', score
+                                if len(config) == 4:
+                                    config = np.insert(config, 4, 0.)
+                                    config = np.insert(config, 4, 0.)
+                                #score_stuff = dict()
+                                # optimization_results[<method>, <sampling>, <model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_additional_movement>]
+                                config = np.resize(config, [6, 1])
+                                score_stuff[parameters] = [config, score, (rospy.Time.now() - parameter_start_time).to_sec()]
+
+                            elif self.model == 'autobed':
+                                # maxiter = 10
+                                # popsize = 100
+                #                popsize = m.pow(6, 2)*100
+                #                 popsize = 1500
+                                if self.allow_additional_movement == 0:
+                                    parameters_min = np.array([0.3, -1.7, m.radians(-360.) - 0.0001, 0.])
+                                    parameters_max = np.array([3.0, 1.7, m.radians(360.) + .0001, 0.3])
+                                    parameters_scaling = (parameters_max - parameters_min) / 3.
+                                else:
+                                    parameters_min = np.array([0.3, -1.7, m.radians(-360.)-0.0001, 0., 0., 0.*m.pi/180.])
+                                    parameters_max = np.array([3.0, 1.7, m.radians(360.)+.0001, 0.3, 0.25, 75.*m.pi/180.])
+                                    parameters_scaling = (parameters_max-parameters_min)/8.
+                                    #parameters_scaling[5] = (parameters_max[5]-parameters_min[5])/2.
+                                #parameters_scaling[2] = (parameters_max[2]-parameters_min[2])/4.
+                                #parameters_scaling[3] = (parameters_max[3]-parameters_min[3])/2.
+                                parameters_initialization = (parameters_max+parameters_min)/2.
+                                parameters_initialization[1] = start_position_y
+                                parameters_scaling[1] = (parameters_max[1] - parameters_min[1]) / 16.
+
+                                if sampling == 'cma':
+                                    opts1 = {'seed': 1234, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter, 'maxfevals': 1e8, 'CMA_cmean': 0.25,'tolfun':1e-3, 'tolfunhist':1e-12,'tolx':5e-4,'maxstd':4.0,'tolstagnation':100,
+                                             'CMA_stds': list(parameters_scaling),
+                                             'bounds': [list(parameters_min),
+                                                        list(parameters_max)]}
+                                    if method == 'toc':
+                                        # optimization_results[<method>, <sampling>, <model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_additional_movement>]
+                                        optimization_results[parameters] = cma.fmin(self.objective_function_one_config_toc_sample,
+                                                                                    list(parameters_initialization),
+                                                                                    1.,restarts=0,
+                                                                                    options=opts1)
+                                    elif method == 'inverse_reachability' or method == 'inverse_reachability_collision':
+                                        # optimization_results[<method>, <sampling>, <model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_additional_movement>]
+                                        optimization_results[parameters] = cma.fmin(self.objective_function_one_config_ireach_sample,
+                                                                                    list(parameters_initialization),
+                                                                                    1.,restarts=0,
+                                                                                    options=opts1)
+                                    elif method == 'ik':
+                                        opts1 = {'seed': 1234, 'ftarget': 0., 'popsize': popsize, 'maxiter': maxiter,
+                                                 'maxfevals': 1e8, 'CMA_cmean': 0.25,'tolfun':1e-3, 'tolfunhist':1e-12,'tolx':5e-4,'maxstd':4.0,'tolstagnation':100,
+                                                 'CMA_stds': list(parameters_scaling),
+                                                 'bounds': [list(parameters_min), list(parameters_max)]}
+                                        # optimization_results[<method>, <sampling>, <model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_additional_movement>]
+                                        optimization_results[parameters] = cma.fmin(
+                                            self.objective_function_one_config_ik_sample,
+                                            list(parameters_initialization),
+                                            1.,restarts=0,
+                                            options=opts1)
+                                    else:
+                                        print 'Unknown method!'
+                                        return False
+                                    config = self.best_config
+                                    score = self.best_score
+                                elif sampling == 'uniform':
+                                    # self.best_config = None
+                                    # self.best_score = 1000.
+                                    random_state = np.random.RandomState(seed=seed)
+                                    samples = random_state.uniform(parameters_min, parameters_max,
+                                                                   [maxiter*popsize,len(parameters_min)])
+                                    if method == 'toc':
+                                        for sample in samples:
+                                            self.objective_function_one_config_toc_sample(sample)
+                                    elif method == 'inverse_reachability' or method == 'inverse_reachability_collision':
+                                        for sample in samples:
+                                            self.objective_function_one_config_ireach_sample(sample)
+                                    elif method == 'ik':
+                                        for sample in samples:
+                                            self.objective_function_one_config_ik_sample(sample)
+                                            if self.best_score < 0.0001 or self.best_score ==0.:
+                                                break
+                                    else:
+                                        print 'Unknown method!'
+                                        return False
+                                    config = self.best_config
+                                    score = self.best_score
+                                elif sampling == 'gaussian':
+                                    # self.best_config = None
+                                    # self.best_score = 1000.
+                                    random_state = np.random.RandomState(seed=seed)
+                                    samples = random_state.normal(parameters_initialization, parameters_scaling,
+                                                                  [maxiter * popsize, len(parameters_scaling)])
+                                    if method == 'toc':
+                                        for sample in samples:
+                                            self.objective_function_one_config_toc_sample(sample)
+                                    elif method == 'inverse_reachability' or method == 'inverse_reachability_collision':
+                                        for sample in samples:
+                                            self.objective_function_one_config_ireach_sample(sample)
+                                    elif method == 'ik':
+                                        for sample in samples:
+                                            self.objective_function_one_config_ik_sample(sample)
+                                            if self.best_score < 0.0001 or self.best_score == 0.:
+                                                break
+                                    else:
+                                        print 'Unknown method!'
+                                        return False
+                                    config = self.best_config
+                                    score = self.best_score
+                                if len(config) == 4:
+                                    config = np.insert(config, 4, 0.)
+                                    config = np.insert(config, 4, 0.)
+                                config = np.resize(config, [6, 1])
+                                print 'Config: ', config
+                                print 'Score: ', score
+                                print 'Time to find scores for this set of parameters: %fs' % ((rospy.Time.now()-parameter_start_time).to_sec())
+                                #score_stuff = dict()
+                                # optimization_results[<method>, <sampling>, <model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_additional_movement>]
+                                score_stuff[parameters] = [config, score, (rospy.Time.now() - parameter_start_time).to_sec()]
+
+                        elif num_config == 2:
+                            self.best_scores = np.array([1000., 1000., 1000.])
                             # maxiter = 10
-                            # popsize = m.pow(6, 2)*100
-                            parameters_min = np.array([0.3, -1.7, m.radians(-360.) - 0.0001, 0., 0., 0.*m.pi/180.,
-                                                       0.3, -1.7, m.radians(-360.) - 0.0001, 0., 0., 0.*m.pi/180.])
-                             # parameters_max = np.array([ 3.,  3.,  m.pi+.001, 0.3, 0.2, 80.*m.pi/180.,  3.,  3.,  m.pi+.001, 0.3, 0.2, 80.*m.pi/180.])
-                            # Henry's bed can only rise a few centimeters because of the overbed table
-                            parameters_max = np.array([3.0, 1.7, m.radians(360.) + .0001, 0.3, 0.25, 75.*m.pi/180.,
-                                                       3.0, 1.7, m.radians(360.) + .0001, 0.3, 0.25, 75.*m.pi/180.])
-                            parameters_scaling = (parameters_max-parameters_min)/8.
-                            parameters_scaling[1] = (parameters_max[1]-parameters_min[1])/16.
-                            parameters_scaling[7] = (parameters_max[7]-parameters_min[7])/16.
-                            #parameters_scaling[2] = (parameters_max[2]-parameters_min[2])/4.
-                            #parameters_scaling[8] = (parameters_max[8]-parameters_min[8])/4.
-                            #parameters_scaling[3] = (parameters_max[3]-parameters_min[3])/2.
-                            #parameters_scaling[9] = (parameters_max[9]-parameters_min[9])/2.
-                            parameters_initialization = (parameters_max+parameters_min)/2.
-                            parameters_initialization[1] = 0.85
-                            parameters_initialization[7] = -0.85
-                            # Parameters are: [x, y, th, z, bz, bth]
-                            if sampling == 'cma':
-                                opts2 = {'seed': seed, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter, 'maxfevals': 1e8, 'CMA_cmean': 0.25,'tolfun':1e-3, 'tolfunhist':1e-12,'tolx':5e-4,'maxstd':4.0,'tolstagnation':100,
+                            # popsize = m.pow(4, 2)*100
+                            if self.allow_additional_movement == 0 and self.model == 'autobed':
+                                parameters_min = np.array([0.3, -1.7, m.radians(-360.) - 0.0001, 0.,
+                                                           0.3, -1.7, m.radians(-360.) - 0.0001, 0.])
+                                parameters_max = np.array([3.0, 1.7, m.radians(360.) + .0001, 0.3,
+                                                           3.0, 1.7, m.radians(360.) + .0001, 0.3])
+                            if self.model == 'chair':
+                                parameters_min = np.array([0., -1.7, m.radians(-360.) - 0.0001, 0.,
+                                                           0., -1.7, m.radians(-360.) - 0.0001, 0.])
+                                parameters_max = np.array([2.5, 1.7, m.radians(360.) + 0.0001, 0.3,
+                                                           2.5, 1.7, m.radians(360.) + 0.0001, 0.3])
+                            if (self.allow_additional_movement == 0 and self.model == 'autobed') or self.model == 'chair':
+                                parameters_scaling = (parameters_max-parameters_min)/8.
+                                parameters_scaling[1] = (parameters_max[1]-parameters_min[1])/16.
+                                parameters_scaling[5] = (parameters_max[5]-parameters_min[5])/16.
+                                #parameters_scaling[2] = (parameters_max[2]-parameters_min[2])/4.
+                                #parameters_scaling[6] = (parameters_max[6]-parameters_min[6])/4.
+                                #parameters_scaling[3] = (parameters_max[3]-parameters_min[3])/2.
+                                #parameters_scaling[7] = (parameters_max[7]-parameters_min[7])/2.
+                                parameters_initialization = (parameters_max+parameters_min)/2.
+                                parameters_initialization[1] = start_position_y[0]
+                                parameters_initialization[5] = start_position_y[1]
+                                if sampling == 'cma':
+                                    opts2 = {'seed': seed, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter, 'maxfevals': 1e8, 'CMA_cmean': 0.25,'tolfun':1e-3, 'tolfunhist':1e-12,'tolx':5e-4,'maxstd':4.0,'tolstagnation':100,
+                                             'CMA_stds': list(parameters_scaling),
+                                             'bounds': [list(parameters_min),
+                                                        list(parameters_max)]}
+                                    if method == 'toc':
+                                        # optimization_results[2, self.heady, self.start_x, self.start_y] = [t for t in ((cma.fmin(self.objective_function_two_config_toc_sample,
+                                        print 'Working on heady location:', self.heady
+                                        # optimization_results[<model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_additional_movement>]
+                                        optimization_results[parameters] = cma.fmin(self.objective_function_two_config_toc_sample,
+                                                                                    # [0.75, 0.75, 0., 0.15, 0.75, -0.75, 0., 0.15],
+                                                                                    list(parameters_initialization),
+                                                                                    # [0., 0., 0., 0.15, 0.1, 35*m.pi/180, 0., 0., 0., 0.15, 0.1, 35*m.pi/180],
+                                                                                    1.,restarts=0,
+                                                                                    options=opts2)
+                                    # print optimization_results[2, self.heady, self.start_x, self.start_y][0]
+                                    config = self.best_config
+                                    score = self.best_score
+                                    scores = self.best_scores
+                                elif sampling == 'uniform':
+                                    # self.best_config = None
+                                    # self.best_score = 1000.
+                                    random_state = np.random.RandomState(seed=seed)
+                                    samples = np.hstack([random_state.uniform(parameters_min[0:(len(parameters_min) / 2)],
+                                                                              parameters_max[0:(len(parameters_min) / 2)],
+                                                                              [maxiter*popsize,len(parameters_min)/2]),
+                                                         random_state.uniform(parameters_min[0:(len(parameters_min) / 2)],
+                                                                              parameters_max[0:(len(parameters_min) / 2)],
+                                                                              [maxiter * popsize, len(parameters_min) / 2])])
+                                    if method == 'toc':
+                                        for sample in samples:
+                                            self.objective_function_two_config_toc_sample(sample)
+                                    else:
+                                        print 'Unknown method to do multiple base configurations!'
+                                        return False
+                                    config = self.best_config
+                                    score = self.best_score
+                                    scores = self.best_scores
+                                elif sampling == 'gaussian':
+                                    # self.best_config = None
+                                    # self.best_score = 1000.
+                                    random_state = np.random.RandomState(seed=seed)
+                                    samples = np.hstack([random_state.normal(parameters_initialization[0:(len(parameters_scaling) / 2)],
+                                                                             parameters_scaling[0:(len(parameters_scaling) / 2)],
+                                                                             [maxiter * popsize, len(parameters_scaling) / 2]),
+                                                         random_state.normal(parameters_initialization[0:(len(parameters_scaling) / 2)],
+                                                                             parameters_scaling[0:(len(parameters_scaling) / 2)],
+                                                                             [maxiter * popsize, len(parameters_scaling) / 2])])
+                                    if method == 'toc':
+                                        for sample in samples:
+                                            self.objective_function_two_config_toc_sample(sample)
+                                    else:
+                                        print 'Unknown method to do multiple base configurations!'
+                                        return False
+                                    config = self.best_config
+                                    score = self.best_score
+                                    scores = self.best_scores
+                                print 'Config: ', config
+                                print 'Score: ', score
+                                print 'Time to find scores for this set of parameters: %fs' % ((rospy.Time.now()-parameter_start_time).to_sec())
+                                config = np.insert(config, 4, 0.)
+                                config = np.insert(config, 4, 0.)
+                                config = np.insert(config, 10, 0.)
+                                config = np.insert(config, 10, 0.)
+                                #optimization_results[parameters] = [config, score]
+                                # optimization_results[2, self.heady, self.start_x, self.start_y][0] = np.insert(optimization_results[2, self.heady, self.start_x, self.start_y][0], 4, 0.)
+                                # optimization_results[2, self.heady, self.start_x, self.start_y][0] = np.insert(optimization_results[2, self.heady, self.start_x, self.start_y][0], 10, 0.)
+                                # optimization_results[2, self.heady, self.start_x, self.start_y][0] = np.insert(optimization_results[2, self.heady, self.start_x, self.start_y][0], 10, 0.)
+                            elif self.head_rest_angle > -1.:
+                                # Deactivated head rest angle
+                                # Parameters are: [x, y, th, z, bz, bth]
+                                # maxiter = 10
+                                # popsize = m.pow(5, 2)*100
+                                parameters_min = np.array([0.2, -3., -m.pi-.001, 0., 0., 0.2, -3., -m.pi-.001, 0., 0.])
+                                # parameters_max = np.array([3., 3., m.pi+.001, 0.3, 0.2, 3., 3., m.pi+.001, 0.3, 0.2])
+                                # At Henry's the bed can only range a few centimeters because of the overbed table
+                                parameters_max = np.array([3., 3., m.pi+.001, 0.3, 0.08, 3., 3., m.pi+.001, 0.3, 0.08])
+                                parameters_scaling = (parameters_max-parameters_min)/3.
+                                parameters_initialization = (parameters_max+parameters_min)/2.
+                                parameters_initialization[1] = 1.0
+                                parameters_initialization[6] = -1.0
+                                opts2 = {'seed': 1234, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter, 'maxfevals': 1e8, 'CMA_cmean': 0.25,'tolfun':1e-3, 'tolfunhist':1e-12,'tolx':5e-4,'maxstd':4.0,'tolstagnation':100,
                                          'CMA_stds': list(parameters_scaling),
                                          'bounds': [list(parameters_min),
                                                     list(parameters_max)]}
 
                                 # optimization_results[2, self.heady, self.start_x, self.start_y] = [t for t in ((cma.fmin(self.objective_function_two_config_toc_sample,
                                 print 'Working on heady location:', self.heady
-                                if method == 'toc':
-                                    optimization_results[parameters] = cma.fmin(self.objective_function_two_config_toc_sample,
-                                                                                list(parameters_initialization),
-                                                                                # [0.5, 0.75, 0., 0.15, 0., 35*m.pi/180, 0.5, -0.75, 0., 0.15, 0., 35*m.pi/180],
-                                                                                # [0., 0., 0., 0.15, 0.1, 35*m.pi/180, 0., 0., 0., 0.15, 0.1, 35*m.pi/180],
-                                                                                1.,restarts=0,
-                                                                                options=opts2)
+                                optimization_results[parameters] = cma.fmin(self.objective_function_two_config_toc_sample,
+                                                                            list(parameters_initialization),
+                                                                            # [0.75, 0.75, 0., 0.15, 0., 0.75, -0.75, 0., 0.15, 0.],
+                                                                            # [0., 0., 0., 0.15, 0.1, 35*m.pi/180, 0., 0., 0., 0.15, 0.1, 35*m.pi/180],
+                                                                            1.,restarts=1,
+                                                                            options=opts2)
                                 # for self.start_x in np.arange(start_x_min, start_x_max, start_x_int)
                                 # for self.start_y in np.arange(start_y_min, start_y_max, start_y_int)
                                 # for self.heady in np.arange(heady_min, heady_max, heady_int)
                                 config = optimization_results[parameters][0]
                                 score = optimization_results[parameters][1]
-                                scores = self.best_scores
-                                if score != self.best_score:
-                                    print 'There is something weird. The best score from cma optimization output' \
-                                          'differs from what I extracted from it.'
-                                    print 'config:\n',config
-                                    print 'score:\n',score
+                                config = np.insert(config, 5, np.radians(self.head_rest_angle))
+                                config = np.insert(config, 11, np.radians(self.head_rest_angle))
+                                optimization_results[parameters] = [config, score]
+                            else:
+                                # maxiter = 10
+                                # popsize = m.pow(6, 2)*100
+                                parameters_min = np.array([0.3, -1.7, m.radians(-360.) - 0.0001, 0., 0., 0.*m.pi/180.,
+                                                           0.3, -1.7, m.radians(-360.) - 0.0001, 0., 0., 0.*m.pi/180.])
+                                 # parameters_max = np.array([ 3.,  3.,  m.pi+.001, 0.3, 0.2, 80.*m.pi/180.,  3.,  3.,  m.pi+.001, 0.3, 0.2, 80.*m.pi/180.])
+                                # Henry's bed can only rise a few centimeters because of the overbed table
+                                parameters_max = np.array([3.0, 1.7, m.radians(360.) + .0001, 0.3, 0.25, 75.*m.pi/180.,
+                                                           3.0, 1.7, m.radians(360.) + .0001, 0.3, 0.25, 75.*m.pi/180.])
+                                parameters_scaling = (parameters_max-parameters_min)/8.
+                                parameters_scaling[1] = (parameters_max[1]-parameters_min[1])/16.
+                                parameters_scaling[7] = (parameters_max[7]-parameters_min[7])/16.
+                                #parameters_scaling[2] = (parameters_max[2]-parameters_min[2])/4.
+                                #parameters_scaling[8] = (parameters_max[8]-parameters_min[8])/4.
+                                #parameters_scaling[3] = (parameters_max[3]-parameters_min[3])/2.
+                                #parameters_scaling[9] = (parameters_max[9]-parameters_min[9])/2.
+                                parameters_initialization = (parameters_max+parameters_min)/2.
+                                parameters_initialization[1] = start_position_y[0]
+                                parameters_initialization[7] = start_position_y[1]
+                                # Parameters are: [x, y, th, z, bz, bth]
+                                if sampling == 'cma':
+                                    opts2 = {'seed': seed, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter, 'maxfevals': 1e8, 'CMA_cmean': 0.25,'tolfun':1e-3, 'tolfunhist':1e-12,'tolx':5e-4,'maxstd':4.0,'tolstagnation':100,
+                                             'CMA_stds': list(parameters_scaling),
+                                             'bounds': [list(parameters_min),
+                                                        list(parameters_max)]}
+
+                                    # optimization_results[2, self.heady, self.start_x, self.start_y] = [t for t in ((cma.fmin(self.objective_function_two_config_toc_sample,
+                                    print 'Working on heady location:', self.heady
+                                    if method == 'toc':
+                                        optimization_results[parameters] = cma.fmin(self.objective_function_two_config_toc_sample,
+                                                                                    list(parameters_initialization),
+                                                                                    # [0.5, 0.75, 0., 0.15, 0., 35*m.pi/180, 0.5, -0.75, 0., 0.15, 0., 35*m.pi/180],
+                                                                                    # [0., 0., 0., 0.15, 0.1, 35*m.pi/180, 0., 0., 0., 0.15, 0.1, 35*m.pi/180],
+                                                                                    1.,restarts=0,
+                                                                                    options=opts2)
+                                    # for self.start_x in np.arange(start_x_min, start_x_max, start_x_int)
+                                    # for self.start_y in np.arange(start_y_min, start_y_max, start_y_int)
+                                    # for self.heady in np.arange(heady_min, heady_max, heady_int)
                                     config = self.best_config
                                     score = self.best_score
-                                    print 'config:\n', config
-                                    print 'score:\n', score
-                            elif sampling == 'uniform':
-                                self.best_config = None
-                                self.best_score = 1000.
-                                random_state = np.random.RandomState(seed=seed)
-                                samples = np.hstack([random_state.uniform(parameters_min[0:(len(parameters_min) / 2)],
-                                                                          parameters_max[0:(len(parameters_min) / 2)],
-                                                                          [maxiter * popsize, len(parameters_min) / 2]),
-                                                     random_state.uniform(parameters_min[0:(len(parameters_min) / 2)],
-                                                                          parameters_max[0:(len(parameters_min) / 2)],
-                                                                          [maxiter * popsize, len(parameters_min) / 2])])
-                                if method == 'toc':
-                                    for sample in samples:
-                                        self.objective_function_two_config_toc_sample(sample)
-                                else:
-                                    print 'Unknown method to do multiple base configurations!'
-                                    return False
-                                config = self.best_config
-                                score = self.best_score
-                                scores = self.best_scores
-                            elif sampling == 'gaussian':
-                                self.best_config = None
-                                self.best_score = 1000.
-                                random_state = np.random.RandomState(seed=seed)
-                                samples = np.hstack(
-                                    [random_state.normal(parameters_initialization[0:(len(parameters_scaling) / 2)],
-                                                         parameters_scaling[0:(len(parameters_scaling) / 2)],
-                                                         [maxiter * popsize, len(parameters_scaling) / 2]),
-                                     random_state.normal(parameters_initialization[0:(len(parameters_scaling) / 2)],
-                                                         parameters_scaling[0:(len(parameters_scaling) / 2)],
-                                                         [maxiter * popsize, len(parameters_scaling) / 2])])
-                                if method == 'toc':
-                                    for sample in samples:
-                                        self.objective_function_two_config_toc_sample(sample)
-                                else:
-                                    print 'Unknown method to do multiple base configurations!'
-                                    return False
-                                config = self.best_config
-                                score = self.best_score
-                                scores = self.best_scores
-                            # optimization_results[parameters] = [config, score]
-                        # optimization_results[parameters].append((rospy.Time.now()-parameter_start_time).to_sec())
-                        print 'Config:', config
-                        print 'Score:',score
-                        print 'Scores:',scores
+                                    scores = self.best_scores
+                                    if score != self.best_score:
+                                        print 'There is something weird. The best score from cma optimization output' \
+                                              'differs from what I extracted from it.'
+                                        print 'config:\n',config
+                                        print 'score:\n',score
+                                        config = self.best_config
+                                        score = self.best_score
+                                        print 'config:\n', config
+                                        print 'score:\n', score
+                                elif sampling == 'uniform':
+                                    # self.best_config = None
+                                    # self.best_score = 1000.
+                                    random_state = np.random.RandomState(seed=seed)
+                                    samples = np.hstack([random_state.uniform(parameters_min[0:(len(parameters_min) / 2)],
+                                                                              parameters_max[0:(len(parameters_min) / 2)],
+                                                                              [maxiter * popsize, len(parameters_min) / 2]),
+                                                         random_state.uniform(parameters_min[0:(len(parameters_min) / 2)],
+                                                                              parameters_max[0:(len(parameters_min) / 2)],
+                                                                              [maxiter * popsize, len(parameters_min) / 2])])
+                                    if method == 'toc':
+                                        for sample in samples:
+                                            self.objective_function_two_config_toc_sample(sample)
+                                    else:
+                                        print 'Unknown method to do multiple base configurations!'
+                                        return False
+                                    config = self.best_config
+                                    score = self.best_score
+                                    scores = self.best_scores
+                                elif sampling == 'gaussian':
+                                    # self.best_config = None
+                                    # self.best_score = 1000.
+                                    random_state = np.random.RandomState(seed=seed)
+                                    samples = np.hstack(
+                                        [random_state.normal(parameters_initialization[0:(len(parameters_scaling) / 2)],
+                                                             parameters_scaling[0:(len(parameters_scaling) / 2)],
+                                                             [maxiter * popsize, len(parameters_scaling) / 2]),
+                                         random_state.normal(parameters_initialization[0:(len(parameters_scaling) / 2)],
+                                                             parameters_scaling[0:(len(parameters_scaling) / 2)],
+                                                             [maxiter * popsize, len(parameters_scaling) / 2])])
+                                    if method == 'toc':
+                                        for sample in samples:
+                                            self.objective_function_two_config_toc_sample(sample)
+                                    else:
+                                        print 'Unknown method to do multiple base configurations!'
+                                        return False
+                                    config = self.best_config
+                                    score = self.best_score
+                                    scores = self.best_scores
+                                # optimization_results[parameters] = [config, score]
+                            # optimization_results[parameters].append((rospy.Time.now()-parameter_start_time).to_sec())
+                            print 'Config:', config
+                            print 'Score:',score
+                            print 'Scores:',scores
 
-                        # score_stuff[self.heady, self.distance] = self.compare_results_one_vs_two_configs(optimization_results[1, self.heady, self.distance], optimization_results[2, self.heady, self.distance])
-                        config, score = self.check_which_num_base_is_better(config, scores)
-                        score_stuff[parameters] = [config, score, (rospy.Time.now()-parameter_start_time).to_sec()]
-                        print 'Termination criteria triggered:\n', optimization_results[parameters][-3]
-                    if any(criteria in acceptable_termination_criteria for criteria in optimization_results[parameters][-3].keys()):
-                        parameter_termination_satisfied = True
-                    else:
-                        this_seed += 1
-                        popsize *= 2
-                print 'Time to find scores for this set of parameters: %fs' % ((rospy.Time.now()-parameter_start_time).to_sec())
-                print 'Time elapsed so far for parameters: %fs' % ((rospy.Time.now()-scoring_start_time).to_sec())
+                            # score_stuff[self.heady, self.distance] = self.compare_results_one_vs_two_configs(optimization_results[1, self.heady, self.distance], optimization_results[2, self.heady, self.distance])
+                            config, score = self.check_which_num_base_is_better(config, scores)
+                            score_stuff[parameters] = [config, score, (rospy.Time.now()-parameter_start_time).to_sec()]
+                            print 'Termination criteria triggered:\n', optimization_results[parameters][-3]
+                        if not sampling == 'cma' :
+                            parameter_termination_satisfied = True
+                        else:
+                            if any(criteria in acceptable_termination_criteria for criteria in
+                                 optimization_results[parameters][-3].keys()):
+                                parameter_termination_satisfied = True
+                            else:
+                                this_seed += 1
+                                popsize *= 2
+                    print 'Time to find scores for this set of parameters: %fs' % ((rospy.Time.now()-parameter_start_time).to_sec())
+                    print 'Time elapsed so far for parameters: %fs' % ((rospy.Time.now()-scoring_start_time).to_sec())
 
 
         # score_stuff = []  # np.zeros([len(optimization_results), 9])
@@ -978,7 +999,7 @@ class ScoreGenerator(object):
 
         print 'SCORE RESULTS:'
         for item in score_stuff:
-            print '(<model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_bed_movement>):\n', item
+            print '(<model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_additional_movement>):\n', item
             print '[[[x], [y], [th], [z], [bz], [bth]], score, time]'
             print 'Or, if there are two configurations:'
             print '[[[x1, x2], [y1, y2], [th1, th2], [z1, z2], [bz1, bz2], [bth1, bth2]], score, time]'
@@ -2566,8 +2587,12 @@ class ScoreGenerator(object):
             return this_score
 
     def objective_function_one_config_ireach_sample(self, current_parameters):
-        # current_parameters = [  1.21497982,  0.97523797, -3.14114645,  0.29979307,  0.07958062,
-        # 0.95115451]
+        # current_parameters = list(flatten([[ 1.23790765],
+        #                                    [-0.68671183],
+        #                                    [ 1.76159089],
+        #                                    [ 0.16533435],
+        #                                    [ 0.        ],
+        #                                    [ 0.        ]]))
         # self.heady = 0.09
         # print 'ireach goals:\n', self.goals
         if not self.a_model_is_loaded:
@@ -4432,6 +4457,10 @@ class ScoreGenerator(object):
         th_e = random_state.normal(0., (m.pi/72))
         h_e = random_state.normal(0., (m.pi/18)/2)
 
+        pr2_x_e = 0.
+        pr2_y_e = 0.
+        pr2_th_e = 0.
+
         # self.reference_names = reference_options
         if error is None:
             if self.model == 'chair':
@@ -5125,7 +5154,7 @@ class ScoreGenerator(object):
 
         print 'OpenRave has succesfully been initialized. \n'
 
-    def set_autobed(self, z, headrest_th, head_x, head_y):
+    def set_autobed(self, z, headrest_th, head_x, head_y, wall_x=0.):
         # print head_x, head_y
         with self.env:
             bz = z
@@ -5133,6 +5162,7 @@ class ScoreGenerator(object):
             bth = m.degrees(headrest_th)
             # print bth
             v = self.autobed.GetActiveDOFValues()
+            v[self.autobed.GetJoint('autobed/origin_wall_joint').GetDOFIndex()] = wall_x
             v[self.autobed.GetJoint('autobed/tele_legs_joint').GetDOFIndex()] = bz
             v[self.autobed.GetJoint('autobed/bed_neck_base_updown_bedframe_joint').GetDOFIndex()] = head_x
             shift = 0.
