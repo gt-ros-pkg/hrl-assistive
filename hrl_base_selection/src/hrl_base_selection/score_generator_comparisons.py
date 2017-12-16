@@ -499,7 +499,7 @@ class ScoreGenerator(object):
             #             self.task == 'wiping_forehead') and method == 'toc':
             #     self.head_angles = np.array([[68, 10], [68, 0], [68, -10], [0, 0], [-68, 10], [68, 0], [-68, -10]])
             #     self.head_angles = np.array([[60., 0.], [0., 0.], [-60., 0.]])
-            score_parameters = ([t for t in ((tuple([self.task, method, sampling, self.model, num_configs, 0, 0, 0, 0]))
+            score_parameters = ([t for t in ((tuple([self.task, method, sampling, self.model, num_configs, 0, 0, 0, allow_additional_movement]))
                                              for num_configs in [1,2]
                                              for allow_additional_movement in additional_movement
                                              )
