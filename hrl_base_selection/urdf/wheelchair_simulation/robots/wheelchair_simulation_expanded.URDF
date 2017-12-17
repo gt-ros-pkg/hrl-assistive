@@ -268,7 +268,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/head_link.STL" scale="1.1 1.1 1.1"/>
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/head_link.STL" scale="1. 1. 1."/>
       </geometry>
       <material
         name="">
@@ -282,7 +282,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/head_link.STL" scale="1.1 1.1 1.1"/>
+          filename="package://hrl_base_selection/urdf/wheelchair_simulation/meshes/head_link.STL" scale="1. 1. 1."/>
       </geometry>
     </collision>
   </link>
