@@ -94,7 +94,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
     # we initiate these layers to reuse later.
     decoded_h1 = Dense(h1_dim) 
     decoded_h2 = RepeatVector(timesteps)
-    decoded_L1 = LSTM(input_dim, return_sequences=True, activation='tanh', stateful=True, recurrent_dropout=0.2)
+    decoded_L1 = LSTM(input_dim, return_sequences=True, activation='tanh', stateful=True, recurrent_dropout=0.0)
     decoded_mu    = TimeDistributed(Dense(input_dim, activation='linear'))
     decoded_sigma = TimeDistributed(Dense(input_dim, activation='softplus')) 
 
@@ -125,7 +125,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
             x_d_mean = args[1][:,:,:input_dim]
             x_d_std  = args[1][:,:,input_dim:]/x_std_div + x_std_offset
 
-            p = K.concatenate([K.sin(p*2.0*np.pi), K.cos(p*2.0*np.pi)], axis=-1)
+            p = K.concatenate([K.sin(p*2.0*np.pi)*0.8, K.cos(p*2.0*np.pi)*0.8], axis=-1)
             ## p = K.concatenate([K.zeros(shape=(batch_size, z_dim-1)),p], axis=-1)
             
             loss = self.vae_loss(x, x_d_mean, x_d_std, p)
@@ -163,8 +163,8 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
         if fine_tuning:
             vae_autoencoder.load_weights(weights_file)
             lr = 0.001
-            optimizer = Adam(lr=lr, clipvalue=10.) #4.)# 5)
-            vae_autoencoder.compile(optimizer=optimizer, loss=None)
+            #optimizer = Adam(lr=lr, clipvalue=10.) #4.)# 5)
+            #vae_autoencoder.compile(optimizer=optimizer, loss=None)
             vae_autoencoder.compile(optimizer='adam', loss=None)
         else:
             if re_load and os.path.isfile(weights_file):
@@ -288,7 +288,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
             #ReduceLROnPlateau
             if plateau_wait > 3:
                 old_lr = float(K.get_value(vae_autoencoder.optimizer.lr))
-                new_lr = old_lr * 0.2 #0.5
+                new_lr = old_lr * 0.5
                 if new_lr < min_lr:
                     print "Too small learning rate!"
                     break

@@ -396,15 +396,15 @@ def get_anomaly_score(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_m
                     if method.find('circle')>=0:
                         p = float(j)/float(length-window_size+1)
                     else:
-                        p = float(j)/float(length-window_size+1)
-                        ## p = float(j)/float(length-window_size+1) *2.0*phase-phase
+                        #p = float(j)/float(length-window_size+1)
+                        p = float(j)/float(length-window_size+1) *2.0*phase-phase
                         
                     if train_flag:
                         p = p*np.ones((batch_info[1], window_size, 1))
                     else:
                         #temp
                         p = p*np.ones((batch_info[1], window_size, 1))
-                        ## p = np.zeros((len(x), len(x[0]),1))
+                        #p = np.zeros((len(x), len(x[0]),1))
                 else:
                     p = None
                 
@@ -565,7 +565,10 @@ def get_err_vec(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_method,
 
                 if method.find('lstm_vae_custom')>=0 or method.find('lstm_dvae_custom')>=0 or\
                     method.find('phase')>=0 or method.find('pred')>=0:
-                    p = float(j)/float(length-window_size+1) *2.0*phase-phase
+                    if method.find('circle')>=0:
+                        p = float(j)/float(length-window_size+1)
+                    else:
+                        p = float(j)/float(length-window_size+1) *2.0*phase-phase
                     if train_flag:
                         p = p*np.ones((batch_info[1], window_size, 1))
                     else:
@@ -578,7 +581,7 @@ def get_err_vec(X, vae, enc_z_mean, enc_z_logvar, window_size, alpha, ad_method,
                 # Method 2: Lower bound
                 l, z_mean, z_log_var = ad_metrics.get_lower_bound(xx, x_mean, x_std, z_std,
                                                                   enc_z_mean, enc_z_logvar,\
-                                                                  x_dim, method, p, alpha=alpha)
+                                                                  x_dim, method, alpha=alpha)
                 s.append(l)
                 z.append(z_mean.tolist()) # + z_log_var.tolist())
 

@@ -210,12 +210,12 @@ def get_detection_idx(method, save_data_path, main_data, sub_data, param_dict, v
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(main_data['kFoldList']):
 
-        #if idx>0: continue
+        if idx==0: continue
 
         if clf_renew is False and os.path.isfile(detection_pkl): break
         print "==================== ", idx, " ========================"
         
-        # ------------------------------------------------------------------------------------------         
+        # ------------------------------------------------------------------------------------         
         # dim x sample x length
         normalTrainData     = main_data['successData'][:, normalTrainIdx, :]
         abnormalTrainData   = main_data['failureData'][:, abnormalTrainIdx, :]
@@ -258,30 +258,31 @@ def get_detection_idx(method, save_data_path, main_data, sub_data, param_dict, v
 
         # ------------------------------------------------------------------------------------------         
         # scaling info to reconstruct the original scale of data
-        scaler_dict  = {'scaler': scaler, 'scale': 1, 'param_dict': main_data['raw_param_dict']}
+        scaler_dict = {'scaler': scaler, 'scale': 1, 'param_dict': main_data['raw_param_dict']}
 
-        vae_logvar = None
-        window_size = 1
-        noise_mag   = 0.05
-        patience    = 10
+        vae_logvar   = None
+        window_size  = 1
+        noise_mag    = 0.05
+        patience     = 4 #10
         
-        ad_method = 'lower_bound'
-        stateful    = True
-        x_std_div   = 4.
-        x_std_offset= 0.1
-        z_std       = 1.0 #1.0 
-        h1_dim      = 4 #nDim
-        z_dim       = 3 #2 #3
-        phase       = 1.0
-        sam_epoch   = 40 #100
-        plot = False
+        ad_method    = 'lower_bound'
+        stateful     = True
+        x_std_div    = 4.
+        x_std_offset = 0.1
+        z_std        = 1.0 #1.0 
+        h1_dim       = 4 #nDim
+        z_dim        = 2 #3
+        phase        = 1.0
+        sam_epoch    = 40 #100
+        plot         = False
         fixed_batch_size = True
-        batch_size  = 256
+        batch_size   = 256
 
-        if method == 'lstm_dvae_phase_kl':
+        if method == 'lstm_dvae_phase_circle_kl':
             from hrl_anomaly_detection.journal_isolation.models import lstm_dvae_phase_circle_kl as km
+        elif method == 'lstm_dvae_phase_circle':
+            from hrl_anomaly_detection.journal_isolation.models import lstm_dvae_phase_circle as km
         else:
-            #from hrl_anomaly_detection.journal_isolation.models import lstm_dvae_phase_circle as km
             from hrl_anomaly_detection.journal_isolation.models import lstm_dvae_phase2 as km 
             
         weights_path = os.path.join(save_data_path,'model_weights_'+method+'_'+str(idx)+'.h5')
@@ -300,10 +301,10 @@ def get_detection_idx(method, save_data_path, main_data, sub_data, param_dict, v
         ##                          method=method)
         ## sys.exit()
 
-        alpha = np.array([1.0]*nDim) #/float(nDim)
+        alpha    = np.array([1.0]*nDim) #/float(nDim)
         alpha[0] = 1.
         ths_l = np.logspace(0.,1.3,nPoints) #- 0.12
-        ths_l = np.logspace(-0.2,1.8,nPoints) - 0.2 #SVR
+        ths_l = np.logspace(0.0,1.8,nPoints) - 0.2 #SVR
         #ths_l = np.logspace(0.2,2.4,nPoints) - 0.2    
 
         from hrl_anomaly_detection.journal_isolation import detector as dt
@@ -613,7 +614,7 @@ if __name__ == '__main__':
           '/hrl_file_server/dpark_data/anomaly/JOURNAL_ISOL/'+opt.task+'_2'
     elif os.uname()[1] == 'colossus12':
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/JOURNAL_ISOL/'+opt.task+'_2'
+          '/hrl_file_server/dpark_data/anomaly/JOURNAL_ISOL/'+opt.task+'_3'
     elif os.uname()[1] == 'colossus8':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/JOURNAL_ISOL/'+opt.task+'_4'
@@ -622,10 +623,9 @@ if __name__ == '__main__':
           '/hrl_file_server/dpark_data/anomaly/JOURNAL_ISOL/'+opt.task+'_2'
 
 
-    window_steps= 5
     task_name = 'feeding'
     nb_classes = 12
-    method       = 'lstm_dvae_phase' #_kl'
+    method       = 'lstm_dvae_phase_circle'
     IROS_TEST = True
     JOURNAL_TEST = False #True
 
