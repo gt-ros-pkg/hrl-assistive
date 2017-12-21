@@ -94,7 +94,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
     # we initiate these layers to reuse later.
     decoded_h1 = Dense(h1_dim) 
     decoded_h2 = RepeatVector(timesteps)
-    decoded_L1 = LSTM(input_dim, return_sequences=True, activation='tanh', stateful=True, recurrent_dropout=0.0)
+    decoded_L1 = LSTM(input_dim, return_sequences=True, activation='tanh', stateful=True, recurrent_dropout=0.2)
     decoded_mu    = TimeDistributed(Dense(input_dim, activation='linear'))
     decoded_sigma = TimeDistributed(Dense(input_dim, activation='softplus')) 
 
@@ -210,7 +210,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
 
 
                     for j in xrange(len(x[0])-timesteps+1): # per window 
-                        p = float(j)/float(length-timesteps+1)
+                        p = float(j)/float(length-timesteps+1 +1) #length/10)
                         if keras.__version__ < LooseVersion("2.1.0"):
                             y = x[:,j:j+timesteps]
                         else:
@@ -248,7 +248,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
                     x = x_test[i:i+batch_size]
                 
                 for j in xrange(len(x[0])-timesteps+1):
-                    p = float(j)/float(length-timesteps+1)
+                    p = float(j)/float(length-timesteps+1 +1) #length/10)
                     if keras.__version__ < LooseVersion("2.1.0"):
                         y = x[:,j:j+timesteps]
                     else:

@@ -55,10 +55,12 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
                       normalTestData, abnormalTestData, ad_method, method, window_size=1, \
                       alpha=None, ths_l=None, save_pkl=None, stateful=False, \
                       x_std_div=1.0, x_std_offset=1e-10, z_std=None, phase=1.0, \
-                      dyn_ths=False, plot=False, renew=False, batch_info=(False,None), **kwargs):
-                      
+                      dyn_ths=False, latent_plot=False, renew=False, batch_info=(False,None), **kwargs):
+
+    if latent_plot: renew = False
+                          
     print "Start to get anomaly scores"
-    if (os.path.isfile(save_pkl) and renew is False):
+    if (os.path.isfile(save_pkl) and renew is False) or True:
         print "Load anomaly detection results"
         d = ut.load_pickle(save_pkl)
     else:
@@ -112,6 +114,10 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
     scores_te_a = np.array(d['scores_te_a'])
     
     if ad_method == 'recon_err_vec': dyn_ths=False
+    if latent_plot:
+        print np.shape(zs_tr_n)
+        vutil.viz_latent_space(zs_tr_n)
+        sys.exit()
 
     if dyn_ths:
         l = len(zs_tr_n[0])
@@ -738,3 +744,5 @@ def get_optimal_alpha(inputs, vae, vae_mean, ad_method, method, window_size, sav
     sys.exit()
     
     return res.x
+
+

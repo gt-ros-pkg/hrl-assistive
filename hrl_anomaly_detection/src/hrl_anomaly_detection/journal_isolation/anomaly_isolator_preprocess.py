@@ -181,7 +181,8 @@ def get_label_from_filename(file_names):
     
 
 def get_detection_idx(method, save_data_path, main_data, sub_data, param_dict, verbose=False,
-                      dyn_ths=False, scale=1.8, fine_tuning=False, tr_only=False, te_only=False):
+                      dyn_ths=False, scale=1.8, fine_tuning=False, tr_only=False, te_only=False,
+                      latent_plot=False):
     
     # load params (param_dict)
     nPoints    = param_dict['ROC']['nPoints']
@@ -210,7 +211,7 @@ def get_detection_idx(method, save_data_path, main_data, sub_data, param_dict, v
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(main_data['kFoldList']):
 
-        if idx==0: continue
+        #if idx>0: continue
 
         if clf_renew is False and os.path.isfile(detection_pkl): break
         print "==================== ", idx, " ========================"
@@ -263,7 +264,7 @@ def get_detection_idx(method, save_data_path, main_data, sub_data, param_dict, v
         vae_logvar   = None
         window_size  = 1
         noise_mag    = 0.05
-        patience     = 4 #10
+        patience     = 10 #4 #10
         
         ad_method    = 'lower_bound'
         stateful     = True
@@ -296,15 +297,16 @@ def get_detection_idx(method, save_data_path, main_data, sub_data, param_dict, v
         if tr_only: continue
                       
         #------------------------------------------------------------------------------------
-        ## vutil.graph_latent_space(normalTestData, abnormalTestData, enc_z_mean,
-        ##                          timesteps=window_size, batch_size=batch_size,
-        ##                          method=method)
-        ## sys.exit()
-
+        ## if latent_plot:
+        ##     vutil.graph_latent_space(normalTestData, abnormalTestData, enc_z_mean,
+        ##                              timesteps=window_size, batch_size=batch_size,
+        ##                              method=method)
+        ##     sys.exit()
+        
         alpha    = np.array([1.0]*nDim) #/float(nDim)
         alpha[0] = 1.
         ths_l = np.logspace(0.,1.3,nPoints) #- 0.12
-        ths_l = np.logspace(0.0,1.8,nPoints) - 0.2 #SVR
+        ths_l = np.logspace(-0.4,1.8,nPoints) - 0.2 #SVR
         #ths_l = np.logspace(0.2,2.4,nPoints) - 0.2    
 
         from hrl_anomaly_detection.journal_isolation import detector as dt
@@ -316,7 +318,7 @@ def get_detection_idx(method, save_data_path, main_data, sub_data, param_dict, v
                                ad_method, method,
                                window_size, alpha, ths_l=ths_l, save_pkl=save_pkl, stateful=True,
                                x_std_div = x_std_div, x_std_offset=x_std_offset, z_std=z_std, \
-                               phase=phase, plot=False, \
+                               phase=phase, latent_plot=latent_plot, \
                                renew=clf_renew, dyn_ths=dyn_ths, batch_info=(True,batch_size),\
                                param_dict=main_data['param_dict'], scaler_dict=scaler_dict,\
                                filenames=(np.array(main_data['success_files'])[normalTestIdx],
@@ -381,7 +383,7 @@ def get_detection_idx(method, save_data_path, main_data, sub_data, param_dict, v
 
     
 def get_isolation_data(method, subject_names, task_name, raw_data_path, save_data_path, param_dict,
-                       fine_tuning=False, dyn_ths=False, tr_only=False, te_only=False):
+                       fine_tuning=False, dyn_ths=False, tr_only=False, te_only=False, latent_plot=False):
 
     # Get Raw Data
     main_data, sub_data = get_data(subject_names, task_name, raw_data_path, save_data_path, param_dict,
@@ -390,7 +392,8 @@ def get_isolation_data(method, subject_names, task_name, raw_data_path, save_dat
     # Get detection indices and corresponding features
     dt_dict = get_detection_idx(method, save_data_path, main_data, sub_data, param_dict,
                                 fine_tuning=fine_tuning,
-                                dyn_ths=dyn_ths, scale=1.8, tr_only=tr_only, te_only=te_only,verbose=False)
+                                dyn_ths=dyn_ths, scale=1.8, tr_only=tr_only, te_only=te_only,
+                                latent_plot=latent_plot, verbose=False)
     if tr_only: return
 
     # Classification?
@@ -602,6 +605,8 @@ if __name__ == '__main__':
                  default=False, help='Run dynamic threshold.')
     p.add_option('--testing_only', '--te', action='store_true', dest='bTestOnly',
                  default=False, help='Run dynamic threshold.')         
+    p.add_option('--latent_space_plot', '--lsp', action='store_true', dest='bLatentPlot',
+                 default=False, help='Show latent space.')
     opt, args = p.parse_args()
 
     from hrl_anomaly_detection.journal_isolation.isolation_param import *
@@ -611,7 +616,7 @@ if __name__ == '__main__':
                                                           opt.bHMMRenew, opt.bCLFRenew)
     if os.uname()[1] == 'monty1':
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/JOURNAL_ISOL/'+opt.task+'_2'
+          '/hrl_file_server/dpark_data/anomaly/JOURNAL_ISOL/'+opt.task+'_4' #2 with dropout?
     elif os.uname()[1] == 'colossus12':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/JOURNAL_ISOL/'+opt.task+'_3'
@@ -631,7 +636,9 @@ if __name__ == '__main__':
 
 
     get_isolation_data(method, subject_names, task_name, raw_data_path, save_data_path, param_dict,
-                       fine_tuning=opt.bFineTune, dyn_ths=opt.bDynThs, tr_only=opt.bTrainOnly, te_only=opt.bTestOnly)
+                       fine_tuning=opt.bFineTune, dyn_ths=opt.bDynThs,
+                       tr_only=opt.bTrainOnly, te_only=opt.bTestOnly,
+                       latent_plot=opt.bLatentPlot)
 
     #, weight=1.0, window_steps=window_steps, verbose=False)
 

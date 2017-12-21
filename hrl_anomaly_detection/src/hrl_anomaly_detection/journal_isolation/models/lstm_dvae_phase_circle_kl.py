@@ -128,7 +128,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
             x_d_std  = args[1][:,:,input_dim:]/x_std_div + x_std_offset
             w_kl     = args[2]
 
-            p = K.concatenate([K.sin(p*2.0*np.pi), K.cos(p*2.0*np.pi)], axis=-1)
+            p = K.concatenate([K.sin(p*2.0*np.pi)*0.8, K.cos(p*2.0*np.pi)*0.8], axis=-1)
             ## p = K.concatenate([K.zeros(shape=(batch_size, z_dim-1)),p], axis=-1)
             
             loss = self.vae_loss(x, x_d_mean, x_d_std, p, w_kl)
@@ -298,7 +298,7 @@ def lstm_vae(trainData, testData, weights_file=None, batch_size=32, nb_epoch=500
             #ReduceLROnPlateau
             if plateau_wait > 3:
                 old_lr = float(K.get_value(vae_autoencoder.optimizer.lr))
-                new_lr = old_lr * 0.2
+                new_lr = old_lr * 0.5
                 if new_lr < min_lr:
                     print "Too small learning rate!"
                     break
