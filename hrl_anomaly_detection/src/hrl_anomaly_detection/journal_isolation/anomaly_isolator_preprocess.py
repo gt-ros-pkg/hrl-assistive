@@ -211,7 +211,7 @@ def get_detection_idx(method, save_data_path, main_data, sub_data, param_dict, v
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(main_data['kFoldList']):
 
-        #if idx>0: continue
+        if idx>0: continue
 
         if clf_renew is False and os.path.isfile(detection_pkl): break
         print "==================== ", idx, " ========================"
@@ -270,7 +270,7 @@ def get_detection_idx(method, save_data_path, main_data, sub_data, param_dict, v
         stateful     = True
         x_std_div    = 4.
         x_std_offset = 0.1
-        z_std        = 1.0 #1.0 
+        z_std        = 0.4 #1.0 
         h1_dim       = 4 #nDim
         z_dim        = 2 #3
         phase        = 1.0
