@@ -211,9 +211,9 @@ def get_detection_idx(method, save_data_path, main_data, sub_data, param_dict, v
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(main_data['kFoldList']):
 
-        #if idx>0: continue
+        if idx!=7: continue
 
-        if clf_renew is False and os.path.isfile(detection_pkl): break
+        if clf_renew is False and os.path.isfile(detection_pkl) and latent_plot is False: break
         print "==================== ", idx, " ========================"
         
         # ------------------------------------------------------------------------------------         

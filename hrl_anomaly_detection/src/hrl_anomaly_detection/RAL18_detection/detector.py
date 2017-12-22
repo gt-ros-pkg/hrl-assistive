@@ -55,7 +55,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
                       normalTestData, abnormalTestData, ad_method, method, window_size=1, \
                       alpha=None, ths_l=None, save_pkl=None, stateful=False, \
                       x_std_div=1.0, x_std_offset=1e-10, z_std=None, phase=1.0, \
-                      dyn_ths=False, plot=False, renew=False, batch_info=(False,None), **kwargs):
+                      dyn_ths=False, latent_plot=False, renew=False, batch_info=(False,None), **kwargs):
                       
     print "Start to get anomaly scores"
     if os.path.isfile(save_pkl) and renew is False :
@@ -100,6 +100,10 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
     scores_te_a = np.array(scores_te_a)
     
     if ad_method == 'recon_err_vec': dyn_ths=False
+    if latent_plot:
+        print np.shape(zs_tr_n)
+        vutil.viz_latent_space(zs_tr_n[3:13])
+        sys.exit()
 
     if dyn_ths:
         l = len(zs_tr_n[0])
