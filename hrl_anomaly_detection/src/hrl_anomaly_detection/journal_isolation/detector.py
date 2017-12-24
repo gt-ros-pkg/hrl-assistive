@@ -60,7 +60,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
     if latent_plot: renew = False
                           
     print "Start to get anomaly scores"
-    if (os.path.isfile(save_pkl) and renew is False) or True:
+    if (os.path.isfile(save_pkl) and renew is False):
         print "Load anomaly detection results"
         d = ut.load_pickle(save_pkl)
     else:
@@ -116,7 +116,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
     if ad_method == 'recon_err_vec': dyn_ths=False
     if latent_plot:
         print np.shape(zs_tr_n)
-        vutil.viz_latent_space(zs_tr_n)
+        vutil.viz_latent_space(zs_tr_n[3:13])
         sys.exit()
 
     if dyn_ths:

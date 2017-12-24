@@ -63,7 +63,7 @@ random.seed(3334)
 np.random.seed(3334)
 
 def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, param_dict, plot=False,
-              re_load=False, fine_tuning=False, dyn_ths=False):
+              re_load=False, fine_tuning=False, dyn_ths=False, latent_plot=False):
     ## Parameters
     data_dict  = param_dict['data_param']
     AE_dict    = param_dict['AE']
@@ -121,7 +121,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(d['kFoldList']):
         #if (idx == 0 or idx==7): continue
-        if idx != 2: continue
+        if idx != 6: continue
         
         print "==================== ", idx, " ========================"
 
@@ -162,7 +162,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         # ------------------------------------------------------------------------------------------
         # ------------------------------------------------------------------------------------------        
         method      = 'lstm_dvae_phase'
-        method      = 'osvm'
+        #method      = 'osvm'
         #method      = 'encdec_ad'
         #method      = 'lstm_ae'
         ## scaler_file = os.path.join(save_data_path,'scaler_'+method+'_'+str(idx)+'.pkl')
@@ -189,6 +189,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
         phase       = 1.0
         stateful    = None
         ad_method   = None
+        gamma       = 1.0
 
         if (method.find('lstm_vae')>=0 or method.find('lstm_dvae')>=0) and\
             method.find('offline')<0:
@@ -357,10 +358,16 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
             window_size = 1
             ths_l = np.linspace(0.0,1.0,40)
         elif method == 'osvm':
-            window_size = 6 #3
+            window_size = 3 #6
             fixed_batch_size = False
             ad_method   = None
-            ths_l = np.logspace(-0.05, 0, 3)
+            if window_size ==3:
+                gamma = 1e-5 #1.0
+                ths_l = np.logspace(-3, 0, 40)
+                #ths_l = np.linspace(3e-1, 1.0, 3) #40
+            else:
+                gamma = 0.00001
+                ths_l = np.linspace(6e-1, 1.0, 3)
             autoencoder = None
             #autoencoder = km.osvm(trainData, valData, weights_path, timesteps=window_size,
             #                      renew=ae_renew)
@@ -408,11 +415,12 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
                                ad_method, method,
                                window_size, alpha, ths_l=ths_l, save_pkl=save_pkl, stateful=stateful,
                                x_std_div = x_std_div, x_std_offset=x_std_offset, z_std=z_std, \
-                               phase=phase, plot=plot, \
+                               phase=phase, latent_plot=latent_plot, \
                                renew=clf_renew, dyn_ths=dyn_ths, batch_info=(fixed_batch_size,batch_size),\
                                param_dict=d['param_dict'], scaler_dict=scaler_dict,\
                                filenames=(np.array(d['success_files'])[normalTestIdx],
-                                          np.array(d['failure_files'])[abnormalTestIdx]))
+                                          np.array(d['failure_files'])[abnormalTestIdx]),
+                               gamma=gamma)
 
         roc_l.append(roc)
 
@@ -488,6 +496,8 @@ if __name__ == '__main__':
                  default=False, help='Run dynamic threshold.')
     p.add_option('--ad_score', '--as', action='store_true', dest='ad_score_viz',
                  default=False, help='Visualize anomaly scores.')
+    p.add_option('--latent_space_plot', '--lsp', action='store_true', dest='bLatentPlot',
+                 default=False, help='Show latent space.')
 
     opt, args = p.parse_args()
 
@@ -511,10 +521,10 @@ if __name__ == '__main__':
         save_data_path = os.path.expanduser('~')+\
           '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_osvm_raw'
     else:
-        #save_data_path = os.path.expanduser('~')+\
-        #  '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_dvae_phase_raw'
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_osvm_raw_win6'
+         '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_lstm_dvae_phase_raw'
+        ## save_data_path = os.path.expanduser('~')+\
+        ##   '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_osvm_raw_win6'
         #save_data_path = os.path.expanduser('~')+\
         #  '/hrl_file_server/dpark_data/anomaly/ICRA2018/'+opt.task+'_data_encdec_ad_raw_6d'
         #save_data_path = os.path.expanduser('~')+\
@@ -528,7 +538,8 @@ if __name__ == '__main__':
 
     if opt.lstm_test:
         lstm_test(subjects, opt.task, raw_data_path, save_data_path, param_dict, plot=not opt.bNoPlot,
-                  re_load=opt.bReLoad, fine_tuning=opt.bFineTune, dyn_ths=opt.bDynThs)
+                  re_load=opt.bReLoad, fine_tuning=opt.bFineTune, dyn_ths=opt.bDynThs,
+                  latent_plot=opt.bLatentPlot)
     elif opt.ad_score_viz:
         ad_score_viz(opt.task, raw_data_path, save_data_path, param_dict)
 

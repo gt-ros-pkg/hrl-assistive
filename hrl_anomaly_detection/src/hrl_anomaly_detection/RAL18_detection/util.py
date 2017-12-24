@@ -438,7 +438,7 @@ def graph_latent_space(normalTestData, abnormalTestData, enc_z, timesteps=1, bat
 def viz_latent_space(z_n, z_a=None, z_n_se=None, save_pdf=False, **kwargs):
     '''
     z_n: latent variable from normal data
-    z_n: latent variable from abnormal data
+    z_a: latent variable from abnormal data
     '''
     import matplotlib
     import matplotlib.pyplot as plt
@@ -449,24 +449,26 @@ def viz_latent_space(z_n, z_a=None, z_n_se=None, save_pdf=False, **kwargs):
     matplotlib.rcParams['pdf.fonttype'] = 42
     matplotlib.rcParams['ps.fonttype'] = 42
 
-    fig = plt.figure(figsize=(6, 6))
+    fig = plt.figure(figsize=(7, 6))
     if np.shape(z_n)[-1]>2:
         print np.shape(z_n), np.shape(z_a)
         z_dim = np.shape(z_n)[-1]
         n_z_n   = len(z_n)
         n_z_n_l = len(z_n[0])
-        n_z_a   = len(z_a)
-        n_z_a_l = len(z_a[0])
+        if z_a is not None:
+            n_z_a   = len(z_a)
+            n_z_a_l = len(z_a[0])
         
         from sklearn.decomposition import KernelPCA
         ml = KernelPCA(n_components=2, kernel="linear", fit_inverse_transform=False, \
                        gamma=0.01)
         z_n = ml.fit_transform(z_n.reshape(-1, z_dim))
-        z_a = ml.transform(z_a.reshape(-1, z_dim))                
-        ## ax = fig.add_subplot(111, projection='3d')
-        print np.shape(z_n), np.shape(z_a)
         z_n = z_n.reshape(n_z_n, n_z_n_l, 2)
-        z_a = z_a.reshape(n_z_a, n_z_a_l, 2)
+        if z_a is not None:
+            z_a = ml.transform(z_a.reshape(-1, z_dim))                
+            ## ax = fig.add_subplot(111, projection='3d')
+            print np.shape(z_n), np.shape(z_a)
+            z_a = z_a.reshape(n_z_a, n_z_a_l, 2)
         
     s = 121    
     
@@ -478,8 +480,11 @@ def viz_latent_space(z_n, z_a=None, z_n_se=None, save_pdf=False, **kwargs):
                 ax.scatter(z[:,0], z[:,1], z[:,2], color='r', s=0.5*s, marker='^', alpha=.4, label='Anomalous')
 
     for z in z_n:
+        t = np.arange(0,len(z))/float(len(z))
+        colors = plt.cm.coolwarm(t)
         if np.shape(z)[-1] == 2:
-            plt.scatter(z[:,0], z[:,1], color='b', s=0.5*s, alpha=.4, label='Non-anomalous')
+            plt.scatter(z[:,0], z[:,1], c=colors, s=0.5*s, alpha=1, label='Non-anomalous')
+            ## plt.scatter(z[:,0], z[:,1], c=colors, s=0.5*s, alpha=.4, label='Non-anomalous')
         else:
             ax.scatter(z[:,0], z[:,1], z[:,2], color='b', s=0.5*s, alpha=.4, label='Non-anomalous') 
 
@@ -506,27 +511,34 @@ def viz_latent_space(z_n, z_a=None, z_n_se=None, save_pdf=False, **kwargs):
     ##     plt.plot(z_mean_tgt[:,0], z_mean_tgt[:,1], '-k', marker='o', ms=5, lw=2)
         
 
-    ## ax = plt.gca()
-    ## ax.axes.get_xaxis().set_visible(False)
-    ## ax.axes.get_yaxis().set_visible(False)
+    ax = plt.gca()
+    ax.axes.get_xaxis().set_visible(False)
+    ax.axes.get_yaxis().set_visible(False)
     #plt.legend(handles=[ax1, ax2], loc=3, ncol=2)
+    ax.set_ylim([-2,2])
+    ax.set_ylim([-2,2])
 
     ## import matplotlib.cm as cm
     ## colors = iter(cm.rainbow(np.linspace(0, 1, np.shape(z_n)[-2])))
     ## for i in range(len(z_n[0])): 
     ##     plt.scatter(z_n[:,i,0], z_n[:,i,1], color=next(colors), s=0.5*s, alpha=.4, label='Non-anomalous')
         
-    ## sm = plt.cm.ScalarMappable(cmap=cm.rainbow, norm=plt.Normalize(vmin=0, vmax=1))
-    ## sm._A = []
-    ## cbar = plt.colorbar(sm)
-    ## cbar.set_ticks([0,1])
-    ## cbar.set_ticklabels(['Start','End'])
+    #sm = plt.cm.ScalarMappable(cmap=cm.rainbow, norm=plt.Normalize(vmin=0, vmax=1))
+    sm = plt.cm.ScalarMappable(cmap=plt.cm.coolwarm, norm=plt.Normalize(vmin=0, vmax=1))
+    sm._A = []
+    cbar = plt.colorbar(sm)
+    cbar.set_ticks([0,1])
+    cbar.set_ticklabels(['Start','End'])
+    cbar.ax.tick_params(labelsize=18) 
 
-    if save_pdf:
-        fig.savefig('latent_space.pdf')
-        fig.savefig('latent_space.png')
-        fig.savefig('latent_space.eps')
-        os.system('cp test.p* ~/Dropbox/HRL/')
+    if save_pdf:# or True:
+        fname = 'latent_space_17_RAL_linear'
+        fig.savefig(fname+'.pdf')
+        fig.savefig(fname+'.png')
+        fig.savefig(fname+'.eps')
+        os.system('mv *.pdf ~/Dropbox/HRL/')
+        os.system('mv *.png ~/Dropbox/HRL/')
+        os.system('mv *.eps ~/Dropbox/HRL/')
     else:
         plt.show()
 
