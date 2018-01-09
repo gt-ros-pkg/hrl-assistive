@@ -227,7 +227,7 @@ class ScoreGenerator(object):
                     self.task == 'feeding_trajectory' or self.task == 'brushing' or
                     self.task == 'wiping_forehead') and self.model == 'chair':
             self.head_angles = np.array([[68, 10], [68, 0], [68, -10], [0, 0], [-68, 10], [68, 0], [-68, -10]])
-            self.head_angles = np.array([[60., 0.], [0., 0.], [-60., 0.]])
+            self.head_angles = np.array([[45., 0.], [0., 0.], [-45., 0.]])
         else:
             self.head_angles = np.array([[0., 0.]])
         origin_B_pr2 = np.matrix([[       1.,        0.,   0.,         0.0],
@@ -463,12 +463,12 @@ class ScoreGenerator(object):
                 self.ir_and_collision = False
             self.ireach = InverseReachabilitySetup(visualize=False, redo_ik=False,
                                                    redo_reachability=False, redo_ir=False, manip='leftarm')
-        if self.model == 'chair' and self.task in ['scratching_knee_left', 'scratching_knee_right', 'arm_cuffs', 'scratching_upper_arm_left', 'scratching_upper_arm_right'] and not force_allow_additional_movement:
+        if self.model == 'chair' and self.task in ['scratching_knee_left', 'scratching_knee_right', 'arm_cuffs',
+                                                   'scratching_upper_arm_left', 'scratching_upper_arm_right'] and not force_allow_additional_movement:
             additional_movement = [0]
         else:
             additional_movement = [0, 1]
         start_positions_y = [0.85, -0.85]
-
 
         acceptable_termination_criteria = ['tolfun', 'tolfunhist', 'tolx','tolstagnation','conditioncov']
 
@@ -486,7 +486,7 @@ class ScoreGenerator(object):
         # score_parameters.append([self.model, ])
         if self.model == 'autobed':
             score_parameters = ([t for t in ((tuple([self.task, method, sampling, self.model, num_configs, head_rest_angle, headx, heady, allow_additional_movement]))
-                                             for num_configs in [1, 2]
+                                             for num_configs in [1]
                                              for head_rest_angle in head_rest_range
                                              for headx in head_x_range
                                              for heady in head_y_range
@@ -498,7 +498,7 @@ class ScoreGenerator(object):
             #             self.task == 'feeding_trajectory' or self.task == 'brushing' or
             #             self.task == 'wiping_forehead') and method == 'toc':
             #     self.head_angles = np.array([[68, 10], [68, 0], [68, -10], [0, 0], [-68, 10], [68, 0], [-68, -10]])
-            #     self.head_angles = np.array([[60., 0.], [0., 0.], [-60., 0.]])
+            #     self.head_angles = np.array([[45., 0.], [0., 0.], [-45., 0.]])
             score_parameters = ([t for t in ((tuple([self.task, method, sampling, self.model, num_configs, 0, 0, 0, allow_additional_movement]))
                                              for num_configs in [1,2]
                                              for allow_additional_movement in additional_movement
@@ -522,13 +522,23 @@ class ScoreGenerator(object):
 
             self.best_config = None
             self.best_score = 1000.
+            self.best_scores = np.array([1000., 1000., 1000.])
+            init_start_positions_x = None
 
             if parameters[4] == 1 and parameters[2] == 'cma':
                 init_start_positions_y = [-0.85, 0.85]
                 init_start_positions_th = [0., m.pi]
-            else:
+            elif parameters[2] == 'cma':
                 init_start_positions_y = [[-0.85, 0.85]]
                 init_start_positions_th = [[0., m.pi]]
+                if self.task == 'shaving_no_wall':
+                    init_start_positions_x = [[-.75, -.75], [1.5, 1.5]]
+                    init_start_positions_y = [[0., 0.],[-0.85, 0.85]]
+                    init_start_positions_headth = [[0., 0.], [m.radians(45.),m.radians(45.)]]
+                    init_start_positions_th = [[-m.pi / 2., 0.],[0., m.pi]]
+            else:
+                init_start_positions_y = [0.]
+                init_start_positions_th = [0.]
             for start_position_i in xrange(len(init_start_positions_y)):
                 maxiter = 1000
                 popsize = 40
@@ -569,7 +579,7 @@ class ScoreGenerator(object):
                                 parameters_scaling[1] = (parameters_max[1] - parameters_min[1]) / 16.
 
                                 if sampling == 'cma':
-                                    opts1 = {'seed': seed, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter, 'maxfevals': 1e8, 'CMA_cmean': 0.25, 'tolfun':1e-3, 'tolfunhist':1e-12,'tolx':5e-4,'maxstd':4.0,'tolstagnation':100,
+                                    opts1 = {'seed': seed, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter, 'maxfevals': 1e8, 'CMA_cmean': 0.25,
                                              'CMA_stds': list(parameters_scaling),
                                              'bounds': [list(parameters_min), list(parameters_max)]}
 
@@ -759,7 +769,6 @@ class ScoreGenerator(object):
                                 score_stuff[parameters] = [config, score, (rospy.Time.now() - parameter_start_time).to_sec()]
 
                         elif num_config == 2:
-                            self.best_scores = np.array([1000., 1000., 1000.])
                             # maxiter = 10
                             # popsize = m.pow(4, 2)*100
                             if self.allow_additional_movement == 0 and self.model == 'autobed':
@@ -892,6 +901,9 @@ class ScoreGenerator(object):
                                 # popsize = m.pow(6, 2)*100
                                 parameters_min = np.array([0.3, -1.7, m.radians(-360.) - 0.0001, 0., 0., 0.*m.pi/180.,
                                                            0.3, -1.7, m.radians(-360.) - 0.0001, 0., 0., 0.*m.pi/180.])
+                                if self.task == 'shaving_no_wall':
+                                    parameters_min[0] = -1.5
+                                    parameters_min[6] = -1.5
                                  # parameters_max = np.array([ 3.,  3.,  m.pi+.001, 0.3, 0.2, 80.*m.pi/180.,  3.,  3.,  m.pi+.001, 0.3, 0.2, 80.*m.pi/180.])
                                 # Henry's bed can only rise a few centimeters because of the overbed table
                                 parameters_max = np.array([3.0, 1.7, m.radians(360.) + .0001, 0.3, 0.25, 75.*m.pi/180.,
@@ -908,6 +920,11 @@ class ScoreGenerator(object):
                                 parameters_initialization[7] = init_start_positions_y[start_position_i][1]
                                 parameters_initialization[2] = init_start_positions_th[start_position_i][0]
                                 parameters_initialization[8] = init_start_positions_th[start_position_i][1]
+                                if self.task == 'shaving_no_wall':
+                                    parameters_initialization[0] = init_start_positions_x[start_position_i][0]
+                                    parameters_initialization[6] = init_start_positions_x[start_position_i][1]
+                                    parameters_initialization[5] = init_start_positions_headth[start_position_i][0]
+                                    parameters_initialization[11] = init_start_positions_headth[start_position_i][1]
                                 # Parameters are: [x, y, th, z, bz, bth]
                                 if sampling == 'cma':
                                     opts2 = {'seed': seed, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter, 'maxfevals': 1e8, 'CMA_cmean': 0.25,'tolfun':1e-3, 'tolfunhist':1e-12,'tolx':5e-4,'maxstd':4.0,'tolstagnation':100,
@@ -3875,7 +3892,7 @@ class ScoreGenerator(object):
                 self.setup_human_model()
         if (self.task == 'wiping_mouth' or self.task == 'shaving' or self.task == 'feeding_trajectory' or self.task == 'brushing') and self.model == 'chair':
             self.head_angles = np.array([[68, 10], [68, 0], [68, -10], [0, 0], [-68, 10], [68, 0], [-68, -10]])
-            self.head_angles = np.array([[60., 0.], [0., 0.],  [-60., 0.]])
+            self.head_angles = np.array([[45., 0.], [0., 0.], [-45., 0.]])
         else:
             self.head_angles = np.array([[0., 0.]])
         # current_parameters = [  1.21497982,  0.97523797, -3.14114645,  0.29979307,  0.07958062,
@@ -4450,7 +4467,7 @@ class ScoreGenerator(object):
                     self.task == 'feeding_trajectory' or self.task == 'brushing' or
                     self.task == 'wiping_forehead') and self.model == 'chair' :
             self.head_angles = np.array([[68, 10], [68, 0], [68, -10], [0, 0], [-68, 10], [68, 0], [-68, -10]])
-            self.head_angles = np.array([[60., 0.], [0., 0.],  [-60., 0.]])
+            self.head_angles = np.array([[45., 0.], [0., 0.], [-45., 0.]])
         else:
             self.head_angles = np.array([[0., 0.]])
         start_time = time.time()
@@ -5166,6 +5183,8 @@ class ScoreGenerator(object):
     def set_autobed(self, z, headrest_th, head_x, head_y, wall_x=0.):
         # print head_x, head_y
         with self.env:
+            if self.task == 'shaving_no_wall':
+                wall_x = -2.99
             bz = z
             # print headrest_th
             bth = m.degrees(headrest_th)

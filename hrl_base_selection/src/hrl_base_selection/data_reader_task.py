@@ -57,6 +57,29 @@ class DataReader_Task(object):
             self.num = np.ones([len(self.goals), 1])
             self.reference_options = ['head']
             self.reference = np.zeros([len(self.goals), 1])
+        elif self.task == 'shaving_no_wall':
+            liftlink_B_reference = createBMatrix([1.249848, -0.013344, 0.1121597],
+                                                 [0.044735, -0.010481, 0.998626, -0.025188])
+            liftlink_B_goal = [[1.087086, -0.019988, 0.014680, 0.011758, 0.014403, 0.031744, 0.999323],
+                               [1.089931, -0.023529, 0.115044, 0.008146, 0.125716, 0.032856, 0.991489],
+                               [1.123504, -0.124174, 0.060517, 0.065528, -0.078776, 0.322874, 0.940879],
+                               [1.192543, -0.178014, 0.093005, -0.032482, 0.012642, 0.569130, 0.821509],
+                               [1.194537, -0.180350, 0.024144, 0.055151, -0.113447, 0.567382, 0.813736],
+                               [1.103003, 0.066879, 0.047237, 0.023224, -0.083593, -0.247144, 0.965087],
+                               [1.180539, 0.155222, 0.061160, -0.048171, -0.076155, -0.513218, 0.853515],
+                               [1.181696, 0.153536, 0.118200, 0.022272, 0.045203, -0.551630, 0.832565]]
+            # goal_B_gripper = np.matrix(np.eye(4))
+            # goal_B_gripper = np.matrix([[1., 0., 0., -0.04],
+            goal_B_gripper = np.matrix([[1., 0., 0., 0.0],
+                                        [0., 1., 0., 0.0],
+                                        [0., 0., 1., 0.0],
+                                        [0., 0., 0., 1.]])
+            for i in xrange(len(liftlink_B_goal)):
+                self.goals.append(liftlink_B_reference.I * createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][
+                                                                                                  3:]) * goal_B_gripper)  # all in reference to head
+            self.num = np.ones([len(self.goals), 1])
+            self.reference_options = ['head']
+            self.reference = np.zeros([len(self.goals), 1])
         elif self.task == 'wiping_mouth':
             thz = m.radians(180)
             z = np.matrix([[m.cos(thz), -m.sin(thz), 0, 0], [m.sin(thz), m.cos(thz), 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
@@ -167,14 +190,14 @@ class DataReader_Task(object):
             rot = z * y * x
             quat = tft.quaternion_from_matrix(rot)
             liftlink_B_reference = createBMatrix([0., 0., 0.], [0., 0., 0., 1.])
-            liftlink_B_goal = [[0.24, 0.17, 0.0, quat[0], quat[1], quat[2], quat[3]],
-                               [0.24, 0.17, 0.0, quat[0], quat[1], quat[2], quat[3]],
-                               [-0.03, 0.1, 0.0, quat[0], quat[1], quat[2], quat[3]],
-                               [-0.17, 0.1, 0.0, quat[0], quat[1], quat[2], quat[3]],
-                               [-0.34, 0.1, 0.0, quat[0], quat[1], quat[2], quat[3]],
-                               [-0.03, 0.1, 0.0, quat[0], quat[1], quat[2], quat[3]],
-                               [-0.17, 0.1, 0.0, quat[0], quat[1], quat[2], quat[3]],
-                               [-0.34, 0.1, 0.0, quat[0], quat[1], quat[2], quat[3]]]
+            liftlink_B_goal = [[0.24, 0.2, 0.0, quat[0], quat[1], quat[2], quat[3]],
+                               [0.24, 0.2, 0.0, quat[0], quat[1], quat[2], quat[3]],
+                               [-0.03, 0.15, 0.0, quat[0], quat[1], quat[2], quat[3]],
+                               [-0.17, 0.11, 0.0, quat[0], quat[1], quat[2], quat[3]],
+                               [-0.34, 0.11, 0.0, quat[0], quat[1], quat[2], quat[3]],
+                               [-0.03, 0.15, 0.0, quat[0], quat[1], quat[2], quat[3]],
+                               [-0.17, 0.11, 0.0, quat[0], quat[1], quat[2], quat[3]],
+                               [-0.34, 0.11, 0.0, quat[0], quat[1], quat[2], quat[3]]]
             for i in xrange(len(liftlink_B_goal)):
                 self.goals.append(liftlink_B_reference.I * createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][
                                                                                                   3:]))  # all in reference to head
@@ -377,10 +400,10 @@ class DataReader_Task(object):
             rot = z * y * x
             quat = tft.quaternion_from_matrix(rot)
             liftlink_B_reference = createBMatrix([0., 0., 0.], [0., 0., 0., 1.])
-            liftlink_B_goal = [[0.02, 0.1, 0.0, quat[0], quat[1], quat[2], quat[3]],
-                               [-0.02, 0.1, 0.0, quat[0], quat[1], quat[2], quat[3]],
-                               [0.0, 0.1, 0.03, quat[0], quat[1], quat[2], quat[3]],
-                               [0.0, 0.1, -0.03, quat[0], quat[1], quat[2], quat[3]]]
+            liftlink_B_goal = [[0.02, 0.15, 0.0, quat[0], quat[1], quat[2], quat[3]],
+                               [-0.02, 0.15, 0.0, quat[0], quat[1], quat[2], quat[3]],
+                               [0.0, 0.15, 0.03, quat[0], quat[1], quat[2], quat[3]],
+                               [0.0, 0.15, -0.03, quat[0], quat[1], quat[2], quat[3]]]
             for i in xrange(len(liftlink_B_goal)):
                 self.goals.append(liftlink_B_reference.I * createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][
                                                                                                   3:]))  # all in reference to head
@@ -397,10 +420,10 @@ class DataReader_Task(object):
             rot = z * y * x
             quat = tft.quaternion_from_matrix(rot)
             liftlink_B_reference = createBMatrix([0., 0., 0.], [0., 0., 0., 1.])
-            liftlink_B_goal = [[0.02, 0.1, 0.0, quat[0], quat[1], quat[2], quat[3]],
-                               [-0.02, 0.1, 0.0, quat[0], quat[1], quat[2], quat[3]],
-                               [0.0, 0.1, 0.03, quat[0], quat[1], quat[2], quat[3]],
-                               [0.0, 0.1, -0.03, quat[0], quat[1], quat[2], quat[3]]]
+            liftlink_B_goal = [[0.02, 0.15, 0.0, quat[0], quat[1], quat[2], quat[3]],
+                               [-0.02, 0.15, 0.0, quat[0], quat[1], quat[2], quat[3]],
+                               [0.0, 0.15, 0.03, quat[0], quat[1], quat[2], quat[3]],
+                               [0.0, 0.15, -0.03, quat[0], quat[1], quat[2], quat[3]]]
             for i in xrange(len(liftlink_B_goal)):
                 self.goals.append(liftlink_B_reference.I * createBMatrix(liftlink_B_goal[i][0:3], liftlink_B_goal[i][
                                                                                                   3:]))  # all in reference to head
@@ -471,6 +494,7 @@ class DataReader_Task(object):
                                        [6]])
         else:
             print 'THE TASK I GOT WAS BOGUS. SOMETHING PROBABLY WRONG WITH INPUTS TO DATA READER TASK'
+            print self.task
         self.goals = np.array(self.goals)
         # print self.goals
         return self.goals, self.num, self.reference, self.reference_options
@@ -619,8 +643,7 @@ if __name__ == "__main__":
     else:
         seed = 1
         for model in ['autobed']:  # 'autobed', 'chair'
-            for task in [ 'wiping_mouth','arm_cuffs', 'bathe_legs','scratching_knee_left', 'scratching_knee_right',
-                         'scratching_upper_arm_left', 'scratching_upper_arm_right','shaving', 'feeding_trajectory']: #
+            for task in ['shaving_no_wall']: #
                 # 'arm_cuffs', 'bathe_legs','scratching_knee_left', 'scratching_knee_right',
                 #          'scratching_upper_arm_left', 'scratching_upper_arm_right','shaving', 'wiping_mouth',
                 #           'scratching_thigh_left', 'scratching_thigh_right','feeding_trajectory'
