@@ -389,7 +389,7 @@ class ScoreGeneratorDressingwithPhysx(object):
                 self.run_interleaving_optimization_outer_level(subtask=subtask, subtask_step=subtask_number,
                                                                maxiter=20, popsize=500)
 
-    def run_interleaving_optimization_outer_level(self, maxiter=8, popsize=40, subtask='', subtask_step=0):
+    def run_interleaving_optimization_outer_level(self, maxiter=1000, popsize=40, subtask='', subtask_step=0):
         self.subtask_step = subtask_step
         self.best_physx_score[self.subtask_step] = 100.
 
@@ -407,28 +407,41 @@ class ScoreGeneratorDressingwithPhysx(object):
                                    0.])
         parameters_max = np.array([m.radians(100.), m.radians(100.), m.radians(100),
                                    m.radians(135.)])
-        parameters_scaling = (parameters_max - parameters_min) / 2.
-        parameters_initialization = (parameters_max + parameters_min) / 2.
-        parameters_initialization[0] = m.radians(0.)
-        parameters_initialization[1] = m.radians(70.)
-        parameters_initialization[2] = m.radians(0.)
-        parameters_initialization[3] = m.radians(0.)
-        opts1 = {'seed': 1234, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter, 'maxfevals': 1e8,
-                 'CMA_cmean': 0.25,
+        parameters_scaling = (parameters_max - parameters_min) / 8.
+        # parameters_initialization = (parameters_max + parameters_min) / 2.
+        init_start_configs = [[m.radians(0.), m.radians(0.), m.radians(0.), m.radians(0.)],
+                              [m.radians(0.), m.radians(0.), m.radians(0.), m.radians(0.)],
+                              [m.radians(0.), m.radians(0.), m.radians(0.), m.radians(0.)]]
+        opts1 = {'seed': 1234, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter,
+                 'maxfevals': 1e8, 'CMA_cmean': 0.25, 'tolfun': 1e-3,
+                 'tolfunhist': 1e-12, 'tolx': 5e-4,
+                 'maxstd': 4.0, 'tolstagnation': 100,
                  'verb_filenameprefix': 'outcma_arm_and_trajectory',
                  'scaling_of_variables': list(parameters_scaling),
                  'bounds': [list(parameters_min), list(parameters_max)]}
+        for init_start_config in init_start_configs:
+            parameters_initialization = init_start_config
+            # parameters_initialization[0] = m.radians(0.)
+            # parameters_initialization[1] = m.radians(70.)
+            # parameters_initialization[2] = m.radians(0.)
+            # parameters_initialization[3] = m.radians(0.)
 
-        # optimization_results[<model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_bed_movement>]
-        self.optimization_results[self.subtask_step] = cma.fmin(self.objective_function_traj_and_arm_config,
-                                                      list(parameters_initialization),
-                                                      1.,
-                                                      options=opts1)
+            # optimization_results[<model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_bed_movement>]
+            self.optimization_results[self.subtask_step] = cma.fmin(self.objective_function_traj_and_arm_config,
+                                                          list(parameters_initialization),
+                                                          1.,
+                                                          options=opts1)
+            print 'raw cma optimization results:\n',self.optimization_results[self.subtask_step]
+            self.optimization_results[self.subtask_step] = [self.best_config, self.best_score]
 
-        print 'Outcome is: '
-        print self.optimization_results
-        print 'Best trajectory and arm config for ',subtask, 'subtask: \n', self.optimization_results[self.subtask_step][0]
-        print 'Associated score: ', self.optimization_results[self.subtask_step][1]
+        # print 'Outcome is: '
+        # print self.optimization_results
+        # print 'Best arm config for ',subtask, 'subtask: \n', self.optimization_results[self.subtask_step][0]
+        # print 'Associated score: ', self.optimization_results[self.subtask_step][1]
+        # print 'Best PR2 configuration: \n', self.best_pr2_results[self.subtask_step][0]
+        # print 'Associated score: ', self.best_pr2_results[self.subtask_step][1]
+        print 'Best arm config for ', subtask, 'subtask: \n', self.best_config
+        print 'Associated score: ', self.best_score
         print 'Best PR2 configuration: \n', self.best_pr2_results[self.subtask_step][0]
         print 'Associated score: ', self.best_pr2_results[self.subtask_step][1]
         optimized_traj_arm_output = []
@@ -682,7 +695,11 @@ class ScoreGeneratorDressingwithPhysx(object):
             if np.max(np.abs(np.array(self.arm_configs_checked[neighbor] - np.array(params)))) < m.radians(15.):
                 if not self.arm_configs_eval[neighbor][5] == 'good':
                     # print 'arm evaluation found this configuration to be bad'
-                    return 10. + 2. + random.random()
+                    this_score = 10. + 2. + random.random()
+                    if this_score < self.best_score:
+                        self.best_config = params
+                        self.best_score = this_score
+                    return this_score
 
         print 'arm config is not bad'
         arm = self.human_arm.split('a')[0]
@@ -699,7 +716,11 @@ class ScoreGeneratorDressingwithPhysx(object):
         # self.set_human_model_dof_dart([params[0], params[1], params[2], params[3]], 'leftarm')
 
         if self.is_human_in_self_collision():
-            return 10. + 1. + random.random()
+            this_score = 10. + 1. + random.random()
+            if this_score < self.best_score:
+                self.best_config = params
+                self.best_score = this_score
+            return this_score
 
         print 'arm config is not in self collision'
 
@@ -767,7 +788,11 @@ class ScoreGeneratorDressingwithPhysx(object):
         print 'angle from horizontal = ', angle_from_horizontal
         if abs(angle_from_horizontal) > 30.:
             print 'Angle of forearm is too high for success'
-            return 10. + 10. * (abs(angle_from_horizontal) - 30.)
+            this_score = 10. + 10. * (abs(angle_from_horizontal) - 30.)
+            if this_score < self.best_score:
+                self.best_config = params
+                self.best_score = this_score
+            return this_score
 
         print 'Number of goals: ', len(self.goals)
         start_time = rospy.Time.now()
@@ -859,13 +884,19 @@ class ScoreGeneratorDressingwithPhysx(object):
         beta = 1.  # cost on manipulability
         zeta = 0.5  # cost on torque
         self.arm_traj_parameters.append([params, 10. + self.force_cost*alpha + self.kinematics_optimization_results[1]*beta + torque_cost*zeta])
-        save_pickle(self.arm_traj_parameters, self.pkg_path+'/data/all_arm_traj_configs.pkl')
-        physx_score = 10. + self.force_cost*alpha + self.kinematics_optimization_results[1]*beta + torque_cost*zeta
+        save_each_config_score = False
+        if save_each_config_score:
+            save_pickle(self.arm_traj_parameters, self.pkg_path+'/data/all_arm_traj_configs.pkl')
+        # physx_score = 10. + self.force_cost*alpha + self.kinematics_optimization_results[1]*beta + torque_cost*zeta
         print 'Force cost was: ', self.force_cost
         print 'Kinematics score was: ', self.kinematics_optimization_results[1]
         print 'Torque score was: ', torque_cost
-        print 'Total score was: ', physx_score
-        return physx_score
+        this_score = 10. + self.force_cost*alpha + self.kinematics_optimization_results[1]*beta + torque_cost*zeta
+        print 'Total score was: ', this_score
+        if this_score < self.best_score:
+            self.best_config = params
+            self.best_score = this_score
+        return this_score
 
     def calculate_scores(self, task_dict, model, ref_options):
         self.model = model

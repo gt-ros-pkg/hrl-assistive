@@ -30,6 +30,10 @@ from matplotlib.cbook import flatten
 from matplotlib.path import Path
 import matplotlib.patches as patches
 from matplotlib.colors import LinearSegmentedColormap
+from matplotlib.font_manager import FontProperties
+
+
+from scipy.stats import wilcoxon, ranksums
 
 import re
 
@@ -117,9 +121,11 @@ class Manipulability_Testing(object):
     def get_best_base(self):
         return self.best_base
 
-    def toc_correlation_evaluation(self, task, model, number_samples=5, mc_sim_number=1000,
+    def toc_correlation_evaluation(self, tasks, models, number_samples=5, mc_sim_number=1000,
                                    reset_save_file=False, save_results=False, force_key=None,
                                    seed=None):
+        # print tasks
+        # print models
         if seed is None:
             seed = int(time.time())
         self.mc_sim_number = mc_sim_number
@@ -131,7 +137,7 @@ class Manipulability_Testing(object):
         accuracy = np.zeros([number_samples, self.mc_sim_number])
         success = np.zeros([number_samples, self.mc_sim_number])
         self.selector.ireach = InverseReachabilitySetup(visualize=False, redo_ik=False,
-                                               redo_reachability=False, redo_ir=False, manip='leftarm')
+                                                        redo_reachability=False, redo_ir=False, manip='leftarm')
         current_seed = copy.copy(seed)
         for model in models:
             for task in tasks:
@@ -152,16 +158,22 @@ class Manipulability_Testing(object):
                                                             test_reference=raw_reference)
                 for j in xrange(number_samples):
                     print 'IK sample', j, 'out of ', number_samples
+                    self.selector.task = task
+                    self.selector.model = 'replace'
+                    self.selector.training = True
                     self.selector.receive_new_goals(goal_data, reference_options=raw_reference_options, model=model)
-                    ik_result_dict = self.selector.handle_score_generation(method='ik', sampling='uniform', force_allow_bed_movement=True)
+                    ik_result_dict = self.selector.handle_score_generation(method='ik', sampling='uniform',
+                                                                           force_allow_additional_movement=True)
                     for key in ik_result_dict:
                         ik_result = ik_result_dict[key]
                     if (task == 'wiping_mouth' or task == 'shaving' or task == 'feeding_trajectory' or task == 'brushing')  and model == 'chair':
                         self.selector.head_angles = np.array([[60., 0.], [0., 0.], [-60., 0.]])
                     else:
                         self.selector.head_angles = np.array([[0., 0.]])
+                    self.selector.model = 'replace'
+                    self.selector.training = False
                     self.selector.receive_new_goals(goal_data, reference_options=raw_reference_options,model=model)
-                    toc_score =  self.selector.objective_function_one_config_toc_sample(ik_result[0])
+                    toc_score = self.selector.objective_function_one_config_toc_sample(ik_result[0])
                     self.selector.receive_new_goals(goal_data, reference_options=raw_reference_options, model=model)
                     self.selector.ir_and_collision = False
                     ireach_score = self.selector.objective_function_one_config_ireach_sample(ik_result[0])
@@ -195,6 +207,109 @@ class Manipulability_Testing(object):
                     gc.collect()
         print 'All done with all comparisons!!'
 
+    def toc_correlation_plotting(self):
+        print 'Starting to plot correlation!'
+        save_file_name = 'toc_correlation_results.log'
+        save_file_path = self.pkg_path + '/data/'
+        raw_loaded_data = [line.rstrip('\n').split(',') for line in open(save_file_path + save_file_name)]
+        loaded_data = np.zeros([len(raw_loaded_data),len(raw_loaded_data[0])-2])
+        for i in xrange(len(raw_loaded_data)):
+            loaded_data[i] = [float(j) for j in raw_loaded_data[i][2:]]
+        accuracy_mean = loaded_data[:, 0]
+        accuracy_std = loaded_data[:, 1]
+        accuracy_standard_error = accuracy_std/ m.sqrt(100.)
+        accuracy_variance = accuracy_std * accuracy_std
+        success_std = loaded_data[:, 2]
+        success_std = loaded_data[:, 3]
+        toc_score = loaded_data[:, 4]/-10.+1.
+        capability_score = loaded_data[:, 5]/-10.
+
+        fig = plt.figure(figsize=(14, 8))
+        ax1 = plt.subplot(121)
+        ax2 = plt.subplot(122)
+        ax1.scatter(toc_score, accuracy_mean, edgecolor='none', s=60, c='g',label='Mean Accuracy', alpha=0.7)
+        ax2.scatter(toc_score, accuracy_variance, edgecolor='none', s=60, c='g', label='Mean Variance', alpha=0.7)
+        ax1.set_title('Mean Accuracy vs TOC score', fontsize=20)
+        ax2.set_title('Variance of Accuracy vs TOC score')
+        # plt.plot(np.unique(toc_score), np.poly1d(np.polyfit(toc_score, accuracy_mean, 1))(np.unique(toc_score)))
+
+        for item in ([ax1.title, ax1.xaxis.label, ax1.yaxis.label,
+                      ax2.title, ax2.xaxis.label, ax2.yaxis.label] +
+                         ax1.get_xticklabels() + ax1.get_yticklabels() +
+                         ax2.get_xticklabels() + ax2.get_yticklabels()):
+            item.set_fontsize(24)
+
+        ax1.set_xlim([1.025, 1.038])
+        ax1.set_ylim([0.5, 1.02])
+        ax1.set_xticks([1.025, 1.03, 1.035])
+        ax1.set_yticks([0.5, 0.75, 1.0])
+        ax1.set_xlabel('TOC score')
+        ax1.set_ylabel('Mean Accuracy (% goals reachable)')
+        ax1.grid(True, linestyle='dotted')
+        # ax1.legend(loc=3, scatterpoints = 1)
+
+        ax2.set_xlim([1.025, 1.038])
+        ax2.set_ylim([-0.01, 0.185])
+        ax2.set_xticks([1.025, 1.03, 1.035])
+        ax2.set_yticks([0.0, 0.1])
+        ax2.set_xlabel('TOC score')
+        ax2.set_ylabel('Variance of Accuracy (% goals reachable)')
+        ax2.grid(True, linestyle='dotted')
+        ax1.tick_params(axis='x', pad=10)
+        ax1.tick_params(axis='y', pad=10)
+        ax2.tick_params(axis='x', pad=10)
+        ax2.tick_params(axis='y', pad=10)
+
+
+        # ax2.legend(loc=3, scatterpoints=1)
+
+        # plt.suptitle('TOC score is correlated with increasing mean accuracy\nand decreasing variance', fontsize=20)
+
+        def poly2latex(poly, variable="x", width=1):
+            t = ["{0:0.{width}f}"]
+            t.append(t[-1] + " {variable}")
+            t.append(t[-1] + "^{1}")
+
+            def f():
+                for i, v in enumerate(reversed(poly)):
+                    idx = i if i < 2 else 2
+                    yield t[idx].format(v, i, variable=variable, width=width)
+
+            return "${}$".format("+".join(f()))
+
+        fit_mean = np.polyfit(toc_score, accuracy_mean, deg=1)
+        fit_std = np.polyfit(toc_score, accuracy_variance, deg=1)
+        slope, intercept, r_value_mean, p_value, std_err = scipy.stats.linregress(toc_score, accuracy_mean)
+        print slope, intercept, r_value_mean**2., p_value, std_err
+        slope, intercept, r_value_std, p_value, std_err = scipy.stats.linregress(toc_score, accuracy_variance)
+        print slope, intercept, r_value_std**2., p_value, std_err
+        slope, intercept, r_value_std, p_value, std_err = scipy.stats.linregress(toc_score, accuracy_std)
+        print slope, intercept, r_value_std**2., p_value, std_err
+
+        x_fit = np.linspace(1.027, 1.04, 100)
+        y_mean = np.polyval(fit_mean, x_fit)
+        y_std = np.polyval(fit_std, x_fit)
+        # plt.plot(x_fit, y_mean, lw=2, color="green")
+        # plt.plot(x_fit, y_std, lw=2, color="orange")
+        ax1.plot(x_fit, y_mean, lw=2, color="black")
+        ax2.plot(x_fit, y_std, lw=2, color="black")
+        ax1.text(x_fit[0]+.0001, y_mean[0]-0.02, poly2latex(fit_mean) + '; $R^2$='+str("${:.2f}$".format(r_value_mean**2.)), fontsize=24)
+        ax2.text(x_fit[0]+.0001, y_std[0]+0.005, poly2latex(fit_std) + '; $R^2$='+str("${:.2f}$".format(r_value_std**2.)), fontsize=24)
+        fig.tight_layout(pad=1.3)
+        # for item in ([plt.title, plt.xaxis.label, plt.yaxis.label, plt.get_xticklabels(), plt.get_yticklabels()]):
+        #     item.set_fontsize(20)
+
+        # plt.plot(toc_score, fit_mean[0] * toc_score + fit_mean[1], color='blue')
+
+        # plt.plot(toc_score, fit_std[0] * toc_score + fit_std[1], color='red')
+
+
+        # plt.scatter(x, y, s=area, c=colors, alpha=0.5)
+        plt.savefig(save_file_path + 'correlation_toc'+'.png', bbox_inches="tight")
+        plt.show(block=True)
+        # plt.show()
+
+
     def run_comparisons_monty_carlo(self, reset_save_file=False, save_results=False, force_key=None,
                         mc_sim_number=1000, seed=None, use_error=True):
         if seed is None:
@@ -202,12 +317,14 @@ class Manipulability_Testing(object):
         self.mc_sim_number = mc_sim_number
         save_file_name = 'mc_scores.log'
         save_file_path = self.pkg_path + '/data/'
+        raw_save_file_name_base = 'mc_scores_raw_'
         if reset_save_file:
             open(save_file_path+save_file_name, 'w').close()
+
         accuracy = np.zeros(self.mc_sim_number)
         success = np.zeros(self.mc_sim_number)
         for key in self.loaded_scores:
-            if key[3]=='autobed' or True:
+            if key[3]=='chair' or True:
                 if force_key is not None:
                     new_key = []
                     for i in key:
@@ -227,20 +344,26 @@ class Manipulability_Testing(object):
                         new_key[5] = -10
                         new_key[6] = 0
                         new_key[7] = 0
-                        new_key[8] = 0
-                    elif force_key[3] == 'chair' and force_key[1] == 'toc':
-                        new_key[4] = 2
-                        new_key[5] = 0
-                        new_key[6] = 0
-                        new_key[7] = 0
-                        new_key[8] = 0
+                        new_key[8] = 1
                     elif force_key[3] == 'chair':
-                        new_key[4] = 1
+                        if force_key[1] == 'toc':
+                            new_key[4] = 2
+                        else:
+                            new_key[4] = 1
                         new_key[5] = 0
                         new_key[6] = 0
                         new_key[7] = 0
                         new_key[8] = 0
+                        if new_key[0] in ['arm_cuffs', 'scratching_knee_left', 'scratching_knee_right',
+                                          'scratching_upper_arm_left', 'scratching_upper_arm_right']:
+                            new_key[8] = 0
+                        else:
+                            new_key[8] = 1
                     key = tuple(new_key)
+                raw_save_file_name = raw_save_file_name_base + '_' + key[0] + '_' + key[1] + '_' + key[2] + '_' + key[
+                    3] + '_' + str(key[4]) + '_move' + str(key[8]) + '.log'
+                if reset_save_file:
+                    open(save_file_path + raw_save_file_name, 'w').close()
                 current_seed = copy.copy(seed)
                 print 'I will use data with the saved key:', key
                 loaded_score = self.loaded_scores[key]
@@ -277,6 +400,12 @@ class Manipulability_Testing(object):
                 #                       [ 0.21458089,  0.24799169],
                 #                       [ 0.64335277,  0.79439213],
                 #                       [ 0.78823877, -0.8840706 ]])
+                # best_base = np.array([[10.],
+                #                       [10.],
+                #                       [0.],
+                #                       [0.],
+                #                       [0.2],
+                #                       [m.radians(45.)]])
                 # x= 1.0
                 # y = -0.65
                 # th = m.radians(90.)
@@ -300,7 +429,13 @@ class Manipulability_Testing(object):
                     else:
                         accuracy[i], success[i] = self.evaluate_configuration_mc(model, task, best_base, goal_data,
                                                                                  raw_reference_names, seed=current_seed)
+                    if save_results:
+                        with open(save_file_path + raw_save_file_name, 'a') as myfile:
+                            myfile.write(str("{:.4f}".format(accuracy[i]))
+                                         + ',' + str("{:.4f}".format(success[i]))
+                                         + '\n')
                     current_seed += 1
+                    # rospy.sleep(5.)
                 # print accuracy.mean()
                 # print success.mean()
                 # print str("{:.3f}".format(accuracy.mean()))
@@ -322,10 +457,86 @@ class Manipulability_Testing(object):
                 gc.collect()
         print 'All done with all comparisons!!'
 
+    def comparisons_significance(self):
+        print 'Starting calculation of signifance of the comparisions'
+        subplot_num = 130
+        base_file_name = 'mc_scores_raw_'
+        save_file_path = self.pkg_path + '/data/'
+        file_list = os.listdir(save_file_path)
+        models = ['autobed', 'chair']
+        my_method = 'toc'
+        baseline_methods = ['ik', 'inverse_reachability', 'inverse_reachability_collision']
+        toc_overall_results = []
+        ik_overall_results = []
+        capability_overall_results = []
+        capability_collision_overall_results = []
+        for model in models:
+
+            if model == 'chair':
+                tasks = [ 'shaving', 'arm_cuffs', 'wiping_mouth',
+                          'scratching_knee_left', 'scratching_knee_right',
+                          'scratching_upper_arm_left','scratching_upper_arm_right',
+                          'feeding_trajectory']
+            else:
+                tasks = ['shaving', 'bathe_legs', 'arm_cuffs', 'wiping_mouth',
+                         'scratching_knee_left', 'scratching_knee_right',
+                         'scratching_upper_arm_left', 'scratching_upper_arm_right',
+                         'feeding_trajectory']
+
+            for task in tasks:
+                if task in ['arm_cuffs',
+                         'scratching_knee_left', 'scratching_knee_right',
+                         'scratching_upper_arm_left', 'scratching_upper_arm_right'] and model == 'chair':
+                    allow_movement = 0
+                else:
+                    allow_movement = 1
+                toc_save_file = base_file_name + '_' + task + '_' + 'toc' + '_' + 'cma' + '_' + model\
+                                + '_' + '2' + '_move' + str(allow_movement) + '.log'
+
+                toc_data = [line.rstrip('\n').split(',') for line in open(save_file_path + toc_save_file)]
+                for j in xrange(len(toc_data)):
+                    toc_data[j] = [float(i) for i in toc_data[j]]
+                toc_data = np.array(toc_data)
+                print '\nFor',task, 'in', model, 'model'
+                print 'Mean (std) of TOC:', toc_data[:, 1].mean(), '('+str(toc_data[:, 1].std())+')'
+                toc_overall_results.append(toc_data[:, 1])
+                for baseline in baseline_methods:
+                    baseline_save_file = base_file_name + '_' + task + '_' + baseline + '_' + 'cma' + '_' + model \
+                                    + '_' + '1' + '_move' + str(allow_movement) + '.log'
+                    baseline_data = [line.rstrip('\n').split(',') for line in open(save_file_path + baseline_save_file)]
+                    for j in xrange(len(baseline_data)):
+                        baseline_data[j] = [float(i) for i in baseline_data[j]]
+                    baseline_data = np.array(baseline_data)
+                    print 'Mean (std) of '+baseline+':', baseline_data[:, 1].mean(), '(' + str(baseline_data[:, 1].std()) + ')'
+                    stat, pvalue = ranksums(toc_data[:, 1], baseline_data[:, 1])
+                    print 'Statistic and pvalue:\n',stat, pvalue
+                    if baseline == 'ik':
+                        ik_overall_results.append(baseline_data[:, 1])
+                    elif baseline == 'inverse_reachability':
+                        capability_overall_results.append(baseline_data[:, 1])
+                    elif baseline == 'inverse_reachability_collision':
+                        capability_collision_overall_results.append(baseline_data[:, 1])
+        toc_overall_results = np.array(list(flatten(toc_overall_results)))
+        ik_overall_results = np.array(list(flatten(ik_overall_results)))
+        capability_overall_results = np.array(list(flatten(capability_overall_results)))
+        capability_collision_overall_results = np.array(list(flatten(capability_collision_overall_results)))
+        print 'Mean (std) of ' + 'TOC' + ':', toc_overall_results.mean(), '(' + str(toc_overall_results.std()) + ')'
+        print 'Mean (std) of ' + 'IK' + ':', ik_overall_results.mean(), '(' + str(ik_overall_results.std()) + ')'
+        print 'Mean (std) of ' + 'capability' + ':', capability_overall_results.mean(), '(' + str(capability_overall_results.std()) + ')'
+        print 'Mean (std) of ' + 'capability collision' + ':', capability_collision_overall_results.mean(), '(' + str(capability_collision_overall_results.std()) + ')'
+        stat, pvalue = ranksums(toc_overall_results, ik_overall_results)
+        print 'IK Statistic and pvalue:\n', stat, pvalue
+        stat, pvalue = ranksums(toc_overall_results, capability_overall_results)
+        print 'Capability Statistic and pvalue:\n', stat, pvalue
+        stat, pvalue = ranksums(toc_overall_results, capability_collision_overall_results)
+        print 'Capability Collision Statistic and pvalue:\n', stat, pvalue
+
+
+
     def comparisons_monty_carlo_plotting(self):
         print 'Starting to plot the comparison between TOC and baseline algorithms'
         save_file_name = 'mc_scores.log'
-        save_file_name = 'mc_scores_good_pr2_error_included.log'
+        # save_file_name = 'mc_scores_good_pr2_error_included.log'
 
         save_file_path = self.pkg_path + '/data/'
         raw_loaded_data = [line.rstrip('\n').split(',') for line in open(save_file_path + save_file_name)]
@@ -338,19 +549,33 @@ class Manipulability_Testing(object):
         # toc2_results = dict()
         for item in raw_loaded_data:
             # data = [float(i) for i in loaded_data[9:]]
+            # print item[11]
+            # if float(item[11]) <= 0.1:
+            #     print 'adding'
+            #     item[11] = float(item[11])+0.01
+            # print item[11]
             if item[0] not in loaded_data.keys():
                 loaded_data[item[0]] = dict()
             if item[3] not in loaded_data[item[0]].keys():
                 loaded_data[item[0]][item[3]] = dict()
-            if item[1] == 'toc':
+            if item[1] == 'toc' and (int(item[8]) == 1 or (item[3]=='chair' and item[0] in ['arm_cuffs', 'scratching_knee_left',
+                                                                                            'scratching_knee_right',
+                                                                                            'scratching_upper_arm_left',
+                                                                                            'scratching_upper_arm_right'])):
+                # print item
                 loaded_data[item[0]][item[3]]['toc'+str(item[4])] = [float(i) for i in item[9:]]
-            elif int(item[4]) == 1 and int(item[8]) == 1:
+            elif int(item[4]) == 1 and (int(item[8]) == 1 or (int(item[8]) == 0 and item[3]=='chair' and item[0] in ['arm_cuffs', 'scratching_knee_left',
+                                                                                                                     'scratching_knee_right',
+                                                                                                                     'scratching_upper_arm_left',
+                                                                                                                     'scratching_upper_arm_right'])):
+                # print item
                 loaded_data[item[0]][item[3]][item[1]] = [float(i) for i in item[9:]]
+        # print loaded_data
         N = len(loaded_data.keys())
         # fig_num = 0
 
         self.fig_num += 1
-        for model in ['autobed']: #'chair',
+        for model in ['chair','autobed']: #'chair',
             ik_success_means = []
             ik_success_std = []
             capability_success_means = []
@@ -373,15 +598,16 @@ class Manipulability_Testing(object):
 
 
             N = 0
-            task_list = ['scratching_knee_left','scratching_knee_right',
+            task_list = [
                          # 'scratching_thigh_left', 'scratching_thigh_right',
                          'scratching_upper_arm_left', 'scratching_upper_arm_right',
+                         'scratching_knee_left', 'scratching_knee_right',
                          'bathe_legs', 'feeding_trajectory',
                          'wiping_mouth', 'shaving', 'arm_cuffs']
             for task in task_list:
                 if (model == 'chair' and task not in ['brushing','scratching_thigh_right',
-                                                      'scratching_thigh_left', 'bathe_legs', 'feeding_trajectory']) \
-                        or (model == 'autobed' and task not in ['brushing', 'feeding_trajectory']):
+                                                      'scratching_thigh_left', 'bathe_legs']) \
+                        or (model == 'autobed' and task not in ['brushing']):
                     N += 1
                     ik_success_means.append(100.*loaded_data[task][model]['ik'][2])
                     ik_success_std.append(100.*loaded_data[task][model]['ik'][3])
@@ -419,10 +645,13 @@ class Manipulability_Testing(object):
                         taskname = 'Wiping Mouth'
                     elif task == 'shaving':
                         taskname = 'Shaving'
+                    elif task == 'shaving_no_wall':
+                        taskname = 'Shaving with no wall'
                     elif task == 'arm_cuffs':
                         taskname = 'Cleaning Arms'
                     else:
                         print 'I do not know the task name'
+                        print task
                         taskname = 'UNKNOWN TASK'
 
                     # taskname = task
@@ -430,6 +659,11 @@ class Manipulability_Testing(object):
                     # Create the tick labels
                     tick_labels.append(taskname)
 
+            ik_success_means = np.array(ik_success_means)
+            capability_success_means = np.array(capability_success_means)
+            capability_collision_success_means = np.array(capability_collision_success_means)
+            toc1_success_means = np.array(toc1_success_means)
+            toc2_success_means = np.array(toc2_success_means)
             # print N
             ind = np.arange(N)  # the x locations for the groups
             width = 0.16  # the width of the bars
@@ -447,17 +681,32 @@ class Manipulability_Testing(object):
             ax = plt.subplot(111)
             self.fig_num += 1
             co = plt.get_cmap('Accent')
-            rects1 = ax.bar(ind, ik_success_means, width, color=co(0.4), yerr=ik_success_std)
-            rects2 = ax.bar(ind+width, capability_success_means, width, color=co(0.3), yerr=capability_success_std)
-            rects3 = ax.bar(ind+2*width, capability_collision_success_means, width, color=co(0.2), yerr=capability_collision_success_std)
-            rects4 = ax.bar(ind+3*width, toc1_success_means, width, color=co(0.1), yerr=toc1_success_std)
-            rects5 = ax.bar(ind+4*width, toc2_success_means, width, color=co(0.0), yerr=toc2_success_std)
+            neg_bar = np.ones(N) * -1.
+            rects1 = ax.bar(ind, ik_success_means+1., width, bottom=neg_bar, color=co(0.4), yerr=ik_success_std)
+            rects2 = ax.bar(ind+width, capability_success_means+1., width, bottom=neg_bar, color=co(0.3), yerr=capability_success_std)
+            rects3 = ax.bar(ind+2*width, capability_collision_success_means+1., width, bottom=neg_bar, color=co(0.2), yerr=capability_collision_success_std)
+            # rects4 = ax.bar(ind+3*width, toc1_success_means+1., width, bottom=neg_bar, color=co(0.1), yerr=toc1_success_std)
+            rects5 = ax.bar(ind+3*width, toc2_success_means+1., width, bottom=neg_bar, color=co(0.0), yerr=toc2_success_std)
+
+            # neg_bar = np.ones(N)*-1.
+            # rects12 = ax.bar(ind, neg_bar, width, color=co(0.4))
+            # rects22 = ax.bar(ind + width, neg_bar, width, color=co(0.3))
+            # rects32 = ax.bar(ind + 2 * width, neg_bar, width, color=co(0.2))
+            # rects42 = ax.bar(ind + 3 * width, neg_bar, width, color=co(0.1))
+            # rects52 = ax.bar(ind + 4 * width, neg_bar, width, color=co(0.0))
 
             # add some text for labels, title and axes ticks
-            ax.set_ylabel('% of Successful Trials')
-            ax.set_title('Percent Successful Trials with State Estimation Error in '+modelname + ' Environment', y=1.15)
-            ax.set_xticks(ind + width* 2.5)
-            ax.set_xticklabels(tick_labels, rotation=65)
+            ax.set_ylabel('Successful Trials (%)')
+            # ax.set_title('Percent Successful Trials with State Estimation Error in '+modelname + ' Environment', y=1.15)
+
+            ax.set_xticks(ind + width* 2)
+            ax.set_xticklabels(tick_labels, rotation=45, ha='right', va='center', rotation_mode='anchor')
+            if model == 'chair':
+                ax.set_title('TOC outperforms or is comparable to other methods for robotic wheelchair assistance', y=1.15)
+                ax.tick_params('x',width=109.5,direction='out',top='off')
+            else:
+                ax.set_title('TOC outperforms or is comparable to other methods for robotic bed assistance', y=1.15)
+                ax.tick_params('x', width=98., direction='out', top='off')
             # plt.xlim([0, N])
             # rcParams.update({'figure.autolayout': True})
             # plt.tight_layout(pad=0.2)
@@ -468,35 +717,67 @@ class Manipulability_Testing(object):
                 item.set_fontsize(20)
 
             ax.set_yticks([0., 25., 50., 75., 100.])
-            ax.set_ylim(0., 110.)
+            ax.set_ylim(-1.0, 112.)
             plt.autoscale(enable=True, axis='x', tight=True)
 
             ax.grid(True, axis='y', linestyle='dotted')
 
-            ax.legend([rects1[0], rects2[0], rects3[0], rects4[0], rects5[0]],
+            ax.legend([rects1[0], rects2[0], rects3[0], rects5[0]],
                       ['IK Solver', 'Capability Map', 'Capability Map w/ Collision',
-                       'TOC: 1 config', 'TOC: 2 configs'], fontsize=20,
+                       'TOC'], fontsize=20,
                       bbox_to_anchor=(0., 1.02, 1., .102), loc=3,
                       ncol=5, mode="expand", borderaxespad=0.)
-
-            def autolabel(rects):
+            # plt.rc('text', usetex=True)
+            def autolabel(rects, underline_indices):
                 """
                 Attach a text label above each bar displaying its height
                 """
-                for rect in rects:
-                    height = rect.get_height()
+                fonts = [FontProperties(),FontProperties()]
+                fonts[1].set_weight('bold')
+                for i in xrange(len(rects)):
+                    rect = rects[i]
+                    height = rect.get_height() - 1.
+                    # if height <= 6.:
+                    #     height -= 1.0
+                    if i in underline_indices:
+                        j = 1
+                    else:
+                        j = 0
                     ax.text(rect.get_x() + rect.get_width() / 2.+0.01, height+1.5,
-                            str("{:.0f}".format(height)),
+                            "{:.0f}".format(height),
+                            fontproperties=fonts[j],
                             # '%d' % int(height),
                             rotation=90,
                             fontsize=20,
                             ha='center', va='bottom')
+                    # else:
+                    #     ax.text(rect.get_x() + rect.get_width() / 2. + 0.01, height + 1.5,
+                    #             str("{:.0f}".format(height)),
+                    #             # '%d' % int(height),
+                    #             rotation=90,
+                    #             fontsize=20,
+                    #             ha='center', va='bottom')
+            if model == 'autobed':
+                # autolabel(rects1, [0, 1, 2, 3, 4, 6, 7, 8])
+                # autolabel(rects2, [2, 4, 5, 7, 8])
+                # autolabel(rects3, [2, 4, 5, 7, 8])
 
-            autolabel(rects1)
-            autolabel(rects2)
-            autolabel(rects3)
-            autolabel(rects4)
-            autolabel(rects5)
+                autolabel(rects1, [0, 1, 2, 3, 4, 6, 7, 8])
+                autolabel(rects2, [0, 4, 5, 7, 8])
+                autolabel(rects3, [0, 4, 5, 7, 8])
+                # autolabel(rects4)
+                autolabel(rects5, [])
+            else:
+                # autolabel(rects1, [1, 2, 3, 4, 6, 7])
+                # autolabel(rects2, [1, 2, 3, 4, 5, 6, 7])
+                # autolabel(rects3, [2, 3, 6, 7])
+
+                autolabel(rects1, [0, 1, 3, 4, 6, 7])
+                autolabel(rects2, [0, 1, 3, 4, 5, 6, 7])
+                autolabel(rects3, [0, 1, 6, 7])
+                # autolabel(rects4)
+                autolabel(rects5, [])
+            ax.tick_params(axis='x', pad=10)
             print 'Saving figure!'
             plt.savefig(save_file_path + 'comparison_vs_baseline_' + model + '.png', bbox_inches="tight")
 
@@ -603,7 +884,8 @@ class Manipulability_Testing(object):
             model_name = 'Autobed'
         elif model == 'chair':
             model_name = 'Wheelchair'
-        plt.suptitle(task_name + ' Task in ' + model_name + ' Environment', fontsize='26')
+        # plt.suptitle(task_name + ' Task in ' + model_name + ' Environment', fontsize='26')
+        plt.suptitle('TOC allows differentiation between robot configurations that can reach all goal poses', fontsize='26')
         # plt.suptitle('Scores for Robot Configurations for ' + task_name + ' Task in ' + model_name + ' Environment', fontsize='26')
         subplot_num = 120
         for score_type in ['accuracy', 'toc_score']:
@@ -693,8 +975,9 @@ class Manipulability_Testing(object):
                                         facecolor='lightgray', edgecolor='black', linewidth=3, alpha = 1.0))
                 ax.add_artist(Ellipse(xy=[0.54302, 0.], width=0.20, height=0.20, angle=0.,
                                             fill=False, linewidth=3))
-                plt.text(0.66, -0.03, 'Head Location', fontsize=16)
-                plt.text(1.7, -0.43, 'Bed Frame', fontsize=16)
+                plt.text(0.66, -0.03, 'Head location with', fontsize=16)
+                plt.text(0.66, -0.13, 'head rest at 45 degrees', fontsize=16)
+                plt.text(1.7, -0.43, 'Bed frame', fontsize=16)
                 # ax.add_artist(ell)
             # cbar = fig.colorbar(ax)
 
@@ -711,8 +994,9 @@ class Manipulability_Testing(object):
 
         # ax = plt.subplot(subplot_num, aspect='equal')
         # cax = plt.axes([0.85, 0.1, 0.075, 0.8])
-        ax1 = fig.add_axes([0.2, 0.87, 0.3, 0.02])
-        ax2 = fig.add_axes([0.5, 0.87, 0.3, 0.02])
+        ax11 = fig.add_axes([0.1, 0.87, 0.35, 0.02])
+        ax21 = fig.add_axes([0.6, 0.87, 0.1725, 0.02])
+        ax22 = fig.add_axes([0.7725, 0.87, 0.1725, 0.02])
         # ax1 = plt.subplot(133, )
         # ax2 = fig.add_axes([0.05, 0.475, 0.9, 0.15])
         # ax3 = fig.add_axes([0.05, 0.15, 0.9, 0.15])
@@ -727,7 +1011,7 @@ class Manipulability_Testing(object):
         # Set the colormap and norm to correspond to the data for which
         # the colorbar will be used.
         # cmap = mpl.cm.gist_rainbow
-        norm = mpl.colors.Normalize(vmin=1, vmax=1.4, clip=True)
+        norm = mpl.colors.Normalize(vmin=1, vmax=1.04, clip=True)
         # norm = mpl.colors.Normalize(clip=False)
 
         # ColorbarBase derives from ScalarMappable and puts a colorbar
@@ -735,40 +1019,54 @@ class Manipulability_Testing(object):
         # standalone colorbar.  There are many more kwargs, but the
         # following gives a basic continuous colorbar with ticks
         # and labels.
-        cb1 = mpl.colorbar.ColorbarBase(ax1, cmap=cmap1, drawedges=False,
+        cb11 = mpl.colorbar.ColorbarBase(ax11, cmap=cmap1, drawedges=False,
                                         # norm=norm,
                                         orientation='horizontal')
-        cb1.set_ticks([0., 1.0])
-        cb1.set_ticklabels(['0.00', '1.00'])
+        cb11.set_ticks([0., 1.0])
+        cb11.set_ticklabels(['0.00', '1.00'])
+
+        cb21 = mpl.colorbar.ColorbarBase(ax21, cmap=cmap1, drawedges=False,
+                                         # norm=norm,
+                                         orientation='horizontal')
+        cb21.set_ticks([0., 1.0])
+        cb21.set_ticklabels(['0.00', '1.00'])
 
 
-        cb2 = mpl.colorbar.ColorbarBase(ax2, cmap=cmap2, drawedges=False,
+        cb22 = mpl.colorbar.ColorbarBase(ax22, cmap=cmap2, drawedges=False,
                                         norm=norm,
                                         orientation='horizontal')
-        cb2.set_ticks([1.4])
-        cb2.set_ticklabels(['1.04'])
-        cb1.ax.xaxis.set_label_position('top')
-        cb1.set_label('Score 0 - 1.00', fontsize=20)
+        cb22.set_ticks([1.04])
+        cb22.set_ticklabels(['1.04'])
+        cb11.ax.xaxis.set_label_position('top')
+        cb11.set_label('Score 0 - 1.00', fontsize=20)
 
-        cb2.ax.xaxis.set_label_position('top')
-        cb2.set_label('Score 1.00 - 1.04', fontsize=20)
+        cb21.ax.xaxis.set_label_position('top')
+        cb21.set_label('Score 0 - 1.00', fontsize=20)
+
+        cb22.ax.xaxis.set_label_position('top')
+        cb22.set_label('Score 1.00 - 1.04', fontsize=20)
 
         # for item in [cb1.get_yticklabels(), cb2.get_yticklabels()]:
         #     item.set_fontsize(20)
-        cb1.ax.tick_params(labelsize=20)
-        cb2.ax.tick_params(labelsize=20)
+        cb11.ax.tick_params(labelsize=20)
+        cb21.ax.tick_params(labelsize=20)
+        cb22.ax.tick_params(labelsize=20)
         plt.tight_layout()
         print 'Saving figure!'
         plt.savefig(save_file_path + 'base_brute_evaluation_fig_' + task + '_' + model + '.png', bbox_inches="tight", )
         print 'Done with all plots!'
-        plt.show()
-        fig2 = plt.figure(2)
-        rospy.spin()
+        plt.show(block=True)
+        # fig2 = plt.figure(2)
+        # rospy.spin()
 
-    def robustness_calculation(self, task, model, method, discretization_size, search_area, reset_save_file=False, save_results=False):
+    def robustness_calculation(self, task, model, method, discretization_size, search_area,
+                               allow_additional_movement, reset_save_file=False, save_results=False):
         save_file_path = self.pkg_path + '/data/'
 
         key = []
+        if model == 'chair' and allow_additional_movement == 1 and task in ['arm_cuffs', 'scratching_knee_left', 'scratching_knee_right',
+                                         'scratching_upper_arm_left', 'scratching_upper_arm_right']:
+            return
 
         key.append(task)
         key.append(method)
@@ -782,12 +1080,12 @@ class Manipulability_Testing(object):
             key.append(-10)
             key.append(0.0)
             key.append(0.0)
-            key.append(1)
+            key.append(allow_additional_movement)
         else:
             key.append(0)
             key.append(0)
             key.append(0)
-            key.append(0)
+            key.append(allow_additional_movement)
         key = tuple(key)
         print 'I will use data with the saved key:\n', key
         loaded_score = self.loaded_scores[key]
@@ -832,7 +1130,8 @@ class Manipulability_Testing(object):
         # fig_num = 0
         # fig = plt.figure(fig_num, figsize=(24, 14))
         for base in xrange(num_plots):
-            save_file_name = 'robustness_visualization_results_' + task + '_' + model + '_' + str(base) + '.log'
+            save_file_name = 'robustness_visualization_results_' + task + '_' + model + '_move' \
+                             + str(allow_additional_movement) + '_' + str(base) + '.log'
             if reset_save_file:
                 open(save_file_path + save_file_name, 'w').close()
                 # open(save_file_path + 'raw_' + save_file_name, 'w').close()
@@ -872,27 +1171,33 @@ class Manipulability_Testing(object):
             print 'Saved file:', save_file_name
         print 'Done with all calculation of robustness'
 
-    def robustness_plotting(self, task, model, method, discretization_size, search_area):
+    def robustness_plotting(self, task, model, method, discretization_size, search_area, allow_additional_movement):
         print 'Starting visualization of robustness'
         subplot_num = 130
-        base_file_name = 'robustness_visualization_results_' + task + '_' + model + '_'
+        base_file_name = 'robustness_visualization_results_' + task + '_' + model + '_move' + str(allow_additional_movement) + '_'
         save_file_path = self.pkg_path + '/data/'
 
         plot_ids = []
         self.fig_num += 1
         file_list = os.listdir(save_file_path)
+
         for item in file_list:
+            # print item
             if base_file_name in item:
                 item = filter(None, re.split('[_.]', item))
                 plot_ids.append(int(item[-2]))
-        num_plots = np.max(plot_ids)+1
+        # print base_file_name
         if plot_ids == []:
+
             return
+        num_plots = np.max(plot_ids) + 1
 
         print 'Preparing plot visualization. Will make', num_plots, 'total plots'
 
         if task == 'shaving':
             task_name = 'Shaving'
+        elif task == 'shaving_no_wall':
+            task_name = 'Shaving with no wall'
         elif task == 'arm_cuffs':
             task_name = 'Cleaning Arms'
         elif task == 'wiping_mouth':
@@ -900,17 +1205,19 @@ class Manipulability_Testing(object):
         elif task == 'scratching_upper_arm_left':
             task_name = 'Scratching Left Upper Arm'
         elif task == 'scratching_knee_left':
-            task_name = 'Scratcing Left Knee'
+            task_name = 'Scratching Left Knee'
         elif task == 'scratching_knee_right':
-            task_name = 'Scratcing Right Knee'
+            task_name = 'Scratching Right Knee'
         elif task == 'scratching_upper_arm_left':
-            task_name = 'Scratcing Left Upper Arm'
+            task_name = 'Scratching Left Upper Arm'
         elif task == 'scratching_upper_arm_right':
-            task_name = 'Scratcing Right Upper Arm'
+            task_name = 'Scratching Right Upper Arm'
         elif task == 'bathe_legs':
             task_name = 'Cleaning Legs'
         elif task == 'feeding_trajectory':
             task_name = 'Feeding'
+        else:
+            print 'I do not know this task', task
         if model == 'autobed':
             model_name = 'Robotic Bed'
         elif model == 'chair':
@@ -926,7 +1233,7 @@ class Manipulability_Testing(object):
 
         for base in xrange(num_plots):
             print 'Starting plot', base+1
-            save_file_name = 'robustness_visualization_results_' + task + '_' + model + '_' + str(base) + '.log'
+            save_file_name = 'robustness_visualization_results_' + task + '_' + model + '_move' + str(allow_additional_movement) + '_' + str(base) + '.log'
 
             loaded_data = [line.rstrip('\n').split(',') for line in open(save_file_path+save_file_name)]
             # print loaded_data
@@ -1081,7 +1388,7 @@ class Manipulability_Testing(object):
         # ax.legend(handles=[red_patch, orange_patch, yellow_patch, green_patch], fontsize=20,
         #           bbox_to_anchor=(0.9, 1), loc=2, borderaxespad=0.)
         print 'Saving figure!'
-        plt.savefig(save_file_path+'robustness_fig_'+task+'_' + model + '.png',bbox_inches="tight",)
+        plt.savefig(save_file_path+'robustness_fig_'+task+'_' + model + '_move' + str(allow_additional_movement)+  '.png',bbox_inches="tight",)
         print 'Done with all plots!'
         # plt.show()
         # fig2 = plt.figure(2)
@@ -1435,7 +1742,8 @@ class Manipulability_Testing(object):
 if __name__ == "__main__":
     comparison_type_options = ['comparison', 'toc_correlation',
                                'robustness_visualization', 'plot_comparison',
-                               'base_brute_evaluation','plot_base_brute_evaluation']
+                               'base_brute_evaluation','plot_base_brute_evaluation',
+                               'plot_correlation', 'comparison_significance']
     comparison_type = comparison_type_options[3]
 
     rospy.init_node('manipulability_test_cma'+comparison_type+str(time.time()).split('.')[0])
@@ -1447,12 +1755,17 @@ if __name__ == "__main__":
         seed = 100
         # myTest.run_comparisons_monty_carlo(reset_save_file=True, save_results=True, mc_sim_number=200, seed=seed)
         myTest.run_comparisons_monty_carlo(reset_save_file=False, save_results=False, mc_sim_number=100, seed=seed,
-                                           force_key=['wiping_mouth', 'inverse_reachability', 'cma', 'chair'], use_error=False)
+                                           force_key=['shaving', 'toc', 'cma', 'chair'], use_error=False)
 
     if comparison_type == 'plot_comparison':
         print 'Doing plotting of TOC comparison'
         myTest.comparisons_monty_carlo_plotting()
         rospy.spin()
+
+    if comparison_type == 'comparison_significance':
+        print 'Doing comparison significance analysis'
+        myTest.comparisons_significance()
+        # rospy.spin()
 
     elif comparison_type == 'toc_correlation':
         print 'Doing toc correlation'
@@ -1467,25 +1780,33 @@ if __name__ == "__main__":
         gc.collect()
         # print 'Done! Time to generate all scores for all tasks: %fs' % (time.time() - full_start_time)
 
+    if comparison_type == 'plot_correlation':
+        print 'Doing plotting of TOC correlation'
+        myTest.toc_correlation_plotting()
+        # rospy.spin()
+
     elif comparison_type == 'robustness_visualization':
         print 'Doing robustness visualization'
         seed = 1000
         search_area = 0.7
         discretization_size = 0.01  # centimeters
-        model = 'chair'
+        model = 'autobed'
         task = 'arm_cuffs'  # 'shaving', 'wiping_mouth', 'arm_cuffs'
         method = 'toc' #inverse_reachability_collision
         this_start_time = rospy.Time.now()
         myTest.load_scores()
-        tasks = [ 'shaving', 'arm_cuffs', 'wiping_mouth', 'scratching_knee_left', 'scratching_knee_right', 'scratching_upper_arm_left','scratching_upper_arm_right',
-                  'feeding_trajectory', 'bathe_legs']#, 'shaving' ,'wiping_mouth', 'bathe_legs']
-        models = ['chair' ]#, 'autobed' ]
+        tasks = [ 'shaving', 'bathe_legs', 'arm_cuffs', 'wiping_mouth', 'scratching_knee_left', 'scratching_knee_right', 'scratching_upper_arm_left','scratching_upper_arm_right',
+                  'feeding_trajectory']#, 'shaving' ,'wiping_mouth', 'bathe_legs']
+        tasks = ['shaving_no_wall']
+        models = ['autobed' ]#, 'autobed' ]
+        movements_allowed = [1]
         for model in models:
             for task in tasks:
-                # myTest.robustness_calculation(task, model, method, discretization_size, search_area,
-                #                               reset_save_file=True, save_results=True)
-                myTest.robustness_plotting(task, model, method, discretization_size, search_area)
-                gc.collect()
+                for allow_movement in movements_allowed:
+                    myTest.robustness_calculation(task, model, method, discretization_size, search_area, allow_movement,
+                                                  reset_save_file=True, save_results=True)
+                    myTest.robustness_plotting(task, model, method, discretization_size, search_area, allow_movement)
+                    gc.collect()
         print 'Done! Time to generate all scores for this task, method, and sampling:', (
         rospy.Time.now() - this_start_time).to_sec()
 
