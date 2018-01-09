@@ -463,8 +463,8 @@ class ScoreGenerator(object):
                 self.ir_and_collision = False
             self.ireach = InverseReachabilitySetup(visualize=False, redo_ik=False,
                                                    redo_reachability=False, redo_ir=False, manip='leftarm')
-        if (method == 'inverse_reachability' or method == 'inverse_reachability_collision' or method == 'ik') and not force_allow_additional_movement:
-            additional_movement = [0, 1]
+        if self.model == 'chair' and self.task in ['scratching_knee_left', 'scratching_knee_right', 'arm_cuffs', 'scratching_upper_arm_left', 'scratching_upper_arm_right'] and not force_allow_additional_movement:
+            additional_movement = [0]
         else:
             additional_movement = [0, 1]
         start_positions_y = [0.85, -0.85]
@@ -548,7 +548,7 @@ class ScoreGenerator(object):
                         self.allow_additional_movement = parameters[8]
             #            self.heady=0.03
 
-                        if self.allow_additional_movement == 1 and self.model == 'chair':
+                        if self.allow_additional_movement == 1 and self.model == 'chair' and (self.task=='wiping_mouth' or self.task=='shaving' or self.task=='feeding_trajectory'):
                             self.head_angles = np.array([[45., 0.], [0., 0.], [-45., 0.]])
                         else:
                             self.head_angles = np.array([[0., 0.]])
@@ -5040,6 +5040,7 @@ class ScoreGenerator(object):
             rospy.sleep(0.01)
             self.autobed = self.env.GetRobots()[1]
             v = self.autobed.GetActiveDOFValues()
+            remove_wall = True
             shift = 0.
             #            if self.task == 'scratching_knee_left':
             #            shift = 0.02
