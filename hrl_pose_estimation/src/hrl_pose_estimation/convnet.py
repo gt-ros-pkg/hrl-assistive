@@ -3,9 +3,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
+from kinematics_lib import KinematicsLib
 
 class CNN(nn.Module):
-    def __init__(self, mat_size, out_size, hidden_dim, kernel_size):
+    def __init__(self, mat_size, out_size, hidden_dim, kernel_size, loss_vector_type):
         '''
         Create components of a CNN classifier and initialize their weights.
 
@@ -21,7 +22,7 @@ class CNN(nn.Module):
         # TODO: Initialize anything you need for the forward pass
         #############################################################################
         #print mat_size
-
+        self.loss_vector_type = loss_vector_type
 
         hidden_dim1= 16
         hidden_dim2 = 32
@@ -118,7 +119,7 @@ class CNN(nn.Module):
         #print scores.size(), 'scores fc1'
         scores = self.CNN_fc(scores)
 
-        targets_est = Variable(torch.Tensor(np.copy(scores.data.numpy())))
+        targets_est = np.copy(scores.data.numpy())
 
         #print scores.size(), 'scores fc2'
 
@@ -130,10 +131,7 @@ class CNN(nn.Module):
         scores[:,2] = scores[:,6]+scores[:,7]+scores[:,8]
         scores[:,3] = scores[:,9]+scores[:,10]+scores[:,11]
         scores[:,4] = scores[:,12]+scores[:,13]+scores[:,14]
-        scores = scores.unsqueeze(0)
-        scores = scores.unsqueeze(0)
-        scores = F.pad(scores, (0,-10,0,0), "constant", 0)
-        scores = scores.squeeze()
+        scores = scores[:, 0:5]
         scores = scores.sqrt()
 
 
@@ -142,7 +140,7 @@ class CNN(nn.Module):
         #############################################################################
         return scores, targets_est
 
-    def forward_kinematic_jacobian(self, images, targets, constraints):
+    def forward_kinematic_jacobian(self, images, targets, kincons, prior_cascade = None):
         '''
         Take a batch of images and run them through the CNN to
         produce a scores for each class.
@@ -167,7 +165,6 @@ class CNN(nn.Module):
         #scores_size = scores.size()
         #print scores_size, 'scores conv1'
 
-
         scores = self.CNN_pack2(scores)
         #scores_size = scores.size()
         #print scores_size, 'scores conv2'
@@ -180,35 +177,128 @@ class CNN(nn.Module):
         scores_size = scores.size()
         #print scores_size, 'scores conv4'
 
-        #scores = self.CNN_pack5(scores)
-        #scores_size = scores.size()
-        #rint scores_size, 'scores_conv5'
-
         # This combines the height, width, and filters into a single dimension
         scores = scores.view(images.size(0),scores_size[1] *scores_size[2]*scores_size[3] )
 
         #print scores.size(), 'scores fc1'
         scores = self.CNN_fc(scores)
 
-        targets_est = Variable(torch.Tensor(np.copy(scores.data.numpy())))
+        #kincons_est = Variable(torch.Tensor(np.copy(scores.data.numpy())))
 
-        #print scores.size(), 'scores fc2'
+        #torso_scores = scores[:, 0:3]
 
-        #here we want to compute our score as the Euclidean distance between the estimated x,y,z points and the target.
-        scores = targets - scores
-        scores = scores.pow(2)
-        scores[:, 0] = scores[:, 0] + scores[:, 1] + scores[:, 2]
-        scores[:,1] = scores[:,3]+scores[:,4]+scores[:,5]
-        scores[:,2] = scores[:,6]+scores[:,7]+scores[:,8]
-        scores[:,3] = scores[:,9]+scores[:,10]+scores[:,11]
-        scores[:,4] = scores[:,12]+scores[:,13]+scores[:,14]
-        scores = scores.unsqueeze(0)
-        scores = scores.unsqueeze(0)
-        scores = F.pad(scores, (0,-10,0,0), "constant", 0)
-        scores = scores.squeeze()
-        scores = scores.sqrt()
+
+        #angles_scores = scores[:, 11:19]
+
+        kincons = kincons / 100
+
+
+
+        #print scores.size(), scores[0, :], 'kinematic estimates'
+
+
+        #scores = scores[:, 0:8].
+
+
+        scores = KinematicsLib().forward_kinematics_pytorch(images, scores, targets, kincons, loss_vector_type=self.loss_vector_type, prior_cascade = prior_cascade)
+
+        if self.loss_vector_type == 'upper_angles':
+            targets_est = np.copy(scores[:, 9:27].data.numpy())*1000. #this is after the forward kinematics
+            targets_est[:, 0:3] = np.copy(scores[:, 12:15].data.numpy())*1000. #this is after the forward kinematics
+            targets_est[:, 3:6] = np.copy(scores[:, 9:12].data.numpy())*1000. #this is after the forward kinematics
+            lengths_est = np.copy(scores[:, 0:9].data.numpy())
+
+            scores = scores.unsqueeze(0)
+            scores = scores.unsqueeze(0)
+            scores = F.pad(scores, (6, 18, 0, 0))
+            scores = scores.squeeze(0)
+            scores = scores.squeeze(0)
+
+
+            scores[:, 21:33] = targets[:, 6:18]/1000 - scores[:, 21:33]
+            scores[:, 15:18] = targets[:, 3:6]/1000 - scores[:, 15:18]
+            scores[:, 18:21] = targets[:, 0:3]/1000 - scores[:, 18:21]
+
+            scores[:, 33:51] = ((scores[:, 15:33])*1.).pow(2)
+
+            scores[:, 0] = (scores[:, 33] + scores[:, 34] + scores[:, 35]).sqrt()
+            scores[:, 1] = (scores[:, 36] + scores[:, 37] + scores[:, 38]).sqrt()
+            scores[:, 2] = (scores[:, 39] + scores[:, 40] + scores[:, 41]).sqrt()
+            scores[:, 3] = (scores[:, 42] + scores[:, 43] + scores[:, 44]).sqrt()
+            scores[:, 4] = (scores[:, 45] + scores[:, 46] + scores[:, 47]).sqrt()
+            scores[:, 5] = (scores[:, 48] + scores[:, 49] + scores[:, 50]).sqrt()
+
+
+            scores = scores.unsqueeze(0)
+            scores = scores.unsqueeze(0)
+            scores = F.pad(scores, (0, -36, 0, 0))
+            scores = scores.squeeze(0)
+            scores = scores.squeeze(0)
+
+        elif self.loss_vector_type == 'angles':
+            targets_est = np.copy(scores[:, 17:47].data.numpy())*1000. #after it comes out of the forward kinematics
+            targets_est[:, 0:3] = np.copy(scores[:, 20:23].data.numpy())*1000. #after it comes out of the forward kinematics
+            targets_est[:, 3:6] = np.copy(scores[:, 17:20].data.numpy())*1000. #after it comes out of the forward kinematics
+            lengths_est = np.copy(scores[:, 0:17].data.numpy())
+
+            scores = scores.unsqueeze(0)
+            scores = scores.unsqueeze(0)
+            scores = F.pad(scores, (10, 30, 0, 0))
+            scores = scores.squeeze(0)
+            scores = scores.squeeze(0)
+
+
+
+            scores[:, 27:30] = targets[:, 3:6]/1000 - scores[:, 27:30]
+            scores[:, 30:33] = targets[:, 0:3]/1000 - scores[:, 30:33]
+            scores[:, 33:57] = targets[:, 6:30]/1000 - scores[:, 33:57]
+
+            scores[:, 57:87] = ((scores[:, 27:57])*1.).pow(2)
+
+
+            scores[:, 0] = (scores[:, 57] + scores[:, 58] + scores[:, 59]).sqrt()# consider weighting the torso by a >1 factor because it's very important to root the other joints
+            scores[:, 1] = (scores[:, 60] + scores[:, 61] + scores[:, 62]).sqrt()
+            scores[:, 2] = (scores[:, 63] + scores[:, 64] + scores[:, 65]).sqrt()
+            scores[:, 3] = (scores[:, 66] + scores[:, 67] + scores[:, 68]).sqrt()
+            scores[:, 4] = (scores[:, 69] + scores[:, 70] + scores[:, 71]).sqrt()
+            scores[:, 5] = (scores[:, 72] + scores[:, 73] + scores[:, 74]).sqrt()
+            scores[:, 6] = (scores[:, 75] + scores[:, 76] + scores[:, 77]).sqrt()
+            scores[:, 7] = (scores[:, 78] + scores[:, 79] + scores[:, 80]).sqrt()
+            scores[:, 8] = (scores[:, 81] + scores[:, 82] + scores[:, 83]).sqrt()
+            scores[:, 9] = (scores[:, 84] + scores[:, 85] + scores[:, 86]).sqrt()
+
+
+            scores = scores.unsqueeze(0)
+            scores = scores.unsqueeze(0)
+            scores = F.pad(scores, (0, -60, 0, 0))
+            scores = scores.squeeze(0)
+            scores = scores.squeeze(0)
+
+        elif self.loss_vector_type == 'arms_cascade':
+            targets_est = np.copy(scores[:, 0:6].data.numpy())*1000.
+
+            scores = scores.unsqueeze(0)
+            scores = scores.unsqueeze(0)
+            scores = F.pad(scores, (2, 6, 0, 0))
+            scores = scores.squeeze(0)
+            scores = scores.squeeze(0)
+
+
+            scores[:, 2:8] = torch.cat((targets[:, 9:12], targets[:, 15:18]), dim = 1)/1000. - scores[:, 2:8]
+            scores[:, 8:14] = ((scores[:, 2:8])*1.).pow(2)
+
+            scores[:, 0] = (scores[:, 8] + scores[:, 9] + scores[:, 10]).sqrt()
+            scores[:, 1] = (scores[:, 11] + scores[:, 12] + scores[:, 13]).sqrt()
+
+
+            scores = scores.unsqueeze(0)
+            scores = scores.unsqueeze(0)
+            scores = F.pad(scores, (0, -12, 0, 0))
+            scores = scores.squeeze(0)
+            scores = scores.squeeze(0)
 
 
         #############################################################################
         #                             END OF YOUR CODE                              #
         #############################################################################
+        return scores, targets_est#, lengths_scores

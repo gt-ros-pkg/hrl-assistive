@@ -91,7 +91,7 @@ Visualization Manager:
       Marker Topic: /pressure_image
       Name: MarkerArray
       Namespaces:
-        {}
+        "": true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -142,7 +142,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 2.78406
+      Distance: 2.49639
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
@@ -154,10 +154,10 @@ Visualization Manager:
         Z: -0.314191
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 1.2948
+      Pitch: 0.484797
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.11346
+      Yaw: 4.72162
     Saved: ~
 Window Geometry:
   Displays:

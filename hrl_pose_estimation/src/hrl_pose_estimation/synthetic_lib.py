@@ -227,20 +227,51 @@ class SyntheticLib():
         # swap in the z
         dummy = zeros((tar_mod.shape))
 
-        if self.arms_only == True:
+        if self.loss_vector_type == 'upper_angles':
 
-            dummy[:, [1, 3], :] = tar_mod[:, [1, 3], :]
-            tar_mod[:, [1, 3], :] = tar_mod[:, [2, 4], :]
-            tar_mod[:, [2, 4], :] = dummy[:, [1, 3], :]
+            dummy[:, [2, 4], :] = tar_mod[:, [2, 4], :]
+            tar_mod[:, [2, 4], :] = tar_mod[:, [3, 5], :]
+            tar_mod[:, [3, 5], :] = dummy[:, [2, 4], :]
             if pcons is not None:
                 pcons_orig = np.multiply(pcons, original[:, np.newaxis])
                 pcons_mod = np.multiply(pcons, modified[:, np.newaxis])
                 dummy2 = zeros((pcons_mod.shape))
-                dummy2[:, [4, 6, 8, 10, 12, 14]] = pcons_mod[:, [4, 6, 8, 10, 12, 14]]
-                pcons_mod[:, [4, 6, 8, 10, 12, 14]] = pcons_mod[:, [5, 7, 9, 11, 13, 15]]
-                pcons_mod[:, [5, 7, 9, 11, 13, 15]] = dummy2[:, [4, 6, 8, 10, 12, 14]]
+                dummy2[:, [0, 2, 4, 6, 14, 16]] = pcons_mod[:, [0, 2, 4, 6, 14, 16]]
+                pcons_mod[:, [0, 2, 4, 6, 14, 16]] = pcons_mod[:, [1, 3, 5, 7, 15, 17]]
+                pcons_mod[:, [1, 3, 5, 7, 15, 17]] = dummy2[:, [0, 2, 4, 6, 14, 16]]
                 pcons_mod = np.multiply(pcons_mod, modified[:, np.newaxis])
                 pcons = pcons_orig + pcons_mod
+
+        elif self.loss_vector_type == 'angles':
+
+            dummy[:, [2, 4, 6, 8], :] = tar_mod[:, [2, 4, 6, 8], :]
+            tar_mod[:, [2, 4, 6, 8], :] = tar_mod[:, [3, 5, 7, 9], :]
+            tar_mod[:, [3, 5, 7, 9], :] = dummy[:, [2, 4, 6, 8], :]
+            if pcons is not None:
+                pcons_orig = np.multiply(pcons, original[:, np.newaxis])
+                pcons_mod = np.multiply(pcons, modified[:, np.newaxis])
+                dummy2 = zeros((pcons_mod.shape))
+                dummy2[:, [0, 2, 4, 6, 10, 12, 14, 16, 22, 24, 31, 33]] = pcons_mod[:, [0, 2, 4, 6, 10, 12, 14, 16, 22, 24, 31, 33]]
+                pcons_mod[:, [0, 2, 4, 6, 10, 12, 14, 16, 22, 24, 31, 33]] = pcons_mod[:, [1, 3, 5, 7, 11, 13, 15, 17, 23, 25, 32, 34]]
+                pcons_mod[:, [1, 3, 5, 7, 11, 13, 15, 17, 23, 25, 32, 34]] = dummy2[:, [0, 2, 4, 6, 10, 12, 14, 16, 22, 24, 31, 33]]
+                pcons_mod = np.multiply(pcons_mod, modified[:, np.newaxis])
+                pcons = pcons_orig + pcons_mod
+
+        elif self.loss_vector_type == 'arms_cascade':
+
+            dummy[:, [1, 3, 5], :] = tar_mod[:, [1, 3, 5], :]
+            tar_mod[:, [1, 3, 5], :] = tar_mod[:, [2, 4, 6], :]
+            tar_mod[:, [2, 4, 6], :] = dummy[:, [1, 3, 5], :]
+            if pcons is not None:
+                pcons_orig = np.multiply(pcons, original[:, np.newaxis])
+                pcons_mod = np.multiply(pcons, modified[:, np.newaxis])
+                dummy2 = zeros((pcons_mod.shape))
+                dummy2[:, [0, 2, 4, 6, 14, 16]] = pcons_mod[:, [0, 2, 4, 6, 14, 16]]
+                pcons_mod[:, [0, 2, 4, 6, 14, 16]] = pcons_mod[:, [1, 3, 5, 7, 15, 17]]
+                pcons_mod[:, [1, 3, 5, 7, 15, 17]] = dummy2[:, [0, 2, 4, 6, 14, 16]]
+                pcons_mod = np.multiply(pcons_mod, modified[:, np.newaxis])
+                pcons = pcons_orig + pcons_mod
+
 
         else:
             dummy[:, [2, 4, 6, 8], :] = tar_mod[:, [2, 4, 6, 8], :]
@@ -256,8 +287,8 @@ class SyntheticLib():
         return images, targets, pcons
 
 
-    def synthetic_master(self, images_tensor, targets_tensor, pcons_tensor = None, flip=False, shift=False, scale=False, bedangle = False, arms_only = False, include_inter = False, p_cons = False):
-        self.arms_only = arms_only
+    def synthetic_master(self, images_tensor, targets_tensor, pcons_tensor = None, flip=False, shift=False, scale=False, bedangle = False, include_inter = False, loss_vector_type = False):
+        self.loss_vector_type = loss_vector_type
         self.include_inter = include_inter
         self.t1 = time.time()
         images_tensor = torch.squeeze(images_tensor)

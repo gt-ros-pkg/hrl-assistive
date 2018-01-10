@@ -82,17 +82,16 @@ class DataVisualizer():
         self.verbose = True
         self.old = False
         self.normalize = True
-        self.opt.arms_only = True
         self.include_inter = True
-        self.loss_vector_type = None#'arm_angles'
+        self.loss_vector_type = 'angles'
         # Set initial parameters
         self.dump_path = pkl_directory.rstrip('/')
 
         self.mat_size = (NUMOFTAXELS_X, NUMOFTAXELS_Y)
 
 
-        if self.opt.arms_only == True:
-            self.output_size = (NUMOFOUTPUTNODES-5, NUMOFOUTPUTDIMS)
+        if self.opt.upper_only == True:
+            self.output_size = (NUMOFOUTPUTNODES-4, NUMOFOUTPUTDIMS)
         else:
             self.output_size = (NUMOFOUTPUTNODES, NUMOFOUTPUTDIMS)
 
@@ -130,16 +129,6 @@ class DataVisualizer():
 
 
         if self.subject == 1:
-            #plt.plot(train_val_loss['epoch_flip_1'], train_val_loss['train_flip_1'],'b')
-            #plt.plot(train_val_loss['epoch_1'], train_val_loss['train_1'], 'g')
-            #plt.plot(train_val_loss['epoch_1'], train_val_loss['val_1'], 'k')
-            #plt.plot(train_val_loss['epoch_flip_1'], train_val_loss['val_flip_1'], 'r')
-            #plt.plot(train_val_loss['epoch_flip_shift_1'], train_val_loss['train_flip_shift_1'], 'g')
-            #plt.plot(train_val_loss['epoch_flip_shift_1'], train_val_loss['val_flip_shift_1'], 'g')
-            #plt.plot(train_val_loss['epoch_flip_shift_nd_1'], train_val_loss['val_flip_shift_nd_1'], 'g')
-            #plt.plot(train_val_loss['epoch_flip_shift_nd_nohome_1'], train_val_loss['val_flip_shift_nd_nohome_1'], 'y')
-            #plt.plot(train_val_loss['epoch_armsup_flip_shift_scale5_nd_nohome_1'], train_val_loss['train_armsup_flip_shift_scale5_nd_nohome_1'], 'b')
-            #plt.plot(train_val_loss['epoch_armsup_flip_shift_scale5_nd_nohome_1'], train_val_loss['val_armsup_flip_shift_scale5_nd_nohome_1'], 'r')
 
             plt.plot(train_val_loss_desk['epoch_armsup_700e_1'], train_val_loss_desk['val_armsup_700e_1'], 'k',label='Raw Pressure Map Input')
             #plt.plot(train_val_loss['epoch_sitting_flip_700e_4'], train_val_loss['val_sitting_flip_700e_4'], 'c',label='Synthetic Flipping: $Pr(X=flip)=0.5$')
@@ -152,46 +141,15 @@ class DataVisualizer():
 
 
         elif self.subject == 4:
-            #plt.plot(train_val_loss['epoch_flip_4'], train_val_loss['train_flip_4'], 'g')
-            #plt.plot(train_val_loss['epoch_flip_4'], train_val_loss['val_flip_4'], 'y')
-            #plt.plot(train_val_loss['epoch_4'], train_val_loss['train_4'], 'b')
-            #plt.plot(train_val_loss['epoch_4'], train_val_loss['val_4'], 'r')
-            #plt.plot(train_val_loss['epoch_flip_shift_nd_4'], train_val_loss['val_flip_shift_nd_4'], 'b')
-            #plt.plot(train_val_loss['epoch_flip_shift_nd_nohome_4'], train_val_loss['val_flip_shift_nd_nohome_4'], 'y')
-
             if pathkey == 'lab_hd': #results presented to hrl dressing 171106
 
-                if self.opt.arms_only == True:
-                    #plt.plot(train_val_loss_all['epoch_2to8_all_armsonly_fss_100b_adam_300e_4'],train_val_loss_all['train_2to8_all_armsonly_fss_100b_adam_300e_4'],'k', label='Synthetic Flipping+Shifting+Scaling')
-                    # plt.plot(train_val_loss_all['epoch_2to8_all_armsonly_fss_100b_adam_300e_4'],train_val_loss_all['val_2to8_all_armsonly_fss_100b_adam_300e_4'], 'c',label='Synthetic Flipping+Shifting+Scaling')
-                    # plt.plot(train_val_loss_all['epoch_2to8_all_armsonly_fss_115b_adam_100e_4'],train_val_loss_all['val_2to8_all_armsonly_fss_115b_adam_100e_4'], 'g',label='Synthetic Flipping+Shifting+Scaling')
-                    # plt.plot(train_val_loss_all['epoch_2to8_all_armsonly_fss_130b_adam_120e_4'],train_val_loss_all['val_2to8_all_armsonly_fss_130b_adam_120e_4'], 'y',label='Synthetic Flipping+Shifting+Scaling')
-                    # plt.plot(train_val_loss_all['epoch_2to8_all_armsonly_fss_115b_adam_350e_4'],train_val_loss_all['val_2to8_all_armsonly_fss_115b_adam_350e_4'], 'r',label='Synthetic Flipping+Shifting+Scaling')
-                    # plt.plot(train_val_loss_all['epoch_2to8_all_armsonly_fss_115b_adam_120e_lg1_4'],train_val_loss_all['val_2to8_all_armsonly_fss_115b_adam_120e_lg1_4'], 'b',label='Synthetic Flipping+Shifting+Scaling')
-                    # plt.plot(train_val_loss_all['epoch_2to8_all_armsonly_fss_115b_adam_200e_sm1_4'],
-                    #          train_val_loss_all['val_2to8_all_armsonly_fss_115b_adam_200e_sm1_4'], 'm',
-                    #          label='Synthetic Flipping+Shifting+Scaling')
-                    #plt.plot(train_val_loss_all['epoch_2to8_alldata_armsonly_direct_115b_adam_200e_4'],train_val_loss_all['val_2to8_alldata_armsonly_direct_115b_adam_200e_4'], 'k',label='Direct Joint, Synthetic Flipping+Shifting')
-                    #plt.plot(train_val_loss_all['epoch_2to8_all_armsonly_kincons_115b_adam_200e_4'],train_val_loss_all['val_2to8_all_armsonly_kincons_115b_adam_200e_4'], 'b',label='Kinematics, Synthetic Flipping+Shifting')
-                    #plt.plot(train_val_loss_all['epoch_2to8_all_armsonly_kincons_fs_5xp_115b_adam_200e_4'],train_val_loss_all['val_2to8_all_armsonly_kincons_fs_5xp_115b_adam_200e_4'], 'y',label='Kinematics, 4x pitch, Synthetic Flipping+Shifting')
-                    #plt.plot(train_val_loss_all['epoch_2to8_alldata_armsonly_direct_115b_adam_100e_4_smkernel4'], train_val_loss_all['val_2to8_alldata_armsonly_direct_115b_adam_100e_4_smkernel4'], 'g', label='Kinematics, Synthetic Flipping+Shifting')
-                    #plt.plot(train_val_loss_all['epoch_2to8_alldata_armsonly_direct_115b_adam_200e_4_smkernel24'],
-                    #         train_val_loss_all['val_2to8_alldata_armsonly_direct_115b_adam_200e_4_smkernel24'], 'y',
-                    #         label='Kinematics, Synthetic Flipping+Shifting')
+
+                plt.plot(train_val_loss_all['epoch_2to8_alldata_angles_115b_adam_200e_44'], train_val_loss_all['train_2to8_alldata_angles_115b_adam_200e_44'], 'k')
+                plt.plot(train_val_loss_all['epoch_2to8_alldata_angles_115b_adam_200e_44'], train_val_loss_all['val_2to8_alldata_angles_115b_adam_200e_44'], 'y')
 
 
 
-                    #plt.plot(train_val_loss_all['epoch_2to8_alldata_armsonly_direct_115b_adam_400e_44'], train_val_loss_all['val_2to8_alldata_armsonly_direct_115b_adam_400e_44'], 'g', label='2-channel input')
-                    #plt.plot(train_val_loss_all['epoch_2to8_alldata_armsonly_direct_inclinter_115b_adam_200e_44'],
-                    #         train_val_loss_all['val_2to8_alldata_armsonly_direct_inclinter_115b_adam_200e_44'], 'y',
-                    #         label='3-channel input')
-                    #plt.plot([0, 410], [3000, 3000], 'k')
-                    plt.plot(train_val_loss_all['epoch_2to8_alldata_armsonly_euclidean_error_115b_adam_100e_44'], train_val_loss_all['train_2to8_alldata_armsonly_euclidean_error_115b_adam_100e_44'], 'k')
-                    plt.plot(train_val_loss_all['epoch_2to8_alldata_armsonly_euclidean_error_115b_adam_100e_44'], train_val_loss_all['val_2to8_alldata_armsonly_euclidean_error_115b_adam_100e_44'], 'y')
-
-
-
-                else:
+                if False:
                     plt.plot(train_val_loss['epoch_sitting_700e_4'],train_val_loss['val_sitting_700e_4'],'k', label='Raw Pressure Map Input')
                     plt.plot(train_val_loss['epoch_sitting_flip_700e_4'], train_val_loss['val_sitting_flip_700e_4'], 'c', label='Synthetic Flipping: $Pr(X=flip)=0.5$')
                     plt.plot(train_val_loss['epoch_sitting_flip_shift_nd_700e4'],train_val_loss['val_sitting_flip_shift_nd_700e4'], 'g', label='Synthetic Flipping+Shifting: $X,Y \sim N(\mu,\sigma), \mu = 0 cm, \sigma \~= 9 cm$')
@@ -207,18 +165,8 @@ class DataVisualizer():
 
 
 
-
-        elif self.subject == 10:
-            if pathkey == 'hc_desktop':
-                plt.plot(train_val_loss_all['epoch_alldata_flip_shift_scale5_700e_10'],train_val_loss_all['train_alldata_flip_shift_scale5_700e_10'], 'g',label='Synthetic Flipping+Shifting+Scaling: $S_C \sim N(\mu,\sigma), \mu = 1, \sigma \~= 1.02$')
-                plt.plot(train_val_loss_all['epoch_alldata_flip_shift_scale5_700e_10'],train_val_loss_all['val_alldata_flip_shift_scale5_700e_10'], 'y',label='Synthetic Flipping+Shifting+Scaling: $S_C \sim N(\mu,\sigma), \mu = 1, \sigma \~= 1.02$')
-
-            #plt.plot(train_val_loss['epoch_flip_2'], train_val_loss['train_flip_2'], 'y')
-            #plt.plot(train_val_loss['epoch_flip_2'], train_val_loss['val_flip_2'], 'g')
-            #plt.plot(train_val_loss['epoch_flip_shift_nd_2'], train_val_loss['val_flip_shift_nd_2'], 'y')
-
         #plt.axis([0,410,0,30000])
-        plt.axis([0, 100, 0, 10000])
+        plt.axis([0, 200, 0, 20])
         plt.show()
 
         self.count = 0
@@ -232,7 +180,7 @@ class DataVisualizer():
 
     def validate_model(self):
 
-        validation_set = load_pickle(self.dump_path + '/subject_' + str(3) + '/p_files/trainval_150rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p')
+        validation_set = load_pickle(self.dump_path + '/subject_' + str(4) + '/p_files/trainval_150rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p')
 
         test_dat = validation_set
         for key in test_dat:
@@ -256,8 +204,17 @@ class DataVisualizer():
 
         self.test_y_flat = []  # Initialize the ground truth list
         for entry in range(len(test_dat['images'])):
-            if self.opt.arms_only == True:
-                c = np.concatenate((test_dat['markers_xyz_m'][entry][6:18] * 1000, test_dat['joint_lengths_U_m'][entry] * 100, test_dat['joint_angles_U_deg'][entry], test_dat['markers_xyz_m'][entry][3:6] * 100), axis=0)
+            if self.loss_vector_type == 'angles':
+                c = np.concatenate((test_dat['markers_xyz_m'][entry][0:30] * 1000,
+                                    test_dat['joint_lengths_U_m'][entry][0:9] * 100,
+                                    test_dat['joint_angles_U_deg'][entry][0:10],
+                                    test_dat['joint_lengths_L_m'][entry][0:8] * 100,
+                                    test_dat['joint_angles_L_deg'][entry][0:8]), axis=0)
+                self.test_y_flat.append(c)
+            elif self.loss_vector_type == 'upper_angles':
+                c = np.concatenate((test_dat['markers_xyz_m'][entry][0:18] * 1000,
+                                    test_dat['joint_lengths_U_m'][entry][0:9] * 100,
+                                    test_dat['joint_angles_U_deg'][entry][0:10]), axis=0)
                 self.test_y_flat.append(c)
             else:
                 self.test_y_flat.append(test_dat['markers_xyz_m'][entry] * 1000)
@@ -266,36 +223,39 @@ class DataVisualizer():
         print 'Finished converting outputs to a torch tensor'
 
         print len(validation_set), 'size of validation set'
-        batch_size = 1
+        batch_size = 1480
 
         self.test_dataset = torch.utils.data.TensorDataset(self.test_x_tensor, self.test_y_tensor)
-        self.test_loader = torch.utils.data.DataLoader(self.test_dataset, batch_size, shuffle=False)
+        self.test_loader = torch.utils.data.DataLoader(self.test_dataset, batch_size, shuffle=True)
 
 
 
         #torso_length_model = torch.load(self.dump_path + '/subject_' + str(self.subject) + '/p_files/convnet_2to8_alldata_armsonly_torso_lengths_115b_adam_100e_4.pt')
-        #angle_model = torch.load(self.dump_path + '/subject_' + str(self.subject) + '/p_files/convnet_2to8_alldata_armsonly_arm_angles_115b_adam_200e_4.pt')
-        model = torch.load(self.dump_path + '/subject_' + str(self.subject) + '/p_files/convnet_2to8_alldata_armsonly_direct_inclinter_115b_adam_200e_4.pt')
+        #angle_model = torch.load(self.dump_path + '/subject_' + str(self.subject) + '/p_files/convnet_2to8_alldata_armsonly_upper_angles_115b_adam_200e_4.pt')
+        model = torch.load(self.dump_path + '/subject_' + str(4) + '/p_files/convnet_2to8_alldata_angles_115b_adam_200e_4.pt')
 
         count = 0
         for batch_idx, batch in enumerate(self.test_loader):
             count += 1
             #print count
+            # append upper joint angles, lower joint angles, upper joint lengths, lower joint lengths, in that order
+            batch.append(torch.cat((batch[1][:, 39:49], batch[1][:, 57:65], batch[1][:, 30:39], batch[1][:, 49:57]), dim=1))
 
-            batch.append(batch[1][:, 12:31])  # get the constraints we'll be training on
-            #print batch[1][:, 28:31].shape, 'val'
-            #print batch[1][:, 0:12].shape, 'val'
-            batch[1] = torch.cat((torch.mul(batch[1][:, 28:31], 10), batch[1][:, 0:12]), dim=1)
-            #print batch[1].shape, 'val'
-            #print batch[2].shape, 'val'
-            batch[2] = batch[2][:, 8:16]
-            batch[2] = batch[2].numpy()
-            batch[2][:,2:4] = batch[2][:,2:4] * 4
-            batch[2] = torch.Tensor(batch[2])
+            # get the direct joint locations
+            batch[1] = batch[1][:, 0:30]
+
+            images, targets, constraints = Variable(batch[0], requires_grad=False), Variable(batch[1], requires_grad=False), Variable(batch[2], requires_grad=False)
 
 
-            images, targets, constraints = Variable(batch[0]), Variable(batch[1]), Variable(batch[2])
-            bed_distances = KinematicsLib().get_bed_distance(images, targets)
+            if self.loss_vector_type == 'angles':
+                scores, targets_est = model.forward_kinematic_jacobian(images, targets, constraints)
+            elif self.loss_vector_type == None:
+                scores, targets_est = model.forward_direct(images, targets)
+
+            targets = targets.data.numpy()
+
+
+            #bed_distances = KinematicsLib().get_bed_distance(images, targets)
 
 
             #print batch[0].shape
@@ -304,18 +264,12 @@ class DataVisualizer():
 
 
 
-            print test_dat['marker_direct_error_euclideans_m'][count-1]
-
-
-
-
-            scores = model(images)
-            error_norm = VisualizationLib().print_error(targets, scores, self.output_size, self.loss_vector_type, data=str(count))/1000
+            error_norm = VisualizationLib().print_error(targets, targets_est, self.output_size, self.loss_vector_type, data=str(count))/1000
             self.im_sample = batch[0].numpy()
             self.im_sample = np.squeeze(self.im_sample[0, :])
-            self.tar_sample = batch[1].numpy()
+            self.tar_sample = targets
             self.tar_sample = np.squeeze(self.tar_sample[0, :]) / 1000
-            self.sc_sample = scores.data.numpy()
+            self.sc_sample = targets_est
             self.sc_sample = np.squeeze(self.sc_sample[0, :]) / 1000
             self.sc_sample = np.reshape(self.sc_sample, self.output_size)
             VisualizationLib().rviz_publish_input(self.im_sample[0, :, :], self.im_sample[-1, 10, 10])
@@ -325,30 +279,6 @@ class DataVisualizer():
 
 
 
-
-            if self.loss_vector_type == 'arm_angles':
-                constraint_scores = angle_model(images)
-                torso_length_scores = torso_length_model(images)
-
-                output = KinematicsLib().forward_arm_kinematics(images, torso_length_scores, constraint_scores) #remember to change this to constraint scores.
-                scores = Variable(torch.Tensor(output))
-
-            else:
-                #batch[1] = torch.cat((torch.mul(batch[1][:, 28:31], 10), batch[1][:, 0:12]), dim=1)
-                #images, targets = Variable(batch[0]), Variable(batch[1])
-                scores = model(images)
-            error_norm = VisualizationLib().print_error(targets, scores, self.output_size, self.loss_vector_type, data=str(count))/1000
-            self.im_sample = batch[0].numpy()
-            self.im_sample = np.squeeze(self.im_sample[0, :])
-            self.tar_sample = batch[1].numpy()
-            self.tar_sample = np.squeeze(self.tar_sample[0, :]) / 1000
-            self.sc_sample = scores.data.numpy()
-            self.sc_sample = np.squeeze(self.sc_sample[0, :]) / 1000
-            self.sc_sample = np.reshape(self.sc_sample, self.output_size)
-            #VisualizationLib().rviz_publish_input(self.im_sample[0,:,:], self.im_sample[-1,10,10])
-            #VisualizationLib().rviz_publish_output(np.reshape(self.tar_sample, self.output_size), self.sc_sample)
-            #VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample, block = True)
-            #VisualizationLib().visualize_error_from_distance(bed_distances, error_norm)
 
         return mean, stdev
 
@@ -420,8 +350,8 @@ if __name__ == "__main__":
                  dest='lab_harddrive', \
                  default=False, \
                  help='Set path to the training database on lab harddrive.')
-    p.add_option('--arms_only', action='store_true',
-                 dest='arms_only', \
+    p.add_option('--upper_only', action='store_true',
+                 dest='upper_only', \
                  default=False, \
                  help='Train only on data from the arms, both sitting and laying.')
 

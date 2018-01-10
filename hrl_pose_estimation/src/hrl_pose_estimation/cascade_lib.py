@@ -54,7 +54,7 @@ HIGH_TAXEL_THRESH_Y = (NUMOFTAXELS_Y - 1)
 
 
 
-class VisualizationLib():
+class CascadeLib():
 
     def print_error(self, target, score, output_size, loss_vector_type = None, data = None, printerror = True):
 
@@ -115,23 +115,6 @@ class VisualizationLib():
         error_norm = np.squeeze(error_norm, axis = 2)
         return error_norm
 
-
-    def visualize_error_from_distance(self, bed_distance, error_norm):
-        plt.close()
-        fig = plt.figure()
-        ax = []
-        for joint in range(0, bed_distance.shape[1]):
-            ax.append(joint)
-            if bed_distance.shape[1] <= 5:
-                ax[joint] = fig.add_subplot(1, bed_distance.shape[1], joint + 1)
-            else:
-                print math.ceil(bed_distance.shape[1]/2.)
-                ax[joint] = fig.add_subplot(2, math.ceil(bed_distance.shape[1]/2.), joint + 1)
-            ax[joint].set_xlim([0, 0.7])
-            ax[joint].set_ylim([0, 1])
-            ax[joint].set_title('Joint ' + str(joint) + ' error')
-            ax[joint].plot(bed_distance[:, joint], error_norm[:, joint], 'r.')
-        plt.show()
 
 
     def visualize_pressure_map(self, p_map, targets_raw=None, scores_raw = None, p_map_val = None, targets_val = None, scores_val = None, block = False):
@@ -223,137 +206,29 @@ class VisualizationLib():
 
 
 
-    def rviz_publish_input(self, image, angle):
+    def get_mat_coordinates(self, images, targets):
         mat_size = (NUMOFTAXELS_X, NUMOFTAXELS_Y)
+        bedangle = images[:, 2, 10, 10]
 
-        image = np.reshape(image, mat_size)
+        print bedangle[0]
+        queue_frame = np.zeros_like(targets)
+        queue_head = np.zeros_like(targets)
 
-        markerArray = MarkerArray()
-        for j in range(10, image.shape[0]-10):
-            for i in range(10, image.shape[1]-10):
-                imagePublisher = rospy.Publisher("/pressure_image", MarkerArray)
+        queue_frame[:, :, 0] = targets[:, :, 0]/28.6 #x coord projected onto flat bed
+        queue_frame[:, :, 1] = targets[:, :, 1]/28.6 #y coord projected onto flat bed
+        queue_frame[:, :, 2] = targets[:, :, 2]/28.6 #z coord projected onto flat bed
 
-                marker = Marker()
-                marker.header.frame_id = "autobed/base_link"
-                marker.type = marker.SPHERE
-                marker.action = marker.ADD
-                marker.scale.x = 0.05
-                marker.scale.y = 0.05
-                marker.scale.z = 0.05
-                marker.color.a = 1.0
-                if image[j,i] > 60:
-                    marker.color.r = 1.
-                    marker.color.b = (100 - image[j, i])*.9 / 60.
-                else:
-                    marker.color.r = image[j, i] / 40.
-                    marker.color.b = 1.
-                marker.color.g = (70-np.abs(image[j,i]-50))/100.
+        By = (51)  -  3 * np.sin(np.deg2rad(np.expand_dims(bedangle[:], axis=1)))
+        queue_head[:, :, 1] = (targets[:, :, 2]/28.6) * np.sin(np.deg2rad(np.expand_dims(bedangle[:], axis=1))) + (targets[:, :, 1]/28.6 ) * np.cos(np.deg2rad(np.expand_dims(bedangle[:], axis=1)))
 
-                marker.pose.orientation.w = 1.0
+        #z. this one is good to go.
+        queue_head[:, :, 2] = targets[:, :, 2]/28.6 * np.cos(np.deg2rad(np.expand_dims(bedangle[:], axis=1))) - (targets[:, :, 1]/28.6 - By) * np.sin(np.deg2rad(np.expand_dims(bedangle[:], axis=1)))
 
-                marker.pose.position.x = i*0.0286
-                if j > 33:
-                    marker.pose.position.y = (84-j)*0.0286 - 0.0286*3*np.sin(np.deg2rad(angle))
-                    marker.pose.position.z = 0.#-0.1
-                    #print marker.pose.position.x, 'x'
-                else:
-
-                    marker.pose.position.y = (51) * 0.0286 + (33 - j) * 0.0286 * np.cos(np.deg2rad(angle)) - 0.0286*3*np.sin(np.deg2rad(angle))
-                    marker.pose.position.z = (33-j)*0.0286*np.sin(np.deg2rad(angle)) #-0.1
-                    #print j, marker.pose.position.z, marker.pose.position.y, 'head'
-
-                # We add the new marker to the MarkerArray, removing the oldest
-                # marker from it when necessary
-                #if (self.count > 100):
-                 #   markerArray.markers.pop(0)
-
-                markerArray.markers.append(marker)
-
-                #print self.count
-
-                # Renumber the marker IDs
-                id = 0
-                for m in markerArray.markers:
-                    m.id = id
-                    id += 1
-        imagePublisher.publish(markerArray)
+        print queue_frame[0, :, 1:3], 'frame'
+        print queue_head[0, :, 1:3], 'head'
 
 
-    def rviz_publish_output(self, targets, scores, pseudotargets = None):
-        TargetArray = MarkerArray()
-        for joint in range(0, targets.shape[0]):
-            targetPublisher = rospy.Publisher("/targets", MarkerArray)
-            Tmarker = Marker()
-            Tmarker.header.frame_id = "autobed/base_link"
-            Tmarker.type = Tmarker.SPHERE
-            Tmarker.action = Tmarker.ADD
-            Tmarker.scale.x = 0.05
-            Tmarker.scale.y = 0.05
-            Tmarker.scale.z = 0.05
-            Tmarker.color.a = 1.0
-            Tmarker.color.r = 1.0
-            Tmarker.color.g = 1.0
-            Tmarker.color.b = 0.0
-            Tmarker.pose.orientation.w = 1.0
-            Tmarker.pose.position.x = targets[joint, 0]
-            Tmarker.pose.position.y = targets[joint, 1]
-            Tmarker.pose.position.z = targets[joint, 2]
-            TargetArray.markers.append(Tmarker)
-            tid = 0
-            for m in TargetArray.markers:
-                m.id = tid
-                tid += 1
-        targetPublisher.publish(TargetArray)
-
-        ScoresArray = MarkerArray()
-        for joint in range(0, scores.shape[0]):
-            scoresPublisher = rospy.Publisher("/scores", MarkerArray)
-            Smarker = Marker()
-            Smarker.header.frame_id = "autobed/base_link"
-            Smarker.type = Smarker.SPHERE
-            Smarker.action = Smarker.ADD
-            Smarker.scale.x = 0.04
-            Smarker.scale.y = 0.04
-            Smarker.scale.z = 0.04
-            Smarker.color.a = 1.0
-            Smarker.color.r = 0.
-            Smarker.color.g = 1.0
-            Smarker.color.b = 1.0
-            Smarker.pose.orientation.w = 1.0
-            Smarker.pose.position.x = scores[joint, 0]
-            Smarker.pose.position.y = scores[joint, 1]
-            Smarker.pose.position.z = scores[joint, 2]
-            ScoresArray.markers.append(Smarker)
-            sid = 0
-            for m in ScoresArray.markers:
-                m.id = sid
-                sid += 1
-        scoresPublisher.publish(ScoresArray)
-
-        if pseudotargets is not None:
-            PTargetArray = MarkerArray()
-            for joint in range(0, pseudotargets.shape[0]):
-                ptargetPublisher = rospy.Publisher("/pseudotargets", MarkerArray)
-                PTmarker = Marker()
-                PTmarker.header.frame_id = "autobed/base_link"
-                PTmarker.type = PTmarker.SPHERE
-                PTmarker.action = PTmarker.ADD
-                PTmarker.scale.x = 0.1
-                PTmarker.scale.y = 0.1
-                PTmarker.scale.z = 0.1
-                PTmarker.color.a = 1.0
-                PTmarker.color.r = 1.0
-                PTmarker.color.g = 1.0
-                PTmarker.color.b = 0.0
-                PTmarker.pose.orientation.w = 1.0
-                PTmarker.pose.position.x = pseudotargets[joint, 0]
-                PTmarker.pose.position.y = pseudotargets[joint, 1]
-                PTmarker.pose.position.z = pseudotargets[joint, 2]
-                PTargetArray.markers.append(PTmarker)
-                ptid = 0
-                for m in PTargetArray.markers:
-                    m.id = ptid
-                    ptid += 1
-            ptargetPublisher.publish(PTargetArray)
-
+        print targets.shape
+        print images.shape
+        print targets[0,:,0:2]/28.6
 

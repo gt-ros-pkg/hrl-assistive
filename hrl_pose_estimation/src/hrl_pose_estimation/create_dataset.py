@@ -114,6 +114,7 @@ class DatabaseCreator():
         self.r_H = np.zeros((4, 1))
         self.T = np.zeros((4, 1))
         self.H = np.zeros((4, 1))
+        self.N = np.zeros((4, 1))
 
         self.r_S = np.zeros((4, 1))
         self.r_E = np.zeros((4, 1))
@@ -131,6 +132,7 @@ class DatabaseCreator():
         self.r_SH_pp = np.zeros((3, 1))
         self.r_Spx_pp = np.zeros((3, 1))
         self.r_ROT_OS = np.matrix('0.,0.,-1.;0.,1.,0.;-1.,0.,0.')
+        self.ROT_ON = np.matrix('1.,0.,0.;0.,0.,1.;0.,1.,0.')
         self.ROT_bed = np.matrix('1.,0.,0.;0.,1.,0.;0.,0.,1.')
 
         self.r_G = np.zeros((4,1))
@@ -290,14 +292,19 @@ class DatabaseCreator():
 
     def inverse_arm_kinematics(self, targets, subject, bedangle):
 
-        lengths = np.zeros((8))  # torso height, torso vert, shoulder right, shoulder left, upper arm right, upper arm left, forearm right, forearm left
-        angles = np.zeros((8))  # sh right roll, sh left roll, sh right pitch, sh left pitch, sh right yaw, sh left yaw, elbow right, elbow left
-        pseudotargets = np.zeros((2,3))
+        lengths = np.zeros((9))  # torso height, torso vert, shoulder right, shoulder left, upper arm right, upper arm left, forearm right, forearm left
+        angles = np.zeros((10))  # sh right roll, sh left roll, sh right pitch, sh left pitch, sh right yaw, sh left yaw, elbow right, elbow left
+        pseudotargets = np.zeros((3,3))
 
         lengths[0] = 0.1  # torso height
         lengths[1] = 0.2065 * self.pseudoheight[str(subject)] - 0.0529  # about 0.25. torso vert
         lengths[2] = 0.13454 * self.pseudoheight[str(subject)] - 0.03547  # about 0.15. shoulder right
         lengths[3] = 0.13454 * self.pseudoheight[str(subject)] - 0.03547  # about 0.15. shoulder left
+
+        self.H[0, 0] = targets[0, 0]
+        self.H[1, 0] = targets[0, 1]
+        self.H[2, 0] = targets[0, 2]
+        self.H[3, 0] = 1.
 
         self.T[0, 0] = targets[1, 0]
         self.T[1, 0] = targets[1, 1]
@@ -324,7 +331,12 @@ class DatabaseCreator():
         self.l_H[2, 0] = targets[5, 2]
         self.l_H[3, 0] = 1.
 
-        # here we construct pseudo ground truths for the shoulders by making fixed translations from the torso
+        # here we construct pseudo ground truths for the neck and shoulders by making fixed translations from the torso
+        self.N[0, 0] = self.T[0, 0]
+        self.N[1, 0] = self.T[1, 0] + lengths[1] * np.cos(np.deg2rad(bedangle * 0.75))
+        self.N[2, 0] = self.T[2, 0] - lengths[0] + lengths[1] * np.sin(np.deg2rad(bedangle * 0.75))
+        self.N[3, 0] = 1
+
         self.r_S[0, 0] = self.T[0, 0] - lengths[2]
         self.r_S[1, 0] = self.T[1, 0] + lengths[1] * np.cos(np.deg2rad(bedangle * 0.75))
         self.r_S[2, 0] = self.T[2, 0] - lengths[0] + lengths[1] * np.sin(np.deg2rad(bedangle * 0.75))
@@ -335,13 +347,17 @@ class DatabaseCreator():
         self.l_S[2, 0] = self.T[2, 0] - lengths[0] + lengths[1] * np.sin(np.deg2rad(bedangle * 0.75))
         self.l_S[3, 0] = 1
 
-        pseudotargets[0, 0] = self.r_S[0, 0]
-        pseudotargets[0, 1] = self.r_S[1, 0]
-        pseudotargets[0, 2] = self.r_S[2, 0]
+        pseudotargets[0, 0] = self.N[0, 0]
+        pseudotargets[0, 1] = self.N[1, 0]
+        pseudotargets[0, 2] = self.N[2, 0]
 
-        pseudotargets[1, 0] = self.l_S[0, 0]
-        pseudotargets[1, 1] = self.l_S[1, 0]
-        pseudotargets[1, 2] = self.l_S[2, 0]
+        pseudotargets[1, 0] = self.r_S[0, 0]
+        pseudotargets[1, 1] = self.r_S[1, 0]
+        pseudotargets[1, 2] = self.r_S[2, 0]
+
+        pseudotargets[2, 0] = self.l_S[0, 0]
+        pseudotargets[2, 1] = self.l_S[1, 0]
+        pseudotargets[2, 2] = self.l_S[2, 0]
 
         # get the length of the right shoulder to right elbow
         lengths[4] = np.linalg.norm(self.r_E - self.r_S)
@@ -351,6 +367,9 @@ class DatabaseCreator():
         lengths[6] = np.linalg.norm(self.r_H - self.r_E)
         lengths[7] = np.linalg.norm(self.l_H - self.l_E)
 
+        # get the length between the neck and head
+        lengths[8] = np.linalg.norm(self.H - self.N)
+
 
         # To find the angles we also need to rotate by the bed angle
         self.ROT_bed[1, 1] = np.cos(np.deg2rad(-bedangle * 0.75))
@@ -358,6 +377,12 @@ class DatabaseCreator():
         self.ROT_bed[2, 1] = np.sin(np.deg2rad(-bedangle * 0.75))
         self.ROT_bed[2, 2] = np.cos(np.deg2rad(-bedangle * 0.75))
 
+        # get the neck yaw
+        NH_mag = np.copy(lengths[8])
+        self.NH = self.H[0:3] - self.N[0:3]
+        self.NH = np.matmul(np.matmul(self.ROT_ON, self.ROT_bed), self.NH)
+        if NH_mag > 0: self.NHn = np.copy(self.NH) / NH_mag
+        angles[8] = np.degrees(np.arcsin(self.NHn[0, 0]))
 
         # get the shoulder pitch
         rSE_mag = np.copy(lengths[4])
@@ -371,6 +396,11 @@ class DatabaseCreator():
         self.l_SE = np.matmul(np.matmul(self.l_ROT_OS, self.ROT_bed), self.l_SE)
         if lSE_mag > 0: self.l_SEn = np.copy(self.l_SE) / lSE_mag
         angles[3] = -np.degrees(np.arcsin(self.l_SEn[1, 0]))
+
+
+        #get the neck pitch
+        angles[9] = np.degrees(np.arctan(self.NHn[2, 0] / self.NHn[1, 0]))
+        print self.N - self.H
 
         # get shoulder yaw
         angles[4] = -np.degrees(np.arctan(self.r_SEn[0, 0] / self.r_SEn[2, 0]))
@@ -462,6 +492,11 @@ class DatabaseCreator():
         if np.cross(self.l_SH.T, self.l_SE.T)[0][0] < 0:
             angles[1] = -angles[1]
 
+
+
+        print angles, 'UEP'
+
+
         return lengths, angles, pseudotargets
 
 
@@ -470,11 +505,18 @@ class DatabaseCreator():
         lengths = np.zeros((8))  # torso height, torso vert, glute right, glute left, thigh right, thigh left, calf right, calf left
         angles = np.zeros((8))  # hip right roll, hip left roll, hip right pitch, hip left pitch, hip right yaw, hip left yaw, knee right, knee left
         pseudotargets = np.zeros((2,3))
+        print self.pseudoheight[str(subject)], 'subject ', subject, 'height'
 
-        lengths[0] = 0.1  # torso height
-        lengths[1] = - 0.2065 * self.pseudoheight[str(subject)] + 0.0529  # about 0.25. torso vert
-        lengths[2] = 0.13454 * self.pseudoheight[str(subject)] - 0.03547  # about 0.15. shoulder right
-        lengths[3] = 0.13454 * self.pseudoheight[str(subject)] - 0.03547  # about 0.15. shoulder left
+        lengths[0] = 0.14  # torso height
+        #lengths[1] = 0.2065 * self.pseudoheight[str(subject)] - 0.0529  # about 0.25. torso vert
+        #.85 is .0354, .0241
+        #.8 is .0328, .0239
+        #.75 is .0314, .0239
+
+
+        lengths[1] = 0.1549 * self.pseudoheight[str(subject)] - 0.03968 # about 0.25. torso vert
+        lengths[2] = 0.08072 * self.pseudoheight[str(subject)] - 0.02128  # Equal to 0.6 times the equivalent neck to shoulder. glute right
+        lengths[3] = 0.08072 * self.pseudoheight[str(subject)] - 0.02128 # Equal to 0.6 times the equivalent neck to shoulder. glute left
 
         self.T[0, 0] = targets[1, 0]
         self.T[1, 0] = targets[1, 1]
@@ -503,12 +545,12 @@ class DatabaseCreator():
 
         # here we construct pseudo ground truths for the shoulders by making fixed translations from the torso
         self.r_G[0, 0] = self.T[0, 0] - lengths[2]
-        self.r_G[1, 0] = self.T[1, 0] + lengths[1] #* np.cos(np.deg2rad(bedangle * 0.75))
+        self.r_G[1, 0] = self.T[1, 0] - lengths[1] #* np.cos(np.deg2rad(bedangle * 0.75))
         self.r_G[2, 0] = self.T[2, 0] - lengths[0] #+ lengths[1] * np.sin(np.deg2rad(bedangle * 0.75))
         self.r_G[3, 0] = 1
 
         self.l_G[0, 0] = self.T[0, 0] + lengths[2]
-        self.l_G[1, 0] = self.T[1, 0] + lengths[1] #* np.cos(np.deg2rad(bedangle * 0.75))
+        self.l_G[1, 0] = self.T[1, 0] - lengths[1] #* np.cos(np.deg2rad(bedangle * 0.75))
         self.l_G[2, 0] = self.T[2, 0] - lengths[0] #+ lengths[1] * np.sin(np.deg2rad(bedangle * 0.75))
         self.l_G[3, 0] = 1
 
@@ -529,12 +571,6 @@ class DatabaseCreator():
         lengths[7] = np.linalg.norm(self.l_A - self.l_K)
 
 
-        # To find the angles we also need to rotate by the bed angle
-        #self.ROT_bed[1, 1] = np.cos(np.deg2rad(-bedangle * 0.75))
-        #self.ROT_bed[1, 2] = -np.sin(np.deg2rad(-bedangle * 0.75))
-        #self.ROT_bed[2, 1] = np.sin(np.deg2rad(-bedangle * 0.75))
-        #self.ROT_bed[2, 2] = np.cos(np.deg2rad(-bedangle * 0.75))
-
 
         # get the shoulder pitch
         rGK_mag = np.copy(lengths[4])
@@ -549,15 +585,16 @@ class DatabaseCreator():
         if lGK_mag > 0: self.l_GKn = np.copy(self.l_GK) / lGK_mag
         angles[3] = -np.degrees(np.arcsin(self.l_GKn[1, 0]))
 
-        # get shoulder yaw
-        angles[4] = -np.degrees(np.arctan(self.r_GKn[0, 0] / self.r_GKn[2, 0]))
-        if self.r_G[0] - self.r_K[0] < 0: #this is to correct for the arc tan flip when the shoulder and elbow x flip
-            angles[4] = -angles[4]
-        angles[5] = +np.degrees(np.arctan(self.l_GKn[0, 0] / self.l_GKn[2, 0]))
-        if self.l_G[0] - self.l_K[0] > 0: #this is to correct for the arc tan flip when the shoulder and elbow x flip
-            angles[5] = -angles[5]
+        # get glute yaw
+        angles[4] = np.degrees(np.arctan(self.r_GKn[0, 0] / self.r_GKn[2, 0]))
+        if self.r_G[0] - self.r_K[0] > 0: #this is to correct for the arc tan flip when the shoulder and elbow x flip
+            angles[4] = angles[4] + 180
 
-        # get the elbow angle
+        angles[5] = np.degrees(np.arctan(self.l_GKn[0, 0] / self.l_GKn[2, 0]))
+        if self.l_G[0] - self.l_K[0] > 0: #this is to correct for the arc tan flip when the shoulder and elbow x flip
+            angles[5] = angles[5] + 180
+
+        # get the knee angle
         rGA_mag = np.linalg.norm(self.r_A - self.r_G)
         # now apply law of cosines
         angles[6] = np.degrees(np.arccos((np.square(lengths[4]) + np.square(
@@ -568,7 +605,7 @@ class DatabaseCreator():
             lengths[7]) - np.square(lGA_mag)) / (2 * lengths[5] * lengths[7])))
 
 
-        # calculate the shoulder roll
+        # calculate the glute roll
         self.r_GA = self.r_G[0:3] - self.r_A[0:3]  # first get distance between shoulder and hand
         self.r_GA = np.matmul(self.r_ROT_OS, self.r_GA)
         self.r_GAn = np.copy(self.r_GA) / rGA_mag
@@ -637,7 +674,7 @@ class DatabaseCreator():
         if np.cross(self.l_GA.T, self.l_GK.T)[0][0] < 0:
             angles[1] = -angles[1]
 
-        print lengths, angles, pseudotargets, 'LEP'
+        #print lengths, 'LEP'
 
         return lengths, angles, pseudotargets
 
@@ -646,12 +683,15 @@ class DatabaseCreator():
         '''Creates a database using the raw pressure values(full_body) and only
         transforms world frame coordinates to mat coordinates'''
 
+        std_lengths = []
         #for subject in [4,9,10,11,12,13,14,15,16,17,18]:
         #for subject in [12]:
-        for subject in [2,3,4,5,6,7,8]:
+        for subject in [2, 3, 4, 5, 6, 7, 8]:
+
             self.final_dataset = {}
             self.final_dataset['images'] = []
             self.final_dataset['markers_xyz_m'] = []
+            self.final_dataset['pseudomarkers_xyz_m'] = []
             self.final_dataset['marker_bed_euclideans_m'] = []
             self.final_dataset['bed_angle_deg'] = []
             self.final_dataset['joint_lengths_U_m'] = []
@@ -662,7 +702,9 @@ class DatabaseCreator():
 
 
             for movement in ['RH_sitting','LH_sitting','RL_sitting','LL_sitting','RH1','LH1','RH2','RH3','LH2','LH3','RL','LL']:
-            #for movement in ['RH_sitting','LH_sitting','RL_sitting','LL_sitting']:
+            #for movement in ['RH_sitting', 'RH1']:
+                std_lengths_i = []
+            #for movement in ['RH_sitting','RH1']:#'LH_sitting','RL_sitting','LL_sitting']:
             #self.training_dump_path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_'+str(subject)
             #print self.training_dump_path
 
@@ -742,20 +784,36 @@ class DatabaseCreator():
 
                     rot_target_mat = target_mat
 
+                    torso = np.ones((4, 1))
+                    torso[0:3, 0] = rot_target_mat[1, :]
+                    # print torso
+
 
                     arm_joint_lengths, arm_joint_angles, arm_pseudotargets = self.inverse_arm_kinematics(rot_target_mat, subject, angle)
-                    #leg_joint_lengths, leg_joint_angles, leg_pseudotargets = self.inverse_leg_kinematics(rot_target_mat, subject, angle)
-
-
-                    torso = np.ones((4,1))
-                    torso[0:3,0] = rot_target_mat[1,:]
-                   #print torso
-
 
                     #the following returns the targets in mm
-                    arm_targets = KinematicsLib().forward_arm_kinematics(np.expand_dims(angle, axis=0), np.concatenate((torso[0:3,0], arm_joint_lengths), axis = 0), arm_joint_angles)
+                    arm_targets = KinematicsLib().forward_upper_kinematics(np.expand_dims(angle, axis=0), np.concatenate((torso[0:3,0], arm_joint_lengths), axis = 0), arm_joint_angles)
                     arm_targets = np.squeeze(arm_targets, axis = 0)
-                    arm_targets = np.reshape(arm_targets[3:], (4,3))
+                    arm_targets = np.reshape(arm_targets, (6,3))
+
+
+                    leg_joint_lengths, leg_joint_angles, leg_pseudotargets = self.inverse_leg_kinematics(rot_target_mat, subject, angle)
+
+                    std_lengths_i.append(leg_joint_lengths[4])
+
+                    # the following returns the targets in mm
+                    leg_targets = KinematicsLib().forward_lower_kinematics(np.expand_dims(angle, axis=0), np.concatenate((torso[0:3, 0], leg_joint_lengths), axis=0), leg_joint_angles)
+                    leg_targets = np.squeeze(leg_targets, axis=0)
+                    leg_targets = np.reshape(leg_targets[3:], (4,3))
+
+
+
+
+                    kin_targets = np.concatenate((arm_targets, leg_targets), axis = 0)
+                    pseudotargets = np.concatenate((arm_pseudotargets, leg_pseudotargets), axis = 0)
+
+                    #VisualizationLib().rviz_publish_input(rot_p_map, angle)
+                    #VisualizationLib().rviz_publish_output(rot_target_mat, kin_targets / 1000, pseudotargets)
 
                     #get the distances from the bed. this will help us to do an a per instance loss and for final error evaluation,
                     #so we can throw out joint poses that are too far away.
@@ -763,8 +821,6 @@ class DatabaseCreator():
 
 
 
-                    #VisualizationLib().rviz_publish_input(rot_p_map, angle)
-                    #VisualizationLib().rviz_publish_output(rot_target_mat, arm_targets/1000, arm_pseudotargets)
 
                     sleep(0.01)
 
@@ -773,27 +829,40 @@ class DatabaseCreator():
                         if self.keep_image == True:
                             self.final_dataset['images'].append(list(rot_p_map.flatten()))
                             self.final_dataset['markers_xyz_m'].append(rot_target_mat.flatten())
+                            self.final_dataset['pseudomarkers_xyz_m'].append(pseudotargets.flatten())
                             self.final_dataset['marker_bed_euclideans_m'].append(bed_distances[0])
                             self.final_dataset['bed_angle_deg'].append(angle)
                             self.final_dataset['joint_lengths_U_m'].append(arm_joint_lengths)
+                            self.final_dataset['joint_lengths_L_m'].append(leg_joint_lengths)
                             self.final_dataset['joint_angles_U_deg'].append(arm_joint_angles)
+                            self.final_dataset['joint_angles_L_deg'].append(leg_joint_angles)
+
                     elif self.select == True:
                         self.visualize_single_pressure_map(rot_p_map, rot_target_mat)
                         if self.keep_image == True:
                             self.final_dataset['images'].append(list(rot_p_map.flatten()))
                             self.final_dataset['markers_xyz_m'].append(rot_target_mat.flatten())
+                            self.final_dataset['pseudomarkers_xyz_m'].append(pseudotargets.flatten())
                             self.final_dataset['marker_bed_euclideans_m'].append(bed_distances[0])
                             self.final_dataset['bed_angle_deg'].append(angle)
                             self.final_dataset['joint_lengths_U_m'].append(arm_joint_lengths)
+                            self.final_dataset['joint_lengths_L_m'].append(leg_joint_lengths)
                             self.final_dataset['joint_angles_U_deg'].append(arm_joint_angles)
+                            self.final_dataset['joint_angles_L_deg'].append(leg_joint_angles)
                     else:
                         self.final_dataset['images'].append(list(rot_p_map.flatten()))
                         self.final_dataset['markers_xyz_m'].append(rot_target_mat.flatten())
+                        self.final_dataset['pseudomarkers_xyz_m'].append(pseudotargets.flatten())
                         self.final_dataset['marker_bed_euclideans_m'].append(bed_distances[0])
                         self.final_dataset['bed_angle_deg'].append(angle)
                         self.final_dataset['joint_lengths_U_m'].append(arm_joint_lengths)
+                        self.final_dataset['joint_lengths_L_m'].append(leg_joint_lengths)
                         self.final_dataset['joint_angles_U_deg'].append(arm_joint_angles)
+                        self.final_dataset['joint_angles_L_deg'].append(leg_joint_angles)
                     count += 1
+
+                std_lengths.append(np.std(np.array(std_lengths_i)))
+                print std_lengths, 'std'
 
                 print 'images shape: ',np.array(self.final_dataset['images']).shape
                 print 'marker xyz array shape: ', np.array(self.final_dataset['markers_xyz_m']).shape
@@ -801,7 +870,10 @@ class DatabaseCreator():
                 print 'bed angle in degrees shape: ', np.array(self.final_dataset['bed_angle_deg']).shape
                 print 'joint lengths upper body shape: ',  np.array(self.final_dataset['joint_lengths_U_m']).shape
                 print 'joint angles upper body shape: ', np.array(self.final_dataset['joint_angles_U_deg']).shape
+                print 'joint lengths lower body shape: ',  np.array(self.final_dataset['joint_lengths_L_m']).shape
+                print 'joint angles lower body shape: ', np.array(self.final_dataset['joint_angles_L_deg']).shape
 
+            print np.mean(np.array(std_lengths)), 'mean of standard devs'
             print 'Output file size: ~', int(len(self.final_dataset['images']) * 0.08958031837*3948/1728), 'Mb'
             print "Saving final_dataset"
             pkl.dump(self.final_dataset, open(os.path.join(self.training_dump_path+str(subject)+'/p_files/trainval_150rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p'), 'wb'))
