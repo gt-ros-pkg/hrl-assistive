@@ -1978,7 +1978,7 @@ class ScoreGeneratorDressingwithPhysx(object):
 
         weights = np.zeros(7)
         for joint in xrange(len(weights)):
-            weights[joint] = (1. - m.pow(0.5, ((joint_range[joint])/2. - np.abs((joint_range[joint])/2. - q[joint] + joint_min[joint]))/(joint_range[joint]/40.)))
+            weights[joint] = (1. - m.pow(0.5, ((joint_range[joint])/2. - np.abs((joint_range[joint])/2. - m.degrees(q[joint]) + joint_min[joint]))/(joint_range[joint]/40.)+1.))
         weights[4] = 1.
         weights[6] = 1.
         return np.diag(weights)
