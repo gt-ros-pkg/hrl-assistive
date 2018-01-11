@@ -41,10 +41,13 @@ from keras.layers import Input, TimeDistributed, Layer
 from keras.layers import Activation, Dropout, Flatten, Dense, merge, Lambda, GaussianNoise
 from keras.utils.np_utils import to_categorical
 from keras.optimizers import SGD, Adagrad, Adadelta, RMSprop
+from keras import regularizers
 from keras import backend as K
 from keras import objectives
+from keras.callbacks import *
+import keras
 
-from hrl_execution_monitor.keras_util import keras_util as ku
+from hrl_anomaly_detection.journal_isolation.models import keras_util as ku
 ## from hrl_anomaly_detection.vae import util as vutil
 
 import gc
@@ -53,7 +56,7 @@ import gc
 
 def sig_net(trainData, testData, batch_size=512, nb_epoch=500, \
             patience=20, fine_tuning=False, noise_mag=0.0,\
-            weights_file=None, save_weights_file='./sig_weights.h5', renew=False, **kwargs):
+            weights_file=None, save_weights_file='sig_weights.h5', renew=False, **kwargs):
     """
     Variational Autoencoder with two LSTMs and one fully-connected layer
     x_train is (sample x dim)
@@ -61,28 +64,42 @@ def sig_net(trainData, testData, batch_size=512, nb_epoch=500, \
 
     y_train should contain all labels
     """
-
     x_train = trainData[0]
-    y_train = trainData[1]
+    y_train = np.expand_dims(trainData[1], axis=-1)-2
     x_test = testData[0]
-    y_test = testData[1]
+    y_test = np.expand_dims(testData[1], axis=-1)-2
 
     n_labels = len(np.unique(y_train))
-    print "Labels: ", np.unique(y_train)
-    print "#Labels: ", n_labels    
+    print "Labels: ", np.unique(y_train), " #Labels: ", n_labels
+    print "Labels: ", np.unique(y_test), " #Labels: ", n_labels
+    print np.shape(x_train), np.shape(y_train), np.shape(x_test), np.shape(y_test)
+
+    # Convert labels to categorical one-hot encoding
+    y_train = keras.utils.to_categorical(y_train, num_classes=n_labels)
+    y_test  = keras.utils.to_categorical(y_test, num_classes=n_labels)
+
+    ## from sklearn import preprocessing
+    ## scaler  = preprocessing.StandardScaler()
+    ## #scaler  = preprocessing.MinMaxScaler()
+    ## x_train = scaler.fit_transform(x_train)
+    ## x_test  = scaler.transform(x_test)
 
     # Model construction
     model = Sequential()
-    model.add(Dense(128, init='uniform', input_shape=np.shape(x_train)[1:],
-                    W_regularizer=L1L2Regularizer(0,0),\
-                    name='fc_sig_1'))
+    model.add(Dense(32, init='uniform', input_shape=np.shape(x_train[0]),
+                    ## kernel_regularizer=regularizers.l2(0.01),\
+                    name='sig_1'))
     model.add(Activation('relu'))
-    model.add(Dropout(0.2))
+    model.add(Dropout(0.3))
+    ## model.add(Dense(16, init='uniform',
+    ##                 ## kernel_regularizer=regularizers.l2(0.01),\
+    ##                 name='sig_2'))
+    ## model.add(Activation('tanh'))
+    ## model.add(Dropout(0.3))
     model.add(Dense(n_labels, activation='softmax',
-                    W_regularizer=L1L2Regularizer(0,0),
-                    name='fc_sig_out'))    
+                    ## W_regularizer=L1L2Regularizer(0,0),
+                    name='sig_out'))    
     print(model.summary())
-
 
     if weights_file is not None and os.path.isfile(weights_file) and fine_tuning is False and\
       renew is False:
@@ -91,7 +108,7 @@ def sig_net(trainData, testData, batch_size=512, nb_epoch=500, \
 
         callbacks = [EarlyStopping(monitor='val_loss', min_delta=0, patience=patience,
                                    verbose=0, mode='auto'),
-                     ModelCheckpoint(save_weights_file,
+                     ModelCheckpoint(weights_file,
                                      save_best_only=True,
                                      save_weights_only=True,
                                      monitor='val_loss'),
@@ -103,14 +120,18 @@ def sig_net(trainData, testData, batch_size=512, nb_epoch=500, \
             optimizer = SGD(lr=0.0001, decay=1e-7, momentum=0.9, nesterov=True)
             model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
         else:
-            if os.path.isfile(weights_file): model.load_weights(weights_file)
+            print "----------------------"
+            print weights_file
+            print "----------------------"
+            if os.path.isfile(weights_file) and False: model.load_weights(weights_file)
             model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
+            #model.compile(optimizer='sgd', loss='categorical_crossentropy', metrics=['accuracy'])
 
 
-        train_datagen = ku.sigGenerator(augmentation=True, noise_mag=noise_mag )
-        test_datagen = ku.sigGenerator(augmentation=False)
+        train_datagen   = ku.sigGenerator(augmentation=True, noise_mag=noise_mag )
+        test_datagen    = ku.sigGenerator(augmentation=False, noise_mag=0.0)
         train_generator = train_datagen.flow(x_train, y_train, batch_size=batch_size)
-        test_generator = test_datagen.flow(x_test, y_test, batch_size=batch_size)
+        test_generator  = test_datagen.flow(x_test, y_test, batch_size=batch_size)
 
         hist = model.fit_generator(train_generator,
                                    samples_per_epoch=len(y_train),
@@ -119,6 +140,10 @@ def sig_net(trainData, testData, batch_size=512, nb_epoch=500, \
                                    nb_val_samples=len(y_test),
                                    callbacks=callbacks)
 
+        ## hist = model.fit(x_train, y_train, nb_epoch=nb_epoch, batch_size=batch_size, shuffle=True,
+        ##                  validation_data=(x_test, y_test), callbacks=callbacks)
+
+        scores = []
         scores.append( hist.history['val_acc'][-1] )
         gc.collect()
 

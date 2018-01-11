@@ -178,5 +178,6 @@ def get_err_vec(x, x_mean, x_std, nDim, method=None, p=None, alpha=None):
     # x: length x dim ?
     log_p_x_z = -0.5 * ( (alpha*(x-x_mean)/x_std)**2 \
                          + float(nDim) * np.log(2.0*np.pi) + np.log(x_std**2) )
-
+    ## log_p_x_z = (x-x_mean)**2
+        
     return log_p_x_z

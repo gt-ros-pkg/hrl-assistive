@@ -252,8 +252,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
     from sklearn import metrics
     roc = metrics.auc(fpr_l, tpr_l, True)
 
-    return_idx = kwargs.get('return_idx', False)
-    if return_idx:
+    if kwargs.get('return_idx', False):
         dd = {}
         dd['tr_a_idx'] = tr_a_idx_ll
         dd['te_a_idx'] = te_a_idx_ll
