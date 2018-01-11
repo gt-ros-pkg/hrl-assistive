@@ -76,7 +76,7 @@ q_percent = np.array(q_percent)
 fig1 = plt.figure(1)
 joint = 0
 
-ax1 = fig1.add_subplot(231)
+ax1 = fig1.add_subplot(111)
 ax12 = ax1.twiny()
 ax1.set_xlabel('Percent of Angle Range')
 ax1.set_ylabel('Transmission Weight, $t_i$')
@@ -87,9 +87,9 @@ ax1.grid(True, linestyle='dotted')
 for item in ([ax1.title, ax1.xaxis.label, ax1.yaxis.label] + ax12.get_xticklabels() +
              ax1.get_xticklabels() + ax1.get_yticklabels()):
     item.set_fontsize(20)
-ax1.yaxis.set_ticks([0, 1])
+ax1.yaxis.set_ticks([0, 0.5, 1])
 ax1.yaxis.set_major_formatter(ticker.FormatStrFormatter('%0.1f'))
-ax1.xaxis.set_ticks([-1, 0, 1])
+ax1.xaxis.set_ticks([-1,-0.5, 0, 0.5, 1])
 ax12.set_xlim(-1.05, 1.05)
 ax12.xaxis.set_ticks([-1, 0, 1])
 ax12.xaxis.set_ticklabels(['$q_{min}$', '', '$q_{max}$'])
@@ -97,7 +97,12 @@ ax1.xaxis.set_major_formatter(ticker.FormatStrFormatter('%0.1f'))
 
 # surf11 = ax1.scatter(q_list[:, joint], weights_list[:, joint], color="green", s=1, alpha=1)
 surf11 = ax1.scatter(q_percent[:, joint], weights_list[:, joint], color="green", s=1, alpha=1)
-
+plt.tight_layout()
+rospack = rospkg.RosPack()
+pkg_path = rospack.get_path('hrl_base_selection')
+save_file_path = pkg_path + '/data/'
+plt.savefig(save_file_path+'jlwki_weight.png', bbox_inches="tight",)
+'''
 joint = 1
 ax2 = fig1.add_subplot(232)
 ax2.set_xlabel('Percent of Angle Range')
@@ -138,6 +143,6 @@ ax5.set_xlim(-1.0, 1.0)
 # surf14 = ax4.scatter(q_list[:, joint], weights_list[:, joint], color="green", s=1, alpha=1)
 surf15 = ax5.scatter(q_percent[:, joint], weights_list[:, joint], color="green", s=1, alpha=1)
 
-
+'''
 
 plt.show()
