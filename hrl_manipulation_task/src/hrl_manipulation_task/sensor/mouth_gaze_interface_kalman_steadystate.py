@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 
-
+# TODO: Add steady state detection for stationary gestures: feeding, scooping
 
 # User interface to send commmands to feeding system using gestures.
 # Feeding: Look straight at camera and keep mouth open for approx 3 seconds.
@@ -27,6 +27,7 @@
 # corners of mouth with the edge of the cheek.
 #
 # v2: added "wipe mouth" command
+
 
 
 import sys
@@ -157,6 +158,18 @@ class DlibFaceLandmarkDetector:
         self.wipe_mouth_start = True
         self.wipe_mouth_outlier = 0
 
+        # Steady state
+        self.ss_window = np.array([])
+        self.ss_window_size = 30
+        self.window_diff = 3
+        self.prev_deviation = None
+        self.a1 = np.array([])
+        self.a2 = np.array([])
+        self.a3 = np.array([])
+        self.a4 = np.array([])
+        self.a5 = np.array([])
+        self.a6 = np.array([])
+
     def guiCallback(self, msg):
         self.gui_status = msg.data
 
@@ -223,6 +236,79 @@ class DlibFaceLandmarkDetector:
                 shape = self.predictor(gray_img, largest_box)
                 corrected = True
 
+            # Steady state detection-----------------------------------------------------------------------------------------
+            # 1. Detect steady state for nose position, mouth open-ness, face ratio
+            #   Nose position: x-y movements of head
+            #   Mouth open-ness: if mouth condition is also steady
+            #   Face ratio: rotation of head
+
+
+            # 2. Or... steadiness of several facial landmark positions?
+            # Some can be weighted depending on noise
+            steady = False
+            standard_deviation = 100
+            nose = shape.part(30).x + shape.part(30).y
+            mouth_corner_left = shape.part(60).x + shape.part(60).y
+            mouth_corner_right = shape.part(64).x + shape.part(64).y
+            upper_lip = shape.part(62).x + shape.part(62).y
+            bottom_lip = shape.part(66).x + shape.part(66).y
+
+            landmark_total = (1.5 * nose) + mouth_corner_right + mouth_corner_left + upper_lip + (1.2 * bottom_lip)
+            self.ss_window = np.append(self.ss_window, landmark_total)
+
+            # TESTING
+            # self.a1 = np.append(self.a1, nose)
+            # self.a2 = np.append(self.a2, mouth_corner_left)
+            # self.a3 = np.append(self.a3, mouth_corner_right)
+            # self.a4 = np.append(self.a4, upper_lip)
+            # self.a5 = np.append(self.a5, bottom_lip)
+            # std1 = 100
+            # std2 = 100
+            # std3 = 100
+            # std4 = 100
+            # std5 = 100
+
+            # when window is full, recalculate standard deviation
+            # First calculation of standard deviation
+            if ((self.ss_window.size) == self.ss_window_size):
+                standard_deviation = np.std(self.ss_window)
+                # std1 = np.std(self.a1)
+                # std2 = np.std(self.a2)
+                # std3 = np.std(self.a3)
+                # std4 = np.std(self.a4)
+                # std5 = np.std(self.a5)
+
+            # Update standard deviation
+            elif ((self.ss_window.size) > self.ss_window_size):
+                self.ss_window = np.delete(self.ss_window, 0)
+                standard_deviation = np.std(self.ss_window)
+                # self.a1 = np.delete(self.a1, 0)
+                # self.a2 = np.delete(self.a2, 0)
+                # self.a3 = np.delete(self.a3, 0)
+                # self.a4 = np.delete(self.a4, 0)
+                # self.a5 = np.delete(self.a5, 0)
+                # std1 = np.std(self.a1)
+                # std2 = np.std(self.a2)
+                # std3 = np.std(self.a3)
+                # std4 = np.std(self.a4)
+                # std5 = np.std(self.a5)
+            #print standard_deviation
+
+            # print 'nose: {}, mouth left: {}. mouth right: {}'.format(std1, std2, std3)
+            # print 'upper lip: {}, bottom lip: {}'.format(std4, std5)
+
+            if (standard_deviation < 4.0):
+                print 'STEADY'
+                steady = True
+
+
+            # 3. Consider all landmarks, and weight based on importance.
+
+
+
+
+            # ----------------------------------------------------------------------------------------------------------------
+
             # Mouth open check.
             mouth_open = self.lips_open(shape, largest_area)
             if mouth_open:
@@ -247,31 +333,67 @@ class DlibFaceLandmarkDetector:
 
             # Scoop condition check
             # TODO
-            if ratio_kalman < 0.4 and mouth_open:
-                self.scoop_outliers = 0
-                if self.scoop_condition:
-                    elapsed = time.time() - self.scoop_timer
-                    if elapsed > self.scoop_seconds:
-                        print 'scooping condition met, gui status: {}'.format(self.gui_status)
-                        if (self.gui_status == 'select task') or (self.gui_status == 'stopped'):
-                            self.statusPub.publish('Scooping')
-                            self.availablePub.publish('true')
-                            self.userInputPub.publish('Start')
-                            print 'scooping command published'
-                            self.sound_handle.say('Scoop ing')
-                            print 'said scooping'
-                        elif self.gui_status == 'wait start':
-                            self.userInputPub.publish('Start')
-                else:
-                    print 'scoop timer started'
-                    self.scoop_timer = time.time()
-                    self.scoop_condition = True
-            elif self.scoop_outliers <= 5:
-                status = 'OPEN, LEFT'
-                print 'scoop outlier #{}'.format(self.scoop_outliers)
-                self.scoop_outliers += 1
-            else:
-                self.scoop_condition = False
+            if (steady):
+                if ratio_kalman < 0.4 and mouth_open:
+                    print 'scooping condition met, gui status: {}'.format(self.gui_status)
+                    cv2.putText(img, 'Scooping!', (2, 230), cv2.FONT_HERSHEY_PLAIN, 2, cv2_blue, 2)
+                    if (self.gui_status == 'select task') or (self.gui_status == 'stopped'):
+                        self.statusPub.publish('Scooping')
+                        self.availablePub.publish('true')
+                        self.userInputPub.publish('Start')
+                        print 'scooping command published'
+                        self.sound_handle.say('Scoop ing')
+                        print 'said scooping'
+                    elif self.gui_status == 'wait start':
+                        self.userInputPub.publish('Start')
+                elif mouth_open and not head_rotated:
+                    print 'feeding conditions met, gui status: {}'.format(self.gui_status)
+                    cv2.putText(img, 'Feeding!', (2, 230), cv2.FONT_HERSHEY_PLAIN, 2, cv2_green, 2)
+                    if (self.gui_status == 'select task') or (self.gui_status == 'stopped'):
+                        self.statusPub.publish('Feeding')
+                        self.availablePub.publish('true')
+                        self.userInputPub.publish('Start')
+                        print 'Feeding command published'
+                        self.sound_handle.say('feed ing')
+                        print 'said feeding'
+                    elif self.gui_status == 'wait start':
+                        self.userInputPub.publish('Start')
+                elif ratio_kalman > 2.5:
+                    print 'stop condition met, gui status: {}'.format(self.gui_status)
+                    cv2.putText(img, 'Stop!', (2, 230), cv2.FONT_HERSHEY_PLAIN, 2, cv2_orange, 2)
+                    if (self.gui_status == 'in motion') or (self.gui_status == 'wait start'):
+                        self.emergencyPub.publish('STOP')
+                        print 'stopping command published'
+                        self.sound_handle.say('Stop ing')
+                        print 'said stopping'
+
+            # Scoop version 1 (no steady state)----------------------------------------------------------------------
+            # if ratio_kalman < 0.4 and mouth_open:
+            #     self.scoop_outliers = 0
+            #     if self.scoop_condition:
+            #         elapsed = time.time() - self.scoop_timer
+            #         if elapsed > self.scoop_seconds:
+            #             print 'scooping condition met, gui status: {}'.format(self.gui_status)
+            #             if (self.gui_status == 'select task') or (self.gui_status == 'stopped'):
+            #                 self.statusPub.publish('Scooping')
+            #                 self.availablePub.publish('true')
+            #                 self.userInputPub.publish('Start')
+            #                 print 'scooping command published'
+            #                 self.sound_handle.say('Scoop ing')
+            #                 print 'said scooping'
+            #             elif self.gui_status == 'wait start':
+            #                 self.userInputPub.publish('Start')
+            #     else:
+            #         print 'scoop timer started'
+            #         self.scoop_timer = time.time()
+            #         self.scoop_condition = True
+            # elif self.scoop_outliers <= 5:
+            #     status = 'OPEN, LEFT'
+            #     print 'scoop outlier #{}'.format(self.scoop_outliers)
+            #     self.scoop_outliers += 1
+            # else:
+            #     self.scoop_condition = False
+            # -----------------------------------------------------------------------------------------------------------
 
             # Wiping condition check
             if not self.wiping_start:
@@ -286,6 +408,7 @@ class DlibFaceLandmarkDetector:
                 elif ratio_kalman < 0.4:
                     #self.publish_wipe = True
                     print 'clean spoon condition met, gui status: {}'.format(self.gui_status)
+                    cv2.putText(img, 'Clean spoon!', (2, 230), cv2.FONT_HERSHEY_PLAIN, 2, cv2_yellow, 2)
                     if (self.gui_status == 'select task') or (self.gui_status == 'stopped'):
                         self.statusPub.publish('Clean')
                         self.availablePub.publish('true')
@@ -309,6 +432,7 @@ class DlibFaceLandmarkDetector:
                 elif ratio_kalman > 2.5:
                     #self.publish_wipe = True
                     print 'wipe mouth condition met, gui status: {}'.format(self.gui_status)
+                    cv2.putText(img, 'Wipe mouth!', (2, 230), cv2.FONT_HERSHEY_PLAIN, 2, cv2_black, 2)
                     if (self.gui_status == 'select task') or (self.gui_status == 'stopped'):
                         self.statusPub.publish('Wiping')
                         self.availablePub.publish('true')
@@ -324,16 +448,24 @@ class DlibFaceLandmarkDetector:
             # -----------------------------------------------------------------
             # Update conditions_met bool.
             # Allow 4 consecutive outliers.
+
+            color = None
+            # Conditions for feeding gesture met
             if mouth_open and not head_rotated:
                 self.conditions_met = True
                 self.outliers = 0
+                color = cv2_green
+            # Conditions for feeding gestures not met but were met before,
+            # and this is the 5th frame or less of not meeting conditions
             elif self.conditions_met and mouth_open and (self.outliers < 5):
                 self.outliers += 1
                 print 'feeding outlier #{}'.format(self.outliers)
                 status = 'OPEN, STRAIGHT'
+                color = cv2_green
             else:
                 self.conditions_met = False
                 self.outliers = 0
+                color = cv2_orange
 
             # Face box coordinates
             left = largest_box.left()
@@ -342,31 +474,33 @@ class DlibFaceLandmarkDetector:
             bottom = largest_box.bottom()
 
             # Check if three seconds have passed while conditions were continuously met.
-            color = None
-            if (self.conditions_met) and (not self.timer_started):  # conditions_met: False -> True.
-                print 'feeding timer started'
-                self.start_time = time.time()
-                self.timer_started = True
-                color = cv2_green
-            elif (self.conditions_met) and (self.timer_started):  # conditions_met: True -> True, >= 3 secs
-                if (time.time() - self.start_time) >= self.feed_seconds:
-                    cv2.putText(img, '3 seconds passed!', (2, 230), cv2.FONT_HERSHEY_PLAIN, 2, cv2_green, 2)
-                    color = cv2_green
-                    print 'feeding conditions met, gui status: {}'.format(self.gui_status)
-                    if (self.gui_status == 'select task') or (self.gui_status == 'stopped'):
-                        self.statusPub.publish('Feeding')
-                        self.availablePub.publish('true')
-                        self.userInputPub.publish('Start')
-                        print 'Feeding command published'
-                        self.sound_handle.say('feed ing')
-                        print 'said feeding'
-                    elif self.gui_status == 'wait start':
-                        self.userInputPub.publish('Start')
-                else:  # conditions_met: True -> True, < 3 secs
-                    color = cv2_green
-            else:  # conditions_met: False
-                color =cv2_orange
-                self.timer_started = False
+            # color = None
+            # if (self.conditions_met) and (not self.timer_started):  # conditions_met: False -> True.
+            #     print 'feeding timer started'
+            #     self.start_time = time.time()
+            #     self.timer_started = True
+            #     color = cv2_green
+            # elif (self.conditions_met) and (self.timer_started):  # conditions_met: True -> True, >= 3 secs
+            #     if (time.time() - self.start_time) >= self.feed_seconds:
+            #         cv2.putText(img, '3 seconds passed!', (2, 230), cv2.FONT_HERSHEY_PLAIN, 2, cv2_green, 2)
+            #         color = cv2_green
+            #         print 'feeding conditions met, gui status: {}'.format(self.gui_status)
+            #         if (self.gui_status == 'select task') or (self.gui_status == 'stopped'):
+            #             self.statusPub.publish('Feeding')
+            #             self.availablePub.publish('true')
+            #             self.userInputPub.publish('Start')
+            #             print 'Feeding command published'
+            #             self.sound_handle.say('feed ing')
+            #             print 'said feeding'
+            #         elif self.gui_status == 'wait start':
+            #             self.userInputPub.publish('Start')
+            #     else:  # conditions_met: True -> True, < 3 secs
+            #         color = cv2_green
+            # else:  # conditions_met: False
+            #     color =cv2_orange
+            #     self.timer_started = False
+
+            # Draw result on screen
             cv2.rectangle(img, (left-20, top-30), (left+132, top-15), color, -1)
             cv2.rectangle(img, (left, top), (right, bottom), color, 1)
             cv2.putText(img, status, (left-18, top-17), cv2.FONT_HERSHEY_PLAIN, 1, cv2_black)
@@ -376,26 +510,28 @@ class DlibFaceLandmarkDetector:
             self.imagePub.publish(self.bridge.cv2_to_imgmsg(img, "rgb8"))
 
             # Stop condition check
-            if ratio_kalman > 2.5:
-                self.stop_outliers = 0
-                if self.stop_condition:
-                    elapsed = time.time() - self.stop_timer
-                    if elapsed > self.stop_seconds:
-                        print 'stop condition met, gui status: {}'.format(self.gui_status)
-                        if (self.gui_status == 'in motion') or (self.gui_status == 'wait start'):
-                            self.emergencyPub.publish('STOP')
-                            print 'stopping command published'
-                            self.sound_handle.say('Stop ing')
-                            print 'said stopping'
-                else:
-                    print 'stop timer started'
-                    self.stop_timer = time.time()
-                    self.stop_condition = True
-            elif self.stop_outliers <= 5:
-                print 'stop outlier #{}'.format(self.stop_outliers)
-                self.stop_outliers += 1
-            else:
-                self.stop_condition = False     
+            # if ratio_kalman > 2.5:
+            #     self.stop_outliers = 0
+            #     if self.stop_condition:
+            #         elapsed = time.time() - self.stop_timer
+            #         if elapsed > self.stop_seconds:
+            #             print 'stop condition met, gui status: {}'.format(self.gui_status)
+            #             if (self.gui_status == 'in motion') or (self.gui_status == 'wait start'):
+            #                 self.emergencyPub.publish('STOP')
+            #                 print 'stopping command published'
+            #                 self.sound_handle.say('Stop ing')
+            #                 print 'said stopping'
+            #     else:
+            #         print 'stop timer started'
+            #         self.stop_timer = time.time()
+            #         self.stop_condition = True
+            # elif self.stop_outliers <= 5:
+            #     print 'stop outlier #{}'.format(self.stop_outliers)
+            #     self.stop_outliers += 1
+            # else:
+            #     self.stop_condition = False
+
+
     
         # No faces have been detected.
         else:
@@ -417,6 +553,7 @@ class DlibFaceLandmarkDetector:
                 if self.stop_condition:
                     elapsed = time.time() - self.stop_timer
                     if elapsed > 3.0:
+                        print 'stop conditions met'
                         if (self.gui_status == 'in motion') or (self.gui_status == 'wait start'):
                             self.emergencyPub.publish('STOP')
                             print 'stopping command published'
@@ -434,20 +571,19 @@ class DlibFaceLandmarkDetector:
             self.imagePub.publish(self.bridge.cv2_to_imgmsg(img, "rgb8"))
 
             # Scoop condition check
-            if self.scoop_condition:
-                elapsed = time.time() - self.scoop_timer
-                if elapsed >= 2.0:
-                    print 'scooping condition met, gui status: {}'.format(self.gui_status)
-                    if (self.gui_status == 'select task') or (self.gui_status == 'stopped'):
-                        self.statusPub.publish('Scooping')
-                        self.availablePub.publish('true')
-                        self.userInputPub.publish('Start')
-                        print 'scooping command published'
-                        self.sound_handle.say('Scoop ing')
-                        print 'said scooping'
-                    elif self.gui_status == 'wait start':
-                        self.userInputPub.publish('Start')
-                               
+            # if self.scoop_condition:
+            #     elapsed = time.time() - self.scoop_timer
+            #     if elapsed >= 2.0:
+            #         print 'scooping condition met, gui status: {}'.format(self.gui_status)
+            #         if (self.gui_status == 'select task') or (self.gui_status == 'stopped'):
+            #             self.statusPub.publish('Scooping')
+            #             self.availablePub.publish('true')
+            #             self.userInputPub.publish('Start')
+            #             print 'scooping command published'
+            #             self.sound_handle.say('Scoop ing')
+            #             print 'said scooping'
+            #         elif self.gui_status == 'wait start':
+            #             self.userInputPub.publish('Start')
 
             # Uncomment to add rectangle around face.
             #self.win.add_overlay(self.dets)
