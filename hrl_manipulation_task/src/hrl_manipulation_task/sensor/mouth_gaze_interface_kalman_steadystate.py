@@ -170,6 +170,8 @@ class DlibFaceLandmarkDetector:
         self.a5 = np.array([])
         self.a6 = np.array([])
 
+        self.said_ready = False
+
     def guiCallback(self, msg):
         self.gui_status = msg.data
 
@@ -343,6 +345,7 @@ class DlibFaceLandmarkDetector:
                         self.userInputPub.publish('Start')
                         print 'scooping command published'
                         self.sound_handle.say('Scoop ing')
+                        self.said_ready = False
                         print 'said scooping'
                     elif self.gui_status == 'wait start':
                         self.userInputPub.publish('Start')
@@ -355,6 +358,7 @@ class DlibFaceLandmarkDetector:
                         self.userInputPub.publish('Start')
                         print 'Feeding command published'
                         self.sound_handle.say('feed ing')
+                        self.said_ready = False
                         print 'said feeding'
                     elif self.gui_status == 'wait start':
                         self.userInputPub.publish('Start')
@@ -365,6 +369,7 @@ class DlibFaceLandmarkDetector:
                         self.emergencyPub.publish('STOP')
                         print 'stopping command published'
                         self.sound_handle.say('Stop ing')
+                        self.said_ready = False
                         print 'said stopping'
 
             # Scoop version 1 (no steady state)----------------------------------------------------------------------
@@ -415,6 +420,7 @@ class DlibFaceLandmarkDetector:
                         self.userInputPub.publish('Start')
                         print 'wiping command published'
                         self.sound_handle.say('Cleaning spoon')
+                        self.said_ready = False
                     elif self.gui_status == 'wait start':
                         self.userInputPub.publish('Start')
 
@@ -439,6 +445,7 @@ class DlibFaceLandmarkDetector:
                         self.userInputPub.publish('Start')
                         print 'wiping command published'
                         self.sound_handle.say('Wiping mouth')
+                        self.said_ready = False
                     elif self.gui_status == 'wait start':
                         self.userInputPub.publish('Start')
 
@@ -509,6 +516,10 @@ class DlibFaceLandmarkDetector:
             self.win.add_overlay(shape, orange)
             self.imagePub.publish(self.bridge.cv2_to_imgmsg(img, "rgb8"))
 
+            if (not self.said_ready) and (self.gui_status == 'select task' or self.gui_status == 'stopped'):
+                self.sound_handle.say('ready for next command')
+                self.said_ready = True
+
             # Stop condition check
             # if ratio_kalman > 2.5:
             #     self.stop_outliers = 0
@@ -558,6 +569,7 @@ class DlibFaceLandmarkDetector:
                             self.emergencyPub.publish('STOP')
                             print 'stopping command published'
                             self.sound_handle.say('Stop ing')
+                            self.said_ready = False
                             print 'said stopping'
                 else:
                     print 'stop timer started'
