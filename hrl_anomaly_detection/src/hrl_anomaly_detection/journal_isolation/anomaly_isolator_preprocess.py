@@ -144,9 +144,9 @@ def get_data(subject_names, task_name, raw_data_path, save_data_path, param_dict
                        'successFileList', 'failureFileList',
                        'success_files', 'failure_files',
                        'failure_labels']:
-                if IROS_TEST: td[key] = td1[key]+td2[key]+td3[key]
+                if IROS_TEST:       td[key] = td1[key]+td2[key]+td3[key]
                 elif JOURNAL_TEST:  td[key] = td1[key]+td2[key]+td3[key]+td4[key]
-                else:         td[key] = td1[key]+td4[key]
+                else:               td[key] = td1[key]+td4[key]
             elif key in ['successData', 'failureData']:
                 if IROS_TEST:
                     td[key] = np.vstack([np.swapaxes(td1[key],0,1),
@@ -182,7 +182,7 @@ def get_label_from_filename(file_names):
 
 def get_detection_idx(method, save_data_path, main_data, sub_data, param_dict, verbose=False,
                       dyn_ths=False, scale=1.8, fine_tuning=False, tr_only=False, te_only=False,
-                      latent_plot=False):
+                      isol_only=False, latent_plot=False):
     
     # load params (param_dict)
     nPoints    = param_dict['ROC']['nPoints']
@@ -202,7 +202,10 @@ def get_detection_idx(method, save_data_path, main_data, sub_data, param_dict, v
     train_a_err_ll = []
     test_a_err_ll  = []
 
-    detection_pkl = os.path.join(save_data_path, 'anomaly_idx.pkl')
+    if isol_only is False:
+        detection_pkl = os.path.join(save_data_path, 'anomaly_idx.pkl')
+    else:
+        detection_pkl = os.path.join(save_data_path, 'anomaly_ai_idx.pkl')
 
     #-----------------------------------------------------------------------------------------
     # Anomaly Detection using lstm-dvae-phase
@@ -211,7 +214,7 @@ def get_detection_idx(method, save_data_path, main_data, sub_data, param_dict, v
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(main_data['kFoldList']):
 
-        if idx!=1: continue
+        #if idx!=1: continue
 
         if clf_renew is False and os.path.isfile(detection_pkl) and latent_plot is False: break
         print "==================== ", idx, " ========================"
@@ -232,6 +235,12 @@ def get_detection_idx(method, save_data_path, main_data, sub_data, param_dict, v
             abnormalTrainData   = np.hstack([abnormalTrainData,
                                              copy.deepcopy(sub_data['failureData'])])
             abnormalTrainLabels = abnormalTrainLabels + sub_data['failure_labels']
+        elif isol_only:
+            abnormalTrainData   = np.hstack([abnormalTrainData,
+                                             copy.deepcopy(sub_data['failureData'])])
+            abnormalTrainLabels = abnormalTrainLabels + sub_data['failure_labels']
+            
+            
 
         # shuffle
         np.random.seed(3334+idx)
@@ -270,11 +279,11 @@ def get_detection_idx(method, save_data_path, main_data, sub_data, param_dict, v
         stateful     = True
         x_std_div    = 4.
         x_std_offset = 0.1
-        z_std        = 0.8 
+        z_std        = 1.0 #2:1.0 
         h1_dim       = 4 #nDim
         z_dim        = 2 #3
         phase        = 1.0
-        sam_epoch    = 100 #40 #100
+        sam_epoch    = 40 #2:40
         plot         = False
         fixed_batch_size = True
         batch_size   = 256
@@ -307,10 +316,13 @@ def get_detection_idx(method, save_data_path, main_data, sub_data, param_dict, v
         alpha[0] = 1.
         ths_l = np.logspace(0.,1.3,nPoints) #- 0.12
         ths_l = np.logspace(-0.4,1.8,nPoints) - 0.2 # 2
-        ths_l = np.logspace(-0.4,2.1,nPoints) - 0.2    
+        #ths_l = np.logspace(-0.4,2.1,nPoints) - 0.2    
 
         from hrl_anomaly_detection.journal_isolation import detector as dt
-        save_pkl = os.path.join(save_data_path, 'model_ad_scores_'+str(idx)+'.pkl')
+        if isol_only is False:
+            save_pkl = os.path.join(save_data_path, 'model_ad_scores_'+str(idx)+'.pkl')
+        else:
+            save_pkl = os.path.join(save_data_path, 'model_ai_scores_'+str(idx)+'.pkl')
         tp_l, tn_l, fp_l, fn_l, roc, ad_dict = \
           dt.anomaly_detection(autoencoder, vae_mean, vae_logvar, enc_z_mean, enc_z_std, generator,
                                normalTrainData, valData[0], abnormalTrainData,\
@@ -383,7 +395,8 @@ def get_detection_idx(method, save_data_path, main_data, sub_data, param_dict, v
 
     
 def get_isolation_data(method, subject_names, task_name, raw_data_path, save_data_path, param_dict,
-                       fine_tuning=False, dyn_ths=False, tr_only=False, te_only=False, latent_plot=False):
+                       fine_tuning=False, dyn_ths=False, tr_only=False, te_only=False, isol_only=False,
+                       latent_plot=False):
 
     # Get Raw Data
     main_data, sub_data = get_data(subject_names, task_name, raw_data_path, save_data_path, param_dict,
@@ -393,6 +406,7 @@ def get_isolation_data(method, subject_names, task_name, raw_data_path, save_dat
     dt_dict = get_detection_idx(method, save_data_path, main_data, sub_data, param_dict,
                                 fine_tuning=fine_tuning,
                                 dyn_ths=dyn_ths, scale=1.8, tr_only=tr_only, te_only=te_only,
+                                isol_only=isol_only,
                                 latent_plot=latent_plot, verbose=False)
     if tr_only: return
 
@@ -415,89 +429,208 @@ def get_isolation_data(method, subject_names, task_name, raw_data_path, save_dat
         print "==================== ", idx, " ========================"
 
         # Find an index given maximum f-score
-        ths_idx = np.argmax(dt_dict['fs_l'][idx])
+        #ths_idx = np.argmax(dt_dict['fs_l']) #need to remove
 
-
+        #print "ths_idx = ", ths_idx
+        print "ths: ", dt_dict['fs_l']
         print np.shape(dt_dict['train_err_ll'][idx]), np.shape(dt_dict['train_labels']),
         print np.shape(dt_dict['test_err_ll'][idx]), np.shape(dt_dict['test_labels'])        
-        print "00000000000000000000000"
-        sys.exit()
         ## iutil.save_data_labels(dt_dict['train_err_ll'][idx], dt_dict['train_labels'])        
 
         # feature extraction by index based on IROS17_isolation/isolation_util.py's feature_extraction
         #1) Individual features reconstruction probability?
         #2) Image list
-        feature_extraction(idx,\
-                           (dt_dict['train_idx_ll'][idx][ths_idx],
-                            dt_dict['train_err_ll'][idx],
-                           [main_data['failure_d_image_list'][i] for i in abnormalTrainIdx]
-                           + sub_data['failure_d_image_list'],
-                           dt_dict['train_labels']),\
-                           (dt_dict['test_idx_ll'][idx][ths_idx],
-                            dt_dict['test_err_ll'][idx],
-                           [main_data['failure_d_image_list'][i] for i in abnormalTestIdx],
-                           dt_dict['test_labels']),\
-                           save_data_path)
+        f_tr, f_te = feature_extraction(idx,\
+                                        (dt_dict['train_idx_ll'][idx],
+                                         dt_dict['train_err_ll'][idx],
+                                        [main_data['failure_d_image_list'][i] for i in abnormalTrainIdx]
+                                        + sub_data['failure_d_image_list'],
+                                        dt_dict['train_labels']),\
+                                        (dt_dict['test_idx_ll'][idx],
+                                         dt_dict['test_err_ll'][idx],
+                                        [main_data['failure_d_image_list'][i] for i in abnormalTestIdx],
+                                        dt_dict['test_labels']),\
+                                        save_data_path)
 
+        return
+        ## sys.exit()
 
-
-        sys.exit()
-
-
-        
-
-
-        # train sig net
-        sig_weights_file=os.path.join(save_data_path,'sig_weights_'+str(idx)+'.h5')
-        sig_net([x_train_s, y_train], [x_test_s, y_test], noise_mag=0,
-                save_weights_file=sig_weights_file)
+        ## # train sig net
+        ## sig_weights_file=os.path.join(save_data_path,'sig_weights_'+str(idx)+'.h5')
+        ## sig_net([x_train_s, y_train], [x_test_s, y_test], noise_mag=0,
+        ##         save_weights_file=sig_weights_file)
         
         
 
-    return [x_train, x_train_img], y_train, [x_test, x_test_img], y_test    
+    return [x_train_sig, x_train_img], y_train, [x_test_sig, x_test_img], y_test    
 
 
-def feature_extraction(idx, trainData, testData, save_data_path, window_step=10):
+def feature_extraction(idx, trainData, testData, save_data_path, window_step=1,
+                       pkl_name='isol_features', renew=False):
+    
+    file_name = os.path.join(save_data_path,pkl_name+'_'+str(idx)+'.pkl')
+    
+    if os.path.isfile(file_name) and renew is False and False:
+        d = ut.load_pickle(file_name)
+    else:
+        ''' Get individual reconstruction probability vector when anomalies are detected '''
+        train_d_idx_l  = trainData[0]
+        train_err_l  = trainData[1] # sample x length x dim
+        train_dimg_l = trainData[2]
+        train_labels = trainData[3]
 
-    ''' Get individual reconstruction probability vector when anomalies are detected '''
-    train_d_idx_l  = trainData[0]
-    train_err_l  = trainData[1] # sample x length x dim
-    train_dimg_l = trainData[2]
-    train_labels = trainData[3]
+        test_d_idx_l  = testData[0]
+        test_err_l  = testData[1]
+        test_dimg_l = testData[2]
+        test_labels = testData[3]
 
-    test_d_idx_l  = testData[0]
-    test_err_l  = testData[1]
-    test_dimg_l = testData[2]
-    test_labels = testData[3]
+        #max_step = 8
+        def features(d_idx_l, x_sig, x_img, y):
+            x_sig_list = []
+            x_img_list = []
+            y_list = []
+            for i, d_idx in enumerate(d_idx_l):
+                # Skip undetected anomaly
+                if d_idx is None: continue
+            
+                for j in range(-window_step, window_step):
+                    if d_idx+j <= window_step: continue
+                    if d_idx+j >= len(x_sig[i])-window_step: continue
+                    if d_idx+j-7 < 0: continue
+
+                    # pyramid pooling? (1,4,8)
+                    vs = x_sig[i][d_idx+j]
+                    #vs = np.vstack([ vs, np.amax(x_sig[i][d_idx+j-4:d_idx+j+1], axis=0) ])
+                    vs = np.vstack([ vs, np.amax(x_sig[i][d_idx+j-7:d_idx+j+1], axis=0) ])
+                    #vs = vs.flatten() #3,17 - 51
+                    ## vs = np.exp(vs)                    
+                    vs = np.array(vs)
+
+                    x_sig_list.append(vs.tolist())
+                    y_list.append(y[i])
+
+            return x_sig_list, x_img_list, y_list
+
+        d = {}
+        d['x_sig_tr'] = []; d['x_img_tr'] = []; d['y_tr'] = []
+
+        for i in xrange(10, 40):
+            x_sig, x_img, y = features(train_d_idx_l[i], train_err_l, train_dimg_l, train_labels)
+            d['x_sig_tr'] += x_sig
+            d['x_img_tr'] += x_img
+            d['y_tr']     += y
+            
+        ## d['x_sig_tr'], d['x_img_tr'], d['y_tr']\
+        ## = features(train_d_idx_l, train_err_l, train_dimg_l, train_labels)
+        
+        d['x_sig_te'], d['x_img_te'], d['y_te']\
+        = features(test_d_idx_l[30], test_err_l, test_dimg_l, test_labels)
+
+        ut.save_pickle(d, file_name)
+
+    return (d['x_sig_tr'], d['x_sig_tr'], d['y_tr']), (d['x_sig_te'], d['x_sig_te'], d['y_te'])
+
+
+
+def sig_net_test(idx, save_data_path, pkl_name='', renew=False):
+
+    file_name = os.path.join(save_data_path, pkl_name+'_'+str(idx)+'.pkl')
+    d = ut.load_pickle(file_name)
+    trainData = (d['x_sig_tr'], d['y_tr'])
+    testData = (d['x_sig_te'], d['y_te'])
+
+    print np.shape(d['x_sig_tr']), np.shape(d['y_tr'])
+
+    from sklearn import preprocessing
+    scaler  = preprocessing.StandardScaler()
+    ## ## x_train = scaler.fit_transform(d['x_sig_tr'])
+    ## ## x_test  = scaler.transform(d['x_sig_te'])
+
+    
+    ## #scaler  = preprocessing.MinMaxScaler()
+    n,m,k = np.shape(d['x_sig_tr'])    
+    ## x_train = np.array(d['x_sig_tr']).reshape(n,m*k)
+    x_train = scaler.fit_transform(np.array(d['x_sig_tr']).reshape(n*m,k)).reshape(n,m*k)
+    n,m,k = np.shape(d['x_sig_te'])
+    ## x_test  = np.array(d['x_sig_te']).reshape(n,m*k)
+    x_test  = scaler.transform(np.array(d['x_sig_te']).reshape(n*m,k)).reshape(n,m*k)
+    trainData = (x_train, d['y_tr'])
+    testData = (x_test, d['y_te'])
+
+
+    ## # train svm
+    ## #from sklearn.svm import SVC
+    ## #clf = SVC(C=1.0, kernel='rbf', gamma=1e-5) #, decision_function_shape='ovo')
+    ## from sklearn.ensemble import RandomForestClassifier
+    ## clf = RandomForestClassifier(n_estimators=800, n_jobs=-1)
+    ## ## from sklearn.neighbors import KNeighborsClassifier
+    ## ## clf = KNeighborsClassifier(n_neighbors=10, n_jobs=-1)
+    ## clf.fit(trainData[0], trainData[1])
+    
+    ## # classify and get scores
+    ## score = clf.score(testData[0], testData[1])
+    ## print "score: ", score
+    ## sys.exit()
+
+
+
+    method      = 'sig_net'
+    noise_mag   = 0.05
+    patience    = 10 #4 #10
+    fine_tuning = False
+    batch_size  = 4096 #2048
+
+    # Save data for visualizer
+    ## from hrl_anomaly_detection.IROS17_isolation import isolation_util as iu
+    ## iu.save_data_labels(trainData[0], trainData[1])
+    ## sys.exit()
+
+    from hrl_anomaly_detection.journal_isolation.models import sig_net             
+    weights_file = os.path.join(save_data_path,'model_weights_'+method+'_'+str(idx)+'.h5')
+    ml = sig_net.sig_net(trainData, testData, weights_file=weights_file, patience=patience,
+                         batch_size=batch_size,\
+                         noise_mag=noise_mag, renew=True, fine_tuning=fine_tuning)
+
+    # test
+
+
+    return 
+
+
+def img_net_test(idx, save_data_path, pkl_name='', renew=False):
+
+    file_name = os.path.join(save_data_path, pkl_name+'_'+str(idx)+'.pkl')
+    d = ut.load_pickle(file_name)
+    trainData = (d['x_img_tr'], d['y_tr'])
+    testData  = (d['x_img_te'], d['y_te'])
+
+    method      = 'img_net'
+    noise_mag   = 0.05 #5
+    patience    = 30 #4 #10
+    sam_epoch   = 40 #2:40
+    fine_tuning = False
+    batch_size  = 1024
+
+    # Save data for visualizer
+    ## from hrl_anomaly_detection.IROS17_isolation import isolation_util as iu
+    ## iu.save_data_labels(trainData[0], trainData[1])
+    ## sys.exit()
+
+    from hrl_anomaly_detection.journal_isolation.models import img_net             
+    weights_file = os.path.join(save_data_path,'model_weights_'+method+'_'+str(idx)+'.h5')
+    ml = img_net.img_net(trainData, testData, weights_file=weights_file, patience=patience,
+                         batch_size=batch_size,\
+                         noise_mag=noise_mag, sam_epoch=sam_epoch, renew=True, fine_tuning=fine_tuning)
+
+    return 
+
+
 
 ## anomaly_idx_list, abnormalData, abnormalData_s, \
 ##                        abnormalLabel, abnormalData_img,\
 ##                        task_name, processed_data_path, param_dict,\
 ##                        window_step=10, verbose=False, plot=False,\
 ##                        window=False, delta_flag=False):
-
-    max_step = 8
-
-    def features(d_idx_l, x_sig, x_img, y):
-        for i, d_idx in enumerate(d_idx_l):
-            # Skip undetected anomaly
-            if d_idx is None: continue
-        
-            for j in range(-window_step, window_step):
-                if d_idx+j <= 4: continue
-                if d_idx+j > len(x_sig[0][0,i]): continue
-
-                # pyramid pooling? (1,4,8)
-                vs = np.amin(x_sig[i][j], axis=0)
-                vs = np.vstack([ vs, np.amin(x_sig[i][:4], axis=0) ])
-                vs = np.vstack([ vs, np.amin(x_sig[i][:8], axis=0) ])
-                vs = vs.flatten()
-
-
-    features(train_d_idx_l, train_err_l, train_dimg_l, train_labels)
-    features(test_d_idx_l, test_err_l, test_dimg_l, test_labels)
-
-
     ## x = []
     ## y = []
     ## x_img = []
@@ -605,6 +738,8 @@ if __name__ == '__main__':
                  default=False, help='Run dynamic threshold.')
     p.add_option('--testing_only', '--te', action='store_true', dest='bTestOnly',
                  default=False, help='Run dynamic threshold.')         
+    p.add_option('--isol_only', '--ai', action='store_true', dest='bIsolOnly',
+                 default=False, help='Run a classifier with anomaly isolation data.')         
     p.add_option('--latent_space_plot', '--lsp', action='store_true', dest='bLatentPlot',
                  default=False, help='Show latent space.')
     opt, args = p.parse_args()
@@ -625,7 +760,7 @@ if __name__ == '__main__':
           '/hrl_file_server/dpark_data/anomaly/JOURNAL_ISOL/'+opt.task+'_4'
     else:
         save_data_path = os.path.expanduser('~')+\
-          '/hrl_file_server/dpark_data/anomaly/JOURNAL_ISOL/'+opt.task+'_2'
+          '/hrl_file_server/dpark_data/anomaly/JOURNAL_ISOL/'+opt.task+'_4'
 
 
     task_name = 'feeding'
@@ -633,15 +768,17 @@ if __name__ == '__main__':
     method       = 'lstm_dvae_phase_circle'
     IROS_TEST = True
     JOURNAL_TEST = False #True
+    if opt.bIsolOnly: JOURNAL_TEST = True
 
 
     get_isolation_data(method, subject_names, task_name, raw_data_path, save_data_path, param_dict,
                        fine_tuning=opt.bFineTune, dyn_ths=opt.bDynThs,
-                       tr_only=opt.bTrainOnly, te_only=opt.bTestOnly,
+                       tr_only=opt.bTrainOnly, te_only=opt.bTestOnly, isol_only=opt.bIsolOnly,\
                        latent_plot=opt.bLatentPlot)
 
-    #, weight=1.0, window_steps=window_steps, verbose=False)
 
+    ## sig_net_test(0, save_data_path, pkl_name='isol_features', renew=False)
 
+    ## img_net_test(0, save_data_path, pkl_name='isol_features', renew=False)
 
 

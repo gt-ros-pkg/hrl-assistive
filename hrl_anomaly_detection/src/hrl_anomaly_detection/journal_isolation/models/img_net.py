@@ -38,10 +38,10 @@ import scipy
 import h5py 
 from keras.models import Sequential, Model
 from keras.layers import Input, TimeDistributed, Layer
+from keras.layers import Convolution2D, MaxPooling2D, ZeroPadding2D, Merge, Input
 from keras.layers import Activation, Dropout, Flatten, Dense, merge, Lambda, GaussianNoise
 from keras.utils.np_utils import to_categorical
 from keras.optimizers import SGD, Adagrad, Adadelta, RMSprop
-from keras import regularizers
 from keras import backend as K
 from keras import objectives
 from keras.callbacks import *
@@ -52,9 +52,12 @@ from hrl_anomaly_detection.journal_isolation.models import keras_util as ku
 
 import gc
 
+random.seed(3334)
+np.random.seed(3334)
+vgg_weights_path = os.path.expanduser('~')+'/git/keras_test/vgg16_weights.h5'
 
 
-def sig_net(trainData, testData, batch_size=512, nb_epoch=500, \
+def img_net(trainData, testData, batch_size=512, nb_epoch=500, \
             patience=20, fine_tuning=False, noise_mag=0.0,\
             weights_file=None, save_weights_file='sig_weights.h5', renew=False, **kwargs):
     """
@@ -72,33 +75,110 @@ def sig_net(trainData, testData, batch_size=512, nb_epoch=500, \
     n_labels = len(np.unique(y_train))
     print "Labels: ", np.unique(y_train), " #Labels: ", n_labels
     print "Labels: ", np.unique(y_test), " #Labels: ", n_labels
+
+
+
+    # Extract images -------------------------------------------------------------------
+    from hrl_execution_monitor import preprocess as pp
+    rm_idx = []
+    x = []
+    for j, f in enumerate(x_train):
+        if f is None:
+            print "None image ", j+1, '/', len(x_train)
+            rm_idx.append(j)
+            continue
+
+        img = extract_image(f, img_feature_type=img_feature_type, img_scale=img_scale)
+        x.append(img)
+
+    y_train  = np.expand_dims(trainData[1], axis=-1)
+    n_labels = len(np.unique(y_train))
+    get_bottleneck_image(save_data_path, n_labels, idx)
+
+
+
+
+    
     print np.shape(x_train), np.shape(y_train), np.shape(x_test), np.shape(y_test)
 
     # Convert labels to categorical one-hot encoding
     y_train = keras.utils.to_categorical(y_train, num_classes=n_labels)
     y_test  = keras.utils.to_categorical(y_test, num_classes=n_labels)
 
-    ## from sklearn import preprocessing
-    ## scaler  = preprocessing.StandardScaler()
-    ## #scaler  = preprocessing.MinMaxScaler()
-    ## x_train = scaler.fit_transform(x_train)
-    ## x_test  = scaler.transform(x_test)
+    from sklearn import preprocessing
+    scaler  = preprocessing.StandardScaler()
+    #scaler  = preprocessing.MinMaxScaler()
+    x_train = scaler.fit_transform(x_train)
+    x_test  = scaler.transform(x_test)
 
-    # Model construction
+    # Model construction (VGG16) ---------------------------------------------------------
     model = Sequential()
-    model.add(Dense(32, init='uniform', input_shape=np.shape(x_train[0]),
-                    ## kernel_regularizer=regularizers.l2(0.01),\
-                    name='sig_1'))
-    model.add(Activation('relu'))
-    model.add(Dropout(0.3))
-    ## model.add(Dense(16, init='uniform',
-    ##                 ## kernel_regularizer=regularizers.l2(0.01),\
-    ##                 name='sig_2'))
-    ## model.add(Activation('tanh'))
-    ## model.add(Dropout(0.3))
-    model.add(Dense(n_labels, activation='softmax',
-                    ## W_regularizer=L1L2Regularizer(0,0),
-                    name='sig_out'))    
+    model.add(ZeroPadding2D((1, 1), input_shape=input_shape))
+
+    model.add(Convolution2D(64, 3, 3, activation='relu', name='conv1_1'))
+    model.add(ZeroPadding2D((1, 1)))
+    model.add(Convolution2D(64, 3, 3, activation='relu', name='conv1_2'))
+    model.add(MaxPooling2D((2, 2), strides=(2, 2)))
+
+    model.add(ZeroPadding2D((1, 1)))
+    model.add(Convolution2D(128, 3, 3, activation='relu', name='conv2_1'))
+    model.add(ZeroPadding2D((1, 1)))
+    model.add(Convolution2D(128, 3, 3, activation='relu', name='conv2_2'))
+    model.add(MaxPooling2D((2, 2), strides=(2, 2)))
+
+    model.add(ZeroPadding2D((1, 1)))
+    model.add(Convolution2D(256, 3, 3, activation='relu', name='conv3_1'))
+    model.add(ZeroPadding2D((1, 1)))
+    model.add(Convolution2D(256, 3, 3, activation='relu', name='conv3_2'))
+    model.add(ZeroPadding2D((1, 1)))
+    model.add(Convolution2D(256, 3, 3, activation='relu', name='conv3_3'))
+    model.add(MaxPooling2D((2, 2), strides=(2, 2)))
+
+    model.add(ZeroPadding2D((1, 1)))
+    model.add(Convolution2D(512, 3, 3, activation='relu', name='conv4_1'))
+    model.add(ZeroPadding2D((1, 1)))
+    model.add(Convolution2D(512, 3, 3, activation='relu', name='conv4_2'))
+    model.add(ZeroPadding2D((1, 1)))
+    model.add(Convolution2D(512, 3, 3, activation='relu', name='conv4_3'))
+    model.add(MaxPooling2D((2, 2), strides=(2, 2)))
+
+    model.add(ZeroPadding2D((1, 1)))
+    model.add(Convolution2D(512, 3, 3, activation='relu', name='conv5_1'))
+    model.add(ZeroPadding2D((1, 1)))
+    model.add(Convolution2D(512, 3, 3, activation='relu', name='conv5_2'))
+    model.add(ZeroPadding2D((1, 1)))
+    model.add(Convolution2D(512, 3, 3, activation='relu', name='conv5_3'))
+    model.add(MaxPooling2D((2, 2), strides=(2, 2)))
+
+    if vgg_weights_path is not None:       
+        # load the weights of the VGG16 networks
+        # (trained on ImageNet, won the ILSVRC competition in 2014)
+        # note: when there is a complete match between your model definition
+        # and your weight savefile, you can simply call model.load_weights(filename)        
+        assert os.path.exists(vgg_weights_path), \
+          'Model weights not found (see "weights_path" variable in script).'
+        f = h5py.File(vgg_weights_path)
+        for k in range(f.attrs['nb_layers']):
+            if k >= len(model.layers):
+                # we don't look at the last (fully-connected) layers in the savefile
+                break
+            g = f['layer_{}'.format(k)]
+            weights = [g['param_{}'.format(p)] for p in range(g.attrs['nb_params'])]
+            model.layers[k].set_weights(weights)
+        f.close()
+        print('Model loaded.')
+    # 31 layers---------------------------------------------------------------
+    
+    if fine_tune and False:
+        for layer in model.layers[:25]:
+            layer.trainable = False
+    else:
+        for layer in model.layers:
+            layer.trainable = False
+
+
+
+    
     print(model.summary())
 
     if weights_file is not None and os.path.isfile(weights_file) and fine_tuning is False and\
@@ -113,7 +193,7 @@ def sig_net(trainData, testData, batch_size=512, nb_epoch=500, \
                                      save_weights_only=True,
                                      monitor='val_loss'),
                      ReduceLROnPlateau(monitor='val_loss', factor=0.2,
-                                       patience=patience/2, min_lr=0.00001)]
+                                       patience=patience-1, min_lr=0.00001)]
 
         if fine_tuning:
             model.load_weights(weights_file)
