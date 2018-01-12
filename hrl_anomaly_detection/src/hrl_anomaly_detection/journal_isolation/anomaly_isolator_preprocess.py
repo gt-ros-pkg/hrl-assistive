@@ -144,9 +144,9 @@ def get_data(subject_names, task_name, raw_data_path, save_data_path, param_dict
                        'successFileList', 'failureFileList',
                        'success_files', 'failure_files',
                        'failure_labels']:
-                if IROS_TEST: td[key] = td1[key]+td2[key]+td3[key]
+                if IROS_TEST:       td[key] = td1[key]+td2[key]+td3[key]
                 elif JOURNAL_TEST:  td[key] = td1[key]+td2[key]+td3[key]+td4[key]
-                else:         td[key] = td1[key]+td4[key]
+                else:               td[key] = td1[key]+td4[key]
             elif key in ['successData', 'failureData']:
                 if IROS_TEST:
                     td[key] = np.vstack([np.swapaxes(td1[key],0,1),
@@ -766,8 +766,9 @@ if __name__ == '__main__':
     task_name = 'feeding'
     nb_classes = 12
     method       = 'lstm_dvae_phase_circle'
-    IROS_TEST = False
+    IROS_TEST = True
     JOURNAL_TEST = False #True
+    if opt.bIsolOnly: JOURNAL_TEST = True
 
 
     get_isolation_data(method, subject_names, task_name, raw_data_path, save_data_path, param_dict,
@@ -776,7 +777,7 @@ if __name__ == '__main__':
                        latent_plot=opt.bLatentPlot)
 
 
-    sig_net_test(0, save_data_path, pkl_name='isol_features', renew=False)
+    ## sig_net_test(0, save_data_path, pkl_name='isol_features', renew=False)
 
     ## img_net_test(0, save_data_path, pkl_name='isol_features', renew=False)
 
