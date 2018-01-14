@@ -53,6 +53,7 @@ from sound_play.libsoundplay import SoundClient
 
 from steady_state_linear_reg import SteadyStateDetector
 
+
 # dlib colors
 yellow = dlib.rgb_pixel(255, 255, 0)
 red = dlib.rgb_pixel(255, 0, 0)
@@ -165,6 +166,7 @@ class DlibFaceLandmarkDetector:
         self.ss_window_size = 30
 
         self.said_ready = False
+        self.prev_gui_status = ""
 
         # State: (nose x position, nose y position, mouth ratio, head rotation ratio)
         self.steady_detector = SteadyStateDetector(30, (4,), 5, mode='std monitor', overlap=-1)
@@ -436,10 +438,15 @@ class DlibFaceLandmarkDetector:
             self.win.add_overlay(shape, orange)
             self.imagePub.publish(self.bridge.cv2_to_imgmsg(img, "rgb8"))
 
-            if (not self.said_ready) and (self.gui_status == 'select task' or self.gui_status == 'stopped'):
-                self.sound_handle.say('ready for next command')
-                print "said ready"
-                self.said_ready = True
+            # if (not self.said_ready) and (self.gui_status == 'select task' or self.gui_status == 'stopped'):
+            #     self.sound_handle.say('ready for next command')
+            #     print "said ready"
+            #     self.said_ready = True
+            if (self.gui_status == 'select task') or (self.gui_status == 'stopped'):
+                if (self.gui_status != self.prev_gui_status):
+                    self.sound_handle.say('ready for next command')
+                    print "said ready"
+            self.prev_gui_status = self.gui_status
 
         # No faces have been detected.
         else:
