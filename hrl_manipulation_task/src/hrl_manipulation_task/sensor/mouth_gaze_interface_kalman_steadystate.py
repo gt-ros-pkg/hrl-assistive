@@ -170,7 +170,7 @@ class DlibFaceLandmarkDetector:
 
         # State: (nose x position, nose y position, mouth ratio, head rotation ratio)
         self.steady_detector = SteadyStateDetector(30, (4,), 5, mode='std monitor', overlap=-1)
-        self.thresh = [1, 1, 1, 0.1]
+        self.thresh = [1.5, 1.5, 1.5, 1.5]
         self.prev_time = None
 
     def guiCallback(self, msg):
