@@ -344,10 +344,11 @@ class KinematicsLib():
 
 
 
-    def forward_kinematics_pytorch(self, images_v, torso_lengths_angles_v, targets_v, kincons_v, loss_vector_type, prior_cascade = None):
+    def forward_kinematics_pytorch(self, images_v, torso_lengths_angles_v, targets_v, loss_vector_type, kincons_v = None, prior_cascade = None, forward_only = False):
 
         test_ground_truth = False
         loop = False
+        pseudotargets = None
 
         if loss_vector_type == 'upper_angles':
             torso_lengths_angles_v = torso_lengths_angles_v.unsqueeze(0)
@@ -658,6 +659,36 @@ class KinematicsLib():
                 torso_lengths_angles_v[:, 63] = torso_lengths_angles_v[:, 36] + (((-torso_lengths_angles_v[:, 13]) * 100 * np.pi / 180).sin() * ((torso_lengths_angles_v[:, 17] * 100 * np.pi / 180).cos() * torso_lengths_angles[:, 34] -  torso_lengths_angles[:, 32]) + ((-torso_lengths_angles_v[:, 13]) * 100 * np.pi / 180).cos() * ((-torso_lengths_angles_v[:, 11] + torso_lengths_angles_v[:, 15] + 0.9) * 100 * np.pi / 180).cos() * (torso_lengths_angles_v[:, 17] * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 34]) - torso_lengths_angles[:, 28]
                 torso_lengths_angles_v[:, 64] = torso_lengths_angles_v[:, 37] - torso_lengths_angles[:, 27] + ((torso_lengths_angles_v[:, 15] - 1.8) * 100 * np.pi / 180).sin() * (((-torso_lengths_angles_v[:, 13]) * 100 * np.pi / 180).cos() * ((torso_lengths_angles_v[:, 17] * 100 * np.pi / 180).cos() *  torso_lengths_angles[:, 34] -torso_lengths_angles[:, 32]) - ((-torso_lengths_angles_v[:, 13]) * 100 * np.pi / 180).sin() * ((-torso_lengths_angles_v[:, 11] + torso_lengths_angles_v[:, 15] + 0.9) * 100 * np.pi / 180).cos() * (torso_lengths_angles_v[:, 17] * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 34]) - ((torso_lengths_angles_v[:, 15] - 1.8) * 100 * np.pi / 180).cos() * ((-torso_lengths_angles_v[:, 11] + torso_lengths_angles_v[:, 15] + 0.9) * 100 * np.pi / 180).sin() * (torso_lengths_angles_v[:, 17] * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 34]
 
+                if forward_only == True:
+                    #let's get the neck, shoulders, and glutes pseudotargets
+                    pseudotargets = Variable(torch.Tensor(np.zeros((images.shape[0], 15))))
+
+                    #get the neck in vectorized form
+                    pseudotargets[:, 0] = torso_lengths_angles_v[:, 35]
+                    pseudotargets[:, 1] = torso_lengths_angles_v[:, 36] + torso_lengths_angles[:, 19] * bedangle[:].cos()
+                    pseudotargets[:, 2] = torso_lengths_angles_v[:, 37] - torso_lengths_angles[:, 18] + torso_lengths_angles[:, 19] * bedangle[:].sin()
+
+                    #get the right shoulder in vectorized form
+                    pseudotargets[:, 3] = torso_lengths_angles_v[:, 35] - torso_lengths_angles[:, 20]
+                    pseudotargets[:, 4] = torso_lengths_angles_v[:, 36] + torso_lengths_angles[:, 19] * bedangle[:].cos()
+                    pseudotargets[:, 5] = torso_lengths_angles_v[:, 37] - torso_lengths_angles[:, 18] + torso_lengths_angles[:, 19] * bedangle[:].sin()
+
+                    #print \the left shoulder in vectorized form
+                    pseudotargets[:, 6] = torso_lengths_angles_v[:, 35] + torso_lengths_angles[:, 21]
+                    pseudotargets[:, 7] = torso_lengths_angles_v[:, 36] + torso_lengths_angles[:, 19] * bedangle[:].cos()
+                    pseudotargets[:, 8] = torso_lengths_angles_v[:, 37] - torso_lengths_angles[:, 18] + torso_lengths_angles[:, 19] * bedangle[:].sin()
+
+                    #get the right glute in vectorized form
+                    pseudotargets[:, 9] = torso_lengths_angles_v[:, 35] - torso_lengths_angles[:, 29]
+                    pseudotargets[:, 10] = torso_lengths_angles_v[:, 36] - torso_lengths_angles[:, 28]
+                    pseudotargets[:, 11] = torso_lengths_angles_v[:, 37] - torso_lengths_angles[:, 27]
+
+                    #print \the left glute in vectorized form
+                    pseudotargets[:, 12] = torso_lengths_angles_v[:, 35] + torso_lengths_angles[:, 30]
+                    pseudotargets[:, 13] = torso_lengths_angles_v[:, 36] - torso_lengths_angles[:, 28]
+                    pseudotargets[:, 14] = torso_lengths_angles_v[:, 37] - torso_lengths_angles[:, 27]
+
+                    pseudotargets = pseudotargets.data.numpy() * 1000
 
             torso_lengths_angles_v = torso_lengths_angles_v.unsqueeze(0)
             torso_lengths_angles_v = torso_lengths_angles_v.unsqueeze(0)
@@ -712,5 +743,5 @@ class KinematicsLib():
             torso_lengths_angles_v = torso_lengths_angles_v.squeeze(0)
             torso_lengths_angles_v = torso_lengths_angles_v.squeeze(0)
 
-        return torso_lengths_angles_v
+        return torso_lengths_angles_v, pseudotargets
 

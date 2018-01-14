@@ -145,19 +145,22 @@ class SyntheticLib():
 
         #use bed angles to keep it from shifting in the x and y directions
 
-        x = np.arange(-10, 11)
+        x = np.arange(-5, 6)
         xU, xL = x + 0.5, x - 0.5
-        prob = ss.norm.cdf(xU, scale=3) - ss.norm.cdf(xL, scale=3)
+        prob = ss.norm.cdf(xU, scale=2) - ss.norm.cdf(xL, scale=2) #scale is the standard deviation using a cumulative density function
         prob = prob / prob.sum()  # normalize the probabilities so their sum is 1
         modified_x = np.random.choice(x, size=images.shape[0], p=prob)
-        # plt.hist(modified_x)
-        # plt.show()
+        #plt.hist(modified_x)
+        #plt.show()
 
-        y = np.arange(-10, 11)
+        y = np.arange(-5, 6)
         yU, yL = y + 0.5, y - 0.5
-        prob = ss.norm.cdf(yU, scale=3) - ss.norm.cdf(yL, scale=3)
+        prob = ss.norm.cdf(yU, scale=2) - ss.norm.cdf(yL, scale=2)
         prob = prob / prob.sum()  # normalize the probabilities so their sum is 1
         modified_y = np.random.choice(y, size=images.shape[0], p=prob)
+        modified_y[bedangles[:,0,0] > 10] = 0 #we have to cut out the vertical shifts where the bed is not flat
+        #plt.hist(modified_y)
+        #plt.show()
 
         tar_mod = np.reshape(targets, (targets.shape[0], targets.shape[1] / 3, 3))
 
@@ -259,21 +262,22 @@ class SyntheticLib():
 
         elif self.loss_vector_type == 'arms_cascade':
 
-            dummy[:, [1, 3, 5], :] = tar_mod[:, [1, 3, 5], :]
-            tar_mod[:, [1, 3, 5], :] = tar_mod[:, [2, 4, 6], :]
-            tar_mod[:, [2, 4, 6], :] = dummy[:, [1, 3, 5], :]
+            dummy[:, [2, 4, 6, 8, 11, 13], :] = tar_mod[:, [2, 4, 6, 8, 11, 13], :]
+            tar_mod[:, [2, 4, 6, 8, 11, 13], :] = tar_mod[:, [3, 5, 7, 9, 12, 14], :]
+            tar_mod[:, [3, 5, 7, 9, 12, 14], :] = dummy[:, [2, 4, 6, 8, 11, 13], :]
             if pcons is not None:
                 pcons_orig = np.multiply(pcons, original[:, np.newaxis])
                 pcons_mod = np.multiply(pcons, modified[:, np.newaxis])
                 dummy2 = zeros((pcons_mod.shape))
-                dummy2[:, [0, 2, 4, 6, 14, 16]] = pcons_mod[:, [0, 2, 4, 6, 14, 16]]
-                pcons_mod[:, [0, 2, 4, 6, 14, 16]] = pcons_mod[:, [1, 3, 5, 7, 15, 17]]
-                pcons_mod[:, [1, 3, 5, 7, 15, 17]] = dummy2[:, [0, 2, 4, 6, 14, 16]]
+                dummy2[:, [0, 2, 4, 6, 10, 12, 14, 16, 22, 24, 31, 33]] = pcons_mod[:, [0, 2, 4, 6, 10, 12, 14, 16, 22, 24, 31, 33]]
+                pcons_mod[:, [0, 2, 4, 6, 10, 12, 14, 16, 22, 24, 31, 33]] = pcons_mod[:, [1, 3, 5, 7, 11, 13, 15, 17, 23, 25, 32, 34]]
+                pcons_mod[:, [1, 3, 5, 7, 11, 13, 15, 17, 23, 25, 32, 34]] = dummy2[:, [0, 2, 4, 6, 10, 12, 14, 16, 22, 24, 31, 33]]
                 pcons_mod = np.multiply(pcons_mod, modified[:, np.newaxis])
                 pcons = pcons_orig + pcons_mod
 
 
-        else:
+
+        elif self.loss_vector_type == 'direct':
             dummy[:, [2, 4, 6, 8], :] = tar_mod[:, [2, 4, 6, 8], :]
             tar_mod[:, [2, 4, 6, 8], :] = tar_mod[:, [3, 5, 7, 9], :]
             tar_mod[:, [3, 5, 7, 9], :] = dummy[:, [2, 4, 6, 8], :]

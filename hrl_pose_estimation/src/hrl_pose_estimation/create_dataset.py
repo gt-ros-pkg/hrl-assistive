@@ -686,7 +686,7 @@ class DatabaseCreator():
         std_lengths = []
         #for subject in [4,9,10,11,12,13,14,15,16,17,18]:
         #for subject in [12]:
-        for subject in [2, 3, 4, 5, 6, 7, 8]:
+        for subject in [12, 13, 14, 15, 16, 17, 18]:
 
             self.final_dataset = {}
             self.final_dataset['images'] = []

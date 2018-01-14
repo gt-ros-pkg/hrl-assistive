@@ -44,6 +44,7 @@ from hrl_lib.util import load_pickle
 from create_dataset_lib import CreateDatasetLib
 from visualization_lib import VisualizationLib
 from kinematics_lib import KinematicsLib
+from yashc_lib import YashcLib
 
 #PyTorch libraries
 import argparse
@@ -146,6 +147,9 @@ class DataVisualizer():
 
                 plt.plot(train_val_loss_all['epoch_2to8_alldata_angles_115b_adam_200e_44'], train_val_loss_all['train_2to8_alldata_angles_115b_adam_200e_44'], 'k')
                 plt.plot(train_val_loss_all['epoch_2to8_alldata_angles_115b_adam_200e_44'], train_val_loss_all['val_2to8_alldata_angles_115b_adam_200e_44'], 'y')
+                plt.plot(train_val_loss_all['epoch_2to8_alldata_angles_no_yshift_115b_adam_200e_44'], train_val_loss_all['train_2to8_alldata_angles_no_yshift_115b_adam_200e_44'], 'b')
+                plt.plot(train_val_loss_all['epoch_2to8_alldata_angles_no_yshift_115b_adam_200e_44'], train_val_loss_all['val_2to8_alldata_angles_no_yshift_115b_adam_200e_44'], 'r')
+                plt.plot(train_val_loss_all['epoch_2to8_alldata_angles_s10to18_115b_50e_44'], train_val_loss_all['val_2to8_alldata_angles_s10to18_115b_50e_44'], 'g')
 
 
 
@@ -171,18 +175,13 @@ class DataVisualizer():
 
         self.count = 0
 
-        rospy.init_node('calc_mean_std_of_head_detector_node')
+        rospy.init_node('plot_loss')
 
 
 
+        self.validation_set = load_pickle(self.dump_path + '/subject_' + str(9) + '/p_files/trainval_150rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p')
 
-
-
-    def validate_model(self):
-
-        validation_set = load_pickle(self.dump_path + '/subject_' + str(4) + '/p_files/trainval_150rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p')
-
-        test_dat = validation_set
+        test_dat = self.validation_set
         for key in test_dat:
             print key, np.array(test_dat[key]).shape
 
@@ -222,8 +221,49 @@ class DataVisualizer():
 
         print 'Finished converting outputs to a torch tensor'
 
-        print len(validation_set), 'size of validation set'
-        batch_size = 1480
+
+
+    def validate_baseline(self):
+
+        print len(self.validation_set), 'size of validation set'
+        batch_size = 1
+
+        self.test_dataset = torch.utils.data.TensorDataset(self.test_x_tensor, self.test_y_tensor)
+        self.test_loader = torch.utils.data.DataLoader(self.test_dataset, batch_size, shuffle=True)
+        regr = load_pickle(self.dump_path + '/subject_' + str(4) + '/p_files/HoG_Linear.p')
+
+
+        count = 0
+        for batch_idx, batch in enumerate(self.test_loader):
+            images = batch[0].numpy()[:, 0, :, :]
+            targets = batch[1].numpy()
+
+            # upsample the images
+            images_up = YashcLib().preprocessing_pressure_map_upsample(images)
+            # targets = list(targets)
+            print images_up[0].shape
+
+            # Compute HoG of the current(training) pressure map dataset
+            images_up = YashcLib().compute_HoG(images_up)
+            scores = regr.predict(images_up)
+
+            VisualizationLib().print_error(scores, targets, self.output_size, loss_vector_type=self.loss_vector_type,
+                                           data='test', printerror=True)
+
+            self.im_sample = np.squeeze(images[0, :])
+            print self.im_sample.shape
+
+            self.tar_sample = np.squeeze(targets[0, :]) / 1000
+            self.sc_sample = np.copy(scores)
+            self.sc_sample = np.squeeze(self.sc_sample[0, :]) / 1000
+            self.sc_sample = np.reshape(self.sc_sample, self.output_size)
+            VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample, block=True)
+
+    def validate_convnet(self):
+
+
+        print len(self.validation_set), 'size of validation set'
+        batch_size = 1
 
         self.test_dataset = torch.utils.data.TensorDataset(self.test_x_tensor, self.test_y_tensor)
         self.test_loader = torch.utils.data.DataLoader(self.test_dataset, batch_size, shuffle=True)
@@ -232,7 +272,7 @@ class DataVisualizer():
 
         #torso_length_model = torch.load(self.dump_path + '/subject_' + str(self.subject) + '/p_files/convnet_2to8_alldata_armsonly_torso_lengths_115b_adam_100e_4.pt')
         #angle_model = torch.load(self.dump_path + '/subject_' + str(self.subject) + '/p_files/convnet_2to8_alldata_armsonly_upper_angles_115b_adam_200e_4.pt')
-        model = torch.load(self.dump_path + '/subject_' + str(4) + '/p_files/convnet_2to8_alldata_angles_115b_adam_200e_4.pt')
+        model = torch.load(self.dump_path + '/subject_' + str(4) + '/p_files/convnet_2to8_alldata_angles_s10to18_115b_50e_4.pt')
 
         count = 0
         for batch_idx, batch in enumerate(self.test_loader):
@@ -244,11 +284,21 @@ class DataVisualizer():
             # get the direct joint locations
             batch[1] = batch[1][:, 0:30]
 
+            images_up = batch[0].numpy()
+            images_up = images_up[:, :, 10:74, 5:42]
+            images_up = YashcLib().preprocessing_pressure_map_upsample(images_up)
+            images_up = np.array(images_up)
+            images_up = Variable(torch.Tensor(images_up), requires_grad=False)
+            print images_up.size()
+
             images, targets, constraints = Variable(batch[0], requires_grad=False), Variable(batch[1], requires_grad=False), Variable(batch[2], requires_grad=False)
 
 
+
+
+
             if self.loss_vector_type == 'angles':
-                scores, targets_est = model.forward_kinematic_jacobian(images, targets, constraints)
+                scores, targets_est, _, _ = model.forward_kinematic_jacobian(images_up, targets, constraints)
             elif self.loss_vector_type == None:
                 scores, targets_est = model.forward_direct(images, targets)
 
@@ -330,7 +380,7 @@ class DataVisualizer():
     def run(self):
         '''Runs either the synthetic database creation script or the
         raw dataset creation script to create a dataset'''
-        self.validate_model()
+        self.validate_convnet()
         return
 
 

@@ -35,6 +35,7 @@ from synthetic_lib import SyntheticLib
 from visualization_lib import VisualizationLib
 from kinematics_lib import KinematicsLib
 from cascade_lib import CascadeLib
+from yashc_lib import YashcLib
  
 #PyTorch libraries
 import argparse
@@ -73,7 +74,7 @@ class PhysicalTrainer():
         self.verbose = opt.verbose
         self.opt = opt
         self.batch_size = 115
-        self.num_epochs = 200
+        self.num_epochs = 100
         self.include_inter = True
 
 
@@ -81,11 +82,11 @@ class PhysicalTrainer():
         #Entire pressure dataset with coordinates in world frame
 
         if self.opt.upper_only == True:
-            self.save_name = '_2to8_alldata_angles_' + str(self.batch_size) + 'b_adam_' + str(self.num_epochs) + 'e_4'
+            self.save_name = '_2to8_alldata_angles_' + str(self.batch_size) + 'b_' + str(self.num_epochs) + 'e_4'
             self.loss_vector_type = 'upper_angles'
 
         else:
-            self.save_name = '_2to8_alldata_angles_' + str(self.batch_size) + 'b_adam_' + str(self.num_epochs) + 'e_4'
+            self.save_name = '_2to8_alldata_angles_noise_' + str(self.batch_size) + 'b_' + str(self.num_epochs) + 'e_4'
             self.loss_vector_type = 'angles'  # 'arms_cascade'#'upper_angles' #this is so you train the set to joint lengths and angles
 
         #we'll be loading this later
@@ -114,10 +115,8 @@ class PhysicalTrainer():
         elif self.loss_vector_type == 'arms_cascade':
             self.output_size = (NUMOFOUTPUTNODES - 8, NUMOFOUTPUTDIMS) #because of symmetry, we can train on just one side via synthetic flipping
             self.val_output_size = (NUMOFOUTPUTNODES - 6, NUMOFOUTPUTDIMS) #however, we still want to make a validation double forward pass through both sides
-        elif self.loss_vector_type == 'angles':
+        elif self.loss_vector_type == 'angles' or self.loss_vector_type == 'direct':
             self.output_size = (NUMOFOUTPUTNODES, NUMOFOUTPUTDIMS)
-        elif self.loss_vector_type == 'euclidean_error':
-            self.output_size = (NUMOFOUTPUTNODES - 5, NUMOFOUTPUTDIMS)
         elif self.loss_vector_type == None:
             self.output_size = (NUMOFOUTPUTNODES - 5, NUMOFOUTPUTDIMS)
 
@@ -153,13 +152,13 @@ class PhysicalTrainer():
         self.train_x_flat = []  # Initialize the testing pressure mat list
         for entry in range(len(dat['images'])):
             self.train_x_flat.append(dat['images'][entry])
-        # test_x = self.preprocessing_pressure_array_resize(self.test_x_flat)
+        # test_x = YashcLib().preprocessing_pressure_array_resize(self.test_x_flat, self.mat_size, self.verbose)
         # test_x = np.array(test_x)
 
         self.train_a_flat = []  # Initialize the testing pressure mat angle list
         for entry in range(len(dat['images'])):
             self.train_a_flat.append(dat['bed_angle_deg'][entry])
-        train_xa = self.preprocessing_create_pressure_angle_stack(self.train_x_flat, self.train_a_flat)
+        train_xa = YashcLib().preprocessing_create_pressure_angle_stack(self.train_x_flat, self.train_a_flat, self.include_inter, self.mat_size, self.verbose)
         train_xa = np.array(train_xa)
         self.train_x_tensor = torch.Tensor(train_xa)
 
@@ -171,9 +170,11 @@ class PhysicalTrainer():
                                     dat['joint_angles_U_deg'][entry][0:10]), axis=0)
                 self.train_y_flat.append(c)
             elif self.loss_vector_type == 'arms_cascade':
-                c = np.concatenate((dat['markers_xyz_m'][entry][0:18] * 1000,
+                c = np.concatenate((dat['markers_xyz_m'][entry][0:30] * 1000,
                                     dat['joint_lengths_U_m'][entry][0:9] * 100,
                                     dat['joint_angles_U_deg'][entry][0:10],
+                                    dat['joint_lengths_L_m'][entry][0:8] * 100,
+                                    dat['joint_angles_L_deg'][entry][0:8],
                                     dat['pseudomarkers_xyz_m'][entry][:] * 1000), axis=0)
                 self.train_y_flat.append(c)
             elif self.loss_vector_type == 'angles':
@@ -199,13 +200,13 @@ class PhysicalTrainer():
         self.test_x_flat = []  # Initialize the testing pressure mat list
         for entry in range(len(test_dat['images'])):
             self.test_x_flat.append(test_dat['images'][entry])
-        # test_x = self.preprocessing_pressure_array_resize(self.test_x_flat)
+        # test_x = YashcLib.preprocessing_pressure_array_resize(self.test_x_flat, self.mat_size, self.verbose)
         # test_x = np.array(test_x)
 
         self.test_a_flat = []  # Initialize the testing pressure mat angle list
         for entry in range(len(test_dat['images'])):
             self.test_a_flat.append(test_dat['bed_angle_deg'][entry])
-        test_xa = self.preprocessing_create_pressure_angle_stack(self.test_x_flat, self.test_a_flat)
+        test_xa = YashcLib().preprocessing_create_pressure_angle_stack(self.test_x_flat, self.test_a_flat, self.include_inter, self.mat_size, self.verbose)
         test_xa = np.array(test_xa)
         self.test_x_tensor = torch.Tensor(test_xa)
 
@@ -217,9 +218,11 @@ class PhysicalTrainer():
                                     test_dat['joint_angles_U_deg'][entry][0:10]), axis=0)
                 self.test_y_flat.append(c)
             elif self.loss_vector_type == 'arms_cascade':
-                c = np.concatenate((test_dat['markers_xyz_m'][entry][0:18] * 1000,
+                c = np.concatenate((test_dat['markers_xyz_m'][entry][0:30] * 1000,
                                     test_dat['joint_lengths_U_m'][entry][0:9] * 100,
                                     test_dat['joint_angles_U_deg'][entry][0:10],
+                                    test_dat['joint_lengths_L_m'][entry][0:8] * 100,
+                                    test_dat['joint_angles_L_deg'][entry][0:8],
                                     test_dat['pseudomarkers_xyz_m'][entry][:] * 1000), axis=0)
                 self.test_y_flat.append(c)
             elif self.loss_vector_type == 'angles':
@@ -229,47 +232,116 @@ class PhysicalTrainer():
                                     test_dat['joint_lengths_L_m'][entry][0:8] * 100,
                                     test_dat['joint_angles_L_deg'][entry][0:8]), axis=0)
                 self.test_y_flat.append(c)
-            else:
+            elif self.loss_vector_type == 'direct':
                 self.test_y_flat.append(test_dat['markers_xyz_m'][entry] * 1000)
+            else:
+                print "ERROR! SPECIFY A VALID LOSS VECTOR TYPE."
         self.test_y_flat = np.array(self.test_y_flat)
         self.test_y_tensor = torch.Tensor(self.test_y_flat)
 
 
-    def preprocessing_pressure_array_resize(self, data):
-        '''Will resize all elements of the dataset into the dimensions of the 
-        pressure map'''
-        p_map_dataset = []
-        for map_index in range(len(data)):
-            #print map_index, self.mat_size, 'mapidx'
-            #Resize mat to make into a matrix
-            p_map = np.reshape(data[map_index], self.mat_size)
-            #print p_map
-            p_map_dataset.append(p_map)
-            #print p_map.shape
-        if self.verbose: print len(data[0]),'x',1, 'size of an incoming pressure map'
-        if self.verbose: print len(p_map_dataset[0]),'x',len(p_map_dataset[0][0]), 'size of a resized pressure map'
-        return p_map_dataset
+    def baseline_train(self):
+        n_neighbors = 5
+        cv_fold = 3
+
+        #for knn we don't really care about the variable function in pytorch, but it's a nice utility for shuffling the data.
+        self.batch_size = self.train_y_tensor.numpy().shape[0]
+        self.batchtest_size = 1#self.test_y_tensor.numpy().shape[0]
 
 
-    def preprocessing_create_pressure_angle_stack(self,x_data,a_data):
-        '''This is for creating a 2-channel input using the height of the bed. '''
-        p_map_dataset = []
-        for map_index in range(len(x_data)):
-            # print map_index, self.mat_size, 'mapidx'
-            # Resize mat to make into a matrix
-            p_map = np.reshape(x_data[map_index], self.mat_size)
-            a_map = zeros_like(p_map) + a_data[map_index]
-            if self.include_inter == True:
-                p_map_inter = (100-2*np.abs(p_map - 50))*4
-                p_map_dataset.append([p_map, p_map_inter, a_map])
-            else:
-                p_map_dataset.append([p_map, a_map])
-        if self.verbose: print len(x_data[0]), 'x', 1, 'size of an incoming pressure map'
-        if self.verbose: print len(p_map_dataset[0][0]), 'x', len(p_map_dataset[0][0][0]), 'size of a resized pressure map'
-        if self.verbose: print len(p_map_dataset[0][1]), 'x', len(p_map_dataset[0][1][0]), 'size of the stacked angle mat'
-        return p_map_dataset
+        self.train_dataset = torch.utils.data.TensorDataset(self.train_x_tensor, self.train_y_tensor)
+        self.train_loader = torch.utils.data.DataLoader(self.train_dataset, self.batch_size, shuffle=True)
+
+        self.test_dataset = torch.utils.data.TensorDataset(self.test_x_tensor, self.test_y_tensor)
+        self.test_loader = torch.utils.data.DataLoader(self.test_dataset, self.batchtest_size, shuffle=True)
+
+        for batch_idx, batch in enumerate(self.train_loader):
+            batch[0], batch[1], _ = SyntheticLib().synthetic_master(batch[0], batch[1], flip=True,
+                                                                           shift=True, scale=False,
+                                                                           bedangle=True,
+                                                                           include_inter=self.include_inter,
+                                                                           loss_vector_type=self.loss_vector_type)
 
 
+            images = batch[0].numpy()[:,0,:,:]
+            targets = batch[1].numpy()
+
+
+            #upsample the images
+            images_up = YashcLib().preprocessing_pressure_map_upsample(images)
+            #targets = list(targets)
+            print images_up[0].shape
+
+
+
+            # Compute HoG of the current(training) pressure map dataset
+            images_up = YashcLib().compute_HoG(images_up)
+
+            #images_up = [[0], [1], [2], [3]]
+            #targets = [0, 0, 1, 1]
+
+            print np.shape(images_up)
+            print np.shape(targets)
+
+            print 'fitting'
+
+            baseline = 'Linear'
+            if baseline == 'KNN':
+                regr = neighbors.KNeighborsRegressor(15, weights='distance')
+
+            elif baseline == 'kmeans_SVM':
+                k_means = KMeans(n_clusters=10, n_init=4)
+                k_means.fit(images_up)
+                labels = k_means.labels_
+                svm_classifier = svm.SVC()
+                svm_classifier.fit(images_up, labels)
+                regr = linear_model.LinearRegression()
+
+            elif baseline == 'Ridge':
+                regr = linear_model.Ridge(alpha=1.0)
+
+            elif baseline == 'KRidge':
+                regr = kernel_ridge.KernelRidge(alpha=1, kernel='chi2', gamma= 10)
+            elif baseline == 'Linear':
+                regr = linear_model.LinearRegression()
+
+            regr.fit(images_up, targets)
+            print 'done fitting'
+
+            pkl.dump(regr, open('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leaveOut) + '/p_files/HoG_Linear.p', 'wb'))
+
+            #validation
+            for batchtest_idx, batchtest in enumerate(self.test_loader):
+                images_test = batchtest[0].numpy()[:, 0, :, :]
+                targets = batchtest[1].numpy()
+
+                images_up_test = YashcLib().preprocessing_pressure_map_upsample(images_test)
+                #targets = list(targets)
+
+                images_up_test = YashcLib().compute_HoG(images_up_test)
+                scores = regr.predict(images_up_test)
+
+                print scores.shape
+                print targets.shape
+                print scores[0]
+                print targets[0]
+
+                print regr.predict(images_up_test[0]) - targets[0]
+                VisualizationLib().print_error(scores, targets, self.output_size, loss_vector_type=self.loss_vector_type, data='test', printerror=True)
+
+                self.im_sample = np.squeeze(images_test[0, :])
+                print self.im_sample.shape
+
+                self.tar_sample = np.squeeze(targets[0, :]) / 1000
+                self.sc_sample = np.copy(scores)
+                self.sc_sample = np.squeeze(self.sc_sample[0, :]) / 1000
+                self.sc_sample = np.reshape(self.sc_sample, self.output_size)
+                VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample, block=True)
+
+            print len(scores)
+            print scores[0].shape
+            print scores.shape
+            print targets.shape
 
 
 
@@ -285,7 +357,6 @@ class PhysicalTrainer():
 
 
 
-        batch_size = self.batch_size
         num_epochs = self.num_epochs
         hidden_dim = 12
         kernel_size = 10
@@ -294,11 +365,11 @@ class PhysicalTrainer():
 
         #self.train_x_tensor = self.train_x_tensor.unsqueeze(1)
         self.train_dataset = torch.utils.data.TensorDataset(self.train_x_tensor, self.train_y_tensor)
-        self.train_loader = torch.utils.data.DataLoader(self.train_dataset, batch_size, shuffle=True)
+        self.train_loader = torch.utils.data.DataLoader(self.train_dataset, self.batch_size, shuffle=True)
 
         #self.test_x_tensor = self.test_x_tensor.unsqueeze(1)
         self.test_dataset = torch.utils.data.TensorDataset(self.test_x_tensor, self.test_y_tensor)
-        self.test_loader = torch.utils.data.DataLoader(self.test_dataset, batch_size, shuffle=True)
+        self.test_loader = torch.utils.data.DataLoader(self.test_dataset, self.batch_size, shuffle=True)
 
 
         output_size = self.output_size[0]*self.output_size[1]
@@ -313,14 +384,9 @@ class PhysicalTrainer():
             #we'll make a double pass through this network for the validation for each arm.
             fc_output_size = 4 #4 angles for arms
             self.model = convnet.CNN(self.mat_size, fc_output_size, hidden_dim, kernel_size, self.loss_vector_type)
-
-            #self.model_cascade_prior = torch.load('xxxxxxxxxx') this should be the fully trained model that outputs target locations for all joints
-        elif self.loss_vector_type == 'euclidean_error':
-            fc_output_size = 5
-            self.model = convnet.CNN(self.mat_size, fc_output_size, hidden_dim, kernel_size, self.loss_vector_type)
-            self.model_direct_marker = torch.load('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leaveOut) + '/p_files/convnet_2to8_alldata_armsonly_direct_inclinter_115b_adam_200e_4.pt')
-        elif self.loss_vector_type == None:
-            fc_output_size = 15
+            self.model_cascade_prior = torch.load('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leaveOut) + '/p_files/convnet_2to8_alldata_angles_115b_adam_200e_4.pt')
+        elif self.loss_vector_type == 'direct':
+            fc_output_size = 30
             self.model = convnet.CNN(self.mat_size, fc_output_size, hidden_dim, kernel_size, self.loss_vector_type)
 
 
@@ -328,10 +394,12 @@ class PhysicalTrainer():
 
 
 
-        if self.loss_vector_type == None or self.loss_vector_type == 'euclidean_error':
+        if self.loss_vector_type == None:
             self.optimizer2 = optim.Adam(self.model.parameters(), lr=0.000025, weight_decay=0.0005)
-        elif self.loss_vector_type == 'upper_angles' or self.loss_vector_type == 'arms_cascade' or self.loss_vector_type == 'angles':
+        elif self.loss_vector_type == 'upper_angles' or self.loss_vector_type == 'arms_cascade' or self.loss_vector_type == 'angles' or self.loss_vector_type == 'direct':
             self.optimizer2 = optim.Adam(self.model.parameters(), lr=0.00001, weight_decay=0.0005)
+        elif self.loss_vector_type == 'direct':
+            self.optimizer2 = optim.Adam(self.model.parameters(), lr=0.00005, weight_decay=0.0005)
         self.optimizer = optim.RMSprop(self.model.parameters(), lr=0.000015, momentum=0.7, weight_decay=0.0005)
 
 
@@ -353,7 +421,7 @@ class PhysicalTrainer():
 
 
         print 'done with epochs, now evaluating'
-        self.evaluate('test', verbose=True)
+        self.validate_convnet('test')
 
         print self.train_val_losses_all, 'trainval'
         # Save the model (architecture and weights)
@@ -414,7 +482,7 @@ class PhysicalTrainer():
                 scores_zeros[:, 6:15] = constraints[:, 10:19]/100
 
 
-                scores, targets_est = self.model.forward_kinematic_jacobian(images, targets, constraints)
+                scores, targets_est, _, _ = self.model.forward_kinematic_jacobian(images, targets, constraints)
                 self.criterion = nn.MSELoss()
                 loss = self.criterion(scores, scores_zeros)
 
@@ -430,6 +498,17 @@ class PhysicalTrainer():
                                                            bedangle=True,
                                                            include_inter=self.include_inter,
                                                            loss_vector_type=self.loss_vector_type)
+
+
+                images_up = batch[0].numpy()
+                images_up = images_up[:, :, 5:79, 5:42]
+                images_up = YashcLib().preprocessing_pressure_map_upsample(images_up)
+                images_up = np.array(images_up)
+                images_up = YashcLib().preprocessing_add_image_noise(images_up)
+                #print images_up[0, 0, 0:10, 0:10]
+                images_up = Variable(torch.Tensor(images_up), requires_grad = False)
+                #print images_up.size()
+
 
                 images, targets, constraints = Variable(batch[0], requires_grad = False), Variable(batch[1], requires_grad = False), Variable(batch[2], requires_grad = False)
 
@@ -447,18 +526,19 @@ class PhysicalTrainer():
                 scores_zeros[:, 10:27] = constraints[:, 18:35]/100
 
 
-                scores, targets_est = self.model.forward_kinematic_jacobian(images, targets, constraints) # scores is a variable with 27 for 10 euclidean errors and 17 lengths in meters. targets est is a numpy array in mm.
+                scores, targets_est, _, _ = self.model.forward_kinematic_jacobian(images_up, targets, constraints) # scores is a variable with 27 for 10 euclidean errors and 17 lengths in meters. targets est is a numpy array in mm.
 
                 self.criterion = nn.MSELoss()
                 loss = self.criterion(scores, scores_zeros)
 
             elif self.loss_vector_type == 'arms_cascade':
 
-                # append upper joint angles, upper joint lengths, in that order
-                batch.append(torch.cat((batch[1][:,27:37], batch[1][:, 18:27]), dim = 1))
+                # append upper joint angles, lower joint angles, upper joint lengths, lower joint lengths, in that order
+                #print batch[1].size()
+                batch.append(torch.cat((batch[1][:,39:49], batch[1][:, 57:65], batch[1][:, 30:39], batch[1][:, 49:57]), dim = 1))
 
                 #get the torso, shoulder pseudotargets, and the arm targets for elbow and hand in that order
-                batch[1] = torch.cat((batch[1][:, 3:6], batch[1][:, 40:46], batch[1][:, 6:18]), dim = 1)
+                batch[1] = torch.cat((batch[1][:, 0:30], batch[1][:, 65:80]), dim = 1)
 
                 batch[0], batch[1], batch[2]= SyntheticLib().synthetic_master(batch[0], batch[1], batch[2], flip=True, shift=True, scale=False,
                                                            bedangle=True,
@@ -468,7 +548,6 @@ class PhysicalTrainer():
                 images, targets, constraints = Variable(batch[0], requires_grad = False), Variable(batch[1], requires_grad = False), Variable(batch[2], requires_grad = False)
 
 
-                CascadeLib().get_mat_coordinates(images.data.numpy(), np.reshape(targets.data.numpy(), (targets.size()[0], 7, 3)))
 
                 self.optimizer.zero_grad()
 
@@ -477,15 +556,29 @@ class PhysicalTrainer():
                 scores_zeros = Variable(torch.Tensor(scores_zeros))
 
 
-                prior_cascade = torch.cat((targets[:, 0:3], constraints[:, 10:18]/100), dim = 1) #just use this method to check, do a forward pass through the prior cascade when its trained
+                prior_cascade = torch.cat((targets[:, 3:6], constraints[:, 19:27]/100), dim = 1) #just use this method to check, do a forward pass through the prior cascade when its trained
+                _, targets_prior, lengths_prior, pseudotargets_prior = self.model_cascade_prior.forward_kinematic_jacobian(images, targets, forward_only=True)
+                #print targets_prior[0]
+                #print pseudotargets_prior[0]
+                targets_prior = np.concatenate((targets_prior, pseudotargets_prior), axis = 1)
+                #print targets_prior.shape
 
-                scores, targets_est = self.model.forward_kinematic_jacobian(images, targets, constraints, prior_cascade=prior_cascade)
+                #find the pressure mat coordinates where the projected markers lie
+                targets_2D = CascadeLib().get_2D_projection(images.data.numpy(), np.reshape(targets.data.numpy(), (targets.size()[0], 15, 3)))
+                targets_2D_prior = CascadeLib().get_2D_projection(images.data.numpy(), np.reshape(targets_prior, (targets.size()[0], 15, 3)))
 
+                box_centers = np.round(targets_2D_prior[:, :, 0:2] / 28.6, 0)
 
+                image_cascade = CascadeLib().generate_bounded_box_input(batch[0].numpy(), box_centers)
+                image_cascade_up = YashcLib().preprocessing_pressure_map_upsample(image_cascade)
+                image_cascade_tensor = Variable(torch.Tensor(image_cascade_up), requires_grad = False)
+
+                scores, targets_est, _, _ = self.model.forward_kinematic_jacobian(images, targets, constraints, prior_cascade=prior_cascade)
 
                 ground_truth = np.zeros((batch[0].numpy().shape[0], 6)) #6 is 6 joint locations for the x y z right side elbow and hand
                 ground_truth = Variable(torch.Tensor(ground_truth))
-                targets = torch.cat((targets[:, 9:12], targets[:, 15:18]), dim = 1)
+                targets2 = targets#if we want to visualize the 3D targets using only x /y and not the normal projection on the mat, visualize this
+                targets = torch.cat((targets[:, 6:9], targets[:, 12:15]), dim = 1)
                 ground_truth[:, 0:6] = targets/1000.
 
                 self.criterion = nn.MSELoss()
@@ -493,33 +586,8 @@ class PhysicalTrainer():
                 loss = self.criterion(scores, scores_zeros)
 
 
+            elif self.loss_vector_type == 'direct':
 
-            elif self.loss_vector_type == 'euclidean_error':
-
-                batch[1] = torch.cat((torch.mul(batch[1][:, 28:31], 10), batch[1][:, 0:12]), dim=1)
-                batch[0],batch[1], _ = SyntheticLib().synthetic_master(batch[0], batch[1], flip=True, shift=True, scale=False, bedangle=True, include_inter = self.include_inter, loss_vector_type = self.loss_vector_type)
-
-                images, targets = Variable(batch[0], volatile = True), Variable(batch[1], volatile = True)
-                self.optimizer.zero_grad()
-
-                scores = self.model_direct_marker(images)
-
-                images = Variable(batch[0], volatile = False)
-                errors_scores = self.model(images)
-
-
-                errors = VisualizationLib().print_error(targets, scores, self.output_size, self.loss_vector_type, data = 'train', printerror = False)
-                errors = Variable(torch.Tensor(errors), volatile = False)
-
-                self.criterion = nn.MSELoss()
-                loss = self.criterion(errors_scores,errors)
-
-                print errors.data.numpy()[0] / 10, 'errors example'
-                print errors_scores.data.numpy()[0] / 10, 'errors prediction example'
-
-            elif self.loss_vector_type == None:
-
-                batch[1] = torch.cat((torch.mul(batch[1][:, 28:31], 10), batch[1][:, 0:12]), dim=1)
                 batch[0],batch[1], _ = SyntheticLib().synthetic_master(batch[0], batch[1], flip=True, shift=True, scale=False, bedangle=True, include_inter = self.include_inter, loss_vector_type = self.loss_vector_type)
 
                 images, targets, scores_zeros = Variable(batch[0], requires_grad = False), Variable(batch[1], requires_grad = False), Variable(torch.Tensor(np.zeros((batch[1].shape[0], batch[1].shape[1]/3))), requires_grad = False)
@@ -538,7 +606,7 @@ class PhysicalTrainer():
 
 
             if batch_idx % opt.log_interval == 0:
-                if self.loss_vector_type == 'upper_angles' or self.loss_vector_type == 'angles' or self.loss_vector_type == 'arms_cascade':
+                if self.loss_vector_type == 'upper_angles' or self.loss_vector_type == 'angles':
                     VisualizationLib().print_error(targets.data.numpy(), targets_est, self.output_size, self.loss_vector_type, data = 'train')
                     self.im_sample = images.data.numpy()
                     #self.im_sample = self.im_sample[:,0,:,:]
@@ -549,18 +617,7 @@ class PhysicalTrainer():
                     self.sc_sample = np.squeeze(self.sc_sample[0, :]) / 1000
                     self.sc_sample = np.reshape(self.sc_sample, self.output_size)
 
-                elif self.loss_vector_type == 'euclidean_error':
-                    VisualizationLib().print_error(targets, scores, self.output_size, self.loss_vector_type, data='train')
-                    self.im_sample = batch[0].numpy()
-                    #self.im_sample = self.im_sample[:, 1, :, :]
-                    self.im_sample = np.squeeze(self.im_sample[0, :])
-                    self.tar_sample = batch[1].numpy()
-                    self.tar_sample = np.squeeze(self.tar_sample[0, :]) / 1000
-                    self.sc_sample = scores.data.numpy()
-                    self.sc_sample = np.squeeze(self.sc_sample[0, :]) / 1000
-                    self.sc_sample = np.reshape(self.sc_sample, self.output_size)
-
-                elif self.loss_vector_type == None:
+                elif self.loss_vector_type == 'direct':
                     VisualizationLib().print_error(targets.data.numpy(), targets_est, self.output_size, self.loss_vector_type, data='train')
                     self.im_sample = batch[0].numpy()
                     #self.im_sample = self.im_sample[:, 1, :, :]
@@ -571,8 +628,26 @@ class PhysicalTrainer():
                     self.sc_sample = np.squeeze(self.sc_sample[0, :]) / 1000
                     self.sc_sample = np.reshape(self.sc_sample, self.output_size)
 
+                elif self.loss_vector_type == 'arms_cascade':
+                    VisualizationLib().print_error(targets.data.numpy(), targets_est, self.output_size, self.loss_vector_type, data='train')
 
-                val_loss = self.validate_convnet('test', n_batches=4)
+                    im_sample = np.squeeze(batch[0].numpy()[0,0, :])
+                    tar_sample = targets_2D[0, :, :].flatten() / 1000#targets2.data.numpy()#batch[1].numpy()
+                    tar_prior_sample = targets_2D_prior[0, :, :,].flatten() / 1000
+                    self.full_im_tar_prior = []
+                    self.full_im_tar_prior.append(im_sample)
+                    self.full_im_tar_prior.append(tar_sample)
+                    self.full_im_tar_prior.append(tar_prior_sample)
+
+                    cascade_im_sample = image_cascade[0, :, :, :]
+                    cascade_tar_sample = targets.data.numpy()[0, :]
+                    cascade_sc_sample = targets_est[0, :]
+                    self.cascade_im_tar_sc = []
+                    self.cascade_im_tar_sc.append(cascade_im_sample)
+                    self.cascade_im_tar_sc.append(cascade_tar_sample)
+                    self.cascade_im_tar_sc.append(cascade_sc_sample)
+
+                val_loss = self.validate_convnet(n_batches=4)
                 train_loss = loss.data[0]
                 examples_this_epoch = batch_idx * len(images)
                 epoch_progress = 100. * batch_idx / len(self.train_loader)
@@ -591,7 +666,7 @@ class PhysicalTrainer():
 
 
 
-    def validate_convnet(self, split, verbose=False, n_batches=None):
+    def validate_convnet(self, verbose=False, n_batches=None):
         '''
         Compute loss on val or test data.
         '''
@@ -601,11 +676,7 @@ class PhysicalTrainer():
         self.model.eval()
         loss = 0.
         n_examples = 0
-        if split == 'val':
-            loader = val_loader
-        elif split == 'test':
-            loader = self.test_loader
-        for batch_i, batch in enumerate(loader):
+        for batch_i, batch in enumerate(self.test_loader):
 
             self.model.train()
 
@@ -632,21 +703,12 @@ class PhysicalTrainer():
                 scores_zeros = Variable(torch.Tensor(scores_zeros))
                 scores_zeros[:, 6:15] = constraints[:, 10:19]/100
 
-
-
-
-                scores, targets_est = self.model.forward_kinematic_jacobian(images, targets, constraints)
+                scores, targets_est, _, _ = self.model.forward_kinematic_jacobian(images, targets, constraints)
                 self.criterion = nn.MSELoss()
 
 
                 loss = self.criterion(scores[:, 0:6], scores_zeros[:, 0:6])
                 loss = loss.data[0]
-
-                #print np.array([scores.data.numpy()[0,:], ground_truth.data.numpy()[0, :]]), 'ground truth'
-
-                #
-                # print loss.data.numpy(), 'loss validation'
-                #
 
             elif self.loss_vector_type == 'angles':
 
@@ -655,6 +717,16 @@ class PhysicalTrainer():
 
                 #get the direct joint locations
                 batch[1] = batch[1][:, 0:30]
+
+
+                images_up = batch[0].numpy()
+                images_up = images_up[:, :, 5:79, 5:42]
+                images_up = YashcLib().preprocessing_pressure_map_upsample(images_up)
+                images_up = np.array(images_up)
+                images_up = Variable(torch.Tensor(images_up), requires_grad = False)
+                print images_up.size()
+
+
 
                 images, targets, constraints = Variable(batch[0], requires_grad=False), Variable(batch[1],requires_grad=False), Variable(batch[2], requires_grad=False)
 
@@ -670,7 +742,7 @@ class PhysicalTrainer():
                 scores_zeros = Variable(torch.Tensor(scores_zeros))
                 scores_zeros[:, 10:27] = constraints[:, 18:35]/100
 
-                scores, targets_est = self.model.forward_kinematic_jacobian(images, targets, constraints)
+                scores, targets_est, _, _ = self.model.forward_kinematic_jacobian(images_up, targets, constraints)
 
 
                 self.criterion = nn.MSELoss()
@@ -679,49 +751,53 @@ class PhysicalTrainer():
 
             elif self.loss_vector_type == 'arms_cascade':
 
-                # append upper joint angles, upper joint lengths, in that order
-                batch.append(torch.cat((batch[1][:,27:37], batch[1][:, 18:27]), dim = 1))
+                #append upper joint angles, lower joint angles, upper joint lengths, lower joint lengths, in that order
+                batch.append(torch.cat((batch[1][:,39:49], batch[1][:, 57:65], batch[1][:, 30:39], batch[1][:, 49:57]), dim = 1))
 
-                #get the torso, shoulder pseudotargets, and the arm targets for elbow and hand in that order
-                batch[1] = torch.cat((batch[1][:, 3:6], batch[1][:, 40:46], batch[1][:, 6:18]), dim = 1)
+                # get the targets and pseudotargets
+                batch[1] = torch.cat((batch[1][:, 0:30], batch[1][:, 65:80]), dim=1)
 
                 images, targets, constraints = Variable(batch[0], requires_grad = False), Variable(batch[1], requires_grad = False), Variable(batch[2], requires_grad = False)
 
                 self.optimizer.zero_grad()
 
-
                 scores_zeros = np.zeros((batch[0].numpy().shape[0], 2)) #2 is 2 euclidean errors
                 scores_zeros = Variable(torch.Tensor(scores_zeros))
 
+                prior_cascade = torch.cat((targets[:, 3:6], constraints[:, 19:27]/100), dim = 1) #just use this method to check, do a forward pass through the prior cascade when its trained
 
-                prior_cascade = torch.cat((targets[:, 0:3], constraints[:, 10:18]/100), dim = 1) #just use this method to check, do a forward pass through the prior cascade when its trained
 
-                scores, targets_est = self.model.forward_kinematic_jacobian(images, targets, constraints, prior_cascade=prior_cascade)
+                _, targets_prior, lengths_prior, pseudotargets_prior = self.model_cascade_prior.forward_kinematic_jacobian(images, targets, forward_only=True)
+                targets_prior = np.concatenate((targets_prior, pseudotargets_prior), axis=1)
+
+                # find the pressure mat coordinates where the projected markers lie
+                targets_2D = CascadeLib().get_2D_projection(images.data.numpy(), np.reshape(targets.data.numpy(),(targets.size()[0], 15, 3)))
+                targets_2D_prior = CascadeLib().get_2D_projection(images.data.numpy(), np.reshape(targets_prior, (targets.size()[0], 15, 3)))
+
+                box_centers = np.round(targets_2D[:, :, 0:2] / 28.6, 0)
+                image_cascade = CascadeLib().generate_bounded_box_input(batch[0].numpy(), box_centers)
+                image_cascade_up = YashcLib().preprocessing_pressure_map_upsample(image_cascade)
+                image_cascade_tensor = Variable(torch.Tensor(image_cascade_up), requires_grad=False)
+
+
+
+
+                scores, targets_est, _, _ = self.model.forward_kinematic_jacobian(images, targets, constraints, prior_cascade=prior_cascade)
 
 
                 ground_truth = np.zeros((batch[0].numpy().shape[0], 6)) #6 is 6 joint locations for the x y z right side elbow and hand
                 ground_truth = Variable(torch.Tensor(ground_truth))
-                targets = torch.cat((targets[:, 9:12], targets[:, 15:18]), dim = 1)
+                targets2 = targets #if we want to visualize the 3D targets using only x /y and not the normal projection on the mat, visualize this
+                targets = torch.cat((targets[:, 6:9], targets[:, 12:15]), dim = 1)
                 ground_truth[:, 0:6] = targets/1000.
 
                 self.criterion = nn.MSELoss()
                 loss = self.criterion(scores[:, 0:2], scores_zeros[:, 0:2])
                 loss = loss.data[0]
 
-            elif self.loss_vector_type == 'euclidean_error':
-                batch[1] = torch.cat((torch.mul(batch[1][:, 28:31], 10), batch[1][:, 0:12]), dim=1)
-                image, target = Variable(batch[0], volatile = True), Variable(batch[1], volatile = True)
-                output = self.model_direct_marker(image)
 
-                error = VisualizationLib().print_error(target, output, self.output_size, self.loss_vector_type, data='validate', printerror = False)
-                error = Variable(torch.Tensor(error))
-                error_output = self.model(image)
-                loss += self.criterion(error_output, error).data[0]
-                print error.data.numpy()[0] / 10, 'validation error example'
-                print error_output.data.numpy()[0] / 10, 'validation error prediction example'
 
-            elif self.loss_vector_type == None:
-                batch[1] = torch.cat((torch.mul(batch[1][:, 28:31], 10), batch[1][:, 0:12]), dim=1)
+            elif self.loss_vector_type == 'direct':
                 images, targets, scores_zeros = Variable(batch[0], volatile = True), Variable(batch[1], volatile = True), Variable(torch.Tensor(np.zeros((batch[1].shape[0], batch[1].shape[1]/3))), requires_grad = False)
 
 
@@ -745,8 +821,7 @@ class PhysicalTrainer():
 
         VisualizationLib().print_error(targets.data.numpy(), targets_est, self.output_size, self.loss_vector_type, data='validate')
 
-
-        if self.loss_vector_type is not 'euclidean_error':
+        if self.loss_vector_type == 'angles' or self.loss_vector_type == 'direct' or self.loss_vector_type == 'upper_angles':
             self.im_sampleval = images.data.numpy()
             #self.im_sampleval = self.im_sampleval[:,0,:,:]
             self.im_sampleval = np.squeeze(self.im_sampleval[0, :])
@@ -755,7 +830,31 @@ class PhysicalTrainer():
             self.sc_sampleval = np.copy(targets_est)
             self.sc_sampleval = np.squeeze(self.sc_sampleval[0, :]) / 1000
             self.sc_sampleval = np.reshape(self.sc_sampleval, self.output_size)
-            VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample, self.im_sampleval, self.tar_sampleval, self.sc_sampleval, block = False)
+
+            VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample,self.im_sampleval, self.tar_sampleval, self.sc_sampleval, block=False)
+
+        elif self.loss_vector_type == 'arms_cascade':
+
+            im_sample = np.squeeze(batch[0].numpy()[0, :])
+            tar_sample = targets_2D[0, :, :].flatten() / 1000  # targets2.data.numpy()#batch[1].numpy()
+            tar_prior_sample = targets_2D_prior[0, :, :, ].flatten() / 1000
+            #print im_sample.shape, tar_sample.shape, tar_prior_sample.shape
+            self.full_im_tar_prior_val = []
+            self.full_im_tar_prior_val.append(im_sample)
+            self.full_im_tar_prior_val.append(tar_sample)
+            self.full_im_tar_prior_val.append(tar_prior_sample)
+
+            cascade_im_sample = image_cascade[0, :, :, :]
+            cascade_tar_sample = targets.data.numpy()[0, :]
+            cascade_sc_sample = targets_est[0, :]
+            #print cascade_im_sample.shape, cascade_tar_sample.shape, cascade_sc_sample.shape
+            self.cascade_im_tar_sc_val = []
+            self.cascade_im_tar_sc_val.append(cascade_im_sample)
+            self.cascade_im_tar_sc_val.append(cascade_tar_sample)
+            self.cascade_im_tar_sc_val.append(cascade_sc_sample)
+
+            VisualizationLib().visualize_pressure_map_cascade(self.full_im_tar_prior, self.cascade_im_tar_sc, block = True)
+
 
 
 
@@ -816,16 +915,16 @@ if __name__ == "__main__":
         opt.subject6Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_6/p_files/trainval_150rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p'
         opt.subject7Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_7/p_files/trainval_150rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p'
         opt.subject8Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_8/p_files/trainval_150rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p'
-        opt.subject9Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_9/p_files/trainval_200rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p'
-        opt.subject10Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_10/p_files/trainval_200rh1_lh1_100rh23_lh23_sit120rh_lh.p'
-        opt.subject11Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_11/p_files/trainval_200rh1_lh1_100rh23_lh23_sit120rh_lh.p'
-        opt.subject12Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_12/p_files/trainval_200rh1_lh1_100rh23_lh23_sit120rh_lh.p'
-        opt.subject13Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_13/p_files/trainval_200rh1_lh1_100rh23_lh23_sit120rh_lh.p'
-        opt.subject14Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_14/p_files/trainval_200rh1_lh1_100rh23_lh23_sit120rh_lh.p'
-        opt.subject15Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_15/p_files/trainval_200rh1_lh1_100rh23_lh23_sit120rh_lh.p'
-        opt.subject16Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_16/p_files/trainval_200rh1_lh1_100rh23_lh23_sit120rh_lh.p'
-        opt.subject17Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_17/p_files/trainval_200rh1_lh1_100rh23_lh23_sit120rh_lh.p'
-        opt.subject18Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_18/p_files/trainval_200rh1_lh1_100rh23_lh23_sit120rh_lh.p'
+        opt.subject9Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_9/p_files/trainval_150rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p'
+        opt.subject10Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_10/p_files/trainval_150rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p'
+        opt.subject11Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_11/p_files/trainval_150rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p'
+        opt.subject12Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_12/p_files/trainval_150rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p'
+        opt.subject13Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_13/p_files/trainval_150rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p'
+        opt.subject14Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_14/p_files/trainval_150rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p'
+        opt.subject15Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_15/p_files/trainval_150rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p'
+        opt.subject16Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_16/p_files/trainval_150rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p'
+        opt.subject17Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_17/p_files/trainval_150rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p'
+        opt.subject18Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_18/p_files/trainval_150rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p'
 
         #shortcut:
 
@@ -875,16 +974,16 @@ if __name__ == "__main__":
             training_database_file.append(opt.subject6Path)
             training_database_file.append(opt.subject7Path)
             training_database_file.append(opt.subject8Path)
-        # training_database_file.append(opt.subject9Path)
-        # training_database_file.append(opt.subject10Path)
-        # training_database_file.append(opt.subject11Path)
-        # training_database_file.append(opt.subject12Path)
-        # training_database_file.append(opt.subject13Path)
-        # training_database_file.append(opt.subject14Path)
-        # training_database_file.append(opt.subject15Path)
-        # training_database_file.append(opt.subject16Path)
-        # training_database_file.append(opt.subject17Path)
-        # training_database_file.append(opt.subject18Path)
+            #training_database_file.append(opt.subject9Path)
+            #training_database_file.append(opt.subject10Path)
+            #training_database_file.append(opt.subject11Path)
+            #training_database_file.append(opt.subject12Path)
+            ##training_database_file.append(opt.subject13Path)
+            ##training_database_file.append(opt.subject14Path)
+            #training_database_file.append(opt.subject15Path)
+            #training_database_file.append(opt.subject16Path)
+            #training_database_file.append(opt.subject17Path)
+            #training_database_file.append(opt.subject18Path)
 
     elif opt.leaveOut == 1:
         test_database_file = opt.subject1Path
@@ -947,6 +1046,7 @@ if __name__ == "__main__":
 
         #if training_type == 'convnet_2':
         p.init_convnet_train()
+        #p.baseline_train()
 
         #else:
         #    print 'Please specify correct training type:1. HoG_KNN 2. convnet_2'

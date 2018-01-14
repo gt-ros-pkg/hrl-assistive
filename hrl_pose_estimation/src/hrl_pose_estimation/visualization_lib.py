@@ -5,6 +5,7 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.pylab import *
+import matplotlib.gridspec as gridspec
 
 import cPickle as pkl
 import random
@@ -72,7 +73,7 @@ class VisualizationLib():
             error_avg = np.transpose(np.concatenate(([['Average Error for Last Batch', '       ', ' Head  ', ' Torso ', 'R Elbow', 'L Elbow',
                                                        'R Hand ', 'L Hand ']], np.transpose(
                 np.concatenate(([['', '', '', ''], [' x, cm ', ' y, cm ', ' z, cm ', '  norm ']], error_avg))))))
-        elif loss_vector_type == 'all_joints' or loss_vector_type == 'angles':
+        elif loss_vector_type == 'direct' or loss_vector_type == 'angles':
             error_avg = np.transpose(np.concatenate(([['Average Error for Last Batch', '       ', 'Head   ',
                                                        'Torso  ', 'R Elbow', 'L Elbow', 'R Hand ', 'L Hand ',
                                                        'R Knee ', 'L Knee ', 'R Foot ', 'L Foot ']], np.transpose(
@@ -97,7 +98,7 @@ class VisualizationLib():
             error_std = np.transpose(np.concatenate(([['Error Standard Deviation for Last Batch', '       ', ' Head  ', ' Torso ', 'R Elbow',
                                                        'L Elbow', 'R Hand ', 'L Hand ']], np.transpose(
                 np.concatenate(([['', '', '',''], ['x, cm', 'y, cm', 'z, cm', '  norm ']], error_std))))))
-        elif loss_vector_type == 'all_joints' or loss_vector_type == 'angles':
+        elif loss_vector_type == 'direct' or loss_vector_type == 'angles':
             error_std = np.transpose(np.concatenate(([['Error Standard Deviation for Last Batch', '       ', 'Head   ', 'Torso  ',
                                   'R Elbow', 'L Elbow', 'R Hand ', 'L Hand ', 'R Knee ', 'L Knee ',
                                   'R Foot ', 'L Foot ']], np.transpose(
@@ -110,8 +111,8 @@ class VisualizationLib():
             error_std = np.transpose(np.concatenate(([['Error Standard Deviation for Last Batch', '       ', ' Torso ', 'R Elbow',
                                                        'L Elbow', 'R Hand ', 'L Hand ']], np.transpose(
                 np.concatenate(([['', '', '',''], ['x, cm', 'y, cm', 'z, cm', '  norm ']], error_std))))))
-        #if printerror == True:
-        #    print data, error_std
+        if printerror == True:
+            print data, error_std
         error_norm = np.squeeze(error_norm, axis = 2)
         return error_norm
 
@@ -135,7 +136,10 @@ class VisualizationLib():
 
 
     def visualize_pressure_map(self, p_map, targets_raw=None, scores_raw = None, p_map_val = None, targets_val = None, scores_val = None, block = False):
-        p_map = p_map[0,:,:] #select the original image matrix from the intermediate amplifier matrix and the height matrix
+        try:
+            p_map = p_map[0,:,:] #select the original image matrix from the intermediate amplifier matrix and the height matrix
+        except:
+            pass
 
         plt.close()
         plt.pause(0.0001)
@@ -149,7 +153,10 @@ class VisualizationLib():
 
         # set options
         if p_map_val is not None:
-            p_map_val = p_map_val[0, :, :] #select the original image matrix from the intermediate amplifier matrix and the height matrix
+            try:
+                p_map_val = p_map_val[0, :, :] #select the original image matrix from the intermediate amplifier matrix and the height matrix
+            except:
+                pass
             ax1 = fig.add_subplot(1, 2, 1)
             ax2 = fig.add_subplot(1, 2, 2)
             xlim = [-2.0, 49.0]
@@ -217,6 +224,149 @@ class VisualizationLib():
             target_coord[:, 1] -= (NUMOFTAXELS_X - 1)
             target_coord[:, 1] *= -1.0
             ax2.plot(target_coord[:, 0], target_coord[:, 1], marker = 'o', linestyle='None', markerfacecolor = 'white',markeredgecolor='black', ms=8)
+        plt.pause(0.0001)
+        plt.show(block = block)
+        return
+
+    def visualize_pressure_map_cascade(self, full_im_tar_prior, cascade_im_tar_sc, full_im_tar_prior_val = None, cascade_im_tar_sc_val = None, block = False):
+        full_im = full_im_tar_prior[0]
+        full_tar = full_im_tar_prior[1]
+        full_prior = full_im_tar_prior[2]
+
+        cascade_im = cascade_im_tar_sc[0]
+        cascade_tar = cascade_im_tar_sc[1]
+        cascade_sc = cascade_im_tar_sc[2]
+
+
+        plt.close()
+        plt.pause(0.0001)
+
+        fig = plt.figure(1)
+
+        mngr = plt.get_current_fig_manager()
+        gridspec.GridSpec(3, 3)
+        # to put it into the upper left corner for example:
+        #mngr.window.setGeometry(50, 100, 840, 705)
+
+        plt.pause(0.0001)
+
+        # set options
+        if full_im_tar_prior_val is not None and cascade_im_tar_sc_val is not None:
+
+            full_im_val = full_im_tar_prior_val[0]
+            full_tar_val = full_im_tar_prior_val[1]
+            full_prior_val = full_im_tar_prior_val[2]
+
+            cascade_im_val = cascade_im_tar_sc_val[0]
+            cascade_tar_val = cascade_im_tar_sc_val[1]
+            cascade_sc_val = cascade_im_tar_sc_val[2]
+
+            try:
+                p_map_val = p_map_val[0, :, :] #select the original image matrix from the intermediate amplifier matrix and the height matrix
+            except:
+                pass
+            ax1 = fig.add_subplot(1, 2, 1)
+            ax2 = fig.add_subplot(1, 2, 2)
+            xlim = [-2.0, 49.0]
+            ylim = [86.0, -2.0]
+            ax1.set_xlim(xlim)
+            ax1.set_ylim(ylim)
+            ax2.set_xlim(xlim)
+            ax2.set_ylim(ylim)
+            ax1.set_axis_bgcolor('cyan')
+            ax2.set_axis_bgcolor('cyan')
+            ax1.imshow(p_map, interpolation='nearest', cmap=
+            plt.cm.bwr, origin='upper', vmin=0, vmax=100)
+            ax2.imshow(p_map_val, interpolation='nearest', cmap=
+            plt.cm.bwr, origin='upper', vmin=0, vmax=100)
+            ax1.set_title('Training Sample \n Targets and 2D projections')
+            ax2.set_title('Validation Sample \n Targets and Estimates')
+
+
+        else:
+            ax1 = plt.subplot2grid((2,3), (0, 0), colspan = 1, rowspan = 2)
+            xlim = [-2.0, 48.0]
+            ylim = [85.0, -2.0]
+            ax1.set_xlim(xlim)
+            ax1.set_ylim(ylim)
+            ax1.set_axis_bgcolor('cyan')
+            ax1.imshow(full_im, interpolation='nearest', cmap=plt.cm.bwr, origin='upper', vmin=0, vmax=100)
+            ax1.set_title('Training Sample \n 2D Projection \n Targets (g) and Priors (y)')
+
+            ax2 = plt.subplot2grid((2,3), (0, 1), colspan = 1, rowspan =  1)
+            xlim = [-1.0, 17.0]
+            ylim = [17.0, -1.0]
+            ax2.set_xlim(xlim)
+            ax2.set_ylim(ylim)
+            ax2.set_axis_bgcolor('cyan')
+            ax2.imshow(cascade_im[0, :, :], interpolation='nearest', cmap=plt.cm.bwr, origin='upper', vmin=0, vmax=100)
+            ax2.set_title('Shoulder \n Cascade')
+
+            ax2 = plt.subplot2grid((2,3), (0, 2), colspan = 1, rowspan =  1)
+            xlim = [-1.0, 17.0]
+            ylim = [17.0, -1.0]
+            ax2.set_xlim(xlim)
+            ax2.set_ylim(ylim)
+            ax2.set_axis_bgcolor('cyan')
+            ax2.imshow(cascade_im[1, :, :], interpolation='nearest', cmap=plt.cm.bwr, origin='upper', vmin=0, vmax=100)
+            ax2.set_title('Elbow \n Cascade')
+
+            ax2 = plt.subplot2grid((2,3), (1, 1), colspan = 1, rowspan =  1)
+            xlim = [-1.0, 17.0]
+            ylim = [17.0, -1.0]
+            ax2.set_xlim(xlim)
+            ax2.set_ylim(ylim)
+            ax2.set_axis_bgcolor('cyan')
+            ax2.imshow(cascade_im[2, :, :], interpolation='nearest', cmap=plt.cm.bwr, origin='upper', vmin=0, vmax=100)
+            ax2.set_title('Hand  \n Cascade')
+
+            ax2 = plt.subplot2grid((2,3), (1, 2), colspan = 1, rowspan =  1)
+            xlim = [-1.0, 17.0]
+            ylim = [17.0, -1.0]
+            ax2.set_xlim(xlim)
+            ax2.set_ylim(ylim)
+            ax2.set_axis_bgcolor('cyan')
+            ax2.imshow(cascade_im[3, :, :], interpolation='nearest', cmap=plt.cm.bwr, origin='upper', vmin=0, vmax=100)
+            ax2.set_title('Bedangle \n Matrix')
+
+
+
+        # Visualize targets of training set
+        if len(np.shape(full_tar)) == 1:
+            full_tar = np.reshape(full_tar, (len(full_tar) / 3, 3))
+        target_coord = full_tar[:, :2] / INTER_SENSOR_DISTANCE
+        target_coord[:, 1] -= (NUMOFTAXELS_X - 1)
+        target_coord[:, 1] *= -1.0
+        ax1.plot(target_coord[:, 0], target_coord[:, 1], marker = 'o', linestyle='None', markerfacecolor = 'green',markeredgecolor='black', ms=8)
+        plt.pause(0.0001)
+
+        #Visualize estimated from training set
+        if len(np.shape(full_prior)) == 1:
+            full_prior = np.reshape(full_prior, (len(full_prior) / 3, 3))
+        target_coord = full_prior[:, :2] / INTER_SENSOR_DISTANCE
+        target_coord[:, 1] -= (NUMOFTAXELS_X - 1)
+        target_coord[:, 1] *= -1.0
+        ax1.plot(target_coord[:, 0], target_coord[:, 1], marker = 'o', linestyle='None', markerfacecolor = 'yellow',markeredgecolor='black', ms=8)
+        plt.pause(0.0001)
+
+        ## Visualize targets of validation set
+        #if targets_val is not None:
+        #    if len(np.shape(targets_val)) == 1:
+        #        targets_val = np.reshape(targets_val, (len(targets_val) / 3, 3))
+        #    target_coord = targets_val[:, :2] / INTER_SENSOR_DISTANCE
+        #    target_coord[:, 1] -= (NUMOFTAXELS_X - 1)
+        #    target_coord[:, 1] *= -1.0
+        #    ax2.plot(target_coord[:, 0], target_coord[:, 1], marker = 'o', linestyle='None', markerfacecolor = 'green',markeredgecolor='black', ms=8)
+        #plt.pause(0.0001)
+
+        ## Visualize estimated from training set
+        #if scores_val is not None:
+        #    if len(np.shape(scores_val)) == 1:
+        #        scores_val = np.reshape(scores_val, (len(scores_val) / 3, 3))
+        #    target_coord = scores_val[:, :2] / INTER_SENSOR_DISTANCE
+        #    target_coord[:, 1] -= (NUMOFTAXELS_X - 1)
+        #    target_coord[:, 1] *= -1.0
+        #    ax2.plot(target_coord[:, 0], target_coord[:, 1], marker = 'o', linestyle='None', markerfacecolor = 'white',markeredgecolor='black', ms=8)
         plt.pause(0.0001)
         plt.show(block = block)
         return

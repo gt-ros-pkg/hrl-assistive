@@ -53,7 +53,7 @@ HIGH_TAXEL_THRESH_Y = (NUMOFTAXELS_Y - 1)
 
 
 
-class YashcLib():
+class PreprocessingLib():
     def chi2_distance(self, histA, histB, eps = 1e-10):
         # compute the chi-squared distance
         d = 0.5 * np.sum([((a - b) ** 2) / (a + b + eps)
@@ -62,10 +62,36 @@ class YashcLib():
         return d
 
 
+
+    def compute_HoG(self, data):
+        '''Computes a HoG(Histogram of gradients for a list of images provided
+        to it. Returns a list of flattened lists'''
+        flat_hog = []
+        print "*****Begin HoGing the dataset*****"
+        count = 0
+        for index in range(len(data)):
+            count += 1
+            if count == 200:
+                count = 0
+                print "HoG being applied over image number: {}".format(index)
+
+            #fd = data[index].flatten()
+            #Compute HoG of the current pressure map
+            fd, hog_image = hog(data[index], orientations=8,
+                    pixels_per_cell=(4,4), cells_per_block = (1, 1),
+                    visualise=True)
+
+            flat_hog.append(fd)
+        return flat_hog
+
+
     def compute_pixel_variance(self, data):
+        self.verbose = True
         weight_matrix = np.std(data, axis=0)
         if self.verbose == True: print len(weight_matrix),'x', len(weight_matrix[0]), 'size of weight matrix'
         weight_matrix = weight_matrix/weight_matrix.max()
+        print len(weight_matrix)
+        print weight_matrix[0].shape
 
         x = np.zeros((20, 54))
         y = np.hstack((
@@ -73,12 +99,87 @@ class YashcLib():
                 np.ones((60,12))))
         z = np.ones((48, 54))
         weight_matrix = np.vstack((np.vstack((x,y)), z))
+
+        print len(weight_matrix)
+        print weight_matrix[0].shape
+
         matshow(weight_matrix, fignum=100, cmap=cm.gray)
         show()
         if self.verbose == True: print len(x),'x', len(x[0]), 'size of x matrix'
         if self.verbose == True: print len(y),'x', len(y[0]), 'size of y matrix'
         if self.verbose == True: print len(z),'x', len(z[0]), 'size of z matrix'
         return weight_matrix
+
+    def preprocessing_add_image_noise(self, images):
+        queue = np.copy(images[:, 0:2, :, :])
+        queue[queue != 0] = 1.
+
+        x = np.arange(-20, 20)
+        xU, xL = x + 0.5, x - 0.5
+        prob = ss.norm.cdf(xU, scale=5) - ss.norm.cdf(xL,scale=5)  # scale is the standard deviation using a cumulative density function
+        prob = prob / prob.sum()  # normalize the probabilities so their sum is 1
+        image_noise = np.random.choice(x, size=(images.shape[0], images.shape[1]-1, images.shape[2], images.shape[3]), p=prob)
+        image_noise = image_noise*queue
+        images[:, 0:2, :, :] += image_noise
+
+        #print images[0, 0, 50, 10:25]
+
+        return images
+
+
+    def preprocessing_pressure_array_resize(self, data, mat_size, verbose):
+        '''Will resize all elements of the dataset into the dimensions of the
+        pressure map'''
+        p_map_dataset = []
+        for map_index in range(len(data)):
+            #print map_index, self.mat_size, 'mapidx'
+            #Resize mat to make into a matrix
+            p_map = np.reshape(data[map_index], mat_size)
+            #print p_map
+            p_map_dataset.append(p_map)
+            #print p_map.shape
+        if verbose: print len(data[0]),'x',1, 'size of an incoming pressure map'
+        if verbose: print len(p_map_dataset[0]),'x',len(p_map_dataset[0][0]), 'size of a resized pressure map'
+        return p_map_dataset
+
+
+    def preprocessing_create_pressure_angle_stack(self,x_data, a_data, include_inter, mat_size, verbose):
+        '''This is for creating a 2-channel input using the height of the bed. '''
+        p_map_dataset = []
+        for map_index in range(len(x_data)):
+            # print map_index, self.mat_size, 'mapidx'
+            # Resize mat to make into a matrix
+            p_map = np.reshape(x_data[map_index], mat_size)
+            a_map = zeros_like(p_map) + a_data[map_index]
+            if include_inter == True:
+                p_map_inter = (100-2*np.abs(p_map - 50))*4
+                p_map_dataset.append([p_map, p_map_inter, a_map])
+            else:
+                p_map_dataset.append([p_map, a_map])
+        if verbose: print len(x_data[0]), 'x', 1, 'size of an incoming pressure map'
+        if verbose: print len(p_map_dataset[0][0]), 'x', len(p_map_dataset[0][0][0]), 'size of a resized pressure map'
+        if verbose: print len(p_map_dataset[0][1]), 'x', len(p_map_dataset[0][1][0]), 'size of the stacked angle mat'
+        return p_map_dataset
+
+
+    def preprocessing_pressure_map_upsample(self, data, multiple=2, order=1):
+        '''Will upsample an incoming pressure map dataset'''
+        p_map_highres_dataset = []
+
+        if len(data.shape) == 3:
+            for map_index in range(len(data)):
+                #Upsample the current map using bilinear interpolation
+                p_map_highres_dataset.append(
+                        ndimage.zoom(data[map_index], multiple, order=order))
+        elif len(data.shape) == 4:
+            for map_index in range(len(data)):
+                p_map_highres_dataset_subindex = []
+                for map_subindex in range(len(data[map_index])):
+                    #Upsample the current map using bilinear interpolation
+                    p_map_highres_dataset_subindex.append(ndimage.zoom(data[map_index][map_subindex], multiple, order=order))
+                p_map_highres_dataset.append(p_map_highres_dataset_subindex)
+
+        return p_map_highres_dataset
 
 
 
