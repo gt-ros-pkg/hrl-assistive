@@ -409,7 +409,7 @@ class ScoreGeneratorDressingwithPhysx(object):
                                    m.radians(135.)])
         parameters_scaling = (parameters_max - parameters_min) / 8.
         # parameters_initialization = (parameters_max + parameters_min) / 2.
-        init_start_configs = [[m.radians(0.), m.radians(0.), m.radians(0.), m.radians(0.)],
+        init_start_arm_configs = [[m.radians(0.), m.radians(0.), m.radians(0.), m.radians(0.)],
                               [m.radians(0.), m.radians(0.), m.radians(0.), m.radians(0.)],
                               [m.radians(0.), m.radians(0.), m.radians(0.), m.radians(0.)]]
         opts1 = {'seed': 1234, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter,
@@ -419,8 +419,8 @@ class ScoreGeneratorDressingwithPhysx(object):
                  'verb_filenameprefix': 'outcma_arm_and_trajectory',
                  'scaling_of_variables': list(parameters_scaling),
                  'bounds': [list(parameters_min), list(parameters_max)]}
-        for init_start_config in init_start_configs:
-            parameters_initialization = init_start_config
+        for init_start_arm_config in init_start_arm_configs:
+            parameters_initialization = init_start_arm_config
             # parameters_initialization[0] = m.radians(0.)
             # parameters_initialization[1] = m.radians(70.)
             # parameters_initialization[2] = m.radians(0.)
@@ -812,26 +812,36 @@ class ScoreGeneratorDressingwithPhysx(object):
         # [0.3, -0.9, 1.57 * m.pi / 3., 0.3]
         # parameters_min = np.array([-0.1, -1.0, m.pi/2. - .001, 0.2])
         # parameters_max = np.array([0.8, -0.3, 2.5*m.pi/2. + .001, 0.3])
-        parameters_scaling = (parameters_max-parameters_min)/2.
+        parameters_scaling = (parameters_max-parameters_min)/8.
+
+        init_start_pr2_configs = [[0., 0., 0., m.radians(0.)],
+                                  [0., 0., 0., m.radians(0.)],
+                                  [0., 0., 0., m.radians(0.)]]
+
+
         parameters_initialization = (parameters_max+parameters_min)/2.
-        opts1 = {'seed': 1234, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter, 'maxfevals': 1e8,
-                 'CMA_cmean': 0.25,
+        opts2 = {'seed': 1234, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter,
+                 'maxfevals': 1e8, 'CMA_cmean': 0.25, 'tolfun': 1e-3,
+                 'tolfunhist': 1e-12, 'tolx': 5e-4,
+                 'maxstd': 4.0, 'tolstagnation': 100,
                  'verb_filenameprefix': 'outcma_pr2_base',
                  'scaling_of_variables': list(parameters_scaling),
-                 'tolfun': 1e-3,
                  'bounds': [list(parameters_min), list(parameters_max)]}
-        self.kinematics_optimization_results = cma.fmin(self.objective_function_one_config,
-                                                      list(parameters_initialization),
-                                                      1.,
-                                                      options=opts1)
-
-        self.pr2_parameters.append([self.kinematics_optimization_results[0], self.kinematics_optimization_results[1]])
-        save_pickle(self.pr2_parameters, self.pkg_path+'/data/all_pr2_configs.pkl')
+        for init_start_pr2_config in init_start_pr2_configs:
+            parameters_initialization = init_start_pr2_config
+            self.kinematics_optimization_results = cma.fmin(self.objective_function_one_config,
+                                                          list(parameters_initialization),
+                                                          1.,
+                                                          options=opts2)
+            print 'Best PR2 configuration: \n', self.best_pr2_results[self.subtask_step][0]
+            print 'Associated score: ', self.best_pr2_results[self.subtask_step][1]
+        # self.pr2_parameters.append([self.kinematics_optimization_results[0], self.kinematics_optimization_results[1]])
+        # save_pickle(self.pr2_parameters, self.pkg_path+'/data/all_pr2_configs.pkl')
         gc.collect()
         elapsed_time = rospy.Time.now()-start_time
         print 'Done with openrave round. Time elapsed:', elapsed_time.to_sec()
         print 'Openrave results:'
-        print self.kinematics_optimization_results
+        # print self.kinematics_optimization_results
         self.force_cost = 0.
         if self.kinematics_optimization_results[1] < 0.:
             self.physx_output = False
@@ -1124,7 +1134,11 @@ class ScoreGeneratorDressingwithPhysx(object):
         # PR2 is too close to the person (who is at the origin). PR2 base is 0.668m x 0.668m
         distance_from_origin = np.linalg.norm(origin_B_pr2[:2, 3])
         if distance_from_origin <= 0.334:
-            return 10. + 1. + (0.4 - distance_from_origin)
+            this_pr2_score = 10. + 1. + (0.4 - distance_from_origin)
+            if this_pr2_score < self.best_pr2_score:
+                self.best_pr2_config = current_parameters
+                self.best_pr2_score = this_pr2_score
+            return this_pr2_score
 
         # v = self.robot.q
         # v['torso_lift_joint'] = z
@@ -1141,7 +1155,11 @@ class ScoreGeneratorDressingwithPhysx(object):
                 break
         if out_of_reach:
             # print 'location is out of reach'
-            return 10. +1.+ 20.*(distance - 1.25)
+            this_pr2_score = 10. +1.+ 20.*(distance - 1.25)
+            if this_pr2_score < self.best_pr2_score:
+                self.best_pr2_config = current_parameters
+                self.best_pr2_score = this_pr2_score
+            return this_pr2_score
 
         reach_score = 0.
         manip_score = 0.
@@ -1213,7 +1231,11 @@ class ScoreGeneratorDressingwithPhysx(object):
             manip = np.zeros(len(self.origin_B_grasps))
             is_smooth_ik_possible, joint_change_amount = self.check_smooth_ik_feasiblity(self.origin_B_grasps)
             if not is_smooth_ik_possible:
-                return 10. + 1. + joint_change_amount
+                this_pr2_score = 10. + 1. + joint_change_amount
+                if this_pr2_score < self.best_pr2_score:
+                    self.best_pr2_config = current_parameters
+                    self.best_pr2_score = this_pr2_score
+                return this_pr2_score
             all_sols = []
             all_jacobians = []
 
@@ -1310,8 +1332,6 @@ class ScoreGeneratorDressingwithPhysx(object):
                 reach_score = 1.
                 manip_score = value_so_far['end']/len(self.origin_B_grasps)
 
-
-
             if self.visualize or (not self.subtask_step == 0 or False):
                 if path:
                     prev_sol = np.zeros(7)
@@ -1341,7 +1361,11 @@ class ScoreGeneratorDressingwithPhysx(object):
         else:
             # print 'In base collision! single config distance: ', distance
             if distance < 2.0:
-                return 10. + 1. + (1.25 - distance)
+                this_pr2_score = 10. + 1. + (1.25 - distance)
+                if this_pr2_score < self.best_pr2_score:
+                    self.best_pr2_config = current_parameters
+                    self.best_pr2_score = this_pr2_score
+                return this_pr2_score
 
         # self.human_model.SetActiveManipulator('leftarm')
         # self.human_manip = self.robot.GetActiveManipulator()
@@ -1368,7 +1392,11 @@ class ScoreGeneratorDressingwithPhysx(object):
         gamma = 1.  # Weight on manipulability of arm at each reachable goal
         zeta = 0.05  # Weight on torques
         if reach_score == 0.:
-            return 10. + 2*random.random()
+            this_pr2_score = 10. + 1.+ 2*random.random()
+            if this_pr2_score < self.best_pr2_score:
+                self.best_pr2_config = current_parameters
+                self.best_pr2_score = this_pr2_score
+            return this_pr2_score
         else:
             # print 'Reach score: ', reach_score
             # print 'Manip score: ', manip_score
@@ -1377,7 +1405,11 @@ class ScoreGeneratorDressingwithPhysx(object):
                     rospy.sleep(2.0)
             # print 'reach_score:', reach_score
             # print 'manip_score:', manip_score
-            return 10.-beta*reach_score-gamma*manip_score #+ zeta*angle_cost
+            this_pr2_score = 10.-beta*reach_score-gamma*manip_score #+ zeta*angle_cost
+            if this_pr2_score < self.best_pr2_score:
+                self.best_pr2_config = current_parameters
+                self.best_pr2_score = this_pr2_score
+            return this_pr2_score
 
     def is_dart_base_in_collision(self):
         self.dart_world.check_collision()
