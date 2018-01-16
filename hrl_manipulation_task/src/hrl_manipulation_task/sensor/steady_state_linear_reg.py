@@ -45,6 +45,7 @@ class SteadyStateDetector:
             self.std   = []
             self.var   = []
             self.stable_stds = []
+            self.stable_means = []
 
     #appends current state. It automatically calculates slope for moving windows.
     def append(self, state, time):
@@ -53,7 +54,8 @@ class SteadyStateDetector:
             if len(self.stable_stds) != 0:
                 temp = []
                 for i, std in enumerate(self.stable_stds):
-                    temp.append(state[i]/std)
+                    #temp.append(state[i]/std)
+                    temp.append((state[i] - self.stable_means[i])/std)
                 state = temp
         #print "new state ", state
         if len(self.cb) > 0:
@@ -113,6 +115,7 @@ class SteadyStateDetector:
                         if 0.0 in self.stable_stds:
                             return stds
                         self.stable_stds = stds#.copy().copy()
+                        self.stable_means = self.avg
                         self.cb = cb.CircularBuffer(self.cb.size, self.cb[0].shape)
                         self.time_cb = cb.CircularBuffer(self.time_cb.size, (1,))
                         return stds
