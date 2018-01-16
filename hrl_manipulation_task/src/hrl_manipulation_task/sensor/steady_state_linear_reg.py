@@ -44,9 +44,18 @@ class SteadyStateDetector:
             self.avg   = []
             self.std   = []
             self.var   = []
+            self.stable_stds = []
 
     #appends current state. It automatically calculates slope for moving windows.
     def append(self, state, time):
+        #print "old state", state
+        if self.mode == 'std monitor':
+            if len(self.stable_stds) != 0:
+                temp = []
+                for i, std in enumerate(self.stable_stds):
+                    temp.append(state[i]/std)
+                state = temp
+        #print "new state ", state
         if len(self.cb) > 0:
             old_state = self.cb[0].copy().copy()
             #old_time = self.time_cb[0].copy().copy()
@@ -96,19 +105,36 @@ class SteadyStateDetector:
                     for i in xrange(len(self.cb[0])):
                         arr = np.asarray(self.cb)[:, i] # array consisting of only 1 signal
                         var = np.var(arr)
+                        print "first var ", var
                         self.avg.append(np.mean(arr))
                         stds.append(np.sqrt(var))
                         variances.append(var)
+                    if len(self.stable_stds) == 0:
+                        if 0.0 in self.stable_stds:
+                            return stds
+                        self.stable_stds = stds#.copy().copy()
+                        self.cb = cb.CircularBuffer(self.cb.size, self.cb[0].shape)
+                        self.time_cb = cb.CircularBuffer(self.time_cb.size, (1,))
+                        return stds
                 # Update variance/std dev
                 else:
+                    for i in xrange(len(self.cb[0])):
+                        arr = np.asarray(self.cb)[:, i] # array consisting of only 1 signal
+                        var = np.var(arr)
+                        self.avg.append(np.mean(arr))
+                        stds.append(np.sqrt(var))
+                        variances.append(var)
+                    """
                     for i, var in enumerate(self.var):
                         avg1 = self.avg[i].copy().copy()
                         self.avg[i] = self.avg[i] + ((self.cb[-1][i] - old_state[i])/self.cb.size)
                         avg2 = self.avg[i]
-                        curr_var = var + ((self.cb[-1][i] ** 2 - old_state[i] ** 2) / self.cb.size)
+                        curr_var = var + ((self.cb[-1][i] ** 2 - old_state[i] ** 2) / float(self.cb.size))
                         curr_var = curr_var - (avg2 ** 2 - avg1 ** 2)
                         variances.append(curr_var)
+                        print curr_var
                         stds.append(np.sqrt(curr_var))
+                    """
                 self.std = stds
                 self.var = variances
                 return self.std
