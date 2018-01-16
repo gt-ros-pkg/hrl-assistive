@@ -391,7 +391,12 @@ class ScoreGeneratorDressingwithPhysx(object):
 
     def run_interleaving_optimization_outer_level(self, maxiter=1000, popsize=40, subtask='', subtask_step=0):
         self.subtask_step = subtask_step
-        self.best_physx_score[self.subtask_step] = 100.
+
+        self.best_physx_config[self.subtask_step] = None
+        self.best_physx_score[self.subtask_step] = 1000.
+
+        self.best_kinematics_config[self.subtask_step] = None
+        self.best_kinematics_score[self.subtask_step] = 1000.
 
         # maxiter = 30/
         # popsize = m.pow(5, 2)*100
@@ -440,10 +445,10 @@ class ScoreGeneratorDressingwithPhysx(object):
         # print 'Associated score: ', self.optimization_results[self.subtask_step][1]
         # print 'Best PR2 configuration: \n', self.best_pr2_results[self.subtask_step][0]
         # print 'Associated score: ', self.best_pr2_results[self.subtask_step][1]
-        print 'Best arm config for ', subtask, 'subtask: \n', self.best_config
-        print 'Associated score: ', self.best_score
-        print 'Best PR2 configuration: \n', self.best_pr2_results[self.subtask_step][0]
-        print 'Associated score: ', self.best_pr2_results[self.subtask_step][1]
+        print 'Best arm config for ', subtask, 'subtask: \n', self.best_physx_config[self.subtask_step]
+        print 'Associated score: ', self.best_physx_score[self.subtask_step]
+        print 'Best PR2 configuration: \n', self.best_kinematics_config[self.subtask_step]
+        print 'Associated score: ', self.best_kinematics_score[self.subtask_step]
         optimized_traj_arm_output = []
         for key in self.optimization_results.keys():
             optimized_traj_arm_output.append([self.optimization_results[key][0], self.optimization_results[key][1]])
@@ -689,6 +694,9 @@ class ScoreGeneratorDressingwithPhysx(object):
             # params = [1.73983062, -0.13343737,  0.42208647,  0.26249355]  # solution with arm snaking
             # params = [0.3654207,  0.80081779,  0.44793856,  1.83270078]  # without checking with phsyx
             params = [0.9679925, 0.18266905, 0.87995157, 0.77562143]
+
+        self.best_pr2_config = None
+        self.best_pr2_score = 1000.
 
         neigh_distances, neighbors = self.arm_knn.kneighbors([params], 8)
         for neigh_dist, neighbor in zip(neigh_distances[0], neighbors[0]):
