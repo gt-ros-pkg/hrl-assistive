@@ -2,14 +2,14 @@
 
 import numpy as np
 import math as m
-import openravepy as op
-from openravepy.misc import InitOpenRAVELogging
+#import openravepy as op
+#from openravepy.misc import InitOpenRAVELogging
 import copy
 
 import time
 import roslib
 roslib.load_manifest('hrl_base_selection')
-roslib.load_manifest('hrl_haptic_mpc')
+#roslib.load_manifest('hrl_haptic_mpc')
 import rospy, rospkg
 import tf
 from geometry_msgs.msg import PoseStamped, Pose, PoseArray
@@ -46,7 +46,7 @@ import hrl_lib.util as ut
 
 import sensor_msgs.point_cloud2 as pc2
 
-import cma
+#import cma
 
 from joblib import Parallel, delayed
 
