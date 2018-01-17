@@ -183,6 +183,14 @@ class PreprocessingLib():
 
 
 
+    def pad_pressure_mats(self,NxHxWimages):
+        padded = np.zeros((NxHxWimages.shape[0],NxHxWimages.shape[1]+20,NxHxWimages.shape[2]+20))
+        padded[:,10:74,10:37] = NxHxWimages
+        NxHxWimages = padded
+        return NxHxWimages
+
+
+
     def person_based_loocv(self):
         '''Computes Person Based Leave One Out Cross Validation. This means
         that if we have 10 participants, we train using 9 participants and test

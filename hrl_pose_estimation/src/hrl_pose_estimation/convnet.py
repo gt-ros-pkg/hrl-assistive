@@ -4,6 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 from kinematics_lib import KinematicsLib
+import scipy.stats as ss
 
 class CNN(nn.Module):
     def __init__(self, mat_size, out_size, hidden_dim, kernel_size, loss_vector_type):
@@ -30,6 +31,8 @@ class CNN(nn.Module):
             hidden_dim3 = 48
             hidden_dim4 = 128
 
+            self.count = 0
+
             self.CNN_pack1 = nn.Sequential(
                 nn.Conv2d(3, hidden_dim1, kernel_size = 7, stride = 2, padding = 1),
                 nn.ReLU(inplace = True),
@@ -55,6 +58,15 @@ class CNN(nn.Module):
 
 
             print 'x'
+            #self.CNN_fc1 = nn.Sequential(
+            #    nn.Linear(4096, 2500),
+            #    #nn.ReLU(inplace = True),
+            #    #nn.Linear(5760, 3000),
+            #    nn.Linear(2500, 1000),
+            #    #nn.ReLU(inplace = True),
+            #    nn.Linear(1000, 300),
+            #    nn.Linear(300, out_size),
+            #)
             self.CNN_fc1 = nn.Sequential(
                 nn.Linear(4096, 2500),
                 #nn.ReLU(inplace = True),
@@ -64,59 +76,46 @@ class CNN(nn.Module):
                 nn.Linear(1000, 300),
                 nn.Linear(300, out_size),
             )
-            self.CNN_fc2 = nn.Sequential(
-                nn.Linear(4096, 500),
-                nn.ReLU(inplace = True),
-                nn.Linear(500, 200),
-                nn.ReLU(inplace = True),
-                nn.Linear(200, 50),
-                nn.Linear(50, out_size),
-            )
-            self.CNN_fc3 = nn.Sequential(
-                nn.Linear(4096, 2000),
-                nn.ReLU(inplace = True),
-                nn.Linear(2000, 1000),
-                nn.ReLU(inplace = True),
-                nn.Linear(1000, 300),
-                nn.Linear(300, out_size),
-            )
+            #self.CNN_fc2 = nn.Sequential(
+            #    nn.Linear(4096, 500),
+            #    nn.ReLU(inplace = True),
+            #    nn.Linear(500, 100),
+            #    nn.ReLU(inplace = True),
+            #    nn.Linear(100, 50),
+            #    nn.Linear(50, 17),
+            #)
+            #self.CNN_fc3 = nn.Sequential(
+            #    nn.Linear(4096, 200),
+            #    nn.ReLU(inplace = True),
+            #    nn.Linear(200, 50),
+            #    nn.Linear(50, 30),
+            #    nn.Linear(30, 3),
+            #)
 
         elif self.loss_vector_type == 'arms_cascade':
 
             hidden_dim1 = 16
-            hidden_dim2 = 32
-            hidden_dim3 = 48
-            hidden_dim4 = 128
+            hidden_dim2 = 24
+            hidden_dim3 = 40
+            hidden_dim4 = 64
 
             self.CNN_pack1 = nn.Sequential(
                 nn.Conv2d(3, hidden_dim1, kernel_size=5, stride=1, padding=0),
                 nn.ReLU(inplace=True),
-            )
-
-            self.CNN_pack2 = nn.Sequential(
                 nn.Conv2d(hidden_dim1, hidden_dim2, kernel_size=4, stride=2, padding=0),
                 nn.ReLU(inplace=True),
-
-            )
-
-            self.CNN_pack3 = nn.Sequential(
                 nn.Conv2d(hidden_dim2, hidden_dim3, kernel_size=4, stride=2, padding=1),
                 nn.ReLU(inplace=True),
-                # torch.nn.MaxPool2d(2, 2),  # this cuts the height and width down by 2
-                #
-            )
-
-            self.CNN_pack4 = nn.Sequential(
                 nn.Conv2d(hidden_dim3, hidden_dim4, kernel_size=4, stride=2, padding=1),
                 nn.ReLU(inplace=True),
             )
 
             print 'x'
             self.CNN_fc1 = nn.Sequential(
-                nn.Linear(15360, 3000),
-                nn.Linear(3000, 1000),
-                nn.Linear(1000, 300),
-                nn.Linear(300, out_size),
+                nn.Linear(2880, 1500),
+                nn.Linear(1500, 500),
+                nn.Linear(500, 100),
+                nn.Linear(100, out_size),
             )
 
 
@@ -231,12 +230,22 @@ class CNN(nn.Module):
         # This combines the height, width, and filters into a single dimension
         scores_cnn = scores_cnn.view(images.size(0),scores_size[1] *scores_size[2]*scores_size[3] )
 
-        #print scores.size(), 'scores fc1'
+        fc_noise = False #add noise to the output of the convolutions.  Only add it to the non-zero outputs, because most are zero.
+        if fc_noise == True:
+            bin_nonz = -scores_cnn
+            bin_nonz[bin_nonz < 0] = 1
+            x = np.arange(-900, 900)
+            xU, xL = x + 0.5, x - 0.5
+            prob = ss.norm.cdf(xU, scale=300) - ss.norm.cdf(xL, scale=300)  # scale is the standard deviation using a cumulative density function
+            prob = prob / prob.sum()  # normalize the probabilities so their sum is 1
+            image_noise = np.random.choice(x, size=(1, 4096), p=prob) / 1000.
+            image_noise = Variable(torch.Tensor(image_noise), volatile = True)
+            image_noise = torch.mul(bin_nonz, image_noise)
+            scores_cnn = torch.add(scores_cnn, image_noise)
+
         scores = self.CNN_fc1(scores_cnn)
-
-        scores_lengths = self.CNN_fc2(scores_cnn)
-
-        scores_torso = self.CNN_fc3(scores_cnn)
+        #scores_lengths = self.CNN_fc2(scores_cnn)
+        #scores_torso = self.CNN_fc3(scores_cnn)
 
 
         #kincons_est = Variable(torch.Tensor(np.copy(scores.data.numpy())))
@@ -250,14 +259,8 @@ class CNN(nn.Module):
             kincons = kincons / 100
 
 
-
-        #print scores.size(), scores[0, :], 'kinematic estimates'
-
-
-        #scores = scores[:, 0:8].
-
-
-        scores, pseudotargets_est = KinematicsLib().forward_kinematics_pytorch(images, scores, targets, self.loss_vector_type, kincons, prior_cascade = prior_cascade, forward_only = forward_only)
+        scores, angles_est, pseudotargets_est = KinematicsLib().forward_kinematics_pytorch(images, scores, targets, self.loss_vector_type, kincons, prior_cascade = prior_cascade, forward_only = forward_only)
+        #scores_torso, scores_angles, pseudotargets_est = KinematicsLib().forward_kinematics_3fc_pytorch(images, scores_torso, scores_lengths, scores_angles, targets, self.loss_vector_type, kincons, prior_cascade = prior_cascade, forward_only = forward_only)
 
         if self.loss_vector_type == 'upper_angles':
             targets_est = np.copy(scores[:, 9:27].data.numpy())*1000. #this is after the forward kinematics
@@ -298,6 +301,13 @@ class CNN(nn.Module):
             targets_est[:, 3:6] = np.copy(scores[:, 17:20].data.numpy())*1000. #after it comes out of the forward kinematics
             lengths_est = np.copy(scores[:, 0:17].data.numpy())
 
+            #print scores_angles.size(), 'scores angles'
+            #targets_est = np.zeros((targets.data.numpy().shape[0], 30)) #after it comes out of the forward kinematics
+            #targets_est[:, 0:3] = np.copy(scores_angles[:, 0:3].data.numpy())*1000. #after it comes out of the forward kinematics
+            #targets_est[:, 3:6] = np.copy(scores_torso[:, 0:3].data.numpy())*1000. #after it comes out of the forward kinematics
+            #targets_est[:, 6:30] = np.copy(scores_angles[:, 3:27].data.numpy())*1000. #after it comes out of the forward kinematics
+            #engths_est = np.copy(scores_lengths[:, 0:17].data.numpy())
+
             if forward_only == False:
                 scores = scores.unsqueeze(0)
                 scores = scores.unsqueeze(0)
@@ -311,20 +321,29 @@ class CNN(nn.Module):
                 scores[:, 27:30] = targets[:, 3:6]/1000 - scores[:, 27:30]
                 scores[:, 30:33] = targets[:, 0:3]/1000 - scores[:, 30:33]
                 scores[:, 33:57] = targets[:, 6:30]/1000 - scores[:, 33:57]
-
                 scores[:, 57:87] = ((scores[:, 27:57])*1.).pow(2)
-
-
-                scores[:, 0] = (scores[:, 57] + scores[:, 58] + scores[:, 59]).sqrt()# consider weighting the torso by a >1 factor because it's very important to root the other joints #bad idea, increases error
+                self.count += 1
+                if self.count < 300:
+                    scores[:, 0] = (scores[:, 57] + scores[:, 58] + scores[:, 59]).sqrt()*4# consider weighting the torso by a >1 factor because it's very important to root the other joints #bad idea, increases error
+                else:
+                    scores[:, 0] = (scores[:, 57] + scores[:, 58] + scores[:, 59]).sqrt()*2# consider weighting the torso by a >1 factor because it's very important to root the other joints #bad idea, increases error
                 scores[:, 1] = (scores[:, 60] + scores[:, 61] + scores[:, 62]).sqrt()
                 scores[:, 2] = (scores[:, 63] + scores[:, 64] + scores[:, 65]).sqrt()
                 scores[:, 3] = (scores[:, 66] + scores[:, 67] + scores[:, 68]).sqrt()
-                scores[:, 4] = (scores[:, 69] + scores[:, 70] + scores[:, 71]).sqrt()
-                scores[:, 5] = (scores[:, 72] + scores[:, 73] + scores[:, 74]).sqrt()
                 scores[:, 6] = (scores[:, 75] + scores[:, 76] + scores[:, 77]).sqrt()
                 scores[:, 7] = (scores[:, 78] + scores[:, 79] + scores[:, 80]).sqrt()
-                scores[:, 8] = (scores[:, 81] + scores[:, 82] + scores[:, 83]).sqrt()
-                scores[:, 9] = (scores[:, 84] + scores[:, 85] + scores[:, 86]).sqrt()
+                if self.count < 1500:
+                    scores[:, 4] = (scores[:, 69] + scores[:, 70] + scores[:, 71]).sqrt()*0.5
+                    scores[:, 5] = (scores[:, 72] + scores[:, 73] + scores[:, 74]).sqrt()*0.5
+                    scores[:, 8] = (scores[:, 81] + scores[:, 82] + scores[:, 83]).sqrt()*0.5
+                    scores[:, 9] = (scores[:, 84] + scores[:, 85] + scores[:, 86]).sqrt()*0.5
+                else:
+                    scores[:, 4] = (scores[:, 69] + scores[:, 70] + scores[:, 71]).sqrt()
+                    scores[:, 5] = (scores[:, 72] + scores[:, 73] + scores[:, 74]).sqrt()
+                    scores[:, 8] = (scores[:, 81] + scores[:, 82] + scores[:, 83]).sqrt()
+                    scores[:, 9] = (scores[:, 84] + scores[:, 85] + scores[:, 86]).sqrt()
+
+                print self.count
 
 
                 scores = scores.unsqueeze(0)
@@ -332,6 +351,52 @@ class CNN(nn.Module):
                 scores = F.pad(scores, (0, -60, 0, 0))
                 scores = scores.squeeze(0)
                 scores = scores.squeeze(0)
+                #scores_angles = scores_angles.unsqueeze(0)
+                #scores_angles = scores_angles.unsqueeze(0)
+                #scores_angles = F.pad(scores_angles, (10, 27, 0, 0))
+                #scores_angles = scores_angles.squeeze(0)
+                #scores_angles = scores_angles.squeeze(0)
+                #scores_torso = scores_torso.unsqueeze(0)
+                #scores_torso = scores_torso.unsqueeze(0)
+                #scores_torso = F.pad(scores_torso, (1, 3, 0, 0))
+                #scores_torso = scores_torso.squeeze(0)
+                #scores_torso = scores_torso.squeeze(0)
+
+                #print scores_angles.size()
+                #print targets.size(), 'target size'
+                #
+                # scores_torso[:, 1:4] = targets[:, 3:6]/1000 - scores_torso[:, 1:4]
+                # scores_angles[:, 10:13] = targets[:, 0:3]/1000 - scores_angles[:, 10:13]
+                # scores_angles[:, 13:37] = targets[:, 6:30]/1000 - scores_angles[:, 13:37]
+                #
+                # scores_angles[:, 37:64] = ((scores_angles[:, 10:37])*1.).pow(2)
+                # scores_torso[:, 4:7] = ((scores_angles[:, 1:4])*1.).pow(2)
+                #
+                #
+                # scores_torso[:, 0] = (scores_torso[:, 4] + scores_torso[:, 5] + scores_torso[:, 6]).sqrt()*2# consider weighting the torso by a >1 factor because it's very important to root the other joints #bad idea, increases error
+                # scores_angles[:, 1] = (scores_angles[:, 37] + scores_angles[:, 38] + scores_angles[:, 39]).sqrt()
+                # scores_angles[:, 2] = (scores_angles[:, 40] + scores_angles[:, 41] + scores_angles[:, 42]).sqrt()
+                # scores_angles[:, 3] = (scores_angles[:, 43] + scores_angles[:, 44] + scores_angles[:, 45]).sqrt()
+                # scores_angles[:, 4] = (scores_angles[:, 46] + scores_angles[:, 47] + scores_angles[:, 48]).sqrt()
+                # scores_angles[:, 5] = (scores_angles[:, 49] + scores_angles[:, 50] + scores_angles[:, 51]).sqrt()
+                # scores_angles[:, 6] = (scores_angles[:, 52] + scores_angles[:, 53] + scores_angles[:, 54]).sqrt()
+                # scores_angles[:, 7] = (scores_angles[:, 55] + scores_angles[:, 56] + scores_angles[:, 57]).sqrt()
+                # scores_angles[:, 8] = (scores_angles[:, 58] + scores_angles[:, 59] + scores_angles[:, 60]).sqrt()
+                # scores_angles[:, 9] = (scores_angles[:, 61] + scores_angles[:, 62] + scores_angles[:, 63]).sqrt()
+                #
+                # #print scores_angles.size()
+                # scores_angles = scores_angles.unsqueeze(0)
+                # scores_angles = scores_angles.unsqueeze(0)
+                # scores_angles = F.pad(scores_angles, (-1, -54, 0, 0))
+                # scores_angles = scores_angles.squeeze(0)
+                # scores_angles = scores_angles.squeeze(0)
+                # scores_torso = scores_torso.unsqueeze(0)
+                # scores_torso = scores_torso.unsqueeze(0)
+                # scores_torso = F.pad(scores_torso, (0, -6, 0, 0))
+                # scores_torso = scores_torso.squeeze(0)
+                # scores_torso = scores_torso.squeeze(0)
+
+                #print torch.cat((scores_lengths, scores_torso, scores_angles), dim=1).size()
 
 
         elif self.loss_vector_type == 'arms_cascade':
@@ -343,12 +408,18 @@ class CNN(nn.Module):
             scores = scores.squeeze(0)
             scores = scores.squeeze(0)
 
+            #print targets[0, 3:6], 'torso'
+            #print targets[0, 6:9], 'elbow'
+            #print targets[0, 12:15], 'hand'
+
+            #print scores[0, 2:8], 'scores'
 
             scores[:, 2:8] = torch.cat((targets[:, 6:9], targets[:, 12:15]), dim = 1)/1000. - scores[:, 2:8]
             scores[:, 8:14] = ((scores[:, 2:8])*1.).pow(2)
 
             scores[:, 0] = (scores[:, 8] + scores[:, 9] + scores[:, 10]).sqrt()
             scores[:, 1] = (scores[:, 11] + scores[:, 12] + scores[:, 13]).sqrt()
+
 
 
             scores = scores.unsqueeze(0)
@@ -361,4 +432,4 @@ class CNN(nn.Module):
         #############################################################################
         #                             END OF YOUR CODE                              #
         #############################################################################
-        return scores, targets_est, lengths_est, pseudotargets_est#, lengths_scores
+        return  scores, targets_est, angles_est, lengths_est, pseudotargets_est, #, lengths_scores
