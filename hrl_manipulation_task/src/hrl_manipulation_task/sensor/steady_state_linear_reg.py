@@ -4,6 +4,8 @@ from scipy import stats
 
 import hrl_lib.circular_buffer as cb
 
+INIT_WINS = 3 #number of windows to use for calculating window
+
 #TODO: function stable() may need changes to avoid some disadvantages / flaws
 #      currently, shape of state is assumed to be [a_1, ..., a_n]
 
@@ -24,8 +26,9 @@ class SteadyStateDetector:
     #          adjacent windows differ by 1 element)
     def __init__(self, win_size, state_shape, duration, mode="linreg", overlap=0):
         self.mode = mode #"linreg"
-        self.cb = cb.CircularBuffer(win_size, state_shape)
-        self.time_cb = cb.CircularBuffer(win_size, (1,))
+        self.win_size = win_size
+        self.cb = cb.CircularBuffer(win_size * INIT_WINS, state_shape)
+        self.time_cb = cb.CircularBuffer(win_size * INIT_WINS, (1,))
         if overlap < 0:
             if np.abs(overlap) >= win_size:
                 print "overlap is bigger than win_size"
@@ -71,7 +74,7 @@ class SteadyStateDetector:
             if self.cnt <= self.overlap:
                 self.cnt = self.cb.size - 1
                 slope = self.calc_slope(old_state, old_time)
-                print slope
+                #print slope
                 self.slope.append(slope)
             else:
                 self.cnt -= 1
@@ -116,8 +119,8 @@ class SteadyStateDetector:
                             return stds
                         self.stable_stds = stds#.copy().copy()
                         self.stable_means = self.avg
-                        self.cb = cb.CircularBuffer(self.cb.size, self.cb[0].shape)
-                        self.time_cb = cb.CircularBuffer(self.time_cb.size, (1,))
+                        self.cb = cb.CircularBuffer(self.win_size, self.cb[0].shape)
+                        self.time_cb = cb.CircularBuffer(self.win_size, (1,))
                         return stds
                 # Update variance/std dev
                 else:
@@ -170,7 +173,7 @@ class SteadyStateDetector:
                 for slope in self.slope:
                     #bool_arr = slope > thresh
                     bool_arr = slope < thresh
-                    print bool_arr
+                    #print bool_arr
                     for boolean in bool_arr:
                         if not boolean:
                             return False

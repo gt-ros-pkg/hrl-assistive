@@ -1,6 +1,11 @@
+#!/usr/bin/env python
+
 import rospy
 import threading
 import numpy as np
+import hrl_lib.circular_buffer as cb
+import cv2
+import dlib
 from sensor_msgs.msg import Image
 from std_msgs.msg import String
 from steady_state_linear_reg import SteadyStateDetector
@@ -11,10 +16,12 @@ class depthFaceSteady:
         self.min_dist = 30
         self.max_dist = 90
         self.bridge = CvBridge()
+        self.cb = cb.CircularBuffer(1, (3,))
+        self.win = dlib.image_window()
         
         self.depth_img = None
         self.depth_lock = threading.RLock()
-        self.steady_detector = SteadyStateDetector(15, (3,), 1, mode='std monitor', overlap =-1)
+        self.steady_detector = SteadyStateDetector(20, (3,), 4, mode='std monitor', overlap =-1)
 
         self.depth_sub = rospy.Subscriber(depth_image, Image, self.depth_callback)
 
@@ -32,28 +39,39 @@ class depthFaceSteady:
             with self.depth_lock:
                 depth = self.depth_img
             if depth is not None:
-                #only take values that are min_dist ~ max_dist (cm) 
+                #only take values that are min_dist ~ max_dist (cm)
+                #print np.asarray(depth[100][100:200] * 100).astype('uint8')
                 filtered = (depth*100).astype('uint8')
                 filtered2 = (depth*100).astype('uint8')
                 filtered3 = (depth*100).astype('uint8')
                 filtered[filtered < self.max_dist] = 255
+                filtered[filtered != 255] = 0
                 filtered2[filtered2 > self.min_dist] = 255
+                filtered2[filtered2 != 255] = 0
                 filtered = filtered & filtered2
+                #print filtered[100][100:200]
+                #print filtered[100][100:200]
+                #cv2.imshow(np.asarray(filtered))
                 #filtered = cv2.blur(filtered, (10, 10))
                 #filtered[filtered != 0] = 255
                 depth_float = filtered3 & filtered
+                self.win.set_image(depth_float)
                 depth_float = depth_float.astype('float')
                 #take avg of distances
                 total = np.sum(depth_float)
+                print "nonzeros ", np.count_nonzero(depth_float)
                 avg = total / float(np.count_nonzero(depth_float))
                 x_arr, y_arr = np.sum(depth_float, axis=0), np.sum(depth_float, axis=1)
                 x_mid = self.find_mid(x_arr, total)
                 y_mid = self.find_mid(y_arr, total)
-                print "raw states ", avg, x_mid, y_mid
-                self.steady_detector.append([avg, x_mid, y_mid], 0)
+                self.cb.append([avg, x_mid, y_mid])
+                if len(self.cb) == self.cb.size:
+                    self.steady_detector.append(np.mean(self.cb, axis=0), 0)
                 if self.steady_detector.stable([2., 2., 2.]):
+                    print "steady"
                     self.steady_pub.publish("STEADY")
                 else:
+                    print "not steady"
                     self.steady_pub.publish("NOT STEADY")
             else:
                 self.steady_pub.publish("NOT STEADY")

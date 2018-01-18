@@ -53,6 +53,7 @@ from sound_play.libsoundplay import SoundClient
 
 from steady_state_linear_reg import SteadyStateDetector
 
+import hrl_lib.circular_buffer as cb
 
 # dlib colors
 yellow = dlib.rgb_pixel(255, 255, 0)
@@ -70,7 +71,7 @@ cv2_green = (0, 255, 0)
 cv2_orange = (255, 157, 20)
 
 QUEUE_SIZE = 10
-
+avgs_window = 15
 class DlibFaceLandmarkDetector:
 
     def __init__(self, img_topic='/SR300/rgb/image_raw'):
@@ -173,6 +174,8 @@ class DlibFaceLandmarkDetector:
         self.thresh = [1.5, 1.5, 1.5, 1.5]
         self.prev_time = None
 
+        self.feature_avgs = cb.CircularBuffer(avgs_window, (3,))
+
     def guiCallback(self, msg):
         self.gui_status = msg.data
 
@@ -271,18 +274,25 @@ class DlibFaceLandmarkDetector:
             nose_y = shape.part(30).y
             #mouth_ratio = self.mouth_area_ratio(shape, largest_area) # mouth area wrt face area
             mouth_height = np.abs(shape.part(62).y - shape.part(66).y)
-            curr_state = [nose_x, nose_y, mouth_height, ratio_kalman]
-            curr_time = rospy.Time.now()
-            curr_sec = rospy.Time.to_sec(curr_time)
-            self.steady_detector.append(curr_state, curr_sec)
-            steady2 = self.steady_detector.stable(self.thresh)
-            print steady2
-            if (steady2):
-                print "                       steady!!"
+
+            arr = [nose_x, nose_y, mouth_height]
+            self.feature_avgs.append(arr)
+            steady2 = False
+            if len(self.feature_avgs) == self.feature_avgs.size:
+                avgs = np.mean(self.feature_avgs, axis=0)
+                curr_state = np.append(avgs, ratio_kalman)
+                curr_time = rospy.Time.now()
+                curr_sec = rospy.Time.to_sec(curr_time)
+                self.steady_detector.append(curr_state, curr_sec)
+                steady2 = self.steady_detector.stable(self.thresh)
+                print steady2
+                if (steady2):
+                    print "                       steady!!"
 
 
             # 2. Or... steadiness of several facial landmark positions?
             # Some can be weighted depending on noise
+            """
             steady = False
             standard_deviation = 100
             nose = shape.part(30).x + shape.part(30).y
@@ -293,6 +303,7 @@ class DlibFaceLandmarkDetector:
 
             landmark_total = (1.5 * nose) + mouth_corner_right + mouth_corner_left + upper_lip + (1.2 * bottom_lip)
             self.ss_window = np.append(self.ss_window, landmark_total)
+            
 
             # when window is full, recalculate standard deviation
             # First calculation of standard deviation
@@ -305,6 +316,7 @@ class DlibFaceLandmarkDetector:
                 standard_deviation = np.std(self.ss_window)
             #print standard_deviation
 
+            """
             # if (standard_deviation < 4.0):
             #     print 'STEADY'
             #     steady = True

@@ -12,14 +12,17 @@ import time
 import sys
 import hrl_lib.circular_buffer as cb
 from geometry_msgs.msg import Point32, Quaternion, PoseStamped, WrenchStamped
+from sound_play.libsoundplay import SoundClient
 from sensor_msgs.msg import JointState
 from std_msgs.msg import String
 
-FT_INI_THRESH = -6.0
+FT_INI_THRESH = -8.0
 FT_MAX_THRESH = -1.0
 
-class JointStateListener(object):
+class ForceListener(object):
     def __init__(self, plot_en=False):
+        self.sound_handle = SoundClient()
+        
         self.plot_en = plot_en
         self.ft_lock = threading.RLock()
         self.force = None
@@ -37,7 +40,6 @@ class JointStateListener(object):
         self.wiping = False
         self.detect_stop = False
         self.wipe_finished = False
-        self.steady_detector = SteadyStateDetector(30, (2,), 5, mode='std monitor', overlap=-1)
 
         #Subscriber
         self.ft_sub     = rospy.Subscriber('/ft/l_gripper_motor', WrenchStamped, self.ft_callback)
@@ -79,8 +81,11 @@ class JointStateListener(object):
                 rate.sleep()
                 continue
             if force.y >= FT_INI_THRESH and self.detect_stop:
+                print "first collision"
                 self.stop_motion_pub.publish("found good thresh")
             if force.y >= FT_MAX_THRESH and self.wiping:
+                print "too much force"  
+                self.sound_handle.say('Force detect ed')
                 self.emergency_pub.publish("STOP")
                 self.wiping = False
                 self.wipe_finished = True
@@ -99,8 +104,13 @@ class JointStateListener(object):
                     if par[0][0] >= .5:
                         if self.wiping:
                             self.f_buf = cb.CircularBuffer(10, (1,))
-                            print "force spike detected for stop"
-                            self.emergency_pub.publish("STOP")
+                            self.sound_handle.say('Force detect ed')
+                            if self.detect_stop:
+                                print "force spike detected for pause"
+                                self.stop_motion_pub.publish("found good thresh")
+                            else:
+                                print "force spike detected for stop"
+                                self.emergency_pub.publish("STOP")
                             self.wiping = False
                             self.wipe_finished = True
             elif self.wipe_finished:
@@ -137,6 +147,6 @@ class JointStateListener(object):
 
 if __name__ == "__main__":
     rospy.init_node('force_listener')
-    ForceListener(plot_en=True)
+    ForceListener(plot_en=False)
         
             
