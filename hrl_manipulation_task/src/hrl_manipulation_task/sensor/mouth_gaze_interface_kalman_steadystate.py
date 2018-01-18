@@ -71,7 +71,7 @@ cv2_green = (0, 255, 0)
 cv2_orange = (255, 157, 20)
 
 QUEUE_SIZE = 10
-avgs_window = 15
+avgs_window = 5
 class DlibFaceLandmarkDetector:
 
     def __init__(self, img_topic='/SR300/rgb/image_raw'):
@@ -171,7 +171,7 @@ class DlibFaceLandmarkDetector:
 
         # State: (nose x position, nose y position, mouth ratio, head rotation ratio)
         self.steady_detector = SteadyStateDetector(20, (4,), 5, mode='std monitor', overlap=-1)
-        self.thresh = [1.5, 1.5, 1.5, 1.5]
+        self.thresh = [2.0, 2.0, 2.0, 2.0]
         self.prev_time = None
 
         self.feature_avgs = cb.CircularBuffer(avgs_window, (3,))
@@ -200,6 +200,7 @@ class DlibFaceLandmarkDetector:
         
         # Grayscale (speedup)
         gray_img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+        gray_big_img = cv2.cvtColor(big_img, cv2.COLOR_RGB2GRAY)
 
         # Text string describing status.
         status = ''
@@ -209,6 +210,7 @@ class DlibFaceLandmarkDetector:
         # Detect face every 4 (or 2) frames (speedup).
         if (self.count%self.frame_num) == 0:
             self.dets = self.detector(gray_img, 1)
+            #self.dets = self.detector(gray_big_img, 1)
             self.count += 1
         # Do not detect face (for speedup).
         else:
@@ -265,19 +267,17 @@ class DlibFaceLandmarkDetector:
             self.prev_covariance = next_covariance
 
             # Steady state detection-----------------------------------------------------------------------------------------
-            # 1. Detect steady state for nose position, mouth open-ness, face ratio
-            #   Nose position: x-y movements of head
-            #   Mouth open-ness: if mouth condition is also steady
-            #   Face ratio: rotation of head
-            # State: (nose x position, nose y position, mouth ratio, head rotation ratio)
+            # State: (nose x position, nose y position, distance between upper and lower lip, head rotation ratio)
             nose_x = shape.part(30).x
             nose_y = shape.part(30).y
             #mouth_ratio = self.mouth_area_ratio(shape, largest_area) # mouth area wrt face area
             mouth_height = np.abs(shape.part(62).y - shape.part(66).y)
 
+            # Take moving average of nose x, nose y, and lip distance
             arr = [nose_x, nose_y, mouth_height]
             self.feature_avgs.append(arr)
             steady2 = False
+            # take moving average
             if len(self.feature_avgs) == self.feature_avgs.size:
                 avgs = np.mean(self.feature_avgs, axis=0)
                 curr_state = np.append(avgs, ratio_kalman)
@@ -288,38 +288,6 @@ class DlibFaceLandmarkDetector:
                 print steady2
                 if (steady2):
                     print "                       steady!!"
-
-
-            # 2. Or... steadiness of several facial landmark positions?
-            # Some can be weighted depending on noise
-            """
-            steady = False
-            standard_deviation = 100
-            nose = shape.part(30).x + shape.part(30).y
-            mouth_corner_left = shape.part(60).x + shape.part(60).y
-            mouth_corner_right = shape.part(64).x + shape.part(64).y
-            upper_lip = shape.part(62).x + shape.part(62).y
-            bottom_lip = shape.part(66).x + shape.part(66).y
-
-            landmark_total = (1.5 * nose) + mouth_corner_right + mouth_corner_left + upper_lip + (1.2 * bottom_lip)
-            self.ss_window = np.append(self.ss_window, landmark_total)
-            
-
-            # when window is full, recalculate standard deviation
-            # First calculation of standard deviation
-            if ((self.ss_window.size) == self.ss_window_size):
-                standard_deviation = np.std(self.ss_window)
-
-            # Update standard deviation
-            elif ((self.ss_window.size) > self.ss_window_size):
-                self.ss_window = np.delete(self.ss_window, 0)
-                standard_deviation = np.std(self.ss_window)
-            #print standard_deviation
-
-            """
-            # if (standard_deviation < 4.0):
-            #     print 'STEADY'
-            #     steady = True
             # ----------------------------------------------------------------------------------------------------------------
 
             # Scoop condition check
@@ -399,7 +367,7 @@ class DlibFaceLandmarkDetector:
                 elif ratio_kalman > 2.5:
                     #self.publish_wipe = True
                     print 'wipe mouth condition met, gui status: {}'.format(self.gui_status)
-                    cv2.putText(img, 'Wipe mouth!', (2, 230), cv2.FONT_HERSHEY_PLAIN, 2, cv2_black, 2)
+                    cv2.putText(img, 'Wipe mouth!', (2, 230), cv2.FONT_HERSHEY_PLAIN, 2, cv2_white, 2)
                     if (self.gui_status == 'select task') or (self.gui_status == 'stopped'):
                         self.statusPub.publish('Wiping')
                         self.availablePub.publish('true')
