@@ -24,6 +24,7 @@ from sklearn import metrics, cross_validation
 from sklearn.utils import shuffle
 
 import convnet as convnet
+import convnet_cascade as convnet_cascade
 import tf.transformations as tft
 
 import pickle
@@ -86,8 +87,8 @@ class PhysicalTrainer():
             self.loss_vector_type = 'upper_angles'
 
         else:
-            self.save_name = '_2to8_alldata_armanglescascade_constrained_noise_' + str(self.batch_size) + 'b_' + str(self.num_epochs) + 'e_4'
-            self.loss_vector_type = 'arms_cascade'  # 'arms_cascade'#'upper_angles' #this is so you train the set to joint lengths and angles
+            self.save_name = '_2to8_alldata_angles_implbedang_' + str(self.batch_size) + 'b_' + str(self.num_epochs) + 'e_4'
+            self.loss_vector_type = 'angles'  # 'arms_cascade'#'upper_angles' #this is so you train the set to joint lengths and angles
 
         #we'll be loading this later
         if self.opt.computer == 'lab_harddrive':
@@ -378,12 +379,12 @@ class PhysicalTrainer():
             fc_output_size = 22 #10 angles for arms and head, 9 lengths for arms and head, 3 torso coordinates
             self.model = convnet.CNN(self.mat_size, fc_output_size, hidden_dim, kernel_size, self.loss_vector_type)
         elif self.loss_vector_type == 'angles':
-            fc_output_size = 38 #18 angles for body, 17 lengths for body, 3 torso coordinates
+            fc_output_size = 40#38 #18 angles for body, 17 lengths for body, 3 torso coordinates
             self.model = convnet.CNN(self.mat_size, fc_output_size, hidden_dim, kernel_size, self.loss_vector_type)
         elif self.loss_vector_type == 'arms_cascade':
             #we'll make a double pass through this network for the validation for each arm.
             fc_output_size = 4 #4 angles for arms
-            self.model = convnet.CNN(self.mat_size, fc_output_size, hidden_dim, kernel_size, self.loss_vector_type)
+            self.model = convnet_cascade.CNN(self.mat_size, fc_output_size, hidden_dim, kernel_size, self.loss_vector_type)
             self.model_cascade_prior = torch.load('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leaveOut) + '/p_files/convnet_2to8_alldata_angles_constrained_noise_115b_100e_4.pt')
         elif self.loss_vector_type == 'direct':
             fc_output_size = 30
@@ -397,11 +398,11 @@ class PhysicalTrainer():
         if self.loss_vector_type == None:
             self.optimizer2 = optim.Adam(self.model.parameters(), lr=0.000025, weight_decay=0.0005)
         elif self.loss_vector_type == 'upper_angles' or self.loss_vector_type == 'arms_cascade' or self.loss_vector_type == 'angles' or self.loss_vector_type == 'direct':
-            self.optimizer2 = optim.Adam(self.model.parameters(), lr=0.00002, weight_decay=0.0005)  #0.000002 does not converge even after 100 epochs on subjects 2-8 kin cons. use .00001
+            self.optimizer2 = optim.Adam(self.model.parameters(), lr=0.00001, weight_decay=0.0005)  #0.000002 does not converge even after 100 epochs on subjects 2-8 kin cons. use .00001
         elif self.loss_vector_type == 'direct':
             self.optimizer2 = optim.Adam(self.model.parameters(), lr=0.00005, weight_decay=0.0005)
         #self.optimizer = optim.RMSprop(self.model.parameters(), lr=0.000001, momentum=0.7, weight_decay=0.0005)
-        self.optimizer = optim.Adam(self.model.parameters(), lr=0.000005, weight_decay=0.0005) #start with .00005
+        self.optimizer = optim.Adam(self.model.parameters(), lr=0.00005, weight_decay=0.0005) #start with .00005
 
 
         # train the model one epoch at a time
@@ -515,8 +516,9 @@ class PhysicalTrainer():
                 scores_zeros[:, 10:27] = constraints[:, 18:35]/100
 
 
-                scores, targets_est, angles_est, _, _ = self.model.forward_kinematic_jacobian(images_up, targets, constraints) # scores is a variable with 27 for 10 euclidean errors and 17 lengths in meters. targets est is a numpy array in mm.
-
+                scores, targets_est, angles_est, lengths_est, _ = self.model.forward_kinematic_jacobian(images_up, targets, constraints) # scores is a variable with 27 for 10 euclidean errors and 17 lengths in meters. targets est is a numpy array in mm.
+                #print lengths_est[0,0:10], 'lengths est'
+                #print batch[0][0,2,10,10], 'angle'
 
                 #print scores_zeros[0, :]
 
@@ -540,7 +542,6 @@ class PhysicalTrainer():
                 images, targets, constraints = Variable(batch[0], requires_grad = False), Variable(batch[1], requires_grad = False), Variable(batch[2], requires_grad = False)
 
 
-
                 self.optimizer.zero_grad()
 
 
@@ -561,11 +562,12 @@ class PhysicalTrainer():
 
                 box_centers = np.round(targets_2D_prior[:, :, 0:2] / 28.6, 0)
 
-                image_cascade = CascadeLib().generate_bounded_box_input(batch[0].numpy(), box_centers)
+                image_cascade = CascadeLib().generate_bounded_box_input(batch[0].numpy(), box_centers, limb = 'right_arm')
                 image_cascade_up = PreprocessingLib().preprocessing_pressure_map_upsample(image_cascade)
                 image_cascade_tensor = Variable(torch.Tensor(image_cascade_up), requires_grad = False)
 
-                scores, targets_est, angles_est, _, _ = self.model.forward_kinematic_jacobian(images, targets, constraints, prior_cascade=prior_cascade)
+                scores, targets_est, angles_est, lengths_est, _ = self.model.forward_kinematic_jacobian(image_cascade_tensor, targets, constraints, prior_cascade=prior_cascade, body_side = 'right')
+
 
                 ground_truth = np.zeros((batch[0].numpy().shape[0], 6)) #6 is 6 joint locations for the x y z right side elbow and hand
                 ground_truth = Variable(torch.Tensor(ground_truth))
@@ -600,6 +602,8 @@ class PhysicalTrainer():
             if batch_idx % opt.log_interval == 0:
                 if self.loss_vector_type == 'upper_angles' or self.loss_vector_type == 'angles':
                     VisualizationLib().print_error(targets.data.numpy(), targets_est, self.output_size, self.loss_vector_type, data = 'train')
+                    print angles_est[0, :], 'angles'
+                    print batch[0][0,2,10,10], 'bed angle'
                     self.im_sample = images.data.numpy()
                     #self.im_sample = self.im_sample[:,0,:,:]
                     self.im_sample = np.squeeze(self.im_sample[0, :])
@@ -632,7 +636,9 @@ class PhysicalTrainer():
                     self.full_im_tar_prior.append(tar_sample)
                     self.full_im_tar_prior.append(tar_prior_sample)
 
-                    cascade_im_sample = image_cascade[0, :, :, :]
+                    cascade_im_sample = np.concatenate((image_cascade[0:1, 0, :, :], image_cascade[0:1, 2, :, :], image_cascade[0:1, 4, :, :], image_cascade[0:1, 6, :, :]), axis = 0)
+                    print cascade_im_sample.shape, 'cascade shape'
+
                     cascade_tar_sample = targets.data.numpy()[0, :]
                     cascade_sc_sample = targets_est[0, :]
                     self.cascade_im_tar_sc = []
@@ -769,14 +775,14 @@ class PhysicalTrainer():
                 targets_2D_prior = CascadeLib().get_2D_projection(images.data.numpy(), np.reshape(targets_prior, (targets.size()[0], 15, 3)))
 
                 box_centers = np.round(targets_2D[:, :, 0:2] / 28.6, 0)
-                image_cascade = CascadeLib().generate_bounded_box_input(batch[0].numpy(), box_centers)
-                image_cascade_up = PreprocessingLib().preprocessing_pressure_map_upsample(image_cascade)
-                image_cascade_tensor = Variable(torch.Tensor(image_cascade_up), requires_grad=False)
+                image_cascade_right = CascadeLib().generate_bounded_box_input(batch[0].numpy(), box_centers, limb = 'right_arm')
+                image_cascade_right_up = PreprocessingLib().preprocessing_pressure_map_upsample(image_cascade_right)
+                image_cascade_right_tensor = Variable(torch.Tensor(image_cascade_right_up), requires_grad=False)
 
 
 
 
-                scores, targets_est, angles_est, _, _ = self.model.forward_kinematic_jacobian(images, targets, constraints, prior_cascade=prior_cascade)
+                scores, targets_est, angles_est, _, _ = self.model.forward_kinematic_jacobian(image_cascade_right_tensor, targets, constraints, prior_cascade=prior_cascade, forward_only= True, body_side = 'right')
 
 
                 ground_truth = np.zeros((batch[0].numpy().shape[0], 6)) #6 is 6 joint locations for the x y z right side elbow and hand
@@ -815,6 +821,8 @@ class PhysicalTrainer():
         VisualizationLib().print_error(targets.data.numpy(), targets_est, self.output_size, self.loss_vector_type, data='validate')
 
         if self.loss_vector_type == 'angles' or self.loss_vector_type == 'direct' or self.loss_vector_type == 'upper_angles':
+            print angles_est[0, :], 'angles'
+            print batch[0][0,2,10,10], 'bed angle'
             self.im_sampleval = images.data.numpy()
             #self.im_sampleval = self.im_sampleval[:,0,:,:]
             self.im_sampleval = np.squeeze(self.im_sampleval[0, :])
@@ -836,7 +844,7 @@ class PhysicalTrainer():
             self.full_im_tar_prior_val.append(tar_sample)
             self.full_im_tar_prior_val.append(tar_prior_sample)
 
-            cascade_im_sample = image_cascade[0, :, :, :]
+            cascade_im_sample = image_cascade_right[0, :, :, :]
             cascade_tar_sample = targets.data.numpy()[0, :]
             cascade_sc_sample = targets_est[0, :]
             #print cascade_im_sample.shape, cascade_tar_sample.shape, cascade_sc_sample.shape
@@ -845,7 +853,7 @@ class PhysicalTrainer():
             self.cascade_im_tar_sc_val.append(cascade_tar_sample)
             self.cascade_im_tar_sc_val.append(cascade_sc_sample)
 
-            #VisualizationLib().visualize_pressure_map_cascade(self.full_im_tar_prior, self.cascade_im_tar_sc, block = False)
+           # VisualizationLib().visualize_pressure_map_cascade(self.full_im_tar_prior, self.cascade_im_tar_sc, block = True)
 
 
 

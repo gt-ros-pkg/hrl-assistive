@@ -25,98 +25,72 @@ class CNN(nn.Module):
         #print mat_size
         self.loss_vector_type = loss_vector_type
 
-        if self.loss_vector_type == 'angles' or self.loss_vector_type == 'upper_angles' or self.loss_vector_type == 'direct':
-            hidden_dim1= 16
-            hidden_dim2 = 32
-            hidden_dim3 = 48
-            hidden_dim4 = 128
+        hidden_dim1= 16
+        hidden_dim2 = 32
+        hidden_dim3 = 48
+        hidden_dim4 = 128
 
-            self.count = 0
+        self.count = 0
 
-            self.CNN_pack1 = nn.Sequential(
-                nn.Conv2d(3, hidden_dim1, kernel_size = 7, stride = 2, padding = 1),
-                nn.ReLU(inplace = True),
-                nn.Conv2d(hidden_dim1, hidden_dim2, kernel_size=5, stride=2, padding= 1),
-                nn.ReLU(inplace=True),
-                nn.Conv2d(hidden_dim2, hidden_dim3, kernel_size=4, stride=2, padding= 1),
-                nn.ReLU(inplace=True),
-                nn.Conv2d(hidden_dim3, hidden_dim4, kernel_size=4, stride=2, padding= 1),
-                nn.ReLU(inplace=True),
-            )
+        self.CNN_pack1 = nn.Sequential(
+            nn.Conv2d(3, hidden_dim1, kernel_size = 7, stride = 2, padding = 1),
+            nn.ReLU(inplace = True),
+            nn.Conv2d(hidden_dim1, hidden_dim2, kernel_size=5, stride=2, padding= 1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(hidden_dim2, hidden_dim3, kernel_size=4, stride=2, padding= 1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(hidden_dim3, hidden_dim4, kernel_size=4, stride=2, padding= 1),
+            nn.ReLU(inplace=True),
+        )
 
-            #self.CNN_pack2 = nn.Sequential(
+        #self.CNN_pack2 = nn.Sequential(
 
-            #)
+        #)
 
-            #self.CNN_pack3 = nn.Sequential(
-            #    #torch.nn.MaxPool2d(2, 2),  # this cuts the height and width down by 2
-            #    #
-            #)
+        #self.CNN_pack3 = nn.Sequential(
+        #    #torch.nn.MaxPool2d(2, 2),  # this cuts the height and width down by 2
+        #    #
+        #)
 
-            #self.CNN_pack4 = nn.Sequential(
-            #)
+        #self.CNN_pack4 = nn.Sequential(
+        #)
 
 
-            print 'x'
-            #self.CNN_fc1 = nn.Sequential(
-            #    nn.Linear(4096, 2500),
-            #    #nn.ReLU(inplace = True),
-            #    #nn.Linear(5760, 3000),
-            #    nn.Linear(2500, 1000),
-            #    #nn.ReLU(inplace = True),
-            #    nn.Linear(1000, 300),
-            #    nn.Linear(300, out_size),
-            #)
-            self.CNN_fc1 = nn.Sequential(
-                nn.Linear(4096, 2500),
-                #nn.ReLU(inplace = True),
-                #nn.Linear(5760, 3000),
-                nn.Linear(2500, 1000),
-                #nn.ReLU(inplace = True),
-                nn.Linear(1000, 300),
-                nn.Linear(300, out_size),
-            )
-            #self.CNN_fc2 = nn.Sequential(
-            #    nn.Linear(4096, 500),
-            #    nn.ReLU(inplace = True),
-            #    nn.Linear(500, 100),
-            #    nn.ReLU(inplace = True),
-            #    nn.Linear(100, 50),
-            #    nn.Linear(50, 17),
-            #)
-            #self.CNN_fc3 = nn.Sequential(
-            #    nn.Linear(4096, 200),
-            #    nn.ReLU(inplace = True),
-            #    nn.Linear(200, 50),
-            #    nn.Linear(50, 30),
-            #    nn.Linear(30, 3),
-            #)
+        print 'x'
+        #self.CNN_fc1 = nn.Sequential(
+        #    nn.Linear(4096, 2500),
+        #    #nn.ReLU(inplace = True),
+        #    #nn.Linear(5760, 3000),
+        #    nn.Linear(2500, 1000),
+        #    #nn.ReLU(inplace = True),
+        #    nn.Linear(1000, 300),
+        #    nn.Linear(300, out_size),
+        #)
+        self.CNN_fc1 = nn.Sequential(
+            nn.Linear(4096, 2500),
+            #nn.ReLU(inplace = True),
+            #nn.Linear(5760, 3000),
+            nn.Linear(2500, 1000),
+            #nn.ReLU(inplace = True),
+            nn.Linear(1000, 300),
+            nn.Linear(300, out_size),
+        )
+        #self.CNN_fc2 = nn.Sequential(
+        #    nn.Linear(4096, 500),
+        #    nn.ReLU(inplace = True),
+        #    nn.Linear(500, 100),
+        #    nn.ReLU(inplace = True),
+        #    nn.Linear(100, 50),
+        #    nn.Linear(50, 17),
+        #)
+        #self.CNN_fc3 = nn.Sequential(
+        #    nn.Linear(4096, 200),
+        #    nn.ReLU(inplace = True),
+        #    nn.Linear(200, 50),
+        #    nn.Linear(50, 30),
+        #    nn.Linear(30, 3),
+        #)
 
-        elif self.loss_vector_type == 'arms_cascade':
-
-            hidden_dim1 = 16
-            hidden_dim2 = 24
-            hidden_dim3 = 40
-            hidden_dim4 = 64
-
-            self.CNN_pack1 = nn.Sequential(
-                nn.Conv2d(3, hidden_dim1, kernel_size=5, stride=1, padding=0),
-                nn.ReLU(inplace=True),
-                nn.Conv2d(hidden_dim1, hidden_dim2, kernel_size=4, stride=2, padding=0),
-                nn.ReLU(inplace=True),
-                nn.Conv2d(hidden_dim2, hidden_dim3, kernel_size=4, stride=2, padding=1),
-                nn.ReLU(inplace=True),
-                nn.Conv2d(hidden_dim3, hidden_dim4, kernel_size=4, stride=2, padding=1),
-                nn.ReLU(inplace=True),
-            )
-
-            print 'x'
-            self.CNN_fc1 = nn.Sequential(
-                nn.Linear(2880, 1500),
-                nn.Linear(1500, 500),
-                nn.Linear(500, 100),
-                nn.Linear(100, out_size),
-            )
 
 
 
@@ -148,7 +122,7 @@ class CNN(nn.Module):
         #############################################################################
         #print images.size(), 'CNN input size'
         scores = self.CNN_pack1(images)
-        #scores_size = scores.size()
+        scores_size = scores.size()
         #print scores_size, 'scores conv1'
 
 
@@ -161,15 +135,12 @@ class CNN(nn.Module):
         #print scores_size, 'scores conv3'
 
         #scores = self.CNN_pack4(scores)
-        scores_size = scores.size()
+        #scores_size = scores.size()
         #print scores_size, 'scores conv4'
 
-        #scores = self.CNN_pack5(scores)
-        #scores_size = scores.size()
-        #rint scores_size, 'scores_conv5'
 
         # This combines the height, width, and filters into a single dimension
-        scores = scores.view(images.size(0),scores_size[1] *scores_size[2]*scores_size[3] )
+        scores = scores.view(images.size(0),scores_size[1] *scores_size[2]*scores_size[3])
 
         #print scores.size(), 'scores fc1'
         scores = self.CNN_fc(scores)
@@ -225,7 +196,9 @@ class CNN(nn.Module):
         #print images.size(), 'CNN input size'
         scores_cnn = self.CNN_pack1(images)
         scores_size = scores_cnn.size()
-        #print scores_size, 'scores conv4'
+        #print scores_size, 'scores conv1'
+
+
 
         # This combines the height, width, and filters into a single dimension
         scores_cnn = scores_cnn.view(images.size(0),scores_size[1] *scores_size[2]*scores_size[3] )
@@ -296,6 +269,9 @@ class CNN(nn.Module):
             scores = scores.squeeze(0)
 
         elif self.loss_vector_type == 'angles':
+            #print scores.size(), ''
+
+
             targets_est = np.copy(scores[:, 17:47].data.numpy())*1000. #after it comes out of the forward kinematics
             targets_est[:, 0:3] = np.copy(scores[:, 20:23].data.numpy())*1000. #after it comes out of the forward kinematics
             targets_est[:, 3:6] = np.copy(scores[:, 17:20].data.numpy())*1000. #after it comes out of the forward kinematics
@@ -332,16 +308,16 @@ class CNN(nn.Module):
                 scores[:, 3] = (scores[:, 66] + scores[:, 67] + scores[:, 68]).sqrt()
                 scores[:, 6] = (scores[:, 75] + scores[:, 76] + scores[:, 77]).sqrt()
                 scores[:, 7] = (scores[:, 78] + scores[:, 79] + scores[:, 80]).sqrt()
-                if self.count < 1500:
-                    scores[:, 4] = (scores[:, 69] + scores[:, 70] + scores[:, 71]).sqrt()*0.5
-                    scores[:, 5] = (scores[:, 72] + scores[:, 73] + scores[:, 74]).sqrt()*0.5
-                    scores[:, 8] = (scores[:, 81] + scores[:, 82] + scores[:, 83]).sqrt()*0.5
-                    scores[:, 9] = (scores[:, 84] + scores[:, 85] + scores[:, 86]).sqrt()*0.5
-                else:
-                    scores[:, 4] = (scores[:, 69] + scores[:, 70] + scores[:, 71]).sqrt()
-                    scores[:, 5] = (scores[:, 72] + scores[:, 73] + scores[:, 74]).sqrt()
-                    scores[:, 8] = (scores[:, 81] + scores[:, 82] + scores[:, 83]).sqrt()
-                    scores[:, 9] = (scores[:, 84] + scores[:, 85] + scores[:, 86]).sqrt()
+                #if self.count < 1500:
+                #    scores[:, 4] = (scores[:, 69] + scores[:, 70] + scores[:, 71]).sqrt()*0.5
+                #    scores[:, 5] = (scores[:, 72] + scores[:, 73] + scores[:, 74]).sqrt()*0.5
+                #    scores[:, 8] = (scores[:, 81] + scores[:, 82] + scores[:, 83]).sqrt()*0.5
+                #    scores[:, 9] = (scores[:, 84] + scores[:, 85] + scores[:, 86]).sqrt()*0.5
+                #else:
+                scores[:, 4] = (scores[:, 69] + scores[:, 70] + scores[:, 71]).sqrt()
+                scores[:, 5] = (scores[:, 72] + scores[:, 73] + scores[:, 74]).sqrt()
+                scores[:, 8] = (scores[:, 81] + scores[:, 82] + scores[:, 83]).sqrt()
+                scores[:, 9] = (scores[:, 84] + scores[:, 85] + scores[:, 86]).sqrt()
 
                 print self.count
 
@@ -398,35 +374,6 @@ class CNN(nn.Module):
 
                 #print torch.cat((scores_lengths, scores_torso, scores_angles), dim=1).size()
 
-
-        elif self.loss_vector_type == 'arms_cascade':
-            targets_est = np.copy(scores[:, 0:6].data.numpy())*1000.
-
-            scores = scores.unsqueeze(0)
-            scores = scores.unsqueeze(0)
-            scores = F.pad(scores, (2, 6, 0, 0))
-            scores = scores.squeeze(0)
-            scores = scores.squeeze(0)
-
-            #print targets[0, 3:6], 'torso'
-            #print targets[0, 6:9], 'elbow'
-            #print targets[0, 12:15], 'hand'
-
-            #print scores[0, 2:8], 'scores'
-
-            scores[:, 2:8] = torch.cat((targets[:, 6:9], targets[:, 12:15]), dim = 1)/1000. - scores[:, 2:8]
-            scores[:, 8:14] = ((scores[:, 2:8])*1.).pow(2)
-
-            scores[:, 0] = (scores[:, 8] + scores[:, 9] + scores[:, 10]).sqrt()
-            scores[:, 1] = (scores[:, 11] + scores[:, 12] + scores[:, 13]).sqrt()
-
-
-
-            scores = scores.unsqueeze(0)
-            scores = scores.unsqueeze(0)
-            scores = F.pad(scores, (0, -12, 0, 0))
-            scores = scores.squeeze(0)
-            scores = scores.squeeze(0)
 
 
         #############################################################################

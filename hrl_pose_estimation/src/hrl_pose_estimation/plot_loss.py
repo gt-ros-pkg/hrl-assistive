@@ -45,6 +45,7 @@ from create_dataset_lib import CreateDatasetLib
 from visualization_lib import VisualizationLib
 from kinematics_lib import KinematicsLib
 from preprocessing_lib import PreprocessingLib
+from cascade_lib import CascadeLib
 
 #PyTorch libraries
 import argparse
@@ -91,10 +92,17 @@ class DataVisualizer():
         self.mat_size = (NUMOFTAXELS_X, NUMOFTAXELS_Y)
 
 
-        if self.opt.upper_only == True:
-            self.output_size = (NUMOFOUTPUTNODES-4, NUMOFOUTPUTDIMS)
-        else:
+        self.mat_size = (NUMOFTAXELS_X, NUMOFTAXELS_Y)
+        if self.loss_vector_type == 'upper_angles':
+            self.output_size = (NUMOFOUTPUTNODES - 4, NUMOFOUTPUTDIMS)
+        elif self.loss_vector_type == 'arms_cascade':
+            self.output_size = (NUMOFOUTPUTNODES - 8, NUMOFOUTPUTDIMS) #because of symmetry, we can train on just one side via synthetic flipping
+            self.val_output_size = (NUMOFOUTPUTNODES - 6, NUMOFOUTPUTDIMS) #however, we still want to make a validation double forward pass through both sides
+        elif self.loss_vector_type == 'angles' or self.loss_vector_type == 'direct':
             self.output_size = (NUMOFOUTPUTNODES, NUMOFOUTPUTDIMS)
+        elif self.loss_vector_type == None:
+            self.output_size = (NUMOFOUTPUTNODES - 5, NUMOFOUTPUTDIMS)
+
 
         if pathkey == 'lab_hd':
             train_val_loss = load_pickle(self.dump_path + '/train_val_losses.p')
@@ -150,6 +158,7 @@ class DataVisualizer():
                 #plt.plot(train_val_loss_all['epoch_2to8_alldata_angles_constrained_noise_115b_100e_44'], train_val_loss_all['train_2to8_alldata_angles_constrained_noise_115b_100e_44'], 'b')
                 plt.plot(train_val_loss_all['epoch_2to8_alldata_angles_constrained_noise_115b_100e_44'], train_val_loss_all['val_2to8_alldata_angles_constrained_noise_115b_100e_44'], 'r')
                 #plt.plot(train_val_loss_all['epoch_2to8_alldata_angles_s10to18_115b_50e_44'], train_val_loss_all['val_2to8_alldata_angles_s10to18_115b_50e_44'], 'g')
+                plt.plot(train_val_loss_all['epoch_2to8_alldata_angles_implbedang_115b_100e_44'], train_val_loss_all['val_2to8_alldata_angles_implbedang_115b_100e_44'], 'g')
 
 
 
@@ -209,6 +218,14 @@ class DataVisualizer():
                                     test_dat['joint_angles_U_deg'][entry][0:10],
                                     test_dat['joint_lengths_L_m'][entry][0:8] * 100,
                                     test_dat['joint_angles_L_deg'][entry][0:8]), axis=0)
+                self.test_y_flat.append(c)
+            elif self.loss_vector_type == 'arms_cascade':
+                c = np.concatenate((test_dat['markers_xyz_m'][entry][0:30] * 1000,
+                                    test_dat['joint_lengths_U_m'][entry][0:9] * 100,
+                                    test_dat['joint_angles_U_deg'][entry][0:10],
+                                    test_dat['joint_lengths_L_m'][entry][0:8] * 100,
+                                    test_dat['joint_angles_L_deg'][entry][0:8],
+                                    test_dat['pseudomarkers_xyz_m'][entry][:] * 1000), axis=0)
                 self.test_y_flat.append(c)
             elif self.loss_vector_type == 'upper_angles':
                 c = np.concatenate((test_dat['markers_xyz_m'][entry][0:18] * 1000,
@@ -272,141 +289,196 @@ class DataVisualizer():
 
         #torso_length_model = torch.load(self.dump_path + '/subject_' + str(self.subject) + '/p_files/convnet_2to8_alldata_armsonly_torso_lengths_115b_adam_100e_4.pt')
         #angle_model = torch.load(self.dump_path + '/subject_' + str(self.subject) + '/p_files/convnet_2to8_alldata_armsonly_upper_angles_115b_adam_200e_4.pt')
-        model = torch.load(self.dump_path + '/subject_' + str(4) + '/p_files/convnet_2to8_alldata_angles_constrained_noise_115b_100e_4.pt')
+
+        if self.loss_vector_type == 'angles':
+            model = torch.load(self.dump_path + '/subject_' + str(4) + '/p_files/convnet_2to8_alldata_angles_implbedang_115b_100e_4.pt')
+        elif self.loss_vector_type == 'arms_cascade':
+            model_cascade_prior = torch.load(self.dump_path + '/subject_' + str(4) + '/p_files/convnet_2to8_alldata_angles_constrained_noise_115b_100e_4.pt')
+            model = torch.load(self.dump_path + '/subject_' + str(4) + '/p_files/convnet_2to8_alldata_armanglescascade_constrained_noise_115b_100e_4.pt')
 
         count = 0
-        x2 = []
-        y2 = []
-        x3 = []
-        y3 = []
-        x4 = []
-        y4 = []
-        x5 = []
-        y5 = []
+        x2, y2, x3, y3, x4, y4, x5, y5 = [], [], [], [], [], [], [], []
+
+
         for batch_idx, batch in enumerate(self.test_loader):
             count += 1
             #print count
-            # append upper joint angles, lower joint angles, upper joint lengths, lower joint lengths, in that order
-            batch.append(torch.cat((batch[1][:, 39:49], batch[1][:, 57:65], batch[1][:, 30:39], batch[1][:, 49:57]), dim=1))
 
-            # get the direct joint locations
-            batch[1] = batch[1][:, 0:30]
+            if self.loss_vector_type == 'angles':
 
-            count2 = 0
-            cum_error = []
-            cum_distance = []
-            while count2 < 1:
-                count2 += 1
+                # append upper joint angles, lower joint angles, upper joint lengths, lower joint lengths, in that order
+                batch.append(torch.cat((batch[1][:, 39:49], batch[1][:, 57:65], batch[1][:, 30:39], batch[1][:, 49:57]), dim=1))
 
-                images_up = batch[0].numpy()
-                images_up = images_up[:, :, 5:79, 5:42]
-                images_up = PreprocessingLib().preprocessing_pressure_map_upsample(images_up)
-                images_up = np.array(images_up)
-                #images_up = PreprocessingLib().preprocessing_add_image_noise(images_up)
-                images_up = Variable(torch.Tensor(images_up), volatile = True, requires_grad=False)
-                #print images_up.size()
+                # get the direct joint locations
+                batch[1] = batch[1][:, 0:30]
 
-                images, targets, constraints = Variable(batch[0], volatile = True, requires_grad=False), Variable(batch[1], volatile = True, requires_grad=False), Variable(batch[2], volatile = True, requires_grad=False)
+                count2 = 0
+                cum_error = []
+                cum_distance = []
+                while count2 < 1:
+                    count2 += 1
+
+                    images_up = batch[0].numpy()
+                    images_up = images_up[:, :, 5:79, 5:42]
+                    images_up = PreprocessingLib().preprocessing_pressure_map_upsample(images_up)
+                    images_up = np.array(images_up)
+                    #images_up = PreprocessingLib().preprocessing_add_image_noise(images_up)
+                    images_up = Variable(torch.Tensor(images_up), volatile = True, requires_grad=False)
+                    #print images_up.size()
+
+                    images, targets, constraints = Variable(batch[0], volatile = True, requires_grad=False), Variable(batch[1], volatile = True, requires_grad=False), Variable(batch[2], volatile = True, requires_grad=False)
 
 
-                if self.loss_vector_type == 'angles':
                     _, targets_est, angles_est, lengths_est, pseudotargets_est = model.forward_kinematic_jacobian(images_up, targets, constraints, forward_only = True)
-                elif self.loss_vector_type == None:
-                    _, targets_est = model.forward_direct(images, targets)
+
+                    bed_distances = KinematicsLib().get_bed_distance(images, targets)
 
 
-                bed_distances = KinematicsLib().get_bed_distance(images, targets)
+                    targets = targets.data.numpy()
+
+                    error_norm = VisualizationLib().print_error(targets, targets_est, self.output_size, self.loss_vector_type, data=str(count), printerror =  True)/1000
+                    print angles_est
+                    cum_error.append(error_norm[0])
+                    cum_distance=bed_distances[0]*50
+
+                error = np.mean(np.array(cum_error)*100, axis = 0)
+                std_error = np.std(np.array(cum_error)*100, axis=0)
+                self.im_sample = batch[0].numpy()
+                self.im_sample = np.squeeze(self.im_sample[0, :])
+                self.tar_sample = targets
+                self.tar_sample = np.squeeze(self.tar_sample[0, :]) / 1000
+                self.sc_sample = targets_est
+                self.sc_sample = np.squeeze(self.sc_sample[0, :]) / 1000
+                self.sc_sample = np.reshape(self.sc_sample, self.output_size)
+                self.pseudo_sample = pseudotargets_est
+                self.pseudo_sample = np.squeeze(self.pseudo_sample[0, :])/1000
+                self.pseudo_sample = np.reshape(self.pseudo_sample, (5, 3))
+                VisualizationLib().rviz_publish_input(self.im_sample[0, :, :], self.im_sample[-1, 10, 10])
+                VisualizationLib().rviz_publish_output(np.reshape(self.tar_sample, self.output_size), self.sc_sample, self.pseudo_sample)
+                VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample, block=True)
+                # VisualizationLib().visualize_error_from_distance(bed_distances, error_norm)
+
+                if False:
+
+                    x2.append(std_error[2])
+                    y2.append(error[2])
+                    x3.append(std_error[3])
+                    y3.append(error[3])
+                    x4.append(std_error[4])
+                    y4.append(error[4])
+                    x5.append(std_error[5])
+                    y5.append(error[5])
+                    print batch_idx
+                    if batch_idx > 500:
+                        xlim = [0, 4]
+                        ylim = [0, 50]
+                        fig = plt.figure()
+                        plt.suptitle('Subject 4 Validation. Euclidean Error as a function of Gaussian noise perturbations to output angles', fontsize = 16)
+
+                        ax1 = fig.add_subplot(2, 2, 1)
+                        ax1.set_xlim(xlim)
+                        ax1.set_ylim(ylim)
+                        ax1.set_xlabel('Std. Dev of 3D joint position following 15 noise perturbations per image')
+                        ax1.set_ylabel('Mean Euclidean Error across 15 forward passes')
+                        ax1.plot(x2, y2, 'ro')
+                        ax1.set_title('Right Elbow')
+
+                        ax2 = fig.add_subplot(2, 2, 2)
+                        ax2.set_xlim(xlim)
+                        ax2.set_ylim(ylim)
+                        ax2.set_xlabel('Std. Dev of 3D joint position following 15 noise perturbations per image')
+                        ax2.set_ylabel('Mean Euclidean Error across 15 forward passes')
+                        ax2.plot(x3, y3, 'bo')
+                        ax2.set_title('Left Elbow')
+
+                        ax3 = fig.add_subplot(2, 2, 3)
+                        ax3.set_xlim(xlim)
+                        ax3.set_ylim(ylim)
+                        ax3.set_xlabel('Std. Dev of 3D joint position following 15 noise perturbations per image')
+                        ax3.set_ylabel('Mean Euclidean Error across 15 forward passes')
+                        ax3.plot(x4, y4, 'ro')
+                        ax3.set_title('Right Hand')
+
+                        ax4 = fig.add_subplot(2, 2, 4)
+                        ax4.set_xlim(xlim)
+                        ax4.set_ylim(ylim)
+                        ax4.set_xlabel('Std. Dev of 3D joint position following 15 noise perturbations per image')
+                        ax4.set_ylabel('Mean Euclidean Error across 15 forward passes')
+                        ax4.plot(x5, y5, 'bo')
+                        ax4.set_title('Left Hand')
+
+                        plt.show()
+
+            elif self.loss_vector_type == 'arms_cascade':
+                # append upper joint angles, lower joint angles, upper joint lengths, lower joint lengths, in that order
+                batch.append(torch.cat((batch[1][:, 39:49], batch[1][:, 57:65], batch[1][:, 30:39], batch[1][:, 49:57]), dim=1))
+
+                # get the targets and pseudotargets
+                batch[1] = torch.cat((batch[1][:, 0:30], batch[1][:, 65:80]), dim=1)
+
+                images, targets, constraints = Variable(batch[0], volatile=True, requires_grad=False), Variable(batch[1], volatile=True, requires_grad=False), Variable(batch[2], volatile=True,requires_grad=False)
+
+                #prior_cascade = torch.cat((targets[:, 3:6], constraints[:, 18:26] / 100), dim=1)  # just use this method to check, do a forward pass through the prior cascade when its trained
+                #print prior_cascade[0, :]
 
 
-                targets = targets.data.numpy()
-                #print angles_est[0, :]
-                #print lengths_est[0, :]
+                images_up = Variable(torch.Tensor(np.array(PreprocessingLib().preprocessing_pressure_map_upsample(batch[0].numpy()[:, :, 5:79, 5:42]))),requires_grad=False)
+                _, targets_prior, angles_prior, lengths_prior, pseudotargets_prior = model_cascade_prior.forward_kinematic_jacobian(images_up, targets, forward_only=True)
 
-                error_norm = VisualizationLib().print_error(targets, targets_est, self.output_size, self.loss_vector_type, data=str(count), printerror =  True)/1000
-
-                #print error_norm[0]
-                cum_error.append(error_norm[0])
-                cum_distance=bed_distances[0]*50
+                prior_cascade = torch.cat((Variable(torch.Tensor(targets_prior[:, 3:6])), Variable(torch.Tensor(lengths_prior[:, 0:8]))), dim = 1)
 
 
+                print targets.data.numpy()[:, 0:30].shape
+                print targets_prior.shape
+                VisualizationLib().print_error(targets.data.numpy()[:, 0:30], targets_prior, (10, 3), 'angles', data = 'validate')
+
+                targets_prior = np.concatenate((targets_prior, pseudotargets_prior), axis=1)
+
+                # find the pressure mat coordinates where the projected markers lie
+                targets_2D = CascadeLib().get_2D_projection(images.data.numpy(), np.reshape(targets.data.numpy(),(targets.size()[0], 15, 3)))
+                targets_2D_prior = CascadeLib().get_2D_projection(images.data.numpy(),np.reshape(targets_prior, (targets.size()[0], 15, 3)))
+
+                box_centers = np.round(targets_2D_prior[:, :, 0:2] / 28.6, 0)
+                image_cascade_right = CascadeLib().generate_bounded_box_input(batch[0].numpy(), box_centers, limb = 'right_arm')
+                image_cascade_right_up = PreprocessingLib().preprocessing_pressure_map_upsample(image_cascade_right)
+                image_cascade_right_tensor = Variable(torch.Tensor(image_cascade_right_up), requires_grad=False)
+
+                scores, targets_est, angles_est, _, _ = model.forward_kinematic_jacobian(image_cascade_right_tensor, targets, constraints, prior_cascade=prior_cascade, body_side = 'right')
+
+                print angles_est[0,:]
+
+
+                ground_truth = np.zeros((batch[0].numpy().shape[0], 6))  # 6 is 6 joint locations for the x y z right side elbow and hand
+                ground_truth = Variable(torch.Tensor(ground_truth))
+                targets2 = targets  # if we want to visualize the 3D targets using only x /y and not the normal projection on the mat, visualize this
+                targets = torch.cat((targets[:, 6:9], targets[:, 12:15]), dim=1)
+                ground_truth[:, 0:6] = targets / 1000.
+                VisualizationLib().print_error(targets.data.numpy(), targets_est, self.output_size, self.loss_vector_type, data='cascade validate')
+
+
+                print angles_est[0, :], 'angles'
+                im_sample = np.squeeze(batch[0].numpy()[0, 0, :])
+                tar_sample = targets_2D[0, :, :].flatten() / 1000  # targets2.data.numpy()#batch[1].numpy()
+                tar_prior_sample = targets_2D_prior[0, :, :, ].flatten() / 1000
+                full_im_tar_prior = []
+                full_im_tar_prior.append(im_sample)
+                full_im_tar_prior.append(tar_sample)
+                full_im_tar_prior.append(tar_prior_sample)
+
+                cascade_im_sample = image_cascade[0, :, :, :]
+                cascade_tar_sample = targets.data.numpy()[0, :]
+                cascade_sc_sample = targets_est[0, :]
+                cascade_im_tar_sc = []
+                cascade_im_tar_sc.append(cascade_im_sample)
+                cascade_im_tar_sc.append(cascade_tar_sample)
+                cascade_im_tar_sc.append(cascade_sc_sample)
+                cascade_im_tar_sc.append(box_centers)
+                VisualizationLib().visualize_pressure_map_cascade(full_im_tar_prior, cascade_im_tar_sc, block = True)
 
 
 
-            error = np.mean(np.array(cum_error)*100, axis = 0)
-
-
-            #print error.shape
-            #print bed_distances.shape
-            std_error = np.std(np.array(cum_error)*100, axis=0)
-            #print error, 'error, cm'
-            #print std_error, 'std error, cm'
-            #print cum_distance
-
-            self.im_sample = batch[0].numpy()
-            self.im_sample = np.squeeze(self.im_sample[0, :])
-            self.tar_sample = targets
-            self.tar_sample = np.squeeze(self.tar_sample[0, :]) / 1000
-            self.sc_sample = targets_est
-            self.sc_sample = np.squeeze(self.sc_sample[0, :]) / 1000
-            self.sc_sample = np.reshape(self.sc_sample, self.output_size)
-            self.pseudo_sample = pseudotargets_est
-            self.pseudo_sample = np.squeeze(self.pseudo_sample[0, :])/1000
-            self.pseudo_sample = np.reshape(self.pseudo_sample, (5, 3))
-            VisualizationLib().rviz_publish_input(self.im_sample[0, :, :], self.im_sample[-1, 10, 10])
-            VisualizationLib().rviz_publish_output(np.reshape(self.tar_sample, self.output_size), self.sc_sample, self.pseudo_sample)
-            VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample, block=True)
-            # VisualizationLib().visualize_error_from_distance(bed_distances, error_norm)
-
-            if False:
-
-                x2.append(std_error[2])
-                y2.append(error[2])
-                x3.append(std_error[3])
-                y3.append(error[3])
-                x4.append(std_error[4])
-                y4.append(error[4])
-                x5.append(std_error[5])
-                y5.append(error[5])
-                print batch_idx
-                if batch_idx > 500:
-                    xlim = [0, 4]
-                    ylim = [0, 50]
-                    fig = plt.figure()
-                    plt.suptitle('Subject 4 Validation. Euclidean Error as a function of Gaussian noise perturbations to output angles', fontsize = 16)
-
-                    ax1 = fig.add_subplot(2, 2, 1)
-                    ax1.set_xlim(xlim)
-                    ax1.set_ylim(ylim)
-                    ax1.set_xlabel('Std. Dev of 3D joint position following 15 noise perturbations per image')
-                    ax1.set_ylabel('Mean Euclidean Error across 15 forward passes')
-                    ax1.plot(x2, y2, 'ro')
-                    ax1.set_title('Right Elbow')
-
-                    ax2 = fig.add_subplot(2, 2, 2)
-                    ax2.set_xlim(xlim)
-                    ax2.set_ylim(ylim)
-                    ax2.set_xlabel('Std. Dev of 3D joint position following 15 noise perturbations per image')
-                    ax2.set_ylabel('Mean Euclidean Error across 15 forward passes')
-                    ax2.plot(x3, y3, 'bo')
-                    ax2.set_title('Left Elbow')
-
-                    ax3 = fig.add_subplot(2, 2, 3)
-                    ax3.set_xlim(xlim)
-                    ax3.set_ylim(ylim)
-                    ax3.set_xlabel('Std. Dev of 3D joint position following 15 noise perturbations per image')
-                    ax3.set_ylabel('Mean Euclidean Error across 15 forward passes')
-                    ax3.plot(x4, y4, 'ro')
-                    ax3.set_title('Right Hand')
-
-                    ax4 = fig.add_subplot(2, 2, 4)
-                    ax4.set_xlim(xlim)
-                    ax4.set_ylim(ylim)
-                    ax4.set_xlabel('Std. Dev of 3D joint position following 15 noise perturbations per image')
-                    ax4.set_ylabel('Mean Euclidean Error across 15 forward passes')
-                    ax4.plot(x5, y5, 'bo')
-                    ax4.set_title('Left Hand')
-
-                    plt.show()
+            elif self.loss_vector_type == None:
+                _, targets_est = model.forward_direct(images, targets)
 
         return mean, stdev
 

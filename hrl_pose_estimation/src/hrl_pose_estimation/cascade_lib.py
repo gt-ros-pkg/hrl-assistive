@@ -204,27 +204,32 @@ class CascadeLib():
         plt.show(block = block)
         return
 
-    def generate_bounded_box_input(self, images, box_centers, box_length = 17):
+    def generate_bounded_box_input(self, images, box_centers, box_length = 17, limb = None):
 
-        image_boxes = np.zeros((box_centers.shape[0], 4, box_length, box_length))
+        image_boxes = np.zeros((box_centers.shape[0], 7, box_length, box_length))
         image_box_coords = np.zeros((box_centers.shape[0], 4, 4))
+
+        if limb == 'right_arm':
+            target_ind = [11, 2, 4, 11]
+        elif limb == 'left_arm':
+            target_ind = [12, 3, 5, 12]
 
         #NEED TO VECTORIZE!!!!
         for i in range(box_centers.shape[0]):
             #i = 0
 
-            y1, y2 = (84 - box_centers[i, 11, 1] - 8), (84 - box_centers[i, 11, 1] + 9)
+            y1, y2 = (84 - box_centers[i, target_ind[0], 1] - 8), (84 - box_centers[i, target_ind[0], 1] + 9)
             y1p = (-y1).clip(min=0)
             y2p = (y2 - images.shape[2]).clip(min=0)
-            x1, x2 = box_centers[i, 11, 0] - 8, box_centers[i, 11, 0] + 9
+            x1, x2 = box_centers[i, target_ind[0], 0] - 8, box_centers[i, target_ind[0], 0] + 9
             x1p = (-x1).clip(min=0)
             x2p = (x2 - images.shape[3]).clip(min=0)
-            image_boxes[i, 0, int(y2p):box_length - int(y1p), int(x1p):box_length - int(x2p)] = images[i, 0,int(y1) + int(y1p):int(y2) - int(y2p),int(x1) + int(x1p):int(x2) - int(x2p)]
+            image_boxes[i, 0:2, int(y2p):box_length - int(y1p), int(x1p):box_length - int(x2p)] = images[i, 0:2,int(y1) + int(y1p):int(y2) - int(y2p),int(x1) + int(x1p):int(x2) - int(x2p)]
 
-            y1, y2 = (84 - box_centers[i, 2, 1] - 8), (84 - box_centers[i, 2, 1] + 9)
+            y1, y2 = (84 - box_centers[i, target_ind[1], 1] - 8), (84 - box_centers[i, target_ind[1], 1] + 9)
             y1p = (-y1).clip(min=0)
             y2p = (y2 - images.shape[2]).clip(min=0)
-            x1, x2 = box_centers[i, 2, 0] - 8, box_centers[i, 2, 0] + 9
+            x1, x2 = box_centers[i, target_ind[1], 0] - 8, box_centers[i, target_ind[1], 0] + 9
             x1p = (-x1).clip(min=0)
             x2p = (x2 - images.shape[3]).clip(min=0)
             #print x1, x1p, x2, x2p
@@ -233,12 +238,12 @@ class CascadeLib():
             #print int(y1p), box_length-int(y2p), 'box y'
             #print int(x1)+int(x1p), int(x2)-int(x2p), 'image x'
             #print int(y1)+int(y1p), int(y2)-int(y2p), 'image y', 'elbow'
-            image_boxes[i, 1, int(y2p):box_length-int(y1p), int(x1p):box_length - int(x2p)] = images[i, 0, int(y1)+int(y1p):int(y2)-int(y2p), int(x1)+int(x1p):int(x2)-int(x2p)]
+            image_boxes[i, 2:4, int(y2p):box_length-int(y1p), int(x1p):box_length - int(x2p)] = images[i, 0:2, int(y1)+int(y1p):int(y2)-int(y2p), int(x1)+int(x1p):int(x2)-int(x2p)]
 
-            y1, y2 = (84 - box_centers[i, 4, 1] - 8), (84 - box_centers[i, 4, 1] + 9)
+            y1, y2 = (84 - box_centers[i, target_ind[2], 1] - 8), (84 - box_centers[i, target_ind[2], 1] + 9)
             y1p = (-y1).clip(min=0)
             y2p = (y2 - images.shape[2]).clip(min=0)
-            x1, x2 = box_centers[i, 4, 0] - 8, box_centers[i, 4, 0] + 9
+            x1, x2 = box_centers[i, target_ind[2], 0] - 8, box_centers[i, target_ind[2], 0] + 9
             x1p = (-x1).clip(min=0)
             x2p = (x2 - images.shape[3]).clip(min=0)
             #print x1, x1p, x2, x2p
@@ -247,15 +252,15 @@ class CascadeLib():
             #print int(y1p), box_length - int(y2p), 'box y'
             #print int(x1) + int(x1p), int(x2) - int(x2p), 'image x'
             #print int(y1) + int(y1p), int(y2) - int(y2p), 'image y', 'shoulder'
-            image_boxes[i, 2, int(y2p):box_length - int(y1p), int(x1p):box_length - int(x2p)] = images[i, 0,int(y1) + int(y1p):int(y2) - int(y2p),int(x1) + int(x1p):int(x2) - int(x2p)]
+            image_boxes[i, 4:6, int(y2p):box_length - int(y1p), int(x1p):box_length - int(x2p)] = images[i, 0:2,int(y1) + int(y1p):int(y2) - int(y2p),int(x1) + int(x1p):int(x2) - int(x2p)]
 
-            y1, y2 = (84 - box_centers[i, 11, 1] - 8), (84 - box_centers[i, 11, 1] + 9)
+            y1, y2 = (84 - box_centers[i, target_ind[3], 1] - 8), (84 - box_centers[i, target_ind[3], 1] + 9)
             y1p = (-y1).clip(min=0)
             y2p = (y2 - images.shape[2]).clip(min=0)
-            x1, x2 = box_centers[i, 11, 0] - 8, box_centers[i, 11, 0] + 9
+            x1, x2 = box_centers[i, target_ind[3], 0] - 8, box_centers[i, target_ind[3], 0] + 9
             x1p = (-x1).clip(min=0)
             x2p = (x2 - images.shape[3]).clip(min=0)
-            image_boxes[i, 3, int(y2p):box_length - int(y1p), 0:box_length] = images[i, 2,int(y1) + int(y1p):int(y2) - int(y2p), 0:box_length]
+            image_boxes[i, 6, int(y2p):box_length - int(y1p), 0:box_length] = images[i, 2,int(y1) + int(y1p):int(y2) - int(y2p), 0:box_length]
 
 
         return image_boxes
