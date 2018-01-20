@@ -393,12 +393,12 @@ class ScoreGeneratorDressingwithPhysx(object):
 
     def run_interleaving_optimization_outer_level(self, maxiter=1000, popsize=40, subtask='', subtask_step=0):
         self.subtask_step = subtask_step
-
+        self.best_overall_score = dict()
         self.best_overall_score[self.subtask_step] = 10000.
-
+        self.best_physx_config = dict()
         self.best_physx_config[self.subtask_step] = None
         self.best_physx_score[self.subtask_step] = 10000.
-
+        self.best_kinematics_config = dict()
         self.best_kinematics_config[self.subtask_step] = None
         self.best_kinematics_score[self.subtask_step] = 10000.
 
