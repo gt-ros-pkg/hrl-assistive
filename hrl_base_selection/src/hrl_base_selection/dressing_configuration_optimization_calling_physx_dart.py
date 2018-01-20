@@ -370,11 +370,13 @@ class ScoreGeneratorDressingwithPhysx(object):
 
         self.fixed_points = []
 
+        self.final_results = []
+        self.final_results.append(['subtask', 'overall_score', 'arm_config', 'physx_score', 'pr2_config', 'kinematics_score'])
         for subtask_number, subtask in enumerate(subtask_list):
-
+            self.final_results.append([subtask, '', '', '', ''])
             if 'right' in subtask or 'left' in subtask:
                 self.set_human_arm(subtask)
-            self.best_pr2_results[subtask_number] = [[], []]
+            # self.best_pr2_results[subtask_number] = [[], []]
             if subtask_number == 0:
                 self.fixed_points_to_use = []
                 self.stretch_allowable = []
@@ -392,11 +394,13 @@ class ScoreGeneratorDressingwithPhysx(object):
     def run_interleaving_optimization_outer_level(self, maxiter=1000, popsize=40, subtask='', subtask_step=0):
         self.subtask_step = subtask_step
 
+        self.best_overall_score[self.subtask_step] = 10000.
+
         self.best_physx_config[self.subtask_step] = None
-        self.best_physx_score[self.subtask_step] = 1000.
+        self.best_physx_score[self.subtask_step] = 10000.
 
         self.best_kinematics_config[self.subtask_step] = None
-        self.best_kinematics_score[self.subtask_step] = 1000.
+        self.best_kinematics_score[self.subtask_step] = 10000.
 
         # maxiter = 30/
         # popsize = m.pow(5, 2)*100
@@ -445,19 +449,25 @@ class ScoreGeneratorDressingwithPhysx(object):
         # print 'Associated score: ', self.optimization_results[self.subtask_step][1]
         # print 'Best PR2 configuration: \n', self.best_pr2_results[self.subtask_step][0]
         # print 'Associated score: ', self.best_pr2_results[self.subtask_step][1]
+        print 'Best overall score for ', subtask, 'subtask: \n', self.best_overall_score[self.subtask_step]
         print 'Best arm config for ', subtask, 'subtask: \n', self.best_physx_config[self.subtask_step]
         print 'Associated score: ', self.best_physx_score[self.subtask_step]
         print 'Best PR2 configuration: \n', self.best_kinematics_config[self.subtask_step]
         print 'Associated score: ', self.best_kinematics_score[self.subtask_step]
-        optimized_traj_arm_output = []
-        for key in self.optimization_results.keys():
-            optimized_traj_arm_output.append([self.optimization_results[key][0], self.optimization_results[key][1]])
-        optimized_pr2_output = []
-        for key in self.best_pr2_results.keys():
-            optimized_pr2_output.append([self.best_pr2_results[key][0], self.best_pr2_results[key][1]])
+        self.final_results[subtask_step+1] = [subtask, self.best_overall_score[self.subtask_step],
+                                              self.best_physx_config[self.subtask_step],
+                                              self.best_physx_score[self.subtask_step],
+                                              self.best_kinematics_config[self.subtask_step],
+                                              self.best_kinematics_score[self.subtask_step]]
+        # optimized_traj_arm_output = []
+        # for key in self.optimization_results.keys():
+        #     optimized_traj_arm_output.append([self.optimization_results[key][0], self.optimization_results[key][1]])
+        # optimized_pr2_output = []
+        # for key in self.best_pr2_results.keys():
+        #     optimized_pr2_output.append([self.best_pr2_results[key][0], self.best_pr2_results[key][1]])
 
-        save_pickle(optimized_traj_arm_output, self.pkg_path+'/data/best_trajectory_and_arm_config.pkl')
-        save_pickle(optimized_pr2_output, self.pkg_path+'/data/best_pr2_config.pkl')
+        # save_pickle(self.final_results, self.pkg_path+'/data/best_trajectory_and_arm_config.pkl')
+        save_pickle(self.final_results, self.pkg_path+'/data/dressing_results.pkl')
 
     def find_reference_coordinate_frames_and_goals(self, arm):
         skeleton_frame_B_worldframe = np.matrix([[1., 0., 0., 0.],
@@ -695,20 +705,19 @@ class ScoreGeneratorDressingwithPhysx(object):
             # params = [0.3654207,  0.80081779,  0.44793856,  1.83270078]  # without checking with phsyx
             params = [0.9679925, 0.18266905, 0.87995157, 0.77562143]
 
-        self.best_pr2_config = None
-        self.best_pr2_score = 1000.
-
         neigh_distances, neighbors = self.arm_knn.kneighbors([params], 8)
         for neigh_dist, neighbor in zip(neigh_distances[0], neighbors[0]):
             if np.max(np.abs(np.array(self.arm_configs_checked[neighbor] - np.array(params)))) < m.radians(15.):
                 if not self.arm_configs_eval[neighbor][5] == 'good':
                     # print 'arm evaluation found this configuration to be bad'
-                    this_score = 10. + 2. + random.random()
-                    if this_score < self.best_score:
-                        self.best_config = params
-                        self.best_score = this_score
+                    this_score = 10. + 10. + 2. + random.random()
+                    if this_score < self.best_overall_score[self.subtask_step]:
+                        self.best_overall_score[self.subtask_step] = this_score
+                        self.best_physx_config[self.subtask_step] = params
+                        self.best_physx_score[self.subtask_step] = 10. + 2. + random.random()
+                        self.best_kinematics_config[self.subtask_step] = np.zeros(4)
+                        self.best_kinematics_score[self.subtask_step] = 10. + 2. + random.random()
                     return this_score
-
         print 'arm config is not bad'
         arm = self.human_arm.split('a')[0]
 
@@ -724,10 +733,13 @@ class ScoreGeneratorDressingwithPhysx(object):
         # self.set_human_model_dof_dart([params[0], params[1], params[2], params[3]], 'leftarm')
 
         if self.is_human_in_self_collision():
-            this_score = 10. + 1. + random.random()
-            if this_score < self.best_score:
-                self.best_config = params
-                self.best_score = this_score
+            this_score = 10. + 10. + 1. + random.random()
+            if this_score < self.best_overall_score[self.subtask_step]:
+                self.best_overall_score[self.subtask_step] = this_score
+                self.best_physx_config[self.subtask_step] = params
+                self.best_physx_score[self.subtask_step] = 10. + 1. + random.random()
+                self.best_kinematics_config[self.subtask_step] = np.zeros(4)
+                self.best_kinematics_score[self.subtask_step] = 10. + 1. + random.random()
             return this_score
 
         print 'arm config is not in self collision'
@@ -790,16 +802,27 @@ class ScoreGeneratorDressingwithPhysx(object):
 
         if fixed_points_exceeded_amount > 0.:
             # print 'The gown is being stretched too much to try to do the next part of the task.'
-            return 10. + 1. + 10. * fixed_points_exceeded_amount
+            # return 10. + 1. + 10. * fixed_points_exceeded_amount
+            this_score = 10. + 10. + 1. + 10. * fixed_points_exceeded_amount
+            if this_score < self.best_overall_score[self.subtask_step]:
+                self.best_overall_score[self.subtask_step] = this_score
+                self.best_physx_config[self.subtask_step] = params
+                self.best_physx_score[self.subtask_step] = 10. + 1. + 10. * fixed_points_exceeded_amount
+                self.best_kinematics_config[self.subtask_step] = np.zeros(4)
+                self.best_kinematics_score[self.subtask_step] = 10. + 1. + 10. * fixed_points_exceeded_amount
+            return this_score
 
 
         print 'angle from horizontal = ', angle_from_horizontal
         if abs(angle_from_horizontal) > 30.:
             print 'Angle of forearm is too high for success'
-            this_score = 10. + 10. * (abs(angle_from_horizontal) - 30.)
-            if this_score < self.best_score:
-                self.best_config = params
-                self.best_score = this_score
+            this_score = 10. + 10. + 10. * (abs(angle_from_horizontal) - 30.)
+            if this_score < self.best_overall_score[self.subtask_step]:
+                self.best_overall_score[self.subtask_step] = this_score
+                self.best_physx_config[self.subtask_step] = params
+                self.best_physx_score[self.subtask_step] = 10. + 10. * (abs(angle_from_horizontal) - 30.)
+                self.best_kinematics_config[self.subtask_step] = np.zeros(4)
+                self.best_kinematics_score[self.subtask_step] = 10. + 10. * (abs(angle_from_horizontal) - 30.)
             return this_score
 
         print 'Number of goals: ', len(self.goals)
@@ -826,7 +849,6 @@ class ScoreGeneratorDressingwithPhysx(object):
                                   [0., 0., 0., m.radians(0.)],
                                   [0., 0., 0., m.radians(0.)]]
 
-
         parameters_initialization = (parameters_max+parameters_min)/2.
         opts2 = {'seed': 1234, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter,
                  'maxfevals': 1e8, 'CMA_cmean': 0.25, 'tolfun': 1e-3,
@@ -835,14 +857,18 @@ class ScoreGeneratorDressingwithPhysx(object):
                  'verb_filenameprefix': 'outcma_pr2_base',
                  'scaling_of_variables': list(parameters_scaling),
                  'bounds': [list(parameters_min), list(parameters_max)]}
+
+        self.this_best_pr2_config = None
+        self.this_best_pr2_score = 1000.
+
         for init_start_pr2_config in init_start_pr2_configs:
             parameters_initialization = init_start_pr2_config
             self.kinematics_optimization_results = cma.fmin(self.objective_function_one_config,
                                                           list(parameters_initialization),
                                                           1.,
                                                           options=opts2)
-            print 'Best PR2 configuration: \n', self.best_pr2_results[self.subtask_step][0]
-            print 'Associated score: ', self.best_pr2_results[self.subtask_step][1]
+            print 'Best PR2 configuration: \n', self.this_best_pr2_results[self.subtask_step][0]
+            print 'Associated score: ', self.this_best_pr2_results[self.subtask_step][1]
         # self.pr2_parameters.append([self.kinematics_optimization_results[0], self.kinematics_optimization_results[1]])
         # save_pickle(self.pr2_parameters, self.pkg_path+'/data/all_pr2_configs.pkl')
         gc.collect()
@@ -851,7 +877,7 @@ class ScoreGeneratorDressingwithPhysx(object):
         print 'Openrave results:'
         # print self.kinematics_optimization_results
         self.force_cost = 0.
-        if self.kinematics_optimization_results[1] < 0.:
+        if self.this_best_pr2_score < 0.:
             self.physx_output = False
             self.physx_outcome = None
             # traj_start = np.array(origin_B_traj_start_pos)[0:3, 3]
@@ -885,35 +911,45 @@ class ScoreGeneratorDressingwithPhysx(object):
                     alpha = 1.  # cost on forces
                     beta = 1.  # cost on manipulability
                     zeta = 0.5  # cost on torque
-                    physx_score = self.force_cost*alpha + self.kinematics_optimization_results[1]*beta + torque_cost*zeta
-                    if physx_score < self.best_physx_score[self.subtask_step]:
+                    physx_score = self.force_cost*alpha + torque_cost*zeta
+                    this_score = physx_score + self.this_best_pr2_score*beta
+                    if this_score < self.best_overall_score[self.subtask_step]:
+                        self.best_overall_score[self.subtask_step] = this_score
+                        self.best_physx_config[self.subtask_step] = params
                         self.best_physx_score[self.subtask_step] = physx_score
-                        self.best_pr2_results[self.subtask_step] = self.kinematics_optimization_results
-                    self.arm_traj_parameters.append([params, physx_score])
+                        self.best_kinematics_config[self.subtask_step] = self.this_best_pr2_config
+                        self.best_kinematics_score[self.subtask_step] = self.this_best_pr2_score
+                    # return this_score
 
-                    save_pickle(self.arm_traj_parameters, self.pkg_path+'/data/all_arm_traj_configs.pkl')
+                    # self.arm_traj_parameters.append([params, physx_score])
+
+                    # save_pickle(self.arm_traj_parameters, self.pkg_path+'/data/all_arm_traj_configs.pkl')
                     print 'Force cost was: ', self.force_cost
                     print 'Torque score was: ', torque_cost
                     print 'Physx score was: ', physx_score
-                    return physx_score
+                    print 'Best pr2 kinematics score was: ', self.this_best_pr2_score
+                    return this_score
         self.physx_outcome = None
         self.physx_output = False
         alpha = 1.  # cost on forces
         beta = 1.  # cost on manipulability
         zeta = 0.5  # cost on torque
-        self.arm_traj_parameters.append([params, 10. + self.force_cost*alpha + self.kinematics_optimization_results[1]*beta + torque_cost*zeta])
-        save_each_config_score = False
-        if save_each_config_score:
-            save_pickle(self.arm_traj_parameters, self.pkg_path+'/data/all_arm_traj_configs.pkl')
+        # self.arm_traj_parameters.append([params, 10. + self.force_cost*alpha + self.kinematics_optimization_results[1]*beta + torque_cost*zeta])
+        # save_each_config_score = False
+        # if save_each_config_score:
+        #     save_pickle(self.arm_traj_parameters, self.pkg_path+'/data/all_arm_traj_configs.pkl')
         # physx_score = 10. + self.force_cost*alpha + self.kinematics_optimization_results[1]*beta + torque_cost*zeta
         print 'Force cost was: ', self.force_cost
-        print 'Kinematics score was: ', self.kinematics_optimization_results[1]
+        print 'Kinematics score was: ', self.this_best_pr2_score
         print 'Torque score was: ', torque_cost
         this_score = 10. + self.force_cost*alpha + self.kinematics_optimization_results[1]*beta + torque_cost*zeta
         print 'Total score was: ', this_score
-        if this_score < self.best_score:
-            self.best_config = params
-            self.best_score = this_score
+        if this_score < self.best_overall_score[self.subtask_step]:
+            self.best_overall_score[self.subtask_step] = this_score
+            self.best_physx_config[self.subtask_step] = params
+            self.best_physx_score[self.subtask_step] = physx_score
+            self.best_kinematics_config[self.subtask_step] = self.this_best_pr2_config
+            self.best_kinematics_score[self.subtask_step] = self.this_best_pr2_score
         return this_score
 
     def calculate_scores(self, task_dict, model, ref_options):
@@ -1136,16 +1172,15 @@ class ScoreGeneratorDressingwithPhysx(object):
 
         self.robot.set_positions(v)
 
-
         # self.dart_world.set_gown()
 
         # PR2 is too close to the person (who is at the origin). PR2 base is 0.668m x 0.668m
         distance_from_origin = np.linalg.norm(origin_B_pr2[:2, 3])
         if distance_from_origin <= 0.334:
             this_pr2_score = 10. + 1. + (0.4 - distance_from_origin)
-            if this_pr2_score < self.best_pr2_score:
-                self.best_pr2_config = current_parameters
-                self.best_pr2_score = this_pr2_score
+            if this_pr2_score < self.this_best_pr2_score:
+                self.this_best_pr2_config = current_parameters
+                self.this_best_pr2_score = this_pr2_score
             return this_pr2_score
 
         # v = self.robot.q
@@ -1164,9 +1199,9 @@ class ScoreGeneratorDressingwithPhysx(object):
         if out_of_reach:
             # print 'location is out of reach'
             this_pr2_score = 10. +1.+ 20.*(distance - 1.25)
-            if this_pr2_score < self.best_pr2_score:
-                self.best_pr2_config = current_parameters
-                self.best_pr2_score = this_pr2_score
+            if this_pr2_score < self.this_best_pr2_score:
+                self.this_best_pr2_config = current_parameters
+                self.this_best_pr2_score = this_pr2_score
             return this_pr2_score
 
         reach_score = 0.
@@ -1240,9 +1275,9 @@ class ScoreGeneratorDressingwithPhysx(object):
             is_smooth_ik_possible, joint_change_amount = self.check_smooth_ik_feasiblity(self.origin_B_grasps)
             if not is_smooth_ik_possible:
                 this_pr2_score = 10. + 1. + joint_change_amount
-                if this_pr2_score < self.best_pr2_score:
-                    self.best_pr2_config = current_parameters
-                    self.best_pr2_score = this_pr2_score
+                if this_pr2_score < self.this_best_pr2_score:
+                    self.this_best_pr2_config = current_parameters
+                    self.this_best_pr2_score = this_pr2_score
                 return this_pr2_score
             all_sols = []
             all_jacobians = []
@@ -1370,9 +1405,9 @@ class ScoreGeneratorDressingwithPhysx(object):
             # print 'In base collision! single config distance: ', distance
             if distance < 2.0:
                 this_pr2_score = 10. + 1. + (1.25 - distance)
-                if this_pr2_score < self.best_pr2_score:
-                    self.best_pr2_config = current_parameters
-                    self.best_pr2_score = this_pr2_score
+                if this_pr2_score < self.this_best_pr2_score:
+                    self.this_best_pr2_config = current_parameters
+                    self.this_best_pr2_score = this_pr2_score
                 return this_pr2_score
 
         # self.human_model.SetActiveManipulator('leftarm')
@@ -1401,9 +1436,9 @@ class ScoreGeneratorDressingwithPhysx(object):
         zeta = 0.05  # Weight on torques
         if reach_score == 0.:
             this_pr2_score = 10. + 1.+ 2*random.random()
-            if this_pr2_score < self.best_pr2_score:
-                self.best_pr2_config = current_parameters
-                self.best_pr2_score = this_pr2_score
+            if this_pr2_score < self.this_best_pr2_score:
+                self.this_best_pr2_config = current_parameters
+                self.this_best_pr2_score = this_pr2_score
             return this_pr2_score
         else:
             # print 'Reach score: ', reach_score
@@ -1414,9 +1449,9 @@ class ScoreGeneratorDressingwithPhysx(object):
             # print 'reach_score:', reach_score
             # print 'manip_score:', manip_score
             this_pr2_score = 10.-beta*reach_score-gamma*manip_score #+ zeta*angle_cost
-            if this_pr2_score < self.best_pr2_score:
-                self.best_pr2_config = current_parameters
-                self.best_pr2_score = this_pr2_score
+            if this_pr2_score < self.this_best_pr2_score:
+                self.this_best_pr2_config = current_parameters
+                self.this_best_pr2_score = this_pr2_score
             return this_pr2_score
 
     def is_dart_base_in_collision(self):
