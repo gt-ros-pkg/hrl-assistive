@@ -424,7 +424,7 @@ class DlibFaceLandmarkDetector:
             #     self.said_ready = True
             if (self.gui_status == 'select task') or (self.gui_status == 'stopped'):
                 if (self.gui_status != self.prev_gui_status):
-                    self.sound_handle.say('ready for next command')
+                    self.sound_handle.say('ready')
                     print "said ready"
             self.prev_gui_status = self.gui_status
 
