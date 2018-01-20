@@ -59,6 +59,7 @@ class SteadyStateDetector:
                 for i, std in enumerate(self.stable_stds):
                     #temp.append(state[i]/std)
                     temp.append((state[i] - self.stable_means[i])/std)
+                #print "temp ", temp
                 state = temp
         #print "new state ", state
         if len(self.cb) > 0:
@@ -74,7 +75,7 @@ class SteadyStateDetector:
             if self.cnt <= self.overlap:
                 self.cnt = self.cb.size - 1
                 slope = self.calc_slope(old_state, old_time)
-                #print slope
+                print slope
                 self.slope.append(slope)
             else:
                 self.cnt -= 1
