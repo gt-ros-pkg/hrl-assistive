@@ -2062,7 +2062,7 @@ if __name__ == "__main__":
     rospy.init_node('score_generator')
     # start_time = time.time()
     outer_start_time = rospy.Time.now()
-    selector = ScoreGeneratorDressingwithPhysx(human_arm='rightarm', visualize=True)
+    selector = ScoreGeneratorDressingwithPhysx(human_arm='rightarm', visualize=False)
     # selector.visualize_many_configurations()
     # selector.output_results_for_use()
     # selector.run_interleaving_optimization_outer_level()
