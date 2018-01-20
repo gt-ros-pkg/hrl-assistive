@@ -423,7 +423,9 @@ class ScoreGeneratorDressingwithPhysx(object):
                                   [m.radians(0.), m.radians(45.), m.radians(0.), m.radians(0.)],
                                   [m.radians(0.), m.radians(0.), m.radians(45.), m.radians(0.)],
                                   [m.radians(0.), m.radians(0.), m.radians(0.), m.radians(45.)],
-                                  [0.9679925, 0.18266905, 0.87995157, 0.77562143]]
+                                  [m.radians(25.), m.radians(10.), m.radians(10.), m.radians(45.)],
+                                  [0.9679925, 0.18266905, 0.87995157, 0.77562143],
+                                  (parameters_max + parameters_min) / 2.]
         opts1 = {'seed': 1234, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter,
                  'maxfevals': 1e8, 'CMA_cmean': 0.25, 'tolfun': 1e-3,
                  'tolfunhist': 1e-12, 'tolx': 5e-4,
@@ -713,7 +715,7 @@ class ScoreGeneratorDressingwithPhysx(object):
             if np.max(np.abs(np.array(self.arm_configs_checked[neighbor] - np.array(params)))) < m.radians(15.):
                 if not self.arm_configs_eval[neighbor][5] == 'good':
                     # print 'arm evaluation found this configuration to be bad'
-                    this_score = 10. + 10. + 2. + random.random()
+                    this_score = 10. + 10. + 4. + random.random()
                     if this_score < self.best_overall_score:
                         self.best_overall_score = this_score
                         self.best_physx_config = params
@@ -736,7 +738,7 @@ class ScoreGeneratorDressingwithPhysx(object):
         # self.set_human_model_dof_dart([params[0], params[1], params[2], params[3]], 'leftarm')
 
         if self.is_human_in_self_collision():
-            this_score = 10. + 10. + 1. + random.random()
+            this_score = 10. + 10. + 2. + random.random()
             if this_score < self.best_overall_score:
                 self.best_overall_score = this_score
                 self.best_physx_config = params
@@ -818,7 +820,6 @@ class ScoreGeneratorDressingwithPhysx(object):
                 self.best_kinematics_score = 10. + 1. + 10. * fixed_points_exceeded_amount
             return this_score
 
-
         print 'angle from horizontal = ', angle_from_horizontal
         if abs(angle_from_horizontal) > 30.:
             print 'Angle of forearm is too high for success'
@@ -851,7 +852,7 @@ class ScoreGeneratorDressingwithPhysx(object):
         # parameters_max = np.array([0.8, -0.3, 2.5*m.pi/2. + .001, 0.3])
         parameters_scaling = (parameters_max-parameters_min)/8.
 
-        init_start_pr2_configs = [[0.1, 0.6, m.radians(180.),0.3],
+        init_start_pr2_configs = [[0.1, 0.6, m.radians(180.), 0.3],
                                   [0.1, -0.6, m.radians(0.), 0.3],
                                   [0.6, 0.0, m.radians(90.), 0.3]]
 
