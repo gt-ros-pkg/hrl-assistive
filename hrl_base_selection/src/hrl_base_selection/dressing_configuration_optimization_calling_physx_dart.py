@@ -1382,7 +1382,7 @@ class ScoreGeneratorDressingwithPhysx(object):
                 reach_score = 1.
                 manip_score = value_so_far['end']/len(self.origin_B_grasps)
 
-            if self.visualize or (not self.subtask_step == 0 or False):
+            if self.visualize or (not self.subtask_step == 0 and False):
                 if path:
                     prev_sol = np.zeros(7)
                     print 'Solution being visualized:'
