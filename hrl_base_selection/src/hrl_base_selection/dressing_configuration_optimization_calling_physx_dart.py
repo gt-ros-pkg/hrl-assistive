@@ -389,7 +389,7 @@ class ScoreGeneratorDressingwithPhysx(object):
                     self.stretch_allowable = [0.5]
                     self.add_new_fixed_point = True
                 self.run_interleaving_optimization_outer_level(subtask=subtask, subtask_step=subtask_number,
-                                                               maxiter=20, popsize=500)
+                                                               maxiter=500, popsize=50)
 
     def run_interleaving_optimization_outer_level(self, maxiter=1000, popsize=40, subtask='', subtask_step=0):
         self.subtask_step = subtask_step
@@ -419,8 +419,11 @@ class ScoreGeneratorDressingwithPhysx(object):
         parameters_scaling = (parameters_max - parameters_min) / 8.
         # parameters_initialization = (parameters_max + parameters_min) / 2.
         init_start_arm_configs = [[m.radians(0.), m.radians(0.), m.radians(0.), m.radians(0.)],
-                              [m.radians(0.), m.radians(0.), m.radians(0.), m.radians(0.)],
-                              [m.radians(0.), m.radians(0.), m.radians(0.), m.radians(0.)]]
+                                  [m.radians(45.), m.radians(0.), m.radians(0.), m.radians(0.)],
+                                  [m.radians(0.), m.radians(45.), m.radians(0.), m.radians(0.)],
+                                  [m.radians(0.), m.radians(0.), m.radians(45.), m.radians(0.)],
+                                  [m.radians(0.), m.radians(0.), m.radians(0.), m.radians(45.)],
+                                  [0.9679925, 0.18266905, 0.87995157, 0.77562143]]
         opts1 = {'seed': 1234, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter,
                  'maxfevals': 1e8, 'CMA_cmean': 0.25, 'tolfun': 1e-3,
                  'tolfunhist': 1e-12, 'tolx': 5e-4,
