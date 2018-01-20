@@ -759,7 +759,10 @@ class ScoreGeneratorDressingwithPhysx(object):
         angle_from_horizontal, \
         forearm_B_upper_arm, \
         fixed_points_exceeded_amount = self.find_reference_coordinate_frames_and_goals(arm)
-        print 'arm does not break fixed_points requirement'
+        if fixed_points_exceeded_amount <= 0:
+            print 'arm does not break fixed_points requirement'
+        else:
+            print 'fixed points exceeded: ', fixed_points_exceeded_amount
 
 
         ############################################
@@ -832,25 +835,25 @@ class ScoreGeneratorDressingwithPhysx(object):
         start_time = rospy.Time.now()
         self.set_goals()
         # print self.origin_B_grasps
-        maxiter = 5
-        popsize = 200#4*20
+        maxiter = 500
+        popsize = 50#4*20
         if self.subtask_step == 0 or False:
-            maxiter = 5
-            popsize = 5
+            maxiter = 2
+            popsize = 2
 
         # cma parameters: [pr2_base_x, pr2_base_y, pr2_base_theta, pr2_base_height,
         # human_arm_dof_1, human_arm_dof_2, human_arm_dof_3, human_arm_dof_4, human_arm_dof_5,
         # human_arm_dof_6, human_arm_dof_7]
-        parameters_min = np.array([-1.5, -1.5, -2.5*m.pi-.001, 0.0])
-        parameters_max = np.array([1.5, 1.5, 2.5*m.pi+.001, 0.3])
+        parameters_min = np.array([-1.5, -1.5, -6.5*m.pi-.001, 0.0])
+        parameters_max = np.array([1.5, 1.5, 6.5*m.pi+.001, 0.3])
         # [0.3, -0.9, 1.57 * m.pi / 3., 0.3]
         # parameters_min = np.array([-0.1, -1.0, m.pi/2. - .001, 0.2])
         # parameters_max = np.array([0.8, -0.3, 2.5*m.pi/2. + .001, 0.3])
         parameters_scaling = (parameters_max-parameters_min)/8.
 
-        init_start_pr2_configs = [[0., 0., 0., m.radians(0.)],
-                                  [0., 0., 0., m.radians(0.)],
-                                  [0., 0., 0., m.radians(0.)]]
+        init_start_pr2_configs = [[0.1, 0.6, m.radians(180.),0.3],
+                                  [0.1, -0.6, m.radians(0.), 0.3],
+                                  [0.6, 0.0, m.radians(90.), 0.3]]
 
         parameters_initialization = (parameters_max+parameters_min)/2.
         opts2 = {'seed': 1234, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter,
