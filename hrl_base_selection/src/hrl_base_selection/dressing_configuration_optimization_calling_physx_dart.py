@@ -382,7 +382,7 @@ class ScoreGeneratorDressingwithPhysx(object):
                 self.stretch_allowable = []
                 self.add_new_fixed_point = True
                 self.run_interleaving_optimization_outer_level(subtask=subtask, subtask_step=subtask_number,
-                                                               maxiter=5, popsize=5)
+                                                               maxiter=2, popsize=2)
             else:
                 if subtask_number == 1:
                     self.fixed_points_to_use = [0]
