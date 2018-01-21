@@ -433,21 +433,30 @@ class ScoreGeneratorDressingwithPhysx(object):
                  'verb_filenameprefix': 'outcma_arm_and_trajectory',
                  'scaling_of_variables': list(parameters_scaling),
                  'bounds': [list(parameters_min), list(parameters_max)]}
-        for init_start_arm_config in init_start_arm_configs:
-            parameters_initialization = init_start_arm_config
-            # parameters_initialization[0] = m.radians(0.)
-            # parameters_initialization[1] = m.radians(70.)
-            # parameters_initialization[2] = m.radians(0.)
-            # parameters_initialization[3] = m.radians(0.)
+        regular = False
+        if regular:
+            for init_start_arm_config in init_start_arm_configs:
+                parameters_initialization = init_start_arm_config
+                # parameters_initialization[0] = m.radians(0.)
+                # parameters_initialization[1] = m.radians(70.)
+                # parameters_initialization[2] = m.radians(0.)
+                # parameters_initialization[3] = m.radians(0.)
 
-            # optimization_results[<model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_bed_movement>]
-            self.optimization_results = cma.fmin(self.objective_function_traj_and_arm_config,
-                                                          list(parameters_initialization),
-                                                          1.,
-                                                          options=opts1)
-            print 'raw cma optimization results:\n',self.optimization_results
-            # self.optimization_results = [self.best_config, self.best_score]
-
+                # optimization_results[<model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_bed_movement>]
+                self.optimization_results = cma.fmin(self.objective_function_traj_and_arm_config,
+                                                              list(parameters_initialization),
+                                                              1.,
+                                                              options=opts1)
+                print 'raw cma optimization results:\n',self.optimization_results
+                # self.optimization_results = [self.best_config, self.best_score]
+        else:
+            [t for t in ((self.objective_function_traj_and_arm_config([arm1, arm2, arm3, arm4]))
+                         for arm1 in np.arange(parameters_min[0], parameters_max[0]+0.0001, m.radians(5.))
+                         for arm2 in np.arange(parameters_min[1], parameters_max[1]+0.0001, m.radians(5.))
+                         for arm3 in np.arange(parameters_min[2], parameters_max[2]+0.0001, m.radians(5.))
+                         for arm4 in np.arange(parameters_min[3], parameters_max[3]+0.0001, m.radians(5.))
+                         )
+             ]
         # print 'Outcome is: '
         # print self.optimization_results
         # print 'Best arm config for ',subtask, 'subtask: \n', self.optimization_results[self.subtask_step][0]
@@ -658,8 +667,6 @@ class ScoreGeneratorDressingwithPhysx(object):
 
         # for goal in goals:
         #     print goal
-
-
 
         # path_distance = np.linalg.norm(np.array(origin_B_traj_upper_end)[0:3, 3] -
         #                                np.array(origin_B_traj_final_end)[0:3, 3])
