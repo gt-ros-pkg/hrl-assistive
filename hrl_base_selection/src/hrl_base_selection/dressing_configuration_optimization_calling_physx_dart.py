@@ -53,7 +53,10 @@ import cma
 class ScoreGeneratorDressingwithPhysx(object):
 
     def __init__(self, robot_arm='rightarm', human_arm='rightarm', visualize=False, standard_mode=True):
-
+        rospack = rospkg.RosPack()
+        self.pkg_path = rospack.get_path('hrl_base_selection')
+        self.save_file_path = self.pkg_path + '/data/'
+        self.save_file_name = 'arm_config_scores.log'
         self.visualize = visualize
         self.frame_lock = threading.RLock()
 
@@ -364,7 +367,10 @@ class ScoreGeneratorDressingwithPhysx(object):
             print 'Physx simulation outcome (point-in-polygon): ', self.physx_outcome_method2
             return True
 
-    def optimize_entire_dressing_task(self):
+    def optimize_entire_dressing_task(self, reset_file=False):
+        if reset_file:
+            open(self.save_file_path + self.save_file_name, 'w').close()
+
         self.set_robot_arm('rightarm')
         subtask_list = ['rightarm', 'leftarm']
 
@@ -729,6 +735,14 @@ class ScoreGeneratorDressingwithPhysx(object):
                         self.best_physx_score = 10. + 2. + random.random()
                         self.best_kinematics_config = np.zeros(4)
                         self.best_kinematics_score = 10. + 2. + random.random()
+                    with open(self.save_file_path+self.save_file_name, 'a') as myfile:
+                        myfile.write(str(self.subtask_step) +
+                                     + ',' + str("{:.5f}".format(params[0]))
+                                     + ',' + str("{:.5f}".format(params[1]))
+                                     + ',' + str("{:.5f}".format(params[2]))
+                                     + ',' + str("{:.5f}".format(params[3]))
+                                     + ',' + str("{:.5f}".format(this_score))
+                                     + '\n')
                     return this_score
         print 'arm config is not bad'
         arm = self.human_arm.split('a')[0]
@@ -752,6 +766,14 @@ class ScoreGeneratorDressingwithPhysx(object):
                 self.best_physx_score = 10. + 1. + random.random()
                 self.best_kinematics_config = np.zeros(4)
                 self.best_kinematics_score = 10. + 1. + random.random()
+            with open(self.save_file_path + self.save_file_name, 'a') as myfile:
+                myfile.write(str(self.subtask_step) +
+                             + ',' + str("{:.5f}".format(params[0]))
+                             + ',' + str("{:.5f}".format(params[1]))
+                             + ',' + str("{:.5f}".format(params[2]))
+                             + ',' + str("{:.5f}".format(params[3]))
+                             + ',' + str("{:.5f}".format(this_score))
+                             + '\n')
             return this_score
 
         print 'arm config is not in self collision'
@@ -825,6 +847,14 @@ class ScoreGeneratorDressingwithPhysx(object):
                 self.best_physx_score = 10. + 1. + 10. * fixed_points_exceeded_amount
                 self.best_kinematics_config = np.zeros(4)
                 self.best_kinematics_score = 10. + 1. + 10. * fixed_points_exceeded_amount
+            with open(self.save_file_path + self.save_file_name, 'a') as myfile:
+                myfile.write(str(self.subtask_step) +
+                             + ',' + str("{:.5f}".format(params[0]))
+                             + ',' + str("{:.5f}".format(params[1]))
+                             + ',' + str("{:.5f}".format(params[2]))
+                             + ',' + str("{:.5f}".format(params[3]))
+                             + ',' + str("{:.5f}".format(this_score))
+                             + '\n')
             return this_score
 
         print 'angle from horizontal = ', angle_from_horizontal
@@ -837,6 +867,14 @@ class ScoreGeneratorDressingwithPhysx(object):
                 self.best_physx_score = 10. + 10. * (abs(angle_from_horizontal) - 30.)
                 self.best_kinematics_config = np.zeros(4)
                 self.best_kinematics_score = 10. + 10. * (abs(angle_from_horizontal) - 30.)
+            with open(self.save_file_path + self.save_file_name, 'a') as myfile:
+                myfile.write(str(self.subtask_step) +
+                             + ',' + str("{:.5f}".format(params[0]))
+                             + ',' + str("{:.5f}".format(params[1]))
+                             + ',' + str("{:.5f}".format(params[2]))
+                             + ',' + str("{:.5f}".format(params[3]))
+                             + ',' + str("{:.5f}".format(this_score))
+                             + '\n')
             return this_score
 
         print 'Number of goals: ', len(self.goals)
@@ -881,7 +919,7 @@ class ScoreGeneratorDressingwithPhysx(object):
                                                           list(parameters_initialization),
                                                           1.,
                                                           options=opts2)
-            print 'Best PR2 configuration for this arm config so far: \n', self.this_best_pr2_config[0]
+            print 'Best PR2 configuration for this arm config so far: \n', self.this_best_pr2_config
             print 'Associated score: ', self.this_best_pr2_score
         # self.pr2_parameters.append([self.kinematics_optimization_results[0], self.kinematics_optimization_results[1]])
         # save_pickle(self.pr2_parameters, self.pkg_path+'/data/all_pr2_configs.pkl')
@@ -942,6 +980,14 @@ class ScoreGeneratorDressingwithPhysx(object):
                     print 'Torque score was: ', torque_cost
                     print 'Physx score was: ', physx_score
                     print 'Best pr2 kinematics score was: ', self.this_best_pr2_score
+                    with open(self.save_file_path+self.save_file_name, 'a') as myfile:
+                        myfile.write(str(self.subtask_step) +
+                                     + ',' + str("{:.5f}".format(params[0]))
+                                     + ',' + str("{:.5f}".format(params[1]))
+                                     + ',' + str("{:.5f}".format(params[2]))
+                                     + ',' + str("{:.5f}".format(params[3]))
+                                     + ',' + str("{:.5f}".format(this_score))
+                                     + '\n')
                     return this_score
         self.physx_outcome = None
         self.physx_output = False
@@ -965,6 +1011,14 @@ class ScoreGeneratorDressingwithPhysx(object):
             self.best_physx_score = physx_score
             self.best_kinematics_config = self.this_best_pr2_config
             self.best_kinematics_score = self.this_best_pr2_score
+        with open(self.save_file_path + self.save_file_name, 'a') as myfile:
+            myfile.write(str(self.subtask_step) +
+                         + ',' + str("{:.5f}".format(params[0]))
+                         + ',' + str("{:.5f}".format(params[1]))
+                         + ',' + str("{:.5f}".format(params[2]))
+                         + ',' + str("{:.5f}".format(params[3]))
+                         + ',' + str("{:.5f}".format(this_score))
+                         + '\n')
         return this_score
 
     def calculate_scores(self, task_dict, model, ref_options):
