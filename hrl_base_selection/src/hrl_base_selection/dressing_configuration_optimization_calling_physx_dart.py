@@ -736,7 +736,7 @@ class ScoreGeneratorDressingwithPhysx(object):
                         self.best_kinematics_config = np.zeros(4)
                         self.best_kinematics_score = 10. + 2. + random.random()
                     with open(self.save_file_path+self.save_file_name, 'a') as myfile:
-                        myfile.write(str(self.subtask_step) +
+                        myfile.write(str(self.subtask_step)
                                      + ',' + str("{:.5f}".format(params[0]))
                                      + ',' + str("{:.5f}".format(params[1]))
                                      + ',' + str("{:.5f}".format(params[2]))
@@ -767,7 +767,7 @@ class ScoreGeneratorDressingwithPhysx(object):
                 self.best_kinematics_config = np.zeros(4)
                 self.best_kinematics_score = 10. + 1. + random.random()
             with open(self.save_file_path + self.save_file_name, 'a') as myfile:
-                myfile.write(str(self.subtask_step) +
+                myfile.write(str(self.subtask_step)
                              + ',' + str("{:.5f}".format(params[0]))
                              + ',' + str("{:.5f}".format(params[1]))
                              + ',' + str("{:.5f}".format(params[2]))
@@ -848,7 +848,7 @@ class ScoreGeneratorDressingwithPhysx(object):
                 self.best_kinematics_config = np.zeros(4)
                 self.best_kinematics_score = 10. + 1. + 10. * fixed_points_exceeded_amount
             with open(self.save_file_path + self.save_file_name, 'a') as myfile:
-                myfile.write(str(self.subtask_step) +
+                myfile.write(str(self.subtask_step)
                              + ',' + str("{:.5f}".format(params[0]))
                              + ',' + str("{:.5f}".format(params[1]))
                              + ',' + str("{:.5f}".format(params[2]))
@@ -868,7 +868,7 @@ class ScoreGeneratorDressingwithPhysx(object):
                 self.best_kinematics_config = np.zeros(4)
                 self.best_kinematics_score = 10. + 10. * (abs(angle_from_horizontal) - 30.)
             with open(self.save_file_path + self.save_file_name, 'a') as myfile:
-                myfile.write(str(self.subtask_step) +
+                myfile.write(str(self.subtask_step)
                              + ',' + str("{:.5f}".format(params[0]))
                              + ',' + str("{:.5f}".format(params[1]))
                              + ',' + str("{:.5f}".format(params[2]))
@@ -981,7 +981,14 @@ class ScoreGeneratorDressingwithPhysx(object):
                     print 'Physx score was: ', physx_score
                     print 'Best pr2 kinematics score was: ', self.this_best_pr2_score
                     with open(self.save_file_path+self.save_file_name, 'a') as myfile:
-                        myfile.write(str(self.subtask_step) +
+                        # myfile.write('ok' +
+                                     # + ',' + str("{:.5f}".format(params[0]))
+                                     # + ',' + str("{:.5f}".format(params[1]))
+                                     # + ',' + str("{:.5f}".format(params[2]))
+                                     # + ',' + str("{:.5f}".format(params[3]))
+                                     # + ',' + str("{:.5f}".format(this_score))
+                                     # + '\n')
+                        myfile.write(str(self.subtask_step)
                                      + ',' + str("{:.5f}".format(params[0]))
                                      + ',' + str("{:.5f}".format(params[1]))
                                      + ',' + str("{:.5f}".format(params[2]))
@@ -1012,7 +1019,7 @@ class ScoreGeneratorDressingwithPhysx(object):
             self.best_kinematics_config = self.this_best_pr2_config
             self.best_kinematics_score = self.this_best_pr2_score
         with open(self.save_file_path + self.save_file_name, 'a') as myfile:
-            myfile.write(str(self.subtask_step) +
+            myfile.write(str(self.subtask_step)
                          + ',' + str("{:.5f}".format(params[0]))
                          + ',' + str("{:.5f}".format(params[1]))
                          + ',' + str("{:.5f}".format(params[2]))
