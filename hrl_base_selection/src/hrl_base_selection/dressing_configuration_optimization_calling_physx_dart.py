@@ -434,7 +434,7 @@ class ScoreGeneratorDressingwithPhysx(object):
                  'scaling_of_variables': list(parameters_scaling),
                  'bounds': [list(parameters_min), list(parameters_max)]}
         regular = False
-        if regular:
+        if regular or subtask_step==0:
             for init_start_arm_config in init_start_arm_configs:
                 parameters_initialization = init_start_arm_config
                 # parameters_initialization[0] = m.radians(0.)
