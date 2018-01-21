@@ -451,10 +451,10 @@ class ScoreGeneratorDressingwithPhysx(object):
                 # self.optimization_results = [self.best_config, self.best_score]
         else:
             [t for t in ((self.objective_function_traj_and_arm_config([arm1, arm2, arm3, arm4]))
-                         for arm1 in np.arange(parameters_min[0], parameters_max[0]+0.0001, m.radians(5.))
-                         for arm2 in np.arange(parameters_min[1], parameters_max[1]+0.0001, m.radians(5.))
-                         for arm3 in np.arange(parameters_min[2], parameters_max[2]+0.0001, m.radians(5.))
-                         for arm4 in np.arange(parameters_min[3], parameters_max[3]+0.0001, m.radians(5.))
+                         for arm1 in np.arange(parameters_min[0], parameters_max[0]+0.0001, m.radians(10.))
+                         for arm2 in np.arange(parameters_min[1], parameters_max[1]+0.0001, m.radians(10.))
+                         for arm3 in np.arange(parameters_min[2], parameters_max[2]+0.0001, m.radians(10.))
+                         for arm4 in np.arange(parameters_min[3], parameters_max[3]+0.0001, m.radians(10.))
                          )
              ]
         # print 'Outcome is: '
@@ -843,7 +843,7 @@ class ScoreGeneratorDressingwithPhysx(object):
         start_time = rospy.Time.now()
         self.set_goals()
         # print self.origin_B_grasps
-        maxiter = 500
+        maxiter = 100
         popsize = 50#4*20
         if self.subtask_step == 0 or False:
             maxiter = 2
