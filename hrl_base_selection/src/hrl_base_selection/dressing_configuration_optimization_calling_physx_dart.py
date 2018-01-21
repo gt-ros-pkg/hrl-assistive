@@ -878,6 +878,7 @@ class ScoreGeneratorDressingwithPhysx(object):
             return this_score
 
         print 'Number of goals: ', len(self.goals)
+        print 'This arm config is:\n', params
         start_time = rospy.Time.now()
         self.set_goals()
         # print self.origin_B_grasps
@@ -919,6 +920,7 @@ class ScoreGeneratorDressingwithPhysx(object):
                                                           list(parameters_initialization),
                                                           1.,
                                                           options=opts2)
+            print 'This arm config is:\n',params
             print 'Best PR2 configuration for this arm config so far: \n', self.this_best_pr2_config
             print 'Associated score: ', self.this_best_pr2_score
         # self.pr2_parameters.append([self.kinematics_optimization_results[0], self.kinematics_optimization_results[1]])
@@ -2142,7 +2144,7 @@ if __name__ == "__main__":
     # selector.visualize_many_configurations()
     # selector.output_results_for_use()
     # selector.run_interleaving_optimization_outer_level()
-    selector.optimize_entire_dressing_task()
+    selector.optimize_entire_dressing_task(reset_file=True)
     outer_elapsed_time = rospy.Time.now()-outer_start_time
     print 'Everything is complete!'
     print 'Done with optimization. Total time elapsed:', outer_elapsed_time.to_sec()
