@@ -270,11 +270,11 @@ class DlibFaceLandmarkDetector:
             # State: (nose x position, nose y position, distance between upper and lower lip, head rotation ratio)
             nose_x = shape.part(30).x
             nose_y = shape.part(30).y
-            #mouth_ratio = self.mouth_area_ratio(shape, largest_area) # mouth area wrt face area
-            mouth_height = np.abs(shape.part(62).y - shape.part(66).y)
+            mouth_ratio = self.mouth_area_ratio(shape, largest_area) # mouth area wrt face area
+            #mouth_height = np.abs(shape.part(62).y - shape.part(66).y)
 
             # Take moving average of nose x, nose y, and lip distance
-            arr = [nose_x, nose_y, mouth_height]
+            arr = [nose_x, nose_y, mouth_ratio]
             self.feature_avgs.append(arr)
             steady2 = False
             # take moving average
@@ -424,7 +424,7 @@ class DlibFaceLandmarkDetector:
             #     self.said_ready = True
             if (self.gui_status == 'select task') or (self.gui_status == 'stopped'):
                 if (self.gui_status != self.prev_gui_status):
-                    self.sound_handle.say('ready for next command')
+                    self.sound_handle.say('ready')
                     print "said ready"
             self.prev_gui_status = self.gui_status
 
