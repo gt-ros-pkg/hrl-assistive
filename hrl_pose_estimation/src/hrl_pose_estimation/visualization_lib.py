@@ -126,7 +126,7 @@ class VisualizationLib():
             if bed_distance.shape[1] <= 5:
                 ax[joint] = fig.add_subplot(1, bed_distance.shape[1], joint + 1)
             else:
-                print math.ceil(bed_distance.shape[1]/2.)
+                #print math.ceil(bed_distance.shape[1]/2.)
                 ax[joint] = fig.add_subplot(2, math.ceil(bed_distance.shape[1]/2.), joint + 1)
             ax[joint].set_xlim([0, 0.7])
             ax[joint].set_ylim([0, 1])
@@ -404,12 +404,12 @@ class VisualizationLib():
                 marker.pose.position.x = i*0.0286
                 if j > 33:
                     marker.pose.position.y = (84-j)*0.0286 - 0.0286*3*np.sin(np.deg2rad(angle))
-                    marker.pose.position.z = 0.#-0.1
+                    marker.pose.position.z = -0.1
                     #print marker.pose.position.x, 'x'
                 else:
 
                     marker.pose.position.y = (51) * 0.0286 + (33 - j) * 0.0286 * np.cos(np.deg2rad(angle)) - 0.0286*3*np.sin(np.deg2rad(angle))
-                    marker.pose.position.z = (33-j)*0.0286*np.sin(np.deg2rad(angle)) #-0.1
+                    marker.pose.position.z = (33-j)*0.0286*np.sin(np.deg2rad(angle)) -0.1
                     #print j, marker.pose.position.z, marker.pose.position.y, 'head'
 
                 # We add the new marker to the MarkerArray, removing the oldest

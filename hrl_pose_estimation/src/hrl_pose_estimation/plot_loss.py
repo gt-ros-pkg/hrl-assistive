@@ -159,6 +159,7 @@ class DataVisualizer():
                 plt.plot(train_val_loss_all['epoch_2to8_alldata_angles_constrained_noise_115b_100e_44'], train_val_loss_all['val_2to8_alldata_angles_constrained_noise_115b_100e_44'], 'r')
                 #plt.plot(train_val_loss_all['epoch_2to8_alldata_angles_s10to18_115b_50e_44'], train_val_loss_all['val_2to8_alldata_angles_s10to18_115b_50e_44'], 'g')
                 plt.plot(train_val_loss_all['epoch_2to8_alldata_angles_implbedang_115b_100e_44'], train_val_loss_all['val_2to8_alldata_angles_implbedang_115b_100e_44'], 'g')
+                plt.plot(train_val_loss_all['epoch_2to8_angles_implbedang_loosetorso_115b_100e_44'], train_val_loss_all['val_2to8_angles_implbedang_loosetorso_115b_100e_44'], 'k')
 
 
 
@@ -179,7 +180,7 @@ class DataVisualizer():
 
 
         #plt.axis([0,410,0,30000])
-        plt.axis([0, 200, 0, 20])
+        plt.axis([0, 200, 0, 5])
         plt.show()
 
         self.count = 0
@@ -188,7 +189,7 @@ class DataVisualizer():
 
 
 
-        self.validation_set = load_pickle(self.dump_path + '/subject_' + str(4) + '/p_files/trainval_150rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p')
+        self.validation_set = load_pickle(self.dump_path + '/subject_' + str(8) + '/p_files/trainval_150rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p')
 
         test_dat = self.validation_set
         for key in test_dat:
@@ -246,7 +247,7 @@ class DataVisualizer():
         batch_size = 1
 
         self.test_dataset = torch.utils.data.TensorDataset(self.test_x_tensor, self.test_y_tensor)
-        self.test_loader = torch.utils.data.DataLoader(self.test_dataset, batch_size, shuffle=True)
+        self.test_loader = torch.utils.data.DataLoader(self.test_dataset, batch_size, shuffle=False)
         regr = load_pickle(self.dump_path + '/subject_' + str(4) + '/p_files/HoG_Linear.p')
 
 
@@ -291,7 +292,7 @@ class DataVisualizer():
         #angle_model = torch.load(self.dump_path + '/subject_' + str(self.subject) + '/p_files/convnet_2to8_alldata_armsonly_upper_angles_115b_adam_200e_4.pt')
 
         if self.loss_vector_type == 'angles':
-            model = torch.load(self.dump_path + '/subject_' + str(4) + '/p_files/convnet_2to8_alldata_angles_implbedang_115b_100e_4.pt')
+            model = torch.load(self.dump_path + '/subject_' + str(4) + '/p_files/convnet_2to8_angles_implbedang_loosetorso_115b_100e_4.pt')
         elif self.loss_vector_type == 'arms_cascade':
             model_cascade_prior = torch.load(self.dump_path + '/subject_' + str(4) + '/p_files/convnet_2to8_alldata_angles_constrained_noise_115b_100e_4.pt')
             model = torch.load(self.dump_path + '/subject_' + str(4) + '/p_files/convnet_2to8_alldata_armanglescascade_constrained_noise_115b_100e_4.pt')

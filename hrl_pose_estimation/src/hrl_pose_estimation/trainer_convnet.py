@@ -83,11 +83,11 @@ class PhysicalTrainer():
         #Entire pressure dataset with coordinates in world frame
 
         if self.opt.upper_only == True:
-            self.save_name = '_2to8_alldata_angles_' + str(self.batch_size) + 'b_' + str(self.num_epochs) + 'e_4'
+            self.save_name = '_2to8_angles_' + str(self.batch_size) + 'b_' + str(self.num_epochs) + 'e_4'
             self.loss_vector_type = 'upper_angles'
 
         else:
-            self.save_name = '_2to8_alldata_angles_implbedang_' + str(self.batch_size) + 'b_' + str(self.num_epochs) + 'e_4'
+            self.save_name = '_2to8_angles_implbedang_loosetorso_' + str(self.batch_size) + 'b_' + str(self.num_epochs) + 'e_4'
             self.loss_vector_type = 'angles'  # 'arms_cascade'#'upper_angles' #this is so you train the set to joint lengths and angles
 
         #we'll be loading this later
@@ -853,7 +853,7 @@ class PhysicalTrainer():
             self.cascade_im_tar_sc_val.append(cascade_tar_sample)
             self.cascade_im_tar_sc_val.append(cascade_sc_sample)
 
-           # VisualizationLib().visualize_pressure_map_cascade(self.full_im_tar_prior, self.cascade_im_tar_sc, block = True)
+            #VisualizationLib().visualize_pressure_map_cascade(self.full_im_tar_prior, self.cascade_im_tar_sc, block = True)
 
 
 

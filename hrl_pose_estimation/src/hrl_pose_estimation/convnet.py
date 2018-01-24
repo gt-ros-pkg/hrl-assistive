@@ -301,8 +301,10 @@ class CNN(nn.Module):
                 self.count += 1
                 if self.count < 300:
                     scores[:, 0] = (scores[:, 57] + scores[:, 58] + scores[:, 59]).sqrt()*4# consider weighting the torso by a >1 factor because it's very important to root the other joints #bad idea, increases error
-                else:
+                elif self.count < 1000:
                     scores[:, 0] = (scores[:, 57] + scores[:, 58] + scores[:, 59]).sqrt()*2# consider weighting the torso by a >1 factor because it's very important to root the other joints #bad idea, increases error
+                else:
+                    scores[:, 0] = (scores[:, 57] + scores[:, 58] + scores[:, 59]).sqrt()
                 scores[:, 1] = (scores[:, 60] + scores[:, 61] + scores[:, 62]).sqrt()
                 scores[:, 2] = (scores[:, 63] + scores[:, 64] + scores[:, 65]).sqrt()
                 scores[:, 3] = (scores[:, 66] + scores[:, 67] + scores[:, 68]).sqrt()
