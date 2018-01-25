@@ -51,28 +51,35 @@ HIGH_TAXEL_THRESH_Y = (NUMOFTAXELS_Y - 1)
 
 class SyntheticLib():
 
-    def synthetic_scale(self, images, targets):
+    def synthetic_scale(self, images, targets, bedangles, pcons = None):
 
         x = np.arange(-10 ,11)
         xU, xL = x + 0.5, x - 0.05
         prob = ss.norm.cdf(xU, scale=3) - ss.norm.cdf(xL, scale=3)
         prob = prob / prob.sum()  # normalize the probabilities so their sum is 1
         multiplier = np.random.choice(x, size=images.shape[0], p=prob)
-        multiplier = ( multiplier *0.005 ) +1
-        # plt.hist(multiplier)
-        # plt.show()
+        multiplier = ( multiplier *0.010 ) +1
+        #plt.hist(multiplier)
+        #plt.show()
+        #multiplier[:] = 1.2
+        if self.include_inter == True:
+            multiplier[bedangles[:,0,0] > 10] = 1 #we have to cut out the scaling where the bed isn't flat
 
         # print multiplier
         tar_mod = np.reshape(targets, (targets.shape[0], targets.shape[1] / 3, 3) ) /1000
 
+        #print tar_mod[0,:,:], 'prior'
         for i in np.arange(images.shape[0]):
             if self.include_inter == True:
-                # multiplier[i] = 0.8
                 resized = zoom(images[i, :, :, :], multiplier[i])
                 resized = np.clip(resized, 0, 100)
 
-                rl_diff = resized.shape[1] - images[i, :, :, :].shape[1]
-                ud_diff = resized.shape[0] - images[i, :, :, :].shape[0]
+                if pcons is not None:
+                    pcons[i,18:35] *= multiplier[i]
+
+
+                rl_diff = resized.shape[2] - images[i, :, :, :].shape[2]
+                ud_diff = resized.shape[1] - images[i, :, :, :].shape[1]
                 l_clip = np.int(math.ceil((rl_diff) / 2))
                 # r_clip = rl_diff - l_clip
                 u_clip = np.int(math.ceil((ud_diff) / 2))
@@ -80,13 +87,13 @@ class SyntheticLib():
 
                 if rl_diff < 0:  # if less than 0, we'll have to add some padding in to get back up to normal size
                     resized_adjusted = np.zeros_like(images[i, :, :, :])
-                    resized_adjusted[-u_clip:-u_clip + resized.shape[0], -l_clip:-l_clip + resized.shape[1]] = np.copy(
+                    resized_adjusted[:, -u_clip:-u_clip + resized.shape[1], -l_clip:-l_clip + resized.shape[2]] = np.copy(
                         resized)
                     images[i, :, :, :] = resized_adjusted
                     shift_factor_x = INTER_SENSOR_DISTANCE * -l_clip
                 elif rl_diff > 0:  # if greater than 0, we'll have to cut the sides to get back to normal size
                     resized_adjusted = np.copy \
-                        (resized[u_clip:u_clip + images[i, :, :, :].shape[0], l_clip:l_clip + images[i, :, :, :].shape[1]])
+                        (resized[:, u_clip:u_clip + images[i, :, :, :].shape[1], l_clip:l_clip + images[i, :, :, :].shape[2]])
                     images[i, :, :, :] = resized_adjusted
                     shift_factor_x = INTER_SENSOR_DISTANCE * -l_clip
                 else:
@@ -134,11 +141,16 @@ class SyntheticLib():
             # resized_tar2 = np.copy(resized_tar)
             resized_tar[:, 1] = resized_tar[:, 1] + NUMOFTAXELS_X * (1 - multiplier[i]) * INTER_SENSOR_DISTANCE + shift_factor_y  - INTER_SENSOR_DISTANCE #- 10 * INTER_SENSOR_DISTANCE * (1 - multiplier[i])
             # resized_tar[7,:] = [-0.286,0,0]
+            resized_tar[:, 2] = np.copy(tar_mod[i, :, 2]) * multiplier[i]
+
+
+
             tar_mod[i, :, :] = resized_tar
 
+        #print tar_mod[0,:,:], 'post'
         targets = np.reshape(tar_mod, (targets.shape[0], targets.shape[1])) * 1000
 
-        return images, targets
+        return images, targets, pcons
 
 
     def synthetic_shiftxy(self, images, targets, bedangles):
@@ -302,6 +314,8 @@ class SyntheticLib():
 
         if pcons_tensor is not None: pcons = pcons_tensor.numpy()
         else: pcons = None
+        if len(imagesangles.shape) < 4:
+            imagesangles = np.expand_dims(imagesangles, 0)
 
 
         if bedangle == True:
@@ -320,7 +334,7 @@ class SyntheticLib():
 
 
         if scale == True:
-            images, targets = self.synthetic_scale(images, targets)
+            images, targets, pcons = self.synthetic_scale(images, targets, bedangles, pcons)
         if flip == True:
             images, targets, pcons = self.synthetic_fliplr(images, targets, pcons)
         if shift == True:

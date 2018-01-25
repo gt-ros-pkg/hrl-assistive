@@ -225,8 +225,27 @@ class VisualizationLib():
             target_coord[:, 1] *= -1.0
             ax2.plot(target_coord[:, 0], target_coord[:, 1], marker = 'o', linestyle='None', markerfacecolor = 'white',markeredgecolor='black', ms=8)
         plt.pause(0.0001)
-        plt.show(block = block)
-        return
+
+        axkeep = plt.axes([0.01, 0.05, 0.15, 0.075])
+        axdisc = plt.axes([0.01, 0.15, 0.15, 0.075])
+        bdisc = Button(axdisc, 'Skip Image')
+        bdisc.on_clicked(self.skip)
+        bkeep = Button(axkeep, 'Continue')
+        bkeep.on_clicked(self.cont)
+
+        plt.show(block=block)
+
+        return self.skip_image
+
+
+    def skip(self, event):
+        plt.close()
+        self.skip_image = True
+
+    def cont(self, event):
+        plt.close()
+        self.skip_image = False
+
 
     def visualize_pressure_map_cascade(self, full_im_tar_prior, cascade_im_tar_sc, full_im_tar_prior_val = None, cascade_im_tar_sc_val = None, block = False):
         full_im = full_im_tar_prior[0]
@@ -441,8 +460,8 @@ class VisualizationLib():
             Tmarker.scale.y = 0.05
             Tmarker.scale.z = 0.05
             Tmarker.color.a = 1.0
-            Tmarker.color.r = 1.0
-            Tmarker.color.g = 1.0
+            Tmarker.color.r = 0.0
+            Tmarker.color.g = 0.69
             Tmarker.color.b = 0.0
             Tmarker.pose.orientation.w = 1.0
             Tmarker.pose.position.x = targets[joint, 0]
@@ -466,7 +485,7 @@ class VisualizationLib():
             Smarker.scale.y = 0.04
             Smarker.scale.z = 0.04
             Smarker.color.a = 1.0
-            Smarker.color.r = 0.
+            Smarker.color.r = 1.0
             Smarker.color.g = 1.0
             Smarker.color.b = 1.0
             Smarker.pose.orientation.w = 1.0
@@ -494,7 +513,7 @@ class VisualizationLib():
                 PTmarker.color.a = 1.0
                 PTmarker.color.r = 1.0
                 PTmarker.color.g = 1.0
-                PTmarker.color.b = 0.0
+                PTmarker.color.b = 1.0
                 PTmarker.pose.orientation.w = 1.0
                 PTmarker.pose.position.x = pseudotargets[joint, 0]
                 PTmarker.pose.position.y = pseudotargets[joint, 1]

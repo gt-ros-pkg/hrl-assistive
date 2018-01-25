@@ -743,27 +743,27 @@ class KinematicsLib():
                     #get the neck in vectorized form
                     pseudotargets[:, 0] = torso_lengths_angles_v[:, 37]
                     pseudotargets[:, 1] = torso_lengths_angles_v[:, 38] + torso_lengths_angles[:, 21] * (0. + torso_lengths_angles_v[:, 18]).cos()
-                    pseudotargets[:, 2] = torso_lengths_angles_v[:, 39] - torso_lengths_angles[:, 18] + torso_lengths_angles[:, 21] * (0. + torso_lengths_angles_v[:, 18]).sin()
+                    pseudotargets[:, 2] = torso_lengths_angles_v[:, 39] - torso_lengths_angles[:, 20] + torso_lengths_angles[:, 21] * (0. + torso_lengths_angles_v[:, 18]).sin()
 
                     #get the right shoulder in vectorized form
                     pseudotargets[:, 3] = torso_lengths_angles_v[:, 37] - torso_lengths_angles[:, 22]
                     pseudotargets[:, 4] = torso_lengths_angles_v[:, 38] + torso_lengths_angles[:, 21] * (0. + torso_lengths_angles_v[:, 18]).cos()
-                    pseudotargets[:, 5] = torso_lengths_angles_v[:, 39] - torso_lengths_angles[:, 18] + torso_lengths_angles[:, 21] * (0. + torso_lengths_angles_v[:, 18]).sin()
+                    pseudotargets[:, 5] = torso_lengths_angles_v[:, 39] - torso_lengths_angles[:, 20] + torso_lengths_angles[:, 21] * (0. + torso_lengths_angles_v[:, 18]).sin()
 
                     #print \the left shoulder in vectorized form
                     pseudotargets[:, 6] = torso_lengths_angles_v[:, 37] + torso_lengths_angles[:, 23]
                     pseudotargets[:, 7] = torso_lengths_angles_v[:, 38] + torso_lengths_angles[:, 21] * (0. + torso_lengths_angles_v[:, 18]).cos()
-                    pseudotargets[:, 8] = torso_lengths_angles_v[:, 39] - torso_lengths_angles[:, 18] + torso_lengths_angles[:, 21] * (0. + torso_lengths_angles_v[:, 18]).sin()
+                    pseudotargets[:, 8] = torso_lengths_angles_v[:, 39] - torso_lengths_angles[:, 20] + torso_lengths_angles[:, 21] * (0. + torso_lengths_angles_v[:, 18]).sin()
 
                     #get the right glute in vectorized form
                     pseudotargets[:, 9] = torso_lengths_angles_v[:, 37] - torso_lengths_angles[:, 31]
-                    pseudotargets[:, 10] = torso_lengths_angles_v[:, 38] - torso_lengths_angles[:, 30]
-                    pseudotargets[:, 11] = torso_lengths_angles_v[:, 39] - torso_lengths_angles[:, 29]
+                    pseudotargets[:, 10] = torso_lengths_angles_v[:, 38] - torso_lengths_angles[:, 30] * (0. + torso_lengths_angles_v[:, 19]).cos()
+                    pseudotargets[:, 11] = torso_lengths_angles_v[:, 39] - torso_lengths_angles[:, 29] + torso_lengths_angles[:, 30] * (0. + torso_lengths_angles_v[:, 19]).sin()
 
                     #print \the left glute in vectorized form
                     pseudotargets[:, 12] = torso_lengths_angles_v[:, 37] + torso_lengths_angles[:, 32]
-                    pseudotargets[:, 13] = torso_lengths_angles_v[:, 38] - torso_lengths_angles[:, 30]
-                    pseudotargets[:, 14] = torso_lengths_angles_v[:, 39] - torso_lengths_angles[:, 29]
+                    pseudotargets[:, 13] = torso_lengths_angles_v[:, 38] - torso_lengths_angles[:, 30] * (0. + torso_lengths_angles_v[:, 19]).cos()
+                    pseudotargets[:, 14] = torso_lengths_angles_v[:, 39] - torso_lengths_angles[:, 29] + torso_lengths_angles[:, 30] * (0. + torso_lengths_angles_v[:, 19]).sin()
 
                     pseudotargets = pseudotargets.data.numpy() * 1000
 
