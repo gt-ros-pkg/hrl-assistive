@@ -27,6 +27,7 @@ import convnet as convnet
 import convnet_cascade as convnet_cascade
 import tf.transformations as tft
 
+import hrl_lib.util as ut
 import pickle
 from hrl_lib.util import load_pickle
 

@@ -28,7 +28,7 @@ from visualization_msgs.msg import MarkerArray
 
 
 import pickle
-from util import load_pickle
+from hrl_lib.util import load_pickle
 
 
 # PyTorch libraries

@@ -23,7 +23,7 @@ from sklearn.utils import shuffle
 
 
 import pickle
-from util import load_pickle
+from hrl_lib.util import load_pickle
 import rospkg
 import roslib
 import rospy
