@@ -78,7 +78,7 @@ class PhysicalTrainer():
         self.verbose = opt.verbose
         self.opt = opt
         self.batch_size = 115
-        self.num_epochs = 150
+        self.num_epochs = 1
         self.include_inter = True
 
 
@@ -400,7 +400,7 @@ class PhysicalTrainer():
         elif self.loss_vector_type == 'direct':
             self.optimizer2 = optim.Adam(self.model.parameters(), lr=0.00005, weight_decay=0.0005)
         #self.optimizer = optim.RMSprop(self.model.parameters(), lr=0.000001, momentum=0.7, weight_decay=0.0005)
-        self.optimizer = optim.Adam(self.model.parameters(), lr=0.00005, weight_decay=0.0005) #start with .00005
+        self.optimizer = optim.Adam(self.model.parameters(), lr=0.00003, weight_decay=0.0005) #start with .00005
 
 
         # train the model one epoch at a time
@@ -467,7 +467,7 @@ class PhysicalTrainer():
                 batch[0], batch[1], batch[2]= SyntheticLib().synthetic_master(batch[0], batch[1], batch[2], flip=True, shift=True, scale=True, bedangle=True, include_inter=self.include_inter, loss_vector_type=self.loss_vector_type)
 
 
-                images_up = Variable(torch.Tensor(np.array(PreprocessingLib().preprocessing_pressure_map_upsample(batch[0].numpy()[:, :, 5:79, 5:42]))),requires_grad=False)
+                images_up = Variable(torch.Tensor(np.array(PreprocessingLib().preprocessing_pressure_map_upsample(batch[0].numpy()[:, :, 10:74, 10:37]))),requires_grad=False)
                 images, targets, constraints = Variable(batch[0], requires_grad = False), Variable(batch[1], requires_grad = False), Variable(batch[2], requires_grad = False)
 
 
@@ -613,7 +613,7 @@ class PhysicalTrainer():
 
 
                 images_up = batch[0].numpy()
-                images_up = images_up[:, :, 5:79, 5:42]
+                images_up = images_up[:, :, 10:74, 10:37]
                 images_up = PreprocessingLib().preprocessing_pressure_map_upsample(images_up)
                 images_up = np.array(images_up)
                 images_up = Variable(torch.Tensor(images_up), volatile = True, requires_grad = False)

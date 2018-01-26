@@ -58,7 +58,7 @@ class SyntheticLib():
         prob = ss.norm.cdf(xU, scale=3) - ss.norm.cdf(xL, scale=3)
         prob = prob / prob.sum()  # normalize the probabilities so their sum is 1
         multiplier = np.random.choice(x, size=images.shape[0], p=prob)
-        multiplier = ( multiplier *0.010 ) +1
+        multiplier = ( multiplier *0.020 ) +1
         #plt.hist(multiplier)
         #plt.show()
         #multiplier[:] = 1.2
@@ -157,7 +157,7 @@ class SyntheticLib():
 
         #use bed angles to keep it from shifting in the x and y directions
 
-        x = np.arange(-3, 4)
+        x = np.arange(-5, 6)
         xU, xL = x + 0.5, x - 0.5
         prob = ss.norm.cdf(xU, scale=2) - ss.norm.cdf(xL, scale=2) #scale is the standard deviation using a cumulative density function
         prob = prob / prob.sum()  # normalize the probabilities so their sum is 1
