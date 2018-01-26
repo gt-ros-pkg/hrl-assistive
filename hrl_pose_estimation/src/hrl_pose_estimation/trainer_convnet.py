@@ -102,7 +102,6 @@ class PhysicalTrainer():
                 print 'starting anew'
 
         if self.opt.quick_test == False:
-            cd
             print 'appending to','train'+self.save_name+str(self.opt.leaveOut)
             self.train_val_losses_all['train'+self.save_name+str(self.opt.leaveOut)] = []
             self.train_val_losses_all['val'+self.save_name+str(self.opt.leaveOut)] = []
