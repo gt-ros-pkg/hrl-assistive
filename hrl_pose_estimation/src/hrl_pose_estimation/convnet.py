@@ -33,11 +33,11 @@ class CNN(nn.Module):
         self.count = 0
 
         self.CNN_pack1 = nn.Sequential(
-            nn.Conv2d(3, hidden_dim1, kernel_size = 7, stride = 2, padding = 1),
+            nn.Conv2d(3, hidden_dim1, kernel_size = 7, stride = 2, padding = 2),
             nn.ReLU(inplace = True),
-            nn.Conv2d(hidden_dim1, hidden_dim2, kernel_size=5, stride=2, padding= 1),
+            nn.Conv2d(hidden_dim1, hidden_dim2, kernel_size=5, stride=2, padding= 2),
             nn.ReLU(inplace=True),
-            nn.Conv2d(hidden_dim2, hidden_dim3, kernel_size=4, stride=2, padding= 1),
+            nn.Conv2d(hidden_dim2, hidden_dim3, kernel_size=4, stride=2, padding= 2),
             nn.ReLU(inplace=True),
             nn.Conv2d(hidden_dim3, hidden_dim4, kernel_size=4, stride=2, padding= 1),
             nn.ReLU(inplace=True),
@@ -86,7 +86,7 @@ class CNN(nn.Module):
         #    nn.Linear(300, out_size),
         #)
         self.CNN_fc1 = nn.Sequential(
-            nn.Linear(6400, 2500), #4096 for when we only pad the sides by 5 each instead of 10
+            nn.Linear(5760, 2500), #4096 for when we only pad the sides by 5 each instead of 10
             #nn.ReLU(inplace = True),
             #nn.Linear(5760, 3000),
             nn.Linear(2500, 1000),
