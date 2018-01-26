@@ -28,7 +28,7 @@ import convnet_cascade as convnet_cascade
 import tf.transformations as tft
 
 import pickle
-from hrl_lib.util import load_pickle
+from util import load_pickle
 
 # Pose Estimation Libraries
 from create_dataset_lib import CreateDatasetLib
@@ -82,13 +82,16 @@ class PhysicalTrainer():
         print test_file
         #Entire pressure dataset with coordinates in world frame
 
-        self.save_name = '_2to8_direct_scaling_' + str(self.batch_size) + 'b_' + str(self.num_epochs) + 'e_4'
-        self.loss_vector_type = 'direct'  # 'arms_cascade'#'upper_angles' #this is so you train the set to joint lengths and angles
+        self.save_name = '_2to8_angles_scaling_' + str(self.batch_size) + 'b_' + str(self.num_epochs) + 'e_4'
+        self.loss_vector_type = 'angles'  # 'arms_cascade'#'upper_angles' #this is so you train the set to joint lengths and angles
 
         #we'll be loading this later
         if self.opt.computer == 'lab_harddrive':
             #try:
             self.train_val_losses_all = load_pickle('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/train_val_losses_all.p')
+        elif self.opt.computer == 'aws':
+            self.train_val_losses_all = load_pickle('/home/ubuntu/Autobed_OFFICIAL_Trials/train_val_losses_all.p')
+
         else:
             try:
                 self.train_val_losses_all = load_pickle('/home/henryclever/hrl_file_server/Autobed/train_val_losses_all.p')
@@ -294,7 +297,10 @@ class PhysicalTrainer():
                 regr.fit(images_up, targets)
             print 'done fitting'
 
-            pkl.dump(regr, open('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leaveOut) + '/p_files/HoG_Linear.p', 'wb'))
+            if self.opt.computer == 'lab_harddrive':
+                pkl.dump(regr, open('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leaveOut) + '/p_files/HoG_Linear.p', 'wb'))
+            elif self.opt.computer == 'aws':
+                pkl.dump(regr, open('/home/ubuntu/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leaveOut) + '/p_files/HoG_Linear.p', 'wb'))
 
             #validation
             for batchtest_idx, batchtest in enumerate(self.test_loader):
@@ -363,6 +369,13 @@ class PhysicalTrainer():
         if self.loss_vector_type == 'angles':
             fc_output_size = 40#38 #18 angles for body, 17 lengths for body, 3 torso coordinates
             self.model = convnet.CNN(self.mat_size, fc_output_size, hidden_dim, kernel_size, self.loss_vector_type)
+            pp = 0
+            for p in list(self.model.parameters()):
+                nn = 1
+                for s in list(p.size()):
+                    nn = nn * s
+                pp += nn
+            print pp, 'num params'
         elif self.loss_vector_type == 'arms_cascade':
             #we'll make a double pass through this network for the validation for each arm.
             fc_output_size = 4 #4 angles for arms
@@ -414,6 +427,11 @@ class PhysicalTrainer():
                 torch.save(self.model, '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_'+str(self.opt.leaveOut)+'/p_files/convnet'+self.save_name+'.pt')
                 pkl.dump(self.train_val_losses_all,
                          open(os.path.join('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/train_val_losses_all.p'), 'wb'))
+
+            elif self.opt.computer == 'aws':
+                torch.save(self.model, '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_'+str(self.opt.leaveOut)+'/convnet'+self.save_name+'.pt')
+                pkl.dump(self.train_val_losses_all,
+                         open(os.path.join('/home/ubuntu/Autobed_OFFICIAL_Trials/train_val_losses_all.p'), 'wb'))
 
             else:
                 torch.save(self.model, '/home/henryclever/hrl_file_server/Autobed/subject_'+str(self.opt.leaveOut)+'/p_files/convnet'+self.save_name+'.pt')
@@ -712,7 +730,7 @@ if __name__ == "__main__":
                  dest='testPath',\
                  default='/home/henryclever/hrl_file_server/Autobed/pose_estimation_data/basic_test_dataset.p', \
                  help='Specify path to the training database.')
-    p.add_option('--lab_hd', action='store', type = 'string',
+    p.add_option('--computer', action='store', type = 'string',
                  dest='computer', \
                  default='lab_harddrive', \
                  help='Set path to the training database on lab harddrive.')
@@ -757,6 +775,36 @@ if __name__ == "__main__":
         if opt.quick_test == True:
             opt.subject4Path = '/home/henryclever/test/trainval4_150rh1_sit120rh.p'
             opt.subject8Path = '/home/henryclever/test/trainval8_150rh1_sit120rh.p'
+
+
+
+        training_database_file = []
+
+    elif opt.computer == 'aws':
+
+        opt.subject2Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_2/trainval_150rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p'
+        opt.subject3Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_3/trainval_150rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p'
+        opt.subject4Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_4/trainval_150rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p'
+        opt.subject5Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_5/trainval_150rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p'
+        opt.subject6Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_6/trainval_150rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p'
+        opt.subject7Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_7/trainval_150rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p'
+        opt.subject8Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_8/trainval_150rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p'
+        opt.subject9Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_9/trainval_150rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p'
+        opt.subject10Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_10/trainval_150rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p'
+        opt.subject11Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_11/trainval_150rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p'
+        opt.subject12Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_12/trainval_150rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p'
+        opt.subject13Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_13/trainval_150rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p'
+        opt.subject14Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_14/trainval_150rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p'
+        opt.subject15Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_15/trainval_150rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p'
+        opt.subject16Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_16/trainval_150rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p'
+        opt.subject17Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_17/trainval_150rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p'
+        opt.subject18Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_18/trainval_150rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p'
+
+        #shortcut:
+
+        if opt.quick_test == True:
+            opt.subject4Path = '/home/ubuntu/test/trainval4_150rh1_sit120rh.p'
+            opt.subject8Path = '/home/ubuntu/test/trainval8_150rh1_sit120rh.p'
 
 
 
@@ -862,7 +910,7 @@ if __name__ == "__main__":
     p = PhysicalTrainer(training_database_file, test_database_file, opt)
 
     if test_bool == True:
-        trained_model = load_pickle(opt.modelPath+'/'+training_type+'.p')#Where the trained model is 
+        trained_model = load_pickle(opt.modelPath+'/'+training_type+'.p')#Where the trained model is
         p.test_learning_algorithm(trained_model)
         sys.exit()
     else:
@@ -871,8 +919,8 @@ if __name__ == "__main__":
 
 
         #if training_type == 'convnet_2':
-        #p.init_convnet_train()
-        p.baseline_train()
+        p.init_convnet_train()
+        #p.baseline_train()
 
         #else:
         #    print 'Please specify correct training type:1. HoG_KNN 2. convnet_2'

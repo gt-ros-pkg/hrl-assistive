@@ -287,6 +287,13 @@ class DataVisualizer():
 
         if self.loss_vector_type == 'angles':
             model = torch.load(self.dump_path + '/subject_' + str(4) + '/p_files/convnet_2to8_angles_implbedang_loosetorso_115b_100e_4.pt')
+            pp = 0
+            for p in list(model.parameters()):
+                nn = 1
+                for s in list(p.size()):
+                    nn = nn * s
+                pp += nn
+            print pp, 'num params'
         elif self.loss_vector_type == 'arms_cascade':
             model_cascade_prior = torch.load(self.dump_path + '/subject_' + str(4) + '/p_files/convnet_2to8_alldata_angles_constrained_noise_115b_100e_4.pt')
             model = torch.load(self.dump_path + '/subject_' + str(4) + '/p_files/convnet_2to8_alldata_armanglescascade_constrained_noise_115b_100e_4.pt')

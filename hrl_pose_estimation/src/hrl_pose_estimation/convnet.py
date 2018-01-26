@@ -86,7 +86,7 @@ class CNN(nn.Module):
         #    nn.Linear(300, out_size),
         #)
         self.CNN_fc1 = nn.Sequential(
-            nn.Linear(4096, 2500), #4096 for when we only pad the sides by 5 each instead of 10
+            nn.Linear(6400, 2500), #4096 for when we only pad the sides by 5 each instead of 10
             #nn.ReLU(inplace = True),
             #nn.Linear(5760, 3000),
             nn.Linear(2500, 1000),
