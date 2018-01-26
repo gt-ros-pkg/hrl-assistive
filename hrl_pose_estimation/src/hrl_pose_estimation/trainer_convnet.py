@@ -705,7 +705,8 @@ class PhysicalTrainer():
             self.sc_sampleval = np.squeeze(self.sc_sampleval[0, :]) / 1000
             self.sc_sampleval = np.reshape(self.sc_sampleval, self.output_size)
 
-            VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample,self.im_sampleval, self.tar_sampleval, self.sc_sampleval, block=False)
+            if self.opt.visualize == True:
+                VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample,self.im_sampleval, self.tar_sampleval, self.sc_sampleval, block=False)
 
 
         return loss
@@ -743,6 +744,10 @@ if __name__ == "__main__":
                  help='Train only on data from the arms, both sitting and laying.')
     p.add_option('--qt', action='store_true',
                  dest='quick_test', \
+                 default=False, \
+                 help='Train only on data from the arms, both sitting and laying.')
+    p.add_option('--viz', action='store_true',
+                 dest='visualize', \
                  default=False, \
                  help='Train only on data from the arms, both sitting and laying.')
 
