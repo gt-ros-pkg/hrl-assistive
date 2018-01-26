@@ -28,7 +28,7 @@ import convnet_cascade as convnet_cascade
 import tf.transformations as tft
 
 import pickle
-from util import load_pickle
+from hrl_lib.util import load_pickle
 
 # Pose Estimation Libraries
 from create_dataset_lib import CreateDatasetLib

@@ -228,7 +228,6 @@ class VisualizationLib():
 
         axkeep = plt.axes([0.01, 0.05, 0.15, 0.075])
         axdisc = plt.axes([0.01, 0.15, 0.15, 0.075])
-        self.skip_image = True
         bdisc = Button(axdisc, 'Skip Image')
         bdisc.on_clicked(self.skip)
         bkeep = Button(axkeep, 'Continue')
