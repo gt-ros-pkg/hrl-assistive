@@ -23,10 +23,6 @@ from sklearn import svm, linear_model, decomposition, kernel_ridge, neighbors
 from sklearn import metrics, cross_validation
 from sklearn.utils import shuffle
 
-import convnet as convnet
-import convnet_cascade as convnet_cascade
-import tf.transformations as tft
-
 import hrl_lib.util as ut
 import pickle
 from hrl_lib.util import load_pickle
@@ -48,6 +44,10 @@ import torch.optim as optim
 from torchvision import transforms
 from torch.autograd import Variable
 
+
+import convnet as convnet
+import convnet_cascade as convnet_cascade
+import tf.transformations as tft
 
 
 np.set_printoptions(threshold='nan')
@@ -100,6 +100,7 @@ class PhysicalTrainer():
                 print 'starting anew'
 
         if self.opt.quick_test == False:
+            cd
             print 'appending to','train'+self.save_name+str(self.opt.leaveOut)
             self.train_val_losses_all['train'+self.save_name+str(self.opt.leaveOut)] = []
             self.train_val_losses_all['val'+self.save_name+str(self.opt.leaveOut)] = []
