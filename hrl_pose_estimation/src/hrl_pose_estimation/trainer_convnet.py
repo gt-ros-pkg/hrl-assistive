@@ -6,6 +6,34 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.pylab import *
 
+
+#PyTorch libraries
+import argparse
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+from torchvision import transforms
+from torch.autograd import Variable
+
+
+import convnet as convnet
+import convnet_cascade as convnet_cascade
+import tf.transformations as tft
+
+import hrl_lib.util as ut
+import pickle
+from hrl_lib.util import load_pickle
+
+# Pose Estimation Libraries
+from create_dataset_lib import CreateDatasetLib
+from synthetic_lib import SyntheticLib
+from visualization_lib import VisualizationLib
+from kinematics_lib import KinematicsLib
+from cascade_lib import CascadeLib
+from preprocessing_lib import PreprocessingLib
+
+
 import cPickle as pkl
 import random
 from scipy import ndimage
@@ -22,32 +50,6 @@ from sklearn.preprocessing import normalize
 from sklearn import svm, linear_model, decomposition, kernel_ridge, neighbors
 from sklearn import metrics, cross_validation
 from sklearn.utils import shuffle
-
-import hrl_lib.util as ut
-import pickle
-from hrl_lib.util import load_pickle
-
-# Pose Estimation Libraries
-from create_dataset_lib import CreateDatasetLib
-from synthetic_lib import SyntheticLib
-from visualization_lib import VisualizationLib
-from kinematics_lib import KinematicsLib
-from cascade_lib import CascadeLib
-from preprocessing_lib import PreprocessingLib
- 
-#PyTorch libraries
-import argparse
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
-from torchvision import transforms
-from torch.autograd import Variable
-
-
-import convnet as convnet
-import convnet_cascade as convnet_cascade
-import tf.transformations as tft
 
 
 np.set_printoptions(threshold='nan')
