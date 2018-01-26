@@ -426,21 +426,21 @@ class PhysicalTrainer():
         print self.train_val_losses_all, 'trainval'
         # Save the model (architecture and weights)
 
-        if self.opt.quick_test == False:
-            if self.opt.computer == 'lab_harddrive':
-                torch.save(self.model, '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_'+str(self.opt.leaveOut)+'/p_files/convnet'+self.save_name+'.pt')
-                pkl.dump(self.train_val_losses_all,
-                         open(os.path.join('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/train_val_losses_all.p'), 'wb'))
+        #if self.opt.quick_test == False:
+        if self.opt.computer == 'lab_harddrive':
+            torch.save(self.model, '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_'+str(self.opt.leaveOut)+'/p_files/convnet'+self.save_name+'.pt')
+            pkl.dump(self.train_val_losses_all,
+                     open(os.path.join('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/train_val_losses_all.p'), 'wb'))
 
-            elif self.opt.computer == 'aws':
-                torch.save(self.model, '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_'+str(self.opt.leaveOut)+'/convnet'+self.save_name+'.pt')
-                pkl.dump(self.train_val_losses_all,
-                         open(os.path.join('/home/ubuntu/Autobed_OFFICIAL_Trials/train_val_losses_all.p'), 'wb'))
+        elif self.opt.computer == 'aws':
+            torch.save(self.model, '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_'+str(self.opt.leaveOut)+'/convnet'+self.save_name+'.pt')
+            pkl.dump(self.train_val_losses_all,
+                     open(os.path.join('/home/ubuntu/Autobed_OFFICIAL_Trials/train_val_losses_all.p'), 'wb'))
 
-            else:
-                torch.save(self.model, '/home/henryclever/hrl_file_server/Autobed/subject_'+str(self.opt.leaveOut)+'/p_files/convnet'+self.save_name+'.pt')
-                pkl.dump(self.train_val_losses_all,
-                         open(os.path.join('/home/henryclever/hrl_file_server/Autobed/train_val_losses_all.p'), 'wb'))
+        else:
+            torch.save(self.model, '/home/henryclever/hrl_file_server/Autobed/subject_'+str(self.opt.leaveOut)+'/p_files/convnet'+self.save_name+'.pt')
+            pkl.dump(self.train_val_losses_all,
+                     open(os.path.join('/home/henryclever/hrl_file_server/Autobed/train_val_losses_all.p'), 'wb'))
 
 
     def train_convnet(self, epoch):
