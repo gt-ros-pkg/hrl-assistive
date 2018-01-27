@@ -276,10 +276,11 @@ class DatabaseCreator():
         plt.close()
         self.keep_image = True
 
-    def rand_index_p_length(self, p_file):
+    def rand_index_p_length(self, p_file, shuffle = True):
         #this makes a new list of integers in the range of the p file length. It shuffles them.
         indexList = range(0, len(p_file))
-        random.shuffle(indexList)
+        if shuffle == True:
+            random.shuffle(indexList)
         return indexList
 
     def head_origin_callback(self, data):
@@ -688,7 +689,7 @@ class DatabaseCreator():
         upper_angles_i = []
         lower_angles_i = []
         angle_i = []
-        for subject in [9,10,11,12,13,14,15,16,17,18]:
+        for subject in [8]:
         #for subject in [12]:
         #for subject in [16]:#13, 14, 15, 16, 17, 18]:
 
@@ -705,17 +706,20 @@ class DatabaseCreator():
 
 
 
-            for movement in ['RH_sitting','LH_sitting','RL_sitting','LL_sitting','RH1','LH1','RH2','RH3','LH2','LH3','RL','LL']:
-            #for movement in ['LH2','LH3','LL','RL']:
+            #for movement in ['RH_sitting','LH_sitting','RL_sitting','LL_sitting','RH1','LH1','RH2','RH3','LH2','LH3','RL','LL']:
+            #for movement in ['LH2','LH3','LL'
+        # ,'RL']:
 
-            #for movement in ['RH_sitting','RH1']:#'LH_sitting','RL_sitting','LL_sitting']:
+            for movement in ['LL']:#'LH_sitting','RL_sitting','LL_sitting']:
             #self.training_dump_path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_'+str(subject)
             #print self.training_dump_path
 
                 p_file = load_pickle(self.training_dump_path+str(subject)+'/p_files/'+movement+'.p')
                 count = 0
 
-                indexlist = self.rand_index_p_length(p_file)
+
+
+                indexlist = self.rand_index_p_length(p_file, shuffle = False)
 
 
                 if movement == 'head':
@@ -728,6 +732,8 @@ class DatabaseCreator():
                     num_samp = 120
                 else:
                     num_samp = 100
+
+                num_samp = 500
 
                 print 'working on subject: ',subject, '  movement type:', movement, '  length: ',len(p_file), '  Number sampled: ',num_samp
 
@@ -756,6 +762,9 @@ class DatabaseCreator():
                         print 'resetting index list'
                         indexlist = self.rand_index_p_length(p_file)
                         index = indexlist.pop()
+
+                    print count, 'count', index, 'index', np.shape(indexlist), 'length of list'
+
 
 
 
@@ -792,14 +801,28 @@ class DatabaseCreator():
                     torso[0:3, 0] = rot_target_mat[1, :]
                     # print torso
 
+                    #just do this for subject 16 because it has a messed up marker flip between right hand and right foot
+                    if subject == 16:
+                        if rot_target_mat[4, 1] < 0.8:
+                            queue = np.copy(rot_target_mat[8, :])
+                            rot_target_mat[8, :] = np.copy(rot_target_mat[4, :])
+                            rot_target_mat[4, :] = queue
+                            #print 'flipped', movement
 
-                    if rot_target_mat[4, 1] < 0.8:
-                        queue = np.copy(rot_target_mat[8, :])
-                        rot_target_mat[8, :] = np.copy(rot_target_mat[4, :])
-                        rot_target_mat[4, :] = queue
-                        #print 'flipped', movement
+                    if subject == 7:
+                        if rot_target_mat[2, 1] < 0.8: #NASTY!!!
+                            queue1 = np.copy(rot_target_mat[8, :])
+                            queue2 = np.copy(rot_target_mat[5, :])
+                            rot_target_mat[8, :] = np.copy(rot_target_mat[2, :])
+                            rot_target_mat[5, :] = queue1
+                            rot_target_mat[2, :] = queue2
+                        elif rot_target_mat[5, 1] < 0.8:
+                            queue = np.copy(rot_target_mat[8, :])
+                            rot_target_mat[8, :] = np.copy(rot_target_mat[5, :])
+                            rot_target_mat[5, :] = queue
+                            print 'flipped', movement
 
-                    #print rot_target_mat
+                    #print rot_target_mat, 'print rot tar mat'
 
 
 
@@ -832,8 +855,9 @@ class DatabaseCreator():
                     kin_targets = np.concatenate((arm_targets, leg_targets), axis = 0)
                     pseudotargets = np.concatenate((arm_pseudotargets, leg_pseudotargets), axis = 0)
 
-                    #VisualizationLib().rviz_publish_input(rot_p_map, angle)
-                    #VisualizationLib().rviz_publish_output(rot_target_mat, kin_targets / 1000, pseudotargets)
+                    if index % 1 == 0:
+                        VisualizationLib().rviz_publish_input(rot_p_map, angle)
+                        VisualizationLib().rviz_publish_output(rot_target_mat, kin_targets / 1000, pseudotargets)
 
                     #get the distances from the bed. this will help us to do an a per instance loss and for final error evaluation,
                     #so we can throw out joint poses that are too far away.

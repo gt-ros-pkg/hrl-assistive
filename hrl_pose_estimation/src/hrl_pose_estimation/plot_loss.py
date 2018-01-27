@@ -155,12 +155,12 @@ class DataVisualizer():
 
 
                 #plt.plot(train_val_loss_all['epoch_2to8_alldata_angles_115b_adam_200e_44'], train_val_loss_all['train_2to8_alldata_angles_115b_adam_200e_44'], 'k')
-                plt.plot(train_val_loss_all['epoch_2to8_alldata_angles_115b_adam_200e_44'], train_val_loss_all['val_2to8_alldata_angles_115b_adam_200e_44'], 'y')
+                #plt.plot(train_val_loss_all['epoch_2to8_alldata_angles_115b_adam_200e_44'], train_val_loss_all['val_2to8_alldata_angles_115b_adam_200e_44'], 'y')
                 #plt.plot(train_val_loss_all['epoch_2to8_alldata_angles_constrained_noise_115b_100e_44'], train_val_loss_all['train_2to8_alldata_angles_constrained_noise_115b_100e_44'], 'b')
-                plt.plot(train_val_loss_all['epoch_2to8_alldata_angles_constrained_noise_115b_100e_44'], train_val_loss_all['val_2to8_alldata_angles_constrained_noise_115b_100e_44'], 'r')
+                #plt.plot(train_val_loss_all['epoch_2to8_alldata_angles_constrained_noise_115b_100e_44'], train_val_loss_all['val_2to8_alldata_angles_constrained_noise_115b_100e_44'], 'r')
                 #plt.plot(train_val_loss_all['epoch_2to8_alldata_angles_s10to18_115b_50e_44'], train_val_loss_all['val_2to8_alldata_angles_s10to18_115b_50e_44'], 'g')
-                plt.plot(train_val_loss_all['epoch_2to8_alldata_angles_implbedang_115b_100e_44'], train_val_loss_all['val_2to8_alldata_angles_implbedang_115b_100e_44'], 'g')
-                plt.plot(train_val_loss_all['epoch_2to8_angles_implbedang_loosetorso_115b_100e_44'], train_val_loss_all['val_2to8_angles_implbedang_loosetorso_115b_100e_44'], 'k')
+                #plt.plot(train_val_loss_all['epoch_2to8_alldata_angles_implbedang_115b_100e_44'], train_val_loss_all['val_2to8_alldata_angles_implbedang_115b_100e_44'], 'g')
+                #plt.plot(train_val_loss_all['epoch_2to8_angles_implbedang_loosetorso_115b_100e_44'], train_val_loss_all['val_2to8_angles_implbedang_loosetorso_115b_100e_44'], 'k')
 
 
 
@@ -357,7 +357,8 @@ class DataVisualizer():
                         print batch_idx #angles_est
                         cum_error.append(error_norm[0])
                         #cum_distance=bed_distances[0]*50
-                        cum_distance.append(np.squeeze(targets_est))
+                        cum_distance.append(np.squeeze(targets_est-targets))
+
 
                     print angles_est
                     #print std_distance
@@ -371,12 +372,12 @@ class DataVisualizer():
                     self.pseudo_sample = pseudotargets_est
                     self.pseudo_sample = np.squeeze(self.pseudo_sample[0, :]) / 1000
                     self.pseudo_sample = np.reshape(self.pseudo_sample, (5, 3))
-                    VisualizationLib().rviz_publish_input(self.im_sample[0, :, :], self.im_sample[-1, 10, 10])
-                    VisualizationLib().rviz_publish_output(np.reshape(self.tar_sample, self.output_size), self.sc_sample, self.pseudo_sample)
-                    skip_image = VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample,block=True)
+                    #VisualizationLib().rviz_publish_input(self.im_sample[0, :, :], self.im_sample[-1, 10, 10])
+                    #VisualizationLib().rviz_publish_output(np.reshape(self.tar_sample, self.output_size), self.sc_sample, self.pseudo_sample)
+                    #skip_image = VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample,block=True)
                     # VisualizationLib().visualize_error_from_distance(bed_distances, error_norm)
-                    if skip_image == True:
-                        count2 = 15
+                    #if skip_image == True:
+                    #    count2 = 15
 
                 if generate_confidence == True:
                     cum_distance = np.array(cum_distance)
@@ -396,8 +397,8 @@ class DataVisualizer():
                     error = np.mean(np.array(cum_error) * 100, axis=0)
                     std_error = std_distance
 
-                    x2.append(std_error[1])
-                    y2.append(error[1])
+                    x2.append(std_error[2])
+                    y2.append(error[2])
                     x3.append(std_error[3])
                     y3.append(error[3])
                     x4.append(std_error[4])
@@ -406,12 +407,12 @@ class DataVisualizer():
                     y5.append(error[5])
                     print batch_idx
                     if batch_idx > 200:
-                        xlim = [0, 40]
-                        ylim = [0, 50]
+                        xlim = [0, 20]
+                        ylim = [0, 60]
                         fig = plt.figure()
                         plt.suptitle('Subject 4 Validation. Euclidean Error as a function of Gaussian noise perturbations to input images and shifting augmentation', fontsize = 16)
 
-                        ax1 = fig.add_subplot(1, 1, 1)
+                        ax1 = fig.add_subplot(2,2, 1)
                         ax1.set_xlim(xlim)
                         ax1.set_ylim(ylim)
                         ax1.set_xlabel('Std. Dev of 3D joint position following 15 noise perturbations per image')
@@ -419,29 +420,29 @@ class DataVisualizer():
                         ax1.plot(x2, y2, 'ro')
                         ax1.set_title('Right Elbow')
 
-                        #ax2 = fig.add_subplot(2, 2, 2)
-                        #ax2.set_xlim(xlim)
-                        # ax2.set_ylim(ylim)
-                        # ax2.set_xlabel('Std. Dev of 3D joint position following 15 noise perturbations per image')
-                        # ax2.set_ylabel('Mean Euclidean Error across 15 forward passes')
-                        # ax2.plot(x3, y3, 'bo')
-                        # ax2.set_title('Left Elbow')
-                        #
-                        # ax3 = fig.add_subplot(2, 2, 3)
-                        # ax3.set_xlim(xlim)
-                        # ax3.set_ylim(ylim)
-                        # ax3.set_xlabel('Std. Dev of 3D joint position following 15 noise perturbations per image')
-                        # ax3.set_ylabel('Mean Euclidean Error across 15 forward passes')
-                        # ax3.plot(x4, y4, 'ro')
-                        # ax3.set_title('Right Hand')
-                        #
-                        # ax4 = fig.add_subplot(2, 2, 4)
-                        # ax4.set_xlim(xlim)
-                        # ax4.set_ylim(ylim)
-                        # ax4.set_xlabel('Std. Dev of 3D joint position following 15 noise perturbations per image')
-                        # ax4.set_ylabel('Mean Euclidean Error across 15 forward passes')
-                        # ax4.plot(x5, y5, 'bo')
-                        # ax4.set_title('Left Hand')
+                        ax2 = fig.add_subplot(2, 2, 2)
+                        ax2.set_xlim(xlim)
+                        ax2.set_ylim(ylim)
+                        ax2.set_xlabel('Std. Dev of 3D joint position following 15 noise perturbations per image')
+                        ax2.set_ylabel('Mean Euclidean Error across 15 forward passes')
+                        ax2.plot(x3, y3, 'bo')
+                        ax2.set_title('Left Elbow')
+
+                        ax3 = fig.add_subplot(2, 2, 3)
+                        ax3.set_xlim(xlim)
+                        ax3.set_ylim(ylim)
+                        ax3.set_xlabel('Std. Dev of 3D joint position following 15 noise perturbations per image')
+                        ax3.set_ylabel('Mean Euclidean Error across 15 forward passes')
+                        ax3.plot(x4, y4, 'ro')
+                        ax3.set_title('Right Hand')
+
+                        ax4 = fig.add_subplot(2, 2, 4)
+                        ax4.set_xlim(xlim)
+                        ax4.set_ylim(ylim)
+                        ax4.set_xlabel('Std. Dev of 3D joint position following 15 noise perturbations per image')
+                        ax4.set_ylabel('Mean Euclidean Error across 15 forward passes')
+                        ax4.plot(x5, y5, 'bo')
+                        ax4.set_title('Left Hand')
 
                         plt.show()
 

@@ -82,6 +82,25 @@ class PhysicalTrainer():
         self.include_inter = True
 
 
+        hidden_dim1= 32
+        hidden_dim2 = 48
+        hidden_dim3 = 96
+        hidden_dim4 = 96
+
+        self.count = 0
+
+        self.CNN_pack1 = nn.Sequential(
+            nn.Conv2d(3, hidden_dim1, kernel_size = 5, stride = 2, padding = 1),
+            nn.ReLU(inplace = True),
+            nn.Conv2d(hidden_dim1, hidden_dim2, kernel_size=5, stride=2, padding= 0),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(hidden_dim2, hidden_dim3, kernel_size=5, stride=1, padding= 0),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(hidden_dim3, hidden_dim4, kernel_size=3, stride=1, padding= 0),
+            #nn.ReLU(inplace=True),
+        )
+
+
         print test_file
         #Entire pressure dataset with coordinates in world frame
 
