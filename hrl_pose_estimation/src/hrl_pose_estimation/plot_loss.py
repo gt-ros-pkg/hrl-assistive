@@ -104,7 +104,6 @@ class DataVisualizer():
         elif self.loss_vector_type == None:
             self.output_size = (NUMOFOUTPUTNODES - 5, NUMOFOUTPUTDIMS)
 
-
         if pathkey == 'lab_hd':
             train_val_loss = load_pickle(self.dump_path + '/train_val_losses.p')
             train_val_loss_desk = load_pickle(self.dump_path + '/train_val_losses_hcdesktop.p')
@@ -138,6 +137,7 @@ class DataVisualizer():
 
 
 
+
         if self.subject == 1:
 
             plt.plot(train_val_loss_desk['epoch_armsup_700e_1'], train_val_loss_desk['val_armsup_700e_1'], 'k',label='Raw Pressure Map Input')
@@ -160,7 +160,8 @@ class DataVisualizer():
                 #plt.plot(train_val_loss_all['epoch_2to8_alldata_angles_constrained_noise_115b_100e_44'], train_val_loss_all['val_2to8_alldata_angles_constrained_noise_115b_100e_44'], 'r')
                 #plt.plot(train_val_loss_all['epoch_2to8_alldata_angles_s10to18_115b_50e_44'], train_val_loss_all['val_2to8_alldata_angles_s10to18_115b_50e_44'], 'g')
                 #plt.plot(train_val_loss_all['epoch_2to8_alldata_angles_implbedang_115b_100e_44'], train_val_loss_all['val_2to8_alldata_angles_implbedang_115b_100e_44'], 'g')
-                #plt.plot(train_val_loss_all['epoch_2to8_angles_implbedang_loosetorso_115b_100e_44'], train_val_loss_all['val_2to8_angles_implbedang_loosetorso_115b_100e_44'], 'k')
+                plt.plot(train_val_loss_all['epoch_2to8_angles_5x5_115b_150e_44'], train_val_loss_all['train_2to8_angles_5x5_115b_150e_44'], 'k')
+                plt.plot(train_val_loss_all['epoch_2to8_angles_5x5_115b_150e_44'], train_val_loss_all['val_2to8_angles_5x5_115b_150e_44'], 'y')
 
 
 
@@ -189,9 +190,9 @@ class DataVisualizer():
 
         rospy.init_node('plot_loss')
 
-
-
-        self.validation_set = load_pickle(self.dump_path + '/subject_' + str(8) + '/p_files/trainval_150rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p')
+    def init(self, subject_num):
+        print 'loading subject ', subject_num
+        self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p')
 
         test_dat = self.validation_set
         for key in test_dat:
@@ -276,7 +277,7 @@ class DataVisualizer():
 
         print len(self.validation_set), 'size of validation set'
         batch_size = 1
-        generate_confidence = True
+        generate_confidence = False
         self.test_dataset = torch.utils.data.TensorDataset(self.test_x_tensor, self.test_y_tensor)
         self.test_loader = torch.utils.data.DataLoader(self.test_dataset, batch_size, shuffle=True)
 
@@ -286,7 +287,7 @@ class DataVisualizer():
         #angle_model = torch.load(self.dump_path + '/subject_' + str(self.subject) + '/p_files/convnet_2to8_alldata_armsonly_upper_angles_115b_adam_200e_4.pt')
 
         if self.loss_vector_type == 'angles':
-            model = torch.load(self.dump_path + '/subject_' + str(4) + '/p_files/convnet_2to8_angles_implbedang_loosetorso_115b_100e_4.pt')
+            model = torch.load(self.dump_path + '/subject_' + str(4) + '/p_files/convnet_2to8_angles_5x5_115b_150e_4.pt')
             pp = 0
             for p in list(model.parameters()):
                 nn = 1
@@ -334,7 +335,7 @@ class DataVisualizer():
                         batch1 = batch[1].clone()
 
                     images_up = batch0.numpy()
-                    images_up = images_up[:, :, 5:79, 5:42]
+                    images_up = images_up[:, :, 10:74, 10:37]
                     images_up = PreprocessingLib().preprocessing_pressure_map_upsample(images_up)
                     images_up = np.array(images_up)
                     images_up = PreprocessingLib().preprocessing_add_image_noise(images_up)
@@ -360,7 +361,8 @@ class DataVisualizer():
                         cum_distance.append(np.squeeze(targets_est-targets))
 
 
-                    print angles_est
+                    #print angles_est
+                    #print lengths_est
                     #print std_distance
                     self.im_sample = batch0.numpy()
                     self.im_sample = np.squeeze(self.im_sample[0, :])
@@ -374,7 +376,9 @@ class DataVisualizer():
                     self.pseudo_sample = np.reshape(self.pseudo_sample, (5, 3))
                     #VisualizationLib().rviz_publish_input(self.im_sample[0, :, :], self.im_sample[-1, 10, 10])
                     #VisualizationLib().rviz_publish_output(np.reshape(self.tar_sample, self.output_size), self.sc_sample, self.pseudo_sample)
-                    #skip_image = VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample,block=True)
+                    #if angles_est[0,14] < -110 or angles_est[0,15] < -110:
+                    #    print angles_est[0,14:16], 'bad angles ********************************************************************'
+                    #    skip_image = VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample,block=True)
                     # VisualizationLib().visualize_error_from_distance(bed_distances, error_norm)
                     #if skip_image == True:
                     #    count2 = 15
@@ -471,12 +475,15 @@ class DataVisualizer():
             elif self.loss_vector_type == None:
                 _, targets_est = model.forward_direct(images, targets)
 
-        return mean, stdev
+        return# mean, stdev
 
     def run(self):
         '''Runs either the synthetic database creation script or the
         raw dataset creation script to create a dataset'''
-        self.validate_convnet()
+        for subject in [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18]:
+            self.init(subject)
+
+            self.validate_convnet()
 
 
 

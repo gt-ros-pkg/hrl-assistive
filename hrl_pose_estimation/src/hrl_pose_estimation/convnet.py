@@ -25,22 +25,23 @@ class CNN(nn.Module):
         #print mat_size
         self.loss_vector_type = loss_vector_type
 
-        hidden_dim1= 16
-        hidden_dim2 = 32
-        hidden_dim3 = 48
-        hidden_dim4 = 128
+        hidden_dim1= 32
+        hidden_dim2 = 48
+        hidden_dim3 = 96
+        hidden_dim4 = 96
 
         self.count = 0
 
         self.CNN_pack1 = nn.Sequential(
-            nn.Conv2d(3, hidden_dim1, kernel_size = 7, stride = 2, padding = 1),
+            nn.Conv2d(3, hidden_dim1, kernel_size = 5, stride = 2, padding = 1),
             nn.ReLU(inplace = True),
             nn.Conv2d(hidden_dim1, hidden_dim2, kernel_size=5, stride=2, padding= 1),
             nn.ReLU(inplace=True),
-            nn.Conv2d(hidden_dim2, hidden_dim3, kernel_size=4, stride=2, padding= 1),
+            nn.Conv2d(hidden_dim2, hidden_dim3, kernel_size=5, stride=1, padding= 0),
             nn.ReLU(inplace=True),
-            nn.Conv2d(hidden_dim3, hidden_dim4, kernel_size=4, stride=2, padding= 1),
+            nn.Conv2d(hidden_dim3, hidden_dim4, kernel_size=3, stride=1, padding= 0),
             nn.ReLU(inplace=True),
+            nn.Conv2d(hidden_dim3, hidden_dim4, kernel_size=3, stride=1, padding= 0),
         )
 
         self.CNN_pack2 = nn.Sequential(
@@ -86,13 +87,13 @@ class CNN(nn.Module):
         #    nn.Linear(300, out_size),
         #)
         self.CNN_fc1 = nn.Sequential(
-            nn.Linear(6400, 2500), #4096 for when we only pad the sides by 5 each instead of 10
+            nn.Linear(8832, 2048), #4096 for when we only pad the sides by 5 each instead of 10
             #nn.ReLU(inplace = True),
             #nn.Linear(5760, 3000),
-            nn.Linear(2500, 1000),
+            nn.Linear(2048, 2048),
             #nn.ReLU(inplace = True),
-            nn.Linear(1000, 300),
-            nn.Linear(300, out_size),
+            nn.Linear(2048, 256),
+            nn.Linear(256, out_size),
         )
         #self.CNN_fc2 = nn.Sequential(
         #    nn.Linear(4096, 500),
@@ -278,7 +279,7 @@ class CNN(nn.Module):
             elif self.count < 1000:
                 scores[:, 0] = (scores[:, 57] + scores[:, 58] + scores[:, 59]).sqrt()*2# consider weighting the torso by a >1 factor because it's very important to root the other joints #bad idea, increases error
             else:
-                scores[:, 0] = (scores[:, 57] + scores[:, 58] + scores[:, 59]).sqrt()
+                scores[:, 0] = (scores[:, 57] + scores[:, 58] + scores[:, 59]).sqrt()*2
             scores[:, 1] = (scores[:, 60] + scores[:, 61] + scores[:, 62]).sqrt()
             scores[:, 2] = (scores[:, 63] + scores[:, 64] + scores[:, 65]).sqrt()
             scores[:, 3] = (scores[:, 66] + scores[:, 67] + scores[:, 68]).sqrt()

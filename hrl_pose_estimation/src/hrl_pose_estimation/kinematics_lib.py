@@ -640,8 +640,8 @@ class KinematicsLib():
                 torso_lengths_angles_v[:, 3] = torch.clamp(torso_lengths_angles_v[:, 3], -1.35, 1.35)
                 torso_lengths_angles_v[:, 4] = torch.clamp(torso_lengths_angles_v[:, 4], -1.35, 1.35)
                 torso_lengths_angles_v[:, 5] = torch.clamp(torso_lengths_angles_v[:, 5], -1.35, 1.35)
-                torso_lengths_angles_v[:, 6] = torch.clamp(torch.add(torso_lengths_angles_v[:, 6], 1.5), 0.4, 1.8)
-                torso_lengths_angles_v[:, 7] = torch.clamp(torch.add(torso_lengths_angles_v[:, 7], 1.5), 0.4, 1.8)
+                torso_lengths_angles_v[:, 6] = torch.clamp(torch.add(torso_lengths_angles_v[:, 6], 1.5), 0.2, 1.8)
+                torso_lengths_angles_v[:, 7] = torch.clamp(torch.add(torso_lengths_angles_v[:, 7], 1.5), 0.2, 1.8)
                 #torso_lengths_angles_v[:, 8] = torch.clamp(torso_lengths_angles_v[:, 6], -1.8, 1.8)
                 #torso_lengths_angles_v[:, 9] = torch.clamp(torso_lengths_angles_v[:, 7], -1.5, 1.5)
                 torso_lengths_angles_v[:, 10] = torch.clamp(torso_lengths_angles_v[:, 10], -1.8, 1.8)
@@ -650,8 +650,8 @@ class KinematicsLib():
                 torso_lengths_angles_v[:, 13] = torch.clamp(torch.add(torso_lengths_angles_v[:, 13], -0.6), -1.8, 0.)
                 torso_lengths_angles_v[:, 14] = torch.clamp(torch.add(torso_lengths_angles_v[:, 14], -0.6), -1.35, 1.35)
                 torso_lengths_angles_v[:, 15] = torch.clamp(torch.add(torso_lengths_angles_v[:, 15], -0.6), -1.35, 1.35)
-                torso_lengths_angles_v[:, 16] = torch.clamp(torch.add(torso_lengths_angles_v[:, 16], 1.5), 0.4, 1.8)
-                torso_lengths_angles_v[:, 17] = torch.clamp(torch.add(torso_lengths_angles_v[:, 17], 1.5), 0.4, 1.8)
+                torso_lengths_angles_v[:, 16] = torch.clamp(torch.add(torso_lengths_angles_v[:, 16], 1.5), 0.2, 1.8)
+                torso_lengths_angles_v[:, 17] = torch.clamp(torch.add(torso_lengths_angles_v[:, 17], 1.5), 0.2, 1.8)
 
                 torso_lengths_angles_v[:, 18] = torch.clamp(torch.add(torso_lengths_angles_v[:, 18], 0.2), -0.5, 1.3) #torso angle for upper
                 torso_lengths_angles_v[:, 19] = torch.clamp(torch.add(torso_lengths_angles_v[:, 19], 0.0), -0.5, 0.5) #torso angle for lower
