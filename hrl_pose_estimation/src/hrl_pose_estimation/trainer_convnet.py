@@ -505,7 +505,7 @@ class PhysicalTrainer():
 
                 #print scores_zeros[0, :]
 
-                self.criterion = nn.MSELoss()
+                self.criterion = nn.L1Loss()
                 loss = self.criterion(scores, scores_zeros)
 
             elif self.loss_vector_type == 'confidence':
@@ -533,7 +533,7 @@ class PhysicalTrainer():
                 targets_proj_est = self.model.forward_confidence(images_up, targets_proj)
 
 
-                self.criterion = nn.MSELoss()
+                self.criterion = nn.L1Loss()
 
                 loss = self.criterion(targets_proj_est, targets_proj)
 
@@ -547,7 +547,7 @@ class PhysicalTrainer():
                 self.optimizer.zero_grad()
                 scores, targets_est = self.model.forward_direct(images, targets)
 
-                self.criterion = nn.MSELoss()
+                self.criterion = nn.L1Loss()
                 loss = self.criterion(scores/1000, scores_zeros/1000)
 
             #print loss.data.numpy() * 1000, 'loss'
@@ -646,7 +646,7 @@ class PhysicalTrainer():
                 scores, targets_est, angles_est, lengths_est, _ = self.model.forward_kinematic_jacobian(images_up, targets, constraints)
 
 
-                self.criterion = nn.MSELoss()
+                self.criterion = nn.L1Loss()
                 loss = self.criterion(scores[:, 0:8], scores_zeros[:, 0:8])
                 loss = loss.data[0]
 
@@ -672,7 +672,7 @@ class PhysicalTrainer():
 
                 targets_proj_est = self.model.forward_confidence(images_up, targets_proj)
 
-                self.criterion = nn.MSELoss()
+                self.criterion = nn.L1Loss()
                 loss = self.criterion(targets_proj_est[:, 0:2], targets_proj[:, 0:2])
                 loss = loss.data[0]
 
