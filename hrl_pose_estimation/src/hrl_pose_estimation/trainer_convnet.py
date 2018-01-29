@@ -78,7 +78,7 @@ class PhysicalTrainer():
         self.verbose = opt.verbose
         self.opt = opt
         self.batch_size = 115
-        self.num_epochs = 100
+        self.num_epochs = 150
         self.include_inter = True
 
 
@@ -93,7 +93,7 @@ class PhysicalTrainer():
         print test_file
         #Entire pressure dataset with coordinates in world frame
 
-        self.save_name = '_2to8_angles_5x5_' + str(self.batch_size) + 'b_' + str(self.num_epochs) + 'e_4'
+        self.save_name = '_2to8_angles_5x5_dropout1_' + str(self.batch_size) + 'b_' + str(self.num_epochs) + 'e_4'
         self.loss_vector_type = 'angles'  # 'arms_cascade'#'upper_angles' #this is so you train the set to joint lengths and angles
 
         #we'll be loading this later

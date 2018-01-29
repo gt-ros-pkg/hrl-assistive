@@ -35,6 +35,7 @@ class CNN(nn.Module):
         self.CNN_pack1 = nn.Sequential(
             nn.Conv2d(3, hidden_dim1, kernel_size = 5, stride = 2, padding = 1),
             nn.ReLU(inplace = True),
+            nn.Dropout(p = 0.5, inplace=False),
             nn.Conv2d(hidden_dim1, hidden_dim2, kernel_size=5, stride=2, padding= 1),
             nn.ReLU(inplace=True),
             nn.Conv2d(hidden_dim2, hidden_dim3, kernel_size=5, stride=1, padding= 0),
