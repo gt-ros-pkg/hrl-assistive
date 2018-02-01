@@ -52,6 +52,8 @@ class BagfileToPickle():
         self.head_pose = []
         self.zoom_factor = 2
 
+        [self.p_world_mat, self.R_world_mat] = load_pickle(
+            '/home/henryclever/hrl_file_server/Autobed/pose_estimation_data/mat_axes15.p')
 
         self.T = np.zeros((4,1))
         self.H = np.zeros((4,1))
@@ -90,7 +92,11 @@ class BagfileToPickle():
         bed_pos = np.zeros((1, 3))
         p_mat = []
 
-        mat_tar_pos = []
+
+        if filename == '_full_trial_sitting_LL2.bag' or filename == '_full_trial_sitting_RL2.bag':
+            pass
+        else:
+            self.mat_tar_pos = []
         single_mat_tar_pos = []
 
 
@@ -238,31 +244,67 @@ class BagfileToPickle():
 
             if self.mat_sampled == True:
                 # print self.params_length, 'length'
-                if np.count_nonzero(targets) == 30 and len(p_mat) == 1728 and self.params_length[4] > 0.15 and \
-                                self.params_length[4] < 0.5 and self.params_length[5] > 0.15 and self.params_length[
-                    5] < 0.5 and self.params_length[6] > 0.1 and self.params_length[6] < 0.35 and self.params_length[
-                    7] > 0.1 and self.params_length[7] < 0.35:
-                    # print 'pressure mat has been scanned'
-                    # print targets
-                    # print np.count_nonzero(targets)
-                    single_mat_tar_pos = []
-                    single_mat_tar_pos.append(p_mat)
-                    single_mat_tar_pos.append(targets)
-                    single_mat_tar_pos.append(bed_pos)
-                    mat_tar_pos.append(single_mat_tar_pos)
+                if len(p_mat) == 1728:# and self.params_length[4] > 0.15 and self.params_length[4] < 0.5 and self.params_length[5] > 0.15 and self.params_length[5] < 0.5 and self.params_length[6] > 0.1 and self.params_length[6] < 0.35 and self.params_length[7] > 0.1 and self.params_length[7] < 0.35:
+                    if np.count_nonzero(targets) == 30:#targets[0,1] != 0 and targets[1,1] != 0 and targets[2,1] != 0 and targets[3,1] != 0 and targets[5,1] != 0 and targets[6,1] > 1.2:#
+                        # print 'pressure mat has been scanned'
+                        #print targets
+                        # print np.count_nonzero(targets)
 
-                    self.mat_sampled = False
-                    p_mat = []
-                    targets = np.zeros((10, 3))
-                    bed_pos = np.zeros((1, 3))
-                    # print targets
-                    # print mat_tar_pos[len(mat_tar_pos)-1][2], 'accelerometer reading', len(mat_tar_pos)
+                        if subject == 18 and filename == '_full_trial_sitting_RH.bag' or filename == '_full_trial_sitting_RL.bag': #add some fillers for right elbow
+                            if targets[3, 0] == 0: #fill in for the left elbow
+                                targets[3, 1] = 0.90076631
+                                targets[3, 0] = -0.23236339
+                                targets[3, 2] = 0.5566895
+                        elif subject == 3 and filename == '_full_trial_sitting_LL.bag':
+                            if targets[3, 0] == 0:  # fill in for the left elbow
+                                targets[3, 1] =  0.91585761
+                                targets[3, 0] = -0.28543478
+                                targets[3, 2] = 0.56117147
+                                print 'filled'
+                        elif subject == 3:
+                            if filename == '_full_trial_sitting_LL.bag' or filename == '_full_trial_sitting_LH.bag':
+                                if targets[8,0] > 0.26:
+                                    targets[8, 0] = 0.08311699
+                                    targets[8, 1] = 1.8579005
+                                    targets[8, 2] = 0.57703006
+                                    print 'filled'
+
+
+                        if subject == 3:# and filename == '_full_trial_LH3.bag': #fix flipped knees. also, sometimes the feet freak out in other ways
+                            if CreateDatasetLib().world_to_mat(targets, self.p_world_mat, self.R_world_mat)[6, 0] > CreateDatasetLib().world_to_mat(targets, self.p_world_mat, self.R_world_mat)[7,0]:
+                                queue = np.copy(targets[6, :])
+                                targets[6, :] = np.copy(targets[7, :])
+                                targets[7, :] = queue
+                                print 'flipped knees'
+
+                        if subject == 8:# and filename == '_full_trial_LH3.bag': #fix flipped knees. also, sometimes the feet freak out in other ways
+                            if CreateDatasetLib().world_to_mat(targets, self.p_world_mat, self.R_world_mat)[4, 0] > CreateDatasetLib().world_to_mat(targets, self.p_world_mat, self.R_world_mat)[6,0]:
+                                queue = np.copy(targets[4, :])
+                                targets[4, :] = np.copy(targets[5, :])
+                                targets[5, :] = queue
+                                print 'flipped hands'
+
+
+
+
+                        single_mat_tar_pos = []
+                        single_mat_tar_pos.append(p_mat)
+                        single_mat_tar_pos.append(targets)
+                        single_mat_tar_pos.append(bed_pos)
+                        self.mat_tar_pos.append(single_mat_tar_pos)
+
+                        self.mat_sampled = False
+                        p_mat = []
+                        targets = np.zeros((10, 3))
+                        bed_pos = np.zeros((1, 3))
+                        # print mat_tar_pos[len(mat_tar_pos)-1][2], 'accelerometer reading', len(mat_tar_pos)
+                        print subject, 'subject', count, len(self.mat_tar_pos), 'count discarded, count kept,'
 
         bag.close()
 
-        print count, len(mat_tar_pos), len(mat_tar_pos[0]), 'count, count, number of datatypes (should be 3)'
+        print count, len(self.mat_tar_pos), len(self.mat_tar_pos[0]), 'count, count, number of datatypes (should be 3)'
 
-        return mat_tar_pos
+        return self.mat_tar_pos
 
     
 
@@ -297,23 +339,23 @@ if __name__ == '__main__':
         x.append('LH_sitting')
         file_details.append(x)
 
-        x = []
-        x.append(subject)
-        x.append('_full_trial_sitting_RH.bag')
-        x.append('RH_sitting')
-        file_details.append(x)
-        #
-        # x = []
-        # x.append(subject)
-        # x.append('_full_trial_sitting_LL.bag')
-        # x.append('LL_sitting')
-        # file_details.append(x)
-        #
-        # x = []
-        # x.append(subject)
-        # x.append('_full_trial_sitting_RL.bag')
-        # x.append('RL_sitting')
-        # file_details.append(x)
+        #x = []
+        #x.append(subject)
+        #x.append('_full_trial_sitting_RH.bag')
+        #x.append('RH_sitting')
+        #file_details.append(x)
+
+        #x = []
+        #x.append(subject)
+        #x.append('_full_trial_sitting_LL.bag')
+        #x.append('LL_sitting')
+        #ile_details.append(x)
+
+        #x = []
+        #x.append(subject)
+        #x.append('_full_trial_sitting_RL.bag')
+        #x.append('RL_sitting')
+        #file_details.append(x)
 
         file_details_dict[str(subject)] = file_details
 
@@ -331,41 +373,41 @@ if __name__ == '__main__':
         # x.append('home_sitting')
         # file_details.append(x)
 
+        #x = []
+        #x.append(subject)
+        #x.append('_full_trial_sitting_LH.bag')
+        #x.append('LH_sitting')
+        #file_details.append(x)
+
+        #x = []
+        #x.append(subject)
+        #.append('_full_trial_sitting_RH.bag')
+        #x.append('RH_sitting')
+        #file_details.append(x)
+        #
         x = []
         x.append(subject)
-        x.append('_full_trial_sitting_LH.bag')
-        x.append('LH_sitting')
+        x.append('_full_trial_sitting_LL1.bag')
+        x.append('LL1_sitting')
         file_details.append(x)
 
         x = []
         x.append(subject)
-        x.append('_full_trial_sitting_RH.bag')
-        x.append('RH_sitting')
+        x.append('_full_trial_sitting_LL2.bag')
+        x.append('LL2_sitting')
         file_details.append(x)
         #
-        # x = []
-        # x.append(subject)
-        # x.append('_full_trial_sitting_LL1.bag')
-        # x.append('LL1_sitting')
-        # file_details.append(x)
-        #
-        # x = []
-        # x.append(subject)
-        # x.append('_full_trial_sitting_LL2.bag')
-        # x.append('LL2_sitting')
-        # file_details.append(x)
-        #
-        # x = []
-        # x.append(subject)
-        # x.append('_full_trial_sitting_RL1.bag')
-        # x.append('RL1_sitting')
-        # file_details.append(x)
-        #
-        # x = []
-        # x.append(subject)
-        # x.append('_full_trial_sitting_RL2.bag')
-        # x.append('RL2_sitting')
-        # file_details.append(x)
+        #x = []
+        #x.append(subject)
+        #x.append('_full_trial_sitting_RL1.bag')
+        #.append('RL1_sitting')
+        #file_details.append(x)
+
+        #x = []
+        #x.append(subject)
+        #x.append('_full_trial_sitting_RL2.bag')
+       # x.append('RL2_sitting')
+        #file_details.append(x)
 
         file_details_dict[str(subject)] = file_details
 
@@ -374,7 +416,7 @@ if __name__ == '__main__':
     #print file_details_dict['9']
     database_path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials'
 
-    for subject in [2, 3, 4,5,6,7,8]:
+    for subject in [8]:
     #for subject in [2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]:
 
 

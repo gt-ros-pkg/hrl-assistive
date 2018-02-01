@@ -276,10 +276,11 @@ class DatabaseCreator():
         plt.close()
         self.keep_image = True
 
-    def rand_index_p_length(self, p_file):
+    def rand_index_p_length(self, p_file, shuffle = True):
         #this makes a new list of integers in the range of the p file length. It shuffles them.
         indexList = range(0, len(p_file))
-        random.shuffle(indexList)
+        if shuffle == True:
+            random.shuffle(indexList)
         return indexList
 
     def head_origin_callback(self, data):
@@ -400,7 +401,7 @@ class DatabaseCreator():
 
         #get the neck pitch
         angles[9] = np.degrees(np.arctan(self.NHn[2, 0] / self.NHn[1, 0]))
-        print self.N - self.H
+       #print self.N - self.H
 
         # get shoulder yaw
         angles[4] = -np.degrees(np.arctan(self.r_SEn[0, 0] / self.r_SEn[2, 0]))
@@ -494,7 +495,7 @@ class DatabaseCreator():
 
 
 
-        print angles, 'UEP'
+        #print angles, 'UEP'
 
 
         return lengths, angles, pseudotargets
@@ -505,7 +506,7 @@ class DatabaseCreator():
         lengths = np.zeros((8))  # torso height, torso vert, glute right, glute left, thigh right, thigh left, calf right, calf left
         angles = np.zeros((8))  # hip right roll, hip left roll, hip right pitch, hip left pitch, hip right yaw, hip left yaw, knee right, knee left
         pseudotargets = np.zeros((2,3))
-        print self.pseudoheight[str(subject)], 'subject ', subject, 'height'
+        #print self.pseudoheight[str(subject)], 'subject ', subject, 'height'
 
         lengths[0] = 0.14  # torso height
         #lengths[1] = 0.2065 * self.pseudoheight[str(subject)] - 0.0529  # about 0.25. torso vert
@@ -683,10 +684,15 @@ class DatabaseCreator():
         '''Creates a database using the raw pressure values(full_body) and only
         transforms world frame coordinates to mat coordinates'''
 
-        std_lengths = []
-        #for subject in [4,9,10,11,12,13,14,15,16,17,18]:
-        #for subject in [12]:
-        for subject in [13, 14, 15, 16, 17, 18]:
+        upper_lengths_i = []
+        lower_lengths_i = []
+        upper_angles_i = []
+        lower_angles_i = []
+        angle_i = []
+        #for subject in [2,3,4,5,6,7,8]:
+
+        for subject in [8]:
+        #for subject in [16]:#13, 14, 15, 16, 17, 18]:
 
             self.final_dataset = {}
             self.final_dataset['images'] = []
@@ -701,29 +707,38 @@ class DatabaseCreator():
 
 
 
-            #for movement in ['RH_sitting','LH_sitting','RL_sitting','LL_sitting','RH1','LH1','RH2','RH3','LH2','LH3','RL','LL']:
-            for movement in ['RH3']:
-                std_lengths_i = []
-            #for movement in ['RH_sitting','RH1']:#'LH_sitting','RL_sitting','LL_sitting']:
+            for movement in ['RH_sitting','LH_sitting','RL_sitting','LL_sitting','RH1','LH1','RH2','LH2','RH3','LH3','RL','LL']:
+            #for movement in ['LH2','LH3','LL'
+        # ,'RL']:
+
+            #for movement in ['RL_sitting']:#'LH_sitting','RL_sitting','LL_sitting']:
             #self.training_dump_path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_'+str(subject)
             #print self.training_dump_path
 
                 p_file = load_pickle(self.training_dump_path+str(subject)+'/p_files/'+movement+'.p')
                 count = 0
 
-                indexlist = self.rand_index_p_length(p_file)
+
+
+                indexlist = self.rand_index_p_length(p_file, shuffle = True)
 
 
                 if movement == 'head':
                     num_samp = 100
-                elif movement == 'RH1' or movement == 'LH1' or movement == 'RL' or movement == 'LL':
+                elif movement == 'RH1' or movement == 'LH1':
+                    num_samp = 200
+                elif movement == 'RH2' or movement == 'LH2':
+                    num_samp = 115
+                elif movement == 'RH3' or movement == 'LH3':
+                    num_samp = 75
+                elif movement == 'RL' or movement == 'LL':
                     num_samp = 150
                 elif movement == 'RH_sitting' or movement == 'LH_sitting' :
-                    num_samp = 120
+                    num_samp = 175
                 elif movement == 'RL_sitting' or movement == 'LL_sitting':
                     num_samp = 120
-                else:
-                    num_samp = 100
+
+                #num_samp = 280
 
                 print 'working on subject: ',subject, '  movement type:', movement, '  length: ',len(p_file), '  Number sampled: ',num_samp
 
@@ -752,6 +767,9 @@ class DatabaseCreator():
                         print 'resetting index list'
                         indexlist = self.rand_index_p_length(p_file)
                         index = indexlist.pop()
+
+                    #print subject, 'subject', count, 'count', index, 'index', np.shape(indexlist), 'length of list'
+
 
 
 
@@ -788,6 +806,53 @@ class DatabaseCreator():
                     torso[0:3, 0] = rot_target_mat[1, :]
                     # print torso
 
+                    #just do this for subject 16 because it has a messed up marker flip between right hand and right foot
+                    if subject == 16:
+                        if rot_target_mat[4, 1] < 0.8:
+                            queue = np.copy(rot_target_mat[8, :])
+                            rot_target_mat[8, :] = np.copy(rot_target_mat[4, :])
+                            rot_target_mat[4, :] = queue
+                            #print 'flipped', movement
+
+                    if subject == 7:
+                        if rot_target_mat[2, 1] < 0.8: #NASTY!!!
+                            queue1 = np.copy(rot_target_mat[8, :])
+                            queue2 = np.copy(rot_target_mat[5, :])
+                            rot_target_mat[8, :] = np.copy(rot_target_mat[2, :])
+                            rot_target_mat[5, :] = queue1
+                            rot_target_mat[2, :] = queue2
+                            print 'triple flipped'
+                        elif rot_target_mat[5, 1] < 0.8:
+                            queue = np.copy(rot_target_mat[8, :])
+                            rot_target_mat[8, :] = np.copy(rot_target_mat[5, :])
+                            rot_target_mat[5, :] = queue
+                            print 'flipped', movement
+
+
+
+                    legs = np.copy(np.reshape(rot_target_mat, (10,3))[2:10,:])
+                    #print target_raw,'right foot'
+                    if legs[0, 0] > legs[1, 0]:
+                        print movement
+                        print 'flipped elbow ************************************************************************'
+                        self.visualize_single_pressure_map(rot_p_map, rot_target_mat)
+                    if legs[2, 0] > legs[3, 0]:
+                        print movement
+                        print 'flipped hand ************************************************************************'
+                        self.visualize_single_pressure_map(rot_p_map, rot_target_mat)
+                    if legs[4, 0] > legs[5, 0]:
+                        print movement
+                        print 'flipped knee ************************************************************************'
+                        self.visualize_single_pressure_map(rot_p_map, rot_target_mat)
+                    if legs[6, 0] > legs[7, 0]:
+                        print movement
+                        print 'flipped ankle ************************************************************************'
+                        self.visualize_single_pressure_map(rot_p_map, rot_target_mat)
+
+                    #print target_raw, 'print rot tar mat'
+
+
+
 
                     arm_joint_lengths, arm_joint_angles, arm_pseudotargets = self.inverse_arm_kinematics(rot_target_mat, subject, angle)
 
@@ -799,7 +864,12 @@ class DatabaseCreator():
 
                     leg_joint_lengths, leg_joint_angles, leg_pseudotargets = self.inverse_leg_kinematics(rot_target_mat, subject, angle)
 
-                    std_lengths_i.append(leg_joint_lengths[4])
+                    lower_lengths_i.append(leg_joint_lengths)
+                    upper_lengths_i.append(arm_joint_lengths)
+                    lower_angles_i.append(leg_joint_angles)
+                    upper_angles_i.append(arm_joint_angles)
+                    angle_i.append(angle * 0.75)
+                    #print arm_joint_angles[0], arm_joint_angles[2],'arm joint angles'
 
                     # the following returns the targets in mm
                     leg_targets = KinematicsLib().forward_lower_kinematics(np.expand_dims(angle, axis=0), np.concatenate((torso[0:3, 0], leg_joint_lengths), axis=0), leg_joint_angles)
@@ -812,8 +882,9 @@ class DatabaseCreator():
                     kin_targets = np.concatenate((arm_targets, leg_targets), axis = 0)
                     pseudotargets = np.concatenate((arm_pseudotargets, leg_pseudotargets), axis = 0)
 
-                    VisualizationLib().rviz_publish_input(rot_p_map, angle)
-                    VisualizationLib().rviz_publish_output(rot_target_mat, kin_targets / 1000, pseudotargets)
+                    #if index % 1 == 0:
+                    #    VisualizationLib().rviz_publish_input(rot_p_map, angle)
+                    #    VisualizationLib().rviz_publish_output(rot_target_mat, kin_targets / 1000, pseudotargets)
 
                     #get the distances from the bed. this will help us to do an a per instance loss and for final error evaluation,
                     #so we can throw out joint poses that are too far away.
@@ -861,22 +932,44 @@ class DatabaseCreator():
                         self.final_dataset['joint_angles_L_deg'].append(leg_joint_angles)
                     count += 1
 
-                std_lengths.append(np.std(np.array(std_lengths_i)))
-                print std_lengths, 'std'
+                # lower_lengths = np.array(lower_lengths_i)
+                # print lower_lengths.shape, 'lower lengths shape'
+                # print np.mean(lower_lengths, axis = 0)
+                # print np.std(lower_lengths, axis = 0)
+                #
+                # upper_lengths = np.array(upper_lengths_i)
+                # print upper_lengths.shape, 'upper lengths shape'
+                # print np.mean(upper_lengths, axis = 0)
+                # print np.std(upper_lengths, axis = 0)
+                #
+                # lower_angles = np.array(lower_angles_i)
+                # print lower_angles.shape, 'lower angles shape'
+                # print np.mean(lower_angles, axis = 0)
+                # print np.std(lower_angles, axis = 0)
+                #
+                # upper_angles = np.array(upper_angles_i)
+                # print upper_angles.shape, 'upper angles shape'
+                # print np.mean(upper_angles, axis = 0)
+                # print np.std(upper_angles, axis = 0)
+                #
+                # angle = np.array(angle_i)
+                # print angle.shape, 'angle'
+                # print np.mean(angle)
+                # print np.std(angle)
+                #
+                # print 'images shape: ',np.array(self.final_dataset['images']).shape
+                # print 'marker xyz array shape: ', np.array(self.final_dataset['markers_xyz_m']).shape
+                # print 'marker bed Euclideans shape: ', np.array(self.final_dataset['marker_bed_euclideans_m']).shape
+                # print 'bed angle in degrees shape: ', np.array(self.final_dataset['bed_angle_deg']).shape
+                # print 'joint lengths upper body shape: ',  np.array(self.final_dataset['joint_lengths_U_m']).shape
+                # print 'joint angles upper body shape: ', np.array(self.final_dataset['joint_angles_U_deg']).shape
+                # print 'joint lengths lower body shape: ',  np.array(self.final_dataset['joint_lengths_L_m']).shape
+                # print 'joint angles lower body shape: ', np.array(self.final_dataset['joint_angles_L_deg']).shape
 
-                print 'images shape: ',np.array(self.final_dataset['images']).shape
-                print 'marker xyz array shape: ', np.array(self.final_dataset['markers_xyz_m']).shape
-                print 'marker bed Euclideans shape: ', np.array(self.final_dataset['marker_bed_euclideans_m']).shape
-                print 'bed angle in degrees shape: ', np.array(self.final_dataset['bed_angle_deg']).shape
-                print 'joint lengths upper body shape: ',  np.array(self.final_dataset['joint_lengths_U_m']).shape
-                print 'joint angles upper body shape: ', np.array(self.final_dataset['joint_angles_U_deg']).shape
-                print 'joint lengths lower body shape: ',  np.array(self.final_dataset['joint_lengths_L_m']).shape
-                print 'joint angles lower body shape: ', np.array(self.final_dataset['joint_angles_L_deg']).shape
-
-            print np.mean(np.array(std_lengths)), 'mean of standard devs'
+            #print np.mean(np.array(std_lengths)), 'mean of standard devs'
             print 'Output file size: ~', int(len(self.final_dataset['images']) * 0.08958031837*3948/1728), 'Mb'
             print "Saving final_dataset"
-            #pkl.dump(self.final_dataset, open(os.path.join(self.training_dump_path+str(subject)+'/p_files/trainval_150rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p'), 'wb'))
+            pkl.dump(self.final_dataset, open(os.path.join(self.training_dump_path+str(subject)+'/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'), 'wb'))
 
             print 'Done.'
         return

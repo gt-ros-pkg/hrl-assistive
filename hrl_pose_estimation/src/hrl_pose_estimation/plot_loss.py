@@ -46,6 +46,7 @@ from visualization_lib import VisualizationLib
 from kinematics_lib import KinematicsLib
 from preprocessing_lib import PreprocessingLib
 from cascade_lib import CascadeLib
+from synthetic_lib import SyntheticLib
 
 #PyTorch libraries
 import argparse
@@ -103,7 +104,6 @@ class DataVisualizer():
         elif self.loss_vector_type == None:
             self.output_size = (NUMOFOUTPUTNODES - 5, NUMOFOUTPUTDIMS)
 
-
         if pathkey == 'lab_hd':
             train_val_loss = load_pickle(self.dump_path + '/train_val_losses.p')
             train_val_loss_desk = load_pickle(self.dump_path + '/train_val_losses_hcdesktop.p')
@@ -137,6 +137,7 @@ class DataVisualizer():
 
 
 
+
         if self.subject == 1:
 
             plt.plot(train_val_loss_desk['epoch_armsup_700e_1'], train_val_loss_desk['val_armsup_700e_1'], 'k',label='Raw Pressure Map Input')
@@ -154,11 +155,13 @@ class DataVisualizer():
 
 
                 #plt.plot(train_val_loss_all['epoch_2to8_alldata_angles_115b_adam_200e_44'], train_val_loss_all['train_2to8_alldata_angles_115b_adam_200e_44'], 'k')
-                plt.plot(train_val_loss_all['epoch_2to8_alldata_angles_115b_adam_200e_44'], train_val_loss_all['val_2to8_alldata_angles_115b_adam_200e_44'], 'y')
+                #plt.plot(train_val_loss_all['epoch_2to8_alldata_angles_115b_adam_200e_44'], train_val_loss_all['val_2to8_alldata_angles_115b_adam_200e_44'], 'y')
                 #plt.plot(train_val_loss_all['epoch_2to8_alldata_angles_constrained_noise_115b_100e_44'], train_val_loss_all['train_2to8_alldata_angles_constrained_noise_115b_100e_44'], 'b')
-                plt.plot(train_val_loss_all['epoch_2to8_alldata_angles_constrained_noise_115b_100e_44'], train_val_loss_all['val_2to8_alldata_angles_constrained_noise_115b_100e_44'], 'r')
+                #plt.plot(train_val_loss_all['epoch_2to8_alldata_angles_constrained_noise_115b_100e_44'], train_val_loss_all['val_2to8_alldata_angles_constrained_noise_115b_100e_44'], 'r')
                 #plt.plot(train_val_loss_all['epoch_2to8_alldata_angles_s10to18_115b_50e_44'], train_val_loss_all['val_2to8_alldata_angles_s10to18_115b_50e_44'], 'g')
-                plt.plot(train_val_loss_all['epoch_2to8_alldata_angles_implbedang_115b_100e_44'], train_val_loss_all['val_2to8_alldata_angles_implbedang_115b_100e_44'], 'g')
+                #plt.plot(train_val_loss_all['epoch_2to8_alldata_angles_implbedang_115b_100e_44'], train_val_loss_all['val_2to8_alldata_angles_implbedang_115b_100e_44'], 'g')
+                plt.plot(train_val_loss_all['epoch_2to8_angles_5x5_115b_150e_44'], train_val_loss_all['train_2to8_angles_5x5_115b_150e_44'], 'k')
+                plt.plot(train_val_loss_all['epoch_2to8_angles_5x5_115b_150e_44'], train_val_loss_all['val_2to8_angles_5x5_115b_150e_44'], 'y')
 
 
 
@@ -179,16 +182,17 @@ class DataVisualizer():
 
 
         #plt.axis([0,410,0,30000])
-        plt.axis([0, 200, 0, 20])
-        plt.show()
+        plt.axis([0, 200, 0, 5])
+        if self.opt.no_loss == False:
+            plt.show()
 
         self.count = 0
 
         rospy.init_node('plot_loss')
 
-
-
-        self.validation_set = load_pickle(self.dump_path + '/subject_' + str(4) + '/p_files/trainval_150rh1_lh1_rl_ll_100rh23_lh23_sit120rh_lh_rl_ll.p')
+    def init(self, subject_num):
+        print 'loading subject ', subject_num
+        self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p')
 
         test_dat = self.validation_set
         for key in test_dat:
@@ -219,14 +223,6 @@ class DataVisualizer():
                                     test_dat['joint_lengths_L_m'][entry][0:8] * 100,
                                     test_dat['joint_angles_L_deg'][entry][0:8]), axis=0)
                 self.test_y_flat.append(c)
-            elif self.loss_vector_type == 'arms_cascade':
-                c = np.concatenate((test_dat['markers_xyz_m'][entry][0:30] * 1000,
-                                    test_dat['joint_lengths_U_m'][entry][0:9] * 100,
-                                    test_dat['joint_angles_U_deg'][entry][0:10],
-                                    test_dat['joint_lengths_L_m'][entry][0:8] * 100,
-                                    test_dat['joint_angles_L_deg'][entry][0:8],
-                                    test_dat['pseudomarkers_xyz_m'][entry][:] * 1000), axis=0)
-                self.test_y_flat.append(c)
             elif self.loss_vector_type == 'upper_angles':
                 c = np.concatenate((test_dat['markers_xyz_m'][entry][0:18] * 1000,
                                     test_dat['joint_lengths_U_m'][entry][0:9] * 100,
@@ -246,7 +242,7 @@ class DataVisualizer():
         batch_size = 1
 
         self.test_dataset = torch.utils.data.TensorDataset(self.test_x_tensor, self.test_y_tensor)
-        self.test_loader = torch.utils.data.DataLoader(self.test_dataset, batch_size, shuffle=True)
+        self.test_loader = torch.utils.data.DataLoader(self.test_dataset, batch_size, shuffle=False)
         regr = load_pickle(self.dump_path + '/subject_' + str(4) + '/p_files/HoG_Linear.p')
 
 
@@ -281,7 +277,7 @@ class DataVisualizer():
 
         print len(self.validation_set), 'size of validation set'
         batch_size = 1
-
+        generate_confidence = True
         self.test_dataset = torch.utils.data.TensorDataset(self.test_x_tensor, self.test_y_tensor)
         self.test_loader = torch.utils.data.DataLoader(self.test_dataset, batch_size, shuffle=True)
 
@@ -291,7 +287,15 @@ class DataVisualizer():
         #angle_model = torch.load(self.dump_path + '/subject_' + str(self.subject) + '/p_files/convnet_2to8_alldata_armsonly_upper_angles_115b_adam_200e_4.pt')
 
         if self.loss_vector_type == 'angles':
-            model = torch.load(self.dump_path + '/subject_' + str(4) + '/p_files/convnet_2to8_alldata_angles_implbedang_115b_100e_4.pt')
+            print self.dump_path + '/subject_' + str(4) + '/p_files/convnet_2to8_angles_5x5_dropout1_115b_150e_4.pt'
+            model = torch.load(self.dump_path + '/subject_' + str(4) + '/p_files/convnet_2to8_angles_5x5_115b_150e_4.pt')
+            pp = 0
+            for p in list(model.parameters()):
+                nn = 1
+                for s in list(p.size()):
+                    nn = nn * s
+                pp += nn
+            print pp, 'num params'
         elif self.loss_vector_type == 'arms_cascade':
             model_cascade_prior = torch.load(self.dump_path + '/subject_' + str(4) + '/p_files/convnet_2to8_alldata_angles_constrained_noise_115b_100e_4.pt')
             model = torch.load(self.dump_path + '/subject_' + str(4) + '/p_files/convnet_2to8_alldata_armanglescascade_constrained_noise_115b_100e_4.pt')
@@ -315,18 +319,32 @@ class DataVisualizer():
                 count2 = 0
                 cum_error = []
                 cum_distance = []
-                while count2 < 1:
+                limbArray = None
+
+                if generate_confidence == True:
+                    limit = 100
+                else:
+                    limit = 1
+                while count2 < limit:
                     count2 += 1
 
-                    images_up = batch[0].numpy()
-                    images_up = images_up[:, :, 5:79, 5:42]
+                    if generate_confidence == True:
+                        batch0 = batch[0].clone()
+                        batch1 = batch[1].clone()
+                        batch0, batch1,_ = SyntheticLib().synthetic_master(batch0, batch1,flip=False, shift=False, scale=False,bedangle=True, include_inter=self.include_inter, loss_vector_type=self.loss_vector_type)
+                    else:
+                        batch0 = batch[0].clone()
+                        batch1 = batch[1].clone()
+
+                    images_up = batch0.numpy()
+                    images_up = images_up[:, :, 10:74, 10:37]
                     images_up = PreprocessingLib().preprocessing_pressure_map_upsample(images_up)
                     images_up = np.array(images_up)
-                    #images_up = PreprocessingLib().preprocessing_add_image_noise(images_up)
+                    images_up = PreprocessingLib().preprocessing_add_image_noise(images_up)
                     images_up = Variable(torch.Tensor(images_up), volatile = True, requires_grad=False)
                     #print images_up.size()
 
-                    images, targets, constraints = Variable(batch[0], volatile = True, requires_grad=False), Variable(batch[1], volatile = True, requires_grad=False), Variable(batch[2], volatile = True, requires_grad=False)
+                    images, targets, constraints = Variable(batch0, volatile = True, requires_grad=False), Variable(batch1, volatile = True, requires_grad=False), Variable(batch[2], volatile = True, requires_grad=False)
 
 
                     _, targets_est, angles_est, lengths_est, pseudotargets_est = model.forward_kinematic_jacobian(images_up, targets, constraints, forward_only = True)
@@ -337,28 +355,53 @@ class DataVisualizer():
                     targets = targets.data.numpy()
 
                     error_norm = VisualizationLib().print_error(targets, targets_est, self.output_size, self.loss_vector_type, data=str(count), printerror =  True)/1000
-                    print angles_est
-                    cum_error.append(error_norm[0])
-                    cum_distance=bed_distances[0]*50
 
-                error = np.mean(np.array(cum_error)*100, axis = 0)
-                std_error = np.std(np.array(cum_error)*100, axis=0)
-                self.im_sample = batch[0].numpy()
-                self.im_sample = np.squeeze(self.im_sample[0, :])
-                self.tar_sample = targets
-                self.tar_sample = np.squeeze(self.tar_sample[0, :]) / 1000
-                self.sc_sample = targets_est
-                self.sc_sample = np.squeeze(self.sc_sample[0, :]) / 1000
-                self.sc_sample = np.reshape(self.sc_sample, self.output_size)
-                self.pseudo_sample = pseudotargets_est
-                self.pseudo_sample = np.squeeze(self.pseudo_sample[0, :])/1000
-                self.pseudo_sample = np.reshape(self.pseudo_sample, (5, 3))
-                VisualizationLib().rviz_publish_input(self.im_sample[0, :, :], self.im_sample[-1, 10, 10])
-                VisualizationLib().rviz_publish_output(np.reshape(self.tar_sample, self.output_size), self.sc_sample, self.pseudo_sample)
-                VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample, block=True)
-                # VisualizationLib().visualize_error_from_distance(bed_distances, error_norm)
+                    if generate_confidence == True:
+                        print batch_idx #angles_est
+                        cum_error.append(error_norm[0])
+                        #cum_distance=bed_distances[0]*50
+                        cum_distance.append(np.squeeze(targets_est-targets))
 
-                if False:
+
+                    self.im_sample = batch0.numpy()
+                    self.im_sample = np.squeeze(self.im_sample[0, :])
+                    self.tar_sample = targets
+                    self.tar_sample = np.squeeze(self.tar_sample[0, :]) / 1000
+                    self.sc_sample = targets_est
+                    self.sc_sample = np.squeeze(self.sc_sample[0, :]) / 1000
+                    self.sc_sample = np.reshape(self.sc_sample, self.output_size)
+                    self.pseudo_sample = pseudotargets_est
+                    self.pseudo_sample = np.squeeze(self.pseudo_sample[0, :]) / 1000
+                    self.pseudo_sample = np.reshape(self.pseudo_sample, (5, 3))
+
+                    if count2 <= 1: VisualizationLib().rviz_publish_input(self.im_sample[0, :, :]*1.3, self.im_sample[-1, 10, 10])
+                    else: VisualizationLib().rviz_publish_input(self.im_sample[1, :, :]/2, self.im_sample[-1, 10, 10])
+
+                    VisualizationLib().rviz_publish_output(np.reshape(self.tar_sample, self.output_size), self.sc_sample, self.pseudo_sample)
+                    limbArray = VisualizationLib().rviz_publish_output_limbs(np.reshape(self.tar_sample, self.output_size), self.sc_sample, self.pseudo_sample, LimbArray=limbArray, count = count2)
+
+                    skip_image = VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample,block=True)
+                    #VisualizationLib().visualize_error_from_distance(bed_distances, error_norm)
+                    if skip_image == True:
+                        count2 = 100
+
+                if generate_confidence == True:
+                    cum_distance = np.array(cum_distance)
+                    mean_distance = np.mean(cum_distance, axis = 0)
+                    cum_distance = np.reshape(cum_distance, (cum_distance.shape[0], 10, 3))
+                    mean_distance = np.reshape(mean_distance, (10, 3))
+                    std_distance = 0.
+                    for point in np.arange(cum_distance.shape[0]):
+                        #print np.square(cum_distance[point,:,0] - mean_distance[:,0])
+                        std_distance += (np.square(cum_distance[point,:,0] - mean_distance[:,0]) + np.square(cum_distance[point,:,1] - mean_distance[:,1]) + np.square(cum_distance[point,:,2] - mean_distance[:,2]))/cum_distance.shape[0]
+                    std_distance = np.sqrt(std_distance)/10
+                    #print angles_est
+
+
+                if generate_confidence == True:
+
+                    error = np.mean(np.array(cum_error) * 100, axis=0)
+                    std_error = std_distance
 
                     x2.append(std_error[2])
                     y2.append(error[2])
@@ -370,12 +413,12 @@ class DataVisualizer():
                     y5.append(error[5])
                     print batch_idx
                     if batch_idx > 500:
-                        xlim = [0, 4]
-                        ylim = [0, 50]
+                        xlim = [0, 20]
+                        ylim = [0, 60]
                         fig = plt.figure()
-                        plt.suptitle('Subject 4 Validation. Euclidean Error as a function of Gaussian noise perturbations to output angles', fontsize = 16)
+                        plt.suptitle('Subject 4 Validation. Euclidean Error as a function of Gaussian noise perturbations to input images and shifting augmentation', fontsize = 16)
 
-                        ax1 = fig.add_subplot(2, 2, 1)
+                        ax1 = fig.add_subplot(2,2, 1)
                         ax1.set_xlim(xlim)
                         ax1.set_ylim(ylim)
                         ax1.set_xlabel('Std. Dev of 3D joint position following 15 noise perturbations per image')
@@ -409,7 +452,7 @@ class DataVisualizer():
 
                         plt.show()
 
-            elif self.loss_vector_type == 'arms_cascade':
+            elif self.loss_vector_type == 'confidence':
                 # append upper joint angles, lower joint angles, upper joint lengths, lower joint lengths, in that order
                 batch.append(torch.cat((batch[1][:, 39:49], batch[1][:, 57:65], batch[1][:, 30:39], batch[1][:, 49:57]), dim=1))
 
@@ -418,74 +461,31 @@ class DataVisualizer():
 
                 images, targets, constraints = Variable(batch[0], volatile=True, requires_grad=False), Variable(batch[1], volatile=True, requires_grad=False), Variable(batch[2], volatile=True,requires_grad=False)
 
-                #prior_cascade = torch.cat((targets[:, 3:6], constraints[:, 18:26] / 100), dim=1)  # just use this method to check, do a forward pass through the prior cascade when its trained
-                #print prior_cascade[0, :]
+                self.optimizer.zero_grad()
 
 
-                images_up = Variable(torch.Tensor(np.array(PreprocessingLib().preprocessing_pressure_map_upsample(batch[0].numpy()[:, :, 5:79, 5:42]))),requires_grad=False)
-                _, targets_prior, angles_prior, lengths_prior, pseudotargets_prior = model_cascade_prior.forward_kinematic_jacobian(images_up, targets, forward_only=True)
 
-                prior_cascade = torch.cat((Variable(torch.Tensor(targets_prior[:, 3:6])), Variable(torch.Tensor(lengths_prior[:, 0:8]))), dim = 1)
+                images_up = Variable(torch.Tensor(np.array(PreprocessingLib().preprocessing_pressure_map_upsample(batch[0].numpy()[:, :, 5:79, 5:42]))), requires_grad=False)
 
-
-                print targets.data.numpy()[:, 0:30].shape
-                print targets_prior.shape
-                VisualizationLib().print_error(targets.data.numpy()[:, 0:30], targets_prior, (10, 3), 'angles', data = 'validate')
-
-                targets_prior = np.concatenate((targets_prior, pseudotargets_prior), axis=1)
-
-                # find the pressure mat coordinates where the projected markers lie
-                targets_2D = CascadeLib().get_2D_projection(images.data.numpy(), np.reshape(targets.data.numpy(),(targets.size()[0], 15, 3)))
-                targets_2D_prior = CascadeLib().get_2D_projection(images.data.numpy(),np.reshape(targets_prior, (targets.size()[0], 15, 3)))
-
-                box_centers = np.round(targets_2D_prior[:, :, 0:2] / 28.6, 0)
-                image_cascade_right = CascadeLib().generate_bounded_box_input(batch[0].numpy(), box_centers, limb = 'right_arm')
-                image_cascade_right_up = PreprocessingLib().preprocessing_pressure_map_upsample(image_cascade_right)
-                image_cascade_right_tensor = Variable(torch.Tensor(image_cascade_right_up), requires_grad=False)
-
-                scores, targets_est, angles_est, _, _ = model.forward_kinematic_jacobian(image_cascade_right_tensor, targets, constraints, prior_cascade=prior_cascade, body_side = 'right')
-
-                print angles_est[0,:]
+                #find the pressure mat coordinates where the projected markers lie
+                targets_2D = CascadeLib().get_2D_projection(images.data.numpy(), np.reshape(targets.data.numpy(), (targets.size()[0], 15, 3)))
 
 
-                ground_truth = np.zeros((batch[0].numpy().shape[0], 6))  # 6 is 6 joint locations for the x y z right side elbow and hand
-                ground_truth = Variable(torch.Tensor(ground_truth))
-                targets2 = targets  # if we want to visualize the 3D targets using only x /y and not the normal projection on the mat, visualize this
-                targets = torch.cat((targets[:, 6:9], targets[:, 12:15]), dim=1)
-                ground_truth[:, 0:6] = targets / 1000.
-                VisualizationLib().print_error(targets.data.numpy(), targets_est, self.output_size, self.loss_vector_type, data='cascade validate')
-
-
-                print angles_est[0, :], 'angles'
-                im_sample = np.squeeze(batch[0].numpy()[0, 0, :])
-                tar_sample = targets_2D[0, :, :].flatten() / 1000  # targets2.data.numpy()#batch[1].numpy()
-                tar_prior_sample = targets_2D_prior[0, :, :, ].flatten() / 1000
-                full_im_tar_prior = []
-                full_im_tar_prior.append(im_sample)
-                full_im_tar_prior.append(tar_sample)
-                full_im_tar_prior.append(tar_prior_sample)
-
-                cascade_im_sample = image_cascade[0, :, :, :]
-                cascade_tar_sample = targets.data.numpy()[0, :]
-                cascade_sc_sample = targets_est[0, :]
-                cascade_im_tar_sc = []
-                cascade_im_tar_sc.append(cascade_im_sample)
-                cascade_im_tar_sc.append(cascade_tar_sample)
-                cascade_im_tar_sc.append(cascade_sc_sample)
-                cascade_im_tar_sc.append(box_centers)
-                VisualizationLib().visualize_pressure_map_cascade(full_im_tar_prior, cascade_im_tar_sc, block = True)
-
+                targets_proj_est = self.model.forward_confidence(images_up, targets_proj)
 
 
             elif self.loss_vector_type == None:
                 _, targets_est = model.forward_direct(images, targets)
 
-        return mean, stdev
+        return# mean, stdev
 
     def run(self):
         '''Runs either the synthetic database creation script or the
         raw dataset creation script to create a dataset'''
-        self.validate_convnet()
+        for subject in [4]:
+            self.init(subject)
+
+            self.validate_convnet()
 
 
 
@@ -507,6 +507,10 @@ if __name__ == "__main__":
                  help='Set path to the training database on lab harddrive.')
     p.add_option('--upper_only', action='store_true',
                  dest='upper_only', \
+                 default=False, \
+                 help='Train only on data from the arms, both sitting and laying.')
+    p.add_option('--nl', action='store_true',
+                 dest='no_loss', \
                  default=False, \
                  help='Train only on data from the arms, both sitting and laying.')
 

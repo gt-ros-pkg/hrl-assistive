@@ -6,6 +6,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.pylab import *
 import matplotlib.gridspec as gridspec
+import math
+
+
 
 import cPickle as pkl
 import random
@@ -26,6 +29,7 @@ from sklearn.utils import shuffle
 import rospy
 from visualization_msgs.msg import Marker
 from visualization_msgs.msg import MarkerArray
+import tf
 
 
 import pickle
@@ -56,6 +60,7 @@ HIGH_TAXEL_THRESH_Y = (NUMOFTAXELS_Y - 1)
 
 
 class VisualizationLib():
+
 
     def print_error(self, target, score, output_size, loss_vector_type = None, data = None, printerror = True):
 
@@ -126,7 +131,7 @@ class VisualizationLib():
             if bed_distance.shape[1] <= 5:
                 ax[joint] = fig.add_subplot(1, bed_distance.shape[1], joint + 1)
             else:
-                print math.ceil(bed_distance.shape[1]/2.)
+                #print math.ceil(bed_distance.shape[1]/2.)
                 ax[joint] = fig.add_subplot(2, math.ceil(bed_distance.shape[1]/2.), joint + 1)
             ax[joint].set_xlim([0, 0.7])
             ax[joint].set_ylim([0, 1])
@@ -136,6 +141,8 @@ class VisualizationLib():
 
 
     def visualize_pressure_map(self, p_map, targets_raw=None, scores_raw = None, p_map_val = None, targets_val = None, scores_val = None, block = False):
+        #p_map_val[0, :, :] = p_map[1, : ,:]
+
         try:
             p_map = p_map[0,:,:] #select the original image matrix from the intermediate amplifier matrix and the height matrix
         except:
@@ -225,151 +232,28 @@ class VisualizationLib():
             target_coord[:, 1] *= -1.0
             ax2.plot(target_coord[:, 0], target_coord[:, 1], marker = 'o', linestyle='None', markerfacecolor = 'white',markeredgecolor='black', ms=8)
         plt.pause(0.0001)
-        plt.show(block = block)
-        return
 
-    def visualize_pressure_map_cascade(self, full_im_tar_prior, cascade_im_tar_sc, full_im_tar_prior_val = None, cascade_im_tar_sc_val = None, block = False):
-        full_im = full_im_tar_prior[0]
-        full_tar = full_im_tar_prior[1]
-        full_prior = full_im_tar_prior[2]
+        axkeep = plt.axes([0.01, 0.05, 0.15, 0.075])
+        axdisc = plt.axes([0.01, 0.15, 0.15, 0.075])
+        self.skip_image = False
+        bdisc = Button(axdisc, 'Skip Image')
+        bdisc.on_clicked(self.skip)
+        bkeep = Button(axkeep, 'Continue')
+        bkeep.on_clicked(self.cont)
 
-        cascade_im = cascade_im_tar_sc[0]
-        cascade_tar = cascade_im_tar_sc[1]
-        cascade_sc = cascade_im_tar_sc[2]
+        plt.show(block=block)
+
+        return self.skip_image
 
 
+    def skip(self, event):
         plt.close()
-        plt.pause(0.0001)
+        self.skip_image = True
 
-        fig = plt.figure(1)
+    def cont(self, event):
+        plt.close()
+        self.skip_image = False
 
-        mngr = plt.get_current_fig_manager()
-        gridspec.GridSpec(3, 3)
-        # to put it into the upper left corner for example:
-        #mngr.window.setGeometry(50, 100, 840, 705)
-
-        plt.pause(0.0001)
-
-        # set options
-        if full_im_tar_prior_val is not None and cascade_im_tar_sc_val is not None:
-
-            full_im_val = full_im_tar_prior_val[0]
-            full_tar_val = full_im_tar_prior_val[1]
-            full_prior_val = full_im_tar_prior_val[2]
-
-            cascade_im_val = cascade_im_tar_sc_val[0]
-            cascade_tar_val = cascade_im_tar_sc_val[1]
-            cascade_sc_val = cascade_im_tar_sc_val[2]
-
-            try:
-                p_map_val = p_map_val[0, :, :] #select the original image matrix from the intermediate amplifier matrix and the height matrix
-            except:
-                pass
-            ax1 = fig.add_subplot(1, 2, 1)
-            ax2 = fig.add_subplot(1, 2, 2)
-            xlim = [-2.0, 49.0]
-            ylim = [86.0, -2.0]
-            ax1.set_xlim(xlim)
-            ax1.set_ylim(ylim)
-            ax2.set_xlim(xlim)
-            ax2.set_ylim(ylim)
-            ax1.set_axis_bgcolor('cyan')
-            ax2.set_axis_bgcolor('cyan')
-            ax1.imshow(p_map, interpolation='nearest', cmap=
-            plt.cm.bwr, origin='upper', vmin=0, vmax=100)
-            ax2.imshow(p_map_val, interpolation='nearest', cmap=
-            plt.cm.bwr, origin='upper', vmin=0, vmax=100)
-            ax1.set_title('Training Sample \n Targets and 2D projections')
-            ax2.set_title('Validation Sample \n Targets and Estimates')
-
-
-        else:
-            ax1 = plt.subplot2grid((2,3), (0, 0), colspan = 1, rowspan = 2)
-            xlim = [-2.0, 48.0]
-            ylim = [85.0, -2.0]
-            ax1.set_xlim(xlim)
-            ax1.set_ylim(ylim)
-            ax1.set_axis_bgcolor('cyan')
-            ax1.imshow(full_im, interpolation='nearest', cmap=plt.cm.bwr, origin='upper', vmin=0, vmax=100)
-            ax1.set_title('Training Sample \n 2D Projection \n Targets (g) and Priors (y)')
-
-            ax2 = plt.subplot2grid((2,3), (0, 1), colspan = 1, rowspan =  1)
-            xlim = [-1.0, 17.0]
-            ylim = [17.0, -1.0]
-            ax2.set_xlim(xlim)
-            ax2.set_ylim(ylim)
-            ax2.set_axis_bgcolor('cyan')
-            ax2.imshow(cascade_im[0, :, :], interpolation='nearest', cmap=plt.cm.bwr, origin='upper', vmin=0, vmax=100)
-            ax2.set_title('Shoulder \n Cascade')
-
-            ax2 = plt.subplot2grid((2,3), (0, 2), colspan = 1, rowspan =  1)
-            xlim = [-1.0, 17.0]
-            ylim = [17.0, -1.0]
-            ax2.set_xlim(xlim)
-            ax2.set_ylim(ylim)
-            ax2.set_axis_bgcolor('cyan')
-            ax2.imshow(cascade_im[1, :, :], interpolation='nearest', cmap=plt.cm.bwr, origin='upper', vmin=0, vmax=100)
-            ax2.set_title('Elbow \n Cascade')
-
-            ax2 = plt.subplot2grid((2,3), (1, 1), colspan = 1, rowspan =  1)
-            xlim = [-1.0, 17.0]
-            ylim = [17.0, -1.0]
-            ax2.set_xlim(xlim)
-            ax2.set_ylim(ylim)
-            ax2.set_axis_bgcolor('cyan')
-            ax2.imshow(cascade_im[2, :, :], interpolation='nearest', cmap=plt.cm.bwr, origin='upper', vmin=0, vmax=100)
-            ax2.set_title('Hand  \n Cascade')
-
-            ax2 = plt.subplot2grid((2,3), (1, 2), colspan = 1, rowspan =  1)
-            xlim = [-1.0, 17.0]
-            ylim = [17.0, -1.0]
-            ax2.set_xlim(xlim)
-            ax2.set_ylim(ylim)
-            ax2.set_axis_bgcolor('cyan')
-            ax2.imshow(cascade_im[3, :, :], interpolation='nearest', cmap=plt.cm.bwr, origin='upper', vmin=0, vmax=100)
-            ax2.set_title('Bedangle \n Matrix')
-
-
-
-        # Visualize targets of training set
-        if len(np.shape(full_tar)) == 1:
-            full_tar = np.reshape(full_tar, (len(full_tar) / 3, 3))
-        target_coord = full_tar[:, :2] / INTER_SENSOR_DISTANCE
-        target_coord[:, 1] -= (NUMOFTAXELS_X - 1)
-        target_coord[:, 1] *= -1.0
-        ax1.plot(target_coord[:, 0], target_coord[:, 1], marker = 'o', linestyle='None', markerfacecolor = 'green',markeredgecolor='black', ms=8)
-        plt.pause(0.0001)
-
-        #Visualize estimated from training set
-        if len(np.shape(full_prior)) == 1:
-            full_prior = np.reshape(full_prior, (len(full_prior) / 3, 3))
-        target_coord = full_prior[:, :2] / INTER_SENSOR_DISTANCE
-        target_coord[:, 1] -= (NUMOFTAXELS_X - 1)
-        target_coord[:, 1] *= -1.0
-        ax1.plot(target_coord[:, 0], target_coord[:, 1], marker = 'o', linestyle='None', markerfacecolor = 'yellow',markeredgecolor='black', ms=8)
-        plt.pause(0.0001)
-
-        ## Visualize targets of validation set
-        #if targets_val is not None:
-        #    if len(np.shape(targets_val)) == 1:
-        #        targets_val = np.reshape(targets_val, (len(targets_val) / 3, 3))
-        #    target_coord = targets_val[:, :2] / INTER_SENSOR_DISTANCE
-        #    target_coord[:, 1] -= (NUMOFTAXELS_X - 1)
-        #    target_coord[:, 1] *= -1.0
-        #    ax2.plot(target_coord[:, 0], target_coord[:, 1], marker = 'o', linestyle='None', markerfacecolor = 'green',markeredgecolor='black', ms=8)
-        #plt.pause(0.0001)
-
-        ## Visualize estimated from training set
-        #if scores_val is not None:
-        #    if len(np.shape(scores_val)) == 1:
-        #        scores_val = np.reshape(scores_val, (len(scores_val) / 3, 3))
-        #    target_coord = scores_val[:, :2] / INTER_SENSOR_DISTANCE
-        #    target_coord[:, 1] -= (NUMOFTAXELS_X - 1)
-        #    target_coord[:, 1] *= -1.0
-        #    ax2.plot(target_coord[:, 0], target_coord[:, 1], marker = 'o', linestyle='None', markerfacecolor = 'white',markeredgecolor='black', ms=8)
-        plt.pause(0.0001)
-        plt.show(block = block)
-        return
 
 
 
@@ -404,12 +288,12 @@ class VisualizationLib():
                 marker.pose.position.x = i*0.0286
                 if j > 33:
                     marker.pose.position.y = (84-j)*0.0286 - 0.0286*3*np.sin(np.deg2rad(angle))
-                    marker.pose.position.z = 0.#-0.1
+                    marker.pose.position.z = -0.1
                     #print marker.pose.position.x, 'x'
                 else:
 
                     marker.pose.position.y = (51) * 0.0286 + (33 - j) * 0.0286 * np.cos(np.deg2rad(angle)) - 0.0286*3*np.sin(np.deg2rad(angle))
-                    marker.pose.position.z = (33-j)*0.0286*np.sin(np.deg2rad(angle)) #-0.1
+                    marker.pose.position.z = (33-j)*0.0286*np.sin(np.deg2rad(angle)) -0.1
                     #print j, marker.pose.position.z, marker.pose.position.y, 'head'
 
                 # We add the new marker to the MarkerArray, removing the oldest
@@ -441,8 +325,8 @@ class VisualizationLib():
             Tmarker.scale.y = 0.05
             Tmarker.scale.z = 0.05
             Tmarker.color.a = 1.0
-            Tmarker.color.r = 1.0
-            Tmarker.color.g = 1.0
+            Tmarker.color.r = 0.0
+            Tmarker.color.g = 0.69
             Tmarker.color.b = 0.0
             Tmarker.pose.orientation.w = 1.0
             Tmarker.pose.position.x = targets[joint, 0]
@@ -466,7 +350,7 @@ class VisualizationLib():
             Smarker.scale.y = 0.04
             Smarker.scale.z = 0.04
             Smarker.color.a = 1.0
-            Smarker.color.r = 0.
+            Smarker.color.r = 1.0
             Smarker.color.g = 1.0
             Smarker.color.b = 1.0
             Smarker.pose.orientation.w = 1.0
@@ -488,13 +372,13 @@ class VisualizationLib():
                 PTmarker.header.frame_id = "autobed/base_link"
                 PTmarker.type = PTmarker.SPHERE
                 PTmarker.action = PTmarker.ADD
-                PTmarker.scale.x = 0.1
-                PTmarker.scale.y = 0.1
-                PTmarker.scale.z = 0.1
+                PTmarker.scale.x = 0.02
+                PTmarker.scale.y = 0.02
+                PTmarker.scale.z = 0.02
                 PTmarker.color.a = 1.0
                 PTmarker.color.r = 1.0
                 PTmarker.color.g = 1.0
-                PTmarker.color.b = 0.0
+                PTmarker.color.b = 1.0
                 PTmarker.pose.orientation.w = 1.0
                 PTmarker.pose.position.x = pseudotargets[joint, 0]
                 PTmarker.pose.position.y = pseudotargets[joint, 1]
@@ -505,5 +389,93 @@ class VisualizationLib():
                     m.id = ptid
                     ptid += 1
             ptargetPublisher.publish(PTargetArray)
+
+
+
+
+    def rviz_publish_output_limbs(self, targets, scores, pseudotargets = None, LimbArray = None, count = 0):
+
+
+        if LimbArray == None or count <= 2:
+            LimbArray = MarkerArray()
+
+
+        limbs = {}
+        limbs['right_forearm'] = [scores[2,0], scores[2,1], scores[2,2], scores[4,0], scores[4,1], scores[4,2]]
+        limbs['left_forearm'] = [scores[3,0], scores[3,1], scores[3,2], scores[5,0], scores[5,1], scores[5,2]]
+        limbs['right_upperarm'] = [pseudotargets[1,0], pseudotargets[1,1], pseudotargets[1,2], scores[2,0], scores[2,1], scores[2,2]]
+        limbs['left_upperarm'] = [pseudotargets[2,0], pseudotargets[2,1], pseudotargets[2,2], scores[3,0], scores[3,1], scores[3,2]]
+
+        limbs['right_calf'] = [scores[6,0], scores[6,1], scores[6,2], scores[8,0], scores[8,1], scores[8,2]]
+        limbs['left_calf'] = [scores[7,0], scores[7,1], scores[7,2], scores[9,0], scores[9,1], scores[9,2]]
+        limbs['right_thigh'] = [pseudotargets[3,0], pseudotargets[3,1], pseudotargets[3,2], scores[6,0], scores[6,1], scores[6,2]]
+        limbs['left_thigh'] = [pseudotargets[4,0], pseudotargets[4,1], pseudotargets[4,2], scores[7,0], scores[7,1], scores[7,2]]
+        limbs['torso_drop'] = [scores[1,0], scores[1,1], scores[1,2], scores[1,0]+.0001, scores[1,1]+.0001, scores[1,2] - .12]
+        limbs['torso_midhip'] = [scores[1,0]+.0001, scores[1,1]+.0001, scores[1,2] - .12, (pseudotargets[4,0]+pseudotargets[3,0])/2, pseudotargets[4,1], pseudotargets[4,2]]
+        limbs['torso_neck'] = [scores[1,0]+.0001, scores[1,1]+.0001, scores[1,2] - .12, (pseudotargets[1,0]+pseudotargets[2,0])/2, pseudotargets[1,1], pseudotargets[1,2]]
+        limbs['neck_head'] = [(pseudotargets[1,0]+pseudotargets[2,0])/2, pseudotargets[1,1], pseudotargets[1,2], scores[0,0], scores[0,1], scores[0,2]]
+
+        limbs['shouldershoulder'] =  [pseudotargets[1,0]+.0001, pseudotargets[1,1]+.0001, pseudotargets[1,2]+.0001, pseudotargets[2,0], pseudotargets[2,1], pseudotargets[2,2]]
+        limbs['hiphip'] =  [pseudotargets[3,0]+.0001, pseudotargets[3,1]+.0001, pseudotargets[3,2]+.0001, pseudotargets[4,0], pseudotargets[4,1], pseudotargets[4,2]]
+        #limbs['left_upperarm'] = [scores[3,0], scores[3,1], scores[3,2], scores[5,0], scores[5,1], scores[5,2]]
+
+        for limb in limbs:
+            sx1 = limbs[limb][0]
+            sy1 = limbs[limb][1]
+            sz1 = limbs[limb][2]
+            sx2 = limbs[limb][3]
+            sy2 = limbs[limb][4]
+            sz2 = limbs[limb][5]
+
+            limbscorePublisher = rospy.Publisher("/limbscores", MarkerArray)
+            Lmarker = Marker()
+            Lmarker.header.frame_id = "autobed/base_link"
+            Lmarker.type = Lmarker.CYLINDER
+            Lmarker.action = Lmarker.ADD
+            x_origin = np.array([1., 0., 0.])
+            z_vector = np.array([(sx2-sx1), (sy2-sy1), (sz2-sz1)])
+            z_mag = np.linalg.norm(z_vector)
+            z_vector = z_vector / z_mag
+
+            y_orth = np.cross(z_vector, x_origin)
+            y_orth = y_orth / np.linalg.norm(y_orth)
+
+            x_orth = np.cross(y_orth, z_vector)
+            x_orth = x_orth / np.linalg.norm(x_orth)
+
+            ROT_mat = np.matrix(np.eye(4))
+            ROT_mat[0:3, 0] = np.copy(np.reshape(x_orth, [3,1]))
+            ROT_mat[0:3, 1] = np.copy(np.reshape(y_orth, [3,1]))
+            ROT_mat[0:3, 2] = np.copy(np.reshape(z_vector, [3,1]))
+            Lmarker.scale.x = 0.02
+            Lmarker.scale.y = 0.02
+            Lmarker.scale.z = z_mag
+
+            if count <= 1:
+                Lmarker.color.a = 1.0
+            else:
+                Lmarker.color.a = 0.2
+
+            Lmarker.color.r = 1.0
+            Lmarker.color.g = 1.0
+            Lmarker.color.b = 1.0
+            Lmarker.pose.orientation.x = tf.transformations.quaternion_from_matrix(ROT_mat)[0]
+            Lmarker.pose.orientation.y = tf.transformations.quaternion_from_matrix(ROT_mat)[1]
+            Lmarker.pose.orientation.z = tf.transformations.quaternion_from_matrix(ROT_mat)[2]
+            Lmarker.pose.orientation.w = tf.transformations.quaternion_from_matrix(ROT_mat)[3]
+
+            Lmarker.pose.position.x = (sx1+sx2)/2
+            Lmarker.pose.position.y = (sy1+sy2)/2
+            Lmarker.pose.position.z = (sz1+sz2)/2
+            LimbArray.markers.append(Lmarker)
+            lid = 0
+            for m in LimbArray.markers:
+                m.id = lid
+                lid += 1
+
+
+        limbscorePublisher.publish(LimbArray)
+
+        return LimbArray
 
 
