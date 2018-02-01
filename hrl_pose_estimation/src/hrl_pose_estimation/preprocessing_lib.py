@@ -167,13 +167,17 @@ class PreprocessingLib():
             height_strip = np.repeat(np.expand_dims(height_strip, axis = 1), 47, 1)
             a_map = height_strip
 
+            #ZACKORY: ALTER THE VARIABLE "p_map" HERE TO STANDARDIZE. IT IS AN 84x47 MATRIX WITHIN EACH LOOP.
+            #THIS ALTERATION WILL ALSO CHANGE HOW THE EDGE IS CALCULATED. IF YOU WANT TO DO THEM SEPARATELY,
+            #THEN DO IT AFTER THE 'INCLUDE INTER' IF STATEMENT.
+            #p_map = standardize(p_map)
+
+
             if include_inter == True:
-                #p_map_inter = (100-2*np.abs(p_map - 50))*4
-                #p_map_inter = ndimage.filters.laplace(p_map)*2
-                #print p_map_inter
+                # this makes a sobel edge on the image
                 sx = ndimage.sobel(p_map, axis=0, mode='constant')
                 sy = ndimage.sobel(p_map, axis=1, mode='constant')
-                p_map_inter = np.hypot(sx, sy) #this makes a sobel edge on the image
+                p_map_inter = np.hypot(sx, sy)
                 p_map_dataset.append([p_map, p_map_inter, a_map])
             else:
                 p_map_dataset.append([p_map, a_map])
