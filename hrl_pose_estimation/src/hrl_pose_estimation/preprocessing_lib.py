@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 import sys
 import os
 import time
@@ -13,7 +14,7 @@ import scipy.stats as ss
 from scipy.misc import imresize
 from scipy.ndimage.interpolation import zoom
 from skimage.feature import hog
-from skimage import data, color, exposure
+from skimage import data, color, exposure, feature
 
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import scale
@@ -38,6 +39,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 #from torchvision import transforms
 from torch.autograd import Variable
+
 
 MAT_WIDTH = 0.762 #metres
 MAT_HEIGHT = 1.854 #metres
@@ -111,6 +113,7 @@ class PreprocessingLib():
         return weight_matrix
 
     def preprocessing_add_image_noise(self, images):
+
         queue = np.copy(images[:, 0:2, :, :])
         queue[queue != 0] = 1.
 
@@ -119,11 +122,16 @@ class PreprocessingLib():
         prob = ss.norm.cdf(xU, scale=5) - ss.norm.cdf(xL,scale=5)  # scale is the standard deviation using a cumulative density function
         prob = prob / prob.sum()  # normalize the probabilities so their sum is 1
         image_noise = np.random.choice(x, size=(images.shape[0], images.shape[1]-1, images.shape[2], images.shape[3]), p=prob)
-        image_noise = image_noise*queue
+
+
+        #image_noise = image_noise*queue
         images[:, 0:2, :, :] += image_noise
 
-        #print images[0, 0, 50, 10:25]
+        #print images[0, 0, 50, 10:25], 'added noise'
 
+        #clip noise so we dont go outside sensor limits
+        images[:, 0, :, :] = np.clip(images[:, 0, :, :], 0, 100)
+        images[:, 1, :, :] = np.clip(images[:, 1, :, :], 0, 10000)
         return images
 
 
@@ -145,14 +153,27 @@ class PreprocessingLib():
 
     def preprocessing_create_pressure_angle_stack(self,x_data, a_data, include_inter, mat_size, verbose):
         '''This is for creating a 2-channel input using the height of the bed. '''
+        print np.shape(x_data)
+        print np.shape(a_data), 'angle dat'
+
+        print 'calculating height matrix and sobel filter'
         p_map_dataset = []
         for map_index in range(len(x_data)):
             # print map_index, self.mat_size, 'mapidx'
             # Resize mat to make into a matrix
             p_map = np.reshape(x_data[map_index], mat_size)
-            a_map = zeros_like(p_map) + a_data[map_index]
+            height_strip = np.zeros(np.shape(p_map)[0])
+            height_strip[10:35] = np.flip(np.linspace(0, 1, num=25) * 25 * 2.86 * np.sin(np.deg2rad(a_data[map_index])), axis = 0)
+            height_strip = np.repeat(np.expand_dims(height_strip, axis = 1), 47, 1)
+            a_map = height_strip
+
             if include_inter == True:
-                p_map_inter = (100-2*np.abs(p_map - 50))*4
+                #p_map_inter = (100-2*np.abs(p_map - 50))*4
+                #p_map_inter = ndimage.filters.laplace(p_map)*2
+                #print p_map_inter
+                sx = ndimage.sobel(p_map, axis=0, mode='constant')
+                sy = ndimage.sobel(p_map, axis=1, mode='constant')
+                p_map_inter = np.hypot(sx, sy) #this makes a sobel edge on the image
                 p_map_dataset.append([p_map, p_map_inter, a_map])
             else:
                 p_map_dataset.append([p_map, a_map])

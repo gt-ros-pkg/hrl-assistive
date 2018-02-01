@@ -35,15 +35,17 @@ class CNN(nn.Module):
         self.CNN_pack1 = nn.Sequential(
             nn.Conv2d(3, hidden_dim1, kernel_size = 5, stride = 2, padding = 1),
             nn.ReLU(inplace = True),
-            nn.Dropout(p = 0.5, inplace=False),
+            nn.Dropout(p = 0.1, inplace=False),
             nn.Conv2d(hidden_dim1, hidden_dim2, kernel_size=5, stride=2, padding= 1),
             nn.ReLU(inplace=True),
-            nn.Dropout(p = 0.5, inplace=False),
+            nn.Dropout(p = 0.1, inplace=False),
             nn.Conv2d(hidden_dim2, hidden_dim3, kernel_size=5, stride=1, padding= 0),
             nn.ReLU(inplace=True),
+            nn.Dropout(p = 0.1, inplace=False),
             nn.Conv2d(hidden_dim3, hidden_dim4, kernel_size=3, stride=1, padding= 0),
             nn.ReLU(inplace=True),
             nn.Conv2d(hidden_dim3, hidden_dim4, kernel_size=3, stride=1, padding= 0),
+            nn.Dropout(p=0.1, inplace=False),
         )
 
         self.CNN_pack2 = nn.Sequential(
@@ -165,7 +167,7 @@ class CNN(nn.Module):
         scores = scores.view(images.size(0),scores_size[1] *scores_size[2]*scores_size[3])
 
         #print scores.size(), 'scores fc1'
-        scores = self.CNN_fc(scores)
+        scores = self.CNN_fc1(scores)
 
         targets_est = np.copy(scores.data.numpy())
 
@@ -237,6 +239,8 @@ class CNN(nn.Module):
             image_noise = Variable(torch.Tensor(image_noise), volatile = True)
             image_noise = torch.mul(bin_nonz, image_noise)
             scores_cnn = torch.add(scores_cnn, image_noise)
+
+
 
         scores = self.CNN_fc1(scores_cnn)
 

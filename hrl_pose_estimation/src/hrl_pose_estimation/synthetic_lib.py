@@ -58,7 +58,7 @@ class SyntheticLib():
         prob = ss.norm.cdf(xU, scale=3) - ss.norm.cdf(xL, scale=3)
         prob = prob / prob.sum()  # normalize the probabilities so their sum is 1
         multiplier = np.random.choice(x, size=images.shape[0], p=prob)
-        multiplier = ( multiplier *0.020 ) +1
+        multiplier = (multiplier *0.020) +1
         #plt.hist(multiplier)
         #plt.show()
         #multiplier[:] = 1.2

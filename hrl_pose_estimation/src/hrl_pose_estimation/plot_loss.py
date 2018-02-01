@@ -277,7 +277,7 @@ class DataVisualizer():
 
         print len(self.validation_set), 'size of validation set'
         batch_size = 1
-        generate_confidence = False
+        generate_confidence = True
         self.test_dataset = torch.utils.data.TensorDataset(self.test_x_tensor, self.test_y_tensor)
         self.test_loader = torch.utils.data.DataLoader(self.test_dataset, batch_size, shuffle=True)
 
@@ -287,6 +287,7 @@ class DataVisualizer():
         #angle_model = torch.load(self.dump_path + '/subject_' + str(self.subject) + '/p_files/convnet_2to8_alldata_armsonly_upper_angles_115b_adam_200e_4.pt')
 
         if self.loss_vector_type == 'angles':
+            print self.dump_path + '/subject_' + str(4) + '/p_files/convnet_2to8_angles_5x5_dropout1_115b_150e_4.pt'
             model = torch.load(self.dump_path + '/subject_' + str(4) + '/p_files/convnet_2to8_angles_5x5_115b_150e_4.pt')
             pp = 0
             for p in list(model.parameters()):
@@ -318,9 +319,10 @@ class DataVisualizer():
                 count2 = 0
                 cum_error = []
                 cum_distance = []
+                limbArray = None
 
                 if generate_confidence == True:
-                    limit = 15
+                    limit = 100
                 else:
                     limit = 1
                 while count2 < limit:
@@ -329,7 +331,7 @@ class DataVisualizer():
                     if generate_confidence == True:
                         batch0 = batch[0].clone()
                         batch1 = batch[1].clone()
-                        batch0, batch1,_ = SyntheticLib().synthetic_master(batch0, batch1,flip=False, shift=False, scale=True,bedangle=True, include_inter=self.include_inter, loss_vector_type=self.loss_vector_type)
+                        batch0, batch1,_ = SyntheticLib().synthetic_master(batch0, batch1,flip=False, shift=False, scale=False,bedangle=True, include_inter=self.include_inter, loss_vector_type=self.loss_vector_type)
                     else:
                         batch0 = batch[0].clone()
                         batch1 = batch[1].clone()
@@ -361,9 +363,6 @@ class DataVisualizer():
                         cum_distance.append(np.squeeze(targets_est-targets))
 
 
-                    #print angles_est
-                    #print lengths_est
-                    #print std_distance
                     self.im_sample = batch0.numpy()
                     self.im_sample = np.squeeze(self.im_sample[0, :])
                     self.tar_sample = targets
@@ -374,14 +373,17 @@ class DataVisualizer():
                     self.pseudo_sample = pseudotargets_est
                     self.pseudo_sample = np.squeeze(self.pseudo_sample[0, :]) / 1000
                     self.pseudo_sample = np.reshape(self.pseudo_sample, (5, 3))
-                    #VisualizationLib().rviz_publish_input(self.im_sample[0, :, :], self.im_sample[-1, 10, 10])
-                    #VisualizationLib().rviz_publish_output(np.reshape(self.tar_sample, self.output_size), self.sc_sample, self.pseudo_sample)
-                    #if angles_est[0,14] < -110 or angles_est[0,15] < -110:
-                    #    print angles_est[0,14:16], 'bad angles ********************************************************************'
-                    #    skip_image = VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample,block=True)
-                    # VisualizationLib().visualize_error_from_distance(bed_distances, error_norm)
-                    #if skip_image == True:
-                    #    count2 = 15
+
+                    if count2 <= 1: VisualizationLib().rviz_publish_input(self.im_sample[0, :, :]*1.3, self.im_sample[-1, 10, 10])
+                    else: VisualizationLib().rviz_publish_input(self.im_sample[1, :, :]/2, self.im_sample[-1, 10, 10])
+
+                    VisualizationLib().rviz_publish_output(np.reshape(self.tar_sample, self.output_size), self.sc_sample, self.pseudo_sample)
+                    limbArray = VisualizationLib().rviz_publish_output_limbs(np.reshape(self.tar_sample, self.output_size), self.sc_sample, self.pseudo_sample, LimbArray=limbArray, count = count2)
+
+                    skip_image = VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample,block=True)
+                    #VisualizationLib().visualize_error_from_distance(bed_distances, error_norm)
+                    if skip_image == True:
+                        count2 = 100
 
                 if generate_confidence == True:
                     cum_distance = np.array(cum_distance)
@@ -410,7 +412,7 @@ class DataVisualizer():
                     x5.append(std_error[5])
                     y5.append(error[5])
                     print batch_idx
-                    if batch_idx > 200:
+                    if batch_idx > 500:
                         xlim = [0, 20]
                         ylim = [0, 60]
                         fig = plt.figure()
@@ -480,7 +482,7 @@ class DataVisualizer():
     def run(self):
         '''Runs either the synthetic database creation script or the
         raw dataset creation script to create a dataset'''
-        for subject in [2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18]:
+        for subject in [4]:
             self.init(subject)
 
             self.validate_convnet()

@@ -93,8 +93,11 @@ class PhysicalTrainer():
         print test_file
         #Entire pressure dataset with coordinates in world frame
 
-        self.save_name = '_2to8_angles_5x5_dropout1_2_' + str(self.batch_size) + 'b_' + str(self.num_epochs) + 'e_4'
-        self.loss_vector_type = 'angles'  # 'arms_cascade'#'upper_angles' #this is so you train the set to joint lengths and angles
+        self.save_name = '_2to8_angles_5x5_dropout1234_' + str(self.batch_size) + 'b_' + str(self.num_epochs) + 'e_4'
+
+
+        #change this to 'direct' when you are doing baseline methods
+        self.loss_vector_type = 'angles'#''angles'  # 'arms_cascade'#'upper_angles' #this is so you train the set to joint lengths and angles
 
         #we'll be loading this later
         if self.opt.computer == 'lab_harddrive':
@@ -248,7 +251,7 @@ class PhysicalTrainer():
 
         for batch_idx, batch in enumerate(self.train_loader):
             batch[0], batch[1], _ = SyntheticLib().synthetic_master(batch[0], batch[1], flip=True,
-                                                                           shift=True, scale=False,
+                                                                           shift=True, scale=True,
                                                                            bedangle=True,
                                                                            include_inter=self.include_inter,
                                                                            loss_vector_type=self.loss_vector_type)
@@ -293,8 +296,9 @@ class PhysicalTrainer():
             elif baseline == 'SVM':
                 regr = svm.SVR()
                 regr.fit(images_up, targets)
-                SVR(C=1.0, cache_size=200, coef0=0.0, degree=3, epsilon=0.1, gamma='auto',
-                    kernel='rbf', max_iter=-1, shrinking=True, tol=0.001, verbose=False)
+                SVR(C=1.0, kernel='rbf', verbose = True)
+                #SVR(C=1.0, cache_size=200, coef0=0.0, degree=3, epsilon=0.1, gamma='auto',
+                #                    kernel='rbf', max_iter=-1, shrinking=True, tol=0.001, verbose=False)
 
             elif baseline == 'Ridge':
                 regr = linear_model.Ridge(alpha=1.0)
@@ -309,9 +313,9 @@ class PhysicalTrainer():
             print 'done fitting'
 
             if self.opt.computer == 'lab_harddrive':
-                pkl.dump(regr, open('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leaveOut) + '/p_files/HoG_Linear.p', 'wb'))
+                pkl.dump(regr, open('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leaveOut) + '/p_files/HoG_SVM.p', 'wb'))
             elif self.opt.computer == 'aws':
-                pkl.dump(regr, open('/home/ubuntu/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leaveOut) + '/p_files/HoG_Linear.p', 'wb'))
+                pkl.dump(regr, open('/home/ubuntu/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leaveOut) + '/p_files/HoG_SVM.p', 'wb'))
 
             #validation
             for batchtest_idx, batchtest in enumerate(self.test_loader):
@@ -475,7 +479,7 @@ class PhysicalTrainer():
                 batch[0], batch[1], batch[2]= SyntheticLib().synthetic_master(batch[0], batch[1], batch[2], flip=True, shift=True, scale=True, bedangle=True, include_inter=self.include_inter, loss_vector_type=self.loss_vector_type)
 
 
-                images_up = Variable(torch.Tensor(np.array(PreprocessingLib().preprocessing_pressure_map_upsample(batch[0].numpy()[:, :, 10:74, 10:37]))),requires_grad=False)
+                images_up = Variable(torch.Tensor(PreprocessingLib().preprocessing_add_image_noise(np.array(PreprocessingLib().preprocessing_pressure_map_upsample(batch[0].numpy()[:, :, 10:74, 10:37])))),requires_grad=False)
                 images, targets, constraints = Variable(batch[0], requires_grad = False), Variable(batch[1], requires_grad = False), Variable(batch[2], requires_grad = False)
 
 
@@ -483,7 +487,6 @@ class PhysicalTrainer():
 
                 #image_coords = np.round(targets_2D[:, :, 0:2] / 28.6, 0)
                 #print image_coords[0, :, :]
-
 
                 self.optimizer.zero_grad()
 
@@ -508,44 +511,16 @@ class PhysicalTrainer():
                 self.criterion = nn.L1Loss()
                 loss = self.criterion(scores, scores_zeros)
 
-            elif self.loss_vector_type == 'confidence':
-
-                batch[0], batch[1], _= SyntheticLib().synthetic_master(batch[0], batch[1], flip=True, shift=True, scale=True,
-                                                           bedangle=True,
-                                                           include_inter=self.include_inter,
-                                                           loss_vector_type=self.loss_vector_type)
-
-
-
-
-
-                images, targets = Variable(batch[0], requires_grad = False), Variable(batch[1], requires_grad = False)
-                self.optimizer.zero_grad()
-                images_up = Variable(torch.Tensor(np.array(PreprocessingLib().preprocessing_pressure_map_upsample(batch[0].numpy()[:, :, 5:79, 5:42]))), requires_grad=False)
-
-                #find the pressure mat coordinates where the projected markers lie
-                targets_2D = CascadeLib().get_2D_projection(images.data.numpy(), np.reshape(targets.data.numpy(), (targets.size()[0], 10, 3)))
-
-                image_coords = np.round(targets_2D[:, :, 0:2] / 28.6, 0)
-                print image_coords[0, :, :]
-
-                targets_proj = targets_2D
-                targets_proj_est = self.model.forward_confidence(images_up, targets_proj)
-
-
-                self.criterion = nn.L1Loss()
-
-                loss = self.criterion(targets_proj_est, targets_proj)
-
 
             elif self.loss_vector_type == 'direct':
 
-                batch[0],batch[1], _ = SyntheticLib().synthetic_master(batch[0], batch[1], flip=True, shift=True, scale=False, bedangle=True, include_inter = self.include_inter, loss_vector_type = self.loss_vector_type)
+                batch[0],batch[1], _ = SyntheticLib().synthetic_master(batch[0], batch[1], flip=True, shift=True, scale=True, bedangle=True, include_inter = self.include_inter, loss_vector_type = self.loss_vector_type)
 
+                images_up = Variable(torch.Tensor(PreprocessingLib().preprocessing_add_image_noise(np.array(PreprocessingLib().preprocessing_pressure_map_upsample(batch[0].numpy()[:, :, 10:74, 10:37])))), requires_grad=False)
                 images, targets, scores_zeros = Variable(batch[0], requires_grad = False), Variable(batch[1], requires_grad = False), Variable(torch.Tensor(np.zeros((batch[1].shape[0], batch[1].shape[1]/3))), requires_grad = False)
 
                 self.optimizer.zero_grad()
-                scores, targets_est = self.model.forward_direct(images, targets)
+                scores, targets_est = self.model.forward_direct(images_up, targets)
 
                 self.criterion = nn.L1Loss()
                 loss = self.criterion(scores/1000, scores_zeros/1000)
@@ -619,16 +594,7 @@ class PhysicalTrainer():
                 #get the direct joint locations
                 batch[1] = batch[1][:, 0:30]
 
-
-                images_up = batch[0].numpy()
-                images_up = images_up[:, :, 10:74, 10:37]
-                images_up = PreprocessingLib().preprocessing_pressure_map_upsample(images_up)
-                images_up = np.array(images_up)
-                images_up = Variable(torch.Tensor(images_up), volatile = True, requires_grad = False)
-                #print images_up.size()
-
-
-
+                images_up = Variable(torch.Tensor(np.array(PreprocessingLib().preprocessing_pressure_map_upsample(batch[0].numpy()[:, :, 10:74, 10:37]))), requires_grad=False)
                 images, targets, constraints = Variable(batch[0], volatile = True, requires_grad=False), Variable(batch[1],volatile = True, requires_grad=False), Variable(batch[2], volatile = True, requires_grad=False)
 
                 self.optimizer.zero_grad()
@@ -650,41 +616,16 @@ class PhysicalTrainer():
                 loss = self.criterion(scores[:, 0:8], scores_zeros[:, 0:8])
                 loss = loss.data[0]
 
-            elif self.loss_vector_type == 'confidence':
-
-                #append upper joint angles, lower joint angles, upper joint lengths, lower joint lengths, in that order
-                batch.append(torch.cat((batch[1][:,39:49], batch[1][:, 57:65], batch[1][:, 30:39], batch[1][:, 49:57]), dim = 1))
-
-                # get the targets and pseudotargets
-                batch[1] = torch.cat((batch[1][:, 0:30], batch[1][:, 65:80]), dim=1)
-
-                images, targets, constraints = Variable(batch[0], volatile = True, requires_grad = False), Variable(batch[1], volatile = True, requires_grad = False), Variable(batch[2], volatile = True, requires_grad = False)
-
-                self.optimizer.zero_grad()
-
-
-
-                images_up = Variable(torch.Tensor(np.array(PreprocessingLib().preprocessing_pressure_map_upsample(batch[0].numpy()[:, :, 5:79, 5:42]))), requires_grad=False)
-
-                #find the pressure mat coordinates where the projected markers lie
-                targets_2D = CascadeLib().get_2D_projection(images.data.numpy(), np.reshape(targets.data.numpy(), (targets.size()[0], 15, 3)))
-
-
-                targets_proj_est = self.model.forward_confidence(images_up, targets_proj)
-
-                self.criterion = nn.L1Loss()
-                loss = self.criterion(targets_proj_est[:, 0:2], targets_proj[:, 0:2])
-                loss = loss.data[0]
-
-                print angles_est[0, :], 'angles'
-                print batch[0][0,2,10,10], 'bed angle'
 
 
             elif self.loss_vector_type == 'direct':
+
+                images_up = Variable(torch.Tensor(np.array(PreprocessingLib().preprocessing_pressure_map_upsample(batch[0].numpy()[:, :, 10:74, 10:37]))),requires_grad=False)
                 images, targets, scores_zeros = Variable(batch[0], volatile = True), Variable(batch[1], volatile = True), Variable(torch.Tensor(np.zeros((batch[1].shape[0], batch[1].shape[1]/3))), requires_grad = False)
 
 
-                scores, targets_est = self.model.forward_direct(images, targets)
+                scores, targets_est = self.model.forward_direct(images_up, targets)
+                self.criterion = nn.L1Loss()
 
                 loss = self.criterion(scores/1000., scores_zeros/1000.)
                 loss = loss.data[0]
@@ -703,9 +644,11 @@ class PhysicalTrainer():
 
         VisualizationLib().print_error(targets.data.numpy(), targets_est, self.output_size, self.loss_vector_type, data='validate')
 
-        if self.loss_vector_type == 'angles' or self.loss_vector_type == 'direct' or self.loss_vector_type == 'upper_angles':
-            print angles_est[0, :], 'validation angles'
-            print lengths_est[0, :], 'validation lengths'
+        if self.loss_vector_type == 'angles' or self.loss_vector_type == 'direct':
+            if self.loss_vector_type == 'angles':
+                print angles_est[0, :], 'validation angles'
+                print lengths_est[0, :], 'validation lengths'
+
             print batch[0][0,2,10,10], 'validation bed angle'
             self.im_sampleval = images.data.numpy()
             #self.im_sampleval = self.im_sampleval[:,0,:,:]
