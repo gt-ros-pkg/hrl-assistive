@@ -737,7 +737,20 @@ def get_ext_data(subjects, task_name, raw_data_path, save_data_path, param_dict,
 
 
         ut.save_pickle(td, crossVal_pkl)
+
+
+
+    if len(td['success_image_list'])<len(td['success_files']):
+        td['success_image_list'] = [None]*len(td['success_files'])
+    if len(td['success_d_image_list'])<len(td['success_files']):
+        td['success_d_image_list'] = [None]*len(td['success_files'])
+    if len(td['failure_image_list'])<len(td['failure_files']):
+        td['failure_image_list'] = [None]*len(td['failure_files'])
+    if len(td['failure_d_image_list'])<len(td['failure_files']):
+        td['failure_d_image_list'] = [None]*len(td['failure_files'])
     
+
+        
     if raw_feature is False:
         #------------------------------------------
         # select feature for detection

@@ -143,6 +143,7 @@ def extract_image(f, img_feature_type='vgg', img_scale=None, img_ordering='th'):
     '''
     cv2 imread follows th ordering.
     '''
+    if f is None: return None
 
     # Extract image features
     if img_feature_type is 'cnn':

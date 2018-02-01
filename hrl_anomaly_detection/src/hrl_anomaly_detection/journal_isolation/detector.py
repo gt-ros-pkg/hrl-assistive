@@ -31,6 +31,7 @@
 import os, sys, copy, random
 import numpy as np
 import scipy
+from sklearn.externals import joblib
 
 # Private utils
 import hrl_lib.util as ut
@@ -60,7 +61,7 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
     if latent_plot: renew = False
                           
     print "Start to get anomaly scores"
-    if (os.path.isfile(save_pkl) and renew is False) or True:
+    if (os.path.isfile(save_pkl) and renew is False):
         print "Load anomaly detection results"
         d = ut.load_pickle(save_pkl)
     else:
@@ -124,12 +125,18 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
         x = np.array(zs_tr_n).reshape(-1,np.shape(zs_tr_n)[-1])
         y = np.array(scores_tr_n).reshape(-1,np.shape(scores_tr_n)[-1])
 
-        clf_method = 'SVR'
+        clf_method = kwargs.get('clf_method', 'SVR')
+        clf_file   = kwargs.get('clf_file', None)
+        
         if clf_method=='SVR':
             print "Start to fit SVR with gamma="
             from sklearn.svm import SVR
-            #clf = SVR(C=1.0, epsilon=0.2, kernel='rbf', degree=3, gamma=3.0)
-            clf = SVR(C=1.0, epsilon=0.2, kernel='rbf', degree=3, gamma=2.5)
+            if os.path.isfile(clf_file): # and renew is False:
+                print "Load a classifier"
+                clf = joblib.load(clf_file)
+            else:
+                clf = SVR(C=1.0, epsilon=0.2, kernel='rbf', degree=3, gamma=2.5)
+                if clf_file is not None: joblib.dump(clf, clf_file)
         elif clf_method=='RF':
             print "Start to fit RF : ", np.shape(x), np.shape(y)
             from sklearn.ensemble import RandomForestRegressor
@@ -156,12 +163,9 @@ def anomaly_detection(vae, vae_mean, vae_logvar, enc_z_mean, enc_z_logvar, gener
                 x = x[:10000]
                 y = y[:10000]
 
-        from sklearn import preprocessing
-        #scaler = preprocessing.StandardScaler()
-        scaler = preprocessing.MinMaxScaler()
-        #x = scaler.fit_transform(x)            
-            
-        ## print np.shape(x), np.shape(y)
+        ## from sklearn import preprocessing
+        ## scaler = preprocessing.MinMaxScaler()
+        ## x = scaler.fit_transform(x)            
         clf.fit(x, y)
 
     #--------------------------------------------------------------------

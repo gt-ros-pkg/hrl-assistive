@@ -47,7 +47,7 @@ from keras import objectives
 from keras.callbacks import *
 import keras
 
-from hrl_anomaly_detection.journal_isolation.models import keras_util as ku
+from hrl_execution_monitor.keras_util import keras_util as ku
 ## from hrl_anomaly_detection.vae import util as vutil
 
 import gc
@@ -58,7 +58,7 @@ vgg_weights_path = os.path.expanduser('~')+'/git/keras_test/vgg16_weights.h5'
 
 
 def img_net(trainData, testData, batch_size=512, nb_epoch=500, \
-            patience=20, fine_tuning=False, noise_mag=0.0,\
+            patience=20, fine_tuning=False, noise_mag=0.0, img_scale=0.25, img_feature_type='vgg',\
             weights_file=None, save_weights_file='sig_weights.h5', renew=False, **kwargs):
     """
     Variational Autoencoder with two LSTMs and one fully-connected layer
@@ -75,45 +75,32 @@ def img_net(trainData, testData, batch_size=512, nb_epoch=500, \
     n_labels = len(np.unique(y_train))
     print "Labels: ", np.unique(y_train), " #Labels: ", n_labels
     print "Labels: ", np.unique(y_test), " #Labels: ", n_labels
-
-
-
-    # Extract images -------------------------------------------------------------------
-    from hrl_execution_monitor import preprocess as pp
-    rm_idx = []
-    x = []
-    for j, f in enumerate(x_train):
-        if f is None:
-            print "None image ", j+1, '/', len(x_train)
-            rm_idx.append(j)
-            continue
-
-        img = extract_image(f, img_feature_type=img_feature_type, img_scale=img_scale)
-        x.append(img)
-
-    y_train  = np.expand_dims(trainData[1], axis=-1)
-    n_labels = len(np.unique(y_train))
-    get_bottleneck_image(save_data_path, n_labels, idx)
-
-
-
-
-    
     print np.shape(x_train), np.shape(y_train), np.shape(x_test), np.shape(y_test)
 
     # Convert labels to categorical one-hot encoding
     y_train = keras.utils.to_categorical(y_train, num_classes=n_labels)
     y_test  = keras.utils.to_categorical(y_test, num_classes=n_labels)
 
-    from sklearn import preprocessing
-    scaler  = preprocessing.StandardScaler()
-    #scaler  = preprocessing.MinMaxScaler()
-    x_train = scaler.fit_transform(x_train)
-    x_test  = scaler.transform(x_test)
+
+    # Extract images -------------------------------------------------------------------
+    ## get_bottleneck_image(save_data_path, n_labels, idx)
+
+    # split train data into training and validation data.
+    idx_list = range(len(x_train))
+    np.random.shuffle(idx_list)
+    x = np.array(x_train)[idx_list]
+    y = y_train[idx_list]
+
+    x_train = x[:int(len(x)*0.7)]
+    y_train = y[:int(len(x)*0.7)]
+
+    x_val = x[int(len(x)*0.7):]
+    y_val = y[int(len(x)*0.7):]
+    
 
     # Model construction (VGG16) ---------------------------------------------------------
     model = Sequential()
-    model.add(ZeroPadding2D((1, 1), input_shape=input_shape))
+    model.add(ZeroPadding2D((1, 1), input_shape=np.shape(x_train[0])))
 
     model.add(Convolution2D(64, 3, 3, activation='relu', name='conv1_1'))
     model.add(ZeroPadding2D((1, 1)))
@@ -167,16 +154,14 @@ def img_net(trainData, testData, batch_size=512, nb_epoch=500, \
             model.layers[k].set_weights(weights)
         f.close()
         print('Model loaded.')
-    # 31 layers---------------------------------------------------------------
-    
+    # 31 layers---------------------------------------------------------------    
     if fine_tune and False:
         for layer in model.layers[:25]:
             layer.trainable = False
     else:
+        # No train vgg network
         for layer in model.layers:
             layer.trainable = False
-
-
 
     
     print(model.summary())
@@ -208,8 +193,10 @@ def img_net(trainData, testData, batch_size=512, nb_epoch=500, \
             #model.compile(optimizer='sgd', loss='categorical_crossentropy', metrics=['accuracy'])
 
 
-        train_datagen   = ku.sigGenerator(augmentation=True, noise_mag=noise_mag )
-        test_datagen    = ku.sigGenerator(augmentation=False, noise_mag=0.0)
+        train_datagen   = ku.multiImgGenerator(augmentation=True, rescale=1./255.)
+        test_datagen    = ku.multiImgGenerator(augmentation=False, rescale=1./255.)
+        ## train_datagen   = ku.multiImgGenerator(augmentation=True, noise_mag=noise_mag )
+        ## test_datagen    = ku.multiImgGenerator(augmentation=False, noise_mag=0.0)
         train_generator = train_datagen.flow(x_train, y_train, batch_size=batch_size)
         test_generator  = test_datagen.flow(x_test, y_test, batch_size=batch_size)
 
@@ -223,16 +210,14 @@ def img_net(trainData, testData, batch_size=512, nb_epoch=500, \
         ## hist = model.fit(x_train, y_train, nb_epoch=nb_epoch, batch_size=batch_size, shuffle=True,
         ##                  validation_data=(x_test, y_test), callbacks=callbacks)
 
-        scores = []
-        scores.append( hist.history['val_acc'][-1] )
-        gc.collect()
 
+    y_pred = model.predict(x_test)
+    y_pred = np.argmax(y_pred, axis=1).tolist()
+    from sklearn.metrics import accuracy_score
+    score = accuracy_score(y_test, y_pred) 
+    print "score : ", score
 
-        print "score : ", scores
-        print 
-        print np.mean(scores), np.std(scores)
-
-    return model
+    return model, score
 
 
 ## class ResetStatesCallback(Callback):

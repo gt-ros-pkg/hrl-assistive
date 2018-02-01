@@ -72,30 +72,37 @@ def sig_net(trainData, testData, batch_size=512, nb_epoch=500, \
     n_labels = len(np.unique(y_train))
     print "Labels: ", np.unique(y_train), " #Labels: ", n_labels
     print "Labels: ", np.unique(y_test), " #Labels: ", n_labels
-    print np.shape(x_train), np.shape(y_train), np.shape(x_test), np.shape(y_test)
+    ## print np.shape(x_train), np.shape(y_train), np.shape(x_test), np.shape(y_test)
+
+    # split train data into training and validation data.
+    idx_list = range(len(x_train))
+    np.random.shuffle(idx_list)
+    x = x_train[idx_list]
+    y = y_train[idx_list]
+
+    x_train = x[:int(len(x)*0.7)]
+    y_train = y[:int(len(x)*0.7)]
+
+    x_val = x[int(len(x)*0.7):]
+    y_val = y[int(len(x)*0.7):]
 
     # Convert labels to categorical one-hot encoding
     y_train = keras.utils.to_categorical(y_train, num_classes=n_labels)
-    y_test  = keras.utils.to_categorical(y_test, num_classes=n_labels)
-
-    ## from sklearn import preprocessing
-    ## scaler  = preprocessing.StandardScaler()
-    ## #scaler  = preprocessing.MinMaxScaler()
-    ## x_train = scaler.fit_transform(x_train)
-    ## x_test  = scaler.transform(x_test)
+    y_val   = keras.utils.to_categorical(y_val, num_classes=n_labels)
+    ## y_test  = keras.utils.to_categorical(y_test)#, num_classes=n_labels)
 
     # Model construction
     model = Sequential()
-    model.add(Dense(32, init='uniform', input_shape=np.shape(x_train[0]),
+    model.add(Dense(16, init='uniform', input_shape=np.shape(x_train[0]),
                     ## kernel_regularizer=regularizers.l2(0.01),\
                     name='sig_1'))
-    model.add(Activation('relu'))
+    model.add(Activation('tanh'))
     model.add(Dropout(0.3))
-    ## model.add(Dense(16, init='uniform',
-    ##                 ## kernel_regularizer=regularizers.l2(0.01),\
-    ##                 name='sig_2'))
-    ## model.add(Activation('tanh'))
-    ## model.add(Dropout(0.3))
+    model.add(Dense(16, init='uniform',
+                    ## kernel_regularizer=regularizers.l2(0.01),\
+                    name='sig_2'))
+    model.add(Activation('tanh'))
+    model.add(Dropout(0.3))
     model.add(Dense(n_labels, activation='softmax',
                     ## W_regularizer=L1L2Regularizer(0,0),
                     name='sig_out'))    
@@ -106,14 +113,14 @@ def sig_net(trainData, testData, batch_size=512, nb_epoch=500, \
         model.load_weights(weights_file)
     else:
 
-        callbacks = [EarlyStopping(monitor='val_loss', min_delta=0, patience=patience,
+        callbacks = [EarlyStopping(monitor='val_loss', min_delta=0.0005, patience=patience,
                                    verbose=0, mode='auto'),
                      ModelCheckpoint(weights_file,
                                      save_best_only=True,
                                      save_weights_only=True,
                                      monitor='val_loss'),
                      ReduceLROnPlateau(monitor='val_loss', factor=0.2,
-                                       patience=patience/2, min_lr=0.00001)]
+                                       patience=3, min_lr=0.00001)]
 
         if fine_tuning:
             model.load_weights(weights_file)
@@ -124,35 +131,44 @@ def sig_net(trainData, testData, batch_size=512, nb_epoch=500, \
             print weights_file
             print "----------------------"
             if os.path.isfile(weights_file) and False: model.load_weights(weights_file)
-            model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
-            #model.compile(optimizer='sgd', loss='categorical_crossentropy', metrics=['accuracy'])
+            optimizer = SGD(lr=0.005, decay=1e-6, momentum=0.9, nesterov=True)
+            #optimizer = RMSprop(lr=0.01)
+            #model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
+            model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
 
 
         train_datagen   = ku.sigGenerator(augmentation=True, noise_mag=noise_mag )
         test_datagen    = ku.sigGenerator(augmentation=False, noise_mag=0.0)
         train_generator = train_datagen.flow(x_train, y_train, batch_size=batch_size)
-        test_generator  = test_datagen.flow(x_test, y_test, batch_size=batch_size)
+        test_generator  = test_datagen.flow(x_val, y_val, batch_size=batch_size)
 
         hist = model.fit_generator(train_generator,
                                    samples_per_epoch=len(y_train),
                                    nb_epoch=nb_epoch,
                                    validation_data=test_generator,
-                                   nb_val_samples=len(y_test),
+                                   nb_val_samples=len(y_val),
                                    callbacks=callbacks)
 
         ## hist = model.fit(x_train, y_train, nb_epoch=nb_epoch, batch_size=batch_size, shuffle=True,
         ##                  validation_data=(x_test, y_test), callbacks=callbacks)
 
-        scores = []
-        scores.append( hist.history['val_acc'][-1] )
-        gc.collect()
+
+    y_pred = model.predict(x_test)
+    y_pred = np.argmax(y_pred, axis=1).tolist()
+
+    print np.shape(y_pred), np.shape(y_test)
+
+    from sklearn.metrics import accuracy_score
+    score = accuracy_score(y_test, y_pred) 
+    ## scores.append( hist.history['val_acc'][-1] )
+    ## gc.collect()
 
 
-        print "score : ", scores
-        print 
-        print np.mean(scores), np.std(scores)
+    print "score : ", score
+    ## print 
+    ## print np.mean(scores), np.std(scores)
 
-    return model
+    return model, score
 
 
 ## class ResetStatesCallback(Callback):

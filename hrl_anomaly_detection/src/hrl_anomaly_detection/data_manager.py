@@ -157,6 +157,11 @@ def LOPO_data_index(success_data_list, failure_data_list, \
         if len(failure_data_list[i])>0:
             failure_files += failure_file_list[i]
 
+    if len(success_image_data)<len(success_files): success_image_data = [None]*len(success_files)
+    if len(success_d_image_data)<len(success_files): success_d_image_data = [None]*len(success_files)
+    if len(failure_image_data)<len(failure_files): failure_image_data = [None]*len(failure_files)
+    if len(failure_d_image_data)<len(failure_files): failure_d_image_data = [None]*len(failure_files)
+
 
     # Select specific anomalies
     if target_class is not None:
