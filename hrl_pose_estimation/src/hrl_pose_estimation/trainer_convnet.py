@@ -56,7 +56,7 @@ np.set_printoptions(threshold='nan')
 
 MAT_WIDTH = 0.762 #metres
 MAT_HEIGHT = 1.854 #metres
-MAT_HALF_WIDTH = MAT_WIDTH/2 
+MAT_HALF_WIDTH = MAT_WIDTH/2
 NUMOFTAXELS_X = 84#73 #taxels
 NUMOFTAXELS_Y = 47#30
 NUMOFOUTPUTDIMS = 3
@@ -64,12 +64,12 @@ NUMOFOUTPUTNODES = 10
 INTER_SENSOR_DISTANCE = 0.0286#metres
 LOW_TAXEL_THRESH_X = 0
 LOW_TAXEL_THRESH_Y = 0
-HIGH_TAXEL_THRESH_X = (NUMOFTAXELS_X - 1) 
-HIGH_TAXEL_THRESH_Y = (NUMOFTAXELS_Y - 1) 
+HIGH_TAXEL_THRESH_X = (NUMOFTAXELS_X - 1)
+HIGH_TAXEL_THRESH_Y = (NUMOFTAXELS_Y - 1)
 
- 
+
 class PhysicalTrainer():
-    '''Gets the dictionary of pressure maps from the training database, 
+    '''Gets the dictionary of pressure maps from the training database,
     and will have API to do all sorts of training with it.'''
     def __init__(self, training_database_file, test_file, opt):
         '''Opens the specified pickle files to get the combined dataset:

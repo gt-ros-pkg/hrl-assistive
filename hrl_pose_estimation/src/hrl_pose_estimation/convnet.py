@@ -81,40 +81,18 @@ class CNN(nn.Module):
 
 
         print 'x'
-        #self.CNN_fc1 = nn.Sequential(
-        #    nn.Linear(4096, 2500),
-        #    #nn.ReLU(inplace = True),
-        #    #nn.Linear(5760, 3000),
-        #    nn.Linear(2500, 1000),
-        #    #nn.ReLU(inplace = True),
-        #    nn.Linear(1000, 300),
-        #    nn.Linear(300, out_size),
-        #)
         self.CNN_fc1 = nn.Sequential(
-            nn.Linear(8832, 2048), #4096 for when we only pad the sides by 5 each instead of 10
-            #nn.ReLU(inplace = True),
-            #nn.Linear(5760, 3000),
-            nn.Linear(2048, 2048),
-            #nn.ReLU(inplace = True),
-            nn.Linear(2048, 256),
-            nn.Linear(256, out_size),
-        )
-        #self.CNN_fc2 = nn.Sequential(
-        #    nn.Linear(4096, 500),
-        #    nn.ReLU(inplace = True),
-        #    nn.Linear(500, 100),
-        #    nn.ReLU(inplace = True),
-        #    nn.Linear(100, 50),
-        #    nn.Linear(50, 17),
-        #)
-        #self.CNN_fc3 = nn.Sequential(
-        #    nn.Linear(4096, 200),
-        #    nn.ReLU(inplace = True),
-        #    nn.Linear(200, 50),
-        #    nn.Linear(50, 30),
-        #    nn.Linear(30, 3),
-        #)
+            # Vanilla
+            # nn.Linear(8832, 2048), #4096 for when we only pad the sides by 5 each instead of 10
+            # #nn.ReLU(inplace = True),
+            # #nn.Linear(5760, 3000),
+            # nn.Linear(2048, 2048),
+            # #nn.ReLU(inplace = True),
+            # nn.Linear(2048, 256),
+            # nn.Linear(256, out_size),
 
+            nn.Linear(8832, out_size),
+        )
 
 
 
