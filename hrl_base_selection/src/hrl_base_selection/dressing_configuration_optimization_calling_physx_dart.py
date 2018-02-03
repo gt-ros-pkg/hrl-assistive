@@ -57,6 +57,7 @@ class ScoreGeneratorDressingwithPhysx(object):
         self.pkg_path = rospack.get_path('hrl_base_selection')
         self.save_file_path = self.pkg_path + '/data/'
         self.save_file_name = 'arm_config_scores.log'
+        self.save_file_name_only_good = 'arm_configs_feasible.log'
         self.visualize = visualize
         self.frame_lock = threading.RLock()
 
@@ -370,6 +371,7 @@ class ScoreGeneratorDressingwithPhysx(object):
     def optimize_entire_dressing_task(self, reset_file=False):
         if reset_file:
             open(self.save_file_path + self.save_file_name, 'w').close()
+            open(self.save_file_path + self.save_file_name_only_good, 'w').close()
 
         self.set_robot_arm('rightarm')
         subtask_list = ['rightarm', 'leftarm']
@@ -395,7 +397,8 @@ class ScoreGeneratorDressingwithPhysx(object):
                     self.stretch_allowable = [0.5]
                     self.add_new_fixed_point = True
                 self.run_interleaving_optimization_outer_level(subtask=subtask, subtask_step=subtask_number,
-                                                               maxiter=500, popsize=50)
+                                                               maxiter=500, popsize=40)
+                                                               # maxiter=500, popsize=50)
 
     def run_interleaving_optimization_outer_level(self, maxiter=1000, popsize=40, subtask='', subtask_step=0):
         self.subtask_step = subtask_step
@@ -432,6 +435,7 @@ class ScoreGeneratorDressingwithPhysx(object):
                                   [m.radians(25.), m.radians(10.), m.radians(10.), m.radians(45.)],
                                   [0.9679925, 0.18266905, 0.87995157, 0.77562143],
                                   (parameters_max + parameters_min) / 2.]
+        # init_start_arm_configs = [(parameters_max + parameters_min) / 2.]
         opts1 = {'seed': 1234, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter,
                  'maxfevals': 1e8, 'CMA_cmean': 0.25, 'tolfun': 1e-3,
                  'tolfunhist': 1e-12, 'tolx': 5e-4,
@@ -441,6 +445,8 @@ class ScoreGeneratorDressingwithPhysx(object):
                  'bounds': [list(parameters_min), list(parameters_max)]}
         regular = False
         if regular or subtask_step==0:
+            if subtask_step==0 or False:
+                init_start_arm_configs = [(parameters_max + parameters_min) / 2.]
             for init_start_arm_config in init_start_arm_configs:
                 parameters_initialization = init_start_arm_config
                 # parameters_initialization[0] = m.radians(0.)
@@ -717,12 +723,16 @@ class ScoreGeneratorDressingwithPhysx(object):
         # params = [m.radians(90.0),  m.radians(0.), m.radians(45.), m.radians(0.)]
         # print 'doing subtask', self.subtask_step
         # print 'params:\n', params
-        if self.subtask_step == 0 or False:
+        if self.subtask_step == 0 or False:  # for right arm
             # params = [1.41876758,  0.13962405,  1.47350044,  0.95524629]  # old solution with joint jump
             # params = [1.73983062, -0.13343737,  0.42208647,  0.26249355]  # solution with arm snaking
             # params = [0.3654207,  0.80081779,  0.44793856,  1.83270078]  # without checking with phsyx
             params = [0.9679925, 0.18266905, 0.87995157, 0.77562143]
+            # self.visualize = False
 
+        elif False:  # for left arm
+            params = [1.5707963267948966, -0.17453292519943295, 1.3962634015954636, 1.5707963267948966]
+            # self.visualize = True
         neigh_distances, neighbors = self.arm_knn.kneighbors([params], 8)
         for neigh_dist, neighbor in zip(neigh_distances[0], neighbors[0]):
             if np.max(np.abs(np.array(self.arm_configs_checked[neighbor] - np.array(params)))) < m.radians(15.):
@@ -883,7 +893,7 @@ class ScoreGeneratorDressingwithPhysx(object):
         self.set_goals()
         # print self.origin_B_grasps
         maxiter = 100
-        popsize = 50#4*20
+        popsize = 40#4*20
         if self.subtask_step == 0 or False:
             maxiter = 2
             popsize = 2
@@ -996,6 +1006,24 @@ class ScoreGeneratorDressingwithPhysx(object):
                                      + ',' + str("{:.5f}".format(params[2]))
                                      + ',' + str("{:.5f}".format(params[3]))
                                      + ',' + str("{:.5f}".format(this_score))
+                                     + ',' + str("{:.5f}".format(self.this_best_pr2_config[0]))
+                                     + ',' + str("{:.5f}".format(self.this_best_pr2_config[1]))
+                                     + ',' + str("{:.5f}".format(self.this_best_pr2_config[2]))
+                                     + ',' + str("{:.5f}".format(self.this_best_pr2_config[3]))
+                                     + ',' + str("{:.5f}".format(self.this_best_pr2_score))
+                                     + '\n')
+                    with open(self.save_file_path + self.save_file_name_only_good, 'a') as myfile:
+                        myfile.write(str(self.subtask_step)
+                                     + ',' + str("{:.5f}".format(params[0]))
+                                     + ',' + str("{:.5f}".format(params[1]))
+                                     + ',' + str("{:.5f}".format(params[2]))
+                                     + ',' + str("{:.5f}".format(params[3]))
+                                     + ',' + str("{:.5f}".format(this_score))
+                                     + ',' + str("{:.5f}".format(self.this_best_pr2_config[0]))
+                                     + ',' + str("{:.5f}".format(self.this_best_pr2_config[1]))
+                                     + ',' + str("{:.5f}".format(self.this_best_pr2_config[2]))
+                                     + ',' + str("{:.5f}".format(self.this_best_pr2_config[3]))
+                                     + ',' + str("{:.5f}".format(self.this_best_pr2_score))
                                      + '\n')
                     return this_score
         self.physx_outcome = None
@@ -1027,7 +1055,25 @@ class ScoreGeneratorDressingwithPhysx(object):
                          + ',' + str("{:.5f}".format(params[2]))
                          + ',' + str("{:.5f}".format(params[3]))
                          + ',' + str("{:.5f}".format(this_score))
+                         + ',' + str("{:.5f}".format(self.this_best_pr2_config[0]))
+                         + ',' + str("{:.5f}".format(self.this_best_pr2_config[1]))
+                         + ',' + str("{:.5f}".format(self.this_best_pr2_config[2]))
+                         + ',' + str("{:.5f}".format(self.this_best_pr2_config[3]))
+                         + ',' + str("{:.5f}".format(self.this_best_pr2_score))
                          + '\n')
+            with open(self.save_file_path + self.save_file_name_only_good, 'a') as myfile:
+                myfile.write(str(self.subtask_step)
+                             + ',' + str("{:.5f}".format(params[0]))
+                             + ',' + str("{:.5f}".format(params[1]))
+                             + ',' + str("{:.5f}".format(params[2]))
+                             + ',' + str("{:.5f}".format(params[3]))
+                             + ',' + str("{:.5f}".format(this_score))
+                             + ',' + str("{:.5f}".format(self.this_best_pr2_config[0]))
+                             + ',' + str("{:.5f}".format(self.this_best_pr2_config[1]))
+                             + ',' + str("{:.5f}".format(self.this_best_pr2_config[2]))
+                             + ',' + str("{:.5f}".format(self.this_best_pr2_config[3]))
+                             + ',' + str("{:.5f}".format(self.this_best_pr2_score))
+                             + '\n')
         return this_score
 
     def calculate_scores(self, task_dict, model, ref_options):
@@ -1195,12 +1241,14 @@ class ScoreGeneratorDressingwithPhysx(object):
     def objective_function_one_config(self, current_parameters):
         # start_time = rospy.Time.now()
         # current_parameters = [0.3, -0.9, 1.57*m.pi/3., 0.3]
-        if self.subtask_step == 0 or False:
+        if self.subtask_step == 0 or False:  # right arm
             # current_parameters = [0.2743685, -0.71015745, 0.20439603, 0.29904425]
             # current_parameters = [0.2743685, -0.71015745, 2.2043960252256807, 0.29904425]  # old solution with joint jump
             # current_parameters = [2.5305254, -0.6124738, -2.37421411, 0.02080042]  # solution with arm snaking
             # current_parameters = [0.44534457, -0.85069379, 2.95625035, 0.07931574]  # solution with arm in lap, no physx
-            current_parameters = [-0.00917182, -0.8680934,   1.58936071,  0.045496]
+            current_parameters = [ 0.04840878, -0.83110347 , 0.97416245,  0.29999239]
+        elif False:  # left arm
+            current_parameters = [0.69510576,  0.68875733, -0.85141057, 0.05047799]
         x = current_parameters[0]
         y = current_parameters[1]
         th = current_parameters[2]
@@ -1422,40 +1470,61 @@ class ScoreGeneratorDressingwithPhysx(object):
                         for next_node in possible_next_nodes:
                             goal_j = int(next_node.split('-')[0])
                             sol_j = int(next_node.split('-')[1])
-                            if np.max(np.abs(np.array(all_sols[goal_j][sol_j])[0:3]-np.array(all_sols[goal_i][sol_i])[0:3])) < m.radians(40.):
+                            if np.max(np.abs(np.array(all_sols[goal_j][sol_j])[[0,1,2,3,5]]-np.array(all_sols[goal_i][sol_i])[[0,1,2,3,5]])) < m.radians(40.):
+                                # if self.path_is_clear(np.array(all_sols[goal_j][sol_j]), np.array(all_sols[goal_i][sol_i])):
                                 graph.edges[str(goal_i)+'-'+str(sol_i)].append(str(goal_j)+'-'+str(sol_j))
 
-            came_from, value_so_far = a_star_search(graph, 'start', 'end')
-            # print 'came_from\n', came_from
-            path = reconstruct_path(came_from, 'start', 'end')
-            # print sorted(graph.edges)
 
-            # print 'path\n', path
-            if not path:
-                if len(value_so_far) == 1:
-                    reach_score = 0.
-                    manip_score = 0.
+            path_confirmation_complete = False
+            while not path_confirmation_complete:
+                came_from, value_so_far = a_star_search(graph, 'start', 'end')
+                path = reconstruct_path(came_from, 'start', 'end')
+                # print 'came_from\n', came_from
+                # print sorted(graph.edges)
+                # print 'path\n', path
+                if not path:
+                    path_confirmation_complete = True
+                    if len(value_so_far) == 1:
+                        reach_score = 0.
+                        manip_score = 0.
+                    else:
+                        value_so_far.pop('start')
+                        furthest_reached = np.argmax([t for t in ((int(a[0].split('-')[0]))
+                                                                    for a in value_so_far.items())
+                                                     ])
+                        # print value_so_far.keys()
+                        # print 'furthest reached', furthest_reached
+                        # print value_so_far.items()[furthest_reached]
+                        reach_score = 1.*int(value_so_far.items()[furthest_reached][0].split('-')[0])/len(self.origin_B_grasps)
+                        manip_score = 1.*value_so_far.items()[furthest_reached][1]/len(self.origin_B_grasps)
                 else:
-                    value_so_far.pop('start')
-                    furthest_reached = np.argmax([t for t in ((int(a[0].split('-')[0]))
-                                                                for a in value_so_far.items())
-                                                 ])
-                    # print value_so_far.keys()
-                    # print 'furthest reached', furthest_reached
-                    # print value_so_far.items()[furthest_reached]
-                    reach_score = 1.*int(value_so_far.items()[furthest_reached][0].split('-')[0])/len(self.origin_B_grasps)
-                    manip_score = 1.*value_so_far.items()[furthest_reached][1]/len(self.origin_B_grasps)
-            else:
-                # print 'I FOUND A SOLUTION'
-                # print 'value_so_far[end]:', value_so_far['end']
-                path.pop(0)
-                path.pop(path.index('end'))
-                reach_score = 1.
-                manip_score = value_so_far['end']/len(self.origin_B_grasps)
+                    path_confirmation_complete = True
+                    # print 'I FOUND A SOLUTION'
+                    # print 'value_so_far[end]:', value_so_far['end']
+                    path.pop(0)
+                    path.pop(path.index('end'))
+
+                    # Go through the solution and remove edges that are invalid. Then recalculate the path.
+                    if False:
+                        print 'path\n', path
+                        for node_i in xrange(len(path)-1):
+                            goal_i = node_i
+                            sol_i = int(path[goal_i].split('-')[1])
+                            goal_j = node_i+1
+                            sol_j = int(path[goal_j].split('-')[1])
+                            if not self.path_is_clear(np.array(all_sols[goal_j][sol_j]),
+                                                      np.array(all_sols[goal_i][sol_i])):
+                                graph.edges[str(goal_i)+'-'+str(sol_i)].pop(graph.edges[str(goal_i)+'-'+str(sol_i)].index(str(goal_j)+'-'+str(sol_j)))
+                                path_confirmation_complete = False
+                                print 'The path I wanted had a collision. Redoing path.'
+                    reach_score = 1.
+                    manip_score = value_so_far['end']/len(self.origin_B_grasps)
 
             if self.visualize or (not self.subtask_step == 0 and False):
                 if path:
-                    prev_sol = np.zeros(7)
+                    goal_i = int(path[0].split('-')[0])
+                    sol_i = int(path[0].split('-')[1])
+                    prev_sol = np.array(all_sols[goal_i][sol_i])
                     print 'Solution being visualized:'
                 for path_step in path:
                     # if not path_step == 'start' and not path_step == 'end':
@@ -1463,7 +1532,7 @@ class ScoreGeneratorDressingwithPhysx(object):
                     sol_i = int(path_step.split('-')[1])
                     print 'solution:\n', all_sols[goal_i][sol_i]
                     print 'diff:\n', np.abs(np.array(all_sols[goal_i][sol_i]) - prev_sol)
-                    print 'max diff:\n', np.degrees(np.max(np.abs(np.array(all_sols[goal_i][sol_i]) - prev_sol)))
+                    print 'max diff:\n', np.degrees(np.max(np.abs(np.array(all_sols[goal_i][sol_i])[[0,1,2,3,5]] - prev_sol[[0,1,2,3,5]])))
                     prev_sol = np.array(all_sols[goal_i][sol_i])
 
                     v = self.robot.q
@@ -1479,6 +1548,7 @@ class ScoreGeneratorDressingwithPhysx(object):
                     self.dart_world.check_collision()
                     self.dart_world.set_gown([self.robot_arm])
                     rospy.sleep(1.5)
+                    # rospy.sleep(0.1)
         else:
             # print 'In base collision! single config distance: ', distance
             if distance < 2.0:
@@ -1523,7 +1593,8 @@ class ScoreGeneratorDressingwithPhysx(object):
             # print 'Manip score: ', manip_score
             if reach_score == 1.:
                 if self.visualize:
-                    rospy.sleep(2.0)
+                    # rospy.sleep(2.0)
+                    rospy.sleep(0.1)
             # print 'reach_score:', reach_score
             # print 'manip_score:', manip_score
             this_pr2_score = 10.-beta*reach_score-gamma*manip_score #+ zeta*angle_cost
@@ -1553,6 +1624,25 @@ class ScoreGeneratorDressingwithPhysx(object):
                          (self.gown_rightarm == contact.skel1 or self.gown_rightarm == contact.skel2)):
                 return True
         return False
+
+    def path_is_clear(self, jc1, jc2):
+        for j_i in np.linspace(0., 1., 5)[1:-1]:
+            jc = jc1+(jc2-jc1)*j_i
+            v = self.robot.q
+            v[self.robot_arm[0] + '_shoulder_pan_joint'] = jc[0]
+            v[self.robot_arm[0] + '_shoulder_lift_joint'] = jc[1]
+            v[self.robot_arm[0] + '_upper_arm_roll_joint'] = jc[2]
+            v[self.robot_arm[0] + '_elbow_flex_joint'] = jc[3]
+            v[self.robot_arm[0] + '_forearm_roll_joint'] = jc[4]
+            v[self.robot_arm[0] + '_wrist_flex_joint'] = jc[5]
+            v[self.robot_arm[0] + '_wrist_roll_joint'] = jc[6]
+            self.robot.set_positions(v)
+            self.dart_world.set_gown([self.robot_arm])
+            if self.visualize:
+                rospy.sleep(0.5)
+            if self.is_dart_in_collision():
+                return False
+        return True
 
     def is_human_in_self_collision(self):
         self.dart_world.human.set_self_collision_check(True)
@@ -2094,7 +2184,8 @@ class ScoreGeneratorDressingwithPhysx(object):
                             #     self.env.UpdatePublishedBodies()
                             self.robot.SetDOFValues(sols[0], self.manip.GetArmIndices())
                             self.env.UpdatePublishedBodies()
-                            rospy.sleep(1.5)
+                            # rospy.sleep(1.5)
+                            rospy.sleep(0.1)
 
     def get_best_traj_offset(self):
         return 0.0, 0.1
