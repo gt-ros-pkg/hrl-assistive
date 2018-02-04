@@ -147,9 +147,9 @@ class ResNet(nn.Module):
         x = self.layer4(x)
 
         x = self.avgpool(x)
-        print 'size1:', x.size()
+        # print 'size1:', x.size()
         x = x.view(x.size(0), -1)
-        print 'size2:', x.size()
+        # print 'size2:', x.size()
         x = self.fc(x)
 
         return x

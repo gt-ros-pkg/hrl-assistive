@@ -199,10 +199,10 @@ class CNN(nn.Module):
         )
 
         # self.resnet18 = torchvision.models.resnet18(pretrained=False, num_classes=out_size)
-        # self.resnet34 = torchvision.models.resnet34(pretrained=False)
         self.resnet18 = resnet.resnet18(pretrained=False, num_classes=out_size)
-
-
+        # self.resnet34 = resnet.resnet34(pretrained=False, num_classes=out_size)
+        # self.resnet50 = resnet.resnet50(pretrained=False, num_classes=out_size)
+        # self.resnet101 = resnet.resnet101(pretrained=False, num_classes=out_size)
 
 
         #############################################################################
@@ -334,6 +334,9 @@ class CNN(nn.Module):
 
         # print images.size()
         scores = self.resnet18(images)
+        # scores = self.resnet34(images)
+        # scores = self.resnet50(images)
+        # scores = self.resnet101(images)
 
         #kincons_est = Variable(torch.Tensor(np.copy(scores.data.numpy())))
 
