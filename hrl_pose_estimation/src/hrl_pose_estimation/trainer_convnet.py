@@ -21,9 +21,12 @@ import convnet as convnet
 import convnet_cascade as convnet_cascade
 import tf.transformations as tft
 
-import hrl_lib.util as ut
-import pickle
-from hrl_lib.util import load_pickle
+# import hrl_lib.util as ut
+import cPickle as pickle
+# from hrl_lib.util import load_pickle
+def load_pickle(filename):
+    with open(filename, 'rb') as f:
+        return pickle.load(f)
 
 # Pose Estimation Libraries
 from create_dataset_lib import CreateDatasetLib
@@ -384,6 +387,7 @@ class PhysicalTrainer():
         if self.loss_vector_type == 'angles':
             fc_output_size = 40#38 #18 angles for body, 17 lengths for body, 3 torso coordinates
             self.model = convnet.CNN(self.mat_size, fc_output_size, hidden_dim, kernel_size, self.loss_vector_type)
+            self.model = self.model.cuda()
             pp = 0
             for p in list(self.model.parameters()):
                 nn = 1
@@ -395,10 +399,12 @@ class PhysicalTrainer():
             #we'll make a double pass through this network for the validation for each arm.
             fc_output_size = 4 #4 angles for arms
             self.model = convnet_cascade.CNN(self.mat_size, fc_output_size, hidden_dim, kernel_size, self.loss_vector_type)
+            self.model = self.model.cuda()
             self.model_cascade_prior = torch.load('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leaveOut) + '/p_files/convnet_2to8_alldata_angles_constrained_noise_115b_100e_4.pt')
         elif self.loss_vector_type == 'direct' or self.loss_vector_type == 'confidence':
             fc_output_size = 30
             self.model = convnet.CNN(self.mat_size, fc_output_size, hidden_dim, kernel_size, self.loss_vector_type)
+            self.model = self.model.cuda()
 
 
         self.criterion = F.cross_entropy
@@ -478,12 +484,16 @@ class PhysicalTrainer():
 
                 batch[0], batch[1], batch[2]= SyntheticLib().synthetic_master(batch[0], batch[1], batch[2], flip=True, shift=True, scale=True, bedangle=True, include_inter=self.include_inter, loss_vector_type=self.loss_vector_type)
 
+                # NOTE: Use for CPU
+                dtype = torch.FloatTensor
+                # NOTE: Use for GPU
+                dtype = torch.cuda.FloatTensor
+                images_up = Variable(torch.Tensor(PreprocessingLib().preprocessing_add_image_noise(np.array(PreprocessingLib().preprocessing_pressure_map_upsample(batch[0].numpy()[:, :, 10:74, 10:37])))).type(dtype), requires_grad=False)
+                images, targets, constraints = Variable(batch[0].type(dtype), requires_grad = False), Variable(batch[1].type(dtype), requires_grad = False), Variable(batch[2].type(dtype), requires_grad = False)
 
-                images_up = Variable(torch.Tensor(PreprocessingLib().preprocessing_add_image_noise(np.array(PreprocessingLib().preprocessing_pressure_map_upsample(batch[0].numpy()[:, :, 10:74, 10:37])))),requires_grad=False)
-                images, targets, constraints = Variable(batch[0], requires_grad = False), Variable(batch[1], requires_grad = False), Variable(batch[2], requires_grad = False)
 
-
-                targets_2D = CascadeLib().get_2D_projection(images.data.numpy(), np.reshape(targets.data.numpy(), (targets.size()[0], 10, 3)))
+                # targets_2D = CascadeLib().get_2D_projection(images.data.numpy(), np.reshape(targets.data.numpy(), (targets.size()[0], 10, 3)))
+                targets_2D = CascadeLib().get_2D_projection(images.data, targets.data.view(targets.size()[0], 10, 3))
 
                 #image_coords = np.round(targets_2D[:, :, 0:2] / 28.6, 0)
                 #print image_coords[0, :, :]
@@ -491,14 +501,14 @@ class PhysicalTrainer():
                 self.optimizer.zero_grad()
 
                 ground_truth = np.zeros((batch[0].numpy().shape[0], 47)) #47 is 17 joint lengths and 30 joint locations for x y z
-                ground_truth = Variable(torch.Tensor(ground_truth))
+                ground_truth = Variable(torch.Tensor(ground_truth).type(dtype))
                 ground_truth[:, 0:17] = constraints[:, 18:35]/100
                 ground_truth[:, 17:47] = targets[:, 0:30]/1000
 
 
 
                 scores_zeros = np.zeros((batch[0].numpy().shape[0], 27)) #27 is  10 euclidean errors and 17 joint lengths
-                scores_zeros = Variable(torch.Tensor(scores_zeros))
+                scores_zeros = Variable(torch.Tensor(scores_zeros).type(dtype))
                 scores_zeros[:, 10:27] = constraints[:, 18:35]/100
 
 
@@ -516,8 +526,12 @@ class PhysicalTrainer():
 
                 batch[0],batch[1], _ = SyntheticLib().synthetic_master(batch[0], batch[1], flip=True, shift=True, scale=True, bedangle=True, include_inter = self.include_inter, loss_vector_type = self.loss_vector_type)
 
-                images_up = Variable(torch.Tensor(PreprocessingLib().preprocessing_add_image_noise(np.array(PreprocessingLib().preprocessing_pressure_map_upsample(batch[0].numpy()[:, :, 10:74, 10:37])))), requires_grad=False)
-                images, targets, scores_zeros = Variable(batch[0], requires_grad = False), Variable(batch[1], requires_grad = False), Variable(torch.Tensor(np.zeros((batch[1].shape[0], batch[1].shape[1]/3))), requires_grad = False)
+                # NOTE: Use for CPU
+                dtype = torch.FloatTensor
+                # NOTE: Use for GPU
+                dtype = torch.cuda.FloatTensor
+                images_up = Variable(torch.Tensor(PreprocessingLib().preprocessing_add_image_noise(np.array(PreprocessingLib().preprocessing_pressure_map_upsample(batch[0].numpy()[:, :, 10:74, 10:37])))).type(dtype), requires_grad=False)
+                images, targets, scores_zeros = Variable(batch[0].type(dtype), requires_grad = False), Variable(batch[1].type(dtype), requires_grad = False), Variable(torch.Tensor(np.zeros((batch[1].shape[0], batch[1].shape[1]/3))).type(dtype), requires_grad = False)
 
                 self.optimizer.zero_grad()
                 scores, targets_est = self.model.forward_direct(images_up, targets)
@@ -534,17 +548,17 @@ class PhysicalTrainer():
 
             if batch_idx % opt.log_interval == 0:
                 if self.loss_vector_type == 'upper_angles' or self.loss_vector_type == 'angles':
-                    VisualizationLib().print_error(targets.data.numpy(), targets_est, self.output_size, self.loss_vector_type, data = 'train')
+                    VisualizationLib().print_error(targets.data, targets_est, self.output_size, self.loss_vector_type, data = 'train')
                     print angles_est[0, :], 'angles'
                     print batch[0][0,2,10,10], 'bed angle'
-                    self.im_sample = images.data.numpy()
-                    #self.im_sample = self.im_sample[:,0,:,:]
-                    self.im_sample = np.squeeze(self.im_sample[0, :])
-                    self.tar_sample = targets.data.numpy()
-                    self.tar_sample = np.squeeze(self.tar_sample[0, :])/1000
-                    self.sc_sample = np.copy(targets_est)
-                    self.sc_sample = np.squeeze(self.sc_sample[0, :]) / 1000
-                    self.sc_sample = np.reshape(self.sc_sample, self.output_size)
+                    # self.im_sample = images.data.numpy()
+                    # #self.im_sample = self.im_sample[:,0,:,:]
+                    # self.im_sample = np.squeeze(self.im_sample[0, :])
+                    # self.tar_sample = targets.data.numpy()
+                    # self.tar_sample = np.squeeze(self.tar_sample[0, :])/1000
+                    # self.sc_sample = np.copy(targets_est)
+                    # self.sc_sample = np.squeeze(self.sc_sample[0, :]) / 1000
+                    # self.sc_sample = np.reshape(self.sc_sample, self.output_size)
 
                 elif self.loss_vector_type == 'direct':
                     VisualizationLib().print_error(targets.data.numpy(), targets_est, self.output_size, self.loss_vector_type, data='train')
@@ -594,19 +608,23 @@ class PhysicalTrainer():
                 #get the direct joint locations
                 batch[1] = batch[1][:, 0:30]
 
-                images_up = Variable(torch.Tensor(np.array(PreprocessingLib().preprocessing_pressure_map_upsample(batch[0].numpy()[:, :, 10:74, 10:37]))), requires_grad=False)
-                images, targets, constraints = Variable(batch[0], volatile = True, requires_grad=False), Variable(batch[1],volatile = True, requires_grad=False), Variable(batch[2], volatile = True, requires_grad=False)
+                # NOTE: Use for CPU
+                dtype = torch.FloatTensor
+                # NOTE: Use for GPU
+                dtype = torch.cuda.FloatTensor
+                images_up = Variable(torch.Tensor(np.array(PreprocessingLib().preprocessing_pressure_map_upsample(batch[0].numpy()[:, :, 10:74, 10:37]))).type(dtype), requires_grad=False)
+                images, targets, constraints = Variable(batch[0].type(dtype), volatile = True, requires_grad=False), Variable(batch[1].type(dtype),volatile = True, requires_grad=False), Variable(batch[2].type(dtype), volatile = True, requires_grad=False)
 
                 self.optimizer.zero_grad()
 
 
                 ground_truth = np.zeros((batch[0].numpy().shape[0], 47))
-                ground_truth = Variable(torch.Tensor(ground_truth))
+                ground_truth = Variable(torch.Tensor(ground_truth).type(dtype))
                 ground_truth[:, 0:17] = constraints[:, 18:35]/100
                 ground_truth[:, 17:47] = targets[:, 0:30]/1000
 
                 scores_zeros = np.zeros((batch[0].numpy().shape[0], 27))
-                scores_zeros = Variable(torch.Tensor(scores_zeros))
+                scores_zeros = Variable(torch.Tensor(scores_zeros).type(dtype))
                 scores_zeros[:, 10:27] = constraints[:, 18:35]/100
 
                 scores, targets_est, angles_est, lengths_est, _ = self.model.forward_kinematic_jacobian(images_up, targets, constraints)
@@ -642,7 +660,7 @@ class PhysicalTrainer():
         loss *= 1000
 
 
-        VisualizationLib().print_error(targets.data.numpy(), targets_est, self.output_size, self.loss_vector_type, data='validate')
+        VisualizationLib().print_error(targets.data, targets_est, self.output_size, self.loss_vector_type, data='validate')
 
         if self.loss_vector_type == 'angles' or self.loss_vector_type == 'direct':
             if self.loss_vector_type == 'angles':
@@ -650,14 +668,14 @@ class PhysicalTrainer():
                 print lengths_est[0, :], 'validation lengths'
 
             print batch[0][0,2,10,10], 'validation bed angle'
-            self.im_sampleval = images.data.numpy()
-            #self.im_sampleval = self.im_sampleval[:,0,:,:]
-            self.im_sampleval = np.squeeze(self.im_sampleval[0, :])
-            self.tar_sampleval = targets.data.numpy()
-            self.tar_sampleval = np.squeeze(self.tar_sampleval[0, :]) / 1000
-            self.sc_sampleval = np.copy(targets_est)
-            self.sc_sampleval = np.squeeze(self.sc_sampleval[0, :]) / 1000
-            self.sc_sampleval = np.reshape(self.sc_sampleval, self.output_size)
+            # self.im_sampleval = images.data.numpy()
+            # #self.im_sampleval = self.im_sampleval[:,0,:,:]
+            # self.im_sampleval = np.squeeze(self.im_sampleval[0, :])
+            # self.tar_sampleval = targets.data.numpy()
+            # self.tar_sampleval = np.squeeze(self.tar_sampleval[0, :]) / 1000
+            # self.sc_sampleval = np.copy(targets_est)
+            # self.sc_sampleval = np.squeeze(self.sc_sampleval[0, :]) / 1000
+            # self.sc_sampleval = np.reshape(self.sc_sampleval, self.output_size)
 
             if self.opt.visualize == True:
                 VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample,self.im_sampleval, self.tar_sampleval, self.sc_sampleval, block=False)

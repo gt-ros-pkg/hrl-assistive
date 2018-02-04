@@ -33,6 +33,7 @@ class CNN(nn.Module):
         self.count = 0
 
         self.CNN_pack1 = nn.Sequential(
+            # Vanilla
             nn.Conv2d(3, hidden_dim1, kernel_size = 5, stride = 2, padding = 1),
             nn.ReLU(inplace = True),
             nn.Dropout(p = 0.1, inplace=False),
@@ -46,6 +47,37 @@ class CNN(nn.Module):
             nn.ReLU(inplace=True),
             nn.Conv2d(hidden_dim3, hidden_dim4, kernel_size=3, stride=1, padding= 0),
             nn.Dropout(p=0.1, inplace=False),
+
+            # 2
+            # nn.Conv2d(3, hidden_dim1, kernel_size = 5, stride = 2, padding = 1),
+            # nn.ReLU(inplace = True),
+            # nn.Dropout(p = 0.1, inplace=False),
+            # nn.Conv2d(hidden_dim1, hidden_dim2, kernel_size=5, stride=2, padding= 1),
+            # nn.ReLU(inplace=True),
+            # nn.Dropout(p = 0.1, inplace=False),
+            # nn.Conv2d(hidden_dim2, hidden_dim3, kernel_size=5, stride=1, padding= 0),
+            # nn.ReLU(inplace=True),
+            # nn.Dropout(p = 0.1, inplace=False),
+            # nn.Conv2d(hidden_dim3, hidden_dim4, kernel_size=3, stride=1, padding= 0),
+            # nn.ReLU(inplace=True),
+            # nn.Dropout(p = 0.1, inplace=False),
+            # nn.Conv2d(hidden_dim3, hidden_dim4, kernel_size=3, stride=1, padding= 0),
+            # nn.ReLU(inplace=True),
+            # nn.Dropout(p=0.1, inplace=False),
+
+            # 3
+            # nn.Conv2d(3, hidden_dim1, kernel_size = 5, stride = 2, padding = 1),
+            # nn.ReLU(inplace = True),
+            # nn.Dropout(p = 0.1, inplace=False),
+            # nn.Conv2d(hidden_dim1, hidden_dim2, kernel_size=5, stride=2, padding= 1),
+            # nn.ReLU(inplace=True),
+            # nn.Dropout(p = 0.1, inplace=False),
+            # nn.Conv2d(hidden_dim2, hidden_dim3, kernel_size=5, stride=1, padding= 0),
+            # nn.ReLU(inplace=True),
+            # nn.Dropout(p = 0.1, inplace=False),
+            # nn.Conv2d(hidden_dim3, hidden_dim4, kernel_size=3, stride=1, padding= 0),
+            # nn.ReLU(inplace=True),
+            # nn.Dropout(p = 0.1, inplace=False),
         )
 
         self.CNN_pack2 = nn.Sequential(
@@ -83,15 +115,15 @@ class CNN(nn.Module):
         print 'x'
         self.CNN_fc1 = nn.Sequential(
             # Vanilla
-            # nn.Linear(8832, 2048), #4096 for when we only pad the sides by 5 each instead of 10
-            # #nn.ReLU(inplace = True),
-            # #nn.Linear(5760, 3000),
-            # nn.Linear(2048, 2048),
-            # #nn.ReLU(inplace = True),
-            # nn.Linear(2048, 256),
-            # nn.Linear(256, out_size),
+            nn.Linear(8832, 2048), #4096 for when we only pad the sides by 5 each instead of 10
+            #nn.ReLU(inplace = True),
+            #nn.Linear(5760, 3000),
+            nn.Linear(2048, 2048),
+            #nn.ReLU(inplace = True),
+            nn.Linear(2048, 256),
+            nn.Linear(256, out_size),
 
-            nn.Linear(8832, out_size),
+            # nn.Linear(8832, out_size),
         )
 
 
@@ -238,10 +270,14 @@ class CNN(nn.Module):
 
         #print scores.size(), ''
 
-        targets_est = np.copy(scores[:, 17:47].data.numpy())*1000. #after it comes out of the forward kinematics
-        targets_est[:, 0:3] = np.copy(scores[:, 20:23].data.numpy())*1000. #after it comes out of the forward kinematics
-        targets_est[:, 3:6] = np.copy(scores[:, 17:20].data.numpy())*1000. #after it comes out of the forward kinematics
-        lengths_est = np.copy(scores[:, 0:17].data.numpy())
+        # targets_est = np.copy(scores[:, 17:47].data.numpy())*1000. #after it comes out of the forward kinematics
+        # targets_est[:, 0:3] = np.copy(scores[:, 20:23].data.numpy())*1000. #after it comes out of the forward kinematics
+        # targets_est[:, 3:6] = np.copy(scores[:, 17:20].data.numpy())*1000. #after it comes out of the forward kinematics
+        # lengths_est = np.copy(scores[:, 0:17].data.numpy())
+        targets_est = scores[:, 17:47].data*1000. #after it comes out of the forward kinematics
+        targets_est[:, 0:3] = scores[:, 20:23].data*1000. #after it comes out of the forward kinematics
+        targets_est[:, 3:6] = scores[:, 17:20].data*1000. #after it comes out of the forward kinematics
+        lengths_est = scores[:, 0:17].data
 
         if forward_only == False:
             scores = scores.unsqueeze(0)

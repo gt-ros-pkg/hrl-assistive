@@ -23,14 +23,6 @@ from sklearn import metrics, cross_validation
 from sklearn.utils import shuffle
 
 
-import pickle
-from hrl_lib.util import load_pickle
-import rospkg
-import roslib
-import rospy
-import tf.transformations as tft
-
-
 # PyTorch libraries
 import argparse
 import torch

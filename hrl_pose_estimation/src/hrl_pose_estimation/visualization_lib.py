@@ -32,10 +32,6 @@ from visualization_msgs.msg import MarkerArray
 import tf
 
 
-import pickle
-from hrl_lib.util import load_pickle
-
-
 # PyTorch libraries
 import argparse
 import torch

@@ -23,10 +23,6 @@ from sklearn.utils import shuffle
 
 
 import pickle
-from hrl_lib.util import load_pickle
-import rospkg
-import roslib
-import rospy
 import tf.transformations as tft
 
 
@@ -370,7 +366,8 @@ class KinematicsLib():
                 # print targets_v[0, :], 'targets'
                 # print torso_lengths_angles_v[0, :]
 
-            torso_lengths_angles = torso_lengths_angles_v.data.numpy()
+            # torso_lengths_angles = torso_lengths_angles_v.data.numpy()
+            torso_lengths_angles = torso_lengths_angles_v.data
             # print torso_lengths_angles.shape
 
             # lengths_v = torso_lengths_angles_v[:, 3:11] # raw lengths coming out of network are in m.
@@ -603,10 +600,13 @@ class KinematicsLib():
                 # print targets_v[0, :], 'targets'
                 # print torso_lengths_angles_v[0, :]
 
-            torso_lengths_angles = torso_lengths_angles_v.data.numpy()
+            # torso_lengths_angles = torso_lengths_angles_v.data.numpy()
+            # torso_lengths_angles = torso_lengths_angles_v.data
+            # torso_lengths_angles_v = torso_lengths_angles_v.data
             # print torso_lengths_angles.shape
 
-            images = images_v.data.numpy() * np.pi / 180
+            # images = images_v.data.numpy() * np.pi / 180
+            images = images_v.data * np.pi / 180
             bedangle = images[:, -1, 10, 10] * 0.75
 
             if loop == True:
@@ -614,8 +614,8 @@ class KinematicsLib():
 
             elif loop == False:
 
-                torso_lengths_angles = Variable(torch.Tensor(torso_lengths_angles))
-                bedangle = Variable(torch.Tensor(bedangle))
+                torso_lengths_angles = Variable(torso_lengths_angles_v.data)
+                bedangle = Variable(bedangle)
 
                 angle_noise = False  # add noise to the output of the convolutions.  Only add it to the non-zero outputs, because most are zero.
                 if angle_noise == True:
@@ -624,7 +624,8 @@ class KinematicsLib():
                     prob = ss.norm.cdf(xU, scale=2) - ss.norm.cdf(xL, scale=2)  # scale is the standard deviation using a cumulative density function
                     prob = prob / prob.sum()  # normalize the probabilities so their sum is 1
                     image_noise = np.random.choice(x, size=(1, 17), p=prob) / 100.
-                    image_noise = Variable(torch.Tensor(image_noise), volatile=True)
+                    # image_noise = Variable(torch.Tensor(image_noise), volatile=True)
+                    image_noise = torch.Tensor(image_noise)
                     #print image_noise.size()
                     #print torso_lengths_angles_v[:, 0:17].size()
 
@@ -679,6 +680,7 @@ class KinematicsLib():
 
 
                 #head in vectorized form
+                # print type(torso_lengths_angles_v[:, 37])
                 torso_lengths_angles_v[:, 40] = torso_lengths_angles_v[:, 37] + torso_lengths_angles[:, 28] * ((np.pi / 2. - torso_lengths_angles_v[:, 8] * 100 * np.pi / 180).cos()) * ((-np.pi / 2. + torso_lengths_angles_v[:, 9] * 100 * np.pi / 180).cos())
                 torso_lengths_angles_v[:, 41] = torso_lengths_angles_v[:, 38] + torso_lengths_angles[:, 28] * ((np.pi / 2. - torso_lengths_angles_v[:, 8] * 100 * np.pi / 180).sin()) * ((-np.pi / 2. + torso_lengths_angles_v[:, 9] * 100 * np.pi / 180).cos()) * (0. + torso_lengths_angles_v[:, 18]).cos() + torso_lengths_angles[:, 28] * ((-np.pi / 2. + torso_lengths_angles_v[:, 9] * 100 * np.pi / 180).sin()) * (0. + torso_lengths_angles_v[:, 18]).sin() + torso_lengths_angles[:, 21] * (0. + torso_lengths_angles_v[:, 18]).cos()
                 torso_lengths_angles_v[:, 42] = torso_lengths_angles_v[:, 39] - torso_lengths_angles[:, 20] + torso_lengths_angles[:, 28] * ((np.pi / 2. - torso_lengths_angles_v[:, 8] * 100 * np.pi / 180).sin()) * ((-np.pi / 2. + torso_lengths_angles_v[:, 9] * 100 * np.pi / 180).cos()) * (0. + torso_lengths_angles_v[:, 18]).sin() - torso_lengths_angles[:, 28] * ((-np.pi / 2. + torso_lengths_angles_v[:, 9] * 100 * np.pi / 180).sin()) * (0. + torso_lengths_angles_v[:, 18]).cos() + torso_lengths_angles[:, 21] * (0. + torso_lengths_angles_v[:, 18]).sin()
@@ -767,7 +769,8 @@ class KinematicsLib():
 
                     pseudotargets = pseudotargets.data.numpy() * 1000
 
-            angles = torso_lengths_angles_v[:, 0:20].data.numpy()*100
+            # angles = torso_lengths_angles_v[:, 0:20].data.numpy()*100
+            angles = torso_lengths_angles[:, 0:20]*100
             torso_lengths_angles_v = torso_lengths_angles_v.unsqueeze(0)
             torso_lengths_angles_v = torso_lengths_angles_v.unsqueeze(0)
             torso_lengths_angles_v = F.pad(torso_lengths_angles_v, (-20, 0, 0, 0)) #cut off all the angles
