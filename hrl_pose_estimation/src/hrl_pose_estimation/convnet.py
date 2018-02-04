@@ -6,6 +6,7 @@ from torch.autograd import Variable
 from kinematics_lib import KinematicsLib
 import scipy.stats as ss
 import torchvision
+import resnet
 
 class CNN(nn.Module):
     def __init__(self, mat_size, out_size, hidden_dim, kernel_size, loss_vector_type):
@@ -80,7 +81,7 @@ class CNN(nn.Module):
             # nn.ReLU(inplace=True),
             # nn.Dropout(p = 0.1, inplace=False),
 
-            # # 4
+            # 4
             # nn.Conv2d(3, hidden_dim1, kernel_size = 7, stride = 2, padding = 1),
             # nn.ReLU(inplace = True),
             # nn.Dropout(p = 0.1, inplace=False),
@@ -95,7 +96,7 @@ class CNN(nn.Module):
             # nn.ReLU(inplace=True),
             # nn.Dropout(p = 0.1, inplace=False),
 
-            # # 5
+            # 5
             # nn.Conv2d(3, 32, kernel_size = 7, stride = 2, padding = 1),
             # nn.ReLU(inplace = True),
             # nn.Dropout(p = 0.1, inplace=False),
@@ -110,7 +111,7 @@ class CNN(nn.Module):
             # nn.ReLU(inplace=True),
             # nn.Dropout(p = 0.1, inplace=False),
 
-            # # 6
+            # 6
             # nn.Conv2d(3, 32, kernel_size = 7, stride = 2, padding = 1),
             # nn.ReLU(inplace = True),
             # nn.Dropout(p = 0.1, inplace=False),
@@ -118,14 +119,14 @@ class CNN(nn.Module):
             # nn.Conv2d(32, 32, kernel_size=3, stride=1, padding= 0),
             # nn.ReLU(inplace=True),
             # nn.Dropout(p = 0.1, inplace=False),
-            # nn.Conv2d(64, 64, kernel_size=3, stride=1, padding= 0),
+            # nn.Conv2d(32, 64, kernel_size=3, stride=1, padding= 0),
             # nn.ReLU(inplace=True),
             # nn.Dropout(p = 0.1, inplace=False),
             # nn.Conv2d(64, 64, kernel_size=3, stride=1, padding= 0),
             # nn.ReLU(inplace=True),
             # nn.Dropout(p = 0.1, inplace=False),
 
-            # # 7
+            # 7
             # nn.Conv2d(3, 64, kernel_size = 7, stride = 2, padding = 1),
             # nn.ReLU(inplace = True),
             # nn.Dropout(p = 0.1, inplace=False),
@@ -133,7 +134,7 @@ class CNN(nn.Module):
             # nn.Conv2d(64, 64, kernel_size=3, stride=1, padding= 0),
             # nn.ReLU(inplace=True),
             # nn.Dropout(p = 0.1, inplace=False),
-            # nn.Conv2d(128, 128, kernel_size=3, stride=1, padding= 0),
+            # nn.Conv2d(64, 128, kernel_size=3, stride=1, padding= 0),
             # nn.ReLU(inplace=True),
             # nn.Dropout(p = 0.1, inplace=False),
             # nn.Conv2d(128, 128, kernel_size=3, stride=1, padding= 0),
@@ -185,13 +186,21 @@ class CNN(nn.Module):
             # nn.Linear(256, out_size),
 
             # nn.Linear(8832, out_size),
-
             # 3
-            nn.Linear(14400, out_size),
+            # nn.Linear(14400, out_size),
+            # 4
+            # nn.Linear(13824, out_size),
+            # 5
+            # nn.Linear(36864, out_size),
+            # 6
+            # nn.Linear(9216, out_size),
+            # 7
+            nn.Linear(18432, out_size),
         )
 
-        self.resnet18 = torchvision.models.resnet18(pretrained=False)
+        # self.resnet18 = torchvision.models.resnet18(pretrained=False, num_classes=out_size)
         # self.resnet34 = torchvision.models.resnet34(pretrained=False)
+        self.resnet18 = resnet.resnet18(pretrained=False, num_classes=out_size)
 
 
 
@@ -295,13 +304,12 @@ class CNN(nn.Module):
         targets_est = None
         lengths_est = None
 
-        '''
         scores_cnn = self.CNN_pack1(images)
         scores_size = scores_cnn.size()
         # print scores_size, 'scores conv1'
 
 
-
+        '''
         # This combines the height, width, and filters into a single dimension
         scores_cnn = scores_cnn.view(images.size(0),scores_size[1] *scores_size[2]*scores_size[3] )
         print 'size for fc layer:', scores_cnn.size()
@@ -324,6 +332,7 @@ class CNN(nn.Module):
         scores = self.CNN_fc1(scores_cnn)
         '''
 
+        # print images.size()
         scores = self.resnet18(images)
 
         #kincons_est = Variable(torch.Tensor(np.copy(scores.data.numpy())))
