@@ -5,6 +5,7 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 from kinematics_lib import KinematicsLib
 import scipy.stats as ss
+import torchvision
 
 class CNN(nn.Module):
     def __init__(self, mat_size, out_size, hidden_dim, kernel_size, loss_vector_type):
@@ -34,19 +35,19 @@ class CNN(nn.Module):
 
         self.CNN_pack1 = nn.Sequential(
             # Vanilla
-            nn.Conv2d(3, hidden_dim1, kernel_size = 5, stride = 2, padding = 1),
-            nn.ReLU(inplace = True),
-            nn.Dropout(p = 0.1, inplace=False),
-            nn.Conv2d(hidden_dim1, hidden_dim2, kernel_size=5, stride=2, padding= 1),
-            nn.ReLU(inplace=True),
-            nn.Dropout(p = 0.1, inplace=False),
-            nn.Conv2d(hidden_dim2, hidden_dim3, kernel_size=5, stride=1, padding= 0),
-            nn.ReLU(inplace=True),
-            nn.Dropout(p = 0.1, inplace=False),
-            nn.Conv2d(hidden_dim3, hidden_dim4, kernel_size=3, stride=1, padding= 0),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(hidden_dim3, hidden_dim4, kernel_size=3, stride=1, padding= 0),
-            nn.Dropout(p=0.1, inplace=False),
+            # nn.Conv2d(3, hidden_dim1, kernel_size = 5, stride = 2, padding = 1),
+            # nn.ReLU(inplace = True),
+            # nn.Dropout(p = 0.1, inplace=False),
+            # nn.Conv2d(hidden_dim1, hidden_dim2, kernel_size=5, stride=2, padding= 1),
+            # nn.ReLU(inplace=True),
+            # nn.Dropout(p = 0.1, inplace=False),
+            # nn.Conv2d(hidden_dim2, hidden_dim3, kernel_size=5, stride=1, padding= 0),
+            # nn.ReLU(inplace=True),
+            # nn.Dropout(p = 0.1, inplace=False),
+            # nn.Conv2d(hidden_dim3, hidden_dim4, kernel_size=3, stride=1, padding= 0),
+            # nn.ReLU(inplace=True),
+            # nn.Conv2d(hidden_dim3, hidden_dim4, kernel_size=3, stride=1, padding= 0),
+            # nn.Dropout(p=0.1, inplace=False),
 
             # 2
             # nn.Conv2d(3, hidden_dim1, kernel_size = 5, stride = 2, padding = 1),
@@ -76,6 +77,66 @@ class CNN(nn.Module):
             # nn.ReLU(inplace=True),
             # nn.Dropout(p = 0.1, inplace=False),
             # nn.Conv2d(hidden_dim3, hidden_dim4, kernel_size=3, stride=1, padding= 0),
+            # nn.ReLU(inplace=True),
+            # nn.Dropout(p = 0.1, inplace=False),
+
+            # # 4
+            # nn.Conv2d(3, hidden_dim1, kernel_size = 7, stride = 2, padding = 1),
+            # nn.ReLU(inplace = True),
+            # nn.Dropout(p = 0.1, inplace=False),
+            # nn.MaxPool2d(3, stride=2),
+            # nn.Conv2d(hidden_dim1, hidden_dim2, kernel_size=3, stride=1, padding= 0),
+            # nn.ReLU(inplace=True),
+            # nn.Dropout(p = 0.1, inplace=False),
+            # nn.Conv2d(hidden_dim2, hidden_dim3, kernel_size=3, stride=1, padding= 0),
+            # nn.ReLU(inplace=True),
+            # nn.Dropout(p = 0.1, inplace=False),
+            # nn.Conv2d(hidden_dim3, hidden_dim4, kernel_size=3, stride=1, padding= 0),
+            # nn.ReLU(inplace=True),
+            # nn.Dropout(p = 0.1, inplace=False),
+
+            # # 5
+            # nn.Conv2d(3, 32, kernel_size = 7, stride = 2, padding = 1),
+            # nn.ReLU(inplace = True),
+            # nn.Dropout(p = 0.1, inplace=False),
+            # nn.MaxPool2d(3, stride=2),
+            # nn.Conv2d(32, 64, kernel_size=3, stride=1, padding= 0),
+            # nn.ReLU(inplace=True),
+            # nn.Dropout(p = 0.1, inplace=False),
+            # nn.Conv2d(64, 128, kernel_size=3, stride=1, padding= 0),
+            # nn.ReLU(inplace=True),
+            # nn.Dropout(p = 0.1, inplace=False),
+            # nn.Conv2d(128, 256, kernel_size=3, stride=1, padding= 0),
+            # nn.ReLU(inplace=True),
+            # nn.Dropout(p = 0.1, inplace=False),
+
+            # # 6
+            # nn.Conv2d(3, 32, kernel_size = 7, stride = 2, padding = 1),
+            # nn.ReLU(inplace = True),
+            # nn.Dropout(p = 0.1, inplace=False),
+            # nn.MaxPool2d(3, stride=2),
+            # nn.Conv2d(32, 32, kernel_size=3, stride=1, padding= 0),
+            # nn.ReLU(inplace=True),
+            # nn.Dropout(p = 0.1, inplace=False),
+            # nn.Conv2d(64, 64, kernel_size=3, stride=1, padding= 0),
+            # nn.ReLU(inplace=True),
+            # nn.Dropout(p = 0.1, inplace=False),
+            # nn.Conv2d(64, 64, kernel_size=3, stride=1, padding= 0),
+            # nn.ReLU(inplace=True),
+            # nn.Dropout(p = 0.1, inplace=False),
+
+            # # 7
+            # nn.Conv2d(3, 64, kernel_size = 7, stride = 2, padding = 1),
+            # nn.ReLU(inplace = True),
+            # nn.Dropout(p = 0.1, inplace=False),
+            # nn.MaxPool2d(3, stride=2),
+            # nn.Conv2d(64, 64, kernel_size=3, stride=1, padding= 0),
+            # nn.ReLU(inplace=True),
+            # nn.Dropout(p = 0.1, inplace=False),
+            # nn.Conv2d(128, 128, kernel_size=3, stride=1, padding= 0),
+            # nn.ReLU(inplace=True),
+            # nn.Dropout(p = 0.1, inplace=False),
+            # nn.Conv2d(128, 128, kernel_size=3, stride=1, padding= 0),
             # nn.ReLU(inplace=True),
             # nn.Dropout(p = 0.1, inplace=False),
         )
@@ -115,16 +176,22 @@ class CNN(nn.Module):
         print 'x'
         self.CNN_fc1 = nn.Sequential(
             # Vanilla
-            nn.Linear(8832, 2048), #4096 for when we only pad the sides by 5 each instead of 10
-            #nn.ReLU(inplace = True),
-            #nn.Linear(5760, 3000),
-            nn.Linear(2048, 2048),
-            #nn.ReLU(inplace = True),
-            nn.Linear(2048, 256),
-            nn.Linear(256, out_size),
+            # nn.Linear(8832, 2048), #4096 for when we only pad the sides by 5 each instead of 10
+            # #nn.ReLU(inplace = True),
+            # #nn.Linear(5760, 3000),
+            # nn.Linear(2048, 2048),
+            # #nn.ReLU(inplace = True),
+            # nn.Linear(2048, 256),
+            # nn.Linear(256, out_size),
 
             # nn.Linear(8832, out_size),
+
+            # 3
+            nn.Linear(14400, out_size),
         )
+
+        self.resnet18 = torchvision.models.resnet18(pretrained=False)
+        # self.resnet34 = torchvision.models.resnet34(pretrained=False)
 
 
 
@@ -228,14 +295,16 @@ class CNN(nn.Module):
         targets_est = None
         lengths_est = None
 
+        '''
         scores_cnn = self.CNN_pack1(images)
         scores_size = scores_cnn.size()
-        #print scores_size, 'scores conv1'
+        # print scores_size, 'scores conv1'
 
 
 
         # This combines the height, width, and filters into a single dimension
         scores_cnn = scores_cnn.view(images.size(0),scores_size[1] *scores_size[2]*scores_size[3] )
+        print 'size for fc layer:', scores_cnn.size()
 
         fc_noise = False #add noise to the output of the convolutions.  Only add it to the non-zero outputs, because most are zero.
         if fc_noise == True:
@@ -253,6 +322,9 @@ class CNN(nn.Module):
 
 
         scores = self.CNN_fc1(scores_cnn)
+        '''
+
+        scores = self.resnet18(images)
 
         #kincons_est = Variable(torch.Tensor(np.copy(scores.data.numpy())))
 
