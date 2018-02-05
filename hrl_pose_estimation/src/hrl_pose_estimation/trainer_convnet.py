@@ -70,6 +70,12 @@ LOW_TAXEL_THRESH_Y = 0
 HIGH_TAXEL_THRESH_X = (NUMOFTAXELS_X - 1)
 HIGH_TAXEL_THRESH_Y = (NUMOFTAXELS_Y - 1)
 
+if torch.cuda.is_available():
+    # Use for GPU
+    dtype = torch.cuda.FloatTensor
+else:
+    # Use for CPU
+    dtype = torch.FloatTensor
 
 class PhysicalTrainer():
     '''Gets the dictionary of pressure maps from the training database,
@@ -402,7 +408,6 @@ class PhysicalTrainer():
         if self.loss_vector_type == 'angles':
             fc_output_size = 40#38 #18 angles for body, 17 lengths for body, 3 torso coordinates
             self.model = convnet.CNN(self.mat_size, fc_output_size, hidden_dim, kernel_size, self.loss_vector_type)
-            self.model = self.model.cuda()
             pp = 0
             for p in list(self.model.parameters()):
                 nn = 1
@@ -414,11 +419,13 @@ class PhysicalTrainer():
             #we'll make a double pass through this network for the validation for each arm.
             fc_output_size = 4 #4 angles for arms
             self.model = convnet_cascade.CNN(self.mat_size, fc_output_size, hidden_dim, kernel_size, self.loss_vector_type)
-            self.model = self.model.cuda()
             self.model_cascade_prior = torch.load('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leaveOut) + '/p_files/convnet_2to8_alldata_angles_constrained_noise_115b_100e_4.pt')
         elif self.loss_vector_type == 'direct' or self.loss_vector_type == 'confidence':
             fc_output_size = 30
             self.model = convnet.CNN(self.mat_size, fc_output_size, hidden_dim, kernel_size, self.loss_vector_type)
+
+        # Run model on GPU if available
+        if torch.cuda.is_available():
             self.model = self.model.cuda()
 
 
@@ -509,10 +516,6 @@ class PhysicalTrainer():
 
                 batch[0], batch[1], batch[2]= SyntheticLib().synthetic_master(batch[0], batch[1], batch[2], flip=True, shift=True, scale=True, bedangle=True, include_inter=self.include_inter, loss_vector_type=self.loss_vector_type)
 
-                # NOTE: Use for CPU
-                dtype = torch.FloatTensor
-                # NOTE: Use for GPU
-                dtype = torch.cuda.FloatTensor
                 images_up = Variable(torch.Tensor(PreprocessingLib().preprocessing_add_image_noise(np.array(PreprocessingLib().preprocessing_pressure_map_upsample(batch[0].numpy()[:, :, 10:74, 10:37])))).type(dtype), requires_grad=False)
                 images, targets, constraints = Variable(batch[0].type(dtype), requires_grad = False), Variable(batch[1].type(dtype), requires_grad = False), Variable(batch[2].type(dtype), requires_grad = False)
 
@@ -551,10 +554,6 @@ class PhysicalTrainer():
 
                 batch[0],batch[1], _ = SyntheticLib().synthetic_master(batch[0], batch[1], flip=True, shift=True, scale=True, bedangle=True, include_inter = self.include_inter, loss_vector_type = self.loss_vector_type)
 
-                # NOTE: Use for CPU
-                dtype = torch.FloatTensor
-                # NOTE: Use for GPU
-                dtype = torch.cuda.FloatTensor
                 images_up = Variable(torch.Tensor(PreprocessingLib().preprocessing_add_image_noise(np.array(PreprocessingLib().preprocessing_pressure_map_upsample(batch[0].numpy()[:, :, 10:74, 10:37])))).type(dtype), requires_grad=False)
                 images, targets, scores_zeros = Variable(batch[0].type(dtype), requires_grad = False), Variable(batch[1].type(dtype), requires_grad = False), Variable(torch.Tensor(np.zeros((batch[1].shape[0], batch[1].shape[1]/3))).type(dtype), requires_grad = False)
 
@@ -633,10 +632,6 @@ class PhysicalTrainer():
                 #get the direct joint locations
                 batch[1] = batch[1][:, 0:30]
 
-                # NOTE: Use for CPU
-                dtype = torch.FloatTensor
-                # NOTE: Use for GPU
-                dtype = torch.cuda.FloatTensor
                 images_up = Variable(torch.Tensor(np.array(PreprocessingLib().preprocessing_pressure_map_upsample(batch[0].numpy()[:, :, 10:74, 10:37]))).type(dtype), requires_grad=False)
                 images, targets, constraints = Variable(batch[0].type(dtype), volatile = True, requires_grad=False), Variable(batch[1].type(dtype),volatile = True, requires_grad=False), Variable(batch[2].type(dtype), volatile = True, requires_grad=False)
 
