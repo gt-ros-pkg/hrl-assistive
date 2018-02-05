@@ -140,6 +140,69 @@ class CNN(nn.Module):
             # nn.Conv2d(128, 128, kernel_size=3, stride=1, padding= 0),
             # nn.ReLU(inplace=True),
             # nn.Dropout(p = 0.1, inplace=False),
+
+            # 8
+            # nn.Conv2d(3, 32, kernel_size = 7, stride = 2, padding = 1),
+            # nn.ReLU(inplace = True),
+            # nn.Dropout(p = 0.1, inplace=False),
+            # nn.MaxPool2d(3, stride=2),
+            # nn.Conv2d(32, 32, kernel_size=3, stride=1, padding= 0),
+            # nn.ReLU(inplace=True),
+            # nn.Dropout(p = 0.1, inplace=False),
+            # nn.Conv2d(32, 64, kernel_size=3, stride=1, padding= 0),
+            # nn.ReLU(inplace=True),
+            # nn.Dropout(p = 0.1, inplace=False),
+            # nn.Conv2d(64, 64, kernel_size=3, stride=1, padding= 0),
+            # nn.ReLU(inplace=True),
+            # nn.Dropout(p = 0.1, inplace=False),
+            # nn.Conv2d(64, 128, kernel_size=3, stride=1, padding= 0),
+            # nn.ReLU(inplace=True),
+            # nn.Dropout(p = 0.1, inplace=False),
+            # nn.Conv2d(128, 128, kernel_size=3, stride=1, padding= 0),
+            # nn.ReLU(inplace=True),
+            # nn.Dropout(p = 0.1, inplace=False),
+
+            # 9
+            # nn.Conv2d(3, 64, kernel_size = 7, stride = 2, padding = 1),
+            # nn.ReLU(inplace = True),
+            # nn.Dropout(p = 0.1, inplace=False),
+            # nn.MaxPool2d(3, stride=2),
+            # nn.Conv2d(64, 64, kernel_size=3, stride=1, padding= 0),
+            # nn.ReLU(inplace=True),
+            # nn.Dropout(p = 0.1, inplace=False),
+            # nn.Conv2d(64, 128, kernel_size=3, stride=1, padding= 0),
+            # nn.ReLU(inplace=True),
+            # nn.Dropout(p = 0.1, inplace=False),
+            # nn.Conv2d(128, 128, kernel_size=3, stride=1, padding= 0),
+            # nn.ReLU(inplace=True),
+            # nn.Dropout(p = 0.1, inplace=False),
+            # nn.Conv2d(128, 256, kernel_size=3, stride=1, padding= 0),
+            # nn.ReLU(inplace=True),
+            # nn.Dropout(p = 0.1, inplace=False),
+            # nn.Conv2d(256, 256, kernel_size=3, stride=1, padding= 0),
+            # nn.ReLU(inplace=True),
+            # nn.Dropout(p = 0.1, inplace=False),
+
+            # 10
+            # nn.Conv2d(3, 64, kernel_size = 7, stride = 2, padding = 1),
+            # nn.ReLU(inplace = True),
+            # nn.Dropout(p = 0.1, inplace=False),
+            # nn.MaxPool2d(3, stride=2),
+            # nn.Conv2d(64, 64, kernel_size=3, stride=1, padding= 0),
+            # nn.ReLU(inplace=True),
+            # nn.Dropout(p = 0.1, inplace=False),
+            # nn.Conv2d(64, 64, kernel_size=3, stride=1, padding= 0),
+            # nn.ReLU(inplace=True),
+            # nn.Dropout(p = 0.1, inplace=False),
+            # nn.Conv2d(64, 128, kernel_size=3, stride=1, padding= 0),
+            # nn.ReLU(inplace=True),
+            # nn.Dropout(p = 0.1, inplace=False),
+            # nn.Conv2d(128, 128, kernel_size=3, stride=1, padding= 0),
+            # nn.ReLU(inplace=True),
+            # nn.Dropout(p = 0.1, inplace=False),
+            # nn.Conv2d(128, 128, kernel_size=3, stride=1, padding= 0),
+            # nn.ReLU(inplace=True),
+            # nn.Dropout(p = 0.1, inplace=False),
         )
 
         self.CNN_pack2 = nn.Sequential(
@@ -195,11 +258,17 @@ class CNN(nn.Module):
             # 6
             # nn.Linear(9216, out_size),
             # 7
-            nn.Linear(18432, out_size),
+            # nn.Linear(18432, out_size),
+            # 8
+            # nn.Linear(5120, out_size),
+            # 9
+            # nn.Linear(10240, out_size),
+            # 10
+            # nn.Linear(5120, out_size),
         )
 
         # self.resnet18 = torchvision.models.resnet18(pretrained=False, num_classes=out_size)
-        self.resnet18 = resnet.resnet18(pretrained=False, num_classes=out_size)
+        # self.resnet18 = resnet.resnet18(pretrained=False, num_classes=out_size)
         # self.resnet34 = resnet.resnet34(pretrained=False, num_classes=out_size)
         # self.resnet50 = resnet.resnet50(pretrained=False, num_classes=out_size)
         # self.resnet101 = resnet.resnet101(pretrained=False, num_classes=out_size)
@@ -309,7 +378,7 @@ class CNN(nn.Module):
         # print scores_size, 'scores conv1'
 
 
-        '''
+        # '''
         # This combines the height, width, and filters into a single dimension
         scores_cnn = scores_cnn.view(images.size(0),scores_size[1] *scores_size[2]*scores_size[3] )
         print 'size for fc layer:', scores_cnn.size()
@@ -330,10 +399,10 @@ class CNN(nn.Module):
 
 
         scores = self.CNN_fc1(scores_cnn)
-        '''
+        # '''
 
         # print images.size()
-        scores = self.resnet18(images)
+        # scores = self.resnet18(images)
         # scores = self.resnet34(images)
         # scores = self.resnet50(images)
         # scores = self.resnet101(images)
