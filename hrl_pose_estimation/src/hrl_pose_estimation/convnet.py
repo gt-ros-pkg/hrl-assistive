@@ -203,6 +203,60 @@ class CNN(nn.Module):
             # nn.Conv2d(128, 128, kernel_size=3, stride=1, padding= 0),
             # nn.ReLU(inplace=True),
             # nn.Dropout(p = 0.1, inplace=False),
+
+            # 11
+            # nn.Conv2d(3, 64, kernel_size = 5, stride = 2, padding = 1),
+            # nn.ReLU(inplace = True),
+            # nn.Dropout(p = 0.1, inplace=False),
+            # nn.Conv2d(64, 64, kernel_size=3, stride=2, padding= 1),
+            # nn.ReLU(inplace=True),
+            # nn.Dropout(p = 0.1, inplace=False),
+            # nn.Conv2d(64, 128, kernel_size=3, stride=1, padding= 0),
+            # nn.ReLU(inplace=True),
+            # nn.Dropout(p = 0.1, inplace=False),
+            # nn.Conv2d(128, 128, kernel_size=3, stride=1, padding= 0),
+            # nn.ReLU(inplace=True),
+            # nn.Dropout(p = 0.1, inplace=False),
+
+            # 12
+            # nn.Conv2d(3, 64, kernel_size = 5, stride = 2, padding = 1),
+            # nn.ReLU(inplace = True),
+            # nn.Dropout(p = 0.1, inplace=False),
+            # nn.Conv2d(64, 64, kernel_size=3, stride=2, padding= 1),
+            # nn.ReLU(inplace=True),
+            # nn.Dropout(p = 0.1, inplace=False),
+            # nn.Conv2d(64, 128, kernel_size=3, stride=1, padding= 0),
+            # nn.ReLU(inplace=True),
+            # nn.Dropout(p = 0.1, inplace=False),
+            # nn.Conv2d(128, 128, kernel_size=3, stride=1, padding= 0),
+            # nn.ReLU(inplace=True),
+            # nn.Dropout(p = 0.1, inplace=False),
+            # nn.Conv2d(128, 256, kernel_size=3, stride=1, padding= 0),
+            # nn.ReLU(inplace=True),
+            # nn.Dropout(p = 0.1, inplace=False),
+            # nn.Conv2d(256, 256, kernel_size=3, stride=1, padding= 0),
+            # nn.ReLU(inplace=True),
+            # nn.Dropout(p = 0.1, inplace=False),
+
+            # 13
+            nn.Conv2d(3, 64, kernel_size = 5, stride = 2, padding = 1),
+            nn.ReLU(inplace = True),
+            nn.Dropout(p = 0.1, inplace=False),
+            nn.Conv2d(64, 64, kernel_size=3, stride=2, padding= 1),
+            nn.ReLU(inplace=True),
+            nn.Dropout(p = 0.1, inplace=False),
+            nn.Conv2d(64, 64, kernel_size=3, stride=1, padding= 0),
+            nn.ReLU(inplace=True),
+            nn.Dropout(p = 0.1, inplace=False),
+            nn.Conv2d(64, 128, kernel_size=3, stride=1, padding= 0),
+            nn.ReLU(inplace=True),
+            nn.Dropout(p = 0.1, inplace=False),
+            nn.Conv2d(128, 128, kernel_size=3, stride=1, padding= 0),
+            nn.ReLU(inplace=True),
+            nn.Dropout(p = 0.1, inplace=False),
+            nn.Conv2d(128, 128, kernel_size=3, stride=1, padding= 0),
+            nn.ReLU(inplace=True),
+            nn.Dropout(p = 0.1, inplace=False),
         )
 
         self.CNN_pack2 = nn.Sequential(
@@ -265,6 +319,12 @@ class CNN(nn.Module):
             # nn.Linear(10240, out_size),
             # 10
             # nn.Linear(5120, out_size),
+            # 11
+            # nn.Linear(32256, out_size),
+            # 12
+            # nn.Linear(30720, out_size),
+            # 13
+            nn.Linear(15360, out_size),
         )
 
         # self.resnet18 = torchvision.models.resnet18(pretrained=False, num_classes=out_size)

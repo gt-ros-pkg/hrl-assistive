@@ -81,7 +81,7 @@ class PhysicalTrainer():
         self.verbose = opt.verbose
         self.opt = opt
         self.batch_size = 115
-        self.num_epochs = 150
+        self.num_epochs = 200
         self.include_inter = True
 
 
@@ -173,6 +173,15 @@ class PhysicalTrainer():
             self.train_a_flat.append(dat['bed_angle_deg'][entry])
         train_xa = PreprocessingLib().preprocessing_create_pressure_angle_stack(self.train_x_flat, self.train_a_flat, self.include_inter, self.mat_size, self.verbose)
         train_xa = np.array(train_xa)
+
+        # Standardize data to values between [0, 1]
+        # print 'Standardizing training data'
+        # mins = [np.min(train_xa[:, ii]) for ii in xrange(np.shape(train_xa)[1])]
+        # maxs = [np.max(train_xa[:, ii]) for ii in xrange(np.shape(train_xa)[1])]
+        # print 'mins:', mins, 'maxs:', maxs
+        # for ii in xrange(np.shape(train_xa)[1]):
+        #     train_xa[:, ii] = (train_xa[:, ii] - mins[ii]) / (maxs[ii] - mins[ii])
+
         self.train_x_tensor = torch.Tensor(train_xa)
 
         self.train_y_flat = [] #Initialize the training ground truth list
@@ -213,6 +222,12 @@ class PhysicalTrainer():
             self.test_a_flat.append(test_dat['bed_angle_deg'][entry])
         test_xa = PreprocessingLib().preprocessing_create_pressure_angle_stack(self.test_x_flat, self.test_a_flat, self.include_inter, self.mat_size, self.verbose)
         test_xa = np.array(test_xa)
+
+        # Standardize data to values between [0, 1]
+        # print 'Standardizing test data'
+        # for ii in xrange(np.shape(test_xa)[1]):
+        #     test_xa[:, ii] = (test_xa[:, ii] - mins[ii]) / (maxs[ii] - mins[ii])
+
         self.test_x_tensor = torch.Tensor(test_xa)
 
         self.test_y_flat = []  # Initialize the ground truth list
@@ -411,14 +426,24 @@ class PhysicalTrainer():
 
 
 
+        # if self.loss_vector_type == None:
+        #     self.optimizer2 = optim.Adam(self.model.parameters(), lr=0.00005, weight_decay=0.0005)
+        # elif self.loss_vector_type == 'upper_angles' or self.loss_vector_type == 'arms_cascade' or self.loss_vector_type == 'angles' or self.loss_vector_type == 'direct':
+        #     self.optimizer2 = optim.Adam(self.model.parameters(), lr=0.00005, weight_decay=0.0005)  #0.000002 does not converge even after 100 epochs on subjects 2-8 kin cons. use .00001
+        # elif self.loss_vector_type == 'direct':
+        #     self.optimizer2 = optim.Adam(self.model.parameters(), lr=0.00005, weight_decay=0.0005)
+        # #self.optimizer = optim.RMSprop(self.model.parameters(), lr=0.000001, momentum=0.7, weight_decay=0.0005)
+        # self.optimizer = optim.Adam(self.model.parameters(), lr=0.00005, weight_decay=0.0005) #start with .00005
+
+        # No weight decay
         if self.loss_vector_type == None:
-            self.optimizer2 = optim.Adam(self.model.parameters(), lr=0.000025, weight_decay=0.0005)
+            self.optimizer2 = optim.Adam(self.model.parameters(), lr=0.000025, weight_decay=0.0)
         elif self.loss_vector_type == 'upper_angles' or self.loss_vector_type == 'arms_cascade' or self.loss_vector_type == 'angles' or self.loss_vector_type == 'direct':
-            self.optimizer2 = optim.Adam(self.model.parameters(), lr=0.000015, weight_decay=0.0005)  #0.000002 does not converge even after 100 epochs on subjects 2-8 kin cons. use .00001
+            self.optimizer2 = optim.Adam(self.model.parameters(), lr=0.000025, weight_decay=0.0)  #0.000002 does not converge even after 100 epochs on subjects 2-8 kin cons. use .00001
         elif self.loss_vector_type == 'direct':
-            self.optimizer2 = optim.Adam(self.model.parameters(), lr=0.00005, weight_decay=0.0005)
+            self.optimizer2 = optim.Adam(self.model.parameters(), lr=0.000025, weight_decay=0.0)
         #self.optimizer = optim.RMSprop(self.model.parameters(), lr=0.000001, momentum=0.7, weight_decay=0.0005)
-        self.optimizer = optim.Adam(self.model.parameters(), lr=0.00003, weight_decay=0.0005) #start with .00005
+        self.optimizer = optim.Adam(self.model.parameters(), lr=0.000025, weight_decay=0.0) #start with .00005
 
 
         # train the model one epoch at a time
