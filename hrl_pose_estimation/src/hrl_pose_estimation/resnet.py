@@ -41,12 +41,12 @@ class BasicBlock(nn.Module):
         residual = x
 
         out = self.conv1(x)
-        out = self.bn1(out)
+        # out = self.bn1(out)
         out = self.do1(out)
         out = self.relu(out)
 
         out = self.conv2(out)
-        out = self.bn2(out)
+        # out = self.bn2(out)
         out = self.do2(out)
 
         if self.downsample is not None:
@@ -81,17 +81,17 @@ class Bottleneck(nn.Module):
         residual = x
 
         out = self.conv1(x)
-        out = self.bn1(out)
+        # out = self.bn1(out)
         out = self.do1(out)
         out = self.relu(out)
 
         out = self.conv2(out)
-        out = self.bn2(out)
+        # out = self.bn2(out)
         out = self.do2(out)
         out = self.relu(out)
 
         out = self.conv3(out)
-        out = self.bn3(out)
+        # out = self.bn3(out)
         out = self.do3(out)
 
         if self.downsample is not None:
@@ -150,7 +150,7 @@ class ResNet(nn.Module):
 
     def forward(self, x):
         x = self.conv1(x)
-        x = self.bn1(x)
+        # x = self.bn1(x)
         x = self.do1(x)
         x = self.relu(x)
         x = self.maxpool(x)
