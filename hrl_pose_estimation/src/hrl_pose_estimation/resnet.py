@@ -136,8 +136,8 @@ class ResNet(nn.Module):
             downsample = nn.Sequential(
                 nn.Conv2d(self.inplanes, planes * block.expansion,
                           kernel_size=1, stride=stride, bias=False),
-                nn.BatchNorm2d(planes * block.expansion),
-                # nn.Dropout(p=0.1, inplace=False),
+                # nn.BatchNorm2d(planes * block.expansion),
+                nn.Dropout(p=0.1, inplace=False),
             )
 
         layers = []
@@ -192,6 +192,8 @@ def resnet34(pretrained=False, **kwargs):
     model = ResNet(BasicBlock, [3, 4, 6, 3], **kwargs)
     if pretrained:
         model.load_state_dict(model_zoo.load_url(model_urls['resnet34']))
+    # Update the final layer of a pretrained model so that the output dimensionality matches our problem
+    model.fc = nn.Linear(512 * model.block.expansion, 40)
     return model
 
 

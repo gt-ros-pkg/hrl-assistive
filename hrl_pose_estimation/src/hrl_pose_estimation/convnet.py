@@ -127,19 +127,19 @@ class CNN(nn.Module):
             # nn.Dropout(p = 0.1, inplace=False),
 
             # 7
-            # nn.Conv2d(3, 64, kernel_size = 7, stride = 2, padding = 1),
-            # nn.ReLU(inplace = True),
-            # nn.Dropout(p = 0.1, inplace=False),
-            # nn.MaxPool2d(3, stride=2),
-            # nn.Conv2d(64, 64, kernel_size=3, stride=1, padding= 0),
-            # nn.ReLU(inplace=True),
-            # nn.Dropout(p = 0.1, inplace=False),
-            # nn.Conv2d(64, 128, kernel_size=3, stride=1, padding= 0),
-            # nn.ReLU(inplace=True),
-            # nn.Dropout(p = 0.1, inplace=False),
-            # nn.Conv2d(128, 128, kernel_size=3, stride=1, padding= 0),
-            # nn.ReLU(inplace=True),
-            # nn.Dropout(p = 0.1, inplace=False),
+            nn.Conv2d(3, 64, kernel_size = 7, stride = 2, padding = 1),
+            nn.ReLU(inplace = True),
+            nn.Dropout(p = 0.1, inplace=False),
+            nn.MaxPool2d(3, stride=2),
+            nn.Conv2d(64, 64, kernel_size=3, stride=1, padding= 0),
+            nn.ReLU(inplace=True),
+            nn.Dropout(p = 0.1, inplace=False),
+            nn.Conv2d(64, 128, kernel_size=3, stride=1, padding= 0),
+            nn.ReLU(inplace=True),
+            nn.Dropout(p = 0.1, inplace=False),
+            nn.Conv2d(128, 128, kernel_size=3, stride=1, padding= 0),
+            nn.ReLU(inplace=True),
+            nn.Dropout(p = 0.1, inplace=False),
 
             # 8
             # nn.Conv2d(3, 32, kernel_size = 7, stride = 2, padding = 1),
@@ -312,7 +312,7 @@ class CNN(nn.Module):
             # 6
             # nn.Linear(9216, out_size),
             # 7
-            # nn.Linear(18432, out_size),
+            nn.Linear(18432, out_size),
             # 8
             # nn.Linear(5120, out_size),
             # 9
@@ -329,8 +329,9 @@ class CNN(nn.Module):
 
         # self.resnet18 = torchvision.models.resnet18(pretrained=False, num_classes=out_size)
         print 'Out size:', out_size
-        self.resnet = resnet.resnet18(pretrained=True)
-        # self.resnet = resnet.resnet18(pretrained=True, num_classes=out_size)
+        # self.resnet = resnet.resnet18(pretrained=True)
+        # self.resnet = resnet.resnet34(pretrained=True)
+        # self.resnet = resnet.resnet18(pretrained=False, num_classes=out_size)
         # self.resnet = resnet.resnet34(pretrained=False, num_classes=out_size)
         # self.resnet = resnet.resnet50(pretrained=False, num_classes=out_size)
         # self.resnet = resnet.resnet101(pretrained=False, num_classes=out_size)
@@ -440,7 +441,6 @@ class CNN(nn.Module):
         # print scores_size, 'scores conv1'
 
 
-        '''
         # This combines the height, width, and filters into a single dimension
         scores_cnn = scores_cnn.view(images.size(0),scores_size[1] *scores_size[2]*scores_size[3] )
         print 'size for fc layer:', scores_cnn.size()
@@ -461,10 +461,9 @@ class CNN(nn.Module):
 
 
         scores = self.CNN_fc1(scores_cnn)
-        '''
 
         # print images.size()
-        scores = self.resnet(images)
+        # scores = self.resnet(images)
 
         #kincons_est = Variable(torch.Tensor(np.copy(scores.data.numpy())))
 
