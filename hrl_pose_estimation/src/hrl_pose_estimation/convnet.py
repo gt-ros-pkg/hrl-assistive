@@ -440,7 +440,7 @@ class CNN(nn.Module):
         scores_size = scores_cnn.size()
         # print scores_size, 'scores conv1'
 
-
+        # ''' # NOTE: Uncomment
         # This combines the height, width, and filters into a single dimension
         scores_cnn = scores_cnn.view(images.size(0),scores_size[1] *scores_size[2]*scores_size[3] )
         print 'size for fc layer:', scores_cnn.size()
@@ -461,9 +461,10 @@ class CNN(nn.Module):
 
 
         scores = self.CNN_fc1(scores_cnn)
+        # ''' # NOTE: Uncomment
 
         # print images.size()
-        # scores = self.resnet(images)
+        # scores = self.resnet(images) # NOTE: Uncomment
 
         #kincons_est = Variable(torch.Tensor(np.copy(scores.data.numpy())))
 
