@@ -565,17 +565,17 @@ class PhysicalTrainer():
                     VisualizationLib().print_error(targets.data, targets_est, self.output_size, self.loss_vector_type, data = 'train')
                     print angles_est[0, :], 'angles'
                     print batch[0][0,2,10,10], 'bed angle'
-                    # self.im_sample = images.data.numpy()
+                    self.im_sample = images.data
                     # #self.im_sample = self.im_sample[:,0,:,:]
-                    # self.im_sample = np.squeeze(self.im_sample[0, :])
-                    # self.tar_sample = targets.data.numpy()
-                    # self.tar_sample = np.squeeze(self.tar_sample[0, :])/1000
-                    # self.sc_sample = np.copy(targets_est)
-                    # self.sc_sample = np.squeeze(self.sc_sample[0, :]) / 1000
-                    # self.sc_sample = np.reshape(self.sc_sample, self.output_size)
+                    self.im_sample = self.im_sample[0, :].squeeze()
+                    self.tar_sample = targets.data
+                    self.tar_sample = self.tar_sample[0, :].squeeze()/1000
+                    self.sc_sample = targets_est.clone()
+                    self.sc_sample = self.sc_sample[0, :].squeeze() / 1000
+                    self.sc_sample = self.sc_sample.view(self.output_size)
 
                 elif self.loss_vector_type == 'direct':
-                    VisualizationLib().print_error(targets.data.numpy(), targets_est, self.output_size, self.loss_vector_type, data='train')
+                    VisualizationLib().print_error(targets.data, targets_est, self.output_size, self.loss_vector_type, data='train')
                     self.im_sample = batch[0].numpy()
                     #self.im_sample = self.im_sample[:, 1, :, :]
                     self.im_sample = np.squeeze(self.im_sample[0, :])
@@ -678,14 +678,14 @@ class PhysicalTrainer():
                 print lengths_est[0, :], 'validation lengths'
 
             print batch[0][0,2,10,10], 'validation bed angle'
-            # self.im_sampleval = images.data.numpy()
+            self.im_sampleval = images.data
             # #self.im_sampleval = self.im_sampleval[:,0,:,:]
-            # self.im_sampleval = np.squeeze(self.im_sampleval[0, :])
-            # self.tar_sampleval = targets.data.numpy()
-            # self.tar_sampleval = np.squeeze(self.tar_sampleval[0, :]) / 1000
-            # self.sc_sampleval = np.copy(targets_est)
-            # self.sc_sampleval = np.squeeze(self.sc_sampleval[0, :]) / 1000
-            # self.sc_sampleval = np.reshape(self.sc_sampleval, self.output_size)
+            self.im_sampleval = self.im_sampleval[0, :].squeeze()
+            self.tar_sampleval = targets.data
+            self.tar_sampleval = self.tar_sampleval[0, :].squeeze() / 1000
+            self.sc_sampleval = targets_est.clone()
+            self.sc_sampleval = self.sc_sampleval[0, :].squeeze() / 1000
+            self.sc_sampleval = self.sc_sampleval.view(self.output_size)
 
             if self.opt.visualize == True:
                 VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample,self.im_sampleval, self.tar_sampleval, self.sc_sampleval, block=False)
