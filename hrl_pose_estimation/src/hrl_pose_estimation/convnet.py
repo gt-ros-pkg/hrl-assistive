@@ -497,7 +497,7 @@ class CNN(nn.Module):
             kincons = kincons / 100
 
 
-        scores, angles_est, pseudotargets_est = KinematicsLib().forward_kinematics_pytorch(images, scores, targets, self.loss_vector_type, kincons, prior_cascade = prior_cascade, forward_only = forward_only)
+        scores, angles_est, pseudotargets_est = KinematicsLib().forward_kinematics_lengthsv_pytorch(images, scores, targets, self.loss_vector_type, kincons, prior_cascade = prior_cascade, forward_only = forward_only)
 
 
         #print scores.size(), ''
@@ -510,6 +510,9 @@ class CNN(nn.Module):
         targets_est[:, 0:3] = scores[:, 20:23].data*1000. #after it comes out of the forward kinematics
         targets_est[:, 3:6] = scores[:, 17:20].data*1000. #after it comes out of the forward kinematics
         lengths_est = scores[:, 0:17].data
+
+        #tweak this to change the lengths vector
+        scores[:, 0:17] = torch.mul(scores[:, 0:17], 10)
 
         if forward_only == False:
             scores = scores.unsqueeze(0)
