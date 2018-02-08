@@ -555,14 +555,14 @@ class PhysicalTrainer():
 
                 elif self.loss_vector_type == 'direct':
                     VisualizationLib().print_error(targets.data, targets_est, self.output_size, self.loss_vector_type, data='train')
-                    self.im_sample = batch[0].numpy()
+                    self.im_sample = images.data
                     #self.im_sample = self.im_sample[:, 1, :, :]
-                    self.im_sample = np.squeeze(self.im_sample[0, :])
-                    self.tar_sample = targets.data.numpy()#batch[1].numpy()
-                    self.tar_sample = np.squeeze(self.tar_sample[0, :]) / 1000
-                    self.sc_sample = targets_est#.data.numpy()
-                    self.sc_sample = np.squeeze(self.sc_sample[0, :]) / 1000
-                    self.sc_sample = np.reshape(self.sc_sample, self.output_size)
+                    self.im_sample = self.im_sample[0, :].squeeze()
+                    self.tar_sample = targets.data
+                    self.tar_sample = self.tar_sample[0, :].squeeze()/1000
+                    self.sc_sample = targets_est.clone()
+                    self.sc_sample = self.sc_sample[0, :].squeeze() / 1000
+                    self.sc_sample = self.sc_sample.view(self.output_size)
 
                 val_loss = self.validate_convnet(n_batches=4)
                 train_loss = loss.data[0]
