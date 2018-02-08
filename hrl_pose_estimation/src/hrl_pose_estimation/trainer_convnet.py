@@ -319,7 +319,7 @@ class PhysicalTrainer():
             if self.opt.computer == 'lab_harddrive':
                 pkl.dump(regr, open('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leaveOut) + '/p_files/HoG_'+baseline+'.p', 'wb'))
             elif self.opt.computer == 'aws':
-                pkl.dump(regr, open('/home/ubuntu/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leaveOut) + '/p_files/HoG_'+baseline+'.p', 'wb'))
+                pkl.dump(regr, open('/home/ubuntu/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leaveOut) + '/HoG_'+baseline+'.p', 'wb'))
 
             #validation
             for batchtest_idx, batchtest in enumerate(self.test_loader):
