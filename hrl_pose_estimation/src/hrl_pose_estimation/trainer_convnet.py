@@ -53,6 +53,7 @@ from sklearn.preprocessing import normalize
 from sklearn import svm, linear_model, decomposition, kernel_ridge, neighbors
 from sklearn import metrics, cross_validation
 from sklearn.utils import shuffle
+from sklearn.multioutput import MultiOutputRegressor
 
 
 np.set_printoptions(threshold='nan')
@@ -306,9 +307,9 @@ class PhysicalTrainer():
                 regr.fit(images_up, targets)
 
             elif baseline == 'SVM':
-                regr = svm.SVR()
+                regr = MultiOutputRegressor(estimator=svm.SVR(C=1.0, kernel='rbf', verbose = True))
                 regr.fit(images_up, targets)
-                SVR(C=1.0, kernel='rbf', verbose = True)
+                #SVR(C=1.0, kernel='rbf', verbose = True)
                 #SVR(C=1.0, cache_size=200, coef0=0.0, degree=3, epsilon=0.1, gamma='auto',
                 #                    kernel='rbf', max_iter=-1, shrinking=True, tol=0.001, verbose=False)
 
@@ -318,7 +319,7 @@ class PhysicalTrainer():
             if self.opt.computer == 'lab_harddrive':
                 pkl.dump(regr, open('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leaveOut) + '/p_files/HoG_'+baseline+'.p', 'wb'))
             elif self.opt.computer == 'aws':
-                pkl.dump(regr, open('/home/ubuntu/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leaveOut) + '/p_files/HoG_SVM.p', 'wb'))
+                pkl.dump(regr, open('/home/ubuntu/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leaveOut) + '/p_files/HoG_'+baseline+'.p', 'wb'))
 
             #validation
             for batchtest_idx, batchtest in enumerate(self.test_loader):
