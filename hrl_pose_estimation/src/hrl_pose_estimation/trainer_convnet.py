@@ -88,7 +88,7 @@ class PhysicalTrainer():
         self.verbose = opt.verbose
         self.opt = opt
         self.batch_size = 128
-        self.num_epochs = 200
+        self.num_epochs = 300
         self.include_inter = True
 
         self.count = 0
@@ -416,11 +416,11 @@ class PhysicalTrainer():
         if self.loss_vector_type == None:
             self.optimizer2 = optim.Adam(self.model.parameters(), lr=0.00002, weight_decay=0.0005)
         elif self.loss_vector_type == 'upper_angles' or self.loss_vector_type == 'arms_cascade' or self.loss_vector_type == 'angles' or self.loss_vector_type == 'direct':
-            self.optimizer2 = optim.Adam(self.model.parameters(), lr=0.00002, weight_decay=0.0005)  #0.000002 does not converge even after 100 epochs on subjects 2-8 kin cons. use .00001
+            self.optimizer2 = optim.Adam(self.model.parameters(), lr=0.00003, weight_decay=0.0005)  #0.000002 does not converge even after 100 epochs on subjects 2-8 kin cons. use .00001
         elif self.loss_vector_type == 'direct':
             self.optimizer2 = optim.Adam(self.model.parameters(), lr=0.00002, weight_decay=0.0005)
         #self.optimizer = optim.RMSprop(self.model.parameters(), lr=0.000001, momentum=0.7, weight_decay=0.0005)
-        self.optimizer = optim.Adam(self.model.parameters(), lr=0.00002, weight_decay=0.0005) #start with .00005
+        self.optimizer = optim.Adam(self.model.parameters(), lr=0.00003, weight_decay=0.0005) #start with .00005
 
 
         # train the model one epoch at a time
@@ -507,7 +507,7 @@ class PhysicalTrainer():
 
                 scores_zeros = np.zeros((batch[0].numpy().shape[0], 27)) #27 is  10 euclidean errors and 17 joint lengths
                 scores_zeros = Variable(torch.Tensor(scores_zeros).type(dtype))
-                scores_zeros[:, 10:27] = constraints[:, 18:35]/100 #divide by 100 for direct output. divide by 10 if you multiply the estimate length by 10.
+                scores_zeros[:, 10:27] = constraints[:, 18:35]/10 #divide by 100 for direct output. divide by 10 if you multiply the estimate length by 10.
 
 
                 scores, targets_est, angles_est, lengths_est, _ = self.model.forward_kinematic_jacobian(images_up, targets, constraints) # scores is a variable with 27 for 10 euclidean errors and 17 lengths in meters. targets est is a numpy array in mm.
@@ -615,7 +615,7 @@ class PhysicalTrainer():
 
                 scores_zeros = np.zeros((batch[0].numpy().shape[0], 27))
                 scores_zeros = Variable(torch.Tensor(scores_zeros).type(dtype))
-                scores_zeros[:, 10:27] = constraints[:, 18:35]/100
+                scores_zeros[:, 10:27] = constraints[:, 18:35]/10
 
                 scores, targets_est, angles_est, lengths_est, _ = self.model.forward_kinematic_jacobian(images_up, targets, constraints)
 
