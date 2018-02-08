@@ -313,6 +313,7 @@ class CNN(nn.Module):
             # nn.Linear(9216, out_size),
             # 7
             nn.Linear(18432, out_size),
+            
             # 8
             # nn.Linear(5120, out_size),
             # 9
@@ -387,12 +388,45 @@ class CNN(nn.Module):
         #print scores.size(), 'scores fc1'
         scores = self.CNN_fc1(scores)
 
-        targets_est = np.copy(scores.data.numpy())
+        scores[:, 0] = torch.add(scores[:, 0], 0.6)
+        scores[:, 1] = torch.add(scores[:, 1], 1.3)
+        scores[:, 2] = torch.add(scores[:, 2], 0.1)
+        scores[:, 3] = torch.add(scores[:, 3], 0.6)
+        scores[:, 4] = torch.add(scores[:, 4], 1.3)
+        scores[:, 5] = torch.add(scores[:, 5], 0.1)
+        scores[:, 6] = torch.add(scores[:, 6], 0.6)
+        scores[:, 7] = torch.add(scores[:, 7], 1.3)
+        scores[:, 8] = torch.add(scores[:, 8], 0.1)
+        scores[:, 9] = torch.add(scores[:, 9], 0.6)
+        scores[:, 10] = torch.add(scores[:, 10], 1.3)
+        scores[:, 11] = torch.add(scores[:, 11], 0.1)
+        scores[:, 12] = torch.add(scores[:, 12], 0.6)
+        scores[:, 13] = torch.add(scores[:, 13], 1.3)
+        scores[:, 14] = torch.add(scores[:, 14], 0.1)
+        scores[:, 15] = torch.add(scores[:, 15], 0.6)
+        scores[:, 16] = torch.add(scores[:, 16], 1.3)
+        scores[:, 17] = torch.add(scores[:, 17], 0.1)
+        scores[:, 18] = torch.add(scores[:, 18], 0.6)
+        scores[:, 19] = torch.add(scores[:, 19], 1.3)
+        scores[:, 20] = torch.add(scores[:, 20], 0.1)
+        scores[:, 21] = torch.add(scores[:, 21], 0.6)
+        scores[:, 22] = torch.add(scores[:, 22], 1.3)
+        scores[:, 23] = torch.add(scores[:, 23], 0.1)
+        scores[:, 24] = torch.add(scores[:, 24], 0.6)
+        scores[:, 25] = torch.add(scores[:, 25], 1.3)
+        scores[:, 26] = torch.add(scores[:, 26], 0.1)
+        scores[:, 27] = torch.add(scores[:, 27], 0.6)
+        scores[:, 28] = torch.add(scores[:, 28], 1.3)
+        scores[:, 29] = torch.add(scores[:, 29], 0.1)
+
+        #print scores[0, :]
+
+        targets_est = scores.clone().data*1000.
 
         #print scores.size(), 'scores fc2'
 
         #here we want to compute our score as the Euclidean distance between the estimated x,y,z points and the target.
-        scores = targets - scores
+        scores = targets/1000. - scores
         scores = scores.pow(2)
         scores[:, 0] = scores[:, 0] + scores[:, 1] + scores[:, 2]
         scores[:,1] = scores[:,3]+scores[:,4]+scores[:,5]
@@ -444,20 +478,6 @@ class CNN(nn.Module):
         # This combines the height, width, and filters into a single dimension
         scores_cnn = scores_cnn.view(images.size(0),scores_size[1] *scores_size[2]*scores_size[3] )
         print 'size for fc layer:', scores_cnn.size()
-
-        fc_noise = False #add noise to the output of the convolutions.  Only add it to the non-zero outputs, because most are zero.
-        if fc_noise == True:
-            bin_nonz = -scores_cnn
-            bin_nonz[bin_nonz < 0] = 1
-            x = np.arange(-900, 900)
-            xU, xL = x + 0.5, x - 0.5
-            prob = ss.norm.cdf(xU, scale=300) - ss.norm.cdf(xL, scale=300)  # scale is the standard deviation using a cumulative density function
-            prob = prob / prob.sum()  # normalize the probabilities so their sum is 1
-            image_noise = np.random.choice(x, size=(1, 4096), p=prob) / 1000.
-            image_noise = Variable(torch.Tensor(image_noise), volatile = True)
-            image_noise = torch.mul(bin_nonz, image_noise)
-            scores_cnn = torch.add(scores_cnn, image_noise)
-
 
 
         scores = self.CNN_fc1(scores_cnn)

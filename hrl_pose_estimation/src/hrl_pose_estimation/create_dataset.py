@@ -85,26 +85,10 @@ class DatabaseCreator():
         self.individual_dataset = {}
 
 
-        home_sup_dat = load_pickle(self.training_dump_path + '4/home_sup.p')
-        if self.verbose: print "Checking database for empty values."
-        empty_count = 0
-        for entry in range(len(home_sup_dat)):
-            home_joint_val = home_sup_dat[entry][1]
-            if len(home_joint_val.flatten()) < (30) or (home_sup_dat[entry][0] < self.mat_size[0]*self.mat_size[1]):
-                empty_count += 1
-                del home_sup_dat[entry]
-
         if self.verbose: print "Empty value check results: {} rogue entries found".format(
             empty_count)
 
-        # Targets in the mat frame
-        home_sup_pressure_map = home_sup_dat[0][0]
-        home_sup_joint_pos_world = home_sup_dat[0][1]
-        home_sup_joint_pos = self.world_to_mat(home_sup_joint_pos_world, self.p_world_mat, self.R_world_mat)  # N x 3
 
-        # print home_sup_joint_pos
-        print len(home_sup_pressure_map)
-        print len(home_sup_joint_pos), 'sizes'
 
         self.T = np.zeros((4, 1))
         self.H = np.zeros((4, 1))
@@ -691,7 +675,7 @@ class DatabaseCreator():
         angle_i = []
         #for subject in [2,3,4,5,6,7,8]:
 
-        for subject in [8]:
+        for subject in [18]:
         #for subject in [16]:#13, 14, 15, 16, 17, 18]:
 
             self.final_dataset = {}
@@ -707,14 +691,14 @@ class DatabaseCreator():
 
 
 
-            for movement in ['RH_sitting','LH_sitting','RL_sitting','LL_sitting','RH1','LH1','RH2','LH2','RH3','LH3','RL','LL']:
+            for movement in ['RH1','LH1','RH2','LH2','RH3','LH3','RL','LL']:#'RH_sitting','LH_sitting','RL_sitting','LL_sitting',
             #for movement in ['LH2','LH3','LL'
         # ,'RL']:
 
             #for movement in ['RL_sitting']:#'LH_sitting','RL_sitting','LL_sitting']:
             #self.training_dump_path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_'+str(subject)
             #print self.training_dump_path
-
+                print self.training_dump_path+str(subject)+'/p_files/'+movement+'.p'
                 p_file = load_pickle(self.training_dump_path+str(subject)+'/p_files/'+movement+'.p')
                 count = 0
 
@@ -969,7 +953,7 @@ class DatabaseCreator():
             #print np.mean(np.array(std_lengths)), 'mean of standard devs'
             print 'Output file size: ~', int(len(self.final_dataset['images']) * 0.08958031837*3948/1728), 'Mb'
             print "Saving final_dataset"
-            pkl.dump(self.final_dataset, open(os.path.join(self.training_dump_path+str(subject)+'/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'), 'wb'))
+            pkl.dump(self.final_dataset, open(os.path.join(self.training_dump_path+str(subject)+'/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll.p'), 'wb')) #_sit175rlh_sit120rll
 
             print 'Done.'
         return

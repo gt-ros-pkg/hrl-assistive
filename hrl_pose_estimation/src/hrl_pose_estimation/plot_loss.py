@@ -276,7 +276,7 @@ class DataVisualizer():
 
 
         print len(self.validation_set), 'size of validation set'
-        batch_size = 1670
+        batch_size = 1
         generate_confidence = False
         self.test_dataset = torch.utils.data.TensorDataset(self.test_x_tensor, self.test_y_tensor)
         self.test_loader = torch.utils.data.DataLoader(self.test_dataset, batch_size, shuffle=True)
@@ -384,16 +384,18 @@ class DataVisualizer():
                     self.pseudo_sample = np.squeeze(self.pseudo_sample[0, :]) / 1000
                     self.pseudo_sample = np.reshape(self.pseudo_sample, (5, 3))
 
-                    #if count2 <= 1: VisualizationLib().rviz_publish_input(self.im_sample[0, :, :]*1.3, self.im_sample[-1, 10, 10])
-                    #else: VisualizationLib().rviz_publish_input(self.im_sample[1, :, :]/2, self.im_sample[-1, 10, 10])
 
-                    #VisualizationLib().rviz_publish_output(np.reshape(self.tar_sample, self.output_size), self.sc_sample, self.pseudo_sample)
-                    #limbArray = VisualizationLib().rviz_publish_output_limbs(np.reshape(self.tar_sample, self.output_size), self.sc_sample, self.pseudo_sample, LimbArray=limbArray, count = count2)
+                    if np.max(error_norm) > 0.6:
+                        if count2 <= 1: VisualizationLib().rviz_publish_input(self.im_sample[0, :, :]*1.3, self.im_sample[-1, 10, 10])
+                        #else: VisualizationLib().rviz_publish_input(self.im_sample[1, :, :]/2, self.im_sample[-1, 10, 10])
 
-                    skip_image = VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample,block=True)
-                    #VisualizationLib().visualize_error_from_distance(bed_distances, error_norm)
-                    if skip_image == 1:
-                        count2 = 100
+                        VisualizationLib().rviz_publish_output(np.reshape(self.tar_sample, self.output_size), self.sc_sample, self.pseudo_sample)
+                        limbArray = VisualizationLib().rviz_publish_output_limbs(np.reshape(self.tar_sample, self.output_size), self.sc_sample, self.pseudo_sample, LimbArray=limbArray, count = count2)
+
+                        skip_image = VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample,block=True)
+                        #VisualizationLib().visualize_error_from_distance(bed_distances, error_norm)
+                        if skip_image == 1:
+                            count2 = 100
 
                 if generate_confidence == True:
                     cum_distance = np.array(cum_distance)
@@ -475,7 +477,7 @@ class DataVisualizer():
     def run(self):
         '''Runs either the synthetic database creation script or the
         raw dataset creation script to create a dataset'''
-        for subject in [9,10,11,12,13,14,15,16,17,18]:
+        for subject in [13]:
             self.init(subject)
 
             self.validate_convnet()

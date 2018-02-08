@@ -245,7 +245,7 @@ class BagfileToPickle():
             if self.mat_sampled == True:
                 # print self.params_length, 'length'
                 if len(p_mat) == 1728:# and self.params_length[4] > 0.15 and self.params_length[4] < 0.5 and self.params_length[5] > 0.15 and self.params_length[5] < 0.5 and self.params_length[6] > 0.1 and self.params_length[6] < 0.35 and self.params_length[7] > 0.1 and self.params_length[7] < 0.35:
-                    if np.count_nonzero(targets) == 30:#targets[0,1] != 0 and targets[1,1] != 0 and targets[2,1] != 0 and targets[3,1] != 0 and targets[5,1] != 0 and targets[6,1] > 1.2:#
+                    if targets[0,1] != 0 and targets[1,1] != 0 and targets[2,1] != 0 and targets[4,1] != 0 and targets[5,1] != 0 and targets[6,1] > 1.2:#
                         # print 'pressure mat has been scanned'
                         #print targets
                         # print np.count_nonzero(targets)
@@ -268,6 +268,8 @@ class BagfileToPickle():
                                     targets[8, 1] = 1.8579005
                                     targets[8, 2] = 0.57703006
                                     print 'filled'
+
+                        print CreateDatasetLib().world_to_mat(targets, self.p_world_mat, self.R_world_mat)[4,:]
 
 
                         if subject == 3:# and filename == '_full_trial_LH3.bag': #fix flipped knees. also, sometimes the feet freak out in other ways
@@ -333,11 +335,11 @@ if __name__ == '__main__':
         # x.append('home_sitting')
         # file_details.append(x)
 
-        x = []
-        x.append(subject)
-        x.append('_full_trial_sitting_LH.bag')
-        x.append('LH_sitting')
-        file_details.append(x)
+        #x = []
+        #x.append(subject)
+        #x.append('_full_trial_sitting_LH.bag')
+        #x.append('LH_sitting')
+        #ile_details.append(x)
 
         #x = []
         #x.append(subject)
@@ -351,11 +353,11 @@ if __name__ == '__main__':
         #x.append('LL_sitting')
         #ile_details.append(x)
 
-        #x = []
-        #x.append(subject)
-        #x.append('_full_trial_sitting_RL.bag')
-        #x.append('RL_sitting')
-        #file_details.append(x)
+        x = []
+        x.append(subject)
+        x.append('_full_trial_sitting_RL.bag')
+        x.append('RL_sitting')
+        file_details.append(x)
 
         file_details_dict[str(subject)] = file_details
 
@@ -416,7 +418,7 @@ if __name__ == '__main__':
     #print file_details_dict['9']
     database_path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials'
 
-    for subject in [8]:
+    for subject in [16]:
     #for subject in [2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]:
 
 

@@ -90,23 +90,17 @@ class PhysicalTrainer():
         self.num_epochs = 200
         self.include_inter = True
 
-
-        hidden_dim1= 32
-        hidden_dim2 = 48
-        hidden_dim3 = 96
-        hidden_dim4 = 96
-
         self.count = 0
 
 
         print test_file
         #Entire pressure dataset with coordinates in world frame
 
-        self.save_name = '_2to8_angles_5x5_dropout1234_' + str(self.batch_size) + 'b_' + str(self.num_epochs) + 'e_4'
+        self.save_name = '_2to8_angles_' + opt.losstype + str(self.batch_size) + 'b_' + str(self.num_epochs) + 'e_4'
 
 
         #change this to 'direct' when you are doing baseline methods
-        self.loss_vector_type = 'angles'#''angles'  # 'arms_cascade'#'upper_angles' #this is so you train the set to joint lengths and angles
+        self.loss_vector_type = opt.losstype  # 'arms_cascade'#'upper_angles' #this is so you train the set to joint lengths and angles
 
         #we'll be loading this later
         if self.opt.computer == 'lab_harddrive':
@@ -258,7 +252,7 @@ class PhysicalTrainer():
         self.test_y_tensor = torch.Tensor(self.test_y_flat)
 
 
-    def baseline_train(self):
+    def baseline_train(self, baseline):
         n_neighbors = 5
         cv_fold = 3
 
@@ -274,6 +268,10 @@ class PhysicalTrainer():
         self.test_loader = torch.utils.data.DataLoader(self.test_dataset, self.batchtest_size, shuffle=True)
 
         for batch_idx, batch in enumerate(self.train_loader):
+
+            # get the whole body x y z
+            batch[1] = batch[1][:, 0:30]
+
             batch[0], batch[1], _ = SyntheticLib().synthetic_master(batch[0], batch[1], flip=True,
                                                                            shift=True, scale=True,
                                                                            bedangle=True,
@@ -303,18 +301,8 @@ class PhysicalTrainer():
 
             print 'fitting'
 
-            baseline = 'Linear'
             if baseline == 'KNN':
-                regr = neighbors.KNeighborsRegressor(15, weights='distance')
-                regr.fit(images_up, targets)
-
-            elif baseline == 'kmeans_SVM':
-                k_means = KMeans(n_clusters=10, n_init=4)
-                k_means.fit(images_up)
-                labels = k_means.labels_
-                svm_classifier = svm.SVC()
-                svm_classifier.fit(images_up, labels)
-                regr = linear_model.LinearRegression()
+                regr = neighbors.KNeighborsRegressor(10, weights='distance')
                 regr.fit(images_up, targets)
 
             elif baseline == 'SVM':
@@ -324,20 +312,11 @@ class PhysicalTrainer():
                 #SVR(C=1.0, cache_size=200, coef0=0.0, degree=3, epsilon=0.1, gamma='auto',
                 #                    kernel='rbf', max_iter=-1, shrinking=True, tol=0.001, verbose=False)
 
-            elif baseline == 'Ridge':
-                regr = linear_model.Ridge(alpha=1.0)
-                regr.fit(images_up, targets)
 
-            elif baseline == 'KRidge':
-                regr = kernel_ridge.KernelRidge(alpha=1, kernel='chi2', gamma= 10)
-                regr.fit(images_up, targets)
-            elif baseline == 'Linear':
-                regr = linear_model.LinearRegression()
-                regr.fit(images_up, targets)
             print 'done fitting'
 
             if self.opt.computer == 'lab_harddrive':
-                pkl.dump(regr, open('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leaveOut) + '/p_files/HoG_SVM.p', 'wb'))
+                pkl.dump(regr, open('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leaveOut) + '/p_files/HoG_'+baseline+'.p', 'wb'))
             elif self.opt.computer == 'aws':
                 pkl.dump(regr, open('/home/ubuntu/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leaveOut) + '/p_files/HoG_SVM.p', 'wb'))
 
@@ -551,7 +530,7 @@ class PhysicalTrainer():
                 scores, targets_est = self.model.forward_direct(images_up, targets)
 
                 self.criterion = nn.L1Loss()
-                loss = self.criterion(scores/1000, scores_zeros/1000)
+                loss = self.criterion(scores, scores_zeros)
 
             #print loss.data.numpy() * 1000, 'loss'
 
@@ -655,7 +634,7 @@ class PhysicalTrainer():
                 scores, targets_est = self.model.forward_direct(images_up, targets)
                 self.criterion = nn.L1Loss()
 
-                loss = self.criterion(scores/1000., scores_zeros/1000.)
+                loss = self.criterion(scores, scores_zeros)
                 loss = loss.data[0]
 
 
@@ -720,6 +699,14 @@ if __name__ == "__main__":
                  dest='computer', \
                  default='lab_harddrive', \
                  help='Set path to the training database on lab harddrive.')
+    p.add_option('--mltype', action='store', type = 'string',
+                 dest='mltype', \
+                 default='convnet', \
+                 help='Set if you want to do baseline ML or convnet.')
+    p.add_option('--losstype', action='store', type = 'string',
+                 dest='losstype', \
+                 default='direct', \
+                 help='Set if you want to do baseline ML or convnet.')
     p.add_option('--upper_only', action='store_true',
                  dest='upper_only', \
                  default=False, \
@@ -840,6 +827,17 @@ if __name__ == "__main__":
         training_database_file.append(opt.subject7Path)
         training_database_file.append(opt.subject8Path)
 
+    elif opt.leaveOut == 9:
+        test_database_file = opt.subject9Path
+        training_database_file.append(opt.subject10Path)
+        training_database_file.append(opt.subject11Path)
+        training_database_file.append(opt.subject12Path)
+        training_database_file.append(opt.subject13Path)
+        training_database_file.append(opt.subject14Path)
+        training_database_file.append(opt.subject15Path)
+        training_database_file.append(opt.subject16Path)
+        training_database_file.append(opt.subject17Path)
+        training_database_file.append(opt.subject18Path)
     elif opt.leaveOut == 10:
         test_database_file = opt.subject10Path
         training_database_file.append(opt.subject9Path)
@@ -851,6 +849,94 @@ if __name__ == "__main__":
         training_database_file.append(opt.subject16Path)
         training_database_file.append(opt.subject17Path)
         training_database_file.append(opt.subject18Path)
+    elif opt.leaveOut == 11:
+        test_database_file = opt.subject11Path
+        training_database_file.append(opt.subject9Path)
+        training_database_file.append(opt.subject10Path)
+        training_database_file.append(opt.subject12Path)
+        training_database_file.append(opt.subject13Path)
+        training_database_file.append(opt.subject14Path)
+        training_database_file.append(opt.subject15Path)
+        training_database_file.append(opt.subject16Path)
+        training_database_file.append(opt.subject17Path)
+        training_database_file.append(opt.subject18Path)
+    elif opt.leaveOut == 12:
+        test_database_file = opt.subject12Path
+        training_database_file.append(opt.subject9Path)
+        training_database_file.append(opt.subject10Path)
+        training_database_file.append(opt.subject11Path)
+        training_database_file.append(opt.subject13Path)
+        training_database_file.append(opt.subject14Path)
+        training_database_file.append(opt.subject15Path)
+        training_database_file.append(opt.subject16Path)
+        training_database_file.append(opt.subject17Path)
+        training_database_file.append(opt.subject18Path)
+    elif opt.leaveOut == 13:
+        test_database_file = opt.subject13Path
+        training_database_file.append(opt.subject9Path)
+        training_database_file.append(opt.subject10Path)
+        training_database_file.append(opt.subject11Path)
+        training_database_file.append(opt.subject12Path)
+        training_database_file.append(opt.subject14Path)
+        training_database_file.append(opt.subject15Path)
+        training_database_file.append(opt.subject16Path)
+        training_database_file.append(opt.subject17Path)
+        training_database_file.append(opt.subject18Path)
+    elif opt.leaveOut == 14:
+        test_database_file = opt.subject14Path
+        training_database_file.append(opt.subject9Path)
+        training_database_file.append(opt.subject10Path)
+        training_database_file.append(opt.subject11Path)
+        training_database_file.append(opt.subject12Path)
+        training_database_file.append(opt.subject13Path)
+        training_database_file.append(opt.subject15Path)
+        training_database_file.append(opt.subject16Path)
+        training_database_file.append(opt.subject17Path)
+        training_database_file.append(opt.subject18Path)
+    elif opt.leaveOut == 15:
+        test_database_file = opt.subject15Path
+        training_database_file.append(opt.subject9Path)
+        training_database_file.append(opt.subject10Path)
+        training_database_file.append(opt.subject11Path)
+        training_database_file.append(opt.subject12Path)
+        training_database_file.append(opt.subject13Path)
+        training_database_file.append(opt.subject14Path)
+        training_database_file.append(opt.subject16Path)
+        training_database_file.append(opt.subject17Path)
+        training_database_file.append(opt.subject18Path)
+    elif opt.leaveOut == 16:
+        test_database_file = opt.subject16Path
+        training_database_file.append(opt.subject9Path)
+        training_database_file.append(opt.subject10Path)
+        training_database_file.append(opt.subject11Path)
+        training_database_file.append(opt.subject12Path)
+        training_database_file.append(opt.subject13Path)
+        training_database_file.append(opt.subject14Path)
+        training_database_file.append(opt.subject15Path)
+        training_database_file.append(opt.subject17Path)
+        training_database_file.append(opt.subject18Path)
+    elif opt.leaveOut == 17:
+        test_database_file = opt.subject17Path
+        training_database_file.append(opt.subject9Path)
+        training_database_file.append(opt.subject10Path)
+        training_database_file.append(opt.subject11Path)
+        training_database_file.append(opt.subject12Path)
+        training_database_file.append(opt.subject13Path)
+        training_database_file.append(opt.subject14Path)
+        training_database_file.append(opt.subject15Path)
+        training_database_file.append(opt.subject16Path)
+        training_database_file.append(opt.subject18Path)
+    elif opt.leaveOut == 18:
+        test_database_file = opt.subject18Path
+        training_database_file.append(opt.subject9Path)
+        training_database_file.append(opt.subject10Path)
+        training_database_file.append(opt.subject11Path)
+        training_database_file.append(opt.subject12Path)
+        training_database_file.append(opt.subject13Path)
+        training_database_file.append(opt.subject14Path)
+        training_database_file.append(opt.subject15Path)
+        training_database_file.append(opt.subject16Path)
+        training_database_file.append(opt.subject17Path)
 
     else:
         print 'please specify which subject to leave out for validation using --leave_out _'
@@ -879,9 +965,12 @@ if __name__ == "__main__":
 
 
 
-        #if training_type == 'convnet_2':
-        p.init_convnet_train()
-        #p.baseline_train()
+        if opt.mltype == 'convnet':
+            p.init_convnet_train()
+        elif opt.mltype == 'KNN':
+            p.baseline_train(opt.mltype)
+        elif opt.mltype == 'SVM':
+            p.baseline_train(opt.mltype)
 
         #else:
         #    print 'Please specify correct training type:1. HoG_KNN 2. convnet_2'
