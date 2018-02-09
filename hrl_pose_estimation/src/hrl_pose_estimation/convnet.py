@@ -512,7 +512,7 @@ class CNN(nn.Module):
         lengths_est = scores[:, 0:17].data
 
         #tweak this to change the lengths vector
-        scores[:, 0:17] = torch.mul(scores[:, 0:17], 10)
+        scores[:, 0:17] = torch.mul(scores[:, 0:17], 5)
 
         if forward_only == False:
             scores = scores.unsqueeze(0)
