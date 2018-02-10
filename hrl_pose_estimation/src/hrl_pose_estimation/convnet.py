@@ -497,7 +497,7 @@ class CNN(nn.Module):
             kincons = kincons / 100
 
 
-        scores, angles_est, pseudotargets_est = KinematicsLib().forward_kinematics_pytorch(images, scores, targets, self.loss_vector_type, kincons, prior_cascade = prior_cascade, forward_only = forward_only)
+        scores, angles_est, pseudotargets_est = KinematicsLib().forward_kinematics_lengthsv_pytorch(images, scores, targets, self.loss_vector_type, kincons, prior_cascade = prior_cascade, forward_only = forward_only)
 
 
         #print scores.size(), ''
