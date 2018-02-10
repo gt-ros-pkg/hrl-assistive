@@ -27,10 +27,6 @@ from visualization_msgs.msg import Marker
 from visualization_msgs.msg import MarkerArray
 
 
-import pickle
-from hrl_lib.util import load_pickle
-
-
 # PyTorch libraries
 import argparse
 import torch
@@ -273,10 +269,10 @@ class CascadeLib():
         bedangle = images[:, 2, 10, 10]
 
         queue_frame = np.zeros_like(targets)
-        middleman = np.zeros_like(targets)
-        middleman2 = np.zeros_like(targets)
+        middleman = torch.zeros_like(targets)
+        middleman2 = torch.zeros_like(targets)
         queue_head = np.zeros_like(targets)
-        final_coords = np.zeros_like(targets)
+        final_coords = torch.zeros_like(targets)
 
         targets = targets/28.6
 
@@ -288,7 +284,7 @@ class CascadeLib():
 
 
         #find the distance in x/y between the bed bending point and each target
-        middleman[:, :, 0] = np.sqrt(np.square(targets[:, :, 2]) + np.square(51-targets[:, :, 1]))
+        middleman[:, :, 0] = torch.sqrt(torch.pow(targets[:, :, 2], 2) + torch.pow(51-targets[:, :, 1], 2))
 
         #calculate the angle from 0 degrees (the point is in the plane of a flat bed) about the bed's bend and up to where it is.
         middleman2[:, :, 0] = targets[:, :, 1]
@@ -296,32 +292,37 @@ class CascadeLib():
         middleman2[:, :, 0][middleman2[:, :, 0] > 51.] = 0.
         middleman2[:, :, 1] = 1 - middleman2[:, :, 0]
 
-        middleman2[:, :, 0] *= np.pi/2 + np.arccos(targets[:, :, 2]/middleman[:, :, 0])
-        middleman2[:, :, 1] *= np.pi/2 - np.arccos(targets[:, :, 2]/middleman[:, :, 0])
+        middleman2[:, :, 0] *= np.pi/2 + torch.acos(targets[:, :, 2]/middleman[:, :, 0])
+        middleman2[:, :, 1] *= np.pi/2 - torch.acos(targets[:, :, 2]/middleman[:, :, 0])
         middleman[:, :, 1] = middleman2[:, :, 0] + middleman2[:, :, 1]
 
+        def deg2rad(x):
+            return x * np.pi / 180.0
+
         #For the y distance, you have to subtract the bed angle from the point rotated about the bed's bend until flat
-        queue_head[:, :, 1] = 51 + middleman[:, :, 0]*np.cos(middleman[:, :, 1] - np.deg2rad(np.expand_dims(bedangle[:], axis=1))) + 6.*np.sin(np.deg2rad(np.expand_dims(bedangle[:], axis=1)))
+        queue_head[:, :, 1] = 51 + middleman[:, :, 0]*torch.cos(middleman[:, :, 1] - deg2rad(bedangle.unsqueeze(1))) + 6.*torch.sin(deg2rad(bedangle.unsqueeze(1)))
 
         #z. this one is good to go.
-        By = (51)  -  3 * np.sin(np.deg2rad(np.expand_dims(bedangle[:], axis=1)))
-        queue_head[:, :, 2] = targets[:, :, 2] * np.cos(np.deg2rad(np.expand_dims(bedangle[:], axis=1))) - (targets[:, :, 1] - By) * np.sin(np.deg2rad(np.expand_dims(bedangle[:], axis=1)))
+        By = (51)  -  3 * torch.sin(deg2rad(bedangle.unsqueeze(1)))
+        queue_head[:, :, 2] = targets[:, :, 2] * torch.cos(deg2rad(bedangle.unsqueeze(1))) - (targets[:, :, 1] - By) * torch.sin(deg2rad(bedangle.unsqueeze(1)))
 
         queue_head[:, :, 1] = queue_head[:, :, 1]
         queue_frame[:, :, 1] = queue_frame[:, :, 1]
 
         #find which plane the point is closest to. If it's closest to the head of the bed, we need to select the rotated point.
 
-        queue_frame[:, :, 2][bedangle[:] == 0.] = 100. #this is so we don't duplicate  things by having the mins equal
+        # print queue_frame[:, :, 2].size(), bedangle.size(), queue_frame[:, :, 2][bedangle == 0.].size()
+        queue_frame[:, :, 2][bedangle == 0.] = 100. #this is so we don't duplicate  things by having the mins equal
 
-        middleman[:, :, 2] = np.amin([queue_frame[:, :, 2], queue_head[:, :, 2]], axis = 0)
+        # middleman[:, :, 2] = torch.min(torch.Tensor(np.concatenate([queue_frame[:, :, 2], queue_head[:, :, 2].numpy()])), dim = 0)
+        middleman[:, :, 2] = torch.Tensor(np.amin([queue_frame[:, :, 2], queue_head[:, :, 2]], axis = 0))
         queue_frame[:, :, 2] -= middleman[:, :, 2]
         queue_frame[:, :, 2][queue_frame[:,:,2] == 0] = 1
         queue_frame[:, :, 2][queue_frame[:,:,2] != 1] = 0
         queue_head[:, :, 2] -= middleman[:, :, 2]
         queue_head[:, :, 2][queue_head[:,:,2] == 0] = 1
         queue_head[:, :, 2][queue_head[:,:,2] != 1] = 0
-        final_coords[:, :, 1] = queue_frame[:,:,1]*queue_frame[:,:,2] + queue_head[:,:,1]*queue_head[:,:,2]
+        final_coords[:, :, 1] = queue_frame[:,:,1]*queue_frame[:,:,2] + torch.Tensor(queue_head[:,:,1]*queue_head[:,:,2])
 
         final_coords = final_coords*28.6
         return final_coords

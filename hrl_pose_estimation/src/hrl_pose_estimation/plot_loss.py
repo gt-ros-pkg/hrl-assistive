@@ -107,21 +107,36 @@ class DataVisualizer():
         if pathkey == 'lab_hd':
             train_val_loss = load_pickle(self.dump_path + '/train_val_losses.p')
             train_val_loss_desk = load_pickle(self.dump_path + '/train_val_losses_hcdesktop.p')
-            train_val_loss_all = load_pickle(self.dump_path + '/train_val_losses_all.p')
-            train_val_loss_171106 = load_pickle(self.dump_path + '/train_val_losses_171106.p')
-            train_val_loss_171202 = load_pickle(self.dump_path + '/train_val_losses_171202.p')
+            train_val_loss_GPU2 = load_pickle(self.dump_path + '/train_val_losses_GPU2.p')
+            train_val_loss_GPU3 = load_pickle(self.dump_path + '/train_val_losses_GPU3.p')
+            train_val_loss_GPU4 = load_pickle(self.dump_path + '/train_val_losses_GPU4.p')
+            train_val_loss_GPU2new = load_pickle(self.dump_path + '/train_val_lossesGPU2_021018.p')
+            train_val_loss_GPU3new = load_pickle(self.dump_path + '/train_val_lossesGPU3_021018.p')
+            train_val_loss_GPU4new = load_pickle(self.dump_path + '/train_val_lossesGPU4_021018.p')
             for key in train_val_loss:
                 print key
             print '###########################  done with laptop #################'
             for key in train_val_loss_desk:
                 print key
             print '###########################  done with desktop ################'
-            for key in train_val_loss_171106:
+            for key in train_val_loss_GPU4:
                 print key
-            print '###########################  done with 171106 ################'
-            for key in train_val_loss_all:
+            print '###########################  done with GPU4 ################'
+            for key in train_val_loss_GPU3:
                 print key
-            print '###########################  done with mixed sitting/laying ################'
+            print '###########################  done with GPU3 ################'
+            for key in train_val_loss_GPU2:
+                print key
+            print '###########################  done with GPU2 ################'
+            for key in train_val_loss_GPU4new:
+                print key
+            print '###########################  done with GPU4new ################'
+            for key in train_val_loss_GPU3new:
+                print key
+            print '###########################  done with GPU3new ################'
+            for key in train_val_loss_GPU2new:
+                print key
+            print '###########################  done with GPU2new ################'
 
 
 
@@ -160,10 +175,14 @@ class DataVisualizer():
                 #plt.plot(train_val_loss_all['epoch_2to8_alldata_angles_constrained_noise_115b_100e_44'], train_val_loss_all['val_2to8_alldata_angles_constrained_noise_115b_100e_44'], 'r')
                 #plt.plot(train_val_loss_all['epoch_2to8_alldata_angles_s10to18_115b_50e_44'], train_val_loss_all['val_2to8_alldata_angles_s10to18_115b_50e_44'], 'g')
                 #plt.plot(train_val_loss_all['epoch_2to8_alldata_angles_implbedang_115b_100e_44'], train_val_loss_all['val_2to8_alldata_angles_implbedang_115b_100e_44'], 'g')
-                plt.plot(train_val_loss_all['epoch_2to8_angles_5x5_115b_150e_44'], train_val_loss_all['train_2to8_angles_5x5_115b_150e_44'], 'k')
-                plt.plot(train_val_loss_all['epoch_2to8_angles_5x5_115b_150e_44'], train_val_loss_all['val_2to8_angles_5x5_115b_150e_44'], 'y')
-
-
+                #plt.plot(train_val_loss_all['epoch_2to8_angles_direct128b_200e_44'], train_val_loss_all['train_2to8_angles_direct128b_200e_44'], 'k')
+                #plt.plot(train_val_loss_GPU3['epoch_2to8_angles_angles128b_200e_44'], train_val_loss_GPU3['train_2to8_angles_angles128b_200e_44'], 'b')
+                #plt.plot(train_val_loss_GPU4['epoch_2to8_angles128b_200e_44'], train_val_loss_GPU4['val_2to8_angles128b_200e_44'], 'k') #pull out lengths weighted 1
+                #plt.plot(train_val_loss_GPU3['epoch_2to8_angles128b_200e_44'], train_val_loss_GPU3['val_2to8_angles128b_200e_44'], 'r') #propogated lengths weighted 1
+                plt.plot(train_val_loss_GPU3new['epoch_2to8_angles128b_200e_44'], train_val_loss_GPU3new['val_2to8_angles128b_200e_44'], 'y') #propogated lengths weighted 0.2
+                plt.plot(train_val_loss_GPU2['epoch_2to8_angles_direct128b_200e_44'],train_val_loss_GPU2['val_2to8_angles_direct128b_200e_44'], 'g')
+                plt.plot(train_val_loss_GPU4new['epoch_2to8_direct128b_200e_411'],train_val_loss_GPU4new['val_2to8_direct128b_200e_411'], 'c')
+                #plt.plot(train_val_loss_GPU2new['epoch_2to8_angles128b_250e_44'],train_val_loss_GPU2new['val_2to8_angles128b_250e_44'], 'b') #pull out lengths weighted 2
 
                 if False:
                     plt.plot(train_val_loss['epoch_sitting_700e_4'],train_val_loss['val_sitting_700e_4'],'k', label='Raw Pressure Map Input')
@@ -182,7 +201,7 @@ class DataVisualizer():
 
 
         #plt.axis([0,410,0,30000])
-        plt.axis([0, 200, 0, 5])
+        plt.axis([0, 200, 10, 15])
         if self.opt.no_loss == False:
             plt.show()
 
@@ -277,7 +296,7 @@ class DataVisualizer():
 
         print len(self.validation_set), 'size of validation set'
         batch_size = 1
-        generate_confidence = True
+        generate_confidence = False
         self.test_dataset = torch.utils.data.TensorDataset(self.test_x_tensor, self.test_y_tensor)
         self.test_loader = torch.utils.data.DataLoader(self.test_dataset, batch_size, shuffle=True)
 
@@ -288,7 +307,7 @@ class DataVisualizer():
 
         if self.loss_vector_type == 'angles':
             print self.dump_path + '/subject_' + str(4) + '/p_files/convnet_2to8_angles_5x5_dropout1_115b_150e_4.pt'
-            model = torch.load(self.dump_path + '/subject_' + str(4) + '/p_files/convnet_2to8_angles_5x5_115b_150e_4.pt')
+            model = torch.load(self.dump_path + '/subject_' + str(4) + '/p_files/convnet_2to8_angles_5x5_dropout1234_115b_150e_4.pt')
             pp = 0
             for p in list(model.parameters()):
                 nn = 1
@@ -296,16 +315,20 @@ class DataVisualizer():
                     nn = nn * s
                 pp += nn
             print pp, 'num params'
-        elif self.loss_vector_type == 'arms_cascade':
-            model_cascade_prior = torch.load(self.dump_path + '/subject_' + str(4) + '/p_files/convnet_2to8_alldata_angles_constrained_noise_115b_100e_4.pt')
-            model = torch.load(self.dump_path + '/subject_' + str(4) + '/p_files/convnet_2to8_alldata_armanglescascade_constrained_noise_115b_100e_4.pt')
+        elif self.loss_vector_type == 'direct':
+            pass
 
-        count = 0
-        x2, y2, x3, y3, x4, y4, x5, y5 = [], [], [], [], [], [], [], []
+
+
+
+        self.count = 0
+        self.x2, self.y2, self.x3, self.y3, self.x4, self.y4, self.x5, self.y5 = [], [], [], [], [], [], [], []
 
 
         for batch_idx, batch in enumerate(self.test_loader):
-            count += 1
+
+
+            self.count += 1
             #print count
 
             if self.loss_vector_type == 'angles':
@@ -328,6 +351,7 @@ class DataVisualizer():
                 while count2 < limit:
                     count2 += 1
 
+
                     if generate_confidence == True:
                         batch0 = batch[0].clone()
                         batch1 = batch[1].clone()
@@ -340,7 +364,7 @@ class DataVisualizer():
                     images_up = images_up[:, :, 10:74, 10:37]
                     images_up = PreprocessingLib().preprocessing_pressure_map_upsample(images_up)
                     images_up = np.array(images_up)
-                    images_up = PreprocessingLib().preprocessing_add_image_noise(images_up)
+                    #images_up = PreprocessingLib().preprocessing_add_image_noise(images_up)
                     images_up = Variable(torch.Tensor(images_up), volatile = True, requires_grad=False)
                     #print images_up.size()
 
@@ -349,12 +373,17 @@ class DataVisualizer():
 
                     _, targets_est, angles_est, lengths_est, pseudotargets_est = model.forward_kinematic_jacobian(images_up, targets, constraints, forward_only = True)
 
+                    #print targets_est
+
                     bed_distances = KinematicsLib().get_bed_distance(images, targets)
 
 
-                    targets = targets.data.numpy()
+                    targets = targets.data
 
-                    error_norm = VisualizationLib().print_error(targets, targets_est, self.output_size, self.loss_vector_type, data=str(count), printerror =  True)/1000
+                    error_norm = VisualizationLib().print_error(targets, targets_est, self.output_size, self.loss_vector_type, data=str(self.count), printerror =  True)/1000
+                    print error_norm.shape
+
+                    print np.max(error_norm)
 
                     if generate_confidence == True:
                         print batch_idx #angles_est
@@ -374,16 +403,18 @@ class DataVisualizer():
                     self.pseudo_sample = np.squeeze(self.pseudo_sample[0, :]) / 1000
                     self.pseudo_sample = np.reshape(self.pseudo_sample, (5, 3))
 
-                    if count2 <= 1: VisualizationLib().rviz_publish_input(self.im_sample[0, :, :]*1.3, self.im_sample[-1, 10, 10])
-                    else: VisualizationLib().rviz_publish_input(self.im_sample[1, :, :]/2, self.im_sample[-1, 10, 10])
 
-                    VisualizationLib().rviz_publish_output(np.reshape(self.tar_sample, self.output_size), self.sc_sample, self.pseudo_sample)
-                    limbArray = VisualizationLib().rviz_publish_output_limbs(np.reshape(self.tar_sample, self.output_size), self.sc_sample, self.pseudo_sample, LimbArray=limbArray, count = count2)
+                    if np.max(error_norm) > 0.6:
+                        if count2 <= 1: VisualizationLib().rviz_publish_input(self.im_sample[0, :, :]*1.3, self.im_sample[-1, 10, 10])
+                        #else: VisualizationLib().rviz_publish_input(self.im_sample[1, :, :]/2, self.im_sample[-1, 10, 10])
 
-                    skip_image = VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample,block=True)
-                    #VisualizationLib().visualize_error_from_distance(bed_distances, error_norm)
-                    if skip_image == True:
-                        count2 = 100
+                        VisualizationLib().rviz_publish_output(np.reshape(self.tar_sample, self.output_size), self.sc_sample, self.pseudo_sample)
+                        limbArray = VisualizationLib().rviz_publish_output_limbs(np.reshape(self.tar_sample, self.output_size), self.sc_sample, self.pseudo_sample, LimbArray=limbArray, count = count2)
+
+                        skip_image = VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample,block=True)
+                        #VisualizationLib().visualize_error_from_distance(bed_distances, error_norm)
+                        if skip_image == 1:
+                            count2 = 100
 
                 if generate_confidence == True:
                     cum_distance = np.array(cum_distance)
@@ -403,16 +434,16 @@ class DataVisualizer():
                     error = np.mean(np.array(cum_error) * 100, axis=0)
                     std_error = std_distance
 
-                    x2.append(std_error[2])
-                    y2.append(error[2])
-                    x3.append(std_error[3])
-                    y3.append(error[3])
-                    x4.append(std_error[4])
-                    y4.append(error[4])
-                    x5.append(std_error[5])
-                    y5.append(error[5])
+                    self.x2.append(std_error[2])
+                    self.y2.append(error[2])
+                    self.x3.append(std_error[3])
+                    self.y3.append(error[3])
+                    self.x4.append(std_error[4])
+                    self.y4.append(error[4])
+                    self.x5.append(std_error[5])
+                    self.y5.append(error[5])
                     print batch_idx
-                    if batch_idx > 500:
+                    if batch_idx > 200:
                         xlim = [0, 20]
                         ylim = [0, 60]
                         fig = plt.figure()
@@ -423,7 +454,7 @@ class DataVisualizer():
                         ax1.set_ylim(ylim)
                         ax1.set_xlabel('Std. Dev of 3D joint position following 15 noise perturbations per image')
                         ax1.set_ylabel('Mean Euclidean Error across 15 forward passes')
-                        ax1.plot(x2, y2, 'ro')
+                        ax1.plot(self.x2, self.y2, 'ro')
                         ax1.set_title('Right Elbow')
 
                         ax2 = fig.add_subplot(2, 2, 2)
@@ -431,7 +462,7 @@ class DataVisualizer():
                         ax2.set_ylim(ylim)
                         ax2.set_xlabel('Std. Dev of 3D joint position following 15 noise perturbations per image')
                         ax2.set_ylabel('Mean Euclidean Error across 15 forward passes')
-                        ax2.plot(x3, y3, 'bo')
+                        ax2.plot(self.x3, self.y3, 'bo')
                         ax2.set_title('Left Elbow')
 
                         ax3 = fig.add_subplot(2, 2, 3)
@@ -439,7 +470,7 @@ class DataVisualizer():
                         ax3.set_ylim(ylim)
                         ax3.set_xlabel('Std. Dev of 3D joint position following 15 noise perturbations per image')
                         ax3.set_ylabel('Mean Euclidean Error across 15 forward passes')
-                        ax3.plot(x4, y4, 'ro')
+                        ax3.plot(self.x4, self.y4, 'ro')
                         ax3.set_title('Right Hand')
 
                         ax4 = fig.add_subplot(2, 2, 4)
@@ -447,42 +478,25 @@ class DataVisualizer():
                         ax4.set_ylim(ylim)
                         ax4.set_xlabel('Std. Dev of 3D joint position following 15 noise perturbations per image')
                         ax4.set_ylabel('Mean Euclidean Error across 15 forward passes')
-                        ax4.plot(x5, y5, 'bo')
+                        ax4.plot(self.x5, self.y5, 'bo')
                         ax4.set_title('Left Hand')
 
                         plt.show()
-
-            elif self.loss_vector_type == 'confidence':
-                # append upper joint angles, lower joint angles, upper joint lengths, lower joint lengths, in that order
-                batch.append(torch.cat((batch[1][:, 39:49], batch[1][:, 57:65], batch[1][:, 30:39], batch[1][:, 49:57]), dim=1))
-
-                # get the targets and pseudotargets
-                batch[1] = torch.cat((batch[1][:, 0:30], batch[1][:, 65:80]), dim=1)
-
-                images, targets, constraints = Variable(batch[0], volatile=True, requires_grad=False), Variable(batch[1], volatile=True, requires_grad=False), Variable(batch[2], volatile=True,requires_grad=False)
-
-                self.optimizer.zero_grad()
-
-
-
-                images_up = Variable(torch.Tensor(np.array(PreprocessingLib().preprocessing_pressure_map_upsample(batch[0].numpy()[:, :, 5:79, 5:42]))), requires_grad=False)
-
-                #find the pressure mat coordinates where the projected markers lie
-                targets_2D = CascadeLib().get_2D_projection(images.data.numpy(), np.reshape(targets.data.numpy(), (targets.size()[0], 15, 3)))
-
-
-                targets_proj_est = self.model.forward_confidence(images_up, targets_proj)
-
 
             elif self.loss_vector_type == None:
                 _, targets_est = model.forward_direct(images, targets)
 
         return# mean, stdev
 
+
+   # def forward_batch(self, batch_idx, batch):
+
+
+
     def run(self):
         '''Runs either the synthetic database creation script or the
         raw dataset creation script to create a dataset'''
-        for subject in [4]:
+        for subject in [13]:
             self.init(subject)
 
             self.validate_convnet()

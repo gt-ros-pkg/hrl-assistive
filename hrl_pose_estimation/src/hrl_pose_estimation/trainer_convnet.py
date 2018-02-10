@@ -21,9 +21,12 @@ import convnet as convnet
 import convnet_cascade as convnet_cascade
 import tf.transformations as tft
 
-import hrl_lib.util as ut
-import pickle
-from hrl_lib.util import load_pickle
+# import hrl_lib.util as ut
+import cPickle as pickle
+# from hrl_lib.util import load_pickle
+def load_pickle(filename):
+    with open(filename, 'rb') as f:
+        return pickle.load(f)
 
 # Pose Estimation Libraries
 from create_dataset_lib import CreateDatasetLib
@@ -50,13 +53,14 @@ from sklearn.preprocessing import normalize
 from sklearn import svm, linear_model, decomposition, kernel_ridge, neighbors
 from sklearn import metrics, cross_validation
 from sklearn.utils import shuffle
+from sklearn.multioutput import MultiOutputRegressor
 
 
 np.set_printoptions(threshold='nan')
 
 MAT_WIDTH = 0.762 #metres
 MAT_HEIGHT = 1.854 #metres
-MAT_HALF_WIDTH = MAT_WIDTH/2 
+MAT_HALF_WIDTH = MAT_WIDTH/2
 NUMOFTAXELS_X = 84#73 #taxels
 NUMOFTAXELS_Y = 47#30
 NUMOFOUTPUTDIMS = 3
@@ -64,12 +68,18 @@ NUMOFOUTPUTNODES = 10
 INTER_SENSOR_DISTANCE = 0.0286#metres
 LOW_TAXEL_THRESH_X = 0
 LOW_TAXEL_THRESH_Y = 0
-HIGH_TAXEL_THRESH_X = (NUMOFTAXELS_X - 1) 
-HIGH_TAXEL_THRESH_Y = (NUMOFTAXELS_Y - 1) 
+HIGH_TAXEL_THRESH_X = (NUMOFTAXELS_X - 1)
+HIGH_TAXEL_THRESH_Y = (NUMOFTAXELS_Y - 1)
 
- 
+if torch.cuda.is_available():
+    # Use for GPU
+    dtype = torch.cuda.FloatTensor
+else:
+    # Use for CPU
+    dtype = torch.FloatTensor
+
 class PhysicalTrainer():
-    '''Gets the dictionary of pressure maps from the training database, 
+    '''Gets the dictionary of pressure maps from the training database,
     and will have API to do all sorts of training with it.'''
     def __init__(self, training_database_file, test_file, opt):
         '''Opens the specified pickle files to get the combined dataset:
@@ -77,15 +87,9 @@ class PhysicalTrainer():
         3d position and orientation of the markers associated with it.'''
         self.verbose = opt.verbose
         self.opt = opt
-        self.batch_size = 115
-        self.num_epochs = 150
+        self.batch_size = 128
+        self.num_epochs = 200
         self.include_inter = True
-
-
-        hidden_dim1= 32
-        hidden_dim2 = 48
-        hidden_dim3 = 96
-        hidden_dim4 = 96
 
         self.count = 0
 
@@ -93,11 +97,11 @@ class PhysicalTrainer():
         print test_file
         #Entire pressure dataset with coordinates in world frame
 
-        self.save_name = '_2to8_angles_5x5_dropout1234_' + str(self.batch_size) + 'b_' + str(self.num_epochs) + 'e_4'
+        self.save_name = '_2to8_' + opt.losstype + str(self.batch_size) + 'b_' + str(self.num_epochs) + 'e_4'
 
 
         #change this to 'direct' when you are doing baseline methods
-        self.loss_vector_type = 'angles'#''angles'  # 'arms_cascade'#'upper_angles' #this is so you train the set to joint lengths and angles
+        self.loss_vector_type = opt.losstype  # 'arms_cascade'#'upper_angles' #this is so you train the set to joint lengths and angles
 
         #we'll be loading this later
         if self.opt.computer == 'lab_harddrive':
@@ -170,6 +174,15 @@ class PhysicalTrainer():
             self.train_a_flat.append(dat['bed_angle_deg'][entry])
         train_xa = PreprocessingLib().preprocessing_create_pressure_angle_stack(self.train_x_flat, self.train_a_flat, self.include_inter, self.mat_size, self.verbose)
         train_xa = np.array(train_xa)
+
+        # Standardize data to values between [0, 1]
+        # print 'Standardizing training data'
+        # mins = [np.min(train_xa[:, ii]) for ii in xrange(np.shape(train_xa)[1])]
+        # maxs = [np.max(train_xa[:, ii]) for ii in xrange(np.shape(train_xa)[1])]
+        # print 'mins:', mins, 'maxs:', maxs
+        # for ii in xrange(np.shape(train_xa)[1]):
+        #     train_xa[:, ii] = (train_xa[:, ii] - mins[ii]) / (maxs[ii] - mins[ii])
+
         self.train_x_tensor = torch.Tensor(train_xa)
 
         self.train_y_flat = [] #Initialize the training ground truth list
@@ -210,6 +223,12 @@ class PhysicalTrainer():
             self.test_a_flat.append(test_dat['bed_angle_deg'][entry])
         test_xa = PreprocessingLib().preprocessing_create_pressure_angle_stack(self.test_x_flat, self.test_a_flat, self.include_inter, self.mat_size, self.verbose)
         test_xa = np.array(test_xa)
+
+        # Standardize data to values between [0, 1]
+        # print 'Standardizing test data'
+        # for ii in xrange(np.shape(test_xa)[1]):
+        #     test_xa[:, ii] = (test_xa[:, ii] - mins[ii]) / (maxs[ii] - mins[ii])
+
         self.test_x_tensor = torch.Tensor(test_xa)
 
         self.test_y_flat = []  # Initialize the ground truth list
@@ -234,7 +253,7 @@ class PhysicalTrainer():
         self.test_y_tensor = torch.Tensor(self.test_y_flat)
 
 
-    def baseline_train(self):
+    def baseline_train(self, baseline):
         n_neighbors = 5
         cv_fold = 3
 
@@ -250,6 +269,10 @@ class PhysicalTrainer():
         self.test_loader = torch.utils.data.DataLoader(self.test_dataset, self.batchtest_size, shuffle=True)
 
         for batch_idx, batch in enumerate(self.train_loader):
+
+            # get the whole body x y z
+            batch[1] = batch[1][:, 0:30]
+
             batch[0], batch[1], _ = SyntheticLib().synthetic_master(batch[0], batch[1], flip=True,
                                                                            shift=True, scale=True,
                                                                            bedangle=True,
@@ -279,43 +302,24 @@ class PhysicalTrainer():
 
             print 'fitting'
 
-            baseline = 'Linear'
             if baseline == 'KNN':
-                regr = neighbors.KNeighborsRegressor(15, weights='distance')
-                regr.fit(images_up, targets)
-
-            elif baseline == 'kmeans_SVM':
-                k_means = KMeans(n_clusters=10, n_init=4)
-                k_means.fit(images_up)
-                labels = k_means.labels_
-                svm_classifier = svm.SVC()
-                svm_classifier.fit(images_up, labels)
-                regr = linear_model.LinearRegression()
+                regr = neighbors.KNeighborsRegressor(10, weights='distance')
                 regr.fit(images_up, targets)
 
             elif baseline == 'SVM':
-                regr = svm.SVR()
+                regr = MultiOutputRegressor(estimator=svm.SVR(C=1.0, kernel='rbf', verbose = True))
                 regr.fit(images_up, targets)
-                SVR(C=1.0, kernel='rbf', verbose = True)
+                #SVR(C=1.0, kernel='rbf', verbose = True)
                 #SVR(C=1.0, cache_size=200, coef0=0.0, degree=3, epsilon=0.1, gamma='auto',
                 #                    kernel='rbf', max_iter=-1, shrinking=True, tol=0.001, verbose=False)
 
-            elif baseline == 'Ridge':
-                regr = linear_model.Ridge(alpha=1.0)
-                regr.fit(images_up, targets)
 
-            elif baseline == 'KRidge':
-                regr = kernel_ridge.KernelRidge(alpha=1, kernel='chi2', gamma= 10)
-                regr.fit(images_up, targets)
-            elif baseline == 'Linear':
-                regr = linear_model.LinearRegression()
-                regr.fit(images_up, targets)
             print 'done fitting'
 
             if self.opt.computer == 'lab_harddrive':
-                pkl.dump(regr, open('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leaveOut) + '/p_files/HoG_SVM.p', 'wb'))
+                pkl.dump(regr, open('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leaveOut) + '/p_files/HoG_'+baseline+'.p', 'wb'))
             elif self.opt.computer == 'aws':
-                pkl.dump(regr, open('/home/ubuntu/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leaveOut) + '/p_files/HoG_SVM.p', 'wb'))
+                pkl.dump(regr, open('/home/ubuntu/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leaveOut) + '/HoG_'+baseline+'.p', 'wb'))
 
             #validation
             for batchtest_idx, batchtest in enumerate(self.test_loader):
@@ -400,19 +404,23 @@ class PhysicalTrainer():
             fc_output_size = 30
             self.model = convnet.CNN(self.mat_size, fc_output_size, hidden_dim, kernel_size, self.loss_vector_type)
 
+        # Run model on GPU if available
+        if torch.cuda.is_available():
+            self.model = self.model.cuda()
+
 
         self.criterion = F.cross_entropy
 
 
 
         if self.loss_vector_type == None:
-            self.optimizer2 = optim.Adam(self.model.parameters(), lr=0.000025, weight_decay=0.0005)
+            self.optimizer2 = optim.Adam(self.model.parameters(), lr=0.00002, weight_decay=0.0005)
         elif self.loss_vector_type == 'upper_angles' or self.loss_vector_type == 'arms_cascade' or self.loss_vector_type == 'angles' or self.loss_vector_type == 'direct':
-            self.optimizer2 = optim.Adam(self.model.parameters(), lr=0.000015, weight_decay=0.0005)  #0.000002 does not converge even after 100 epochs on subjects 2-8 kin cons. use .00001
+            self.optimizer2 = optim.Adam(self.model.parameters(), lr=0.00002, weight_decay=0.0005)  #0.000002 does not converge even after 100 epochs on subjects 2-8 kin cons. use .00001
         elif self.loss_vector_type == 'direct':
-            self.optimizer2 = optim.Adam(self.model.parameters(), lr=0.00005, weight_decay=0.0005)
+            self.optimizer2 = optim.Adam(self.model.parameters(), lr=0.00002, weight_decay=0.0005)
         #self.optimizer = optim.RMSprop(self.model.parameters(), lr=0.000001, momentum=0.7, weight_decay=0.0005)
-        self.optimizer = optim.Adam(self.model.parameters(), lr=0.00003, weight_decay=0.0005) #start with .00005
+        self.optimizer = optim.Adam(self.model.parameters(), lr=0.00002, weight_decay=0.0005) #start with .00005
 
 
         # train the model one epoch at a time
@@ -478,12 +486,12 @@ class PhysicalTrainer():
 
                 batch[0], batch[1], batch[2]= SyntheticLib().synthetic_master(batch[0], batch[1], batch[2], flip=True, shift=True, scale=True, bedangle=True, include_inter=self.include_inter, loss_vector_type=self.loss_vector_type)
 
+                images_up = Variable(torch.Tensor(PreprocessingLib().preprocessing_add_image_noise(np.array(PreprocessingLib().preprocessing_pressure_map_upsample(batch[0].numpy()[:, :, 10:74, 10:37])))).type(dtype), requires_grad=False)
+                images, targets, constraints = Variable(batch[0].type(dtype), requires_grad = False), Variable(batch[1].type(dtype), requires_grad = False), Variable(batch[2].type(dtype), requires_grad = False)
 
-                images_up = Variable(torch.Tensor(PreprocessingLib().preprocessing_add_image_noise(np.array(PreprocessingLib().preprocessing_pressure_map_upsample(batch[0].numpy()[:, :, 10:74, 10:37])))),requires_grad=False)
-                images, targets, constraints = Variable(batch[0], requires_grad = False), Variable(batch[1], requires_grad = False), Variable(batch[2], requires_grad = False)
 
-
-                targets_2D = CascadeLib().get_2D_projection(images.data.numpy(), np.reshape(targets.data.numpy(), (targets.size()[0], 10, 3)))
+                # targets_2D = CascadeLib().get_2D_projection(images.data.numpy(), np.reshape(targets.data.numpy(), (targets.size()[0], 10, 3)))
+                targets_2D = CascadeLib().get_2D_projection(images.data, targets.data.view(targets.size()[0], 10, 3))
 
                 #image_coords = np.round(targets_2D[:, :, 0:2] / 28.6, 0)
                 #print image_coords[0, :, :]
@@ -491,15 +499,15 @@ class PhysicalTrainer():
                 self.optimizer.zero_grad()
 
                 ground_truth = np.zeros((batch[0].numpy().shape[0], 47)) #47 is 17 joint lengths and 30 joint locations for x y z
-                ground_truth = Variable(torch.Tensor(ground_truth))
+                ground_truth = Variable(torch.Tensor(ground_truth).type(dtype))
                 ground_truth[:, 0:17] = constraints[:, 18:35]/100
                 ground_truth[:, 17:47] = targets[:, 0:30]/1000
 
 
 
                 scores_zeros = np.zeros((batch[0].numpy().shape[0], 27)) #27 is  10 euclidean errors and 17 joint lengths
-                scores_zeros = Variable(torch.Tensor(scores_zeros))
-                scores_zeros[:, 10:27] = constraints[:, 18:35]/100
+                scores_zeros = Variable(torch.Tensor(scores_zeros).type(dtype))
+                scores_zeros[:, 10:27] = constraints[:, 18:35]/200 #divide by 100 for direct output. divide by 10 if you multiply the estimate length by 10.
 
 
                 scores, targets_est, angles_est, lengths_est, _ = self.model.forward_kinematic_jacobian(images_up, targets, constraints) # scores is a variable with 27 for 10 euclidean errors and 17 lengths in meters. targets est is a numpy array in mm.
@@ -516,14 +524,14 @@ class PhysicalTrainer():
 
                 batch[0],batch[1], _ = SyntheticLib().synthetic_master(batch[0], batch[1], flip=True, shift=True, scale=True, bedangle=True, include_inter = self.include_inter, loss_vector_type = self.loss_vector_type)
 
-                images_up = Variable(torch.Tensor(PreprocessingLib().preprocessing_add_image_noise(np.array(PreprocessingLib().preprocessing_pressure_map_upsample(batch[0].numpy()[:, :, 10:74, 10:37])))), requires_grad=False)
-                images, targets, scores_zeros = Variable(batch[0], requires_grad = False), Variable(batch[1], requires_grad = False), Variable(torch.Tensor(np.zeros((batch[1].shape[0], batch[1].shape[1]/3))), requires_grad = False)
+                images_up = Variable(torch.Tensor(PreprocessingLib().preprocessing_add_image_noise(np.array(PreprocessingLib().preprocessing_pressure_map_upsample(batch[0].numpy()[:, :, 10:74, 10:37])))).type(dtype), requires_grad=False)
+                images, targets, scores_zeros = Variable(batch[0].type(dtype), requires_grad = False), Variable(batch[1].type(dtype), requires_grad = False), Variable(torch.Tensor(np.zeros((batch[1].shape[0], batch[1].shape[1]/3))).type(dtype), requires_grad = False)
 
                 self.optimizer.zero_grad()
                 scores, targets_est = self.model.forward_direct(images_up, targets)
 
                 self.criterion = nn.L1Loss()
-                loss = self.criterion(scores/1000, scores_zeros/1000)
+                loss = self.criterion(scores, scores_zeros)
 
             #print loss.data.numpy() * 1000, 'loss'
 
@@ -534,28 +542,28 @@ class PhysicalTrainer():
 
             if batch_idx % opt.log_interval == 0:
                 if self.loss_vector_type == 'upper_angles' or self.loss_vector_type == 'angles':
-                    VisualizationLib().print_error(targets.data.numpy(), targets_est, self.output_size, self.loss_vector_type, data = 'train')
+                    VisualizationLib().print_error(targets.data, targets_est, self.output_size, self.loss_vector_type, data = 'train')
                     print angles_est[0, :], 'angles'
                     print batch[0][0,2,10,10], 'bed angle'
-                    self.im_sample = images.data.numpy()
-                    #self.im_sample = self.im_sample[:,0,:,:]
-                    self.im_sample = np.squeeze(self.im_sample[0, :])
-                    self.tar_sample = targets.data.numpy()
-                    self.tar_sample = np.squeeze(self.tar_sample[0, :])/1000
-                    self.sc_sample = np.copy(targets_est)
-                    self.sc_sample = np.squeeze(self.sc_sample[0, :]) / 1000
-                    self.sc_sample = np.reshape(self.sc_sample, self.output_size)
+                    self.im_sample = images.data
+                    # #self.im_sample = self.im_sample[:,0,:,:]
+                    self.im_sample = self.im_sample[0, :].squeeze()
+                    self.tar_sample = targets.data
+                    self.tar_sample = self.tar_sample[0, :].squeeze()/1000
+                    self.sc_sample = targets_est.clone()
+                    self.sc_sample = self.sc_sample[0, :].squeeze() / 1000
+                    self.sc_sample = self.sc_sample.view(self.output_size)
 
                 elif self.loss_vector_type == 'direct':
-                    VisualizationLib().print_error(targets.data.numpy(), targets_est, self.output_size, self.loss_vector_type, data='train')
-                    self.im_sample = batch[0].numpy()
+                    VisualizationLib().print_error(targets.data, targets_est, self.output_size, self.loss_vector_type, data='train')
+                    self.im_sample = images.data
                     #self.im_sample = self.im_sample[:, 1, :, :]
-                    self.im_sample = np.squeeze(self.im_sample[0, :])
-                    self.tar_sample = targets.data.numpy()#batch[1].numpy()
-                    self.tar_sample = np.squeeze(self.tar_sample[0, :]) / 1000
-                    self.sc_sample = targets_est#.data.numpy()
-                    self.sc_sample = np.squeeze(self.sc_sample[0, :]) / 1000
-                    self.sc_sample = np.reshape(self.sc_sample, self.output_size)
+                    self.im_sample = self.im_sample[0, :].squeeze()
+                    self.tar_sample = targets.data
+                    self.tar_sample = self.tar_sample[0, :].squeeze()/1000
+                    self.sc_sample = targets_est.clone()
+                    self.sc_sample = self.sc_sample[0, :].squeeze() / 1000
+                    self.sc_sample = self.sc_sample.view(self.output_size)
 
                 val_loss = self.validate_convnet(n_batches=4)
                 train_loss = loss.data[0]
@@ -594,40 +602,39 @@ class PhysicalTrainer():
                 #get the direct joint locations
                 batch[1] = batch[1][:, 0:30]
 
-                images_up = Variable(torch.Tensor(np.array(PreprocessingLib().preprocessing_pressure_map_upsample(batch[0].numpy()[:, :, 10:74, 10:37]))), requires_grad=False)
-                images, targets, constraints = Variable(batch[0], volatile = True, requires_grad=False), Variable(batch[1],volatile = True, requires_grad=False), Variable(batch[2], volatile = True, requires_grad=False)
+                images_up = Variable(torch.Tensor(np.array(PreprocessingLib().preprocessing_pressure_map_upsample(batch[0].numpy()[:, :, 10:74, 10:37]))).type(dtype), requires_grad=False)
+                images, targets, constraints = Variable(batch[0].type(dtype), volatile = True, requires_grad=False), Variable(batch[1].type(dtype),volatile = True, requires_grad=False), Variable(batch[2].type(dtype), volatile = True, requires_grad=False)
 
                 self.optimizer.zero_grad()
 
 
                 ground_truth = np.zeros((batch[0].numpy().shape[0], 47))
-                ground_truth = Variable(torch.Tensor(ground_truth))
+                ground_truth = Variable(torch.Tensor(ground_truth).type(dtype))
                 ground_truth[:, 0:17] = constraints[:, 18:35]/100
                 ground_truth[:, 17:47] = targets[:, 0:30]/1000
 
                 scores_zeros = np.zeros((batch[0].numpy().shape[0], 27))
-                scores_zeros = Variable(torch.Tensor(scores_zeros))
-                scores_zeros[:, 10:27] = constraints[:, 18:35]/100
+                scores_zeros = Variable(torch.Tensor(scores_zeros).type(dtype))
+                scores_zeros[:, 10:27] = constraints[:, 18:35]/200
 
                 scores, targets_est, angles_est, lengths_est, _ = self.model.forward_kinematic_jacobian(images_up, targets, constraints)
 
 
                 self.criterion = nn.L1Loss()
-                loss = self.criterion(scores[:, 0:8], scores_zeros[:, 0:8])
+                loss = self.criterion(scores[:, 0:10], scores_zeros[:, 0:10])
                 loss = loss.data[0]
 
 
 
             elif self.loss_vector_type == 'direct':
 
-                images_up = Variable(torch.Tensor(np.array(PreprocessingLib().preprocessing_pressure_map_upsample(batch[0].numpy()[:, :, 10:74, 10:37]))),requires_grad=False)
-                images, targets, scores_zeros = Variable(batch[0], volatile = True), Variable(batch[1], volatile = True), Variable(torch.Tensor(np.zeros((batch[1].shape[0], batch[1].shape[1]/3))), requires_grad = False)
-
+                images_up = Variable(torch.Tensor(np.array(PreprocessingLib().preprocessing_pressure_map_upsample(batch[0].numpy()[:, :, 10:74, 10:37]))).type(dtype), requires_grad=False)
+                images, targets, scores_zeros = Variable(batch[0].type(dtype), requires_grad=False), Variable(batch[1].type(dtype), requires_grad=False), Variable(torch.Tensor(np.zeros((batch[1].shape[0], batch[1].shape[1] / 3))).type(dtype), requires_grad=False)
 
                 scores, targets_est = self.model.forward_direct(images_up, targets)
                 self.criterion = nn.L1Loss()
 
-                loss = self.criterion(scores/1000., scores_zeros/1000.)
+                loss = self.criterion(scores, scores_zeros)
                 loss = loss.data[0]
 
 
@@ -642,7 +649,7 @@ class PhysicalTrainer():
         loss *= 1000
 
 
-        VisualizationLib().print_error(targets.data.numpy(), targets_est, self.output_size, self.loss_vector_type, data='validate')
+        VisualizationLib().print_error(targets.data, targets_est, self.output_size, self.loss_vector_type, data='validate')
 
         if self.loss_vector_type == 'angles' or self.loss_vector_type == 'direct':
             if self.loss_vector_type == 'angles':
@@ -650,14 +657,14 @@ class PhysicalTrainer():
                 print lengths_est[0, :], 'validation lengths'
 
             print batch[0][0,2,10,10], 'validation bed angle'
-            self.im_sampleval = images.data.numpy()
-            #self.im_sampleval = self.im_sampleval[:,0,:,:]
-            self.im_sampleval = np.squeeze(self.im_sampleval[0, :])
-            self.tar_sampleval = targets.data.numpy()
-            self.tar_sampleval = np.squeeze(self.tar_sampleval[0, :]) / 1000
-            self.sc_sampleval = np.copy(targets_est)
-            self.sc_sampleval = np.squeeze(self.sc_sampleval[0, :]) / 1000
-            self.sc_sampleval = np.reshape(self.sc_sampleval, self.output_size)
+            self.im_sampleval = images.data
+            # #self.im_sampleval = self.im_sampleval[:,0,:,:]
+            self.im_sampleval = self.im_sampleval[0, :].squeeze()
+            self.tar_sampleval = targets.data
+            self.tar_sampleval = self.tar_sampleval[0, :].squeeze() / 1000
+            self.sc_sampleval = targets_est.clone()
+            self.sc_sampleval = self.sc_sampleval[0, :].squeeze() / 1000
+            self.sc_sampleval = self.sc_sampleval.view(self.output_size)
 
             if self.opt.visualize == True:
                 VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample,self.im_sampleval, self.tar_sampleval, self.sc_sampleval, block=False)
@@ -692,6 +699,14 @@ if __name__ == "__main__":
                  dest='computer', \
                  default='lab_harddrive', \
                  help='Set path to the training database on lab harddrive.')
+    p.add_option('--mltype', action='store', type = 'string',
+                 dest='mltype', \
+                 default='convnet', \
+                 help='Set if you want to do baseline ML or convnet.')
+    p.add_option('--losstype', action='store', type = 'string',
+                 dest='losstype', \
+                 default='direct', \
+                 help='Set if you want to do baseline ML or convnet.')
     p.add_option('--upper_only', action='store_true',
                  dest='upper_only', \
                  default=False, \
@@ -812,6 +827,17 @@ if __name__ == "__main__":
         training_database_file.append(opt.subject7Path)
         training_database_file.append(opt.subject8Path)
 
+    elif opt.leaveOut == 9:
+        test_database_file = opt.subject9Path
+        training_database_file.append(opt.subject10Path)
+        training_database_file.append(opt.subject11Path)
+        training_database_file.append(opt.subject12Path)
+        training_database_file.append(opt.subject13Path)
+        training_database_file.append(opt.subject14Path)
+        training_database_file.append(opt.subject15Path)
+        training_database_file.append(opt.subject16Path)
+        training_database_file.append(opt.subject17Path)
+        training_database_file.append(opt.subject18Path)
     elif opt.leaveOut == 10:
         test_database_file = opt.subject10Path
         training_database_file.append(opt.subject9Path)
@@ -823,6 +849,94 @@ if __name__ == "__main__":
         training_database_file.append(opt.subject16Path)
         training_database_file.append(opt.subject17Path)
         training_database_file.append(opt.subject18Path)
+    elif opt.leaveOut == 11:
+        test_database_file = opt.subject11Path
+        training_database_file.append(opt.subject9Path)
+        training_database_file.append(opt.subject10Path)
+        training_database_file.append(opt.subject12Path)
+        training_database_file.append(opt.subject13Path)
+        training_database_file.append(opt.subject14Path)
+        training_database_file.append(opt.subject15Path)
+        training_database_file.append(opt.subject16Path)
+        training_database_file.append(opt.subject17Path)
+        training_database_file.append(opt.subject18Path)
+    elif opt.leaveOut == 12:
+        test_database_file = opt.subject12Path
+        training_database_file.append(opt.subject9Path)
+        training_database_file.append(opt.subject10Path)
+        training_database_file.append(opt.subject11Path)
+        training_database_file.append(opt.subject13Path)
+        training_database_file.append(opt.subject14Path)
+        training_database_file.append(opt.subject15Path)
+        training_database_file.append(opt.subject16Path)
+        training_database_file.append(opt.subject17Path)
+        training_database_file.append(opt.subject18Path)
+    elif opt.leaveOut == 13:
+        test_database_file = opt.subject13Path
+        training_database_file.append(opt.subject9Path)
+        training_database_file.append(opt.subject10Path)
+        training_database_file.append(opt.subject11Path)
+        training_database_file.append(opt.subject12Path)
+        training_database_file.append(opt.subject14Path)
+        training_database_file.append(opt.subject15Path)
+        training_database_file.append(opt.subject16Path)
+        training_database_file.append(opt.subject17Path)
+        training_database_file.append(opt.subject18Path)
+    elif opt.leaveOut == 14:
+        test_database_file = opt.subject14Path
+        training_database_file.append(opt.subject9Path)
+        training_database_file.append(opt.subject10Path)
+        training_database_file.append(opt.subject11Path)
+        training_database_file.append(opt.subject12Path)
+        training_database_file.append(opt.subject13Path)
+        training_database_file.append(opt.subject15Path)
+        training_database_file.append(opt.subject16Path)
+        training_database_file.append(opt.subject17Path)
+        training_database_file.append(opt.subject18Path)
+    elif opt.leaveOut == 15:
+        test_database_file = opt.subject15Path
+        training_database_file.append(opt.subject9Path)
+        training_database_file.append(opt.subject10Path)
+        training_database_file.append(opt.subject11Path)
+        training_database_file.append(opt.subject12Path)
+        training_database_file.append(opt.subject13Path)
+        training_database_file.append(opt.subject14Path)
+        training_database_file.append(opt.subject16Path)
+        training_database_file.append(opt.subject17Path)
+        training_database_file.append(opt.subject18Path)
+    elif opt.leaveOut == 16:
+        test_database_file = opt.subject16Path
+        training_database_file.append(opt.subject9Path)
+        training_database_file.append(opt.subject10Path)
+        training_database_file.append(opt.subject11Path)
+        training_database_file.append(opt.subject12Path)
+        training_database_file.append(opt.subject13Path)
+        training_database_file.append(opt.subject14Path)
+        training_database_file.append(opt.subject15Path)
+        training_database_file.append(opt.subject17Path)
+        training_database_file.append(opt.subject18Path)
+    elif opt.leaveOut == 17:
+        test_database_file = opt.subject17Path
+        training_database_file.append(opt.subject9Path)
+        training_database_file.append(opt.subject10Path)
+        training_database_file.append(opt.subject11Path)
+        training_database_file.append(opt.subject12Path)
+        training_database_file.append(opt.subject13Path)
+        training_database_file.append(opt.subject14Path)
+        training_database_file.append(opt.subject15Path)
+        training_database_file.append(opt.subject16Path)
+        training_database_file.append(opt.subject18Path)
+    elif opt.leaveOut == 18:
+        test_database_file = opt.subject18Path
+        training_database_file.append(opt.subject9Path)
+        training_database_file.append(opt.subject10Path)
+        training_database_file.append(opt.subject11Path)
+        training_database_file.append(opt.subject12Path)
+        training_database_file.append(opt.subject13Path)
+        training_database_file.append(opt.subject14Path)
+        training_database_file.append(opt.subject15Path)
+        training_database_file.append(opt.subject16Path)
+        training_database_file.append(opt.subject17Path)
 
     else:
         print 'please specify which subject to leave out for validation using --leave_out _'
@@ -851,9 +965,12 @@ if __name__ == "__main__":
 
 
 
-        #if training_type == 'convnet_2':
-        p.init_convnet_train()
-        #p.baseline_train()
+        if opt.mltype == 'convnet':
+            p.init_convnet_train()
+        elif opt.mltype == 'KNN':
+            p.baseline_train(opt.mltype)
+        elif opt.mltype == 'SVM':
+            p.baseline_train(opt.mltype)
 
         #else:
         #    print 'Please specify correct training type:1. HoG_KNN 2. convnet_2'

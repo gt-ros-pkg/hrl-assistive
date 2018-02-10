@@ -241,9 +241,11 @@ class BagfileToPickle():
                 #print self.params_length, 'length'
                 #print CreateDatasetLib().world_to_mat(targets, self.p_world_mat, self.R_world_mat)
                 if len(p_mat) == 1728 and self.params_length[4] > 0.15 and self.params_length[4] < 0.5 and self.params_length[5] > 0.15 and self.params_length[5] < 0.5 and self.params_length[6] > 0.1 and self.params_length[6] < 0.35 and self.params_length[7] > 0.1 and self.params_length[7] < 0.35:
-                    if np.count_nonzero(targets) == 30:# and CreateDatasetLib().world_to_mat(targets, self.p_world_mat, self.R_world_mat)[9, 1] < 1.2 and np.abs(CreateDatasetLib().world_to_mat(targets, self.p_world_mat, self.R_world_mat)[8, 0] - CreateDatasetLib().world_to_mat(targets, self.p_world_mat, self.R_world_mat)[9, 0]) > 0.05: #we need to fill in the foot on s10 RH2, so pass it for that part
+                    #if np.count_nonzero(targets) == 30:# and CreateDatasetLib().world_to_mat(targets, self.p_world_mat, self.R_world_mat)[9, 1] < 1.0:# and CreateDatasetLib().world_to_mat(targets, self.p_world_mat, self.R_world_mat)[9, 1] < 1.2 and np.abs(CreateDatasetLib().world_to_mat(targets, self.p_world_mat, self.R_world_mat)[8, 0] - CreateDatasetLib().world_to_mat(targets, self.p_world_mat, self.R_world_mat)[9, 0]) > 0.05: #we need to fill in the foot on s10 RH2, so pass it for that part
+                    if targets[0, 1] != 0 and targets[1, 1] != 0 and targets[3, 1] != 0 and targets[4, 1] != 0 and targets[5, 1] != 0 and targets[6, 1] > 1.2:  #
+
                         #print 'pressure mat has been scanned'
-                        print targets
+                        #print targets
                         #print np.count_nonzero(targets)
                         if subject == 7:
                             print CreateDatasetLib().world_to_mat(targets, self.p_world_mat, self.R_world_mat)[2, 1]
@@ -260,12 +262,26 @@ class BagfileToPickle():
                                 targets[5, :] = queue
                                 print 'flipped markers on subject 7'
 
+                        elif subject == 9:
+                            if CreateDatasetLib().world_to_mat(targets, self.p_world_mat, self.R_world_mat)[9, 1] > CreateDatasetLib().world_to_mat(targets, self.p_world_mat, self.R_world_mat)[5, 1]:
+                                print 'blah'
+                                print CreateDatasetLib().world_to_mat(targets, self.p_world_mat, self.R_world_mat)
+
+
+
                         elif subject == 10 and filename == '_full_trial_RH2.bag':  # add some fillers for the right foot, which is supposed to be static anyway
                             targets[8, 1] = np.copy(targets[9, 1])
                             targets[8, 0] = np.copy(targets[6, 0])
                             targets[8, 2] = np.copy(targets[9, 2])
                             print 'added fillers for subject 10'
                             # print rot_target_mat, 'print rot tar mat'
+                        elif subject == 13:
+                            if CreateDatasetLib().world_to_mat(targets, self.p_world_mat, self.R_world_mat)[9, 1] > 1.0:
+                                print 'blah'
+                                print CreateDatasetLib().world_to_mat(targets, self.p_world_mat, self.R_world_mat)
+
+
+
                         elif subject == 14 and filename == '_full_trial_RL.bag': #fix flipped feet. also, sometimes the feet freak out in other ways
                             if CreateDatasetLib().world_to_mat(targets, self.p_world_mat, self.R_world_mat)[8, 1] < CreateDatasetLib().world_to_mat(targets, self.p_world_mat, self.R_world_mat)[9, 1]:
                                 queue = np.copy(targets[8, :])
@@ -273,11 +289,22 @@ class BagfileToPickle():
                                 targets[9, :] = queue
 
                                 print 'flipped feet'
-                        elif subject == 16 and filename == '_full_trial_RL.bag': #add some fillers for right elbow
-                            if targets[2, 0] == 0:
-                                targets[2, 1] = np.copy(targets[3, 1])
-                                targets[2, 0] = np.copy(targets[4, 0])-0.08
-                                targets[2, 2] = np.copy(targets[4, 2])
+                        elif subject == 16:
+                            if filename == '_full_trial_RL.bag': #add some fillers for right elbow
+                                if targets[2, 0] == 0:
+                                    targets[2, 1] = np.copy(targets[3, 1])
+                                    targets[2, 0] = np.copy(targets[4, 0])-0.08
+                                    targets[2, 2] = np.copy(targets[4, 2])
+
+                        elif subject == 18:
+                            if CreateDatasetLib().world_to_mat(targets, self.p_world_mat, self.R_world_mat)[9, 1] > 1.0:
+                                queue = np.copy(targets[9, :])
+                                targets[9, :] = np.copy(targets[3, :])
+                                targets[3, :] = queue
+                                print 'flipped markers on subject 18'
+
+
+
                         elif subject == 3 and filename == '_full_trial_LH3.bag': #fix flipped feet. also, sometimes the feet freak out in other ways
                             if CreateDatasetLib().world_to_mat(targets, self.p_world_mat, self.R_world_mat)[6, 0] > CreateDatasetLib().world_to_mat(targets, self.p_world_mat, self.R_world_mat)[7,0]:
                                 queue = np.copy(targets[6, :])
@@ -311,27 +338,30 @@ class BagfileToPickle():
                                 self.mat_tar_pos.append(single_mat_tar_pos)
                         elif filename == '_full_trial_RL.bag' or filename == '_full_trial_RL1.bag' or filename == '_full_trial_RL2.bag':#this is to weed out the 'foot in a sling' data.
                             subjectindex = [0, 0, 185, 220, 340, 120, 142, 205, 250, 180, 195, 260, 225, 240, 155, 200, 190, 255, 180] #chosen empirically
-                            try:
-                                if len(self.mat_tar_pos) > subjectindex[subject]:
-                                    pass
-                                else:
-                                    self.mat_tar_pos.append(single_mat_tar_pos)
-                            except:
-                                self.mat_tar_pos.append(single_mat_tar_pos)
-                        elif filename == '_full_trial_LL.bag'or filename == '_full_trial_LL1.bag' or filename == '_full_trial_LL2.bag':#this is to weed out the 'foot in a sling' data.
-                            subjectindex = [0, 0, 180, 255, 320, 75, 150, 130, 202, 205, 168, 275, 205, 290, 168, 230, 210, 280, 250] #chosen empirically
-                            try:
-                                if len(self.mat_tar_pos) > subjectindex[subject]:
-                                    pass
-                                else:
-                                    self.mat_tar_pos.append(single_mat_tar_pos)
-                            except:
-                                self.mat_tar_pos.append(single_mat_tar_pos)
+                            if CreateDatasetLib().world_to_mat(targets, self.p_world_mat, self.R_world_mat)[8,1] < 1.0:
 
+                                try:
+                                    if len(self.mat_tar_pos) > subjectindex[subject]:
+                                        pass
+                                    else:
+                                        self.mat_tar_pos.append(single_mat_tar_pos)
+                                except:
+                                    self.mat_tar_pos.append(single_mat_tar_pos)
+                        elif filename == '_full_trial_LL.bag'or filename == '_full_trial_LL1.bag' or filename == '_full_trial_LL2.bag':#this is to weed out the 'foot in a sling' data.
+                            subjectindex = [0, 0, 180, 255, 320, 75, 150, 130, 202, 205, 168, 275, 205, 275, 168, 230, 210, 280, 250] #chosen empirically
+                            try:
+                                if len(self.mat_tar_pos) > subjectindex[subject]:
+                                    pass
+                                else:
+                                    self.mat_tar_pos.append(single_mat_tar_pos)
+                            except:
+                                self.mat_tar_pos.append(single_mat_tar_pos)
                         else:
+                            if CreateDatasetLib().world_to_mat(targets, self.p_world_mat, self.R_world_mat)[3, 1] > 1.0:
+                                print '*************************************************************'
                             self.mat_tar_pos.append(single_mat_tar_pos)
 
-                        print CreateDatasetLib().world_to_mat(single_mat_tar_pos[1], self.p_world_mat, self.R_world_mat)
+                        #print CreateDatasetLib().world_to_mat(single_mat_tar_pos[1], self.p_world_mat, self.R_world_mat)
                         #print
 
                         self.mat_sampled = False
@@ -384,7 +414,7 @@ if __name__ == '__main__':
         #x.append(subject)
         #x.append('_full_trial_LH1.bag')
         #x.append('LH1')
-        #file_details.append(x)
+        #ile_details.append(x)
         #
         # x = []
         # x.append(subject)
@@ -392,11 +422,11 @@ if __name__ == '__main__':
         # x.append('LH2')
         # file_details.append(x)
         #
-        x = []
-        x.append(subject)
-        x.append('_full_trial_LH3.bag')
-        x.append('LH3')
-        file_details.append(x)
+        #x = []
+        #x.append(subject)
+        #x.append('_full_trial_LH3.bag')
+        #x.append('LH3')
+        #file_details.append(x)
         #
         #x = []
         #x.append(subject)
@@ -410,17 +440,17 @@ if __name__ == '__main__':
         #x.append('RH2')
         #file_details.append(x)
         #
-        # x = []
-        # x.append(subject)
-        # x.append('_full_trial_RH3.bag')
-        # x.append('RH3')
-        # file_details.append(x)
-        # #
         #x = []
         #x.append(subject)
-        #x.append('_full_trial_LL.bag')
-        #x.append('LL')
+        #x.append('_full_trial_RH3.bag')
+        #x.append('RH3')
         #file_details.append(x)
+        # #
+        x = []
+        x.append(subject)
+        x.append('_full_trial_LL.bag')
+        x.append('LL')
+        file_details.append(x)
 
         #x = []
         #x.append(subject)
@@ -569,7 +599,7 @@ if __name__ == '__main__':
     database_path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials'
 
     #for subject in [7]:
-    for subject in [3]:
+    for subject in [13]:
         print subject
 
 

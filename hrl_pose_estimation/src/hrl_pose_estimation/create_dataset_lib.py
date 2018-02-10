@@ -21,30 +21,24 @@ from scipy.ndimage.filters import gaussian_filter
 ## from skimage import data, color, exposure
 from sklearn.decomposition import PCA
 
-# HRL libraries
-import hrl_lib.util as ut
-import pickle
-#roslib.load_manifest('hrl_lib')
-from hrl_lib.util import load_pickle
-
 
 MAT_WIDTH = 0.762 #metres
 MAT_HEIGHT = 1.854 #metres
-MAT_HALF_WIDTH = MAT_WIDTH/2 
+MAT_HALF_WIDTH = MAT_WIDTH/2
 NUMOFTAXELS_X = 64#73 #taxels
-NUMOFTAXELS_Y = 27#30 
+NUMOFTAXELS_Y = 27#30
 INTER_SENSOR_DISTANCE = 0.0286#metres
 LOW_TAXEL_THRESH_X = 0
 LOW_TAXEL_THRESH_Y = 0
-HIGH_TAXEL_THRESH_X = (NUMOFTAXELS_X - 1) 
-HIGH_TAXEL_THRESH_Y = (NUMOFTAXELS_Y - 1) 
+HIGH_TAXEL_THRESH_X = (NUMOFTAXELS_X - 1)
+HIGH_TAXEL_THRESH_Y = (NUMOFTAXELS_Y - 1)
 
 class CreateDatasetLib():
-  
+
     def world_to_mat(self,w_data, p_world_mat, R_world_mat):
-    
+
         '''Converts a vector in the world frame to a vector in the map frame.
-        Depends on the calibration of the MoCap room. Be sure to change this 
+        Depends on the calibration of the MoCap room. Be sure to change this
         when the calibration file changes. This function mainly helps in
         visualizing the joint coordinates on the pressure mat.
         Input: w_data: which is a 3 x 1 vector in the world frame'''
@@ -71,16 +65,16 @@ class CreateDatasetLib():
 
         return m_data
 
-    
+
     def mat_to_taxels(self, m_data):
-        ''' 
-        Input:  Nx2 array 
+        '''
+        Input:  Nx2 array
         Output: Nx2 array
-        '''       
+        '''
         #Convert coordinates in 3D space in the mat frame into taxels
         taxels = m_data / INTER_SENSOR_DISTANCE
-        
-        '''Typecast into int, so that we can highlight the right taxel 
+
+        '''Typecast into int, so that we can highlight the right taxel
         in the pressure matrix, and threshold the resulting values'''
         taxels = np.rint(taxels)
 
