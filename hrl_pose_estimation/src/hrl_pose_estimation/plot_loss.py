@@ -107,10 +107,12 @@ class DataVisualizer():
         if pathkey == 'lab_hd':
             train_val_loss = load_pickle(self.dump_path + '/train_val_losses.p')
             train_val_loss_desk = load_pickle(self.dump_path + '/train_val_losses_hcdesktop.p')
-            train_val_loss_all = load_pickle(self.dump_path + '/train_val_losses_GPU2.p')
+            train_val_loss_GPU2 = load_pickle(self.dump_path + '/train_val_losses_GPU2.p')
             train_val_loss_GPU3 = load_pickle(self.dump_path + '/train_val_losses_GPU3.p')
             train_val_loss_GPU4 = load_pickle(self.dump_path + '/train_val_losses_GPU4.p')
-            train_val_loss_171202 = load_pickle(self.dump_path + '/train_val_losses_171202.p')
+            train_val_loss_GPU2new = load_pickle(self.dump_path + '/train_val_lossesGPU2_021018.p')
+            train_val_loss_GPU3new = load_pickle(self.dump_path + '/train_val_lossesGPU3_021018.p')
+            train_val_loss_GPU4new = load_pickle(self.dump_path + '/train_val_lossesGPU4_021018.p')
             for key in train_val_loss:
                 print key
             print '###########################  done with laptop #################'
@@ -123,9 +125,18 @@ class DataVisualizer():
             for key in train_val_loss_GPU3:
                 print key
             print '###########################  done with GPU3 ################'
-            for key in train_val_loss_all:
+            for key in train_val_loss_GPU2:
                 print key
             print '###########################  done with GPU2 ################'
+            for key in train_val_loss_GPU4new:
+                print key
+            print '###########################  done with GPU4new ################'
+            for key in train_val_loss_GPU3new:
+                print key
+            print '###########################  done with GPU3new ################'
+            for key in train_val_loss_GPU2new:
+                print key
+            print '###########################  done with GPU2new ################'
 
 
 
@@ -165,13 +176,13 @@ class DataVisualizer():
                 #plt.plot(train_val_loss_all['epoch_2to8_alldata_angles_s10to18_115b_50e_44'], train_val_loss_all['val_2to8_alldata_angles_s10to18_115b_50e_44'], 'g')
                 #plt.plot(train_val_loss_all['epoch_2to8_alldata_angles_implbedang_115b_100e_44'], train_val_loss_all['val_2to8_alldata_angles_implbedang_115b_100e_44'], 'g')
                 #plt.plot(train_val_loss_all['epoch_2to8_angles_direct128b_200e_44'], train_val_loss_all['train_2to8_angles_direct128b_200e_44'], 'k')
-                plt.plot(train_val_loss_all['epoch_2to8_angles_direct128b_200e_44'], train_val_loss_all['val_2to8_angles_direct128b_200e_44'], 'g')
                 #plt.plot(train_val_loss_GPU3['epoch_2to8_angles_angles128b_200e_44'], train_val_loss_GPU3['train_2to8_angles_angles128b_200e_44'], 'b')
-                plt.plot(train_val_loss_GPU4['epoch_2to8_angles128b_200e_44'], train_val_loss_GPU4['val_2to8_angles128b_200e_44'], 'k')
-                plt.plot(train_val_loss_GPU3['epoch_2to8_angles128b_200e_44'], train_val_loss_GPU3['val_2to8_angles128b_200e_44'], 'r')
-                plt.plot(train_val_loss_all['epoch_2to8_angles128b_200e_44'], train_val_loss_all['val_2to8_angles128b_200e_44'], 'y')
-
-
+                #plt.plot(train_val_loss_GPU4['epoch_2to8_angles128b_200e_44'], train_val_loss_GPU4['val_2to8_angles128b_200e_44'], 'k') #pull out lengths weighted 1
+                #plt.plot(train_val_loss_GPU3['epoch_2to8_angles128b_200e_44'], train_val_loss_GPU3['val_2to8_angles128b_200e_44'], 'r') #propogated lengths weighted 1
+                plt.plot(train_val_loss_GPU3new['epoch_2to8_angles128b_200e_44'], train_val_loss_GPU3new['val_2to8_angles128b_200e_44'], 'y') #propogated lengths weighted 0.2
+                plt.plot(train_val_loss_GPU2['epoch_2to8_angles_direct128b_200e_44'],train_val_loss_GPU2['val_2to8_angles_direct128b_200e_44'], 'g')
+                plt.plot(train_val_loss_GPU4new['epoch_2to8_direct128b_200e_411'],train_val_loss_GPU4new['val_2to8_direct128b_200e_411'], 'c')
+                #plt.plot(train_val_loss_GPU2new['epoch_2to8_angles128b_250e_44'],train_val_loss_GPU2new['val_2to8_angles128b_250e_44'], 'b') #pull out lengths weighted 2
 
                 if False:
                     plt.plot(train_val_loss['epoch_sitting_700e_4'],train_val_loss['val_sitting_700e_4'],'k', label='Raw Pressure Map Input')
@@ -190,7 +201,7 @@ class DataVisualizer():
 
 
         #plt.axis([0,410,0,30000])
-        plt.axis([0, 200, 10, 30])
+        plt.axis([0, 200, 10, 15])
         if self.opt.no_loss == False:
             plt.show()
 

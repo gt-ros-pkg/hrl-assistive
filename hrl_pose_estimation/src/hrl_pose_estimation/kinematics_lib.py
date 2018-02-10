@@ -721,7 +721,7 @@ class KinematicsLib():
             torso_lengths_angles_v = torso_lengths_angles_v.squeeze(0)
             torso_lengths_angles_v = torso_lengths_angles_v.squeeze(0)
 
-            print 'blah'
+            #print 'blah'
 
 
         return torso_lengths_angles_v, angles, pseudotargets
