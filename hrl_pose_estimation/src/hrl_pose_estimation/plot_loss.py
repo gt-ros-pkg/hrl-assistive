@@ -86,7 +86,7 @@ class DataVisualizer():
         self.old = False
         self.normalize = True
         self.include_inter = True
-        self.loss_vector_type = 'angles'
+        self.loss_vector_type = 'direct'
         # Set initial parameters
         self.dump_path = pkl_directory.rstrip('/')
 
@@ -242,11 +242,6 @@ class DataVisualizer():
                                     test_dat['joint_lengths_L_m'][entry][0:8] * 100,
                                     test_dat['joint_angles_L_deg'][entry][0:8]), axis=0)
                 self.test_y_flat.append(c)
-            elif self.loss_vector_type == 'upper_angles':
-                c = np.concatenate((test_dat['markers_xyz_m'][entry][0:18] * 1000,
-                                    test_dat['joint_lengths_U_m'][entry][0:9] * 100,
-                                    test_dat['joint_angles_U_deg'][entry][0:10]), axis=0)
-                self.test_y_flat.append(c)
             else:
                 self.test_y_flat.append(test_dat['markers_xyz_m'][entry] * 1000)
         self.test_y_tensor = torch.Tensor(self.test_y_flat)
@@ -258,11 +253,11 @@ class DataVisualizer():
     def validate_baseline(self):
 
         print len(self.validation_set), 'size of validation set'
-        batch_size = 1
+        batch_size = 1670
 
         self.test_dataset = torch.utils.data.TensorDataset(self.test_x_tensor, self.test_y_tensor)
         self.test_loader = torch.utils.data.DataLoader(self.test_dataset, batch_size, shuffle=False)
-        regr = load_pickle(self.dump_path + '/subject_' + str(4) + '/p_files/HoG_Linear.p')
+        regr = load_pickle(self.dump_path + '/subject_' + str(4) + '/p_files/HoG_KRidge.p')
 
 
         count = 0
@@ -272,6 +267,7 @@ class DataVisualizer():
 
             # upsample the images
             images_up = PreprocessingLib().preprocessing_pressure_map_upsample(images)
+            #images_up = images
             # targets = list(targets)
             print images_up[0].shape
 
@@ -496,10 +492,10 @@ class DataVisualizer():
     def run(self):
         '''Runs either the synthetic database creation script or the
         raw dataset creation script to create a dataset'''
-        for subject in [13]:
+        for subject in [4]:
             self.init(subject)
 
-            self.validate_convnet()
+            self.validate_baseline()
 
 
 

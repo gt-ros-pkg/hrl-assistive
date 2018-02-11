@@ -287,12 +287,14 @@ class PhysicalTrainer():
             #upsample the images
             images_up = PreprocessingLib().preprocessing_pressure_map_upsample(images)
             #targets = list(targets)
-            print images_up[0].shape
+            print images[0].shape
 
 
 
             # Compute HoG of the current(training) pressure map dataset
             images_up = PreprocessingLib().compute_HoG(images_up)
+
+            #images_up = np.reshape(images, (images.shape[0], images.shape[1]*images.shape[2]))
 
             #images_up = [[0], [1], [2], [3]]
             #targets = [0, 0, 1, 1]
@@ -313,6 +315,33 @@ class PhysicalTrainer():
                 #SVR(C=1.0, cache_size=200, coef0=0.0, degree=3, epsilon=0.1, gamma='auto',
                 #                    kernel='rbf', max_iter=-1, shrinking=True, tol=0.001, verbose=False)
 
+            elif baseline == 'kmeans_SVM':
+                k_means = KMeans(n_clusters=10, n_init=4)
+                k_means.fit(images_up)
+                labels = k_means.labels_
+                print labels.shape, 'label shape'
+                print targets.shape, 'target shape'
+                print 'done fitting kmeans'
+                svm_classifier = svm.SVC(kernel='rbf', verbose = True)
+                svm_classifier.fit(labels, targets)
+                print 'done fitting svm'
+                regr = linear_model.LinearRegression()
+                regr.fit(labels, targets)
+                print 'done fitting linear model'
+
+            elif baseline == 'Ridge':
+                regr = linear_model.Ridge(alpha=0.01)
+                regr.fit(images_up, targets)
+
+            elif baseline == 'KRidge':
+                regr = kernel_ridge.KernelRidge(alpha=0.01, kernel='rbf')
+                regr.fit(images_up, targets)
+
+            elif baseline == 'Linear':
+                regr = linear_model.LinearRegression()
+                regr.fit(images_up, targets)
+
+
 
             print 'done fitting'
 
@@ -330,6 +359,9 @@ class PhysicalTrainer():
                 #targets = list(targets)
 
                 images_up_test = PreprocessingLib().compute_HoG(images_up_test)
+                #images_up_test = np.reshape(images_test, (images_test.shape[0], images_test.shape[1] * images_test.shape[2]))
+
+
                 scores = regr.predict(images_up_test)
 
                 print scores.shape
@@ -347,7 +379,8 @@ class PhysicalTrainer():
                 self.sc_sample = np.copy(scores)
                 self.sc_sample = np.squeeze(self.sc_sample[0, :]) / 1000
                 self.sc_sample = np.reshape(self.sc_sample, self.output_size)
-                VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample, block=True)
+                if self.opt.visualization == True:
+                    VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample, block=True)
 
             print len(scores)
             print scores[0].shape
@@ -967,9 +1000,7 @@ if __name__ == "__main__":
 
         if opt.mltype == 'convnet':
             p.init_convnet_train()
-        elif opt.mltype == 'KNN':
-            p.baseline_train(opt.mltype)
-        elif opt.mltype == 'SVM':
+        elif opt.mltype != 'convnet':
             p.baseline_train(opt.mltype)
 
         #else:
