@@ -302,7 +302,8 @@ class PhysicalTrainer():
             print np.shape(images_up)
             print np.shape(targets)
 
-            print 'fitting ', baseline
+            print 'fitting KNN'
+            baseline = 'KNN'
 
             #if baseline == 'KNN':
             regr = neighbors.KNeighborsRegressor(10, weights='distance')
@@ -325,7 +326,7 @@ class PhysicalTrainer():
 
 
             print 'fitting Ridge'
-
+            baseline = 'Ridge'
             #elif baseline == 'Ridge':
             regr = linear_model.Ridge(alpha=0.01)
             regr.fit(images_up, targets)
@@ -349,7 +350,7 @@ class PhysicalTrainer():
 
 
             print 'fitting KRidge'
-
+            baseline = 'KRidge'
             #elif baseline == 'KRidge':
             regr = kernel_ridge.KernelRidge(alpha=0.01, kernel='rbf')
             regr.fit(images_up, targets)
