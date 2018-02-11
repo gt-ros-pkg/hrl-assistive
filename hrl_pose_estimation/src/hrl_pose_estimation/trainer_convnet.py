@@ -287,7 +287,7 @@ class PhysicalTrainer():
             #upsample the images
             images_up = PreprocessingLib().preprocessing_pressure_map_upsample(images)
             #targets = list(targets)
-            print images[0].shape
+            #print images[0].shape
 
 
 
@@ -302,7 +302,7 @@ class PhysicalTrainer():
             print np.shape(images_up)
             print np.shape(targets)
 
-            print 'fitting'
+            print 'fitting ', baseline
 
             if baseline == 'KNN':
                 regr = neighbors.KNeighborsRegressor(10, weights='distance')
@@ -346,9 +346,12 @@ class PhysicalTrainer():
             print 'done fitting'
 
             if self.opt.computer == 'lab_harddrive':
-                pkl.dump(regr, open('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leaveOut) + '/p_files/HoG_'+baseline+'.p', 'wb'))
+                print 'saving to ','/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leaveOut) + '/p_files/HoG_'+baseline+'_s'+str(self.opt.leaveOut)+'.p'
+                pkl.dump(regr, open('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leaveOut) + '/p_files/HoG_'+baseline+'_s'+str(self.opt.leaveOut)+'.p', 'wb'))
+                print 'saved successfully'
             elif self.opt.computer == 'aws':
-                pkl.dump(regr, open('/home/ubuntu/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leaveOut) + '/HoG_'+baseline+'.p', 'wb'))
+                pkl.dump(regr, open('/home/ubuntu/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leaveOut) + '/HoG_'+baseline+'_s'+str(self.opt.leaveOut)+'.p', 'wb'))
+                print 'saved successfully'
 
             #validation
             for batchtest_idx, batchtest in enumerate(self.test_loader):
@@ -364,22 +367,22 @@ class PhysicalTrainer():
 
                 scores = regr.predict(images_up_test)
 
-                print scores.shape
-                print targets.shape
-                print scores[0]
-                print targets[0]
+                #print scores.shape
+                #print targets.shape
+                #print scores[0]
+                #print targets[0]
 
-                print regr.predict(images_up_test[0]) - targets[0]
-                VisualizationLib().print_error(scores, targets, self.output_size, loss_vector_type=self.loss_vector_type, data='test', printerror=True)
+                #print regr.predict(images_up_test[0]) - targets[0]
+                #VisualizationLib().print_error(scores, targets, self.output_size, loss_vector_type=self.loss_vector_type, data='test', printerror=True)
 
                 self.im_sample = np.squeeze(images_test[0, :])
-                print self.im_sample.shape
+                #print self.im_sample.shape
 
                 self.tar_sample = np.squeeze(targets[0, :]) / 1000
                 self.sc_sample = np.copy(scores)
                 self.sc_sample = np.squeeze(self.sc_sample[0, :]) / 1000
                 self.sc_sample = np.reshape(self.sc_sample, self.output_size)
-                if self.opt.visualization == True:
+                if self.opt.visualize == True:
                     VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample, block=True)
 
             print len(scores)
@@ -740,10 +743,6 @@ if __name__ == "__main__":
                  dest='losstype', \
                  default='direct', \
                  help='Set if you want to do baseline ML or convnet.')
-    p.add_option('--upper_only', action='store_true',
-                 dest='upper_only', \
-                 default=False, \
-                 help='Train only on data from the arms, both sitting and laying.')
     p.add_option('--qt', action='store_true',
                  dest='quick_test', \
                  default=False, \
