@@ -635,6 +635,7 @@ def img_net_test(save_data_path, pkl_name='', renew=False):
         print "----------------------"
         print "Subject ", idx
         print "----------------------"
+        if idx <7: continue
 
         np.random.seed(3334+idx)
 
@@ -681,13 +682,13 @@ def multi_net_test(save_data_path, pkl_name='', renew=False):
         print "Subject ", idx
         print "----------------------"
 
+        # temp
+        if idx >0: continue
+
         np.random.seed(3334+idx)
 
         file_name = os.path.join(save_data_path, pkl_name+'_'+str(idx)+'.pkl')
         d = ut.load_pickle(file_name)
-
-        # Extra images?
-
 
         #
         scaler  = preprocessing.StandardScaler()
@@ -708,11 +709,12 @@ def multi_net_test(save_data_path, pkl_name='', renew=False):
         sig_weights_file   = os.path.join(weights_path, 'model_weights_'+method+'_'+str(idx)+'.h5')
         img_weights_file   = os.path.join(weights_path, 'model_weights_'+method+'_'+str(idx)+'.h5')
         multi_weights_file = os.path.join(weights_path, 'model_weights_'+method+'_'+str(idx)+'.h5')
-        ml, score = multi_net.img_net(idx, trainData, testData, save_data_path,
-                                    weights_file=(sig_weights_file, img_weights_file, multi_weights_file),
-                                    patience=patience, batch_size=batch_size,\
-                                    noise_mag=noise_mag, sam_epoch=sam_epoch, renew=False,
-                                    fine_tuning=fine_tuning)
+        ml, score = multi_net.multi_net(idx, trainData, testData,
+                                        weights_file=(sig_weights_file, img_weights_file,
+                                                      multi_weights_file),
+                                        patience=patience, batch_size=batch_size,\
+                                        noise_mag=noise_mag, sam_epoch=sam_epoch, renew=False,
+                                        fine_tuning=fine_tuning)
 
         # test
         scores.append(score)
@@ -892,4 +894,4 @@ if __name__ == '__main__':
     else:                           
         ## sig_net_test(save_data_path, pkl_name='isol_features', renew=False)
         img_net_test(save_data_path, pkl_name='isol_features', renew=False)
-        multi_net_test(save_data_path, pkl_name='isol_features', renew=False)
+        #multi_net_test(save_data_path, pkl_name='isol_features', renew=False)

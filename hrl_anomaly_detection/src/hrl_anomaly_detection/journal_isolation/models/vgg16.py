@@ -35,10 +35,9 @@ WEIGHTS_PATH = 'https://github.com/fchollet/deep-learning-models/releases/downlo
 WEIGHTS_PATH_NO_TOP = 'https://github.com/fchollet/deep-learning-models/releases/download/v0.1/vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5'
 
 
-def VGG16(include_top=True, weights='imagenet',
+def VGG16(include_top=True, include_multi_top=False, weights='img_net',
           input_tensor=None, input_shape=None,
-          pooling=None,
-          classes=1000):
+          pooling=None, classes=1000):
     """Instantiates the VGG16 architecture.
 
     Optionally loads weights pre-trained
@@ -89,15 +88,15 @@ def VGG16(include_top=True, weights='imagenet',
         ValueError: in case of invalid argument for `weights`,
             or invalid input shape.
     """
-    if not (weights in {'imagenet', None} or os.path.exists(weights)):
-        raise ValueError('The `weights` argument should be either '
-                         '`None` (random initialization), `imagenet` '
-                         '(pre-training on ImageNet), '
-                         'or the path to the weights file to be loaded.')
+    ## if not (weights in {'imagenet', None} or os.path.exists(weights)):
+    ##     raise ValueError('The `weights` argument should be either '
+    ##                      '`None` (random initialization), `imagenet` '
+    ##                      '(pre-training on ImageNet), '
+    ##                      'or the path to the weights file to be loaded.')
 
-    if weights == 'imagenet' and include_top and classes != 1000:
-        raise ValueError('If using `weights` as imagenet with `include_top`'
-                         ' as true, `classes` should be 1000')
+    ## if weights == 'imagenet' and include_top and classes != 1000:
+    ##     raise ValueError('If using `weights` as imagenet with `include_top`'
+    ##                      ' as true, `classes` should be 1000')
     # Determine proper input shape
     input_shape = _obtain_input_shape(input_shape,
                                       default_size=224,
@@ -141,15 +140,15 @@ def VGG16(include_top=True, weights='imagenet',
     x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv3')(x)
     x = MaxPooling2D((2, 2), strides=(2, 2), name='block5_pool')(x)
 
-    if include_top:
-        # Classification block
+    if include_multi_top:
+        print "Not available"
+    elif include_top:
         x = Flatten(name='flatten')(x)
-        x = Dense(1024, activation='relu', name='fc1',
+        x = Dropout(0.5)(x)
+        x = Dense(16, activation='relu', name='fc1',
                   kernel_regularizer=regularizers.l2(0.03))(x)
-        x = Dropout(0.5)(x)
-        x = Dense(128, activation='relu', name='fc2',
+        x = Dense(16, activation='relu', name='fc2',
                   kernel_regularizer=regularizers.l2(0.01))(x)
-        x = Dropout(0.5)(x)
         x = Dense(classes, activation='softmax', name='predictions')(x)
     else:
         if pooling == 'avg':
@@ -187,26 +186,37 @@ def VGG16(include_top=True, weights='imagenet',
                                     cache_subdir='models',
                                     file_hash='6d6bbae143d832006294945121d1f1fc')
         model.load_weights(weights_path)
-        if K.backend() == 'theano':
-            layer_utils.convert_all_kernels_in_model(model)
+        ## if K.backend() == 'theano':
+        ##     layer_utils.convert_all_kernels_in_model(model)
 
-        if K.image_data_format() == 'channels_first':
-            if include_top:
-                maxpool = model.get_layer(name='block5_pool')
-                shape = maxpool.output_shape[1:]
-                dense = model.get_layer(name='fc1')
-                layer_utils.convert_dense_weights_data_format(dense, shape, 'channels_first')
+        ## if K.image_data_format() == 'channels_first':
+        ##     if include_top:
+        ##         maxpool = model.get_layer(name='block5_pool')
+        ##         shape = maxpool.output_shape[1:]
+        ##         dense = model.get_layer(name='fc1')
+        ##         layer_utils.convert_dense_weights_data_format(dense, shape, 'channels_first')
 
-            if K.backend() == 'tensorflow':
-                warnings.warn('You are using the TensorFlow backend, yet you '
-                              'are using the Theano '
-                              'image data format convention '
-                              '(`image_data_format="channels_first"`). '
-                              'For best performance, set '
-                              '`image_data_format="channels_last"` in '
-                              'your Keras config '
-                              'at ~/.keras/keras.json.')
+        ##     if K.backend() == 'tensorflow':
+        ##         warnings.warn('You are using the TensorFlow backend, yet you '
+        ##                       'are using the Theano '
+        ##                       'image data format convention '
+        ##                       '(`image_data_format="channels_first"`). '
+        ##                       'For best performance, set '
+        ##                       '`image_data_format="channels_last"` in '
+        ##                       'your Keras config '
+        ##                       'at ~/.keras/keras.json.')
     elif weights is not None:
+        weights_path = get_file('vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5',
+                                WEIGHTS_PATH_NO_TOP,
+                                cache_subdir='models',
+                                file_hash='6d6bbae143d832006294945121d1f1fc')
+        model.load_weights(weights_path)
+
+        if include_multi_top:
+            weights = 
+        elif include_top:
+            weights = 
+            
         model.load_weights(weights)
 
     return model

@@ -33,6 +33,7 @@ import scipy, numpy as np
 from scipy.stats import truncnorm
 import gc
 
+from keras.preprocessing.image import ImageDataGenerator
 import hrl_lib.util as ut
 import cv2
 
@@ -40,6 +41,95 @@ import cv2
 
 random.seed(3334)
 np.random.seed(3334)
+
+
+class multiGenerator():
+    ''' image + signal data augmentation '''
+    
+    def __init__(self, augmentation=False, noise_mag=0.03, rescale=1.0):
+
+        self.noise_mag     = noise_mag
+        self.total_batches_seen = 0
+
+        if augmentation:
+            self.datagen = ImageDataGenerator(
+                rotation_range=20,
+                rescale=rescale,
+                width_shift_range=0.05,
+                height_shift_range=0.05,
+                zoom_range=0.1,
+                horizontal_flip=False,
+                fill_mode='nearest',
+                data_format="channels_first")
+        else:
+            self.datagen = ImageDataGenerator(
+                rescale=rescale,
+                data_format="channels_first")
+        pass
+
+    def flow(self, x_img, x_sig, y, batch_size=32, shuffle=True):
+
+        assert len(x_img) == len(y), "data should have the same length"
+        assert len(x_img) == len(x_sig), "data should have the same length"
+        
+        if type(x_img) is not np.ndarray: x_img = np.array(x_img)
+        if type(x_sig) is not np.ndarray: x_sig = np.array(x_sig)
+        if type(y) is not np.ndarray: y = np.array(y)
+
+        # Ensure self.batch_index is 0.
+        self.reset()
+        x_sig_new = x_sig[:]
+        x_img_new = x_img[:]
+        y_new = y[:]
+
+        # TODO: Need to add random selection
+        if len(y_new) % batch_size > 0:
+            n_add = batch_size - len(y_new) % batch_size
+            x_sig_new = np.vstack([x_sig_new, x_sig_new[:n_add] ])
+            x_img_new = np.vstack([x_img_new, x_img_new[:n_add] ])
+            y_new = np.vstack([y_new, y_new[:n_add] ])
+        
+
+        n = len(x_img)
+            
+        while 1:
+
+            if seed is not None:
+                np.random.seed(seed + self.total_batches_seen)
+            
+            if self.batch_index == 0:
+                idx_list = range(n)
+                if shuffle: random.shuffle(idx_list)
+                x_sig_new = x_sig_new[idx_list]
+                x_img_new = x_img_new[idx_list]
+                y_new = y_new[idx_list]
+
+            current_index = (self.batch_index * batch_size) % n
+            if n > current_index + batch_size:
+                current_batch_size = batch_size
+                self.batch_index += 1
+            else:
+                current_batch_size = n - current_index
+                self.batch_index = 0
+
+            self.total_batches_seen += 1
+
+            i = -1
+            for x_batch_img, y_batch in self.datagen.flow(x_img_new[idx_list], y_new[idx_list],
+                                                          batch_size=batch_size, shuffle=False):
+
+                if (i+1)*batch_size >= len(y_new):
+                    break
+                else:
+                    i += 1
+                    x = x_sig_new[i*batch_size:(i+1)*batch_size]]
+                    if self.augmentation:
+                        noise = np.random.normal(0.0, self.noise_mag, np.shape(x))
+                        yield x+noise, x_batch_img, y_batch
+                    else:
+                        yield x, x_batch_img, y_batch
+                    
+            
 
 
 class sigGenerator():
