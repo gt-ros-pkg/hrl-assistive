@@ -54,9 +54,9 @@ import gc
 
 
 
-def multi_net(trainData, testData, batch_size=512, nb_epoch=500, \
-            patience=20, fine_tuning=False, noise_mag=0.0,\
-            weights_file=None, save_weights_file='sig_weights.h5', renew=False, **kwargs):
+def multi_net(idx, trainData, testData, batch_size=512, sam_epoch=500, \
+              patience=20, fine_tuning=False, noise_mag=0.0,\
+              weights_file=None, renew=False, **kwargs):
     """
     Variational Autoencoder with two LSTMs and one fully-connected layer
     x_train is (sample x dim)
@@ -75,6 +75,18 @@ def multi_net(trainData, testData, batch_size=512, nb_epoch=500, \
     print "Labels: ", np.unique(y_train), " #Labels: ", n_labels
     print "Labels: ", np.unique(y_test), " #Labels: ", n_labels
     ## print np.shape(x_train), np.shape(y_train), np.shape(x_test), np.shape(y_test)
+
+
+    # Load weights
+    if weights_file is not None:
+        sig_weights_file = weights_file[0]
+        img_weights_file = weights_file[1]
+        multi_weights_file = weights_file[2]
+    else:
+        sig_weights_file = None
+        img_weights_file = None
+        multi_weights_file = None
+
 
     # split train data into training and validation data.
     idx_list = range(len(x_sig_train))
@@ -96,53 +108,32 @@ def multi_net(trainData, testData, batch_size=512, nb_epoch=500, \
     y_val   = keras.utils.to_categorical(y_val, num_classes=n_labels)
     ## y_test  = keras.utils.to_categorical(y_test)#, num_classes=n_labels)
 
-    # Model construction
-    model = Sequential()
-    model.add(Dense(16, init='uniform', input_shape=np.shape(x_sig_train[0]),
-                    ## kernel_regularizer=regularizers.l2(0.01),\
-                    name='sig_1'))
-    model.add(Activation('tanh'))
-    model.add(Dropout(0.3))
-    model.add(Dense(16, init='uniform',
-                    ## kernel_regularizer=regularizers.l2(0.01),\
-                    name='sig_2'))
-    model.add(Activation('tanh'))
-    model.add(Dropout(0.3))
-    model.add(Dense(n_labels, activation='softmax',
-                    ## W_regularizer=L1L2Regularizer(0,0),
-                    name='sig_out'))    
-    print(model.summary())
-
-    if weights_file is not None and os.path.isfile(weights_file) and fine_tuning is False and\
+    if multi_weights_file is not None and os.path.isfile(multi_weights_file) and fine_tuning is False and \
       renew is False:
-        model.load_weights(weights_file)
+        model.load_weights(multi_weights_file)
     else:
-
         callbacks = [EarlyStopping(monitor='val_loss', min_delta=0.0005, patience=patience,
                                    verbose=0, mode='auto'),
-                     ModelCheckpoint(weights_file,
+                     ModelCheckpoint(multi_weights_file,
                                      save_best_only=True,
                                      save_weights_only=True,
                                      monitor='val_loss'),
                      ReduceLROnPlateau(monitor='val_loss', factor=0.2,
                                        patience=3, min_lr=0.00001)]
 
-        if fine_tuning:
-            model.load_weights(weights_file)
-            optimizer = SGD(lr=0.0001, decay=1e-7, momentum=0.9, nesterov=True)
-            model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
-        else:
-            if os.path.isfile(weights_file) and False: model.load_weights(weights_file)
-            optimizer = SGD(lr=0.005, decay=1e-6, momentum=0.9, nesterov=True)
-            #optimizer = RMSprop(lr=0.01)
-            #model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
-            model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+
+        from . import vgg16
+        model = vgg16.VGG16(include_top=False, include_multi_top=True,
+                            input_shape=np.shape(x_train)[1:], classes=n_labels)
+        ## model = km.vgg_multi_top_net(np.shape(x_train)[1:], n_labels, weights_path)
+        model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
+        print(model.summary())
 
 
-        train_datagen   = ku.sigGenerator(augmentation=True, noise_mag=noise_mag )
-        test_datagen    = ku.sigGenerator(augmentation=False, noise_mag=0.0)
-        train_generator = train_datagen.flow(x_sig_train, y_train, batch_size=batch_size)
-        test_generator  = test_datagen.flow(x_sig_val, y_val, batch_size=batch_size)
+        train_datagen   = ku.multiGenerator(augmentation=True, noise_mag=noise_mag )
+        test_datagen    = ku.multiGenerator(augmentation=False, noise_mag=0.0)
+        train_generator = train_datagen.flow(x_sig_train, x_img_train, y_train, batch_size=batch_size)
+        test_generator  = test_datagen.flow(x_sig_val, x_img_val, y_val, batch_size=batch_size)
 
         hist = model.fit_generator(train_generator,
                                    samples_per_epoch=len(y_train),
@@ -150,10 +141,6 @@ def multi_net(trainData, testData, batch_size=512, nb_epoch=500, \
                                    validation_data=test_generator,
                                    nb_val_samples=len(y_val),
                                    callbacks=callbacks)
-
-        ## hist = model.fit(x_train, y_train, nb_epoch=nb_epoch, batch_size=batch_size, shuffle=True,
-        ##                  validation_data=(x_test, y_test), callbacks=callbacks)
-
 
     y_pred = model.predict(x_test)
     y_pred = np.argmax(y_pred, axis=1).tolist()
