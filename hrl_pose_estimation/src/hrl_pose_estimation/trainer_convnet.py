@@ -304,11 +304,74 @@ class PhysicalTrainer():
 
             print 'fitting ', baseline
 
-            if baseline == 'KNN':
-                regr = neighbors.KNeighborsRegressor(10, weights='distance')
-                regr.fit(images_up, targets)
+            #if baseline == 'KNN':
+            regr = neighbors.KNeighborsRegressor(10, weights='distance')
+            regr.fit(images_up, targets)
 
-            elif baseline == 'SVM':
+            print 'done fitting KNN'
+
+            if self.opt.computer == 'lab_harddrive':
+                print 'saving to ', '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
+                    self.opt.leaveOut) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leaveOut) + '.p'
+                pkl.dump(regr, open(
+                    '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
+                        self.opt.leaveOut) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leaveOut) + '.p',
+                    'wb'))
+                print 'saved successfully'
+            elif self.opt.computer == 'aws':
+                pkl.dump(regr, open('/home/ubuntu/Autobed_OFFICIAL_Trials/subject_' + str(
+                    self.opt.leaveOut) + '/HoG_' + baseline + '_p' + str(self.opt.leaveOut) + '.p', 'wb'))
+                print 'saved successfully'
+
+
+            print 'fitting Ridge'
+
+            #elif baseline == 'Ridge':
+            regr = linear_model.Ridge(alpha=0.01)
+            regr.fit(images_up, targets)
+
+            print 'done fitting Ridge'
+
+            if self.opt.computer == 'lab_harddrive':
+                print 'saving to ', '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
+                    self.opt.leaveOut) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leaveOut) + '.p'
+                pkl.dump(regr, open(
+                    '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
+                        self.opt.leaveOut) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leaveOut) + '.p',
+                    'wb'))
+                print 'saved successfully'
+            elif self.opt.computer == 'aws':
+                pkl.dump(regr, open('/home/ubuntu/Autobed_OFFICIAL_Trials/subject_' + str(
+                    self.opt.leaveOut) + '/HoG_' + baseline + '_p' + str(self.opt.leaveOut) + '.p', 'wb'))
+                print 'saved successfully'
+
+
+
+
+            print 'fitting KRidge'
+
+            #elif baseline == 'KRidge':
+            regr = kernel_ridge.KernelRidge(alpha=0.01, kernel='rbf')
+            regr.fit(images_up, targets)
+
+            print 'done fitting KRidge'
+
+            if self.opt.computer == 'lab_harddrive':
+                print 'saving to ', '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
+                    self.opt.leaveOut) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leaveOut) + '.p'
+                pkl.dump(regr, open(
+                    '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
+                        self.opt.leaveOut) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leaveOut) + '.p',
+                    'wb'))
+                print 'saved successfully'
+            elif self.opt.computer == 'aws':
+                pkl.dump(regr, open('/home/ubuntu/Autobed_OFFICIAL_Trials/subject_' + str(
+                    self.opt.leaveOut) + '/HoG_' + baseline + '_p' + str(self.opt.leaveOut) + '.p', 'wb'))
+                print 'saved successfully'
+
+
+
+            if baseline == 'SVM':
                 regr = MultiOutputRegressor(estimator=svm.SVR(C=1.0, kernel='rbf', verbose = True))
                 regr.fit(images_up, targets)
                 #SVR(C=1.0, kernel='rbf', verbose = True)
@@ -329,29 +392,11 @@ class PhysicalTrainer():
                 regr.fit(labels, targets)
                 print 'done fitting linear model'
 
-            elif baseline == 'Ridge':
-                regr = linear_model.Ridge(alpha=0.01)
-                regr.fit(images_up, targets)
-
-            elif baseline == 'KRidge':
-                regr = kernel_ridge.KernelRidge(alpha=0.01, kernel='rbf')
-                regr.fit(images_up, targets)
-
             elif baseline == 'Linear':
                 regr = linear_model.LinearRegression()
                 regr.fit(images_up, targets)
 
 
-
-            print 'done fitting'
-
-            if self.opt.computer == 'lab_harddrive':
-                print 'saving to ','/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leaveOut) + '/p_files/HoG_'+baseline+'_p'+str(self.opt.leaveOut)+'.p'
-                pkl.dump(regr, open('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leaveOut) + '/p_files/HoG_'+baseline+'_p'+str(self.opt.leaveOut)+'.p', 'wb'))
-                print 'saved successfully'
-            elif self.opt.computer == 'aws':
-                pkl.dump(regr, open('/home/ubuntu/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leaveOut) + '/HoG_'+baseline+'_p'+str(self.opt.leaveOut)+'.p', 'wb'))
-                print 'saved successfully'
 
             #validation
             for batchtest_idx, batchtest in enumerate(self.test_loader):
