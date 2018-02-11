@@ -635,7 +635,7 @@ def img_net_test(save_data_path, pkl_name='', renew=False):
         print "----------------------"
         print "Subject ", idx
         print "----------------------"
-        if idx <7: continue
+        if idx<4 or idx>6: continue
 
         np.random.seed(3334+idx)
 

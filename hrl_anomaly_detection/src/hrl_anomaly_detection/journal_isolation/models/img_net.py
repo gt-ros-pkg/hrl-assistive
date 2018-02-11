@@ -207,7 +207,8 @@ def get_bottleneck_image(idx, train_data, test_data, save_data_path, n_labels, u
         
     ## from hrl_execution_monitor.keras_util import keras_model as km
     ## model = km.vgg16_net(np.shape(x_train)[1:], n_labels)
-    model = vgg16.VGG16(include_top=False, input_shape=np.shape(x_train)[1:], classes=n_labels)
+    model = vgg16.VGG16(include_top=False, input_shape=np.shape(x_train)[1:], classes=n_labels,
+                        weights='img_net')
             
     # ------------------------------------------------------------
     from keras.preprocessing.image import ImageDataGenerator
