@@ -554,6 +554,10 @@ def preprocess_data(subject_names, task_name, raw_data_path, save_data_path, par
 
 def sig_net_test(save_data_path, pkl_name='', renew=False):
 
+    weights_path = os.path.join(save_data_path, 'weights')
+    if os.path.isdir(weights_path) is False:
+        os.system('mkdir -p '+weights_path)        
+
     scores = []
     for idx in xrange(8):
 
@@ -563,8 +567,6 @@ def sig_net_test(save_data_path, pkl_name='', renew=False):
         d = ut.load_pickle(file_name)
         trainData = (d['x_sig_tr'], d['y_tr'])
         testData = (d['x_sig_te'], d['y_te'])
-
-        print np.shape(d['x_sig_tr'])
 
         scaler  = preprocessing.StandardScaler()
         x_train = scaler.fit_transform(d['x_sig_tr'])
@@ -608,7 +610,7 @@ def sig_net_test(save_data_path, pkl_name='', renew=False):
         #sys.exit()
 
         from hrl_anomaly_detection.journal_isolation.models import sig_net             
-        weights_file = os.path.join(save_data_path,'sig_model_weights_'+method+'_'+str(idx)+'.h5')
+        weights_file = os.path.join(weights_path,'model_weights_'+method+'_'+str(idx)+'.h5')
         ml, score = sig_net.sig_net(trainData, testData, weights_file=weights_file, patience=patience,
                                     batch_size=batch_size,\
                                     noise_mag=noise_mag, renew=True, fine_tuning=fine_tuning)
@@ -624,8 +626,15 @@ def sig_net_test(save_data_path, pkl_name='', renew=False):
 
 def img_net_test(save_data_path, pkl_name='', renew=False):
 
+    weights_path = os.path.join(save_data_path, 'weights')
+    if os.path.isdir(weights_path) is False:
+        os.system('mkdir -p '+weights_path)        
+
     scores = []
     for idx in xrange(8):
+        print "----------------------"
+        print "Subject ", idx
+        print "----------------------"
 
         np.random.seed(3334+idx)
 
@@ -634,28 +643,86 @@ def img_net_test(save_data_path, pkl_name='', renew=False):
         trainData = (d['x_img_tr'], d['y_tr'])
         testData  = (d['x_img_te'], d['y_te'])
 
+        # Extra images?
+
         method      = 'img_net'
-        noise_mag   = 0.05 #5
-        patience    = 5 #4 #10
+        patience    = 4 #4 #10
         sam_epoch   = 40 #2:40
         fine_tuning = False
-        batch_size  = 1024
+        batch_size  = 2048
 
         from hrl_anomaly_detection.journal_isolation.models import img_net             
-        weights_file = os.path.join(save_data_path,'img_model_weights_'+method+'_'+str(idx)+'.h5')
-        ml, score = img_net.img_net(trainData, testData, weights_file=weights_file, patience=patience,
+        weights_file = os.path.join(weights_path,'model_weights_'+method+'_'+str(idx)+'.h5')
+        ml, score = img_net.img_net(idx, trainData, testData, save_data_path,
+                                    weights_file=weights_file, patience=patience,
                                     batch_size=batch_size,\
-                                    noise_mag=noise_mag, sam_epoch=sam_epoch, renew=True,
+                                    sam_epoch=sam_epoch, renew=False,
                                     fine_tuning=fine_tuning)
 
         # test
         scores.append(score)
-        break
+        #break
 
     print scores
     print np.mean(scores), np.std(scores)
 
     return 
+
+
+def multi_net_test(save_data_path, pkl_name='', renew=False):
+
+    weights_path = os.path.join(save_data_path, 'weights')
+    if os.path.isdir(weights_path) is False:
+        os.system('mkdir -p '+weights_path)        
+
+    scores = []
+    for idx in xrange(8):
+        print "----------------------"
+        print "Subject ", idx
+        print "----------------------"
+
+        np.random.seed(3334+idx)
+
+        file_name = os.path.join(save_data_path, pkl_name+'_'+str(idx)+'.pkl')
+        d = ut.load_pickle(file_name)
+
+        # Extra images?
+
+
+        #
+        scaler  = preprocessing.StandardScaler()
+        x_sig_tr = scaler.fit_transform(d['x_sig_tr'])
+        x_sig_te = scaler.transform(d['x_sig_te'])
+        trainData = (x_sig_tr, d['x_img_tr'], d['y_tr'])
+        testData  = (x_sig_te, d['x_img_te'], d['y_te'])
+        
+
+        method      = 'multi_net'
+        noise_mag   = 0.05 #5
+        patience    = 4 #4 #10
+        sam_epoch   = 40 #2:40
+        fine_tuning = False
+        batch_size  = 2048
+
+        from hrl_anomaly_detection.journal_isolation.models import multi_net             
+        sig_weights_file   = os.path.join(weights_path, 'model_weights_'+method+'_'+str(idx)+'.h5')
+        img_weights_file   = os.path.join(weights_path, 'model_weights_'+method+'_'+str(idx)+'.h5')
+        multi_weights_file = os.path.join(weights_path, 'model_weights_'+method+'_'+str(idx)+'.h5')
+        ml, score = multi_net.img_net(idx, trainData, testData, save_data_path,
+                                    weights_file=(sig_weights_file, img_weights_file, multi_weights_file),
+                                    patience=patience, batch_size=batch_size,\
+                                    noise_mag=noise_mag, sam_epoch=sam_epoch, renew=False,
+                                    fine_tuning=fine_tuning)
+
+        # test
+        scores.append(score)
+        #break
+
+    print scores
+    print np.mean(scores), np.std(scores)
+
+    return 
+
 
 
 
@@ -825,3 +892,4 @@ if __name__ == '__main__':
     else:                           
         ## sig_net_test(save_data_path, pkl_name='isol_features', renew=False)
         img_net_test(save_data_path, pkl_name='isol_features', renew=False)
+        multi_net_test(save_data_path, pkl_name='isol_features', renew=False)

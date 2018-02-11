@@ -43,9 +43,11 @@ from keras.layers import Activation, Dropout, Flatten, Dense, merge
 from keras.layers.advanced_activations import PReLU
 from keras.utils.np_utils import to_categorical
 from keras.optimizers import SGD, Adagrad, Adadelta, RMSprop
-from keras.utils.visualize_util import plot
+#from keras.utils.visualize_util import plot
 from keras.layers.normalization import BatchNormalization
-from keras.regularizers import EigenvalueRegularizer, L1L2Regularizer
+#from keras.regularizers import EigenvalueRegularizer, L1L2Regularizer
+from keras.utils.conv_utils import convert_kernel
+from keras import backend as K
 
 from hrl_execution_monitor.keras_util import model_util as mutil
 random.seed(3334)
@@ -124,18 +126,15 @@ def sig_net(input_shape, n_labels, weights_path=None, activ_type='relu' ):
 
     model = Sequential()
     model.add(Dense(128, init='uniform', input_shape=input_shape,
-                    W_regularizer=L1L2Regularizer(0.0,0.0),\
                     name='fc2_1'))
     model.add(Activation(activ_type))
     model.add(Dropout(0.2))
     ## model.add(Dense(128, init='uniform', input_shape=input_shape,
-    ##                 W_regularizer=L1L2Regularizer(0.0,0.0),\
     ##                 name='fc2_2'))
     ## model.add(Activation(activ_type))
     ## model.add(Dropout(0.2))
 
-    model.add(Dense(n_labels, activation='softmax',W_regularizer=L1L2Regularizer(0,0),
-                    name='fc_sig_out'))
+    model.add(Dense(n_labels, activation='softmax', name='fc_sig_out'))
 
     if weights_path is not None:
         model.load_weights(weights_path)
@@ -147,63 +146,76 @@ def vgg16_net(input_shape, n_labels, weights_path=None,\
               sig_weights_path=None, img_weights_path=None,\
               with_multi_top=False, with_img_top=False, bottle_model=False, \
               input_shape2=None, fine_tune=False, viz=False):
+
+    print input_shape
     
     # build the VGG16 network
     model = Sequential()
     model.add(ZeroPadding2D((1, 1), input_shape=input_shape))
 
-    model.add(Convolution2D(64, 3, 3, activation='relu', name='conv1_1'))
+    model.add(Convolution2D(64, (3, 3), activation='relu', name='conv1_1'))
     model.add(ZeroPadding2D((1, 1)))
-    model.add(Convolution2D(64, 3, 3, activation='relu', name='conv1_2'))
-    model.add(MaxPooling2D((2, 2), strides=(2, 2)))
+    model.add(Convolution2D(64, (3, 3), activation='relu', name='conv1_2'))
+    model.add(MaxPooling2D((2, 2), strides=(2, 2), data_format="channels_first"))
 
     model.add(ZeroPadding2D((1, 1)))
-    model.add(Convolution2D(128, 3, 3, activation='relu', name='conv2_1'))
+    model.add(Convolution2D(128, (3, 3), activation='relu', name='conv2_1'))
     model.add(ZeroPadding2D((1, 1)))
-    model.add(Convolution2D(128, 3, 3, activation='relu', name='conv2_2'))
-    model.add(MaxPooling2D((2, 2), strides=(2, 2)))
+    model.add(Convolution2D(128, (3, 3), activation='relu', name='conv2_2'))
+    model.add(MaxPooling2D((2, 2), strides=(2, 2), data_format="channels_first"))
 
     model.add(ZeroPadding2D((1, 1)))
-    model.add(Convolution2D(256, 3, 3, activation='relu', name='conv3_1'))
+    model.add(Convolution2D(256, (3, 3), activation='relu', name='conv3_1'))
     model.add(ZeroPadding2D((1, 1)))
-    model.add(Convolution2D(256, 3, 3, activation='relu', name='conv3_2'))
+    model.add(Convolution2D(256, (3, 3), activation='relu', name='conv3_2'))
     model.add(ZeroPadding2D((1, 1)))
-    model.add(Convolution2D(256, 3, 3, activation='relu', name='conv3_3'))
-    model.add(MaxPooling2D((2, 2), strides=(2, 2)))
+    model.add(Convolution2D(256, (3, 3), activation='relu', name='conv3_3'))
+    model.add(MaxPooling2D((2, 2), strides=(2, 2), data_format="channels_first"))
 
     model.add(ZeroPadding2D((1, 1)))
-    model.add(Convolution2D(512, 3, 3, activation='relu', name='conv4_1'))
+    model.add(Convolution2D(512, (3, 3), activation='relu', name='conv4_1'))
     model.add(ZeroPadding2D((1, 1)))
-    model.add(Convolution2D(512, 3, 3, activation='relu', name='conv4_2'))
+    model.add(Convolution2D(512, (3, 3), activation='relu', name='conv4_2'))
     model.add(ZeroPadding2D((1, 1)))
-    model.add(Convolution2D(512, 3, 3, activation='relu', name='conv4_3'))
-    model.add(MaxPooling2D((2, 2), strides=(2, 2)))
+    model.add(Convolution2D(512, (3, 3), activation='relu', name='conv4_3'))
+    model.add(MaxPooling2D((2, 2), strides=(2, 2), data_format="channels_first"))
 
     model.add(ZeroPadding2D((1, 1)))
-    model.add(Convolution2D(512, 3, 3, activation='relu', name='conv5_1'))
+    model.add(Convolution2D(512, (3, 3), activation='relu', name='conv5_1'))
     model.add(ZeroPadding2D((1, 1)))
-    model.add(Convolution2D(512, 3, 3, activation='relu', name='conv5_2'))
+    model.add(Convolution2D(512, (3, 3), activation='relu', name='conv5_2'))
     model.add(ZeroPadding2D((1, 1)))
-    model.add(Convolution2D(512, 3, 3, activation='relu', name='conv5_3'))
-    model.add(MaxPooling2D((2, 2), strides=(2, 2)))
+    model.add(Convolution2D(512, (3, 3), activation='relu', name='conv5_3'))
+    model.add(MaxPooling2D((2, 2), strides=(2, 2), data_format="channels_first"))
 
-    if vgg_weights_path is not None:       
-        # load the weights of the VGG16 networks
-        # (trained on ImageNet, won the ILSVRC competition in 2014)
-        # note: when there is a complete match between your model definition
-        # and your weight savefile, you can simply call model.load_weights(filename)        
-        assert os.path.exists(vgg_weights_path), \
-          'Model weights not found (see "weights_path" variable in script).'
-        f = h5py.File(vgg_weights_path)
-        for k in range(f.attrs['nb_layers']):
-            if k >= len(model.layers):
-                # we don't look at the last (fully-connected) layers in the savefile
-                break
-            g = f['layer_{}'.format(k)]
-            weights = [g['param_{}'.format(p)] for p in range(g.attrs['nb_params'])]
-            model.layers[k].set_weights(weights)
-        f.close()
-        print('Model loaded.')
+    if K.backend() == 'theano':
+        print "Keras is theano backend. Convert kernels!"
+        layer_utils.convert_all_kernels_in_model(model)
+
+    ## if K.image_data_format() == 'channels_first':
+    ##     if K.backend() == 'tensorflow':
+            
+
+    if vgg_weights_path is not None:
+        model.load_weights(vgg_weights_path)
+
+    ##     # load the weights of the VGG16 networks
+    ##     # (trained on ImageNet, won the ILSVRC competition in 2014)
+    ##     # note: when there is a complete match between your model definition
+    ##     # and your weight savefile, you can simply call model.load_weights(filename)        
+    ##     assert os.path.exists(vgg_weights_path), \
+    ##       'Model weights not found (see "weights_path" variable in script).'
+    ##     f = h5py.File(vgg_weights_path)
+    ##     for k in range(f.attrs['nb_layers']):
+    ##         if k >= len(model.layers):
+    ##             # we don't look at the last (fully-connected) layers in the savefile
+    ##             break
+    ##         g = f['layer_{}'.format(k)]
+    ##         weights = [g['param_{}'.format(p)] for p in range(g.attrs['nb_params'])]
+    ##         reshaped_weights = convert_kernel(weights)
+    ##         model.layers[k].set_weights(reshaped_weights)
+    ##     f.close()
+    ##     print('Model loaded.')
     # 31 layers---------------------------------------------------------------
 
 
@@ -227,13 +239,13 @@ def vgg16_net(input_shape, n_labels, weights_path=None,\
             
         weight1_1 = mutil.get_layer_weights(weights_file, layer_name='fc1_1')                
         model.add(Dense(1024, init='uniform', weights=weight1_1, name='fc1_1',
-                        W_regularizer=L1L2Regularizer(0.0,0.03)))
+                        kernel_regularizer=regularizers.l2(0.03)))                        
         model.add(Activation('relu'))
         model.add(Dropout(0.5))        
         # -----------------------------------------------------------
         weight1_2 = mutil.get_layer_weights(weights_file, layer_name='fc1_2')        
         model.add(Dense(128, init='uniform', weights=weight1_2, name='fc1_2',
-                        W_regularizer=L1L2Regularizer(0.0,0.01)))
+                        kernel_regularizer=regularizers.l2(0.01)))
         model.add(Activation('relu'))
         model.add(Dropout(0.5))        
         ## # -----------------------------------------------------------
@@ -263,8 +275,7 @@ def vgg16_net(input_shape, n_labels, weights_path=None,\
         
         sig_model = Sequential()
         sig_model.add(Dense(128, init='uniform', weights=weight2_1,
-                            input_shape=input_shape2, name='fc2_1',
-                            W_regularizer=L1L2Regularizer(0.0,0.0)))
+                            input_shape=input_shape2, name='fc2_1'))
         sig_model.add(Activation('relu'))        
         sig_model.add(Dropout(0.2))
 
@@ -290,14 +301,13 @@ def vgg16_net(input_shape, n_labels, weights_path=None,\
         weight_fc_out = mutil.get_layer_weights(weights_file, layer_name='fc_out')        
                 
         c_model.add(Dense(256, activation='relu', init='uniform', weights=weight3_1, name='fc3_1',
-                          W_regularizer=L1L2Regularizer(0,0.05)))
+                          kernel_regularizer=regularizers.l2(0.05)))
         c_model.add(Dropout(0.0))
         ## c_model.add(Dense(256, activation='relu', init='uniform', weights=weight3_2, name='fc3_2',
         ##                   W_regularizer=L1L2Regularizer(0,0.05)))
         ## c_model.add(Dropout(0.6))
         
-        c_model.add(Dense(n_labels, activation='softmax', name='fc_out', weights=weight_fc_out,
-                    W_regularizer=L1L2Regularizer(0,0)))
+        c_model.add(Dense(n_labels, activation='softmax', name='fc_out', weights=weight_fc_out))
         
         if weights_path: weights_file.close()        
         return c_model
@@ -314,13 +324,13 @@ def vgg_image_top_net(input_shape, n_labels, weights_path=None):
     model.add(Flatten(input_shape=input_shape))
 
 
-    model.add(Dense(1024, init='uniform', name='fc1_1', W_regularizer=L1L2Regularizer(0.0,0.03)))
+    model.add(Dense(1024, init='uniform', name='fc1_1', kernel_regularizer=regularizers.l2(0.03)))
     model.add(Activation('relu')) #0.03
     model.add(Dropout(0.5))        
     ## model.add(Dense(1024, init='uniform', name='fc1_2', W_regularizer=L1L2Regularizer(0.0,0.01)))
     ## model.add(Activation('relu'))
     ## model.add(Dropout(0.5))
-    model.add(Dense(128, init='uniform', name='fc1_2', W_regularizer=L1L2Regularizer(0.0,0.01)))
+    model.add(Dense(128, init='uniform', name='fc1_2', kernel_regularizer=regularizers.l2(0.01)))
     model.add(Activation('relu'))
     model.add(Dropout(0.5)) #0.5
 
@@ -349,7 +359,7 @@ def vgg_multi_top_net(input_shape, n_labels, weights_path=None):
     if weights_path is not None: weights_file = h5py.File(weights_path)
     weight = mutil.get_layer_weights(weights_file, layer_name='fc3_1')    
     model.add(Dense(256, activation='relu', init='uniform', name='fc3_1', input_shape=input_shape,
-                    W_regularizer=L1L2Regularizer(0.0, 0.05), weights=weight))
+                    kernel_regularizer=regularizers.l2(0.05), weights=weight))
     model.add(Dropout(0.0))
 
     # -------------------------------------------------------------------
@@ -360,7 +370,7 @@ def vgg_multi_top_net(input_shape, n_labels, weights_path=None):
 
     weight = mutil.get_layer_weights(weights_file, layer_name='fc_out')
     model.add(Dense(n_labels, activation='softmax', name='fc_out', input_shape=input_shape,
-                    weights=weight, W_regularizer=L1L2Regularizer(0,0.0)))
+                    weights=weight))
 
-    if weights_path is not None:  weights_file.close()
+    if weights_path is not None: weights_file.close()
     return model

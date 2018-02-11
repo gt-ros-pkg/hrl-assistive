@@ -54,7 +54,7 @@ import gc
 
 
 
-def sig_net(trainData, testData, batch_size=512, nb_epoch=500, \
+def multi_net(trainData, testData, batch_size=512, nb_epoch=500, \
             patience=20, fine_tuning=False, noise_mag=0.0,\
             weights_file=None, save_weights_file='sig_weights.h5', renew=False, **kwargs):
     """
@@ -64,10 +64,12 @@ def sig_net(trainData, testData, batch_size=512, nb_epoch=500, \
 
     y_train should contain all labels
     """
-    x_train = trainData[0]
-    y_train = np.expand_dims(trainData[1], axis=-1)-2
-    x_test = testData[0]
-    y_test = np.expand_dims(testData[1], axis=-1)-2
+    x_sig_train = trainData[0]
+    x_img_train = trainData[1]
+    y_train = np.expand_dims(trainData[2], axis=-1)-2
+    x_sig_test = testData[0]
+    x_img_test = testData[1]
+    y_test = np.expand_dims(testData[2], axis=-1)-2
 
     n_labels = len(np.unique(y_train))
     print "Labels: ", np.unique(y_train), " #Labels: ", n_labels
@@ -75,15 +77,18 @@ def sig_net(trainData, testData, batch_size=512, nb_epoch=500, \
     ## print np.shape(x_train), np.shape(y_train), np.shape(x_test), np.shape(y_test)
 
     # split train data into training and validation data.
-    idx_list = range(len(x_train))
+    idx_list = range(len(x_sig_train))
     np.random.shuffle(idx_list)
-    x = x_train[idx_list]
+    x_sig = x_sig_train[idx_list]
+    x_img = x_img_train[idx_list]
     y = y_train[idx_list]
 
-    x_train = x[:int(len(x)*0.7)]
+    x_sig_train = x_sig[:int(len(x)*0.7)]
+    x_img_train = x_img[:int(len(x)*0.7)]
     y_train = y[:int(len(x)*0.7)]
 
-    x_val = x[int(len(x)*0.7):]
+    x_sig_val = x_sig[int(len(x)*0.7):]
+    x_img_val = x_img[int(len(x)*0.7):]
     y_val = y[int(len(x)*0.7):]
 
     # Convert labels to categorical one-hot encoding
@@ -93,7 +98,7 @@ def sig_net(trainData, testData, batch_size=512, nb_epoch=500, \
 
     # Model construction
     model = Sequential()
-    model.add(Dense(16, init='uniform', input_shape=np.shape(x_train[0]),
+    model.add(Dense(16, init='uniform', input_shape=np.shape(x_sig_train[0]),
                     ## kernel_regularizer=regularizers.l2(0.01),\
                     name='sig_1'))
     model.add(Activation('tanh'))
@@ -136,8 +141,8 @@ def sig_net(trainData, testData, batch_size=512, nb_epoch=500, \
 
         train_datagen   = ku.sigGenerator(augmentation=True, noise_mag=noise_mag )
         test_datagen    = ku.sigGenerator(augmentation=False, noise_mag=0.0)
-        train_generator = train_datagen.flow(x_train, y_train, batch_size=batch_size)
-        test_generator  = test_datagen.flow(x_val, y_val, batch_size=batch_size)
+        train_generator = train_datagen.flow(x_sig_train, y_train, batch_size=batch_size)
+        test_generator  = test_datagen.flow(x_sig_val, y_val, batch_size=batch_size)
 
         hist = model.fit_generator(train_generator,
                                    samples_per_epoch=len(y_train),
