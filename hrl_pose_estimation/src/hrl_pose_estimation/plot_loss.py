@@ -79,7 +79,7 @@ class DataVisualizer():
     def __init__(self, pkl_directory,  opt):
         self.opt = opt
         self.sitting = False
-        self.subject = 4
+        self.subject = self.opt.leave_out
         self.armsup = False
         self.alldata = False
         self.verbose = True
@@ -299,7 +299,7 @@ class DataVisualizer():
             if self.opt.computer == 'aws':
                 model = torch.load(self.dump_path + '/subject_' + str(self.subject) + '/convnet_2to8_angles128b_200e_' + str(self.subject) + '.pt')
             else:
-                model = torch.load(self.dump_path + '/subject_' + str(self.subject) + '/p_files/convnet_2to8_angles128b_200e_' + str(self.subject) + '.pt')
+                model = torch.load(self.dump_path + '/subject_' + str(self.subject) + '/p_files/convnet_2to8_angles128b_200e_' + str(self.subject) + '.pt', map_location=lambda storage, loc: storage)
             pp = 0
             for p in list(model.parameters()):
                 nn = 1
@@ -311,7 +311,7 @@ class DataVisualizer():
             if self.opt.computer == 'aws':
                 model = torch.load(self.dump_path + '/subject_' + str(self.subject) + '/convnet_2to8_direct128b_200e_'+str(self.subject)+'.pt')
             else:
-                model = torch.load(self.dump_path + '/subject_' + str(self.subject) + '/p_files/convnet_2to8_direct128b_200e_'+str(self.subject)+'.pt')
+                model = torch.load(self.dump_path + '/subject_' + str(self.subject) + '/p_files/convnet_2to8_direct128b_200e_'+str(self.subject)+'.pt', map_location=lambda storage, loc: storage)
             pp = 0
             for p in list(model.parameters()):
                 nn = 1
@@ -375,6 +375,7 @@ class DataVisualizer():
 
                     _, targets_est, angles_est, lengths_est, pseudotargets_est = model.forward_kinematic_jacobian(images_up, targets, constraints, forward_only = True)
 
+                    print lengths_est, 'lengths'
                     #print targets_est
 
                     bed_distances = KinematicsLib().get_bed_distance(images, targets)
@@ -499,7 +500,7 @@ class DataVisualizer():
     def run(self):
         '''Runs either the synthetic database creation script or the
         raw dataset creation script to create a dataset'''
-        for subject in [4]:
+        for subject in [int(self.opt.leave_out)]:
             self.init(subject)
             if self.opt.mltype == 'convnet':
                 self.validate_convnet()
@@ -524,10 +525,9 @@ if __name__ == "__main__":
                  dest='lab_harddrive', \
                  default=False, \
                  help='Set path to the training database on lab harddrive.')
-    p.add_option('--upper_only', action='store_true',
-                 dest='upper_only', \
-                 default=False, \
-                 help='Train only on data from the arms, both sitting and laying.')
+    p.add_option('--leave_out', action='store', type=int, \
+                 dest='leave_out', \
+                 help='Specify which subject to leave out for validation')
     p.add_option('--computer', action='store', type = 'string',
                  dest='computer', \
                  default='lab_harddrive', \
@@ -548,11 +548,11 @@ if __name__ == "__main__":
     opt, args = p.parse_args()
 
 
-    if self.opt.computer == 'lab_harddrive':
+    if opt.computer == 'lab_harddrive':
         Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/'
-    elif self.opt.computer == 'aws':
+    elif opt.computer == 'aws':
         Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/'
-    elif self.opt.computer == 'hc_desktop':
+    elif opt.computer == 'hc_desktop':
         Path = '/home/henryclever/hrl_file_server/Autobed/'
     else:
         Path = None
