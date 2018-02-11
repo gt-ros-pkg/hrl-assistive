@@ -346,11 +346,11 @@ class PhysicalTrainer():
             print 'done fitting'
 
             if self.opt.computer == 'lab_harddrive':
-                print 'saving to ','/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leaveOut) + '/p_files/HoG_'+baseline+'_s'+str(self.opt.leaveOut)+'.p'
-                pkl.dump(regr, open('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leaveOut) + '/p_files/HoG_'+baseline+'_s'+str(self.opt.leaveOut)+'.p', 'wb'))
+                print 'saving to ','/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leaveOut) + '/p_files/HoG_'+baseline+'_p'+str(self.opt.leaveOut)+'.p'
+                pkl.dump(regr, open('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leaveOut) + '/p_files/HoG_'+baseline+'_p'+str(self.opt.leaveOut)+'.p', 'wb'))
                 print 'saved successfully'
             elif self.opt.computer == 'aws':
-                pkl.dump(regr, open('/home/ubuntu/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leaveOut) + '/HoG_'+baseline+'_s'+str(self.opt.leaveOut)+'.p', 'wb'))
+                pkl.dump(regr, open('/home/ubuntu/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leaveOut) + '/HoG_'+baseline+'_p'+str(self.opt.leaveOut)+'.p', 'wb'))
                 print 'saved successfully'
 
             #validation

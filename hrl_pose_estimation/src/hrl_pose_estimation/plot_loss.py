@@ -248,9 +248,9 @@ class DataVisualizer():
         self.test_loader = torch.utils.data.DataLoader(self.test_dataset, batch_size, shuffle=False)
 
         if self.opt.computer == 'aws':
-            regr = load_pickle(self.dump_path + '/subject_' + str(self.subject) + '/p_files/HoG_'+str(self.opt.losstype)+'.p')
+            regr = load_pickle(self.dump_path + '/subject_' + str(self.subject) + '/p_files/HoG_'+str(self.opt.losstype)+'_p'+str(self.opt.leaveOut)+'.p')
         else:
-            regr = load_pickle(self.dump_path + '/subject_' + str(self.subject) + '/HoG_'+str(self.opt.losstype)+'.p')
+            regr = load_pickle(self.dump_path + '/subject_' + str(self.subject) + '/HoG_'+str(self.opt.losstype)+'_p'+str(self.opt.leaveOut)+'.p')
 
 
         count = 0
@@ -300,8 +300,6 @@ class DataVisualizer():
                 model = torch.load(self.dump_path + '/subject_' + str(self.subject) + '/convnet_2to8_angles128b_200e_' + str(self.subject) + '.pt')
             else:
                 model = torch.load(self.dump_path + '/subject_' + str(self.subject) + '/p_files/convnet_2to8_angles128b_200e_' + str(self.subject) + '.pt')
-
-
             pp = 0
             for p in list(model.parameters()):
                 nn = 1
