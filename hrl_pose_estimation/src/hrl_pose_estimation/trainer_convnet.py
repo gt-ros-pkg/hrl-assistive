@@ -206,7 +206,24 @@ class PhysicalTrainer():
 
 
         #load in the test file
-        test_dat = load_pickle(test_file)
+        for some_subject in test_file:
+            print some_subject
+            dat_curr = load_pickle(some_subject)
+            for key in dat_curr:
+                if np.array(dat_curr[key]).shape[0] != 0:
+                    for inputgoalset in np.arange(len(dat_curr['images'])):
+                        try:
+                            test_dat[key].append(dat_curr[key][inputgoalset])
+                        except:
+                            try:
+                                test_dat[key] = []
+                                test_dat[key].append(dat_curr[key][inputgoalset])
+                            except:
+                                test_dat = {}
+                                test_dat[key] = []
+                                test_dat[key].append(dat_curr[key][inputgoalset])
+
+
 
         # create a tensor for our testing dataset.  First print out how many input/output sets we have and what data we have
         for key in test_dat:
