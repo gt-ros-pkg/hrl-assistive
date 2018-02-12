@@ -814,16 +814,27 @@ if __name__ == "__main__":
         opt.subject6Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_6/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
         opt.subject7Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_7/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
         opt.subject8Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_8/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
-        opt.subject9Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_9/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
-        opt.subject10Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_10/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
-        opt.subject11Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_11/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
-        opt.subject12Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_12/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
-        opt.subject13Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_13/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
-        opt.subject14Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_14/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
-        opt.subject15Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_15/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
-        opt.subject16Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_16/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
-        opt.subject17Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_17/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
-        opt.subject18Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_18/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
+
+        opt.subject9Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_9/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll.p'
+        opt.subject10Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_10/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll.p'
+        opt.subject11Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_11/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll.p'
+        opt.subject12Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_12/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll.p'
+        opt.subject13Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_13/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll.p'
+        opt.subject14Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_14/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll.p'
+        opt.subject15Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_15/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll.p'
+        opt.subject16Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_16/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll.p'
+        opt.subject17Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_17/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll.p'
+        opt.subject18Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_18/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll.p'
+        opt.subject9PathB = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_9/p_files/trainval_sit175rlh_sit120rll.p'
+        opt.subject10PathB = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_10/p_files/trainval_sit175rlh_sit120rll.p'
+        opt.subject11PathB = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_11/p_files/trainval_sit175rlh_sit120rll.p'
+        opt.subject12PathB = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_12/p_files/trainval_sit175rlh_sit120rll.p'
+        opt.subject13PathB = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_13/p_files/trainval_sit175rlh_sit120rll.p'
+        opt.subject14PathB = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_14/p_files/trainval_sit175rlh_sit120rll.p'
+        opt.subject15PathB = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_15/p_files/trainval_sit175rlh_sit120rll.p'
+        opt.subject16PathB = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_16/p_files/trainval_sit175rlh_sit120rll.p'
+        opt.subject17PathB = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_17/p_files/trainval_sit175rlh_sit120rll.p'
+        opt.subject18PathB = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_18/p_files/trainval_sit175rlh_sit120rll.p'
 
         #shortcut:
 
@@ -841,16 +852,26 @@ if __name__ == "__main__":
         opt.subject6Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_6/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
         opt.subject7Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_7/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
         opt.subject8Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_8/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
-        opt.subject9Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_9/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
-        opt.subject10Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_10/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
-        opt.subject11Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_11/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
-        opt.subject12Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_12/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
-        opt.subject13Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_13/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
-        opt.subject14Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_14/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
-        opt.subject15Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_15/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
-        opt.subject16Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_16/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
-        opt.subject17Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_17/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
-        opt.subject18Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_18/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
+        opt.subject9Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_9/trainval_200rlh1_115rlh2_75rlh3_150rll.p'
+        opt.subject10Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_10/trainval_200rlh1_115rlh2_75rlh3_150rll.p'
+        opt.subject11Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_11/trainval_200rlh1_115rlh2_75rlh3_150rll.p'
+        opt.subject12Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_12/trainval_200rlh1_115rlh2_75rlh3_150rll.p'
+        opt.subject13Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_13/trainval_200rlh1_115rlh2_75rlh3_150rll.p'
+        opt.subject14Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_14/trainval_200rlh1_115rlh2_75rlh3_150rll.p'
+        opt.subject15Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_15/trainval_200rlh1_115rlh2_75rlh3_150rll.p'
+        opt.subject16Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_16/trainval_200rlh1_115rlh2_75rlh3_150rll.p'
+        opt.subject17Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_17/trainval_200rlh1_115rlh2_75rlh3_150rll.p'
+        opt.subject18Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_18/trainval_200rlh1_115rlh2_75rlh3_150rll.p'
+        opt.subject9PathB = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_9/trainval_sit175rlh_sit120rll.p'
+        opt.subject10PathB = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_10/trainval_sit175rlh_sit120rll.p'
+        opt.subject11PathB = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_11/trainval_sit175rlh_sit120rll.p'
+        opt.subject12PathB = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_12/trainval_sit175rlh_sit120rll.p'
+        opt.subject13PathB = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_13/trainval_sit175rlh_sit120rll.p'
+        opt.subject14PathB = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_14/trainval_sit175rlh_sit120rll.p'
+        opt.subject15PathB = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_15/trainval_sit175rlh_sit120rll.p'
+        opt.subject16PathB = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_16/trainval_sit175rlh_sit120rll.p'
+        opt.subject17PathB = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_17/trainval_sit175rlh_sit120rll.p'
+        opt.subject18PathB = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_18/trainval_sit175rlh_sit120rll.p'
 
         #shortcut:
 
@@ -860,10 +881,10 @@ if __name__ == "__main__":
 
 
 
-
+    test_database_file = []
     training_database_file = []
     if opt.leaveOut == 4:
-        test_database_file = opt.subject4Path
+        test_database_file.append(opt.subject4Path)
         #training_database_file.append(opt.subject1Path)
         if opt.quick_test == True:
             training_database_file.append(opt.subject8Path)
@@ -886,7 +907,7 @@ if __name__ == "__main__":
             #training_database_file.append(opt.subject18Path)
 
     elif opt.leaveOut == 1:
-        test_database_file = opt.subject1Path
+        test_database_file.append(opt.subject1Path)
         training_database_file.append(opt.subject2Path)
         training_database_file.append(opt.subject3Path)
         training_database_file.append(opt.subject4Path)
@@ -896,7 +917,7 @@ if __name__ == "__main__":
         training_database_file.append(opt.subject8Path)
 
     elif opt.leaveOut == 2:
-        test_database_file = opt.subject2Path
+        test_database_file.append(opt.subject2Path)
         training_database_file.append(opt.subject1Path)
         training_database_file.append(opt.subject3Path)
         training_database_file.append(opt.subject4Path)
@@ -906,7 +927,8 @@ if __name__ == "__main__":
         training_database_file.append(opt.subject8Path)
 
     elif opt.leaveOut == 9:
-        test_database_file = opt.subject9Path
+        test_database_file.append(opt.subject9Path)
+        test_database_file.append(opt.subject9PathB)
         training_database_file.append(opt.subject10Path)
         training_database_file.append(opt.subject11Path)
         training_database_file.append(opt.subject12Path)
@@ -916,8 +938,18 @@ if __name__ == "__main__":
         training_database_file.append(opt.subject16Path)
         training_database_file.append(opt.subject17Path)
         training_database_file.append(opt.subject18Path)
+        training_database_file.append(opt.subject10PathB)
+        training_database_file.append(opt.subject11PathB)
+        training_database_file.append(opt.subject12PathB)
+        training_database_file.append(opt.subject13PathB)
+        training_database_file.append(opt.subject14PathB)
+        training_database_file.append(opt.subject15PathB)
+        training_database_file.append(opt.subject16PathB)
+        training_database_file.append(opt.subject17PathB)
+        training_database_file.append(opt.subject18PathB)
     elif opt.leaveOut == 10:
-        test_database_file = opt.subject10Path
+        test_database_file.append(opt.subject10Path)
+        test_database_file.append(opt.subject10PathB)
         training_database_file.append(opt.subject9Path)
         training_database_file.append(opt.subject11Path)
         training_database_file.append(opt.subject12Path)
@@ -927,8 +959,18 @@ if __name__ == "__main__":
         training_database_file.append(opt.subject16Path)
         training_database_file.append(opt.subject17Path)
         training_database_file.append(opt.subject18Path)
+        training_database_file.append(opt.subject9PathB)
+        training_database_file.append(opt.subject11PathB)
+        training_database_file.append(opt.subject12PathB)
+        training_database_file.append(opt.subject13PathB)
+        training_database_file.append(opt.subject14PathB)
+        training_database_file.append(opt.subject15PathB)
+        training_database_file.append(opt.subject16PathB)
+        training_database_file.append(opt.subject17PathB)
+        training_database_file.append(opt.subject18PathB)
     elif opt.leaveOut == 11:
-        test_database_file = opt.subject11Path
+        test_database_file.append(opt.subject11Path)
+        test_database_file.append(opt.subject11PathB)
         training_database_file.append(opt.subject9Path)
         training_database_file.append(opt.subject10Path)
         training_database_file.append(opt.subject12Path)
@@ -938,8 +980,18 @@ if __name__ == "__main__":
         training_database_file.append(opt.subject16Path)
         training_database_file.append(opt.subject17Path)
         training_database_file.append(opt.subject18Path)
+        training_database_file.append(opt.subject9PathB)
+        training_database_file.append(opt.subject10PathB)
+        training_database_file.append(opt.subject12PathB)
+        training_database_file.append(opt.subject13PathB)
+        training_database_file.append(opt.subject14PathB)
+        training_database_file.append(opt.subject15PathB)
+        training_database_file.append(opt.subject16PathB)
+        training_database_file.append(opt.subject17PathB)
+        training_database_file.append(opt.subject18PathB)
     elif opt.leaveOut == 12:
-        test_database_file = opt.subject12Path
+        test_database_file.append(opt.subject12Path)
+        test_database_file.append(opt.subject12PathB)
         training_database_file.append(opt.subject9Path)
         training_database_file.append(opt.subject10Path)
         training_database_file.append(opt.subject11Path)
@@ -949,8 +1001,18 @@ if __name__ == "__main__":
         training_database_file.append(opt.subject16Path)
         training_database_file.append(opt.subject17Path)
         training_database_file.append(opt.subject18Path)
+        training_database_file.append(opt.subject9PathB)
+        training_database_file.append(opt.subject10PathB)
+        training_database_file.append(opt.subject11PathB)
+        training_database_file.append(opt.subject13PathB)
+        training_database_file.append(opt.subject14PathB)
+        training_database_file.append(opt.subject15PathB)
+        training_database_file.append(opt.subject16PathB)
+        training_database_file.append(opt.subject17PathB)
+        training_database_file.append(opt.subject18PathB)
     elif opt.leaveOut == 13:
-        test_database_file = opt.subject13Path
+        test_database_file.append(opt.subject13Path)
+        test_database_file.append(opt.subject13PathB)
         training_database_file.append(opt.subject9Path)
         training_database_file.append(opt.subject10Path)
         training_database_file.append(opt.subject11Path)
@@ -960,8 +1022,18 @@ if __name__ == "__main__":
         training_database_file.append(opt.subject16Path)
         training_database_file.append(opt.subject17Path)
         training_database_file.append(opt.subject18Path)
+        training_database_file.append(opt.subject9PathB)
+        training_database_file.append(opt.subject10PathB)
+        training_database_file.append(opt.subject11PathB)
+        training_database_file.append(opt.subject12PathB)
+        training_database_file.append(opt.subject14PathB)
+        training_database_file.append(opt.subject15PathB)
+        training_database_file.append(opt.subject16PathB)
+        training_database_file.append(opt.subject17PathB)
+        training_database_file.append(opt.subject18PathB)
     elif opt.leaveOut == 14:
-        test_database_file = opt.subject14Path
+        test_database_file.append(opt.subject14Path)
+        test_database_file.append(opt.subject14PathB)
         training_database_file.append(opt.subject9Path)
         training_database_file.append(opt.subject10Path)
         training_database_file.append(opt.subject11Path)
@@ -971,8 +1043,18 @@ if __name__ == "__main__":
         training_database_file.append(opt.subject16Path)
         training_database_file.append(opt.subject17Path)
         training_database_file.append(opt.subject18Path)
+        training_database_file.append(opt.subject9PathB)
+        training_database_file.append(opt.subject10PathB)
+        training_database_file.append(opt.subject11PathB)
+        training_database_file.append(opt.subject12PathB)
+        training_database_file.append(opt.subject13PathB)
+        training_database_file.append(opt.subject15PathB)
+        training_database_file.append(opt.subject16PathB)
+        training_database_file.append(opt.subject17PathB)
+        training_database_file.append(opt.subject18PathB)
     elif opt.leaveOut == 15:
-        test_database_file = opt.subject15Path
+        test_database_file.append(opt.subject15Path)
+        test_database_file.append(opt.subject15PathB)
         training_database_file.append(opt.subject9Path)
         training_database_file.append(opt.subject10Path)
         training_database_file.append(opt.subject11Path)
@@ -982,8 +1064,18 @@ if __name__ == "__main__":
         training_database_file.append(opt.subject16Path)
         training_database_file.append(opt.subject17Path)
         training_database_file.append(opt.subject18Path)
+        training_database_file.append(opt.subject9PathB)
+        training_database_file.append(opt.subject10PathB)
+        training_database_file.append(opt.subject11PathB)
+        training_database_file.append(opt.subject12PathB)
+        training_database_file.append(opt.subject13PathB)
+        training_database_file.append(opt.subject14PathB)
+        training_database_file.append(opt.subject16PathB)
+        training_database_file.append(opt.subject17PathB)
+        training_database_file.append(opt.subject18PathB)
     elif opt.leaveOut == 16:
-        test_database_file = opt.subject16Path
+        test_database_file.append(opt.subject16Path)
+        test_database_file.append(opt.subject16PathB)
         training_database_file.append(opt.subject9Path)
         training_database_file.append(opt.subject10Path)
         training_database_file.append(opt.subject11Path)
@@ -993,8 +1085,18 @@ if __name__ == "__main__":
         training_database_file.append(opt.subject15Path)
         training_database_file.append(opt.subject17Path)
         training_database_file.append(opt.subject18Path)
+        training_database_file.append(opt.subject9PathB)
+        training_database_file.append(opt.subject10PathB)
+        training_database_file.append(opt.subject11PathB)
+        training_database_file.append(opt.subject12PathB)
+        training_database_file.append(opt.subject13PathB)
+        training_database_file.append(opt.subject14PathB)
+        training_database_file.append(opt.subject15PathB)
+        training_database_file.append(opt.subject17PathB)
+        training_database_file.append(opt.subject18PathB)
     elif opt.leaveOut == 17:
-        test_database_file = opt.subject17Path
+        test_database_file.append(opt.subject17Path)
+        test_database_file.append(opt.subject17PathB)
         training_database_file.append(opt.subject9Path)
         training_database_file.append(opt.subject10Path)
         training_database_file.append(opt.subject11Path)
@@ -1004,8 +1106,18 @@ if __name__ == "__main__":
         training_database_file.append(opt.subject15Path)
         training_database_file.append(opt.subject16Path)
         training_database_file.append(opt.subject18Path)
+        training_database_file.append(opt.subject9PathB)
+        training_database_file.append(opt.subject10PathB)
+        training_database_file.append(opt.subject11PathB)
+        training_database_file.append(opt.subject12PathB)
+        training_database_file.append(opt.subject13PathB)
+        training_database_file.append(opt.subject14PathB)
+        training_database_file.append(opt.subject15PathB)
+        training_database_file.append(opt.subject16PathB)
+        training_database_file.append(opt.subject18PathB)
     elif opt.leaveOut == 18:
-        test_database_file = opt.subject18Path
+        test_database_file.append(opt.subject18Path)
+        test_database_file.append(opt.subject18PathB)
         training_database_file.append(opt.subject9Path)
         training_database_file.append(opt.subject10Path)
         training_database_file.append(opt.subject11Path)
@@ -1015,6 +1127,15 @@ if __name__ == "__main__":
         training_database_file.append(opt.subject15Path)
         training_database_file.append(opt.subject16Path)
         training_database_file.append(opt.subject17Path)
+        training_database_file.append(opt.subject9PathB)
+        training_database_file.append(opt.subject10PathB)
+        training_database_file.append(opt.subject11PathB)
+        training_database_file.append(opt.subject12PathB)
+        training_database_file.append(opt.subject13PathB)
+        training_database_file.append(opt.subject14PathB)
+        training_database_file.append(opt.subject15PathB)
+        training_database_file.append(opt.subject16PathB)
+        training_database_file.append(opt.subject17PathB)
 
     else:
         print 'please specify which subject to leave out for validation using --leave_out _'

@@ -99,6 +99,7 @@ class DatabaseCreator():
         self.T = np.zeros((4, 1))
         self.H = np.zeros((4, 1))
         self.N = np.zeros((4, 1))
+        self.B = np.zeros((4, 1))
 
         self.r_S = np.zeros((4, 1))
         self.r_E = np.zeros((4, 1))
@@ -528,15 +529,20 @@ class DatabaseCreator():
         self.l_A[2, 0] = targets[9, 2]
         self.l_A[3, 0] = 1.
 
+        self.B[0, 0] = self.T[0, 0]
+        self.B[1, 0] = self.T[1, 0] - lengths[1] * np.cos(np.deg2rad(bedangle * 0.6))
+        self.B[2, 0] = self.T[2, 0] - lengths[0] - lengths[1] * np.sin(np.deg2rad(bedangle * 0.6))
+        self.B[3, 0] = 1
+
         # here we construct pseudo ground truths for the shoulders by making fixed translations from the torso
         self.r_G[0, 0] = self.T[0, 0] - lengths[2]
-        self.r_G[1, 0] = self.T[1, 0] - lengths[1] #* np.cos(np.deg2rad(bedangle * 0.75))
-        self.r_G[2, 0] = self.T[2, 0] - lengths[0] #+ lengths[1] * np.sin(np.deg2rad(bedangle * 0.75))
+        self.r_G[1, 0] = self.T[1, 0] - lengths[1] * np.cos(np.deg2rad(bedangle * 0.6))
+        self.r_G[2, 0] = self.T[2, 0] - lengths[0] - lengths[1] * np.sin(np.deg2rad(bedangle * 0.6))
         self.r_G[3, 0] = 1
 
         self.l_G[0, 0] = self.T[0, 0] + lengths[2]
-        self.l_G[1, 0] = self.T[1, 0] - lengths[1] #* np.cos(np.deg2rad(bedangle * 0.75))
-        self.l_G[2, 0] = self.T[2, 0] - lengths[0] #+ lengths[1] * np.sin(np.deg2rad(bedangle * 0.75))
+        self.l_G[1, 0] = self.T[1, 0] - lengths[1] * np.cos(np.deg2rad(bedangle * 0.6))
+        self.l_G[2, 0] = self.T[2, 0] - lengths[0] - lengths[1] * np.sin(np.deg2rad(bedangle * 0.6))
         self.l_G[3, 0] = 1
 
         pseudotargets[0, 0] = self.r_G[0, 0]
@@ -675,7 +681,7 @@ class DatabaseCreator():
         angle_i = []
         #for subject in [2,3,4,5,6,7,8]:
 
-        for subject in [18]:
+        for subject in [9,10,11,12,13,14,15,16,17,18]:
         #for subject in [16]:#13, 14, 15, 16, 17, 18]:
 
             self.final_dataset = {}
@@ -691,7 +697,7 @@ class DatabaseCreator():
 
 
 
-            for movement in ['RH1','LH1','RH2','LH2','RH3','LH3','RL','LL']:#'RH_sitting','LH_sitting','RL_sitting','LL_sitting',
+            for movement in ['RH_sitting','LH_sitting','RL_sitting','LL_sitting']:#"'RH1','LH1','RH2','LH2','RH3','LH3','RL','LL']:#,
             #for movement in ['LH2','LH3','LL'
         # ,'RL']:
 
@@ -953,7 +959,7 @@ class DatabaseCreator():
             #print np.mean(np.array(std_lengths)), 'mean of standard devs'
             print 'Output file size: ~', int(len(self.final_dataset['images']) * 0.08958031837*3948/1728), 'Mb'
             print "Saving final_dataset"
-            pkl.dump(self.final_dataset, open(os.path.join(self.training_dump_path+str(subject)+'/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll.p'), 'wb')) #_sit175rlh_sit120rll
+            pkl.dump(self.final_dataset, open(os.path.join(self.training_dump_path+str(subject)+'/p_files/trainval_sit175rlh_sit120rll.p'), 'wb')) #_200rlh1_115rlh2_75rlh3_150rll
 
             print 'Done.'
         return

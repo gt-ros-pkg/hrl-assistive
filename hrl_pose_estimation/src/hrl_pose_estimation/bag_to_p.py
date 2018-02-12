@@ -241,8 +241,8 @@ class BagfileToPickle():
                 #print self.params_length, 'length'
                 #print CreateDatasetLib().world_to_mat(targets, self.p_world_mat, self.R_world_mat)
                 if len(p_mat) == 1728 and self.params_length[4] > 0.15 and self.params_length[4] < 0.5 and self.params_length[5] > 0.15 and self.params_length[5] < 0.5 and self.params_length[6] > 0.1 and self.params_length[6] < 0.35 and self.params_length[7] > 0.1 and self.params_length[7] < 0.35:
-                    #if np.count_nonzero(targets) == 30:# and CreateDatasetLib().world_to_mat(targets, self.p_world_mat, self.R_world_mat)[9, 1] < 1.0:# and CreateDatasetLib().world_to_mat(targets, self.p_world_mat, self.R_world_mat)[9, 1] < 1.2 and np.abs(CreateDatasetLib().world_to_mat(targets, self.p_world_mat, self.R_world_mat)[8, 0] - CreateDatasetLib().world_to_mat(targets, self.p_world_mat, self.R_world_mat)[9, 0]) > 0.05: #we need to fill in the foot on s10 RH2, so pass it for that part
-                    if targets[0, 1] != 0 and targets[1, 1] != 0 and targets[3, 1] != 0 and targets[4, 1] != 0 and targets[5, 1] != 0 and targets[6, 1] > 1.2:  #
+                    if np.count_nonzero(targets) == 30:# and CreateDatasetLib().world_to_mat(targets, self.p_world_mat, self.R_world_mat)[9, 1] < 1.0:# and CreateDatasetLib().world_to_mat(targets, self.p_world_mat, self.R_world_mat)[9, 1] < 1.2 and np.abs(CreateDatasetLib().world_to_mat(targets, self.p_world_mat, self.R_world_mat)[8, 0] - CreateDatasetLib().world_to_mat(targets, self.p_world_mat, self.R_world_mat)[9, 0]) > 0.05: #we need to fill in the foot on s10 RH2, so pass it for that part
+                    #if targets[0, 1] != 0 and targets[1, 1] != 0 and targets[3, 1] != 0 and targets[4, 1] != 0 and targets[5, 1] != 0 and targets[6, 1] > 1.2:  #
 
                         #print 'pressure mat has been scanned'
                         #print targets
@@ -275,6 +275,9 @@ class BagfileToPickle():
                             targets[8, 2] = np.copy(targets[9, 2])
                             print 'added fillers for subject 10'
                             # print rot_target_mat, 'print rot tar mat'
+                        elif subject == 12 and filename == '_full_trial_LH1.bag':
+                            print CreateDatasetLib().world_to_mat(targets, self.p_world_mat, self.R_world_mat)
+
                         elif subject == 13:
                             if CreateDatasetLib().world_to_mat(targets, self.p_world_mat, self.R_world_mat)[9, 1] > 1.0:
                                 print 'blah'
@@ -322,7 +325,7 @@ class BagfileToPickle():
                         single_mat_tar_pos.append(bed_pos)
                         if subject == 10 and filename == '_full_trial_RH1.bag': #this statement weeds out ugly data in subject 10 RH1
                             try:
-                                if len(self.mat_tar_pos) > 355:
+                                if len(self.mat_tar_pos) > 255:
                                     pass
                                 else:
                                     self.mat_tar_pos.append(single_mat_tar_pos)
@@ -410,12 +413,12 @@ if __name__ == '__main__':
         # x.append('home')
         # file_details.append(x)
         #
-        #x = []
-        #x.append(subject)
-        #x.append('_full_trial_LH1.bag')
-        #x.append('LH1')
-        #ile_details.append(x)
-        #
+        x = []
+        x.append(subject)
+        x.append('_full_trial_LH1.bag')
+        x.append('LH1')
+        file_details.append(x)
+
         # x = []
         # x.append(subject)
         # x.append('_full_trial_LH2.bag')
@@ -446,11 +449,11 @@ if __name__ == '__main__':
         #x.append('RH3')
         #file_details.append(x)
         # #
-        x = []
-        x.append(subject)
-        x.append('_full_trial_LL.bag')
-        x.append('LL')
-        file_details.append(x)
+        #x = []
+        #x.append(subject)
+        #x.append('_full_trial_LL.bag')
+        #x.append('LL')
+        #file_details.append(x)
 
         #x = []
         #x.append(subject)
@@ -536,7 +539,7 @@ if __name__ == '__main__':
         file_details_dict[str(subject)] = file_details
 
 
-    for subject in [14]:
+    for subject in [17]:
         file_details = []
         # x = []
         # x.append(subject)
@@ -562,11 +565,11 @@ if __name__ == '__main__':
         # x.append('LH3')
         # file_details.append(x)
         #
-        x = []
-        x.append(subject)
-        x.append('_full_trial_RH1.bag')
-        x.append('RH1')
-        file_details.append(x)
+        #x = []
+        #x.append(subject)
+        #x.append('_full_trial_RH1.bag')
+        #x.append('RH1')
+        #file_details.append(x)
         #
         # x = []
         # x.append(subject)
@@ -586,11 +589,11 @@ if __name__ == '__main__':
         #x.append('LL')
         #file_details.append(x)
 
-        #x = []
-        #x.append(subject)
-        #x.append('_full_trial_RL.bag')
-        #x.append('RL')
-        #file_details.append(x)
+        x = []
+        x.append(subject)
+        x.append('_full_trial_RL.bag')
+        x.append('RL')
+        file_details.append(x)
 
         file_details_dict[str(subject)] = file_details
 
@@ -599,7 +602,7 @@ if __name__ == '__main__':
     database_path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials'
 
     #for subject in [7]:
-    for subject in [13]:
+    for subject in [12]:
         print subject
 
 
