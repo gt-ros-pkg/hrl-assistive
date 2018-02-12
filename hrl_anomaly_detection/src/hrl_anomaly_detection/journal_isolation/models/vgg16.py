@@ -35,7 +35,7 @@ WEIGHTS_PATH = 'https://github.com/fchollet/deep-learning-models/releases/downlo
 WEIGHTS_PATH_NO_TOP = 'https://github.com/fchollet/deep-learning-models/releases/download/v0.1/vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5'
 
 
-def VGG16(include_top=True, include_multi_top=False, weights='img_net',
+def VGG16(include_top=True, include_multi_top=False, weights='imagenet',
           input_tensor=None, input_shape=None,
           pooling=None, classes=1000):
     """Instantiates the VGG16 architecture.
@@ -140,21 +140,21 @@ def VGG16(include_top=True, include_multi_top=False, weights='img_net',
     x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv3')(x)
     x = MaxPooling2D((2, 2), strides=(2, 2), name='block5_pool')(x)
 
-    if include_multi_top:
-        print "Not available"
-    elif include_top:
-        x = Flatten(name='flatten')(x)
-        x = Dropout(0.5)(x)
-        x = Dense(16, activation='relu', name='fc1',
-                  kernel_regularizer=regularizers.l2(0.03))(x)
-        x = Dense(16, activation='relu', name='fc2',
-                  kernel_regularizer=regularizers.l2(0.01))(x)
-        x = Dense(classes, activation='softmax', name='predictions')(x)
-    else:
-        if pooling == 'avg':
-            x = GlobalAveragePooling2D()(x)
-        elif pooling == 'max':
-            x = GlobalMaxPooling2D()(x)
+    ## if include_multi_top:
+    ##     print "Not available"
+    ## elif include_top:
+    ##     x = Flatten(name='flatten')(x)
+    ##     x = Dropout(0.5)(x)
+    ##     x = Dense(16, activation='relu', name='fc1',
+    ##               kernel_regularizer=regularizers.l2(0.03))(x)
+    ##     x = Dense(16, activation='relu', name='fc2',
+    ##               kernel_regularizer=regularizers.l2(0.01))(x)
+    ##     x = Dense(classes, activation='softmax', name='predictions')(x)
+    ## else:
+    ##     if pooling == 'avg':
+    ##         x = GlobalAveragePooling2D()(x)
+    ##     elif pooling == 'max':
+    ##         x = GlobalMaxPooling2D()(x)
 
     # Ensure that the model takes into account
     # any potential predecessors of `input_tensor`.
@@ -212,12 +212,12 @@ def VGG16(include_top=True, include_multi_top=False, weights='img_net',
                                 file_hash='6d6bbae143d832006294945121d1f1fc')
         model.load_weights(weights_path)
 
-        if include_multi_top:
-            weights = 
-        elif include_top:
-            weights = 
+        ## if include_multi_top:
+        ##     weights = 
+        ## elif include_top:
+        ##     weights = 
             
-        model.load_weights(weights)
+        ## model.load_weights(weights)
 
     return model
 
