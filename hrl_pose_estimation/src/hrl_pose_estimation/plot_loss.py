@@ -141,9 +141,9 @@ class DataVisualizer():
             if self.subject == 1:
 
                 plt.plot(train_val_loss_desk['epoch_armsup_700e_1'], train_val_loss_desk['val_armsup_700e_1'], 'k',label='Raw Pressure Map Input')
-                #plt.plot(train_val_loss['epoch_sitting_flip_700e_4'], train_val_loss['val_sitting_flip_700e_4'], 'c',label='Synthetic Flipping: $Pr(X=flip)=0.5$')
+                plt.plot(train_val_loss['epoch_sitting_flip_700e_4'], train_val_loss['val_sitting_flip_700e_4'], 'c',label='Synthetic Flipping: $Pr(X=flip)=0.5$')
                 #plt.plot(train_val_loss_desk['epoch_armsup_flip_shift_scale10_700e_1'],train_val_loss_desk['val_armsup_flip_shift_scale10_700e_1'], 'g',label='Synthetic Flipping+Shifting: $X,Y \sim N(\mu,\sigma), \mu = 0 cm, \sigma \~= 9 cm$')
-                plt.plot(train_val_loss_desk['epoch_armsup_flip_shift_scale5_nd_nohome_700e_1'],train_val_loss_desk['val_armsup_flip_shift_scale5_nd_nohome_700e_1'], 'y', label='Synthetic Flipping+Shifting+Scaling: $S_C \sim N(\mu,\sigma), \mu = 1, \sigma \~= 1.02$')
+                #plt.plot(train_val_loss_desk['epoch_armsup_flip_shift_scale5_nd_nohome_700e_1'],train_val_loss_desk['val_armsup_flip_shift_scale5_nd_nohome_700e_1'], 'y', label='Synthetic Flipping+Shifting+Scaling: $S_C \sim N(\mu,\sigma), \mu = 1, \sigma \~= 1.02$')
                 plt.legend()
                 plt.ylabel('Mean squared error loss over 30 joint vectors')
                 plt.xlabel('Epochs, where 700 epochs ~ 4 hours')
@@ -201,8 +201,8 @@ class DataVisualizer():
         if self.opt.computer == 'aws':
             self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p')
         else:
-            #self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p')
-            self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll.p')
+            self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p')
+            #self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll.p')
             #self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainval_sit175rlh_sit120rll.p')
 
         test_dat = self.validation_set
@@ -245,7 +245,7 @@ class DataVisualizer():
 
         print len(self.validation_set), 'size of validation set'
         batch_size = 1
-        generate_confidence = True
+        generate_confidence = False
         self.test_dataset = torch.utils.data.TensorDataset(self.test_x_tensor, self.test_y_tensor)
         self.test_loader = torch.utils.data.DataLoader(self.test_dataset, batch_size, shuffle=True)
 
@@ -330,130 +330,109 @@ class DataVisualizer():
             if self.loss_vector_type == 'angles' and self.opt.mltype == 'convnet':
 
 
-                count2 = 0
                 cum_error = []
                 limbArray = None
 
                 if generate_confidence == True:
-                    limit = 2000
+                    limit = 20
                 else:
                     limit = 1
+
+
+                if generate_confidence == True:
+                    batch0 = batch[0].clone()
+                    batch1 = batch[1].clone()
+                    batch0, batch1,_ = SyntheticLib().synthetic_master(batch0, batch1,flip=False, shift=False, scale=False,bedangle=True, include_inter=self.include_inter, loss_vector_type=self.loss_vector_type)
+                    batch0 = batch0.expand(limit, 3, 84, 47)
+                    batch1 = batch1.expand(limit, 30)
+
+                else:
+                    batch0 = batch[0].clone()
+                    batch1 = batch[1].clone()
+
+                print batch0.size()
+                print batch1.size(), 'size'
+
+                images_up = batch0.numpy()
+                images_up = images_up[:, :, 10:74, 10:37]
+                images_up = PreprocessingLib().preprocessing_pressure_map_upsample(images_up)
+                images_up = np.array(images_up)
+                #images_up = PreprocessingLib().preprocessing_add_image_noise(images_up)
+                images_up = Variable(torch.Tensor(images_up), volatile = True, requires_grad=False)
+                #print images_up.size()
+
+                images, targets, constraints = Variable(batch0, volatile = True, requires_grad=False), Variable(batch1, volatile = True, requires_grad=False), Variable(batch[2], volatile = True, requires_grad=False)
+
+                _, targets_est, angles_est, lengths_est, pseudotargets_est = model_kin.forward_kinematic_jacobian(images_up, targets, constraints, forward_only = True)
+
+                #print lengths_est, 'lengths'
+                #print targets_est
+
+                bed_distances = KinematicsLib().get_bed_distance(images, targets)
+
+
+                targets = targets.data
+
+                error_norm, error_avg, error_avg_std = VisualizationLib().print_error(targets, targets_est, self.output_size, self.loss_vector_type, data=str(self.count), printerror =  True)
+                error_norm = error_norm/1000
+
+                #print 'blah'
+                if generate_confidence == True:
+                    print batch_idx #angles_est
+                    cum_error.append(error_norm[0])
+                    #cum_distance=bed_distances[0]*50
+
+                    try:
+                        cum_distance = torch.cat((cum_distance, (targets_est - targets)), 0)
+                        cum_angles = torch.cat((cum_angles, angles_est), 0)
+                    except:
+                        cum_distance = (targets_est - targets)
+                        cum_angles = angles_est.clone()
+                        #cum_distance = cum_distance.unsqueeze(0)
+
+                    try:
+                        error_avg_list.append(error_avg)
+                        error_std_list.append(error_avg_std)
+                    except:
+                        error_avg_list = []
+                        error_std_list = []
+
+
+                count2 = 0
                 while count2 < limit:
-                    count2 += 1
-
-
-                    if generate_confidence == True:
-                        batch0 = batch[0].clone()
-                        batch1 = batch[1].clone()
-                        batch0, batch1,_ = SyntheticLib().synthetic_master(batch0, batch1,flip=False, shift=False, scale=False,bedangle=True, include_inter=self.include_inter, loss_vector_type=self.loss_vector_type)
-                    else:
-                        batch0 = batch[0].clone()
-                        batch1 = batch[1].clone()
-
-                    images_up = batch0.numpy()
-                    images_up = images_up[:, :, 10:74, 10:37]
-                    images_up = PreprocessingLib().preprocessing_pressure_map_upsample(images_up)
-                    images_up = np.array(images_up)
-                    #images_up = PreprocessingLib().preprocessing_add_image_noise(images_up)
-                    images_up = Variable(torch.Tensor(images_up), volatile = True, requires_grad=False)
-                    #print images_up.size()
-
-                    images, targets, constraints = Variable(batch0, volatile = True, requires_grad=False), Variable(batch1, volatile = True, requires_grad=False), Variable(batch[2], volatile = True, requires_grad=False)
-
-                    _, targets_est, angles_est, lengths_est, pseudotargets_est = model_kin.forward_kinematic_jacobian(images_up, targets, constraints, forward_only = True)
-
-                    #print lengths_est, 'lengths'
-                    #print targets_est
-
-                    bed_distances = KinematicsLib().get_bed_distance(images, targets)
-
-
-                    targets = targets.data
-
-                    error_norm = VisualizationLib().print_error(targets, targets_est, self.output_size, self.loss_vector_type, data=str(self.count), printerror =  True)/1000
-
-                    if generate_confidence == True:
-                        print batch_idx #angles_est
-                        cum_error.append(error_norm[0])
-                        #cum_distance=bed_distances[0]*50
-
-                        try:
-                            cum_distance = torch.cat((cum_distance, (targets_est - targets)), 0)
-                            cum_angles = torch.cat((cum_angles, angles_est), 0)
-                        except:
-                            cum_distance = (targets_est - targets)
-                            cum_angles = angles_est.clone()
-                            #cum_distance = cum_distance.unsqueeze(0)
-
 
                     self.im_sample = batch0.numpy()
-                    self.im_sample = np.squeeze(self.im_sample[0, :])
+                    self.im_sample = np.squeeze(self.im_sample[count2, :])
                     self.tar_sample = targets
-                    self.tar_sample = np.squeeze(self.tar_sample[0, :]) / 1000
+                    self.tar_sample = np.squeeze(self.tar_sample[count2, :]) / 1000
                     self.sc_sample = targets_est
-                    self.sc_sample = np.squeeze(self.sc_sample[0, :]) / 1000
+                    self.sc_sample = np.squeeze(self.sc_sample[count2, :]) / 1000
                     self.sc_sample = np.reshape(self.sc_sample, self.output_size)
                     self.pseudo_sample = pseudotargets_est
-                    self.pseudo_sample = np.squeeze(self.pseudo_sample[0, :]) / 1000
+                    self.pseudo_sample = np.squeeze(self.pseudo_sample[count2, :]) / 1000
                     self.pseudo_sample = np.reshape(self.pseudo_sample, (5, 3))
 
 
-                    if False:#self.opt.visualize == True:
+                    if self.opt.visualize == True:
                         if count2 <= 1: VisualizationLib().rviz_publish_input(self.im_sample[0, :, :]*1.3, self.im_sample[-1, 10, 10])
                         #else: VisualizationLib().rviz_publish_input(self.im_sample[1, :, :]/2, self.im_sample[-1, 10, 10])
 
                         VisualizationLib().rviz_publish_output(np.reshape(self.tar_sample, self.output_size), self.sc_sample, self.pseudo_sample)
                         limbArray = VisualizationLib().rviz_publish_output_limbs(np.reshape(self.tar_sample, self.output_size), self.sc_sample, self.pseudo_sample, LimbArray=limbArray, count = count2)
 
-                        skip_image = VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample,block=False, title = 'Kinematic Embedding')
+                        skip_image = VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample,block=True, title = 'Kinematic Embedding')
                         #VisualizationLib().visualize_error_from_distance(bed_distances, error_norm)
                         if skip_image == 1:
-                            count2 = 20
+                            count2 = limit
+
+                    count2 += 1
 
                 if generate_confidence == True:
-                    print cum_distance.size()
                     cum_distance = np.array(cum_distance)
                     mean_distance = np.mean(cum_distance, axis = 0)
 
 
                     cum_distance = np.reshape(cum_distance, (cum_distance.shape[0], 10, 3))
-
-                    dist_distribution = np.copy(cum_distance[:,:,0])
-                    for i in range(cum_distance.shape[0]):
-                        dist_distribution[i,:] = np.linalg.norm(cum_distance[i,:,:],axis = 1)
-
-                    VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample,block=True, title='Kinematic Embedding')
-                    print dist_distribution.shape, 'distribution'
-                    plt.hist(dist_distribution[:,4], bins='auto')
-                    print ss.shapiro(dist_distribution[:,4]),'Euclidean'
-                    plt.show()
-
-                    plt.hist(cum_distance[:, 4, 0], bins = 'auto')
-                    print ss.shapiro(cum_distance[:, 4, 0]),'x'
-                    plt.show()
-                    plt.hist(cum_distance[:, 4, 1], bins = 'auto')
-                    print ss.shapiro(cum_distance[:, 4, 1]),'y'
-                    plt.show()
-                    plt.hist(cum_distance[:, 4, 2], bins = 'auto')
-                    print ss.shapiro(cum_distance[:, 4, 2]),'z'
-                    plt.show()
-
-                    cum_angles = np.squeeze(np.array(cum_angles.data))
-                    print cum_angles.shape
-                    print cum_angles[:,0]
-                    plt.hist(cum_angles[:,0], bins='auto')
-                    print ss.shapiro(cum_angles[:,0]),'roll'
-                    plt.show()
-                    plt.hist(cum_angles[:,2], bins='auto')
-                    print ss.shapiro(cum_angles[:,2]),'pitch'
-                    plt.show()
-                    plt.hist(cum_angles[:,4], bins='auto')
-                    print ss.shapiro(cum_angles[:,4]),'yaw'
-                    plt.show()
-                    plt.hist(cum_angles[:,6], bins='auto')
-                    print ss.shapiro(cum_angles[:,6]),'elbow'
-                    plt.show()
-
 
 
                     mean_distance = np.reshape(mean_distance, (10, 3))
@@ -482,6 +461,9 @@ class DataVisualizer():
                     self.y5.append(error[5])
                     print batch_idx
                     if batch_idx > 200:
+
+                        VisualizationLib().visualize_variance_threshold(error_avg_list, error_std_list)
+
                         xlim = [0, 20]
                         ylim = [0, 60]
                         fig = plt.figure()
@@ -594,27 +576,6 @@ class DataVisualizer():
 
                     cum_distance = np.reshape(cum_distance, (cum_distance.shape[0], 10, 3))
 
-                    dist_distribution = np.copy(cum_distance[:, :, 0])
-                    for i in range(cum_distance.shape[0]):
-                        dist_distribution[i, :] = np.linalg.norm(cum_distance[i, :, :], axis=1)
-
-                    VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample,
-                                                              block=True, title='Kinematic Embedding')
-                    print dist_distribution.shape, 'distribution'
-                    plt.hist(dist_distribution[:, 4], bins='auto')
-                    print ss.shapiro(dist_distribution[:, 4]), 'Euclidean'
-                    plt.show()
-
-                    plt.hist(cum_distance[:, 4, 0], bins='auto')
-                    print ss.shapiro(cum_distance[:, 4, 0]), 'x'
-                    plt.show()
-                    plt.hist(cum_distance[:, 4, 1], bins='auto')
-                    print ss.shapiro(cum_distance[:, 4, 1]), 'y'
-                    plt.show()
-                    plt.hist(cum_distance[:, 4, 2], bins='auto')
-                    print ss.shapiro(cum_distance[:, 4, 2]), 'z'
-                    plt.show()
-
                     mean_distance = np.reshape(mean_distance, (10, 3))
                     std_distance = 0.
                     for point in np.arange(cum_distance.shape[0]):
@@ -685,6 +646,7 @@ class DataVisualizer():
                     self.sc_sample = np.reshape(self.sc_sample, self.output_size)
                     if self.opt.visualize == True:
                         VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample,block=True, title = 'Kernel Ridge')
+
 
         return
 

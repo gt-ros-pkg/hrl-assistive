@@ -57,7 +57,6 @@ HIGH_TAXEL_THRESH_Y = (NUMOFTAXELS_Y - 1)
 
 class VisualizationLib():
 
-
     def print_error(self, target, score, output_size, loss_vector_type = None, data = None, printerror = True):
 
         error = (score - target)
@@ -66,63 +65,73 @@ class VisualizationLib():
         error = np.concatenate((error, error_norm), axis = 2)
 
         error_avg = np.mean(error, axis=0) / 10
-        for i in error_avg[:, 3]*10:
-            print i
+
+        #for i in error_avg[:, 3]*10:
+        #    print i
+
         error_avg = np.reshape(error_avg, (output_size[0], output_size[1]+1))
-        error_avg = np.reshape(np.array(["%.2f" % w for w in error_avg.reshape(error_avg.size)]),
+        error_avg_print = np.reshape(np.array(["%.2f" % w for w in error_avg.reshape(error_avg.size)]),
                                      (output_size[0], output_size[1] + 1))
 
 
-
         if loss_vector_type == 'upper_angles':
-            error_avg = np.transpose(np.concatenate(([['Average Error for Last Batch', '       ', ' Head  ', ' Torso ', 'R Elbow', 'L Elbow',
+            error_avg_print = np.transpose(np.concatenate(([['Average Error for Last Batch', '       ', ' Head  ', ' Torso ', 'R Elbow', 'L Elbow',
                                                        'R Hand ', 'L Hand ']], np.transpose(
-                np.concatenate(([['', '', '', ''], [' x, cm ', ' y, cm ', ' z, cm ', '  norm ']], error_avg))))))
+                np.concatenate(([['', '', '', ''], [' x, cm ', ' y, cm ', ' z, cm ', '  norm ']], error_avg_print))))))
         elif loss_vector_type == 'direct' or loss_vector_type == 'angles':
-            error_avg = np.transpose(np.concatenate(([['Average Error for Last Batch', '       ', 'Head   ',
+            error_avg_print = np.transpose(np.concatenate(([['Average Error for Last Batch', '       ', 'Head   ',
                                                        'Torso  ', 'R Elbow', 'L Elbow', 'R Hand ', 'L Hand ',
                                                        'R Knee ', 'L Knee ', 'R Foot ', 'L Foot ']], np.transpose(
-                np.concatenate(([['', '', '', ''], [' x, cm ', ' y, cm ', ' z, cm ', '  norm ']], error_avg))))))
+                np.concatenate(([['', '', '', ''], [' x, cm ', ' y, cm ', ' z, cm ', '  norm ']], error_avg_print))))))
         elif loss_vector_type == 'arms_cascade':
-            error_avg = np.transpose(np.concatenate(([['Average Error for Last Batch', '       ', 'R Elbow', 'R Hand ']], np.transpose(
-                np.concatenate(([['', '', '', ''], [' x, cm ', ' y, cm ', ' z, cm ', '  norm ']], error_avg))))))
+            error_avg_print = np.transpose(np.concatenate(([['Average Error for Last Batch', '       ', 'R Elbow', 'R Hand ']], np.transpose(
+                np.concatenate(([['', '', '', ''], [' x, cm ', ' y, cm ', ' z, cm ', '  norm ']], error_avg_print))))))
         else:
-            error_avg = np.transpose(np.concatenate(([['Average Error for Last Batch', '       ', ' Torso ', 'R Elbow', 'L Elbow',
+            error_avg_print = np.transpose(np.concatenate(([['Average Error for Last Batch', '       ', ' Torso ', 'R Elbow', 'L Elbow',
                                   'R Hand ', 'L Hand ']], np.transpose(np.concatenate(
-                        ([['', '', '', ''], [' x, cm ', ' y, cm ', ' z, cm ', '  norm ']], error_avg))))))
+                        ([['', '', '', ''], [' x, cm ', ' y, cm ', ' z, cm ', '  norm ']], error_avg_print))))))
         if printerror == True:
-            print data, error_avg
+            print data, error_avg_print
 
 
         error_std = np.std(error, axis=0) / 10
-        for i in error_std[:, 3]*10:
-            print i
+
+        #for i in error_std[:, 3]*10:
+        #    print i
+
         error_std = np.reshape(error_std, (output_size[0], output_size[1] + 1))
-        error_std = np.reshape(np.array(["%.2f" % w for w in error_std.reshape(error_std.size)]),
+        error_std_print = np.reshape(np.array(["%.2f" % w for w in error_std.reshape(error_std.size)]),
                                      (output_size[0], output_size[1] + 1))
 
         if loss_vector_type == 'upper_angles':
-            error_std = np.transpose(np.concatenate(([['Error Standard Deviation for Last Batch', '       ', ' Head  ', ' Torso ', 'R Elbow',
+            error_std_print = np.transpose(np.concatenate(([['Error Standard Deviation for Last Batch', '       ', ' Head  ', ' Torso ', 'R Elbow',
                                                        'L Elbow', 'R Hand ', 'L Hand ']], np.transpose(
-                np.concatenate(([['', '', '',''], ['x, cm', 'y, cm', 'z, cm', '  norm ']], error_std))))))
+                np.concatenate(([['', '', '',''], ['x, cm', 'y, cm', 'z, cm', '  norm ']], error_std_print))))))
         elif loss_vector_type == 'direct' or loss_vector_type == 'angles':
-            error_std = np.transpose(np.concatenate(([['Error Standard Deviation for Last Batch', '       ', 'Head   ', 'Torso  ',
+            error_std_print = np.transpose(np.concatenate(([['Error Standard Deviation for Last Batch', '       ', 'Head   ', 'Torso  ',
                                   'R Elbow', 'L Elbow', 'R Hand ', 'L Hand ', 'R Knee ', 'L Knee ',
                                   'R Foot ', 'L Foot ']], np.transpose(
-                    np.concatenate(([['', '', '', ''], ['x, cm', 'y, cm', 'z, cm', '  norm ']], error_std))))))
+                    np.concatenate(([['', '', '', ''], ['x, cm', 'y, cm', 'z, cm', '  norm ']], error_std_print))))))
         elif loss_vector_type == 'arms_cascade':
-            error_std = np.transpose(
+            error_std_print = np.transpose(
                 np.concatenate(([['Error Standard Deviation for Last Batch', '       ', 'R Elbow', 'R Hand ']], np.transpose(
-                    np.concatenate(([['', '', '', ''], ['x, cm', 'y, cm', 'z, cm', '  norm ']], error_std))))))
+                    np.concatenate(([['', '', '', ''], ['x, cm', 'y, cm', 'z, cm', '  norm ']], error_std_print))))))
         else:
-            error_std = np.transpose(np.concatenate(([['Error Standard Deviation for Last Batch', '       ', ' Torso ', 'R Elbow',
+            error_std_print = np.transpose(np.concatenate(([['Error Standard Deviation for Last Batch', '       ', ' Torso ', 'R Elbow',
                                                        'L Elbow', 'R Hand ', 'L Hand ']], np.transpose(
-                np.concatenate(([['', '', '',''], ['x, cm', 'y, cm', 'z, cm', '  norm ']], error_std))))))
+                np.concatenate(([['', '', '',''], ['x, cm', 'y, cm', 'z, cm', '  norm ']], error_std_print))))))
         if printerror == True:
-            print data, error_std
+            print data, error_std_print
         error_norm = np.squeeze(error_norm, axis = 2)
-        return error_norm
 
+
+        #return error_avg[:,3], error_std[:,3]
+        return error_norm, error_avg[:,3], error_std[:,3]
+
+
+    def visualize_variance_threshold(self, error_avg, error_std):
+        error_avg = np.array(error_avg)
+        error_std = np.array(error_std)
 
     def visualize_error_from_distance(self, bed_distance, error_norm):
         plt.close()
