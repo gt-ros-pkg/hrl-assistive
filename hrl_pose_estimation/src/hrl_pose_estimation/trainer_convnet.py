@@ -123,9 +123,6 @@ class PhysicalTrainer():
             self.train_val_losses_all['epoch'+self.save_name + str(self.opt.leaveOut)] = []
 
 
-
-
-        # TODO:Write code for the dataset to store these vals
         self.mat_size = (NUMOFTAXELS_X, NUMOFTAXELS_Y)
         if self.loss_vector_type == 'upper_angles':
             self.output_size = (NUMOFOUTPUTNODES - 4, NUMOFOUTPUTDIMS)
@@ -133,8 +130,6 @@ class PhysicalTrainer():
             self.output_size = (NUMOFOUTPUTNODES, NUMOFOUTPUTDIMS)
         elif self.loss_vector_type == None:
             self.output_size = (NUMOFOUTPUTNODES - 5, NUMOFOUTPUTDIMS)
-
-
 
 
 
