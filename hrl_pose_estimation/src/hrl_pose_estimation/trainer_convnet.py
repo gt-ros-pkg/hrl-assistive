@@ -117,10 +117,10 @@ class PhysicalTrainer():
                 print 'starting anew'
 
         if self.opt.quick_test == False:
-            print 'appending to','train'+self.save_name+str(self.opt.leaveOut)
-            self.train_val_losses_all['train'+self.save_name+str(self.opt.leaveOut)] = []
-            self.train_val_losses_all['val'+self.save_name+str(self.opt.leaveOut)] = []
-            self.train_val_losses_all['epoch'+self.save_name + str(self.opt.leaveOut)] = []
+            print 'appending to','train'+self.save_name+str(self.opt.leave_out)
+            self.train_val_losses_all['train'+self.save_name+str(self.opt.leave_out)] = []
+            self.train_val_losses_all['val'+self.save_name+str(self.opt.leave_out)] = []
+            self.train_val_losses_all['epoch'+self.save_name + str(self.opt.leave_out)] = []
 
 
         self.mat_size = (NUMOFTAXELS_X, NUMOFTAXELS_Y)
@@ -197,7 +197,6 @@ class PhysicalTrainer():
             else:
                 self.train_y_flat.append(dat['markers_xyz_m'][entry] * 1000)
         self.train_y_tensor = torch.Tensor(self.train_y_flat)
-
 
 
         #load in the test file
@@ -325,15 +324,15 @@ class PhysicalTrainer():
 
             if self.opt.computer == 'lab_harddrive':
                 print 'saving to ', '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
-                    self.opt.leaveOut) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leaveOut) + '.p'
+                    self.opt.leave_out) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p'
                 pkl.dump(regr, open(
                     '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
-                        self.opt.leaveOut) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leaveOut) + '.p',
+                        self.opt.leave_out) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p',
                     'wb'))
                 print 'saved successfully'
             elif self.opt.computer == 'aws':
                 pkl.dump(regr, open('/home/ubuntu/Autobed_OFFICIAL_Trials/subject_' + str(
-                    self.opt.leaveOut) + '/HoG_' + baseline + '_p' + str(self.opt.leaveOut) + '.p', 'wb'))
+                    self.opt.leave_out) + '/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p', 'wb'))
                 print 'saved successfully'
 
 
@@ -347,15 +346,15 @@ class PhysicalTrainer():
 
             if self.opt.computer == 'lab_harddrive':
                 print 'saving to ', '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
-                    self.opt.leaveOut) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leaveOut) + '.p'
+                    self.opt.leave_out) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p'
                 pkl.dump(regr, open(
                     '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
-                        self.opt.leaveOut) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leaveOut) + '.p',
+                        self.opt.leave_out) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p',
                     'wb'))
                 print 'saved successfully'
             elif self.opt.computer == 'aws':
                 pkl.dump(regr, open('/home/ubuntu/Autobed_OFFICIAL_Trials/subject_' + str(
-                    self.opt.leaveOut) + '/HoG_' + baseline + '_p' + str(self.opt.leaveOut) + '.p', 'wb'))
+                    self.opt.leave_out) + '/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p', 'wb'))
                 print 'saved successfully'
 
 
@@ -371,15 +370,15 @@ class PhysicalTrainer():
 
             if self.opt.computer == 'lab_harddrive':
                 print 'saving to ', '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
-                    self.opt.leaveOut) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leaveOut) + '.p'
+                    self.opt.leave_out) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p'
                 pkl.dump(regr, open(
                     '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
-                        self.opt.leaveOut) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leaveOut) + '.p',
+                        self.opt.leave_out) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p',
                     'wb'))
                 print 'saved successfully'
             elif self.opt.computer == 'aws':
                 pkl.dump(regr, open('/home/ubuntu/Autobed_OFFICIAL_Trials/subject_' + str(
-                    self.opt.leaveOut) + '/HoG_' + baseline + '_p' + str(self.opt.leaveOut) + '.p', 'wb'))
+                    self.opt.leave_out) + '/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p', 'wb'))
                 print 'saved successfully'
 
 
@@ -493,7 +492,7 @@ class PhysicalTrainer():
             #we'll make a double pass through this network for the validation for each arm.
             fc_output_size = 4 #4 angles for arms
             self.model = convnet_cascade.CNN(self.mat_size, fc_output_size, hidden_dim, kernel_size, self.loss_vector_type)
-            self.model_cascade_prior = torch.load('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leaveOut) + '/p_files/convnet_2to8_alldata_angles_constrained_noise_115b_100e_4.pt')
+            self.model_cascade_prior = torch.load('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leave_out) + '/p_files/convnet_2to8_alldata_angles_constrained_noise_115b_100e_4.pt')
         elif self.loss_vector_type == 'direct' or self.loss_vector_type == 'confidence':
             fc_output_size = 30
             self.model = convnet.CNN(self.mat_size, fc_output_size, hidden_dim, kernel_size, self.loss_vector_type)
@@ -541,17 +540,17 @@ class PhysicalTrainer():
 
         if self.opt.quick_test == False:
             if self.opt.computer == 'lab_harddrive':
-                torch.save(self.model, '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_'+str(self.opt.leaveOut)+'/p_files/convnet'+self.save_name+'.pt')
+                torch.save(self.model, '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_'+str(self.opt.leave_out)+'/p_files/convnet'+self.save_name+'.pt')
                 pkl.dump(self.train_val_losses_all,
                          open(os.path.join('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/train_val_losses_all.p'), 'wb'))
 
             elif self.opt.computer == 'aws':
-                torch.save(self.model, '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_'+str(self.opt.leaveOut)+'/convnet'+self.save_name+'.pt')
+                torch.save(self.model, '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_'+str(self.opt.leave_out)+'/convnet'+self.save_name+'.pt')
                 pkl.dump(self.train_val_losses_all,
                          open(os.path.join('/home/ubuntu/Autobed_OFFICIAL_Trials/train_val_losses_all.p'), 'wb'))
 
             else:
-                torch.save(self.model, '/home/henryclever/hrl_file_server/Autobed/subject_'+str(self.opt.leaveOut)+'/p_files/convnet'+self.save_name+'.pt')
+                torch.save(self.model, '/home/henryclever/hrl_file_server/Autobed/subject_'+str(self.opt.leave_out)+'/p_files/convnet'+self.save_name+'.pt')
                 pkl.dump(self.train_val_losses_all,
                          open(os.path.join('/home/henryclever/hrl_file_server/Autobed/train_val_losses_all.p'), 'wb'))
 
@@ -603,15 +602,14 @@ class PhysicalTrainer():
                 scores_zeros = Variable(torch.Tensor(scores_zeros).type(dtype))
                 scores_zeros[:, 10:27] = constraints[:, 18:35]/50 #divide by 100 for direct output. divide by 10 if you multiply the estimate length by 10.
 
-
-                scores, targets_est, angles_est, lengths_est, _ = self.model.forward_kinematic_jacobian(images_up, targets, constraints) # scores is a variable with 27 for 10 euclidean errors and 17 lengths in meters. targets est is a numpy array in mm.
+                scores, targets_est, angles_est, lengths_est, _ = self.model.forward_kinematic_jacobian(images_up, targets, constraints, prior_cascade = None, forward_only = False, subject = self.opt.leave_out) # scores is a variable with 27 for 10 euclidean errors and 17 lengths in meters. targets est is a numpy array in mm.
                 #print lengths_est[0,0:10], 'lengths est'
                 #print batch[0][0,2,10,10], 'angle'
 
                 #print scores_zeros[0, :]
 
                 self.criterion = nn.L1Loss()
-                loss = self.criterion(scores, scores_zeros)
+                loss = self.criterion(scores[:, 0:10], scores_zeros[:, 0:10])
 
 
             elif self.loss_vector_type == 'direct':
@@ -671,9 +669,9 @@ class PhysicalTrainer():
 
                 print 'appending to alldata losses'
                 if self.opt.quick_test == False:
-                    self.train_val_losses_all['train'+self.save_name + str(self.opt.leaveOut)].append(train_loss)
-                    self.train_val_losses_all['val'+self.save_name + str(self.opt.leaveOut)].append(val_loss)
-                    self.train_val_losses_all['epoch'+self.save_name + str(self.opt.leaveOut)].append(epoch)
+                    self.train_val_losses_all['train'+self.save_name + str(self.opt.leave_out)].append(train_loss)
+                    self.train_val_losses_all['val'+self.save_name + str(self.opt.leave_out)].append(val_loss)
+                    self.train_val_losses_all['epoch'+self.save_name + str(self.opt.leave_out)].append(epoch)
 
 
 
@@ -711,7 +709,7 @@ class PhysicalTrainer():
                 scores_zeros = Variable(torch.Tensor(scores_zeros).type(dtype))
                 scores_zeros[:, 10:27] = constraints[:, 18:35]/50
 
-                scores, targets_est, angles_est, lengths_est, _ = self.model.forward_kinematic_jacobian(images_up, targets, constraints)
+                scores, targets_est, angles_est, lengths_est, _ = self.model.forward_kinematic_jacobian(images_up, targets, prior_cascade = None, forward_only = False, subject = self.opt.leave_out)
 
 
                 self.criterion = nn.L1Loss()
@@ -777,7 +775,7 @@ if __name__ == "__main__":
                  default='/home/henryclever/hrl_file_server/Autobed/pose_estimation_data/basic_train_dataset.p', \
                  help='Specify path to the training database.')
     p.add_option('--leave_out', action='store', type=int, \
-                 dest='leaveOut', \
+                 dest='leave_out', \
                  help='Specify which subject to leave out for validation')
     p.add_option('--only_test','--t',  action='store_true', dest='only_test',
                  default=False, help='Whether you want only testing of previously stored model')
@@ -895,7 +893,7 @@ if __name__ == "__main__":
 
     test_database_file = []
     training_database_file = []
-    if opt.leaveOut == 4:
+    if opt.leave_out == 4:
         test_database_file.append(opt.subject4Path)
         #training_database_file.append(opt.subject1Path)
         if opt.quick_test == True:
@@ -918,7 +916,7 @@ if __name__ == "__main__":
             #training_database_file.append(opt.subject17Path)
             #training_database_file.append(opt.subject18Path)
 
-    elif opt.leaveOut == 1:
+    elif opt.leave_out == 1:
         test_database_file.append(opt.subject1Path)
         training_database_file.append(opt.subject2Path)
         training_database_file.append(opt.subject3Path)
@@ -928,7 +926,7 @@ if __name__ == "__main__":
         training_database_file.append(opt.subject7Path)
         training_database_file.append(opt.subject8Path)
 
-    elif opt.leaveOut == 2:
+    elif opt.leave_out == 2:
         test_database_file.append(opt.subject2Path)
         training_database_file.append(opt.subject1Path)
         training_database_file.append(opt.subject3Path)
@@ -938,7 +936,7 @@ if __name__ == "__main__":
         training_database_file.append(opt.subject7Path)
         training_database_file.append(opt.subject8Path)
 
-    elif opt.leaveOut == 9:
+    elif opt.leave_out == 9:
         test_database_file.append(opt.subject9Path)
         test_database_file.append(opt.subject9PathB)
         training_database_file.append(opt.subject10Path)
@@ -959,7 +957,7 @@ if __name__ == "__main__":
         training_database_file.append(opt.subject16PathB)
         training_database_file.append(opt.subject17PathB)
         training_database_file.append(opt.subject18PathB)
-    elif opt.leaveOut == 10:
+    elif opt.leave_out == 10:
         test_database_file.append(opt.subject10Path)
         test_database_file.append(opt.subject10PathB)
         training_database_file.append(opt.subject9Path)
@@ -980,7 +978,7 @@ if __name__ == "__main__":
         training_database_file.append(opt.subject16PathB)
         training_database_file.append(opt.subject17PathB)
         training_database_file.append(opt.subject18PathB)
-    elif opt.leaveOut == 11:
+    elif opt.leave_out == 11:
         test_database_file.append(opt.subject11Path)
         test_database_file.append(opt.subject11PathB)
         training_database_file.append(opt.subject9Path)
@@ -1001,7 +999,7 @@ if __name__ == "__main__":
         training_database_file.append(opt.subject16PathB)
         training_database_file.append(opt.subject17PathB)
         training_database_file.append(opt.subject18PathB)
-    elif opt.leaveOut == 12:
+    elif opt.leave_out == 12:
         test_database_file.append(opt.subject12Path)
         test_database_file.append(opt.subject12PathB)
         training_database_file.append(opt.subject9Path)
@@ -1022,7 +1020,7 @@ if __name__ == "__main__":
         training_database_file.append(opt.subject16PathB)
         training_database_file.append(opt.subject17PathB)
         training_database_file.append(opt.subject18PathB)
-    elif opt.leaveOut == 13:
+    elif opt.leave_out == 13:
         test_database_file.append(opt.subject13Path)
         test_database_file.append(opt.subject13PathB)
         training_database_file.append(opt.subject9Path)
@@ -1043,7 +1041,7 @@ if __name__ == "__main__":
         training_database_file.append(opt.subject16PathB)
         training_database_file.append(opt.subject17PathB)
         training_database_file.append(opt.subject18PathB)
-    elif opt.leaveOut == 14:
+    elif opt.leave_out == 14:
         test_database_file.append(opt.subject14Path)
         test_database_file.append(opt.subject14PathB)
         training_database_file.append(opt.subject9Path)
@@ -1064,7 +1062,7 @@ if __name__ == "__main__":
         training_database_file.append(opt.subject16PathB)
         training_database_file.append(opt.subject17PathB)
         training_database_file.append(opt.subject18PathB)
-    elif opt.leaveOut == 15:
+    elif opt.leave_out == 15:
         test_database_file.append(opt.subject15Path)
         test_database_file.append(opt.subject15PathB)
         training_database_file.append(opt.subject9Path)
@@ -1085,7 +1083,7 @@ if __name__ == "__main__":
         training_database_file.append(opt.subject16PathB)
         training_database_file.append(opt.subject17PathB)
         training_database_file.append(opt.subject18PathB)
-    elif opt.leaveOut == 16:
+    elif opt.leave_out == 16:
         test_database_file.append(opt.subject16Path)
         test_database_file.append(opt.subject16PathB)
         training_database_file.append(opt.subject9Path)
@@ -1106,7 +1104,7 @@ if __name__ == "__main__":
         training_database_file.append(opt.subject15PathB)
         training_database_file.append(opt.subject17PathB)
         training_database_file.append(opt.subject18PathB)
-    elif opt.leaveOut == 17:
+    elif opt.leave_out == 17:
         test_database_file.append(opt.subject17Path)
         test_database_file.append(opt.subject17PathB)
         training_database_file.append(opt.subject9Path)
@@ -1127,7 +1125,7 @@ if __name__ == "__main__":
         training_database_file.append(opt.subject15PathB)
         training_database_file.append(opt.subject16PathB)
         training_database_file.append(opt.subject18PathB)
-    elif opt.leaveOut == 18:
+    elif opt.leave_out == 18:
         test_database_file.append(opt.subject18Path)
         test_database_file.append(opt.subject18PathB)
         training_database_file.append(opt.subject9Path)

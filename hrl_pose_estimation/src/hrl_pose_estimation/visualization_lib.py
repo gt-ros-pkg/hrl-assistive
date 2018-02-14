@@ -66,8 +66,8 @@ class VisualizationLib():
 
         error_avg = np.mean(error, axis=0) / 10
 
-        #for i in error_avg[:, 3]*10:
-        #    print i
+        for i in error_avg[:, 3]*10:
+            print i
 
         error_avg = np.reshape(error_avg, (output_size[0], output_size[1]+1))
         error_avg_print = np.reshape(np.array(["%.2f" % w for w in error_avg.reshape(error_avg.size)]),
@@ -96,8 +96,8 @@ class VisualizationLib():
 
         error_std = np.std(error, axis=0) / 10
 
-        #for i in error_std[:, 3]*10:
-        #    print i
+        for i in error_std[:, 3]*10:
+            print i
 
         error_std = np.reshape(error_std, (output_size[0], output_size[1] + 1))
         error_std_print = np.reshape(np.array(["%.2f" % w for w in error_std.reshape(error_std.size)]),
@@ -124,14 +124,9 @@ class VisualizationLib():
             print data, error_std_print
         error_norm = np.squeeze(error_norm, axis = 2)
 
-
         #return error_avg[:,3], error_std[:,3]
         return error_norm, error_avg[:,3], error_std[:,3]
 
-
-    def visualize_variance_threshold(self, error_avg, error_std):
-        error_avg = np.array(error_avg)
-        error_std = np.array(error_std)
 
     def visualize_error_from_distance(self, bed_distance, error_norm):
         plt.close()

@@ -464,8 +464,7 @@ class CNN(nn.Module):
 
 
 
-    def forward_kinematic_jacobian(self, images, targets, kincons=None, prior_cascade = None, forward_only = False):
-
+    def forward_kinematic_jacobian(self, images, targets, kincons=None, prior_cascade = None, forward_only = False, subject = None):
         scores = None
         targets_est = None
         lengths_est = None
@@ -477,7 +476,7 @@ class CNN(nn.Module):
         # ''' # NOTE: Uncomment
         # This combines the height, width, and filters into a single dimension
         scores_cnn = scores_cnn.view(images.size(0),scores_size[1] *scores_size[2]*scores_size[3] )
-        print 'size for fc layer:', scores_cnn.size()
+        #print 'size for fc layer:', scores_cnn.size()
 
 
         scores = self.CNN_fc1(scores_cnn)
@@ -497,7 +496,7 @@ class CNN(nn.Module):
             kincons = kincons / 100
 
 
-        scores, angles_est, pseudotargets_est = KinematicsLib().forward_kinematics_pytorch(images, scores, targets, self.loss_vector_type, kincons, prior_cascade = prior_cascade, forward_only = forward_only)
+        scores, angles_est, pseudotargets_est = KinematicsLib().forward_kinematics_pytorch(images, scores, targets, self.loss_vector_type, kincons, prior_cascade = prior_cascade, forward_only = forward_only, subject = subject)
 
 
         #print scores.size(), ''
