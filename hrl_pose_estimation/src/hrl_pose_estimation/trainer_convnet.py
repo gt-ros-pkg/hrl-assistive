@@ -118,6 +118,7 @@ class PhysicalTrainer():
 
         if self.opt.quick_test == False:
             print 'appending to','train'+self.save_name+str(self.opt.leave_out)
+            self.train_val_losse_all = {}
             self.train_val_losses_all['train'+self.save_name+str(self.opt.leave_out)] = []
             self.train_val_losses_all['val'+self.save_name+str(self.opt.leave_out)] = []
             self.train_val_losses_all['epoch'+self.save_name + str(self.opt.leave_out)] = []
