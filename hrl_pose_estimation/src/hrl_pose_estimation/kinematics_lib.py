@@ -442,10 +442,10 @@ class KinematicsLib():
                 torso_lengths_angles_v[:, 39] = torch.add(torso_lengths_angles_v[:, 39], 0.1)
 
 
-                torso_lengths_angles = Variable(torso_lengths_angles_v.data)
+                torso_lengths_angles = Variable(torso_lengths_angles_v.data.clone())
                 if True:  # add this bit for constant bone lengths
                     # if subject is not None:
-                    torso_lengths_angles = torso_lengths_angles.data.clone()
+                    torso_lengths_angles = torso_lengths_angles.data
                     print subject, 'CONSTANT BONE LENGTHS, SUBJECT ', str(subject)
                     if subject == 9:
                         torso_lengths_angles[:, 20:37] = torch.Tensor(
