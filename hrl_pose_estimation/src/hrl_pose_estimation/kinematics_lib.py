@@ -379,7 +379,7 @@ class KinematicsLib():
                 torso_lengths_angles = Variable(torso_lengths_angles_v.data)
 
 
-                if False: #add this bit for constant bone lengths
+                if True: #add this bit for constant bone lengths
                     #if subject is not None:
                     torso_lengths_angles = torso_lengths_angles.data.clone()
                     print subject, 'CONSTANT BONE LENGTHS, SUBJECT ',str(subject)
