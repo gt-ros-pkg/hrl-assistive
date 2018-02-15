@@ -88,7 +88,7 @@ class PhysicalTrainer():
         self.verbose = opt.verbose
         self.opt = opt
         self.batch_size = 128
-        self.num_epochs = 200
+        self.num_epochs = 140
         self.include_inter = True
 
         self.count = 0
@@ -574,6 +574,7 @@ class PhysicalTrainer():
                 # append upper joint angles, lower joint angles, upper joint lengths, lower joint lengths, in that order
                 batch.append(torch.cat((batch[1][:,39:49], batch[1][:, 57:65], batch[1][:, 30:39], batch[1][:, 49:57]), dim = 1))
 
+
                 #get the whole body x y z
                 batch[1] = batch[1][:, 0:30]
 
@@ -600,7 +601,7 @@ class PhysicalTrainer():
 
                 scores_zeros = np.zeros((batch[0].numpy().shape[0], 27)) #27 is  10 euclidean errors and 17 joint lengths
                 scores_zeros = Variable(torch.Tensor(scores_zeros).type(dtype))
-                scores_zeros[:, 10:27] = constraints[:, 18:35]/50 #divide by 100 for direct output. divide by 10 if you multiply the estimate length by 10.
+                scores_zeros[:, 10:27] = constraints[:, 18:35]/100 #divide by 100 for direct output. divide by 10 if you multiply the estimate length by 10.
 
                 scores, targets_est, angles_est, lengths_est, _ = self.model.forward_kinematic_jacobian(images_up, targets, constraints, prior_cascade = None, forward_only = False, subject = self.opt.leave_out) # scores is a variable with 27 for 10 euclidean errors and 17 lengths in meters. targets est is a numpy array in mm.
                 #print lengths_est[0,0:10], 'lengths est'
@@ -609,7 +610,11 @@ class PhysicalTrainer():
                 #print scores_zeros[0, :]
 
                 self.criterion = nn.L1Loss()
-                loss = self.criterion(scores[:, 0:10], scores_zeros[:, 0:10])
+
+                if epoch < 4:
+                    loss = self.criterion(scores, scores_zeros)
+                else:
+                    loss = self.criterion(scores[0:10], scores_zeros[0:10])
 
 
             elif self.loss_vector_type == 'direct':
@@ -707,7 +712,7 @@ class PhysicalTrainer():
 
                 scores_zeros = np.zeros((batch[0].numpy().shape[0], 27))
                 scores_zeros = Variable(torch.Tensor(scores_zeros).type(dtype))
-                scores_zeros[:, 10:27] = constraints[:, 18:35]/50
+                scores_zeros[:, 10:27] = constraints[:, 18:35]/100
 
                 scores, targets_est, angles_est, lengths_est, _ = self.model.forward_kinematic_jacobian(images_up, targets, prior_cascade = None, forward_only = False, subject = self.opt.leave_out)
 

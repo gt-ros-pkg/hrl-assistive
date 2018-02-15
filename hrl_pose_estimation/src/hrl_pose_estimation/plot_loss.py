@@ -202,8 +202,8 @@ class DataVisualizer():
             self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p')
         else:
             #self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p')
-            #self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll.p')
-            self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainval_sit175rlh_sit120rll.p')
+            self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll.p')
+            #self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainval_sit175rlh_sit120rll.p')
 
         test_dat = self.validation_set
         for key in test_dat:
@@ -244,8 +244,8 @@ class DataVisualizer():
 
 
         print len(self.validation_set), 'size of validation set'
-        batch_size = 1
-        generate_confidence = True
+        batch_size = 1670
+        generate_confidence = False
         self.test_dataset = torch.utils.data.TensorDataset(self.test_x_tensor, self.test_y_tensor)
         self.test_loader = torch.utils.data.DataLoader(self.test_dataset, batch_size, shuffle=True)
 
@@ -259,7 +259,7 @@ class DataVisualizer():
             if self.opt.computer == 'aws':
                 model_kin = torch.load(self.dump_path + '/subject_' + str(self.subject) + '/convnet_2to8_angles128b_200e_' + str(self.subject) + '.pt')
             else:
-                model_kin = torch.load(self.dump_path + '/subject_' + str(self.subject) + '/p_files/convnet_2to8_angles128b_200e_' + str(self.subject) + '.pt', map_location=lambda storage, loc: storage)
+                model_kin = torch.load(self.dump_path + '/subject_' + str(self.subject) + '/p_files/convnet_2to8_angles128b_200e_cL_' + str(self.subject) + '.pt', map_location=lambda storage, loc: storage)
             pp = 0
             for p in list(model_kin.parameters()):
                 nn = 1
@@ -363,7 +363,7 @@ class DataVisualizer():
 
                 images, targets, constraints = Variable(batch0, volatile = True, requires_grad=False), Variable(batch1, volatile = True, requires_grad=False), Variable(batch[2], volatile = True, requires_grad=False)
 
-                _, targets_est, angles_est, lengths_est, pseudotargets_est = model_kin.forward_kinematic_jacobian(images_up, targets, constraints, forward_only = True)
+                _, targets_est, angles_est, lengths_est, pseudotargets_est = model_kin.forward_kinematic_jacobian(images_up, targets, constraints, prior_cascade = None, forward_only = True, subject = self.opt.leave_out)
 
                 #print lengths_est, 'lengths'
                 #print targets_est
@@ -400,6 +400,7 @@ class DataVisualizer():
 
                 count2 = 0
                 while count2 < limit:
+                    print angles_est[0,:]
 
                     self.im_sample = batch0.numpy()
                     self.im_sample = np.squeeze(self.im_sample[count2, :])

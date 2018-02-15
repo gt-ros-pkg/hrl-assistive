@@ -685,6 +685,8 @@ class DatabaseCreator():
         #for subject in [16]:#13, 14, 15, 16, 17, 18]:
 
             self.final_dataset = {}
+            self.final_dataset['joint_lengths_L_m'] = []
+
             self.final_dataset['images'] = []
             self.final_dataset['markers_xyz_m'] = []
             self.final_dataset['pseudomarkers_xyz_m'] = []
@@ -692,12 +694,11 @@ class DatabaseCreator():
             self.final_dataset['bed_angle_deg'] = []
             self.final_dataset['joint_lengths_U_m'] = []
             self.final_dataset['joint_angles_U_deg'] = []
-            self.final_dataset['joint_lengths_L_m'] = []
             self.final_dataset['joint_angles_L_deg'] = []
 
 
 
-            for movement in ['RH_sitting','LH_sitting','RL_sitting','LL_sitting','RH1','LH1','RH2','LH2','RH3','LH3','RL','LL']:#,
+            for movement in ['RH_sitting','LH_sitting','RL_sitting','LL_sitting']:#,'RH1','LH1','RH2','LH2','RH3','LH3','RL','LL']:#,
             #for movement in ['LH2','LH3','LL'
         # ,'RL']:
 
@@ -947,7 +948,9 @@ class DatabaseCreator():
                 # print np.mean(angle)
                 # print np.std(angle)
                 #
-                # print 'images shape: ',np.array(self.final_dataset['images']).shape
+
+
+        # print 'images shape: ',np.array(self.final_dataset['images']).shape
                 # print 'marker xyz array shape: ', np.array(self.final_dataset['markers_xyz_m']).shape
                 # print 'marker bed Euclideans shape: ', np.array(self.final_dataset['marker_bed_euclideans_m']).shape
                 # print 'bed angle in degrees shape: ', np.array(self.final_dataset['bed_angle_deg']).shape
@@ -959,7 +962,7 @@ class DatabaseCreator():
             #print np.mean(np.array(std_lengths)), 'mean of standard devs'
             print 'Output file size: ~', int(len(self.final_dataset['images']) * 0.08958031837*3948/1728), 'Mb'
             print "Saving final_dataset"
-            #pkl.dump(self.final_dataset, open(os.path.join(self.training_dump_path+str(subject)+'/p_files/trainval_sit175rlh_sit120rll.p'), 'wb')) #_200rlh1_115rlh2_75rlh3_150rll
+            pkl.dump(self.final_dataset, open(os.path.join(self.training_dump_path+str(subject)+'/p_files/trainval_sit175rlh_sit120rll.p'), 'wb')) #_200rlh1_115rlh2_75rlh3_150rll
 
             print 'Done.'
         return
