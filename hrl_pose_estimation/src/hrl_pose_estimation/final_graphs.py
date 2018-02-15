@@ -159,10 +159,10 @@ class DataVisualizer():
         threshold_error = {}
         joint_percent = {}
         joint_percent_keep = {}
-        for modeltype in ['KNN','LRR','KRR','kinvL']:
+        for modeltype in ['KNN','LRR','KRR','direct','kinvL']:
             error_avg_flat = None
-            for subject in [9,10,11,12,13,14,15]:
-                if modeltype == 'kinvL':
+            for subject in [18]:
+                if modeltype == 'kinvL' or modeltype == 'direct':
                     error_avg, _ = load_pickle(self.dump_path + '/Final_Data/error_avg_std_T25_subject'+str(subject)+'_'+str(modeltype)+'.p')
                     # size (P x N) each: number of images, number of joints
                     try:
@@ -219,8 +219,9 @@ class DataVisualizer():
         ratioKNN = ax1.plot(threshold_error['KNN'] * 10, joint_percent['KNN'], 'c-', lw=4, label='KNN')
         ratioLRR = ax1.plot(threshold_error['LRR'] * 10, joint_percent['LRR'], 'm-', lw=4, label='LRR')
         ratioKRR = ax1.plot(threshold_error['KRR'] * 10, joint_percent['KRR'], 'y-', lw=4, label='KRR')
+        ratiodirect = ax1.plot(threshold_error['direct'] * 10, joint_percent['direct'], 'r-', lw=4, label='CNN direct')
         ratiokinvL = ax1.plot(threshold_error['kinvL'] * 10, joint_percent['kinvL'], 'b-', lw=4, label='CNN kin. regr. '+r"$\boldsymbol{l}$")
-        lns = ratioKNN+ratioLRR+ratioKRR+ratiokinvL
+        lns = ratioKNN+ratioLRR+ratioKRR+ratiodirect+ratiokinvL
         labs = [l.get_label() for l in lns]
         plt.legend(lns, labs, loc=0)
         plt.show()
@@ -236,8 +237,9 @@ class DataVisualizer():
         ratioKNN = ax1.plot(threshold_error['KNN'] * 10, joint_percent_keep['KNN'], 'c-', lw=4, label='KNN')
         ratioLRR = ax1.plot(threshold_error['LRR'] * 10, joint_percent_keep['LRR'], 'm-', lw=4, label='LRR')
         ratioKRR = ax1.plot(threshold_error['KRR'] * 10, joint_percent_keep['KRR'], 'y-', lw=4, label='KRR')
+        ratiodirect = ax1.plot(threshold_error['direct'] * 10, joint_percent_keep['direct'], 'r-', lw=4, label='CNN direct')
         ratiokinvL = ax1.plot(threshold_error['kinvL'] * 10, joint_percent_keep['kinvL'], 'b-', lw=4, label='CNN kin. regr. ' + r"$\boldsymbol{l}$")
-        lns = ratioKNN + ratioLRR + ratioKRR + ratiokinvL
+        lns = ratioKNN + ratioLRR + ratioKRR + ratiodirect+ratiokinvL
         labs = [l.get_label() for l in lns]
         plt.legend(lns, labs, loc=0)
         plt.show()
@@ -527,7 +529,7 @@ if __name__ == "__main__":
     #Initialize trainer with a training database file
     p = DataVisualizer(pkl_directory=Path, opt = opt)
 
-    p.all_joint_error()
+    #p.all_joint_error()
     #p.dropout_std_threshold()
-    #p.error_threshold()
+    p.error_threshold()
     sys.exit()

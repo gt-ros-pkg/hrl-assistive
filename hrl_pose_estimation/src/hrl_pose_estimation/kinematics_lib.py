@@ -376,34 +376,6 @@ class KinematicsLib():
 
             elif loop == False:
 
-                torso_lengths_angles = Variable(torso_lengths_angles_v.data)
-
-
-                if True: #add this bit for constant bone lengths
-                    #if subject is not None:
-                    torso_lengths_angles = torso_lengths_angles.data.clone()
-                    print subject, 'CONSTANT BONE LENGTHS, SUBJECT ',str(subject)
-                    if subject == 9:
-                        torso_lengths_angles[:, 20:37] = torch.Tensor([0.1, 0.26832222, 0.17381444, 0.17381444, 0.28164876, 0.27695534, 0.21541507, 0.20452102, 0.31553109, 0.14, 0.20127556, 0.10428444, 0.10428444, 0.41213504, 0.43190713, 0.42485215, 0.41069972]).repeat(torso_lengths_angles.size()[0],1)
-                    elif subject == 10:
-                        torso_lengths_angles[:, 20:37] = torch.Tensor([0.1, 0.27084611, 0.17545882, 0.17545882, 0.2905044,  0.28538682, 0.2236274, 0.21349257,  0.30564677, 0.14, 0.20316878, 0.10527102, 0.10527102, 0.43162535, 0.44191622, 0.42166114, 0.41218717]).repeat(torso_lengths_angles.size()[0],1)
-                    elif subject == 11:
-                        torso_lengths_angles[:, 20:37] = torch.Tensor([0.1, 0.26946944, 0.17456189, 0.17456189, 0.28605329, 0.28458026, 0.22021226, 0.20930997, 0.30607809, 0.14, 0.20213611, 0.10473289, 0.10473289, 0.42447277, 0.43699407, 0.42203217, 0.41353693]).repeat(torso_lengths_angles.size()[0],1)
-                    elif subject == 12:
-                        torso_lengths_angles[:, 20:37] = torch.Tensor([0.1, 0.27382889, 0.17740218, 0.17740218, 0.29012795, 0.28606032, 0.22466585, 0.21228756, 0.30998514, 0.14, 0.20540622, 0.10643698, 0.10643698, 0.4223127, 0.43911505, 0.43320225, 0.41609839]).repeat(torso_lengths_angles.size()[0],1)
-                    elif subject == 13:
-                        torso_lengths_angles[:, 20:37] = torch.Tensor([0.1, 0.27084611, 0.17545882, 0.17545882, 0.28455711, 0.28242044, 0.21731193, 0.20271964, 0.31538197, 0.14, 0.20316878, 0.10527102, 0.10527102, 0.4135731,  0.42983224, 0.42582947, 0.41555586]).repeat(torso_lengths_angles.size()[0],1)
-                    elif subject == 14:
-                        torso_lengths_angles[:, 20:37] = torch.Tensor([0.1, 0.26878111, 0.17411342, 0.17411342, 0.2839482,  0.28109441, 0.21763367, 0.20413045, 0.31335409, 0.14, 0.20161978, 0.10446382, 0.10446382, 0.41581538, 0.42474949, 0.42284857, 0.41566802]).repeat(torso_lengths_angles.size()[0],1)
-                    elif subject == 15:
-                        torso_lengths_angles[:, 20:37] = torch.Tensor([0.1, 0.26969889, 0.17471138, 0.17471138, 0.28589227, 0.28515002, 0.22193393, 0.20341761, 0.30919443, 0.14, 0.20230822, 0.10482258, 0.10482258, 0.42598388, 0.42974338, 0.42117544, 0.41946262]).repeat(torso_lengths_angles.size()[0],1)
-                    elif subject == 16:
-                        torso_lengths_angles[:, 20:37] = torch.Tensor([0.1, 0.27314056, 0.17695371, 0.17695371, 0.28672228, 0.28045977, 0.22281829, 0.20828243, 0.31858438, 0.14, 0.20488989, 0.10616791, 0.10616791, 0.42033598,  0.43259464, 0.4245889, 0.41915392]).repeat(torso_lengths_angles.size()[0],1)
-                    elif subject == 17:
-                        torso_lengths_angles[:, 20:37] = torch.Tensor([0.1, 0.27428778, 0.17770116, 0.17770116, 0.28976403, 0.28482488, 0.22293538, 0.20923963, 0.3152724, 0.14, 0.20575044, 0.10661636, 0.10661636, 0.41702271, 0.42695342,  0.43464569, 0.42858238]).repeat(torso_lengths_angles.size()[0],1)
-                    elif subject == 18:
-                        torso_lengths_angles[:, 20:37] = torch.Tensor([0.1, 0.27176389, 0.17605678, 0.17605678, 0.28688743, 0.28375046, 0.223929,  0.21221132, 0.31124915, 0.14, 0.20385722, 0.10562978, 0.10562978, 0.42229295, 0.43479301, 0.42381791, 0.41654181]).repeat(torso_lengths_angles.size()[0],1)
-                    torso_lengths_angles = Variable(torso_lengths_angles)
 
 
                 bedangle = Variable(bedangle)
@@ -469,6 +441,63 @@ class KinematicsLib():
                 torso_lengths_angles_v[:, 38] = torch.add(torso_lengths_angles_v[:, 38], 1.3)
                 torso_lengths_angles_v[:, 39] = torch.add(torso_lengths_angles_v[:, 39], 0.1)
 
+
+                torso_lengths_angles = Variable(torso_lengths_angles_v.data)
+                if True:  # add this bit for constant bone lengths
+                    # if subject is not None:
+                    torso_lengths_angles = torso_lengths_angles.data.clone()
+                    print subject, 'CONSTANT BONE LENGTHS, SUBJECT ', str(subject)
+                    if subject == 9:
+                        torso_lengths_angles[:, 20:37] = torch.Tensor(
+                            [0.1, 0.26832222, 0.17381444, 0.17381444, 0.28164876, 0.27695534, 0.21541507, 0.20452102,
+                             0.31553109, 0.14, 0.20127556, 0.10428444, 0.10428444, 0.41213504, 0.43190713, 0.42485215,
+                             0.41069972]).repeat(torso_lengths_angles.size()[0], 1)
+                    elif subject == 10:
+                        torso_lengths_angles[:, 20:37] = torch.Tensor(
+                            [0.1, 0.27084611, 0.17545882, 0.17545882, 0.2905044, 0.28538682, 0.2236274, 0.21349257,
+                             0.30564677, 0.14, 0.20316878, 0.10527102, 0.10527102, 0.43162535, 0.44191622, 0.42166114,
+                             0.41218717]).repeat(torso_lengths_angles.size()[0], 1)
+                    elif subject == 11:
+                        torso_lengths_angles[:, 20:37] = torch.Tensor(
+                            [0.1, 0.26946944, 0.17456189, 0.17456189, 0.28605329, 0.28458026, 0.22021226, 0.20930997,
+                             0.30607809, 0.14, 0.20213611, 0.10473289, 0.10473289, 0.42447277, 0.43699407, 0.42203217,
+                             0.41353693]).repeat(torso_lengths_angles.size()[0], 1)
+                    elif subject == 12:
+                        torso_lengths_angles[:, 20:37] = torch.Tensor(
+                            [0.1, 0.27382889, 0.17740218, 0.17740218, 0.29012795, 0.28606032, 0.22466585, 0.21228756,
+                             0.30998514, 0.14, 0.20540622, 0.10643698, 0.10643698, 0.4223127, 0.43911505, 0.43320225,
+                             0.41609839]).repeat(torso_lengths_angles.size()[0], 1)
+                    elif subject == 13:
+                        torso_lengths_angles[:, 20:37] = torch.Tensor(
+                            [0.1, 0.27084611, 0.17545882, 0.17545882, 0.28455711, 0.28242044, 0.21731193, 0.20271964,
+                             0.31538197, 0.14, 0.20316878, 0.10527102, 0.10527102, 0.4135731, 0.42983224, 0.42582947,
+                             0.41555586]).repeat(torso_lengths_angles.size()[0], 1)
+                    elif subject == 14:
+                        torso_lengths_angles[:, 20:37] = torch.Tensor(
+                            [0.1, 0.26878111, 0.17411342, 0.17411342, 0.2839482, 0.28109441, 0.21763367, 0.20413045,
+                             0.31335409, 0.14, 0.20161978, 0.10446382, 0.10446382, 0.41581538, 0.42474949, 0.42284857,
+                             0.41566802]).repeat(torso_lengths_angles.size()[0], 1)
+                    elif subject == 15:
+                        torso_lengths_angles[:, 20:37] = torch.Tensor(
+                            [0.1, 0.26969889, 0.17471138, 0.17471138, 0.28589227, 0.28515002, 0.22193393, 0.20341761,
+                             0.30919443, 0.14, 0.20230822, 0.10482258, 0.10482258, 0.42598388, 0.42974338, 0.42117544,
+                             0.41946262]).repeat(torso_lengths_angles.size()[0], 1)
+                    elif subject == 16:
+                        torso_lengths_angles[:, 20:37] = torch.Tensor(
+                            [0.1, 0.27314056, 0.17695371, 0.17695371, 0.28672228, 0.28045977, 0.22281829, 0.20828243,
+                             0.31858438, 0.14, 0.20488989, 0.10616791, 0.10616791, 0.42033598, 0.43259464, 0.4245889,
+                             0.41915392]).repeat(torso_lengths_angles.size()[0], 1)
+                    elif subject == 17:
+                        torso_lengths_angles[:, 20:37] = torch.Tensor(
+                            [0.1, 0.27428778, 0.17770116, 0.17770116, 0.28976403, 0.28482488, 0.22293538, 0.20923963,
+                             0.3152724, 0.14, 0.20575044, 0.10661636, 0.10661636, 0.41702271, 0.42695342, 0.43464569,
+                             0.42858238]).repeat(torso_lengths_angles.size()[0], 1)
+                    elif subject == 18:
+                        torso_lengths_angles[:, 20:37] = torch.Tensor(
+                            [0.1, 0.27176389, 0.17605678, 0.17605678, 0.28688743, 0.28375046, 0.223929, 0.21221132,
+                             0.31124915, 0.14, 0.20385722, 0.10562978, 0.10562978, 0.42229295, 0.43479301, 0.42381791,
+                             0.41654181]).repeat(torso_lengths_angles.size()[0], 1)
+                    torso_lengths_angles = Variable(torso_lengths_angles)
 
                 #head in vectorized form
                 # print type(torso_lengths_angles_v[:, 37])

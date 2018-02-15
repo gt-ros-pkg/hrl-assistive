@@ -201,9 +201,9 @@ class DataVisualizer():
         if self.opt.computer == 'aws':
             self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p')
         else:
-            self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p')
+            #self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p')
             #self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll.p')
-            #self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainval_sit175rlh_sit120rll.p')
+            self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainval_sit175rlh_sit120rll.p')
 
         test_dat = self.validation_set
         for key in test_dat:
@@ -413,7 +413,7 @@ class DataVisualizer():
                     self.pseudo_sample = np.reshape(self.pseudo_sample, (5, 3))
 
 
-                    if False:#self.opt.visualize == True:
+                    if self.opt.visualize == True:
                         if count2 <= 1: VisualizationLib().rviz_publish_input(self.im_sample[0, :, :]*1.3, self.im_sample[-1, 10, 10])
                         #else: VisualizationLib().rviz_publish_input(self.im_sample[1, :, :]/2, self.im_sample[-1, 10, 10])
 
@@ -463,7 +463,7 @@ class DataVisualizer():
                     if batch_idx == 1669:
                         #VisualizationLib().visualize_error_threshold(self.error_avg_list)
                         #VisualizationLib().visualize_variance_threshold(self.error_avg_list, self.error_std_list)
-                        pkl.dump([self.error_avg_list, self.error_std_list], open('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/Final_Data/error_avg_std_T25_subject'+str(self.subject)+'_kinvL.p', 'wb'))
+                        #pkl.dump([self.error_avg_list, self.error_std_list], open('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/Final_Data/error_avg_std_T25_subject'+str(self.subject)+'_kinvL.p', 'wb'))
 
                         xlim = [0, 20]
                         ylim = [0, 60]
