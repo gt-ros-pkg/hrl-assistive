@@ -481,42 +481,25 @@ class KinematicsLib():
                     torso_lengths_angles = Variable(torso_lengths_angles)
 
 
-                    torso_lengths_angles_v[:, 20] = torch.add(torch.mul(torso_lengths_angles_v[:, 20],0), 1.)
-                    #torso_lengths_angles_v[:, 20] = torch.add(torso_lengths_angles_v[:, 20], 1)
-                    torso_lengths_angles[:, 20] = torch.mul((0. + torso_lengths_angles[:, 20]),
-                                                            (0. + torso_lengths_angles_v[:, 20]))
-                    torso_lengths_angles[:, 21] = torch.mul((0. + torso_lengths_angles[:, 21]),
-                                                            (0. + torso_lengths_angles_v[:, 20]))
-                    torso_lengths_angles[:, 22] = torch.mul((0. + torso_lengths_angles[:, 22]),
-                                                            (0. + torso_lengths_angles_v[:, 20]))
-                    torso_lengths_angles[:, 23] = torch.mul((0. + torso_lengths_angles[:, 23]),
-                                                            (0. + torso_lengths_angles_v[:, 20]))
-                    torso_lengths_angles[:, 24] = torch.mul((0. + torso_lengths_angles[:, 24]),
-                                                            (0. + torso_lengths_angles_v[:, 20]))
-                    torso_lengths_angles[:, 25] = torch.mul((0. + torso_lengths_angles[:, 25]),
-                                                            (0. + torso_lengths_angles_v[:, 20]))
-                    torso_lengths_angles[:, 26] = torch.mul((0. + torso_lengths_angles[:, 26]),
-                                                            (0. + torso_lengths_angles_v[:, 20]))
-                    torso_lengths_angles[:, 27] = torch.mul((0. + torso_lengths_angles[:, 27]),
-                                                            (0. + torso_lengths_angles_v[:, 20]))
-                    torso_lengths_angles[:, 28] = torch.mul((0. + torso_lengths_angles[:, 28]),
-                                                            (0. + torso_lengths_angles_v[:, 20]))
-                    torso_lengths_angles[:, 29] = torch.mul((0. + torso_lengths_angles[:, 29]),
-                                                            (0. + torso_lengths_angles_v[:, 20]))
-                    torso_lengths_angles[:, 30] = torch.mul((0. + torso_lengths_angles[:, 30]),
-                                                            (0. + torso_lengths_angles_v[:, 20]))
-                    torso_lengths_angles[:, 31] = torch.mul((0. + torso_lengths_angles[:, 31]),
-                                                            (0. + torso_lengths_angles_v[:, 20]))
-                    torso_lengths_angles[:, 32] = torch.mul((0. + torso_lengths_angles[:, 32]),
-                                                            (0. + torso_lengths_angles_v[:, 20]))
-                    torso_lengths_angles[:, 33] = torch.mul((0. + torso_lengths_angles[:, 33]),
-                                                            (0. + torso_lengths_angles_v[:, 20]))
-                    torso_lengths_angles[:, 34] = torch.mul((0. + torso_lengths_angles[:, 34]),
-                                                            (0. + torso_lengths_angles_v[:, 20]))
-                    torso_lengths_angles[:, 35] = torch.mul((0. + torso_lengths_angles[:, 35]),
-                                                            (0. + torso_lengths_angles_v[:, 20]))
-                    torso_lengths_angles[:, 36] = torch.mul((0. + torso_lengths_angles[:, 36]),
-                                                            (0. + torso_lengths_angles_v[:, 20]))
+                    #torso_lengths_angles_v[:, 20] = torch.add(torch.mul(torso_lengths_angles_v[:, 20],0), 1.)
+                    torso_lengths_angles_v[:, 20] = torch.add(torso_lengths_angles_v[:, 20], 1)
+                    torso_lengths_angles[:, 20] = torch.mul((0. + torso_lengths_angles[:, 20]),(0. + torso_lengths_angles_v[:, 20]))
+                    torso_lengths_angles[:, 21] = torch.mul((0. + torso_lengths_angles[:, 21]),(0. + torso_lengths_angles_v[:, 20]))
+                    torso_lengths_angles[:, 22] = torch.mul((0. + torso_lengths_angles[:, 22]),(0. + torso_lengths_angles_v[:, 20]))
+                    torso_lengths_angles[:, 23] = torch.mul((0. + torso_lengths_angles[:, 23]),(0. + torso_lengths_angles_v[:, 20]))
+                    torso_lengths_angles[:, 24] = torch.mul((0. + torso_lengths_angles[:, 24]),(0. + torso_lengths_angles_v[:, 20]))
+                    torso_lengths_angles[:, 25] = torch.mul((0. + torso_lengths_angles[:, 25]),(0. + torso_lengths_angles_v[:, 20]))
+                    torso_lengths_angles[:, 26] = torch.mul((0. + torso_lengths_angles[:, 26]),(0. + torso_lengths_angles_v[:, 20]))
+                    torso_lengths_angles[:, 27] = torch.mul((0. + torso_lengths_angles[:, 27]),(0. + torso_lengths_angles_v[:, 20]))
+                    torso_lengths_angles[:, 28] = torch.mul((0. + torso_lengths_angles[:, 28]),(0. + torso_lengths_angles_v[:, 20]))
+                    torso_lengths_angles[:, 29] = torch.mul((0. + torso_lengths_angles[:, 29]),(0. + torso_lengths_angles_v[:, 20]))
+                    torso_lengths_angles[:, 30] = torch.mul((0. + torso_lengths_angles[:, 30]),(0. + torso_lengths_angles_v[:, 20]))
+                    torso_lengths_angles[:, 31] = torch.mul((0. + torso_lengths_angles[:, 31]),(0. + torso_lengths_angles_v[:, 20]))
+                    torso_lengths_angles[:, 32] = torch.mul((0. + torso_lengths_angles[:, 32]),(0. + torso_lengths_angles_v[:, 20]))
+                    torso_lengths_angles[:, 33] = torch.mul((0. + torso_lengths_angles[:, 33]),(0. + torso_lengths_angles_v[:, 20]))
+                    torso_lengths_angles[:, 34] = torch.mul((0. + torso_lengths_angles[:, 34]),(0. + torso_lengths_angles_v[:, 20]))
+                    torso_lengths_angles[:, 35] = torch.mul((0. + torso_lengths_angles[:, 35]),(0. + torso_lengths_angles_v[:, 20]))
+                    torso_lengths_angles[:, 36] = torch.mul((0. + torso_lengths_angles[:, 36]),(0. + torso_lengths_angles_v[:, 20]))
 
 
                 else:
