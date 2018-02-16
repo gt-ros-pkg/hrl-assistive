@@ -47,6 +47,7 @@ from keras import objectives
 from keras.callbacks import *
 import keras
 
+from . import vgg16
 from hrl_anomaly_detection.journal_isolation.models import keras_util as ku
 ## from hrl_anomaly_detection.vae import util as vutil
 
@@ -74,42 +75,48 @@ def multi_net(idx, trainData, testData, batch_size=512, sam_epoch=500, \
     n_labels = len(np.unique(y_train))
     print "Labels: ", np.unique(y_train), " #Labels: ", n_labels
     print "Labels: ", np.unique(y_test), " #Labels: ", n_labels
-    ## print np.shape(x_train), np.shape(y_train), np.shape(x_test), np.shape(y_test)
+
+    ## x_sig_train = x_sig_train[:20]
+    ## x_img_train = x_img_train[:20]
+    ## y_train = y_train[:20]
+    ## x_sig_test = x_sig_test[:20]
+    ## x_img_test = x_img_test[:20]
+    ## y_test = y_test[:20]
 
 
     # Load weights
     if weights_file is not None:
-        sig_weights_file = weights_file[0]
-        img_weights_file = weights_file[1]
+        ## sig_weights_file = weights_file[0]
+        ## img_weights_file = weights_file[1]
         multi_weights_file = weights_file[2]
     else:
-        sig_weights_file = None
-        img_weights_file = None
+        ## sig_weights_file = None
+        ## img_weights_file = None
         multi_weights_file = None
 
 
     # split train data into training and validation data.
     idx_list = range(len(x_sig_train))
     np.random.shuffle(idx_list)
-    x_sig = x_sig_train[idx_list]
-    x_img = x_img_train[idx_list]
-    y = y_train[idx_list]
+    x_sig = np.array(x_sig_train)[idx_list]
+    x_img = np.array(x_img_train)[idx_list]
+    y = np.array(y_train)[idx_list]
 
-    x_sig_train = x_sig[:int(len(x)*0.7)]
-    x_img_train = x_img[:int(len(x)*0.7)]
-    y_train = y[:int(len(x)*0.7)]
+    x_sig_train = x_sig[:int(len(x_sig)*0.7)]
+    x_img_train = x_img[:int(len(x_img)*0.7)]
+    y_train = y[:int(len(y)*0.7)]
 
-    x_sig_val = x_sig[int(len(x)*0.7):]
-    x_img_val = x_img[int(len(x)*0.7):]
-    y_val = y[int(len(x)*0.7):]
+    x_sig_val = x_sig[int(len(x_sig)*0.7):]
+    x_img_val = x_img[int(len(x_img)*0.7):]
+    y_val = y[int(len(y)*0.7):]
 
     # Convert labels to categorical one-hot encoding
     y_train = keras.utils.to_categorical(y_train, num_classes=n_labels)
     y_val   = keras.utils.to_categorical(y_val, num_classes=n_labels)
-    ## y_test  = keras.utils.to_categorical(y_test)#, num_classes=n_labels)
+    #y_test  = keras.utils.to_categorical(y_test, num_classes=n_labels)
 
-    if multi_weights_file is not None and os.path.isfile(multi_weights_file) and fine_tuning is False and \
-      renew is False:
+    if multi_weights_file is not None and os.path.isfile(multi_weights_file) and\
+        fine_tuning is False and renew is False and False:
         model.load_weights(multi_weights_file)
     else:
         callbacks = [EarlyStopping(monitor='val_loss', min_delta=0.0005, patience=patience,
@@ -122,9 +129,18 @@ def multi_net(idx, trainData, testData, batch_size=512, sam_epoch=500, \
                                        patience=3, min_lr=0.00001)]
 
 
-        from . import vgg16
+        if fine_tuning and os.path.isfile(multi_weights_file):
+            weights_file = (None, None, weights_file[2]) 
+        else:
+            weights_file = (weights_file[0], weights_file[1], None) 
+
         model = vgg16.VGG16(include_top=False, include_multi_top=True,
-                            input_shape=np.shape(x_train)[1:], classes=n_labels)
+                            input_shape=np.shape(x_img_train)[1:],
+                            input_shape2=np.shape(x_sig_train)[1:],
+                            classes=n_labels,
+                            weights_file=weights_file)
+
+            
         ## model = km.vgg_multi_top_net(np.shape(x_train)[1:], n_labels, weights_path)
         model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
         print(model.summary())
@@ -132,17 +148,19 @@ def multi_net(idx, trainData, testData, batch_size=512, sam_epoch=500, \
 
         train_datagen   = ku.multiGenerator(augmentation=True, noise_mag=noise_mag )
         test_datagen    = ku.multiGenerator(augmentation=False, noise_mag=0.0)
-        train_generator = train_datagen.flow(x_sig_train, x_img_train, y_train, batch_size=batch_size)
-        test_generator  = test_datagen.flow(x_sig_val, x_img_val, y_val, batch_size=batch_size)
+        train_generator = train_datagen.flow(x_img_train, x_sig_train, y_train, batch_size=batch_size,
+                                             seed=3334)
+        test_generator  = test_datagen.flow(x_img_val, x_sig_val, y_val, batch_size=batch_size,
+                                            seed=3334)
 
         hist = model.fit_generator(train_generator,
                                    samples_per_epoch=len(y_train),
-                                   nb_epoch=nb_epoch,
+                                   nb_epoch=sam_epoch,
                                    validation_data=test_generator,
                                    nb_val_samples=len(y_val),
                                    callbacks=callbacks)
 
-    y_pred = model.predict(x_test)
+    y_pred = model.predict([np.array(x_img_test), np.array(x_sig_test)])
     y_pred = np.argmax(y_pred, axis=1).tolist()
 
     print np.shape(y_pred), np.shape(y_test)
