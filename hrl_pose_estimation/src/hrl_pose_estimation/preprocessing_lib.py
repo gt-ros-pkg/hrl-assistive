@@ -142,6 +142,30 @@ class PreprocessingLib():
         if verbose: print len(p_map_dataset[0]),'x',len(p_map_dataset[0][0]), 'size of a resized pressure map'
         return p_map_dataset
 
+    def preprocessing_create_pressure_angle_stack_realtime(self, p_map, bedangle):
+        '''This is for creating a 2-channel input using the height of the bed. '''
+        print np.shape(p_map)
+        print np.shape(bedangle), 'angle dat'
+
+        print 'calculating height matrix and sobel filter'
+        p_map_dataset = []
+
+
+        height_strip = np.zeros(np.shape(p_map)[0])
+        height_strip[0:25] = np.flip(np.linspace(0, 1, num=25) * 25 * 2.86 * np.sin(np.deg2rad(bedangle)),
+                                      axis=0)
+        height_strip = np.repeat(np.expand_dims(height_strip, axis=1), 27, 1)
+        a_map = height_strip
+
+
+        # this makes a sobel edge on the image
+        sx = ndimage.sobel(p_map, axis=0, mode='constant')
+        sy = ndimage.sobel(p_map, axis=1, mode='constant')
+        p_map_inter = np.hypot(sx, sy)
+        p_map_dataset.append([p_map, p_map_inter, a_map])
+
+        return p_map_dataset
+
 
     def preprocessing_create_pressure_angle_stack(self,x_data, a_data, include_inter, mat_size, verbose):
         '''This is for creating a 2-channel input using the height of the bed. '''

@@ -344,7 +344,7 @@ class KinematicsLib():
 
 
 
-    def forward_kinematics_pytorch(self, images_v, torso_lengths_angles_v, targets_v, loss_vector_type, kincons_v = None, prior_cascade = None, forward_only = False, body_side = None, subject = None, count = 500):
+    def forward_kinematics_pytorch(self, images_v, torso_lengths_angles_v, loss_vector_type, targets_v=None,  kincons_v = None, prior_cascade = None, forward_only = False, body_side = None, subject = None, count = 500):
 
         test_ground_truth = False
         loop = False
@@ -371,116 +371,94 @@ class KinematicsLib():
             images = images_v.data * np.pi / 180
             bedangle = images[:, -1, 10, 10] * 0.75
 
-            if loop == True:
-                pass
-
-            elif loop == False:
+            bedangle = Variable(bedangle)
 
 
+            #print torso_lengths_angles_v[0, 17], torso_lengths_angles_v[0, 18], torso_lengths_angles_v.size()
 
-                bedangle = Variable(bedangle)
-
-                angle_noise = False  # add noise to the output of the convolutions.  Only add it to the non-zero outputs, because most are zero.
-                if angle_noise == True:
-                    x = np.arange(-6, 6)
-                    xU, xL = x + 0.5, x - 0.5
-                    prob = ss.norm.cdf(xU, scale=2) - ss.norm.cdf(xL, scale=2)  # scale is the standard deviation using a cumulative density function
-                    prob = prob / prob.sum()  # normalize the probabilities so their sum is 1
-                    image_noise = np.random.choice(x, size=(1, 17), p=prob) / 100.
-                    # image_noise = Variable(torch.Tensor(image_noise), volatile=True)
-                    image_noise = torch.Tensor(image_noise)
-                    #print image_noise.size()
-                    #print torso_lengths_angles_v[:, 0:17].size()
-
-                    torso_lengths_angles_v[:, 0:17] = torch.add(torso_lengths_angles_v[:, 0:17], image_noise)
-                    #print torso_lengths_angles_v[:, 0:17]
-
-
-                #print torso_lengths_angles_v[0, 17], torso_lengths_angles_v[0, 18], torso_lengths_angles_v.size()
-
-                torso_lengths_angles_v[:, 0] = torch.clamp(torso_lengths_angles_v[:, 0], -1.8, 1.8)
-                torso_lengths_angles_v[:, 1] = torch.clamp(torso_lengths_angles_v[:, 1], -1.8, 1.8)
-                torso_lengths_angles_v[:, 2] = torch.clamp(torso_lengths_angles_v[:, 2], -1.35, 1.35)
-                torso_lengths_angles_v[:, 3] = torch.clamp(torso_lengths_angles_v[:, 3], -1.35, 1.35)
-                torso_lengths_angles_v[:, 4] = torch.clamp(torso_lengths_angles_v[:, 4], -1.35, 1.35)
-                torso_lengths_angles_v[:, 5] = torch.clamp(torso_lengths_angles_v[:, 5], -1.35, 1.35)
-                torso_lengths_angles_v[:, 6] = torch.clamp(torch.add(torso_lengths_angles_v[:, 6], 1.5), 0.2, 1.8)
-                torso_lengths_angles_v[:, 7] = torch.clamp(torch.add(torso_lengths_angles_v[:, 7], 1.5), 0.2, 1.8)
-                #torso_lengths_angles_v[:, 8] = torch.clamp(torso_lengths_angles_v[:, 6], -1.8, 1.8)
-                #torso_lengths_angles_v[:, 9] = torch.clamp(torso_lengths_angles_v[:, 7], -1.5, 1.5)
-                torso_lengths_angles_v[:, 10] = torch.clamp(torso_lengths_angles_v[:, 10], -1.8, 1.8)
-                torso_lengths_angles_v[:, 11] = torch.clamp(torso_lengths_angles_v[:, 11], -1.8, 1.8)
-                torso_lengths_angles_v[:, 12] = torch.clamp(torch.add(torso_lengths_angles_v[:, 12], -0.6), -1.8, 0.)
-                torso_lengths_angles_v[:, 13] = torch.clamp(torch.add(torso_lengths_angles_v[:, 13], -0.6), -1.8, 0.)
-                torso_lengths_angles_v[:, 14] = torch.clamp(torch.add(torso_lengths_angles_v[:, 14], -0.6), -1.35, 1.35)
-                torso_lengths_angles_v[:, 15] = torch.clamp(torch.add(torso_lengths_angles_v[:, 15], -0.6), -1.35, 1.35)
-                torso_lengths_angles_v[:, 16] = torch.clamp(torch.add(torso_lengths_angles_v[:, 16], 1.5), 0.2, 1.8)
-                torso_lengths_angles_v[:, 17] = torch.clamp(torch.add(torso_lengths_angles_v[:, 17], 1.5), 0.2, 1.8)
-                torso_lengths_angles_v[:, 18] = torch.clamp(torch.add(torso_lengths_angles_v[:, 18], 0.2), -0.5, 1.3) #torso angle for upper
-                torso_lengths_angles_v[:, 19] = torch.clamp(torch.add(torso_lengths_angles_v[:, 19], 0.), -1.3, 0.5) #torso angle for lower
+            torso_lengths_angles_v[:, 0] = torch.clamp(torso_lengths_angles_v[:, 0], -1.8, 1.8)
+            torso_lengths_angles_v[:, 1] = torch.clamp(torso_lengths_angles_v[:, 1], -1.8, 1.8)
+            torso_lengths_angles_v[:, 2] = torch.clamp(torso_lengths_angles_v[:, 2], -1.35, 1.35)
+            torso_lengths_angles_v[:, 3] = torch.clamp(torso_lengths_angles_v[:, 3], -1.35, 1.35)
+            torso_lengths_angles_v[:, 4] = torch.clamp(torso_lengths_angles_v[:, 4], -1.35, 1.35)
+            torso_lengths_angles_v[:, 5] = torch.clamp(torso_lengths_angles_v[:, 5], -1.35, 1.35)
+            torso_lengths_angles_v[:, 6] = torch.clamp(torch.add(torso_lengths_angles_v[:, 6], 1.5), 0.2, 1.8)
+            torso_lengths_angles_v[:, 7] = torch.clamp(torch.add(torso_lengths_angles_v[:, 7], 1.5), 0.2, 1.8)
+            #torso_lengths_angles_v[:, 8] = torch.clamp(torso_lengths_angles_v[:, 6], -1.8, 1.8)
+            #torso_lengths_angles_v[:, 9] = torch.clamp(torso_lengths_angles_v[:, 7], -1.5, 1.5)
+            torso_lengths_angles_v[:, 10] = torch.clamp(torso_lengths_angles_v[:, 10], -1.8, 1.8)
+            torso_lengths_angles_v[:, 11] = torch.clamp(torso_lengths_angles_v[:, 11], -1.8, 1.8)
+            torso_lengths_angles_v[:, 12] = torch.clamp(torch.add(torso_lengths_angles_v[:, 12], -0.6), -1.8, 0.)
+            torso_lengths_angles_v[:, 13] = torch.clamp(torch.add(torso_lengths_angles_v[:, 13], -0.6), -1.8, 0.)
+            torso_lengths_angles_v[:, 14] = torch.clamp(torch.add(torso_lengths_angles_v[:, 14], -0.6), -1.35, 1.35)
+            torso_lengths_angles_v[:, 15] = torch.clamp(torch.add(torso_lengths_angles_v[:, 15], -0.6), -1.35, 1.35)
+            torso_lengths_angles_v[:, 16] = torch.clamp(torch.add(torso_lengths_angles_v[:, 16], 1.5), 0.2, 1.8)
+            torso_lengths_angles_v[:, 17] = torch.clamp(torch.add(torso_lengths_angles_v[:, 17], 1.5), 0.2, 1.8)
+            torso_lengths_angles_v[:, 18] = torch.clamp(torch.add(torso_lengths_angles_v[:, 18], 0.2), -0.5, 1.3) #torso angle for upper
+            torso_lengths_angles_v[:, 19] = torch.clamp(torch.add(torso_lengths_angles_v[:, 19], 0.), -1.3, 0.5) #torso angle for lower
 
 
 
 
-                if count > 300:  # add this bit for constant bone lengths
-                    # if subject is not None:
-                    torso_lengths_angles = Variable(torso_lengths_angles_v.data.clone())
+            if False:#count > 300:  # add this bit for constant bone lengths
+                # if subject is not None:
+                torso_lengths_angles = Variable(torso_lengths_angles_v.data.clone())
 
-                    torso_lengths_angles = torso_lengths_angles.data
-                    print subject, 'SCALED CONSTANT BONE LENGTHS, SUBJECT ', str(subject)
-                    if subject == 9:
-                        torso_lengths_angles[:, 20:37] = torch.Tensor(
-                            [0.1, 0.26832222, 0.17381444, 0.17381444, 0.28164876, 0.27695534, 0.21541507, 0.20452102,
-                             0.31553109, 0.14, 0.20127556, 0.10428444, 0.10428444, 0.41213504, 0.43190713, 0.42485215,
-                             0.41069972]).repeat(torso_lengths_angles.size()[0], 1)
-                    elif subject == 10:
-                        torso_lengths_angles[:, 20:37] = torch.Tensor(
-                            [0.1, 0.27084611, 0.17545882, 0.17545882, 0.2905044, 0.28538682, 0.2236274, 0.21349257,
-                             0.30564677, 0.14, 0.20316878, 0.10527102, 0.10527102, 0.43162535, 0.44191622, 0.42166114,
-                             0.41218717]).repeat(torso_lengths_angles.size()[0], 1)
-                    elif subject == 11:
-                        torso_lengths_angles[:, 20:37] = torch.Tensor(
-                            [0.1, 0.26946944, 0.17456189, 0.17456189, 0.28605329, 0.28458026, 0.22021226, 0.20930997,
-                             0.30607809, 0.14, 0.20213611, 0.10473289, 0.10473289, 0.42447277, 0.43699407, 0.42203217,
-                             0.41353693]).repeat(torso_lengths_angles.size()[0], 1)
-                    elif subject == 12:
-                        torso_lengths_angles[:, 20:37] = torch.Tensor(
-                            [0.1, 0.27382889, 0.17740218, 0.17740218, 0.29012795, 0.28606032, 0.22466585, 0.21228756,
-                             0.30998514, 0.14, 0.20540622, 0.10643698, 0.10643698, 0.4223127, 0.43911505, 0.43320225,
-                             0.41609839]).repeat(torso_lengths_angles.size()[0], 1)
-                    elif subject == 13:
-                        torso_lengths_angles[:, 20:37] = torch.Tensor(
-                            [0.1, 0.27084611, 0.17545882, 0.17545882, 0.28455711, 0.28242044, 0.21731193, 0.20271964,
-                             0.31538197, 0.14, 0.20316878, 0.10527102, 0.10527102, 0.4135731, 0.42983224, 0.42582947,
-                             0.41555586]).repeat(torso_lengths_angles.size()[0], 1)
-                    elif subject == 14:
-                        torso_lengths_angles[:, 20:37] = torch.Tensor(
-                            [0.1, 0.26878111, 0.17411342, 0.17411342, 0.2839482, 0.28109441, 0.21763367, 0.20413045,
-                             0.31335409, 0.14, 0.20161978, 0.10446382, 0.10446382, 0.41581538, 0.42474949, 0.42284857,
-                             0.41566802]).repeat(torso_lengths_angles.size()[0], 1)
-                    elif subject == 15:
-                        torso_lengths_angles[:, 20:37] = torch.Tensor(
-                            [0.1, 0.26969889, 0.17471138, 0.17471138, 0.28589227, 0.28515002, 0.22193393, 0.20341761,
-                             0.30919443, 0.14, 0.20230822, 0.10482258, 0.10482258, 0.42598388, 0.42974338, 0.42117544,
-                             0.41946262]).repeat(torso_lengths_angles.size()[0], 1)
-                    elif subject == 16:
-                        torso_lengths_angles[:, 20:37] = torch.Tensor(
-                            [0.1, 0.27314056, 0.17695371, 0.17695371, 0.28672228, 0.28045977, 0.22281829, 0.20828243,
-                             0.31858438, 0.14, 0.20488989, 0.10616791, 0.10616791, 0.42033598, 0.43259464, 0.4245889,
-                             0.41915392]).repeat(torso_lengths_angles.size()[0], 1)
-                    elif subject == 17:
-                        torso_lengths_angles[:, 20:37] = torch.Tensor(
-                            [0.1, 0.27428778, 0.17770116, 0.17770116, 0.28976403, 0.28482488, 0.22293538, 0.20923963,
-                             0.3152724, 0.14, 0.20575044, 0.10661636, 0.10661636, 0.41702271, 0.42695342, 0.43464569,
-                             0.42858238]).repeat(torso_lengths_angles.size()[0], 1)
-                    elif subject == 18:
-                        torso_lengths_angles[:, 20:37] = torch.Tensor(
-                            [0.1, 0.27176389, 0.17605678, 0.17605678, 0.28688743, 0.28375046, 0.223929, 0.21221132,
-                             0.31124915, 0.14, 0.20385722, 0.10562978, 0.10562978, 0.42229295, 0.43479301, 0.42381791,
-                             0.41654181]).repeat(torso_lengths_angles.size()[0], 1)
-                    torso_lengths_angles = Variable(torso_lengths_angles)
+                torso_lengths_angles = torso_lengths_angles.data
+                print subject, 'SCALED CONSTANT BONE LENGTHS, SUBJECT ', str(subject)
+                if subject == 9:
+                    torso_lengths_angles[:, 20:37] = torch.Tensor(
+                        [0.1, 0.26832222, 0.17381444, 0.17381444, 0.28164876, 0.27695534, 0.21541507, 0.20452102,
+                         0.31553109, 0.14, 0.20127556, 0.10428444, 0.10428444, 0.41213504, 0.43190713, 0.42485215,
+                         0.41069972]).repeat(torso_lengths_angles.size()[0], 1)
+                elif subject == 10:
+                    torso_lengths_angles[:, 20:37] = torch.Tensor(
+                        [0.1, 0.27084611, 0.17545882, 0.17545882, 0.2905044, 0.28538682, 0.2236274, 0.21349257,
+                         0.30564677, 0.14, 0.20316878, 0.10527102, 0.10527102, 0.43162535, 0.44191622, 0.42166114,
+                         0.41218717]).repeat(torso_lengths_angles.size()[0], 1)
+                elif subject == 11:
+                    torso_lengths_angles[:, 20:37] = torch.Tensor(
+                        [0.1, 0.26946944, 0.17456189, 0.17456189, 0.28605329, 0.28458026, 0.22021226, 0.20930997,
+                         0.30607809, 0.14, 0.20213611, 0.10473289, 0.10473289, 0.42447277, 0.43699407, 0.42203217,
+                         0.41353693]).repeat(torso_lengths_angles.size()[0], 1)
+                elif subject == 12:
+                    torso_lengths_angles[:, 20:37] = torch.Tensor(
+                        [0.1, 0.27382889, 0.17740218, 0.17740218, 0.29012795, 0.28606032, 0.22466585, 0.21228756,
+                         0.30998514, 0.14, 0.20540622, 0.10643698, 0.10643698, 0.4223127, 0.43911505, 0.43320225,
+                         0.41609839]).repeat(torso_lengths_angles.size()[0], 1)
+                elif subject == 13:
+                    torso_lengths_angles[:, 20:37] = torch.Tensor(
+                        [0.1, 0.27084611, 0.17545882, 0.17545882, 0.28455711, 0.28242044, 0.21731193, 0.20271964,
+                         0.31538197, 0.14, 0.20316878, 0.10527102, 0.10527102, 0.4135731, 0.42983224, 0.42582947,
+                         0.41555586]).repeat(torso_lengths_angles.size()[0], 1)
+                elif subject == 14:
+                    torso_lengths_angles[:, 20:37] = torch.Tensor(
+                        [0.1, 0.26878111, 0.17411342, 0.17411342, 0.2839482, 0.28109441, 0.21763367, 0.20413045,
+                         0.31335409, 0.14, 0.20161978, 0.10446382, 0.10446382, 0.41581538, 0.42474949, 0.42284857,
+                         0.41566802]).repeat(torso_lengths_angles.size()[0], 1)
+                elif subject == 15:
+                    torso_lengths_angles[:, 20:37] = torch.Tensor(
+                        [0.1, 0.26969889, 0.17471138, 0.17471138, 0.28589227, 0.28515002, 0.22193393, 0.20341761,
+                         0.30919443, 0.14, 0.20230822, 0.10482258, 0.10482258, 0.42598388, 0.42974338, 0.42117544,
+                         0.41946262]).repeat(torso_lengths_angles.size()[0], 1)
+                elif subject == 16:
+                    torso_lengths_angles[:, 20:37] = torch.Tensor(
+                        [0.1, 0.27314056, 0.17695371, 0.17695371, 0.28672228, 0.28045977, 0.22281829, 0.20828243,
+                         0.31858438, 0.14, 0.20488989, 0.10616791, 0.10616791, 0.42033598, 0.43259464, 0.4245889,
+                         0.41915392]).repeat(torso_lengths_angles.size()[0], 1)
+                elif subject == 17:
+                    torso_lengths_angles[:, 20:37] = torch.Tensor(
+                        [0.1, 0.27428778, 0.17770116, 0.17770116, 0.28976403, 0.28482488, 0.22293538, 0.20923963,
+                         0.3152724, 0.14, 0.20575044, 0.10661636, 0.10661636, 0.41702271, 0.42695342, 0.43464569,
+                         0.42858238]).repeat(torso_lengths_angles.size()[0], 1)
+                elif subject == 18:
+                    torso_lengths_angles[:, 20:37] = torch.Tensor(
+                        [0.1, 0.27176389, 0.17605678, 0.17605678, 0.28688743, 0.28375046, 0.223929, 0.21221132,
+                         0.31124915, 0.14, 0.20385722, 0.10562978, 0.10562978, 0.42229295, 0.43479301, 0.42381791,
+                         0.41654181]).repeat(torso_lengths_angles.size()[0], 1)
+                torso_lengths_angles = Variable(torso_lengths_angles)
 
-
+                if False:
                     #torso_lengths_angles_v[:, 20] = torch.add(torch.mul(torso_lengths_angles_v[:, 20],0), 1.)
                     torso_lengths_angles_v[:, 20] = torch.add(torch.mul(torso_lengths_angles_v[:, 20],0.1), 1)
                     torso_lengths_angles[:, 20] = torch.mul((0. + torso_lengths_angles[:, 20]),(0. + torso_lengths_angles_v[:, 20]))
@@ -502,140 +480,203 @@ class KinematicsLib():
                     torso_lengths_angles[:, 36] = torch.mul((0. + torso_lengths_angles[:, 36]),(0. + torso_lengths_angles_v[:, 20]))
 
 
+            else:
+                torso_lengths_angles = Variable(torso_lengths_angles_v.data)
+                torso_lengths_angles_v[:, 20] = torch.add(torso_lengths_angles_v[:, 20], 0.1)
+                torso_lengths_angles_v[:, 21] = torch.add(torso_lengths_angles_v[:, 21], 0.26)
+                torso_lengths_angles_v[:, 22] = torch.add(torso_lengths_angles_v[:, 22], 0.17)
+                torso_lengths_angles_v[:, 23] = torch.add(torso_lengths_angles_v[:, 23], 0.17)
+                torso_lengths_angles_v[:, 24] = torch.add(torso_lengths_angles_v[:, 24], 0.28)
+                torso_lengths_angles_v[:, 25] = torch.add(torso_lengths_angles_v[:, 25], 0.28)
+                torso_lengths_angles_v[:, 26] = torch.add(torso_lengths_angles_v[:, 26], 0.19)
+                torso_lengths_angles_v[:, 27] = torch.add(torso_lengths_angles_v[:, 27], 0.19)
+                torso_lengths_angles_v[:, 28] = torch.add(torso_lengths_angles_v[:, 28], 0.28)
+                torso_lengths_angles_v[:, 29] = torch.add(torso_lengths_angles_v[:, 29], 0.14)
+                torso_lengths_angles_v[:, 30] = torch.add(torso_lengths_angles_v[:, 30], 0.19)
+                torso_lengths_angles_v[:, 31] = torch.add(torso_lengths_angles_v[:, 31], 0.10)
+                torso_lengths_angles_v[:, 32] = torch.add(torso_lengths_angles_v[:, 32], 0.10)
+                torso_lengths_angles_v[:, 33] = torch.add(torso_lengths_angles_v[:, 33], 0.40)
+                torso_lengths_angles_v[:, 34] = torch.add(torso_lengths_angles_v[:, 34], 0.40)
+                torso_lengths_angles_v[:, 35] = torch.add(torso_lengths_angles_v[:, 35], 0.30)
+                torso_lengths_angles_v[:, 36] = torch.add(torso_lengths_angles_v[:, 36], 0.30)
+
+
+            if False:
+                if count < 300:
+                    print count
+                    torso_lengths_angles_v[:, 20] = torch.add(torch.mul(torso_lengths_angles_v[:, 20],0), 1.)
                 else:
-                    torso_lengths_angles = Variable(torso_lengths_angles_v.data)
-                    torso_lengths_angles_v[:, 20] = torch.add(torso_lengths_angles_v[:, 20], 0.1)
-                    torso_lengths_angles_v[:, 21] = torch.add(torso_lengths_angles_v[:, 21], 0.26)
-                    torso_lengths_angles_v[:, 22] = torch.add(torso_lengths_angles_v[:, 22], 0.17)
-                    torso_lengths_angles_v[:, 23] = torch.add(torso_lengths_angles_v[:, 23], 0.17)
-                    torso_lengths_angles_v[:, 24] = torch.add(torso_lengths_angles_v[:, 24], 0.28)
-                    torso_lengths_angles_v[:, 25] = torch.add(torso_lengths_angles_v[:, 25], 0.28)
-                    torso_lengths_angles_v[:, 26] = torch.add(torso_lengths_angles_v[:, 26], 0.19)
-                    torso_lengths_angles_v[:, 27] = torch.add(torso_lengths_angles_v[:, 27], 0.19)
-                    torso_lengths_angles_v[:, 28] = torch.add(torso_lengths_angles_v[:, 28], 0.28)
-                    torso_lengths_angles_v[:, 29] = torch.add(torso_lengths_angles_v[:, 29], 0.14)
-                    torso_lengths_angles_v[:, 30] = torch.add(torso_lengths_angles_v[:, 30], 0.19)
-                    torso_lengths_angles_v[:, 31] = torch.add(torso_lengths_angles_v[:, 31], 0.10)
-                    torso_lengths_angles_v[:, 32] = torch.add(torso_lengths_angles_v[:, 32], 0.10)
-                    torso_lengths_angles_v[:, 33] = torch.add(torso_lengths_angles_v[:, 33], 0.40)
-                    torso_lengths_angles_v[:, 34] = torch.add(torso_lengths_angles_v[:, 34], 0.40)
-                    torso_lengths_angles_v[:, 35] = torch.add(torso_lengths_angles_v[:, 35], 0.30)
-                    torso_lengths_angles_v[:, 36] = torch.add(torso_lengths_angles_v[:, 36], 0.30)
+                    torso_lengths_angles_v[:, 20] = torch.add(torso_lengths_angles_v[:, 20], 1)
+                torso_lengths_angles[:, 20] = torch.mul((0.+torso_lengths_angles[:, 20]), (0.+torso_lengths_angles_v[:, 20]))
+                torso_lengths_angles[:, 21] = torch.mul((0.+torso_lengths_angles[:, 21]), (0.+torso_lengths_angles_v[:, 20]))
+                torso_lengths_angles[:, 22] = torch.mul((0.+torso_lengths_angles[:, 22]), (0.+torso_lengths_angles_v[:, 20]))
+                torso_lengths_angles[:, 23] = torch.mul((0.+torso_lengths_angles[:, 23]), (0.+torso_lengths_angles_v[:, 20]))
+                torso_lengths_angles[:, 24] = torch.mul((0.+torso_lengths_angles[:, 24]), (0.+torso_lengths_angles_v[:, 20]))
+                torso_lengths_angles[:, 25] = torch.mul((0.+torso_lengths_angles[:, 25]), (0.+torso_lengths_angles_v[:, 20]))
+                torso_lengths_angles[:, 26] = torch.mul((0.+torso_lengths_angles[:, 26]), (0.+torso_lengths_angles_v[:, 20]))
+                torso_lengths_angles[:, 27] = torch.mul((0.+torso_lengths_angles[:, 27]), (0.+torso_lengths_angles_v[:, 20]))
+                torso_lengths_angles[:, 28] = torch.mul((0.+torso_lengths_angles[:, 28]), (0.+torso_lengths_angles_v[:, 20]))
+                torso_lengths_angles[:, 29] = torch.mul((0.+torso_lengths_angles[:, 29]), (0.+torso_lengths_angles_v[:, 20]))
+                torso_lengths_angles[:, 30] = torch.mul((0.+torso_lengths_angles[:, 30]), (0.+torso_lengths_angles_v[:, 20]))
+                torso_lengths_angles[:, 31] = torch.mul((0.+torso_lengths_angles[:, 31]), (0.+torso_lengths_angles_v[:, 20]))
+                torso_lengths_angles[:, 32] = torch.mul((0.+torso_lengths_angles[:, 32]), (0.+torso_lengths_angles_v[:, 20]))
+                torso_lengths_angles[:, 33] = torch.mul((0.+torso_lengths_angles[:, 33]), (0.+torso_lengths_angles_v[:, 20]))
+                torso_lengths_angles[:, 34] = torch.mul((0.+torso_lengths_angles[:, 34]), (0.+torso_lengths_angles_v[:, 20]))
+                torso_lengths_angles[:, 35] = torch.mul((0.+torso_lengths_angles[:, 35]), (0.+torso_lengths_angles_v[:, 20]))
+                torso_lengths_angles[:, 36] = torch.mul((0.+torso_lengths_angles[:, 36]), (0.+torso_lengths_angles_v[:, 20]))
 
 
-                if False:
-                    if count < 300:
-                        print count
-                        torso_lengths_angles_v[:, 20] = torch.add(torch.mul(torso_lengths_angles_v[:, 20],0), 1.)
-                    else:
-                        torso_lengths_angles_v[:, 20] = torch.add(torso_lengths_angles_v[:, 20], 1)
-                    torso_lengths_angles[:, 20] = torch.mul((0.+torso_lengths_angles[:, 20]), (0.+torso_lengths_angles_v[:, 20]))
-                    torso_lengths_angles[:, 21] = torch.mul((0.+torso_lengths_angles[:, 21]), (0.+torso_lengths_angles_v[:, 20]))
-                    torso_lengths_angles[:, 22] = torch.mul((0.+torso_lengths_angles[:, 22]), (0.+torso_lengths_angles_v[:, 20]))
-                    torso_lengths_angles[:, 23] = torch.mul((0.+torso_lengths_angles[:, 23]), (0.+torso_lengths_angles_v[:, 20]))
-                    torso_lengths_angles[:, 24] = torch.mul((0.+torso_lengths_angles[:, 24]), (0.+torso_lengths_angles_v[:, 20]))
-                    torso_lengths_angles[:, 25] = torch.mul((0.+torso_lengths_angles[:, 25]), (0.+torso_lengths_angles_v[:, 20]))
-                    torso_lengths_angles[:, 26] = torch.mul((0.+torso_lengths_angles[:, 26]), (0.+torso_lengths_angles_v[:, 20]))
-                    torso_lengths_angles[:, 27] = torch.mul((0.+torso_lengths_angles[:, 27]), (0.+torso_lengths_angles_v[:, 20]))
-                    torso_lengths_angles[:, 28] = torch.mul((0.+torso_lengths_angles[:, 28]), (0.+torso_lengths_angles_v[:, 20]))
-                    torso_lengths_angles[:, 29] = torch.mul((0.+torso_lengths_angles[:, 29]), (0.+torso_lengths_angles_v[:, 20]))
-                    torso_lengths_angles[:, 30] = torch.mul((0.+torso_lengths_angles[:, 30]), (0.+torso_lengths_angles_v[:, 20]))
-                    torso_lengths_angles[:, 31] = torch.mul((0.+torso_lengths_angles[:, 31]), (0.+torso_lengths_angles_v[:, 20]))
-                    torso_lengths_angles[:, 32] = torch.mul((0.+torso_lengths_angles[:, 32]), (0.+torso_lengths_angles_v[:, 20]))
-                    torso_lengths_angles[:, 33] = torch.mul((0.+torso_lengths_angles[:, 33]), (0.+torso_lengths_angles_v[:, 20]))
-                    torso_lengths_angles[:, 34] = torch.mul((0.+torso_lengths_angles[:, 34]), (0.+torso_lengths_angles_v[:, 20]))
-                    torso_lengths_angles[:, 35] = torch.mul((0.+torso_lengths_angles[:, 35]), (0.+torso_lengths_angles_v[:, 20]))
-                    torso_lengths_angles[:, 36] = torch.mul((0.+torso_lengths_angles[:, 36]), (0.+torso_lengths_angles_v[:, 20]))
+            torso_lengths_angles_v[:, 37] = torch.add(torso_lengths_angles_v[:, 37], 0.6)
+            torso_lengths_angles_v[:, 38] = torch.add(torso_lengths_angles_v[:, 38], 1.3)
+            torso_lengths_angles_v[:, 39] = torch.add(torso_lengths_angles_v[:, 39], 0.1)
+
+            if count % 15 == 1:
+                print torso_lengths_angles[0:2, 20:26], 'cloned'
+                print torso_lengths_angles_v[0:2, 20:26],'original variable'
+                #print torso_lengths_angles[0, 20:37]
 
 
-                torso_lengths_angles_v[:, 37] = torch.add(torso_lengths_angles_v[:, 37], 0.6)
-                torso_lengths_angles_v[:, 38] = torch.add(torso_lengths_angles_v[:, 38], 1.3)
-                torso_lengths_angles_v[:, 39] = torch.add(torso_lengths_angles_v[:, 39], 0.1)
+            #head in vectorized form
+            # print type(torso_lengths_angles_v[:, 37])
 
-                if count % 15 == 1:
-                    print torso_lengths_angles[0:2, 20:26], 'cloned'
-                    print torso_lengths_angles_v[0:2, 20:26],'original variable'
-                    #print torso_lengths_angles[0, 20:37]
+            torso_lengths_angles_v[:, 40] = torso_lengths_angles_v[:, 37] \
+                                            + torso_lengths_angles[:, 28] * ((np.pi / 2. - torso_lengths_angles_v[:, 8] * 100 * np.pi / 180).cos()) * ((-np.pi / 2. + torso_lengths_angles_v[:, 9] * 100 * np.pi / 180).cos())
+            torso_lengths_angles_v[:, 41] = torso_lengths_angles_v[:, 38] + torso_lengths_angles[:, 28] * ((np.pi / 2. - torso_lengths_angles_v[:, 8] * 100 * np.pi / 180).sin()) * ((-np.pi / 2. + torso_lengths_angles_v[:, 9] * 100 * np.pi / 180).cos()) * (0. + torso_lengths_angles_v[:, 18]).cos() + torso_lengths_angles[:, 28] * ((-np.pi / 2. + torso_lengths_angles_v[:, 9] * 100 * np.pi / 180).sin()) * (0. + torso_lengths_angles_v[:, 18]).sin() \
+                                            + torso_lengths_angles[:, 21] * (0. + torso_lengths_angles_v[:, 18]).cos()
+            torso_lengths_angles_v[:, 42] = torso_lengths_angles_v[:, 39] - torso_lengths_angles[:, 20] + torso_lengths_angles[:, 28] * ((np.pi / 2. - torso_lengths_angles_v[:, 8] * 100 * np.pi / 180).sin()) * ((-np.pi / 2. + torso_lengths_angles_v[:, 9] * 100 * np.pi / 180).cos()) * (0. + torso_lengths_angles_v[:, 18]).sin() - torso_lengths_angles[:, 28] * ((-np.pi / 2. + torso_lengths_angles_v[:, 9] * 100 * np.pi / 180).sin()) * (0. + torso_lengths_angles_v[:, 18]).cos() \
+                                            + torso_lengths_angles[:, 21] * (0. + torso_lengths_angles_v[:, 18]).sin()
+
+            # right elbow in vectorized form
+            torso_lengths_angles_v[:, 43] = torso_lengths_angles_v[:, 37] - torso_lengths_angles[:, 22] \
+                                            + (-(np.pi + torso_lengths_angles_v[:, 4] * 100 * np.pi / 180).cos() * torso_lengths_angles[:, 24] * (np.pi + torso_lengths_angles_v[:, 2] * 100 * np.pi / 180).cos())
+            torso_lengths_angles_v[:, 44] = torso_lengths_angles_v[:, 38] \
+                                            + (-torso_lengths_angles[:, 24] * (np.pi + torso_lengths_angles_v[:, 2] * 100 * np.pi / 180).sin()) * (0. + torso_lengths_angles_v[:, 18]).cos() \
+                                            - ((np.pi + torso_lengths_angles_v[:, 4] * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 24] * (np.pi + torso_lengths_angles_v[:, 2] * 100 * np.pi / 180).cos()) * (0. + torso_lengths_angles_v[:, 18]).sin() \
+                                            + torso_lengths_angles[:, 21] * (0. + torso_lengths_angles_v[:, 18]).cos()
+            torso_lengths_angles_v[:, 45] = torso_lengths_angles_v[:, 39] - torso_lengths_angles[:, 20] \
+                                            + (-torso_lengths_angles[:, 24] * (np.pi + torso_lengths_angles_v[:, 2] * 100 * np.pi / 180).sin()) * (0. + torso_lengths_angles_v[:, 18]).sin() \
+                                            + ((np.pi + torso_lengths_angles_v[:, 4] * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 24] * (np.pi + torso_lengths_angles_v[:, 2] * 100 * np.pi / 180).cos()) * (0. + torso_lengths_angles_v[:, 18]).cos() \
+                                            + torso_lengths_angles[:, 21] * (0. + torso_lengths_angles_v[:, 18]).sin()
+
+            # left elbow in vectorized form
+            torso_lengths_angles_v[:, 46] = torso_lengths_angles_v[:, 37] + torso_lengths_angles[:, 23] \
+                                            + (-(np.pi + torso_lengths_angles_v[:, 5] * 100 * np.pi / 180).cos() * torso_lengths_angles[:, 25] * (-torso_lengths_angles_v[:, 3] * 100 * np.pi / 180).cos())
+            torso_lengths_angles_v[:, 47] = torso_lengths_angles_v[:, 38] \
+                                            + (-torso_lengths_angles[:, 25] * (-torso_lengths_angles_v[:, 3] * 100 * np.pi / 180).sin()) * (0. + torso_lengths_angles_v[:, 18]).cos() \
+                                            + ((np.pi + torso_lengths_angles_v[:, 5] * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 25] * (-torso_lengths_angles_v[:, 3] * 100 * np.pi / 180).cos()) * (0. + torso_lengths_angles_v[:, 18]).sin() \
+                                            + torso_lengths_angles[:, 21] * (0. + torso_lengths_angles_v[:, 18]).cos()
+            torso_lengths_angles_v[:, 48] = torso_lengths_angles_v[:, 39] - torso_lengths_angles[:, 20] \
+                                            + (-torso_lengths_angles[:, 25] * (-torso_lengths_angles_v[:, 3] * 100 * np.pi / 180).sin()) * (0. + torso_lengths_angles_v[:, 18]).sin() \
+                                            - ((np.pi + torso_lengths_angles_v[:, 5] * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 25] * (-torso_lengths_angles_v[:, 3] * 100 * np.pi / 180).cos()) * (0. + torso_lengths_angles_v[:, 18]).cos() \
+                                            + torso_lengths_angles[:, 21] * (0. + torso_lengths_angles_v[:, 18]).sin()
+
+            # right hand in vectorized form
+            torso_lengths_angles_v[:, 49] = torso_lengths_angles_v[:, 37] - torso_lengths_angles[:, 22] \
+                                            + ((1.8 - torso_lengths_angles_v[:, 4]) * 100 * np.pi / 180).cos() * (((1.8 + torso_lengths_angles_v[:, 2]) * 100 * np.pi / 180).cos() * ((torso_lengths_angles_v[:, 6] * 100 * np.pi / 180).cos() *  torso_lengths_angles[:, 26] - torso_lengths_angles[:, 25]) - ((1.8 + torso_lengths_angles_v[:, 2]) * 100 * np.pi / 180).sin() * ((torso_lengths_angles_v[:, 0] + torso_lengths_angles_v[:, 4] + 0.9) * 100 * np.pi / 180).cos() * (torso_lengths_angles_v[:, 6] * 100 * np.pi / 180).sin() *  torso_lengths_angles[:, 26]) \
+                                            + ((1.8 -torso_lengths_angles_v[:, 4]) * 100 * np.pi / 180).sin() * ((torso_lengths_angles_v[:, 0] + torso_lengths_angles_v[:, 4] + 0.9) * 100 * np.pi / 180).sin() * (torso_lengths_angles_v[:, 6] * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 26]
+            torso_lengths_angles_v[:, 50] = torso_lengths_angles_v[:, 38] \
+                                            + (((1.8 + torso_lengths_angles_v[:, 2]) * 100 * np.pi / 180).sin() * ((torso_lengths_angles_v[:, 6] * 100 * np.pi / 180).cos() *  torso_lengths_angles[:, 26] - torso_lengths_angles[:, 25]) + ((1.8 + torso_lengths_angles_v[:, 2]) * 100 * np.pi / 180).cos() * ((torso_lengths_angles_v[:, 0] + torso_lengths_angles_v[:, 4] + 0.9) * 100 * np.pi / 180).cos() * (torso_lengths_angles_v[:, 6] * 100 * np.pi / 180).sin() *torso_lengths_angles[:, 26]) * (0. + torso_lengths_angles_v[:, 18]).cos() \
+                                            - (((1.8 - torso_lengths_angles_v[:, 4]) * 100 * np.pi / 180).sin() * (((1.8 + torso_lengths_angles_v[:, 2]) * 100 * np.pi / 180).cos() * ((torso_lengths_angles_v[:, 6] * 100 * np.pi / 180).cos() * torso_lengths_angles[:, 26] - torso_lengths_angles[:, 25]) - ((1.8 + torso_lengths_angles_v[:, 2]) * 100 * np.pi / 180).sin() * ((torso_lengths_angles_v[:, 0] + torso_lengths_angles_v[:, 4] + 0.9) * 100 * np.pi / 180).cos() * (torso_lengths_angles_v[:, 6] * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 26]) - ((1.8 - torso_lengths_angles_v[:, 4]) * 100 * np.pi / 180).cos() * ((torso_lengths_angles_v[:, 0] + torso_lengths_angles_v[:, 4] + 0.9) * 100 * np.pi / 180).sin() * (torso_lengths_angles_v[:, 6] * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 26]) * (0. + torso_lengths_angles_v[:, 18]).sin() \
+                                            + torso_lengths_angles[:, 21] * (0. + torso_lengths_angles_v[:, 18]).cos()
+            torso_lengths_angles_v[:, 51] = torso_lengths_angles_v[:, 39] - torso_lengths_angles[:, 20]\
+                                            + (((1.8 + torso_lengths_angles_v[:, 2]) * 100 * np.pi / 180).sin() * ((torso_lengths_angles_v[:, 6] * 100 * np.pi / 180).cos() *  torso_lengths_angles[:, 26] - torso_lengths_angles[:, 25]) + ((1.8 + torso_lengths_angles_v[:, 2]) * 100 * np.pi / 180).cos() * ((torso_lengths_angles_v[:, 0] + torso_lengths_angles_v[:, 4] + 0.9) * 100 * np.pi / 180).cos() * (torso_lengths_angles_v[:, 6] * 100 * np.pi / 180).sin() *torso_lengths_angles[:, 26]) * (0. + torso_lengths_angles_v[:, 18]).sin() \
+                                            + (((1.8 - torso_lengths_angles_v[:, 4]) * 100 * np.pi / 180).sin() * (((1.8 + torso_lengths_angles_v[:, 2]) * 100 * np.pi / 180).cos() * ((torso_lengths_angles_v[:, 6] * 100 * np.pi / 180).cos() * torso_lengths_angles[:, 26] - torso_lengths_angles[:, 25]) - ((1.8 + torso_lengths_angles_v[:, 2]) * 100 * np.pi / 180).sin() * ((torso_lengths_angles_v[:, 0] + torso_lengths_angles_v[:, 4] + 0.9) * 100 * np.pi / 180).cos() * (torso_lengths_angles_v[:, 6] * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 26]) - ((1.8 - torso_lengths_angles_v[:, 4]) * 100 * np.pi / 180).cos() * ((torso_lengths_angles_v[:, 0] + torso_lengths_angles_v[:, 4] + 0.9) * 100 * np.pi / 180).sin() * (torso_lengths_angles_v[:, 6] * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 26]) * (0. + torso_lengths_angles_v[:, 18]).cos() \
+                                            + torso_lengths_angles[:, 21] * (0. + torso_lengths_angles_v[:, 18]).sin()
+
+            # left hand in vectorized form
+            torso_lengths_angles_v[:, 52] = torso_lengths_angles_v[:, 37] + torso_lengths_angles[:, 23] \
+                                            + ((1.8 + torso_lengths_angles_v[:, 5]) * 100 * np.pi / 180).cos() * (((-torso_lengths_angles_v[:, 3]) * 100 * np.pi / 180).cos() * ((torso_lengths_angles_v[:, 7] * 100 * np.pi / 180).cos() *  torso_lengths_angles[:, 27] - torso_lengths_angles[:, 25]) - ((-torso_lengths_angles_v[:, 3]) * 100 * np.pi / 180).sin() * ((-torso_lengths_angles_v[:, 1] - torso_lengths_angles_v[:, 5] + 0.9) * 100 * np.pi / 180).cos() * (torso_lengths_angles_v[:, 7] * 100 * np.pi / 180).sin() *  torso_lengths_angles[:, 27]) \
+                                            + ((1.8 +torso_lengths_angles_v[:, 5]) * 100 * np.pi / 180).sin() * ((-torso_lengths_angles_v[:, 1] -torso_lengths_angles_v[:, 5] + 0.9) * 100 * np.pi / 180).sin() * (torso_lengths_angles_v[:, 7] * 100 * np.pi / 180).sin() *  torso_lengths_angles[:, 27]
+            torso_lengths_angles_v[:, 53] = torso_lengths_angles_v[:, 38] \
+                                            + (((-torso_lengths_angles_v[:, 3]) * 100 * np.pi / 180).sin() * ((torso_lengths_angles_v[:, 7] * 100 * np.pi / 180).cos() * torso_lengths_angles[:, 27] - torso_lengths_angles[:, 25]) + ((-torso_lengths_angles_v[:, 3]) * 100 * np.pi / 180).cos() * ((-torso_lengths_angles_v[:, 1] - torso_lengths_angles_v[:, 5] + 0.9) * 100 * np.pi / 180).cos() * (torso_lengths_angles_v[:, 7] * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 27]) * (0. + torso_lengths_angles_v[:, 18]).cos() \
+                                            - (((1.8 + torso_lengths_angles_v[:, 5]) * 100 * np.pi / 180).sin() * (((-torso_lengths_angles_v[:, 3]) * 100 * np.pi / 180).cos() * ((torso_lengths_angles_v[:, 7] * 100 * np.pi / 180).cos() * torso_lengths_angles[:, 27] - torso_lengths_angles[:, 25]) - ((-torso_lengths_angles_v[:, 3]) * 100 * np.pi / 180).sin() * ((-torso_lengths_angles_v[:, 1] -torso_lengths_angles_v[:, 5] + 0.9) * 100 * np.pi / 180).cos() * (torso_lengths_angles_v[:, 7] * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 27]) - ((1.8 + torso_lengths_angles_v[:, 5]) * 100 * np.pi / 180).cos() * ((-torso_lengths_angles_v[:, 1] - torso_lengths_angles_v[:, 5] + 0.9) * 100 * np.pi / 180).sin() * (torso_lengths_angles_v[:, 7] * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 27]) * (0. + torso_lengths_angles_v[:, 18]).sin() \
+                                            + torso_lengths_angles[:, 21] * (0. + torso_lengths_angles_v[:, 18]).cos()
+            torso_lengths_angles_v[:, 54] = torso_lengths_angles_v[:, 39] - torso_lengths_angles[:, 20]\
+                                            + (((-torso_lengths_angles_v[:, 3]) * 100 * np.pi / 180).sin() * ((torso_lengths_angles_v[:, 7] * 100 * np.pi / 180).cos() * torso_lengths_angles[:, 27] - torso_lengths_angles[:, 25]) + ((-torso_lengths_angles_v[:, 3]) * 100 * np.pi / 180).cos() * ((-torso_lengths_angles_v[:, 1] - torso_lengths_angles_v[:, 5] + 0.9) * 100 * np.pi / 180).cos() * (torso_lengths_angles_v[:, 7] * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 27]) * (0. + torso_lengths_angles_v[:, 18]).sin() \
+                                            + (((1.8 + torso_lengths_angles_v[:, 5]) * 100 * np.pi / 180).sin() * (((-torso_lengths_angles_v[:, 3]) * 100 * np.pi / 180).cos() * ((torso_lengths_angles_v[:, 7] * 100 * np.pi / 180).cos() * torso_lengths_angles[:, 27] - torso_lengths_angles[:, 25]) - ((-torso_lengths_angles_v[:, 3]) * 100 * np.pi / 180).sin() * ((-torso_lengths_angles_v[:, 1] -torso_lengths_angles_v[:, 5] + 0.9) * 100 * np.pi / 180).cos() * (torso_lengths_angles_v[:, 7] * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 27]) - ((1.8 + torso_lengths_angles_v[:, 5]) * 100 * np.pi / 180).cos() * ((-torso_lengths_angles_v[:, 1] - torso_lengths_angles_v[:, 5] + 0.9) * 100 * np.pi / 180).sin() * (torso_lengths_angles_v[:, 7] * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 27]) * (0. + torso_lengths_angles_v[:, 18]).cos() \
+                                            + torso_lengths_angles[:, 21] * (0. + torso_lengths_angles_v[:, 18]).sin()
 
 
-                #head in vectorized form
-                # print type(torso_lengths_angles_v[:, 37])
+            # right knee in vectorized form
+            torso_lengths_angles_v[:, 55] = torso_lengths_angles_v[:, 37] - torso_lengths_angles[:, 31] \
+                                            + ((torso_lengths_angles_v[:, 14] * 100 * np.pi / 180).cos() * torso_lengths_angles[:, 33] * (np.pi + torso_lengths_angles_v[:, 12] * 100 * np.pi / 180).cos())
+            torso_lengths_angles_v[:, 56] = torso_lengths_angles_v[:, 38] \
+                                            + (-torso_lengths_angles[:, 33] * (np.pi + torso_lengths_angles_v[:, 12] * 100 * np.pi / 180).sin()) * (0. + torso_lengths_angles_v[:, 19]).cos() \
+                                            - ((torso_lengths_angles_v[:, 14] * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 33] * (np.pi + torso_lengths_angles_v[:, 12] * 100 * np.pi / 180).cos()) * (0. + torso_lengths_angles_v[:, 19]).sin() \
+                                            - torso_lengths_angles[:, 30] * (0. + torso_lengths_angles_v[:, 19]).cos()
+            torso_lengths_angles_v[:, 57] = torso_lengths_angles_v[:, 39] - torso_lengths_angles[:, 29] \
+                                            + (-torso_lengths_angles[:, 33] * (np.pi + torso_lengths_angles_v[:, 12] * 100 * np.pi / 180).sin()) * (0. + torso_lengths_angles_v[:, 19]).sin() \
+                                            + ((torso_lengths_angles_v[:, 14] * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 33] * (np.pi + torso_lengths_angles_v[:, 12] * 100 * np.pi / 180).cos()) * (0. + torso_lengths_angles_v[:, 19]).cos() \
+                                            + torso_lengths_angles[:, 30] * (0. + torso_lengths_angles_v[:, 19]).sin()
 
-                torso_lengths_angles_v[:, 40] = torso_lengths_angles_v[:, 37] + torso_lengths_angles[:, 28] * ((np.pi / 2. - torso_lengths_angles_v[:, 8] * 100 * np.pi / 180).cos()) * ((-np.pi / 2. + torso_lengths_angles_v[:, 9] * 100 * np.pi / 180).cos())
-                torso_lengths_angles_v[:, 41] = torso_lengths_angles_v[:, 38] + torso_lengths_angles[:, 28] * ((np.pi / 2. - torso_lengths_angles_v[:, 8] * 100 * np.pi / 180).sin()) * ((-np.pi / 2. + torso_lengths_angles_v[:, 9] * 100 * np.pi / 180).cos()) * (0. + torso_lengths_angles_v[:, 18]).cos() + torso_lengths_angles[:, 28] * ((-np.pi / 2. + torso_lengths_angles_v[:, 9] * 100 * np.pi / 180).sin()) * (0. + torso_lengths_angles_v[:, 18]).sin() + torso_lengths_angles[:, 21] * (0. + torso_lengths_angles_v[:, 18]).cos()
-                torso_lengths_angles_v[:, 42] = torso_lengths_angles_v[:, 39] - torso_lengths_angles[:, 20] + torso_lengths_angles[:, 28] * ((np.pi / 2. - torso_lengths_angles_v[:, 8] * 100 * np.pi / 180).sin()) * ((-np.pi / 2. + torso_lengths_angles_v[:, 9] * 100 * np.pi / 180).cos()) * (0. + torso_lengths_angles_v[:, 18]).sin() - torso_lengths_angles[:, 28] * ((-np.pi / 2. + torso_lengths_angles_v[:, 9] * 100 * np.pi / 180).sin()) * (0. + torso_lengths_angles_v[:, 18]).cos() + torso_lengths_angles[:, 21] * (0. + torso_lengths_angles_v[:, 18]).sin()
+            # left knee in vectorized form
+            torso_lengths_angles_v[:, 58] = torso_lengths_angles_v[:, 37] + torso_lengths_angles[:, 32] \
+                                            + (-((-1.8 - torso_lengths_angles_v[:, 15]) * 100 * np.pi / 180).cos() * torso_lengths_angles[:, 34] * (-torso_lengths_angles_v[:, 13] * 100 * np.pi / 180).cos())
+            torso_lengths_angles_v[:, 59] = torso_lengths_angles_v[:, 38] \
+                                            + (-torso_lengths_angles[:, 34] * (-torso_lengths_angles_v[:, 13] * 100 * np.pi / 180).sin()) * (0. + torso_lengths_angles_v[:, 19]).cos() \
+                                            + (((-1.8 - torso_lengths_angles_v[:, 15]) * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 34] * (-torso_lengths_angles_v[:, 13] * 100 * np.pi / 180).cos()) * (0. + torso_lengths_angles_v[:, 19]).sin() \
+                                            - torso_lengths_angles[:, 30] * (0. + torso_lengths_angles_v[:, 19]).cos()
+            torso_lengths_angles_v[:, 60] = torso_lengths_angles_v[:, 39] - torso_lengths_angles[:, 29] \
+                                            + (-torso_lengths_angles[:, 34] * (-torso_lengths_angles_v[:, 13] * 100 * np.pi / 180).sin()) * (0. + torso_lengths_angles_v[:, 19]).sin() \
+                                            - (((-1.8 - torso_lengths_angles_v[:, 15]) * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 34] * (-torso_lengths_angles_v[:, 13] * 100 * np.pi / 180).cos()) * (0. + torso_lengths_angles_v[:, 19]).cos() \
+                                            + torso_lengths_angles[:, 30] * (0. + torso_lengths_angles_v[:, 19]).sin()
 
-                # right elbow in vectorized form
-                torso_lengths_angles_v[:, 43] = torso_lengths_angles_v[:, 37] - torso_lengths_angles[:, 22] + (-(np.pi + torso_lengths_angles_v[:, 4] * 100 * np.pi / 180).cos() * torso_lengths_angles[:, 24] * (np.pi + torso_lengths_angles_v[:, 2] * 100 * np.pi / 180).cos())
-                torso_lengths_angles_v[:, 44] = torso_lengths_angles_v[:, 38] + (-torso_lengths_angles[:, 24] * (np.pi + torso_lengths_angles_v[:, 2] * 100 * np.pi / 180).sin()) * (0. + torso_lengths_angles_v[:, 18]).cos() - ((np.pi + torso_lengths_angles_v[:, 4] * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 24] * (np.pi + torso_lengths_angles_v[:, 2] * 100 * np.pi / 180).cos()) * (0. + torso_lengths_angles_v[:, 18]).sin() + torso_lengths_angles[:, 21] * (0. + torso_lengths_angles_v[:, 18]).cos()
-                torso_lengths_angles_v[:, 45] = torso_lengths_angles_v[:, 39] - torso_lengths_angles[:, 20] + (-torso_lengths_angles[:, 24] * (np.pi + torso_lengths_angles_v[:, 2] * 100 * np.pi / 180).sin()) * (0. + torso_lengths_angles_v[:, 18]).sin() + ((np.pi + torso_lengths_angles_v[:, 4] * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 24] * (np.pi + torso_lengths_angles_v[:, 2] * 100 * np.pi / 180).cos()) * (0. + torso_lengths_angles_v[:, 18]).cos() + torso_lengths_angles[:, 21] * (0. + torso_lengths_angles_v[:, 18]).sin()
+            # right ankle in vectorized form
+            torso_lengths_angles_v[:, 61] = torso_lengths_angles_v[:, 37] - torso_lengths_angles[:, 31] \
+                                            + (-(torso_lengths_angles_v[:, 14]) * 100 * np.pi / 180).cos() * (((1.8 + torso_lengths_angles_v[:, 12]) * 100 * np.pi / 180).cos() * ((torso_lengths_angles_v[:, 16] * 100 * np.pi / 180).cos() *  torso_lengths_angles[:, 35] -  torso_lengths_angles[:, 33]) - ((1.8 + torso_lengths_angles_v[:, 12]) * 100 * np.pi / 180).sin() * ((-torso_lengths_angles_v[:, 10] + torso_lengths_angles_v[:, 14] + 0.9) * 100 * np.pi / 180).cos() * (torso_lengths_angles_v[:, 16] * 100 * np.pi / 180).sin() *  torso_lengths_angles[:, 35]) \
+                                            + (-(torso_lengths_angles_v[:, 14]) * 100 * np.pi / 180).sin() * ((-torso_lengths_angles_v[:, 10] + torso_lengths_angles_v[:, 14] + 0.9) * 100 * np.pi / 180).sin() * (torso_lengths_angles_v[:, 16] * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 35]
+            torso_lengths_angles_v[:, 62] = torso_lengths_angles_v[:, 38] \
+                                            + (((1.8 + torso_lengths_angles_v[:, 12]) * 100 * np.pi / 180).sin() * ((torso_lengths_angles_v[:, 16] * 100 * np.pi / 180).cos() *  torso_lengths_angles[:, 35] - torso_lengths_angles[:, 33]) + ((1.8 + torso_lengths_angles_v[:, 12]) * 100 * np.pi / 180).cos() * ((-torso_lengths_angles_v[:, 10] + torso_lengths_angles_v[:, 14] + 0.9) * 100 * np.pi / 180).cos() * (torso_lengths_angles_v[:, 16] * 100 * np.pi / 180).sin() *torso_lengths_angles[:, 35]) * (0. + torso_lengths_angles_v[:, 19]).cos() \
+                                            - (((torso_lengths_angles_v[:, 14]) * 100 * np.pi / 180).sin() * (((1.8 + torso_lengths_angles_v[:, 12]) * 100 * np.pi / 180).cos() * ((torso_lengths_angles_v[:, 16] * 100 * np.pi / 180).cos() * torso_lengths_angles[:, 35] -  torso_lengths_angles[:, 33]) - ((1.8 + torso_lengths_angles_v[:, 12]) * 100 * np.pi / 180).sin() * ((-torso_lengths_angles_v[:, 10] + torso_lengths_angles_v[:, 14] + 0.9) * 100 * np.pi / 180).cos() * (torso_lengths_angles_v[:, 16] * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 35]) - ((torso_lengths_angles_v[:, 14]) * 100 * np.pi / 180).cos() * ((-torso_lengths_angles_v[:, 10] + torso_lengths_angles_v[:, 14] + 0.9) * 100 * np.pi / 180).sin() * (torso_lengths_angles_v[:, 16] * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 35]) * (0. + torso_lengths_angles_v[:, 19]).sin() \
+                                            - torso_lengths_angles[:, 30] * (0. + torso_lengths_angles_v[:, 19]).cos()
+            torso_lengths_angles_v[:, 63] = torso_lengths_angles_v[:, 39] - torso_lengths_angles[:, 29] \
+                                            + (((1.8 + torso_lengths_angles_v[:, 12]) * 100 * np.pi / 180).sin() * ((torso_lengths_angles_v[:, 16] * 100 * np.pi / 180).cos() *  torso_lengths_angles[:, 35] - torso_lengths_angles[:, 33]) + ((1.8 + torso_lengths_angles_v[:, 12]) * 100 * np.pi / 180).cos() * ((-torso_lengths_angles_v[:, 10] + torso_lengths_angles_v[:, 14] + 0.9) * 100 * np.pi / 180).cos() * (torso_lengths_angles_v[:, 16] * 100 * np.pi / 180).sin() *torso_lengths_angles[:, 35]) * (0. + torso_lengths_angles_v[:, 19]).sin() \
+                                            - (((torso_lengths_angles_v[:, 14]) * 100 * np.pi / 180).sin() * (((1.8 + torso_lengths_angles_v[:, 12]) * 100 * np.pi / 180).cos() * ((torso_lengths_angles_v[:, 16] * 100 * np.pi / 180).cos() * torso_lengths_angles[:, 35] -  torso_lengths_angles[:, 33]) - ((1.8 + torso_lengths_angles_v[:, 12]) * 100 * np.pi / 180).sin() * ((-torso_lengths_angles_v[:, 10] + torso_lengths_angles_v[:, 14] + 0.9) * 100 * np.pi / 180).cos() * (torso_lengths_angles_v[:, 16] * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 35]) - ((torso_lengths_angles_v[:, 14]) * 100 * np.pi / 180).cos() * ((-torso_lengths_angles_v[:, 10] + torso_lengths_angles_v[:, 14] + 0.9) * 100 * np.pi / 180).sin() * (torso_lengths_angles_v[:, 16] * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 35]) * (0. + torso_lengths_angles_v[:, 19]).cos() \
+                                            - torso_lengths_angles[:, 30] * (0. + torso_lengths_angles_v[:, 19]).sin()
 
-                # left elbow in vectorized form
-                torso_lengths_angles_v[:, 46] = torso_lengths_angles_v[:, 37] + torso_lengths_angles[:, 23] + (-(np.pi + torso_lengths_angles_v[:, 5] * 100 * np.pi / 180).cos() * torso_lengths_angles[:, 25] * (-torso_lengths_angles_v[:, 3] * 100 * np.pi / 180).cos())
-                torso_lengths_angles_v[:, 47] = torso_lengths_angles_v[:, 38] + (-torso_lengths_angles[:, 25] * (-torso_lengths_angles_v[:, 3] * 100 * np.pi / 180).sin()) * (0. + torso_lengths_angles_v[:, 18]).cos() + ((np.pi + torso_lengths_angles_v[:, 5] * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 25] * (- torso_lengths_angles_v[:, 3] * 100 * np.pi / 180).cos()) * (0. + torso_lengths_angles_v[:, 18]).sin() + torso_lengths_angles[:, 21] * (0. + torso_lengths_angles_v[:, 18]).cos()
-                torso_lengths_angles_v[:, 48] = torso_lengths_angles_v[:, 39] - torso_lengths_angles[:, 20] + (-torso_lengths_angles[:, 25] * (- torso_lengths_angles_v[:, 3] * 100 * np.pi / 180).sin()) * (0. + torso_lengths_angles_v[:, 18]).sin() - ((np.pi +torso_lengths_angles_v[:, 5] * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 25] * (- torso_lengths_angles_v[:, 3] * 100 * np.pi / 180).cos()) * (0. + torso_lengths_angles_v[:, 18]).cos() + torso_lengths_angles[:, 21] * (0. + torso_lengths_angles_v[:, 18]).sin()
+            # left ankle in vectorized form
+            torso_lengths_angles_v[:, 64] = torso_lengths_angles_v[:, 37] + torso_lengths_angles[:, 32] \
+                                            + (((-1.8 - torso_lengths_angles_v[:, 15])) * 100 * np.pi / 180).cos() * (((-torso_lengths_angles_v[:, 13]) * 100 * np.pi / 180).cos() * (((3.6 - torso_lengths_angles_v[:, 17]) * 100 * np.pi / 180).cos() *  torso_lengths_angles[:, 36] - torso_lengths_angles[:, 34]) - ((-torso_lengths_angles_v[:, 13]) * 100 * np.pi / 180).sin() * ((-torso_lengths_angles_v[:, 11] + (-1.8 - torso_lengths_angles_v[:, 15]) + 0.9) * 100 * np.pi / 180).cos() * ((3.6 - torso_lengths_angles_v[:, 17]) * 100 * np.pi / 180).sin() *  torso_lengths_angles[:, 36]) \
+                                            + (((-1.8 - torso_lengths_angles_v[:, 15])) * 100 * np.pi / 180).sin() * ((-torso_lengths_angles_v[:, 11] + (-1.8 - torso_lengths_angles_v[:, 15]) + 0.9) * 100 * np.pi / 180).sin() * ((3.6 - torso_lengths_angles_v[:, 17]) * 100 * np.pi / 180).sin() *  torso_lengths_angles[:, 36]
+            torso_lengths_angles_v[:, 65] = torso_lengths_angles_v[:, 38] \
+                                            + (((-torso_lengths_angles_v[:, 13]) * 100 * np.pi / 180).sin() * (((3.6 - torso_lengths_angles_v[:, 17]) * 100 * np.pi / 180).cos() * torso_lengths_angles[:, 36] - torso_lengths_angles[:, 34]) + ((-torso_lengths_angles_v[:, 13]) * 100 * np.pi / 180).cos() * ((-torso_lengths_angles_v[:, 11] + (-1.8 - torso_lengths_angles_v[:, 15]) + 0.9) * 100 * np.pi / 180).cos() * ((3.6 - torso_lengths_angles_v[:, 17]) * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 36]) * (0. + torso_lengths_angles_v[:, 19]).cos()\
+                                            - ((((-1.8 - torso_lengths_angles_v[:, 15])) * 100 * np.pi / 180).sin() * (((-torso_lengths_angles_v[:, 13]) * 100 * np.pi / 180).cos() * (((3.6 - torso_lengths_angles_v[:, 17]) * 100 * np.pi / 180).cos() *  torso_lengths_angles[:, 36] - torso_lengths_angles[:, 34]) - ((-torso_lengths_angles_v[:, 13]) * 100 * np.pi / 180).sin() * ((-torso_lengths_angles_v[:, 11] + (-1.8 - torso_lengths_angles_v[:, 15]) + 0.9) * 100 * np.pi / 180).cos() * ((3.6 - torso_lengths_angles_v[:, 17]) * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 36]) - (((-1.8 - torso_lengths_angles_v[:, 15])) * 100 * np.pi / 180).cos() * ((-torso_lengths_angles_v[:, 11] + (-1.8 - torso_lengths_angles_v[:, 15]) + 0.9) * 100 * np.pi / 180).sin() * ((3.6 - torso_lengths_angles_v[:, 17]) * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 36]) * (0. + torso_lengths_angles_v[:, 19]).sin() \
+                                            - torso_lengths_angles[:, 30] * (0. + torso_lengths_angles_v[:, 19]).cos()
+            torso_lengths_angles_v[:, 66] = torso_lengths_angles_v[:, 39] - torso_lengths_angles[:, 29] \
+                                            + (((-torso_lengths_angles_v[:, 13]) * 100 * np.pi / 180).sin() * (((3.6 - torso_lengths_angles_v[:, 17]) * 100 * np.pi / 180).cos() * torso_lengths_angles[:, 36] - torso_lengths_angles[:, 34]) + ((-torso_lengths_angles_v[:, 13]) * 100 * np.pi / 180).cos() * ((-torso_lengths_angles_v[:, 11] + (-1.8 - torso_lengths_angles_v[:, 15]) + 0.9) * 100 * np.pi / 180).cos() * ((3.6 - torso_lengths_angles_v[:, 17]) * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 36]) * (0. + torso_lengths_angles_v[:, 19]).sin() \
+                                            + ((((-1.8 - torso_lengths_angles_v[:, 15])) * 100 * np.pi / 180).sin() * (((-torso_lengths_angles_v[:, 13]) * 100 * np.pi / 180).cos() * (((3.6 - torso_lengths_angles_v[:, 17]) * 100 * np.pi / 180).cos() *  torso_lengths_angles[:, 36] - torso_lengths_angles[:, 34]) - ((-torso_lengths_angles_v[:, 13]) * 100 * np.pi / 180).sin() * ((-torso_lengths_angles_v[:, 11] + (-1.8 - torso_lengths_angles_v[:, 15]) + 0.9) * 100 * np.pi / 180).cos() * ((3.6 - torso_lengths_angles_v[:, 17]) * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 36]) - (((-1.8 - torso_lengths_angles_v[:, 15])) * 100 * np.pi / 180).cos() * ((-torso_lengths_angles_v[:, 11] + (-1.8 - torso_lengths_angles_v[:, 15]) + 0.9) * 100 * np.pi / 180).sin() * ((3.6 - torso_lengths_angles_v[:, 17]) * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 36]) * (0. + torso_lengths_angles_v[:, 19]).cos() \
+                                            - torso_lengths_angles[:, 30] * (0. + torso_lengths_angles_v[:, 19]).sin()
 
-                # right hand in vectorized form
-                torso_lengths_angles_v[:, 49] = torso_lengths_angles_v[:, 37] - torso_lengths_angles[:, 22] + ((1.8 - torso_lengths_angles_v[:, 4]) * 100 * np.pi / 180).cos() * (((1.8 + torso_lengths_angles_v[:, 2]) * 100 * np.pi / 180).cos() * ((torso_lengths_angles_v[:, 6] * 100 * np.pi / 180).cos() *  torso_lengths_angles[:, 26] -  torso_lengths_angles[:, 21]) - ((1.8 + torso_lengths_angles_v[:, 2]) * 100 * np.pi / 180).sin() * ((torso_lengths_angles_v[:, 0] + torso_lengths_angles_v[:, 4] + 0.9) * 100 * np.pi / 180).cos() * (torso_lengths_angles_v[:, 6] * 100 * np.pi / 180).sin() *  torso_lengths_angles[:, 26]) + ((1.8 -torso_lengths_angles_v[:, 4]) * 100 * np.pi / 180).sin() * ((torso_lengths_angles_v[:, 0] + torso_lengths_angles_v[:, 4] + 0.9) * 100 * np.pi / 180).sin() * (torso_lengths_angles_v[:, 6] * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 26]
-                torso_lengths_angles_v[:, 50] = torso_lengths_angles_v[:, 38] + (((1.8 + torso_lengths_angles_v[:, 2]) * 100 * np.pi / 180).sin() * ((torso_lengths_angles_v[:, 6] * 100 * np.pi / 180).cos() *  torso_lengths_angles[:, 26] -  torso_lengths_angles[:, 21]) + ((1.8 + torso_lengths_angles_v[:, 2]) * 100 * np.pi / 180).cos() * ((torso_lengths_angles_v[:, 0] + torso_lengths_angles_v[:, 4] + 0.9) * 100 * np.pi / 180).cos() * (torso_lengths_angles_v[:, 6] * 100 * np.pi / 180).sin() *torso_lengths_angles[:, 26]) * (0. + torso_lengths_angles_v[:, 18]).cos() - (((1.8 - torso_lengths_angles_v[:, 4]) * 100 * np.pi / 180).sin() * (((1.8 + torso_lengths_angles_v[:, 2]) * 100 * np.pi / 180).cos() * ((torso_lengths_angles_v[:, 6] * 100 * np.pi / 180).cos() *torso_lengths_angles[:, 26] -  torso_lengths_angles[:, 21]) - ((1.8 + torso_lengths_angles_v[:, 2]) * 100 * np.pi / 180).sin() * ((torso_lengths_angles_v[:, 0] + torso_lengths_angles_v[:, 4] + 0.9) * 100 * np.pi / 180).cos() * (torso_lengths_angles_v[:, 6] * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 26]) - ((1.8 - torso_lengths_angles_v[:, 4]) * 100 * np.pi / 180).cos() * ((torso_lengths_angles_v[:, 0] +torso_lengths_angles_v[:, 4] + 0.9) * 100 * np.pi / 180).sin() * (torso_lengths_angles_v[:, 6] * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 26]) * (0. + torso_lengths_angles_v[:, 18]).sin() + torso_lengths_angles[:, 21] * (0. + torso_lengths_angles_v[:, 18]).cos()
-                torso_lengths_angles_v[:, 51] = torso_lengths_angles_v[:, 39] - torso_lengths_angles[:, 20] + (((1.8 + torso_lengths_angles_v[:, 2]) * 100 * np.pi / 180).sin() * ((torso_lengths_angles_v[:, 6] * 100 * np.pi / 180).cos() *  torso_lengths_angles[:, 26] - torso_lengths_angles[:, 21]) + ((1.8 + torso_lengths_angles_v[:, 2]) * 100 * np.pi / 180).cos() * ((torso_lengths_angles_v[:, 0] + torso_lengths_angles_v[:, 4] + 0.9) * 100 * np.pi / 180).cos() * (torso_lengths_angles_v[:, 6] * 100 * np.pi / 180).sin() *torso_lengths_angles[:, 26]) * (0. + torso_lengths_angles_v[:, 18]).sin() + (((1.8 - torso_lengths_angles_v[:, 4]) * 100 * np.pi / 180).sin() * (((1.8 + torso_lengths_angles_v[:, 2]) * 100 * np.pi / 180).cos() * ((torso_lengths_angles_v[:, 6] * 100 * np.pi / 180).cos() * torso_lengths_angles[:, 26] -  torso_lengths_angles[:, 21]) - ((1.8 + torso_lengths_angles_v[:, 2]) * 100 * np.pi / 180).sin() * ((torso_lengths_angles_v[:, 0] + torso_lengths_angles_v[:, 4] + 0.9) * 100 * np.pi / 180).cos() * (torso_lengths_angles_v[:, 6] * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 26]) - ((1.8 - torso_lengths_angles_v[:, 4]) * 100 * np.pi / 180).cos() * ((torso_lengths_angles_v[:, 0] + torso_lengths_angles_v[:, 4] + 0.9) * 100 * np.pi / 180).sin() * (torso_lengths_angles_v[:, 6] * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 26]) * (0. + torso_lengths_angles_v[:, 18]).cos() + torso_lengths_angles[:, 21] * (0. + torso_lengths_angles_v[:, 18]).sin()
+            if forward_only == True:
+                #let's get the neck, shoulders, and glutes pseudotargets
+                pseudotargets = Variable(torch.Tensor(np.zeros((images.shape[0], 15))))
 
-                # left hand in vectorized form
-                torso_lengths_angles_v[:, 52] = torso_lengths_angles_v[:, 37] + torso_lengths_angles[:, 23] + ((1.8 + torso_lengths_angles_v[:, 5]) * 100 * np.pi / 180).cos() * (((-torso_lengths_angles_v[:, 3]) * 100 * np.pi / 180).cos() * ((torso_lengths_angles_v[:, 7] * 100 * np.pi / 180).cos() *  torso_lengths_angles[:, 27] - torso_lengths_angles[:, 25]) - ((-torso_lengths_angles_v[:, 3]) * 100 * np.pi / 180).sin() * ((-torso_lengths_angles_v[:, 1] - torso_lengths_angles_v[:, 5] + 0.9) * 100 * np.pi / 180).cos() * (torso_lengths_angles_v[:, 7] * 100 * np.pi / 180).sin() *  torso_lengths_angles[:, 27]) + ((1.8 +torso_lengths_angles_v[:, 5]) * 100 * np.pi / 180).sin() * ((-torso_lengths_angles_v[:, 1] -torso_lengths_angles_v[:, 5] + 0.9) * 100 * np.pi / 180).sin() * (torso_lengths_angles_v[:, 7] * 100 * np.pi / 180).sin() *  torso_lengths_angles[:, 27]
-                torso_lengths_angles_v[:, 53] = torso_lengths_angles_v[:, 38] + (((-torso_lengths_angles_v[:, 3]) * 100 * np.pi / 180).sin() * ((torso_lengths_angles_v[:, 7] * 100 * np.pi / 180).cos() * torso_lengths_angles[:, 27] -  torso_lengths_angles[:, 25]) + ((-torso_lengths_angles_v[:, 3]) * 100 * np.pi / 180).cos() * ((-torso_lengths_angles_v[:, 1] - torso_lengths_angles_v[:, 5] + 0.9) * 100 * np.pi / 180).cos() * (torso_lengths_angles_v[:, 7] * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 27]) * (0. + torso_lengths_angles_v[:, 18]).cos() - (((1.8 + torso_lengths_angles_v[:, 5]) * 100 * np.pi / 180).sin() * (((-torso_lengths_angles_v[:, 3]) * 100 * np.pi / 180).cos() * ((torso_lengths_angles_v[:, 7] * 100 * np.pi / 180).cos() *  torso_lengths_angles[:, 27] - torso_lengths_angles[:, 25]) - ((-torso_lengths_angles_v[:, 3]) * 100 * np.pi / 180).sin() * ((-torso_lengths_angles_v[:, 1] -torso_lengths_angles_v[:, 5] + 0.9) * 100 * np.pi / 180).cos() * (torso_lengths_angles_v[:, 7] * 100 * np.pi / 180).sin() *torso_lengths_angles[:, 27]) - ((1.8 + torso_lengths_angles_v[:, 5]) * 100 * np.pi / 180).cos() * ((-torso_lengths_angles_v[:, 1] - torso_lengths_angles_v[:, 5] + 0.9) * 100 * np.pi / 180).sin() * (torso_lengths_angles_v[:, 7] * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 27]) * (0. + torso_lengths_angles_v[:, 18]).sin() + torso_lengths_angles[:, 21] * (0. + torso_lengths_angles_v[:, 18]).cos()
-                torso_lengths_angles_v[:, 54] = torso_lengths_angles_v[:, 39] - torso_lengths_angles[:, 20] + (((-torso_lengths_angles_v[:, 3]) * 100 * np.pi / 180).sin() * ((torso_lengths_angles_v[:, 7] * 100 * np.pi / 180).cos() *  torso_lengths_angles[:, 27] -torso_lengths_angles[:, 25]) + ((-torso_lengths_angles_v[:, 3]) * 100 * np.pi / 180).cos() * ((-torso_lengths_angles_v[:, 1] - torso_lengths_angles_v[:, 5] + 0.9) * 100 * np.pi / 180).cos() * (torso_lengths_angles_v[:, 7] * 100 * np.pi / 180).sin() *torso_lengths_angles[:, 27]) * (0. + torso_lengths_angles_v[:, 18]).sin() + (((1.8 + torso_lengths_angles_v[:, 5]) * 100 * np.pi / 180).sin() * (((-torso_lengths_angles_v[:, 3]) * 100 * np.pi / 180).cos() * ((torso_lengths_angles_v[:, 7] * 100 * np.pi / 180).cos() *  torso_lengths_angles[:, 27] -torso_lengths_angles[:, 25]) - ((-torso_lengths_angles_v[:, 3]) * 100 * np.pi / 180).sin() * ((-torso_lengths_angles_v[:, 1] -torso_lengths_angles_v[:, 5] + 0.9) * 100 * np.pi / 180).cos() * (torso_lengths_angles_v[:, 7] * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 27]) - ((1.8 + torso_lengths_angles_v[:, 5]) * 100 * np.pi / 180).cos() * ((-torso_lengths_angles_v[:, 1] - torso_lengths_angles_v[:, 5] + 0.9) * 100 * np.pi / 180).sin() * (torso_lengths_angles_v[:, 7] * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 27]) * (0. + torso_lengths_angles_v[:, 18]).cos() + torso_lengths_angles[:, 21] * (0. + torso_lengths_angles_v[:, 18]).sin()
+                #get the neck in vectorized form
+                pseudotargets[:, 0] = torso_lengths_angles_v[:, 37]
+                pseudotargets[:, 1] = torso_lengths_angles_v[:, 38] + torso_lengths_angles[:, 21] * (0. + torso_lengths_angles_v[:, 18]).cos()
+                pseudotargets[:, 2] = torso_lengths_angles_v[:, 39] - torso_lengths_angles[:, 20] + torso_lengths_angles[:, 21] * (0. + torso_lengths_angles_v[:, 18]).sin()
 
+                #get the right shoulder in vectorized form
+                pseudotargets[:, 3] = torso_lengths_angles_v[:, 37] - torso_lengths_angles[:, 22]
+                pseudotargets[:, 4] = torso_lengths_angles_v[:, 38] + torso_lengths_angles[:, 21] * (0. + torso_lengths_angles_v[:, 18]).cos()
+                pseudotargets[:, 5] = torso_lengths_angles_v[:, 39] - torso_lengths_angles[:, 20] + torso_lengths_angles[:, 21] * (0. + torso_lengths_angles_v[:, 18]).sin()
 
-                # right knee in vectorized form
-                torso_lengths_angles_v[:, 55] = torso_lengths_angles_v[:, 37] - torso_lengths_angles[:, 31] + ((torso_lengths_angles_v[:, 14] * 100 * np.pi / 180).cos() * torso_lengths_angles[:, 33] * (np.pi + torso_lengths_angles_v[:, 12] * 100 * np.pi / 180).cos())
-                torso_lengths_angles_v[:, 56] = torso_lengths_angles_v[:, 38] + (-torso_lengths_angles[:, 33] * (np.pi + torso_lengths_angles_v[:, 12] * 100 * np.pi / 180).sin()) * (0. + torso_lengths_angles_v[:, 19]).cos() - ((torso_lengths_angles_v[:, 14] * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 33] * (np.pi + torso_lengths_angles_v[:, 12] * 100 * np.pi / 180).cos()) * (0. + torso_lengths_angles_v[:, 19]).sin() - torso_lengths_angles[:, 30] * (0. + torso_lengths_angles_v[:, 19]).cos()
-                torso_lengths_angles_v[:, 57] = torso_lengths_angles_v[:, 39] - torso_lengths_angles[:, 29] + (-torso_lengths_angles[:, 33] * (np.pi + torso_lengths_angles_v[:, 12] * 100 * np.pi / 180).sin()) * (0. + torso_lengths_angles_v[:, 18]).sin() + ((torso_lengths_angles_v[:, 14] * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 33] * (np.pi + torso_lengths_angles_v[:, 12] * 100 * np.pi / 180).cos()) * (0. + torso_lengths_angles_v[:, 19]).cos() + torso_lengths_angles[:, 30] * (0. + torso_lengths_angles_v[:, 19]).sin()
+                #print \the left shoulder in vectorized form
+                pseudotargets[:, 6] = torso_lengths_angles_v[:, 37] + torso_lengths_angles[:, 23]
+                pseudotargets[:, 7] = torso_lengths_angles_v[:, 38] + torso_lengths_angles[:, 21] * (0. + torso_lengths_angles_v[:, 18]).cos()
+                pseudotargets[:, 8] = torso_lengths_angles_v[:, 39] - torso_lengths_angles[:, 20] + torso_lengths_angles[:, 21] * (0. + torso_lengths_angles_v[:, 18]).sin()
 
-                # left knee in vectorized form
-                torso_lengths_angles_v[:, 58] = torso_lengths_angles_v[:, 37] + torso_lengths_angles[:, 32] + (-((-1.8 - torso_lengths_angles_v[:, 15]) * 100 * np.pi / 180).cos() * torso_lengths_angles[:, 34] * (-torso_lengths_angles_v[:, 13] * 100 * np.pi / 180).cos())
-                torso_lengths_angles_v[:, 59] = torso_lengths_angles_v[:, 38] + (-torso_lengths_angles[:, 34] * (-torso_lengths_angles_v[:, 13] * 100 * np.pi / 180).sin()) * (0. + torso_lengths_angles_v[:, 19]).cos() + (((-1.8 - torso_lengths_angles_v[:, 15]) * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 34] * (- torso_lengths_angles_v[:, 13] * 100 * np.pi / 180).cos()) * (0. + torso_lengths_angles_v[:, 19]).sin() - torso_lengths_angles[:, 30] * (0. + torso_lengths_angles_v[:, 19]).cos()
-                torso_lengths_angles_v[:, 60] = torso_lengths_angles_v[:, 39] - torso_lengths_angles[:, 29] + (-torso_lengths_angles[:, 34] * (- torso_lengths_angles_v[:, 13] * 100 * np.pi / 180).sin()) * (0. + torso_lengths_angles_v[:, 19]).sin() - (((-1.8 - torso_lengths_angles_v[:, 15]) * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 34] * (- torso_lengths_angles_v[:, 13] * 100 * np.pi / 180).cos()) * (0. + torso_lengths_angles_v[:, 19]).cos()  + torso_lengths_angles[:, 30] * (0. + torso_lengths_angles_v[:, 19]).sin()
+                #get the right glute in vectorized form
+                pseudotargets[:, 9] = torso_lengths_angles_v[:, 37] - torso_lengths_angles[:, 31]
+                pseudotargets[:, 10] = torso_lengths_angles_v[:, 38] - torso_lengths_angles[:, 30] * (0. + torso_lengths_angles_v[:, 19]).cos()
+                pseudotargets[:, 11] = torso_lengths_angles_v[:, 39] - torso_lengths_angles[:, 29] + torso_lengths_angles[:, 30] * (0. + torso_lengths_angles_v[:, 19]).sin()
 
-                # right ankle in vectorized form
-                torso_lengths_angles_v[:, 61] = torso_lengths_angles_v[:, 37] - torso_lengths_angles[:, 31] + (-(torso_lengths_angles_v[:, 14]) * 100 * np.pi / 180).cos() * (((1.8 + torso_lengths_angles_v[:, 12]) * 100 * np.pi / 180).cos() * ((torso_lengths_angles_v[:, 16] * 100 * np.pi / 180).cos() *  torso_lengths_angles[:, 35] -  torso_lengths_angles[:, 33]) - ((1.8 + torso_lengths_angles_v[:, 12]) * 100 * np.pi / 180).sin() * ((-torso_lengths_angles_v[:, 10] + torso_lengths_angles_v[:, 14] + 0.9) * 100 * np.pi / 180).cos() * (torso_lengths_angles_v[:, 16] * 100 * np.pi / 180).sin() *  torso_lengths_angles[:, 35]) - ((torso_lengths_angles_v[:, 14]) * 100 * np.pi / 180).sin() * ((-torso_lengths_angles_v[:, 10] + torso_lengths_angles_v[:, 14] + 0.9) * 100 * np.pi / 180).sin() * (torso_lengths_angles_v[:, 16] * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 35]
-                torso_lengths_angles_v[:, 62] = torso_lengths_angles_v[:, 38] + (((1.8 + torso_lengths_angles_v[:, 12]) * 100 * np.pi / 180).sin() * ((torso_lengths_angles_v[:, 16] * 100 * np.pi / 180).cos() *  torso_lengths_angles[:, 35] -  torso_lengths_angles[:, 33]) + ((1.8 + torso_lengths_angles_v[:, 12]) * 100 * np.pi / 180).cos() * ((-torso_lengths_angles_v[:, 10] + torso_lengths_angles_v[:, 14] + 0.9) * 100 * np.pi / 180).cos() * (torso_lengths_angles_v[:, 16] * 100 * np.pi / 180).sin() *torso_lengths_angles[:, 35]) * (0. + torso_lengths_angles_v[:, 19]).cos() - (((torso_lengths_angles_v[:, 14]) * 100 * np.pi / 180).sin() * (((1.8 + torso_lengths_angles_v[:, 12]) * 100 * np.pi / 180).cos() * ((torso_lengths_angles_v[:, 16] * 100 * np.pi / 180).cos() *torso_lengths_angles[:, 35] -  torso_lengths_angles[:, 30]) - ((1.8 + torso_lengths_angles_v[:, 12]) * 100 * np.pi / 180).sin() * ((-torso_lengths_angles_v[:, 10] + torso_lengths_angles_v[:, 14] + 0.9) * 100 * np.pi / 180).cos() * (torso_lengths_angles_v[:, 16] * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 35]) -  ((torso_lengths_angles_v[:, 14]) * 100 * np.pi / 180).cos() * ((-torso_lengths_angles_v[:, 10] + torso_lengths_angles_v[:, 14] + 0.9) * 100 * np.pi / 180).sin() * (torso_lengths_angles_v[:, 16] * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 35]) * (0. + torso_lengths_angles_v[:, 19]).sin() - torso_lengths_angles[:, 30] * (0. + torso_lengths_angles_v[:, 19]).cos()
-                torso_lengths_angles_v[:, 63] = torso_lengths_angles_v[:, 39] - torso_lengths_angles[:, 29] + (((1.8 + torso_lengths_angles_v[:, 12]) * 100 * np.pi / 180).sin() * ((torso_lengths_angles_v[:, 16] * 100 * np.pi / 180).cos() *  torso_lengths_angles[:, 35] - torso_lengths_angles[:, 30]) + ((1.8 + torso_lengths_angles_v[:, 12]) * 100 * np.pi / 180).cos() * ((-torso_lengths_angles_v[:, 10] + torso_lengths_angles_v[:, 14] + 0.9) * 100 * np.pi / 180).cos() * (torso_lengths_angles_v[:, 16] * 100 * np.pi / 180).sin() *torso_lengths_angles[:, 35]) * (0. + torso_lengths_angles_v[:, 19]).sin() + ((-(torso_lengths_angles_v[:, 14]) * 100 * np.pi / 180).sin() * (((1.8 + torso_lengths_angles_v[:, 12]) * 100 * np.pi / 180).cos() * ((torso_lengths_angles_v[:, 16] * 100 * np.pi / 180).cos() * torso_lengths_angles[:, 35] -  torso_lengths_angles[:, 33]) - ((1.8 + torso_lengths_angles_v[:, 12]) * 100 * np.pi / 180).sin() * ((-torso_lengths_angles_v[:, 10] + torso_lengths_angles_v[:, 14] + 0.9) * 100 * np.pi / 180).cos() * (torso_lengths_angles_v[:, 16] * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 35]) +  ((torso_lengths_angles_v[:, 14]) * 100 * np.pi / 180).cos() * ((-torso_lengths_angles_v[:, 10] + torso_lengths_angles_v[:, 14] + 0.9) * 100 * np.pi / 180).sin() * (torso_lengths_angles_v[:, 16] * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 35]) * (0. + torso_lengths_angles_v[:, 19]).cos() - torso_lengths_angles[:, 30] * (0. + torso_lengths_angles_v[:, 19]).sin()
+                #print \the left glute in vectorized form
+                pseudotargets[:, 12] = torso_lengths_angles_v[:, 37] + torso_lengths_angles[:, 32]
+                pseudotargets[:, 13] = torso_lengths_angles_v[:, 38] - torso_lengths_angles[:, 30] * (0. + torso_lengths_angles_v[:, 19]).cos()
+                pseudotargets[:, 14] = torso_lengths_angles_v[:, 39] - torso_lengths_angles[:, 29] + torso_lengths_angles[:, 30] * (0. + torso_lengths_angles_v[:, 19]).sin()
 
-                # left ankle in vectorized form
-                torso_lengths_angles_v[:, 64] = torso_lengths_angles_v[:, 37] + torso_lengths_angles[:, 32] + (((-1.8 - torso_lengths_angles_v[:, 15])) * 100 * np.pi / 180).cos() * (((-torso_lengths_angles_v[:, 13]) * 100 * np.pi / 180).cos() * (((3.6 - torso_lengths_angles_v[:, 17]) * 100 * np.pi / 180).cos() *  torso_lengths_angles[:, 36] - torso_lengths_angles[:, 34]) - ((-torso_lengths_angles_v[:, 13]) * 100 * np.pi / 180).sin() * ((-torso_lengths_angles_v[:, 11] + (-1.8 - torso_lengths_angles_v[:, 15]) + 0.9) * 100 * np.pi / 180).cos() * ((3.6 - torso_lengths_angles_v[:, 17]) * 100 * np.pi / 180).sin() *  torso_lengths_angles[:, 36]) + (((-1.8 - torso_lengths_angles_v[:, 15])) * 100 * np.pi / 180).sin() * ((-torso_lengths_angles_v[:, 11] + (-1.8 - torso_lengths_angles_v[:, 15]) + 0.9) * 100 * np.pi / 180).sin() * ((3.6 - torso_lengths_angles_v[:, 17]) * 100 * np.pi / 180).sin() *  torso_lengths_angles[:, 36]
-                torso_lengths_angles_v[:, 65] = torso_lengths_angles_v[:, 38] + (((-torso_lengths_angles_v[:, 13]) * 100 * np.pi / 180).sin() * (((3.6 - torso_lengths_angles_v[:, 17]) * 100 * np.pi / 180).cos() * torso_lengths_angles[:, 36] -  torso_lengths_angles[:, 34]) + ((-torso_lengths_angles_v[:, 13]) * 100 * np.pi / 180).cos() * ((-torso_lengths_angles_v[:, 11] + (-1.8 - torso_lengths_angles_v[:, 15]) + 0.9) * 100 * np.pi / 180).cos() * ((3.6 - torso_lengths_angles_v[:, 17]) * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 36]) * (0. + torso_lengths_angles_v[:, 19]).cos()  - ((((-1.8 - torso_lengths_angles_v[:, 15])) * 100 * np.pi / 180).sin() * (((-torso_lengths_angles_v[:, 13]) * 100 * np.pi / 180).cos() * (((3.6 - torso_lengths_angles_v[:, 17]) * 100 * np.pi / 180).cos() *  torso_lengths_angles[:, 36] - torso_lengths_angles[:, 34]) - ((-torso_lengths_angles_v[:, 13]) * 100 * np.pi / 180).sin() * ((-torso_lengths_angles_v[:, 11] + (-1.8 - torso_lengths_angles_v[:, 15]) + 0.9) * 100 * np.pi / 180).cos() * ((3.6 - torso_lengths_angles_v[:, 17]) * 100 * np.pi / 180).sin() *torso_lengths_angles[:, 36]) - (((-1.8 - torso_lengths_angles_v[:, 15])) * 100 * np.pi / 180).cos() * ((-torso_lengths_angles_v[:, 11] + (-1.8 - torso_lengths_angles_v[:, 15]) + 0.9) * 100 * np.pi / 180).sin() * ((3.6 - torso_lengths_angles_v[:, 17]) * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 36]) * (0. + torso_lengths_angles_v[:, 19]).sin() - torso_lengths_angles[:, 30] * (0. + torso_lengths_angles_v[:, 19]).cos()
-                torso_lengths_angles_v[:, 66] = torso_lengths_angles_v[:, 39] - torso_lengths_angles[:, 29] + (((-torso_lengths_angles_v[:, 13]) * 100 * np.pi / 180).sin() * (((3.6 - torso_lengths_angles_v[:, 17]) * 100 * np.pi / 180).cos() *  torso_lengths_angles[:, 36] -torso_lengths_angles[:, 34]) + ((-torso_lengths_angles_v[:, 13]) * 100 * np.pi / 180).cos() * ((-torso_lengths_angles_v[:, 11] + (-1.8 - torso_lengths_angles_v[:, 15]) + 0.9) * 100 * np.pi / 180).cos() * ((3.6 - torso_lengths_angles_v[:, 17]) * 100 * np.pi / 180).sin() *torso_lengths_angles[:, 36]) * (0. + torso_lengths_angles_v[:, 19]).sin() + ((((-1.8 - torso_lengths_angles_v[:, 15])) * 100 * np.pi / 180).sin() * (((-torso_lengths_angles_v[:, 13]) * 100 * np.pi / 180).cos() * (((3.6 - torso_lengths_angles_v[:, 17]) * 100 * np.pi / 180).cos() *  torso_lengths_angles[:, 36] -torso_lengths_angles[:, 34]) - ((-torso_lengths_angles_v[:, 13]) * 100 * np.pi / 180).sin() * ((-torso_lengths_angles_v[:, 11] + (-1.8 - torso_lengths_angles_v[:, 15]) + 0.9) * 100 * np.pi / 180).cos() * ((3.6 - torso_lengths_angles_v[:, 17]) * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 36]) - (((-1.8 - torso_lengths_angles_v[:, 15])) * 100 * np.pi / 180).cos() * ((-torso_lengths_angles_v[:, 11] + (-1.8 - torso_lengths_angles_v[:, 15]) + 0.9) * 100 * np.pi / 180).sin() * ((3.6 - torso_lengths_angles_v[:, 17]) * 100 * np.pi / 180).sin() * torso_lengths_angles[:, 36]) * (0. + torso_lengths_angles_v[:, 19]).cos() - torso_lengths_angles[:, 30] * (0. + torso_lengths_angles_v[:, 19]).sin()
-
-                if forward_only == True:
-                    #let's get the neck, shoulders, and glutes pseudotargets
-                    pseudotargets = Variable(torch.Tensor(np.zeros((images.shape[0], 15))))
-
-                    #get the neck in vectorized form
-                    pseudotargets[:, 0] = torso_lengths_angles_v[:, 37]
-                    pseudotargets[:, 1] = torso_lengths_angles_v[:, 38] + torso_lengths_angles[:, 21] * (0. + torso_lengths_angles_v[:, 18]).cos()
-                    pseudotargets[:, 2] = torso_lengths_angles_v[:, 39] - torso_lengths_angles[:, 20] + torso_lengths_angles[:, 21] * (0. + torso_lengths_angles_v[:, 18]).sin()
-
-                    #get the right shoulder in vectorized form
-                    pseudotargets[:, 3] = torso_lengths_angles_v[:, 37] - torso_lengths_angles[:, 22]
-                    pseudotargets[:, 4] = torso_lengths_angles_v[:, 38] + torso_lengths_angles[:, 21] * (0. + torso_lengths_angles_v[:, 18]).cos()
-                    pseudotargets[:, 5] = torso_lengths_angles_v[:, 39] - torso_lengths_angles[:, 20] + torso_lengths_angles[:, 21] * (0. + torso_lengths_angles_v[:, 18]).sin()
-
-                    #print \the left shoulder in vectorized form
-                    pseudotargets[:, 6] = torso_lengths_angles_v[:, 37] + torso_lengths_angles[:, 23]
-                    pseudotargets[:, 7] = torso_lengths_angles_v[:, 38] + torso_lengths_angles[:, 21] * (0. + torso_lengths_angles_v[:, 18]).cos()
-                    pseudotargets[:, 8] = torso_lengths_angles_v[:, 39] - torso_lengths_angles[:, 20] + torso_lengths_angles[:, 21] * (0. + torso_lengths_angles_v[:, 18]).sin()
-
-                    #get the right glute in vectorized form
-                    pseudotargets[:, 9] = torso_lengths_angles_v[:, 37] - torso_lengths_angles[:, 31]
-                    pseudotargets[:, 10] = torso_lengths_angles_v[:, 38] - torso_lengths_angles[:, 30] * (0. + torso_lengths_angles_v[:, 19]).cos()
-                    pseudotargets[:, 11] = torso_lengths_angles_v[:, 39] - torso_lengths_angles[:, 29] + torso_lengths_angles[:, 30] * (0. + torso_lengths_angles_v[:, 19]).sin()
-
-                    #print \the left glute in vectorized form
-                    pseudotargets[:, 12] = torso_lengths_angles_v[:, 37] + torso_lengths_angles[:, 32]
-                    pseudotargets[:, 13] = torso_lengths_angles_v[:, 38] - torso_lengths_angles[:, 30] * (0. + torso_lengths_angles_v[:, 19]).cos()
-                    pseudotargets[:, 14] = torso_lengths_angles_v[:, 39] - torso_lengths_angles[:, 29] + torso_lengths_angles[:, 30] * (0. + torso_lengths_angles_v[:, 19]).sin()
-
-                    pseudotargets = pseudotargets.data.numpy() * 1000
+                pseudotargets = pseudotargets.data.numpy() * 1000
 
             # angles = torso_lengths_angles_v[:, 0:20].data.numpy()*100
             angles = torso_lengths_angles[:, 0:20]*100

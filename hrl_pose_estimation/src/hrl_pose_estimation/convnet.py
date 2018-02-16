@@ -464,7 +464,7 @@ class CNN(nn.Module):
 
 
 
-    def forward_kinematic_jacobian(self, images, targets, kincons=None, prior_cascade = None, forward_only = False, subject = None):
+    def forward_kinematic_jacobian(self, images, targets=None, kincons=None, prior_cascade = None, forward_only = False, subject = None):
         scores = None
         targets_est = None
         lengths_est = None
@@ -496,15 +496,11 @@ class CNN(nn.Module):
             kincons = kincons / 100
 
 
-        scores, angles_est, pseudotargets_est = KinematicsLib().forward_kinematics_pytorch(images, scores, targets, self.loss_vector_type, kincons, prior_cascade = prior_cascade, forward_only = forward_only, subject = subject, count = self.count)
+        scores, angles_est, pseudotargets_est = KinematicsLib().forward_kinematics_pytorch(images, scores, self.loss_vector_type, kincons, targets, prior_cascade = prior_cascade, forward_only = forward_only, subject = subject, count = self.count)
 
 
         #print scores.size(), ''
 
-        # targets_est = np.copy(scores[:, 17:47].data.numpy())*1000. #after it comes out of the forward kinematics
-        # targets_est[:, 0:3] = np.copy(scores[:, 20:23].data.numpy())*1000. #after it comes out of the forward kinematics
-        # targets_est[:, 3:6] = np.copy(scores[:, 17:20].data.numpy())*1000. #after it comes out of the forward kinematics
-        # lengths_est = np.copy(scores[:, 0:17].data.numpy())
         targets_est = scores[:, 17:47].data*1000. #after it comes out of the forward kinematics
         targets_est[:, 0:3] = scores[:, 20:23].data*1000. #after it comes out of the forward kinematics
         targets_est[:, 3:6] = scores[:, 17:20].data*1000. #after it comes out of the forward kinematics

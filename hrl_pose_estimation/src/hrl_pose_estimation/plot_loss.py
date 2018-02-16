@@ -107,9 +107,11 @@ class DataVisualizer():
         if self.opt.computer == 'lab_harddrive':
             train_val_loss = load_pickle(self.dump_path + '/train_val_losses.p')
             train_val_loss_desk = load_pickle(self.dump_path + '/train_val_losses_hcdesktop.p')
+            train_val_loss_13 = load_pickle(self.dump_path + '/train_val_losses_all_13.p')
             train_val_loss_GPU2 = load_pickle(self.dump_path + '/train_val_losses_GPU2.p')
             train_val_loss_GPU3 = load_pickle(self.dump_path + '/train_val_losses_GPU3.p')
             train_val_loss_GPU4 = load_pickle(self.dump_path + '/train_val_losses_GPU4.p')
+            train_val_loss_13 = load_pickle(self.dump_path + '/train_val_losses_all_13.p')
             train_val_loss_GPU2new = load_pickle(self.dump_path + '/train_val_lossesGPU2_021018.p')
             train_val_loss_GPU3new = load_pickle(self.dump_path + '/train_val_lossesGPU3_021018.p')
             train_val_loss_GPU4new = load_pickle(self.dump_path + '/train_val_lossesGPU4_021018.p')
@@ -119,6 +121,9 @@ class DataVisualizer():
             for key in train_val_loss_desk:
                 print key
             print '###########################  done with desktop ################'
+            for key in train_val_loss_13:
+                print key
+            print '###########################  done with 13 cL ################'
             for key in train_val_loss_GPU4:
                 print key
             print '###########################  done with GPU4 ################'
@@ -183,10 +188,15 @@ class DataVisualizer():
                         plt.xlabel('Epochs, where 700 epochs ~ 4 hours')
                         plt.title('Subject 4 sitting validation Loss, training performed on subjects 2, 3, 5, 6, 7, 8')
 
+            elif self.subject == 13:
+
+                plt.plot(train_val_loss_13['epoch_2to8_angles128b_200e_413'], train_val_loss_13['train_2to8_angles128b_200e_413'], 'k')
+                plt.plot(train_val_loss_13['epoch_2to8_angles128b_200e_413'], train_val_loss_13['val_2to8_angles128b_200e_413'], 'y')
+
 
 
             #plt.axis([0,410,0,30000])
-            #plt.axis([0, 200, 10, 15])
+            plt.axis([0, 200, 10, 30])
             #if self.opt.visualize == True:
             #    plt.show()
             plt.close()
@@ -201,9 +211,10 @@ class DataVisualizer():
         if self.opt.computer == 'aws':
             self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p')
         else:
-            #self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p')
-            self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll.p')
+            self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p')
+            #self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll.p')
             #self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainval_sit175rlh_sit120rll.p')
+
 
         test_dat = self.validation_set
         for key in test_dat:
@@ -244,8 +255,8 @@ class DataVisualizer():
 
 
         print len(self.validation_set), 'size of validation set'
-        batch_size = 1670
-        generate_confidence = False
+        batch_size = 1
+        generate_confidence = True
         self.test_dataset = torch.utils.data.TensorDataset(self.test_x_tensor, self.test_y_tensor)
         self.test_loader = torch.utils.data.DataLoader(self.test_dataset, batch_size, shuffle=True)
 

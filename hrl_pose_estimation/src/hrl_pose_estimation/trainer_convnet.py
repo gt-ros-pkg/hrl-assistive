@@ -97,31 +97,18 @@ class PhysicalTrainer():
         print test_file
         #Entire pressure dataset with coordinates in world frame
 
-        self.save_name = '_2to8_' + opt.losstype + str(self.batch_size) + 'b_' + str(self.num_epochs) + 'e_4'
+        self.save_name = '_2to8_' + opt.losstype+'vL_' + str(self.batch_size) + 'b_' + str(self.num_epochs) + 'e_'+str(self.opt.leave_out)
 
 
         #change this to 'direct' when you are doing baseline methods
         self.loss_vector_type = opt.losstype  # 'arms_cascade'#'upper_angles' #this is so you train the set to joint lengths and angles
 
-        #we'll be loading this later
-        if self.opt.computer == 'lab_harddrive':
-            #try:
-            self.train_val_losses_all = load_pickle('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/train_val_losses_all.p')
-        elif self.opt.computer == 'aws':
-            self.train_val_losses_all = load_pickle('/home/ubuntu/Autobed_OFFICIAL_Trials/train_val_losses_all.p')
 
-        else:
-            try:
-                self.train_val_losses_all = load_pickle('/home/henryclever/hrl_file_server/Autobed/train_val_losses_all.p')
-            except:
-                print 'starting anew'
-
-        if self.opt.quick_test == False:
-            print 'appending to','train'+self.save_name+str(self.opt.leave_out)
-            self.train_val_losse_all = {}
-            self.train_val_losses_all['train'+self.save_name+str(self.opt.leave_out)] = []
-            self.train_val_losses_all['val'+self.save_name+str(self.opt.leave_out)] = []
-            self.train_val_losses_all['epoch'+self.save_name + str(self.opt.leave_out)] = []
+        print 'appending to','train'+self.save_name+str(self.opt.leave_out)
+        self.train_val_losses = {}
+        self.train_val_losses['train'+self.save_name] = []
+        self.train_val_losses['val'+self.save_name] = []
+        self.train_val_losses['epoch'+self.save_name] = []
 
 
         self.mat_size = (NUMOFTAXELS_X, NUMOFTAXELS_Y)
@@ -374,8 +361,7 @@ class PhysicalTrainer():
                     self.opt.leave_out) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p'
                 pkl.dump(regr, open(
                     '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
-                        self.opt.leave_out) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p',
-                    'wb'))
+                        self.opt.leave_out) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p','wb'))
                 print 'saved successfully'
             elif self.opt.computer == 'aws':
                 pkl.dump(regr, open('/home/ubuntu/Autobed_OFFICIAL_Trials/subject_' + str(
@@ -536,21 +522,16 @@ class PhysicalTrainer():
         print 'done with epochs, now evaluating'
         self.validate_convnet('test')
 
-        print self.train_val_losses_all, 'trainval'
+        print self.train_val_losses, 'trainval'
         # Save the model (architecture and weights)
 
-        if self.opt.quick_test == False:
-            if self.opt.computer == 'lab_harddrive':
-                torch.save(self.model, '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_'+str(self.opt.leave_out)+'/p_files/convnet'+self.save_name+'.pt')
-                pkl.dump(self.train_val_losses_all,open(os.path.join('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/train_val_losses_all.p'), 'wb'))
+        if self.opt.computer == 'lab_harddrive':
+            torch.save(self.model, '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_'+str(self.opt.leave_out)+'/p_files/convnet'+self.save_name+'.pt')
+            pkl.dump(self.train_val_losses,open('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_'+str(self.opt.leave_out)+'/p_files/losses'+self.save_name+'.p', 'wb'))
 
-            elif self.opt.computer == 'aws':
-                torch.save(self.model, '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_'+str(self.opt.leave_out)+'/convnet'+self.save_name+'.pt')
-                pkl.dump(self.train_val_losses_all,open('/home/ubuntu/Autobed_OFFICIAL_Trials/train_val_losses_all_'+str(self.opt.leave_out)+'.p', 'wb'))
-
-            else:
-                torch.save(self.model, '/home/henryclever/hrl_file_server/Autobed/subject_'+str(self.opt.leave_out)+'/p_files/convnet'+self.save_name+'.pt')
-                pkl.dump(self.train_val_losses_all,open(os.path.join('/home/henryclever/hrl_file_server/Autobed/train_val_losses_all.p'), 'wb'))
+        elif self.opt.computer == 'aws':
+            torch.save(self.model, '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_'+str(self.opt.leave_out)+'/convnet'+self.save_name+'.pt')
+            pkl.dump(self.train_val_losses,open('/home/ubuntu/Autobed_OFFICIAL_Trials/subject_'+str(self.opt.leave_out)+'/losses'+self.save_name+'.p', 'wb'))
 
 
     def train_convnet(self, epoch):
@@ -671,10 +652,9 @@ class PhysicalTrainer():
 
 
                 print 'appending to alldata losses'
-                if self.opt.quick_test == False:
-                    self.train_val_losses_all['train'+self.save_name + str(self.opt.leave_out)].append(train_loss)
-                    self.train_val_losses_all['val'+self.save_name + str(self.opt.leave_out)].append(val_loss)
-                    self.train_val_losses_all['epoch'+self.save_name + str(self.opt.leave_out)].append(epoch)
+                self.train_val_losses['train'+self.save_name].append(train_loss)
+                self.train_val_losses['val'+self.save_name].append(val_loss)
+                self.train_val_losses['epoch'+self.save_name].append(epoch)
 
 
 
