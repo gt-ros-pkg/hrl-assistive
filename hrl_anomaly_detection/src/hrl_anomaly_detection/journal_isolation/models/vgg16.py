@@ -149,6 +149,8 @@ def VGG16(include_top=True, include_multi_top=False, weights='imagenet', weights
                             cache_subdir='models',
                             file_hash='6d6bbae143d832006294945121d1f1fc')
     model.load_weights(weights_path)
+    sys.exit()
+
 
     # total 18 layers
     for layer in model.layers[:-2]:

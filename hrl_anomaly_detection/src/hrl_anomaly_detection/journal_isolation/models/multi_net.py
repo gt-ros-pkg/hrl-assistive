@@ -75,7 +75,6 @@ def multi_net(idx, trainData, testData, batch_size=512, sam_epoch=500, \
     n_labels = len(np.unique(y_train))
     print "Labels: ", np.unique(y_train), " #Labels: ", n_labels
     print "Labels: ", np.unique(y_test), " #Labels: ", n_labels
-    ## print np.shape(x_train), np.shape(y_train), np.shape(x_test), np.shape(y_test)
 
     ## x_sig_train = x_sig_train[:20]
     ## x_img_train = x_img_train[:20]
@@ -83,8 +82,6 @@ def multi_net(idx, trainData, testData, batch_size=512, sam_epoch=500, \
     ## x_sig_test = x_sig_test[:20]
     ## x_img_test = x_img_test[:20]
     ## y_test = y_test[:20]
-
-
 
 
     # Load weights

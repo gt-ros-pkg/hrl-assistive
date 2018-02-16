@@ -689,16 +689,13 @@ def multi_net_test(save_data_path, pkl_name='', renew=False):
 
         file_name = os.path.join(save_data_path, pkl_name+'_'+str(idx)+'.pkl')
         d = ut.load_pickle(file_name)
-        print d.keys()
 
-        #
+        # scaling
         scaler  = preprocessing.StandardScaler()
         x_sig_tr = scaler.fit_transform(d['x_sig_tr'])
         x_sig_te = scaler.transform(d['x_sig_te'])
         trainData = (x_sig_tr, d['x_img_tr'], d['y_tr'])
         testData  = (x_sig_te, d['x_img_te'], d['y_te'])
-        ## trainData = (x_sig_tr[:20], d['x_img_tr'][:20], d['y_tr'][:20])
-        ## testData  = (x_sig_te[:20], d['x_img_te'][:20], d['y_te'][:20])
         
 
         method      = 'multi_net'
