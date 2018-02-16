@@ -263,6 +263,7 @@ class SyntheticLib():
                 pcons_orig = np.multiply(pcons, original[:, np.newaxis])
                 pcons_mod = np.multiply(pcons, modified[:, np.newaxis])
                 dummy2 = zeros((pcons_mod.shape))
+
                 dummy2[:, [0, 2, 4, 6, 10, 12, 14, 16, 22, 24, 31, 33]] = pcons_mod[:, [0, 2, 4, 6, 10, 12, 14, 16, 22, 24, 31, 33]]
                 pcons_mod[:, [0, 2, 4, 6, 10, 12, 14, 16, 22, 24, 31, 33]] = pcons_mod[:, [1, 3, 5, 7, 11, 13, 15, 17, 23, 25, 32, 34]]
                 pcons_mod[:, [1, 3, 5, 7, 11, 13, 15, 17, 23, 25, 32, 34]] = dummy2[:, [0, 2, 4, 6, 10, 12, 14, 16, 22, 24, 31, 33]]

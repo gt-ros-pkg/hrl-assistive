@@ -57,7 +57,6 @@ HIGH_TAXEL_THRESH_Y = (NUMOFTAXELS_Y - 1)
 
 class VisualizationLib():
 
-
     def print_error(self, target, score, output_size, loss_vector_type = None, data = None, printerror = True):
 
         error = (score - target)
@@ -66,56 +65,67 @@ class VisualizationLib():
         error = np.concatenate((error, error_norm), axis = 2)
 
         error_avg = np.mean(error, axis=0) / 10
+
+        for i in error_avg[:, 3]*10:
+            print i
+
         error_avg = np.reshape(error_avg, (output_size[0], output_size[1]+1))
-        error_avg = np.reshape(np.array(["%.2f" % w for w in error_avg.reshape(error_avg.size)]),
+        error_avg_print = np.reshape(np.array(["%.2f" % w for w in error_avg.reshape(error_avg.size)]),
                                      (output_size[0], output_size[1] + 1))
 
+
         if loss_vector_type == 'upper_angles':
-            error_avg = np.transpose(np.concatenate(([['Average Error for Last Batch', '       ', ' Head  ', ' Torso ', 'R Elbow', 'L Elbow',
+            error_avg_print = np.transpose(np.concatenate(([['Average Error for Last Batch', '       ', ' Head  ', ' Torso ', 'R Elbow', 'L Elbow',
                                                        'R Hand ', 'L Hand ']], np.transpose(
-                np.concatenate(([['', '', '', ''], [' x, cm ', ' y, cm ', ' z, cm ', '  norm ']], error_avg))))))
+                np.concatenate(([['', '', '', ''], [' x, cm ', ' y, cm ', ' z, cm ', '  norm ']], error_avg_print))))))
         elif loss_vector_type == 'direct' or loss_vector_type == 'angles':
-            error_avg = np.transpose(np.concatenate(([['Average Error for Last Batch', '       ', 'Head   ',
+            error_avg_print = np.transpose(np.concatenate(([['Average Error for Last Batch', '       ', 'Head   ',
                                                        'Torso  ', 'R Elbow', 'L Elbow', 'R Hand ', 'L Hand ',
                                                        'R Knee ', 'L Knee ', 'R Foot ', 'L Foot ']], np.transpose(
-                np.concatenate(([['', '', '', ''], [' x, cm ', ' y, cm ', ' z, cm ', '  norm ']], error_avg))))))
+                np.concatenate(([['', '', '', ''], [' x, cm ', ' y, cm ', ' z, cm ', '  norm ']], error_avg_print))))))
         elif loss_vector_type == 'arms_cascade':
-            error_avg = np.transpose(np.concatenate(([['Average Error for Last Batch', '       ', 'R Elbow', 'R Hand ']], np.transpose(
-                np.concatenate(([['', '', '', ''], [' x, cm ', ' y, cm ', ' z, cm ', '  norm ']], error_avg))))))
+            error_avg_print = np.transpose(np.concatenate(([['Average Error for Last Batch', '       ', 'R Elbow', 'R Hand ']], np.transpose(
+                np.concatenate(([['', '', '', ''], [' x, cm ', ' y, cm ', ' z, cm ', '  norm ']], error_avg_print))))))
         else:
-            error_avg = np.transpose(np.concatenate(([['Average Error for Last Batch', '       ', ' Torso ', 'R Elbow', 'L Elbow',
+            error_avg_print = np.transpose(np.concatenate(([['Average Error for Last Batch', '       ', ' Torso ', 'R Elbow', 'L Elbow',
                                   'R Hand ', 'L Hand ']], np.transpose(np.concatenate(
-                        ([['', '', '', ''], [' x, cm ', ' y, cm ', ' z, cm ', '  norm ']], error_avg))))))
+                        ([['', '', '', ''], [' x, cm ', ' y, cm ', ' z, cm ', '  norm ']], error_avg_print))))))
         if printerror == True:
-            print data, error_avg
+            print data, error_avg_print
 
 
         error_std = np.std(error, axis=0) / 10
+
+        for i in error_std[:, 3]*10:
+            print i
+
         error_std = np.reshape(error_std, (output_size[0], output_size[1] + 1))
-        error_std = np.reshape(np.array(["%.2f" % w for w in error_std.reshape(error_std.size)]),
+        error_std_print = np.reshape(np.array(["%.2f" % w for w in error_std.reshape(error_std.size)]),
                                      (output_size[0], output_size[1] + 1))
 
         if loss_vector_type == 'upper_angles':
-            error_std = np.transpose(np.concatenate(([['Error Standard Deviation for Last Batch', '       ', ' Head  ', ' Torso ', 'R Elbow',
+            error_std_print = np.transpose(np.concatenate(([['Error Standard Deviation for Last Batch', '       ', ' Head  ', ' Torso ', 'R Elbow',
                                                        'L Elbow', 'R Hand ', 'L Hand ']], np.transpose(
-                np.concatenate(([['', '', '',''], ['x, cm', 'y, cm', 'z, cm', '  norm ']], error_std))))))
+                np.concatenate(([['', '', '',''], ['x, cm', 'y, cm', 'z, cm', '  norm ']], error_std_print))))))
         elif loss_vector_type == 'direct' or loss_vector_type == 'angles':
-            error_std = np.transpose(np.concatenate(([['Error Standard Deviation for Last Batch', '       ', 'Head   ', 'Torso  ',
+            error_std_print = np.transpose(np.concatenate(([['Error Standard Deviation for Last Batch', '       ', 'Head   ', 'Torso  ',
                                   'R Elbow', 'L Elbow', 'R Hand ', 'L Hand ', 'R Knee ', 'L Knee ',
                                   'R Foot ', 'L Foot ']], np.transpose(
-                    np.concatenate(([['', '', '', ''], ['x, cm', 'y, cm', 'z, cm', '  norm ']], error_std))))))
+                    np.concatenate(([['', '', '', ''], ['x, cm', 'y, cm', 'z, cm', '  norm ']], error_std_print))))))
         elif loss_vector_type == 'arms_cascade':
-            error_std = np.transpose(
+            error_std_print = np.transpose(
                 np.concatenate(([['Error Standard Deviation for Last Batch', '       ', 'R Elbow', 'R Hand ']], np.transpose(
-                    np.concatenate(([['', '', '', ''], ['x, cm', 'y, cm', 'z, cm', '  norm ']], error_std))))))
+                    np.concatenate(([['', '', '', ''], ['x, cm', 'y, cm', 'z, cm', '  norm ']], error_std_print))))))
         else:
-            error_std = np.transpose(np.concatenate(([['Error Standard Deviation for Last Batch', '       ', ' Torso ', 'R Elbow',
+            error_std_print = np.transpose(np.concatenate(([['Error Standard Deviation for Last Batch', '       ', ' Torso ', 'R Elbow',
                                                        'L Elbow', 'R Hand ', 'L Hand ']], np.transpose(
-                np.concatenate(([['', '', '',''], ['x, cm', 'y, cm', 'z, cm', '  norm ']], error_std))))))
+                np.concatenate(([['', '', '',''], ['x, cm', 'y, cm', 'z, cm', '  norm ']], error_std_print))))))
         if printerror == True:
-            print data, error_std
+            print data, error_std_print
         error_norm = np.squeeze(error_norm, axis = 2)
-        return error_norm
+
+        #return error_avg[:,3], error_std[:,3]
+        return error_norm, error_avg[:,3], error_std[:,3]
 
 
     def visualize_error_from_distance(self, bed_distance, error_norm):
@@ -136,7 +146,7 @@ class VisualizationLib():
         plt.show()
 
 
-    def visualize_pressure_map(self, p_map, targets_raw=None, scores_raw = None, p_map_val = None, targets_val = None, scores_val = None, block = False):
+    def visualize_pressure_map(self, p_map, targets_raw=None, scores_raw = None, p_map_val = None, targets_val = None, scores_val = None, block = False, title = None):
         #p_map_val[0, :, :] = p_map[1, : ,:]
 
         try:
@@ -187,7 +197,7 @@ class VisualizationLib():
             ax1.set_axis_bgcolor('cyan')
             ax1.imshow(p_map, interpolation='nearest', cmap=
             plt.cm.bwr, origin='upper', vmin=0, vmax=100)
-            ax1.set_title('Validation Sample \n Targets and Estimates')
+            ax1.set_title('Validation Sample \n Targets and Estimates \n'+title)
 
         # Visualize targets of training set
         if targets_raw is not None:
@@ -206,7 +216,7 @@ class VisualizationLib():
             target_coord = scores_raw[:, :2] / INTER_SENSOR_DISTANCE
             target_coord[:, 1] -= (NUMOFTAXELS_X - 1)
             target_coord[:, 1] *= -1.0
-            ax1.plot(target_coord[:, 0], target_coord[:, 1], marker = 'o', linestyle='None', markerfacecolor = 'white',markeredgecolor='black', ms=8)
+            ax1.plot(target_coord[:, 0], target_coord[:, 1], marker = 'o', linestyle='None', markerfacecolor = 'yellow',markeredgecolor='black', ms=8)
         plt.pause(0.0001)
 
         # Visualize targets of validation set
@@ -226,7 +236,7 @@ class VisualizationLib():
             target_coord = scores_val[:, :2] / INTER_SENSOR_DISTANCE
             target_coord[:, 1] -= (NUMOFTAXELS_X - 1)
             target_coord[:, 1] *= -1.0
-            ax2.plot(target_coord[:, 0], target_coord[:, 1], marker = 'o', linestyle='None', markerfacecolor = 'white',markeredgecolor='black', ms=8)
+            ax2.plot(target_coord[:, 0], target_coord[:, 1], marker = 'o', linestyle='None', markerfacecolor = 'yellow',markeredgecolor='black', ms=8)
         plt.pause(0.0001)
 
         axkeep = plt.axes([0.01, 0.05, 0.15, 0.075])
@@ -348,7 +358,7 @@ class VisualizationLib():
             Smarker.color.a = 1.0
             Smarker.color.r = 1.0
             Smarker.color.g = 1.0
-            Smarker.color.b = 1.0
+            Smarker.color.b = 0.0
             Smarker.pose.orientation.w = 1.0
             Smarker.pose.position.x = scores[joint, 0]
             Smarker.pose.position.y = scores[joint, 1]
@@ -374,7 +384,7 @@ class VisualizationLib():
                 PTmarker.color.a = 1.0
                 PTmarker.color.r = 1.0
                 PTmarker.color.g = 1.0
-                PTmarker.color.b = 1.0
+                PTmarker.color.b = 0.0
                 PTmarker.pose.orientation.w = 1.0
                 PTmarker.pose.position.x = pseudotargets[joint, 0]
                 PTmarker.pose.position.y = pseudotargets[joint, 1]
@@ -391,10 +401,8 @@ class VisualizationLib():
 
     def rviz_publish_output_limbs(self, targets, scores, pseudotargets = None, LimbArray = None, count = 0):
 
-
         if LimbArray == None or count <= 2:
             LimbArray = MarkerArray()
-
 
         limbs = {}
         limbs['right_forearm'] = [scores[2,0], scores[2,1], scores[2,2], scores[4,0], scores[4,1], scores[4,2]]
@@ -454,7 +462,77 @@ class VisualizationLib():
 
             Lmarker.color.r = 1.0
             Lmarker.color.g = 1.0
-            Lmarker.color.b = 1.0
+            Lmarker.color.b = 0.0
+            Lmarker.pose.orientation.x = tf.transformations.quaternion_from_matrix(ROT_mat)[0]
+            Lmarker.pose.orientation.y = tf.transformations.quaternion_from_matrix(ROT_mat)[1]
+            Lmarker.pose.orientation.z = tf.transformations.quaternion_from_matrix(ROT_mat)[2]
+            Lmarker.pose.orientation.w = tf.transformations.quaternion_from_matrix(ROT_mat)[3]
+
+            Lmarker.pose.position.x = (sx1+sx2)/2
+            Lmarker.pose.position.y = (sy1+sy2)/2
+            Lmarker.pose.position.z = (sz1+sz2)/2
+            LimbArray.markers.append(Lmarker)
+            lid = 0
+            for m in LimbArray.markers:
+                m.id = lid
+                lid += 1
+
+
+        limbscorePublisher.publish(LimbArray)
+
+        return LimbArray
+    def rviz_publish_output_limbs_direct(self, targets, scores, LimbArray = None, count = 0):
+
+        if LimbArray == None or count <= 2:
+            LimbArray = MarkerArray()
+
+        limbs = {}
+        limbs['right_forearm'] = [scores[2,0], scores[2,1], scores[2,2], scores[4,0], scores[4,1], scores[4,2]]
+        limbs['left_forearm'] = [scores[3,0], scores[3,1], scores[3,2], scores[5,0], scores[5,1], scores[5,2]]
+
+        limbs['right_calf'] = [scores[6,0], scores[6,1], scores[6,2], scores[8,0], scores[8,1], scores[8,2]]
+        limbs['left_calf'] = [scores[7,0], scores[7,1], scores[7,2], scores[9,0], scores[9,1], scores[9,2]]
+
+        for limb in limbs:
+            sx1 = limbs[limb][0]
+            sy1 = limbs[limb][1]
+            sz1 = limbs[limb][2]
+            sx2 = limbs[limb][3]
+            sy2 = limbs[limb][4]
+            sz2 = limbs[limb][5]
+
+            limbscorePublisher = rospy.Publisher("/limbscoresdirect", MarkerArray)
+            Lmarker = Marker()
+            Lmarker.header.frame_id = "autobed/base_link"
+            Lmarker.type = Lmarker.CYLINDER
+            Lmarker.action = Lmarker.ADD
+            x_origin = np.array([1., 0., 0.])
+            z_vector = np.array([(sx2-sx1), (sy2-sy1), (sz2-sz1)])
+            z_mag = np.linalg.norm(z_vector)
+            z_vector = z_vector / z_mag
+
+            y_orth = np.cross(z_vector, x_origin)
+            y_orth = y_orth / np.linalg.norm(y_orth)
+
+            x_orth = np.cross(y_orth, z_vector)
+            x_orth = x_orth / np.linalg.norm(x_orth)
+
+            ROT_mat = np.matrix(np.eye(4))
+            ROT_mat[0:3, 0] = np.copy(np.reshape(x_orth, [3,1]))
+            ROT_mat[0:3, 1] = np.copy(np.reshape(y_orth, [3,1]))
+            ROT_mat[0:3, 2] = np.copy(np.reshape(z_vector, [3,1]))
+            Lmarker.scale.x = 0.02
+            Lmarker.scale.y = 0.02
+            Lmarker.scale.z = z_mag
+
+            if count <= 1:
+                Lmarker.color.a = 1.0
+            else:
+                Lmarker.color.a = 0.2
+
+            Lmarker.color.r = 1.0
+            Lmarker.color.g = 1.0
+            Lmarker.color.b = 0.0
             Lmarker.pose.orientation.x = tf.transformations.quaternion_from_matrix(ROT_mat)[0]
             Lmarker.pose.orientation.y = tf.transformations.quaternion_from_matrix(ROT_mat)[1]
             Lmarker.pose.orientation.z = tf.transformations.quaternion_from_matrix(ROT_mat)[2]
