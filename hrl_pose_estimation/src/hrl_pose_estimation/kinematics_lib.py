@@ -482,7 +482,7 @@ class KinematicsLib():
 
 
                     #torso_lengths_angles_v[:, 20] = torch.add(torch.mul(torso_lengths_angles_v[:, 20],0), 1.)
-                    torso_lengths_angles_v[:, 20] = torch.add(torso_lengths_angles_v[:, 20], 1)
+                    torso_lengths_angles_v[:, 20] = torch.add(torch.mul(torso_lengths_angles_v[:, 20],0.1), 1)
                     torso_lengths_angles[:, 20] = torch.mul((0. + torso_lengths_angles[:, 20]),(0. + torso_lengths_angles_v[:, 20]))
                     torso_lengths_angles[:, 21] = torch.mul((0. + torso_lengths_angles[:, 21]),(0. + torso_lengths_angles_v[:, 20]))
                     torso_lengths_angles[:, 22] = torch.mul((0. + torso_lengths_angles[:, 22]),(0. + torso_lengths_angles_v[:, 20]))
