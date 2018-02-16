@@ -21,6 +21,7 @@ from keras.layers import Conv2D
 from keras.layers import MaxPooling2D
 from keras.layers import GlobalAveragePooling2D
 from keras.layers import GlobalMaxPooling2D
+from keras.layers import Concatenate, concatenate
 from keras.engine.topology import get_source_inputs
 from keras.utils import layer_utils
 from keras.utils.data_utils import get_file
@@ -35,8 +36,8 @@ WEIGHTS_PATH = 'https://github.com/fchollet/deep-learning-models/releases/downlo
 WEIGHTS_PATH_NO_TOP = 'https://github.com/fchollet/deep-learning-models/releases/download/v0.1/vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5'
 
 
-def VGG16(include_top=True, include_multi_top=False, weights='imagenet',
-          input_tensor=None, input_shape=None,
+def VGG16(include_top=True, include_multi_top=False, weights='imagenet', weights_file=None,
+          input_tensor=None, input_shape=None, input_shape2=None,
           pooling=None, classes=1000):
     """Instantiates the VGG16 architecture.
 
@@ -112,114 +113,105 @@ def VGG16(include_top=True, include_multi_top=False, weights='imagenet',
             img_input = Input(tensor=input_tensor, shape=input_shape)
         else:
             img_input = input_tensor
+    model = Sequential()
     # Block 1
-    x = Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_conv1')(img_input)
-    x = Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_conv2')(x)
-    x = MaxPooling2D((2, 2), strides=(2, 2), name='block1_pool')(x)
+    model.add(Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_conv1',
+                     input_shape=input_shape))
+    model.add(Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_conv2'))
+    model.add(MaxPooling2D((2, 2), strides=(2, 2), name='block1_pool'))
 
     # Block 2
-    x = Conv2D(128, (3, 3), activation='relu', padding='same', name='block2_conv1')(x)
-    x = Conv2D(128, (3, 3), activation='relu', padding='same', name='block2_conv2')(x)
-    x = MaxPooling2D((2, 2), strides=(2, 2), name='block2_pool')(x)
+    model.add(Conv2D(128, (3, 3), activation='relu', padding='same', name='block2_conv1'))
+    model.add(Conv2D(128, (3, 3), activation='relu', padding='same', name='block2_conv2'))
+    model.add(MaxPooling2D((2, 2), strides=(2, 2), name='block2_pool'))
 
     # Block 3
-    x = Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv1')(x)
-    x = Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv2')(x)
-    x = Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv3')(x)
-    x = MaxPooling2D((2, 2), strides=(2, 2), name='block3_pool')(x)
+    model.add(Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv1'))
+    model.add(Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv2'))
+    model.add(Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv3'))
+    model.add(MaxPooling2D((2, 2), strides=(2, 2), name='block3_pool'))
 
     # Block 4
-    x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block4_conv1')(x)
-    x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block4_conv2')(x)
-    x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block4_conv3')(x)
-    x = MaxPooling2D((2, 2), strides=(2, 2), name='block4_pool')(x)
+    model.add(Conv2D(512, (3, 3), activation='relu', padding='same', name='block4_conv1'))
+    model.add(Conv2D(512, (3, 3), activation='relu', padding='same', name='block4_conv2'))
+    model.add(Conv2D(512, (3, 3), activation='relu', padding='same', name='block4_conv3'))
+    model.add(MaxPooling2D((2, 2), strides=(2, 2), name='block4_pool'))
 
     # Block 5
-    x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv1')(x)
-    x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv2')(x)
-    x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv3')(x)
-    x = MaxPooling2D((2, 2), strides=(2, 2), name='block5_pool')(x)
+    model.add(Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv1'))
+    model.add(Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv2'))
+    model.add(Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv3'))
+    model.add(MaxPooling2D((2, 2), strides=(2, 2), name='block5_pool'))
 
-    ## if include_multi_top:
-    ##     print "Not available"
-    ## elif include_top:
-    ##     x = Flatten(name='flatten')(x)
-    ##     x = Dropout(0.5)(x)
-    ##     x = Dense(16, activation='relu', name='fc1',
-    ##               kernel_regularizer=regularizers.l2(0.03))(x)
-    ##     x = Dense(16, activation='relu', name='fc2',
-    ##               kernel_regularizer=regularizers.l2(0.01))(x)
-    ##     x = Dense(classes, activation='softmax', name='predictions')(x)
-    ## else:
-    ##     if pooling == 'avg':
-    ##         x = GlobalAveragePooling2D()(x)
-    ##     elif pooling == 'max':
-    ##         x = GlobalMaxPooling2D()(x)
+    WEIGHTS_PATH_NO_TOP = 'https://github.com/fchollet/deep-learning-models/releases/download/v0.1/vgg19_weights_tf_dim_ordering_tf_kernels_notop.h5'
+    weights_path = get_file('vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5',
+                            WEIGHTS_PATH_NO_TOP,
+                            cache_subdir='models',
+                            file_hash='6d6bbae143d832006294945121d1f1fc')
+    model.load_weights(weights_path)
 
-    # Ensure that the model takes into account
-    # any potential predecessors of `input_tensor`.
-    if input_tensor is not None:
-        inputs = get_source_inputs(input_tensor)
-    else:
-        inputs = img_input
-    # Create model.
-    model = Model(inputs, x, name='vgg16')
-    print(model.summary())
-
-
-    for layer in model.layers[31:]:
+    # total 18 layers
+    for layer in model.layers[:-2]:
         layer.trainable = False
     ## for layer in model.layers:
     ##     layer.trainable = False
 
+    # Create model.
+    print(model.summary())
 
-    # load weights
-    if weights == 'imagenet':
-        if include_top:
-            weights_path = get_file('vgg16_weights_tf_dim_ordering_tf_kernels.h5',
-                                    WEIGHTS_PATH,
-                                    cache_subdir='models',
-                                    file_hash='64373286793e3c8b2b4e3219cbf3544b')
-        else:
-            weights_path = get_file('vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5',
-                                    WEIGHTS_PATH_NO_TOP,
-                                    cache_subdir='models',
-                                    file_hash='6d6bbae143d832006294945121d1f1fc')
-        model.load_weights(weights_path)
-        ## if K.backend() == 'theano':
-        ##     layer_utils.convert_all_kernels_in_model(model)
 
-        ## if K.image_data_format() == 'channels_first':
-        ##     if include_top:
-        ##         maxpool = model.get_layer(name='block5_pool')
-        ##         shape = maxpool.output_shape[1:]
-        ##         dense = model.get_layer(name='fc1')
-        ##         layer_utils.convert_dense_weights_data_format(dense, shape, 'channels_first')
+    if include_multi_top:
+        model.add(Flatten(name='flatten'))
+        model.add(Dropout(0.5))
+        model.add(Dense(16, activation='relu', name='fc1',
+                  kernel_regularizer=regularizers.l2(0.03)))
+        model.add(Dense(16, activation='relu', name='fc2',
+                  kernel_regularizer=regularizers.l2(0.01)))
 
-        ##     if K.backend() == 'tensorflow':
-        ##         warnings.warn('You are using the TensorFlow backend, yet you '
-        ##                       'are using the Theano '
-        ##                       'image data format convention '
-        ##                       '(`image_data_format="channels_first"`). '
-        ##                       'For best performance, set '
-        ##                       '`image_data_format="channels_last"` in '
-        ##                       'your Keras config '
-        ##                       'at ~/.keras/keras.json.')
-    elif weights is not None:
-        weights_path = get_file('vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5',
-                                WEIGHTS_PATH_NO_TOP,
-                                cache_subdir='models',
-                                file_hash='6d6bbae143d832006294945121d1f1fc')
-        model.load_weights(weights_path)
+        sig_model = Sequential()
+        sig_model.add(Dense(16, kernel_initializer='random_uniform', input_shape=input_shape2,
+                            activation='tanh', name='sig_1'))#(sig_input)
+        sig_model.add(Dropout(0.3))
+        sig_model.add(Dense(16, kernel_initializer='random_uniform',
+                            activation='tanh', name='sig_2'))
+        sig_model.add(Dropout(0.3))
 
-        ## if include_multi_top:
-        ##     weights = 
-        ## elif include_top:
-        ##     weights = 
+        merged = Concatenate()([model.output, sig_model.output]) 
+        
+        out = Dense(16, activation='tanh', kernel_initializer='random_uniform', name='fc3_1',
+                       kernel_regularizer=regularizers.l2(0.05))(merged)
+        out = Dense(classes, activation='softmax', name='fc_out')(out)
+        multi_model = Model([model.input, sig_model.input], out)
+        
+    elif include_top:
+        model.add(Flatten(name='flatten'))
+        model.add(Dropout(0.5))
+        model.add(Dense(16, activation='relu', name='fc1',
+                  kernel_regularizer=regularizers.l2(0.03)))
+        model.add(Dense(16, activation='relu', name='fc2',
+                  kernel_regularizer=regularizers.l2(0.01)))
+        model.add(Dense(classes, activation='softmax', name='predictions'))
+        multi_model = model
+    else:
+        if pooling == 'avg':
+            model.add(GlobalAveragePooling2D())
+        elif pooling == 'max':
+            model.add(GlobalMaxPooling2D())
+        multi_model = model
+        ## model = Model(img_input, x, name='vgg16')
+
+
+    if weights is not None:
+        if include_multi_top and weights_file is not None:
+            if weights_file[2] is not None:
+                multi_model.load_weights(weights_file[2])
+            else:
+                multi_model.load_weights(weights_file[0], by_name=True)
+                multi_model.load_weights(weights_file[1], by_name=True)
+        elif include_top and weights_file is not None:
+            multi_model.load_weights(weights_file[1], by_name=True)
             
-        ## model.load_weights(weights)
-
-    return model
+    return multi_model
 
 
 def vgg_image_top_net(input_shape, classes):
@@ -238,6 +230,7 @@ def vgg_image_top_net(input_shape, classes):
 
     return model
     
+
 
 
 def _obtain_input_shape(input_shape,

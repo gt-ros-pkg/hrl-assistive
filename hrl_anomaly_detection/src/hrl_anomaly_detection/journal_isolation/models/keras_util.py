@@ -49,7 +49,9 @@ class multiGenerator():
     def __init__(self, augmentation=False, noise_mag=0.03, rescale=1.0):
 
         self.noise_mag     = noise_mag
+        self.augmentation  = augmentation
         self.total_batches_seen = 0
+        self.batch_index = 0
 
         if augmentation:
             self.datagen = ImageDataGenerator(
@@ -67,7 +69,10 @@ class multiGenerator():
                 data_format="channels_first")
         pass
 
-    def flow(self, x_img, x_sig, y, batch_size=32, shuffle=True):
+    def reset(self):
+        self.batch_index = 0
+        
+    def flow(self, x_img, x_sig, y, batch_size=32, shuffle=True, seed=None):
 
         assert len(x_img) == len(y), "data should have the same length"
         assert len(x_img) == len(x_sig), "data should have the same length"
@@ -118,16 +123,19 @@ class multiGenerator():
             for x_batch_img, y_batch in self.datagen.flow(x_img_new[idx_list], y_new[idx_list],
                                                           batch_size=batch_size, shuffle=False):
 
+                if x_batch_img is None:
+                    sys.exit()
+
                 if (i+1)*batch_size >= len(y_new):
                     break
                 else:
                     i += 1
-                    x = x_sig_new[i*batch_size:(i+1)*batch_size]]
+                    x = x_sig_new[i*batch_size:(i+1)*batch_size]
                     if self.augmentation:
                         noise = np.random.normal(0.0, self.noise_mag, np.shape(x))
-                        yield x+noise, x_batch_img, y_batch
+                        yield [x_batch_img, x+noise], y_batch
                     else:
-                        yield x, x_batch_img, y_batch
+                        yield [x_batch_img, x], y_batch
                     
             
 

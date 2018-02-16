@@ -635,7 +635,7 @@ def img_net_test(save_data_path, pkl_name='', renew=False):
         print "----------------------"
         print "Subject ", idx
         print "----------------------"
-        if idx<4 or idx>6: continue
+        if idx<6 or idx>6: continue
 
         np.random.seed(3334+idx)
 
@@ -689,6 +689,7 @@ def multi_net_test(save_data_path, pkl_name='', renew=False):
 
         file_name = os.path.join(save_data_path, pkl_name+'_'+str(idx)+'.pkl')
         d = ut.load_pickle(file_name)
+        print d.keys()
 
         #
         scaler  = preprocessing.StandardScaler()
@@ -696,19 +697,21 @@ def multi_net_test(save_data_path, pkl_name='', renew=False):
         x_sig_te = scaler.transform(d['x_sig_te'])
         trainData = (x_sig_tr, d['x_img_tr'], d['y_tr'])
         testData  = (x_sig_te, d['x_img_te'], d['y_te'])
+        ## trainData = (x_sig_tr[:20], d['x_img_tr'][:20], d['y_tr'][:20])
+        ## testData  = (x_sig_te[:20], d['x_img_te'][:20], d['y_te'][:20])
         
 
         method      = 'multi_net'
         noise_mag   = 0.05 #5
-        patience    = 4 #4 #10
+        patience    = 6 #4 #10
         sam_epoch   = 40 #2:40
         fine_tuning = False
         batch_size  = 2048
 
         from hrl_anomaly_detection.journal_isolation.models import multi_net             
-        sig_weights_file   = os.path.join(weights_path, 'model_weights_'+method+'_'+str(idx)+'.h5')
-        img_weights_file   = os.path.join(weights_path, 'model_weights_'+method+'_'+str(idx)+'.h5')
-        multi_weights_file = os.path.join(weights_path, 'model_weights_'+method+'_'+str(idx)+'.h5')
+        sig_weights_file   = os.path.join(weights_path, 'model_weights_sig_net_'+str(idx)+'.h5')
+        img_weights_file   = os.path.join(weights_path, 'model_weights_img_net_'+str(idx)+'.h5')
+        multi_weights_file = os.path.join(weights_path, 'model_weights_multi_net_'+str(idx)+'.h5')
         ml, score = multi_net.multi_net(idx, trainData, testData,
                                         weights_file=(sig_weights_file, img_weights_file,
                                                       multi_weights_file),
@@ -893,5 +896,5 @@ if __name__ == '__main__':
                         fine_tuning=opt.bFineTune)
     else:                           
         ## sig_net_test(save_data_path, pkl_name='isol_features', renew=False)
-        img_net_test(save_data_path, pkl_name='isol_features', renew=False)
-        #multi_net_test(save_data_path, pkl_name='isol_features', renew=False)
+        #img_net_test(save_data_path, pkl_name='isol_features', renew=False)
+        multi_net_test(save_data_path, pkl_name='isol_features', renew=False)
