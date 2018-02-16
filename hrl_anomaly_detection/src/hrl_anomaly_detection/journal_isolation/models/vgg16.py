@@ -10,7 +10,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import os
+import os, sys
 import warnings
 
 from keras.models import Sequential, Model
@@ -143,7 +143,7 @@ def VGG16(include_top=True, include_multi_top=False, weights='imagenet', weights
     model.add(Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv3'))
     model.add(MaxPooling2D((2, 2), strides=(2, 2), name='block5_pool'))
 
-    WEIGHTS_PATH_NO_TOP = 'https://github.com/fchollet/deep-learning-models/releases/download/v0.1/vgg19_weights_tf_dim_ordering_tf_kernels_notop.h5'
+    WEIGHTS_PATH_NO_TOP = 'https://github.com/fchollet/deep-learning-models/releases/download/v0.1/vgg19_weights_th_dim_ordering_tf_kernels_notop.h5'
     weights_path = get_file('vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5',
                             WEIGHTS_PATH_NO_TOP,
                             cache_subdir='models',
