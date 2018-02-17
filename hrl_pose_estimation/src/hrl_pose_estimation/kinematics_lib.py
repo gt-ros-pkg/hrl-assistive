@@ -400,7 +400,7 @@ class KinematicsLib():
 
 
 
-            if count > 300:  # add this bit for constant bone lengths
+            if False:#count > 300:  # add this bit for constant bone lengths
                 # if subject is not None:
                 torso_lengths_angles = Variable(torso_lengths_angles_v.data.clone())
 

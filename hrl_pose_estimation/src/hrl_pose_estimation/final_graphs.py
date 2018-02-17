@@ -161,7 +161,7 @@ class DataVisualizer():
         joint_percent_keep = {}
         for modeltype in ['KNN','LRR','KRR','direct','kinvL']:
             error_avg_flat = None
-            for subject in [18]:
+            for subject in [10]:
                 if modeltype == 'kinvL' or modeltype == 'direct':
                     error_avg, _ = load_pickle(self.dump_path + '/Final_Data/error_avg_std_T25_subject'+str(subject)+'_'+str(modeltype)+'.p')
                     # size (P x N) each: number of images, number of joints
@@ -388,9 +388,18 @@ class DataVisualizer():
 
     def all_joint_error(self):
         # here is some example to for plotting
+        posture = 'sitting'
+
+        Label_L4L5_DP = ['Head', 'Chest', 'Right Elbow', 'Left Elbow', 'Right Wrist', 'Left Wrist', 'Right Knee', 'Left Knee', 'Right Ankle', 'Left Ankle','Overall']
 
 
-        Label_L4L5_DP = ['Head', 'Chest', 'Right Elbow', 'Left Elbow', 'Right Wrist', 'Left Wrist', 'Right Knee', 'Left Knee', 'Right Ankle', 'Left Ankle']
+
+        # Setting the positions and width for the bars
+        pos = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        width = 0.13
+
+        # Plotting the bars
+        fig, ax = plt.subplots(figsize=(11,4),dpi = 110)
 
         #############ALL
         #KNN     = [87.63,52.54,103.07,105.55,187.81,189.33,83.39,94.20,80.36,72.86]
@@ -399,42 +408,35 @@ class DataVisualizer():
         #Std_LRR = [66.49,24.67,57.51,63.15,101.47,112.01,37.36,38.95,38.00,36.90]
 
 
-        if True:   ##############SUPINE
-            KNN = [59.28,50.51,108.37,111.02,200.77,202.19,81.73,85.26,82.19,68.48] #104.98
-            Std_KNN = [27.77,12.95,88.57,99.09,157.01,170.84,44.91,42.59,52.72,51.55]
-            LRR = [126.94,56.92,107.02,115.50,192.14,207.40,100.43,103.73,75.67,74.60] #116.04
-            Std_LRR = [60.83,24.44,57.08,61.06,102.56,110.31,30.30,36.69,36.66,33.51]
-            KRR = [109.93,50.85,88.28,93.71,162.74,165.14,85.90,90.91,65.99,62.04] #97.55
-            Std_KRR = [50.21,17.44,55.54,62.49,103.94,112.84,25.28,29.67,31.08,28.45]
-            DirectCNN  = [60.43,47.80,53.04,62.11,93.74,108.37,58.79,80.23,62.64,51.95] #67.91
-            Std_DirectCNN = [21.28,14.57,46.13,48.66,94.90,101.16,20.21,25.31,23.88,23.431]
-            KinCNNcL  = [67.80,45.25,58.08,65.67,105.64,115.57,69.26,85.03,67.98,54.95] #73.52
-            Std_KinCNNcL = [21.74,12.87,45.53,54.37,92.17,110.90,21.53,21.29,28.31,21.41]
-            KinCNNvL  = [58.44,46.01,58.33,63.19,106.46,111.31,68.89,82.13,69.07,52.42] #71.62
-            Std_KinCNNvL = [19.03,13.18,47.29,53.51,96.28,111.24,21.75,25.20,26.57,25.87]
+        if posture == 'supine':   ##############SUPINE
+            KNN = [59.28,50.51,108.37,111.02,200.77,202.19,81.73,85.26,82.19,68.48,104.98]
+            Std_KNN = [27.77,12.95,88.57,99.09,157.01,170.84,44.91,42.59,52.72,51.55,0]
+            LRR = [126.94,56.92,107.02,115.50,192.14,207.40,100.43,103.73,75.67,74.60,116.04]
+            Std_LRR = [60.83,24.44,57.08,61.06,102.56,110.31,30.30,36.69,36.66,33.51,0]
+            KRR = [109.93,50.85,88.28,93.71,162.74,165.14,85.90,90.91,65.99,62.04,97.55]
+            Std_KRR = [50.21,17.44,55.54,62.49,103.94,112.84,25.28,29.67,31.08,28.45,0]
+            DirectCNN  = [60.43,47.80,53.04,62.11,93.74,108.37,58.79,80.23,62.64,51.95,67.91]
+            Std_DirectCNN = [21.28,14.57,46.13,48.66,94.90,101.16,20.21,25.31,23.88,23.431,0]
+            KinCNNcL  = [0067.80,45.25,58.08,65.67,105.64,115.57,69.26,85.03,67.98,54.95,73.52]
+            Std_KinCNNcL = [0021.74,12.87,45.53,54.37,92.17,110.90,21.53,21.29,28.31,21.41,0]
+            KinCNNvL  = [61.72,46.72,59.81,66.99,108.99,116.04,68.03,79.50,68.01,49.97,72.58]
+            Std_KinCNNvL = [19.31,14.11,46.43,58.37,98.78,120.66,24.64,24.91,26.80,24.66,0]
+            ax.set_ylabel('Supine Posture: GMPJPE (mm)')
 
-        if False:  ##############SITTING
-            KNN = [139.83, 56.88, 94.51, 95.29, 164.75, 165.57, 86.91, 109.91, 76.44,80.05] #107.01
-            Std_KNN = [64.83,18.20,63.62,63.33,109.18,99.20,44.78,41.30,56.19,52.56]
-            LRR = [150.14,55.82,114.56,122.39,203.13,209.41,90.89,118.15,85.28,81.02] #123.08
-            Std_LRR = [59.78,20.69,54.60,58.90,95.87,103.69,35.61,37.51,34.09,38.14]
-            KRR = [125.49,52.81,92.56,97.32,159.14,158.83,83.35,103.60,76.38,72.34] #102.18
-            Std_KRR = [45.83,15.17,49.90,52.99,86.88,89.51,30.07,28.53,31.62,32.57]
-            DirectCNN = [80.01,43.62,65.55,62.20,110.98,102.38,62.78,83.67,75.03,70.20] #75.64
-            Std_DirectCNN = [34.36,9.66,50.45,44.90,93.93,85.01,23.89,23.79,23.40,23.59]
-            KinCNNcL = [84.91,42.70,75.40,61.94,123.50,107.46,77.80,154.92,77.41,66.94] #87.30
-            Std_KinCNNcL = [34.07,11.14,54.95,46.99,94.55,86.15,24.59,20.33,27.56,25.17]
-            KinCNNvL = [86.87,44.40,74.63,63.61,126.80,105.76,72.35,141.47,77.70,75.98] #86.96
-            Std_KinCNNvL = [32.29,11.66,52.58,45.50,96.89,88.11,26.91,23.51,26.70,26.83]
-
-
-
-        # Setting the positions and width for the bars
-        pos = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-        width = 0.13
-
-        # Plotting the bars
-        fig, ax = plt.subplots(figsize=(8,6))
+        elif posture == 'sitting':  ##############SITTING
+            KNN = [139.83, 56.88, 94.51, 95.29, 164.75, 165.57, 86.91, 109.91, 76.44,80.05,107.01]
+            Std_KNN = [64.83,18.20,63.62,63.33,109.18,99.20,44.78,41.30,56.19,52.56,0]
+            LRR = [150.14,55.82,114.56,122.39,203.13,209.41,90.89,118.15,85.28,81.02,123.08]
+            Std_LRR = [59.78,20.69,54.60,58.90,95.87,103.69,35.61,37.51,34.09,38.14,0]
+            KRR = [125.49,52.81,92.56,97.32,159.14,158.83,83.35,103.60,76.38,72.34,102.18]
+            Std_KRR = [45.83,15.17,49.90,52.99,86.88,89.51,30.07,28.53,31.62,32.57,0]
+            DirectCNN = [80.01,43.62,65.55,62.20,110.98,102.38,62.78,83.67,75.03,70.20,75.64]
+            Std_DirectCNN = [34.36,9.66,50.45,44.90,93.93,85.01,23.89,23.79,23.40,23.59,0]
+            KinCNNcL = [0084.91,42.70,75.40,61.94,123.50,107.46,77.80,154.92,77.41,66.94,87.30]
+            Std_KinCNNcL = [0034.07,11.14,54.95,46.99,94.55,86.15,24.59,20.33,27.56,25.17,0]
+            KinCNNvL = [84.63,50.06,69.18,60.21,119.44,100.02,85.51,98.70,70.13,66.01,80.39]
+            Std_KinCNNvL = [32.60,12.54,51.54,45.89,94.74,87.94,26.97,22.69,23.46,24.11,0]
+            ax.set_ylabel('Sitting Posture: GMPJPE (mm)')
 
         plt.bar(pos, KNN, width,
                          alpha=0.5,
@@ -495,17 +497,26 @@ class DataVisualizer():
 
 
         # Setting axis labels and ticks
-        ax.set_ylabel('GMPJPE')
-        ax.set_title('Supine Error')
-        ax.set_xticks([p + 1.5 * width for p in pos])
+        ax.set_xticks([p + 3.0 * width for p in pos])
         ax.set_xticklabels(Label_L4L5_DP)
 
         # Setting the x-axis and y-axis limits
         plt.xlim(min(pos)-width, max(pos)+width*4+0.4)
-        plt.ylim([0, max(KNN + LRR + KRR + DirectCNN + KinCNNcL + KinCNNvL) * 1.5])
+        plt.ylim([0, max(KNN + LRR + KRR + DirectCNN + KinCNNcL + KinCNNvL) * 1.05])
+
+        ax.text(max(pos)+0.13*0+0.015, KNN[10]+25, str(np.round(KNN[10],2)), color='black', fontweight = 'normal',rotation = 'vertical',fontsize=8)
+        ax.text(max(pos)+0.13*1+0.015, LRR[10]+25, str(np.round(LRR[10],2)), color='black', fontweight = 'normal',rotation = 'vertical',fontsize=8)
+        ax.text(max(pos)+0.13*2+0.015, KRR[10]+25, str(np.round(KRR[10],2)), color='black', fontweight = 'normal',rotation = 'vertical',fontsize=8)
+        ax.text(max(pos)+0.13*3+0.02, DirectCNN[10]+20, str(format(DirectCNN[10], '.2f')), color='black', fontweight='heavy', rotation = 'vertical',fontsize=9)
+        ax.text(max(pos)+0.13*4+0.02, KinCNNcL[10]+20, str(format(KinCNNcL[10], '.2f')), color='black', fontweight = 'normal', rotation = 'vertical',fontsize=8)
+        ax.text(max(pos)+0.13*5+0.02, KinCNNvL[10]+20, str(np.round(KinCNNvL[10],2)), color='black', fontweight='heavy', rotation = 'vertical',fontsize=9)
 
         # Adding the legend and showing the plot
-        plt.legend(['KNN', 'LRR', 'KRR','CNN direct '+r"$\boldsymbol{s}_{j=1..N}$",'CNN kin. avg. '+r"$\boldsymbol{l}$", 'CNN kin. regr. '+r"$\boldsymbol{l}$"], loc='upper left') #+r"$\boldsymbol{l}$"
+        if posture == 'supine':
+            plt.legend(['KNN', 'LRR', 'KRR', 'CNN direct ' + r"$\boldsymbol{s}_{j=1..N}$",
+                        'CNN kin. avg. ' + r"$\boldsymbol{l}$", 'CNN kin. regr. ' + r"$\boldsymbol{l}$"], loc=9,
+                       bbox_to_anchor=(0., 1.032, 1., .102), ncol=6)  # +r"$\boldsymbol{l}$"
+
         plt.grid()
         plt.show()
 
@@ -531,7 +542,7 @@ if __name__ == "__main__":
     #Initialize trainer with a training database file
     p = DataVisualizer(pkl_directory=Path, opt = opt)
 
-    p.all_joint_error()
+    #p.all_joint_error()
     #p.dropout_std_threshold()
-    #p.error_threshold()
+    p.error_threshold()
     sys.exit()
