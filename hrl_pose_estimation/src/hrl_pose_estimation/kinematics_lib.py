@@ -458,7 +458,7 @@ class KinematicsLib():
                          0.41654181]).repeat(torso_lengths_angles.size()[0], 1)
                 torso_lengths_angles = Variable(torso_lengths_angles)
 
-                if True:
+                if False:
                     #torso_lengths_angles_v[:, 20] = torch.add(torch.mul(torso_lengths_angles_v[:, 20],0), 1.)
                     #torso_lengths_angles_v[:, 20] = torch.add(torch.mul(torso_lengths_angles_v[:, 20],0.1), 1)
                     torso_lengths_angles_v[:, 20] = torch.add(torch.mul(torch.add(F.sigmoid(torso_lengths_angles_v[:,20]), -0.5),0.25),1.0)
