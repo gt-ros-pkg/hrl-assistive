@@ -478,7 +478,7 @@ class ScoreGenerator(object):
 #        if self.task == 'scratching_knee_left':
         self.head_angles = np.array([[0., 0.]])
         head_y_range = (np.arange(11)-5)*.03
-        head_y_range = np.array([0.])
+        head_y_range = np.array([-0.15, 0.15])
         head_rest_range = np.arange(-10, 80.1, 10.)
         head_rest_range = [-10]
         # bed_height = 'fixed'
@@ -486,7 +486,7 @@ class ScoreGenerator(object):
         # score_parameters.append([self.model, ])
         if self.model == 'autobed':
             score_parameters = ([t for t in ((tuple([self.task, method, sampling, self.model, num_configs, head_rest_angle, headx, heady, allow_additional_movement]))
-                                             for num_configs in [1]
+                                             for num_configs in [2]
                                              for head_rest_angle in head_rest_range
                                              for headx in head_x_range
                                              for heady in head_y_range
@@ -4438,7 +4438,8 @@ class ScoreGenerator(object):
         print 'Time to score this initial configuration: %fs' % (time.time()-start_time)
         return score
 
-    def mc_eval_init_config(self, init_config, goal_data, reference_names, model=None, task=None, seed=None, error=None):
+    def mc_eval_init_config(self, init_config, goal_data, reference_names, model=None, task=None, seed=None, error=None,
+                            x_error=0., y_error=0.):
         # print init_config
         # init_config = np.array([[ 1.10995678,  0.47979084],
         #                         [ 0.6339488 , -0.82258422],
@@ -4489,10 +4490,10 @@ class ScoreGenerator(object):
         # self.reference_names = reference_options
         if error is None:
             if self.model == 'chair':
-                error = np.array([x_e, y_e, th_e, pr2_x_e, pr2_y_e, pr2_th_e])
+                error = np.array([x_error+x_e, y_error+y_e, th_e, pr2_x_e, pr2_y_e, pr2_th_e])
             elif self.model == 'autobed':
                 # modeling_error = np.array([[x_e, y_e, m_x_e, m_y_e, m_th_e]])
-                error = np.array([x_e, y_e, 0., pr2_x_e, pr2_y_e, pr2_th_e])
+                error = np.array([x_error+x_e, y_error+y_e, 0., pr2_x_e, pr2_y_e, pr2_th_e])
         # error = np.zeros(6)
         total_length = len(goal_data)
         # for error in modeling_error:

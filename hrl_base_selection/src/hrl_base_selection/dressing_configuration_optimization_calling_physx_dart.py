@@ -58,6 +58,7 @@ class ScoreGeneratorDressingwithPhysx(object):
         self.save_file_path = self.pkg_path + '/data/'
         self.save_file_name = 'arm_config_scores.log'
         self.save_file_name_only_good = 'arm_configs_feasible.log'
+        self.save_file_name_per_human_initialization = 'arm_configs_per_human_initialization.log'
         self.visualize = visualize
         self.frame_lock = threading.RLock()
 
@@ -372,6 +373,7 @@ class ScoreGeneratorDressingwithPhysx(object):
         if reset_file:
             open(self.save_file_path + self.save_file_name, 'w').close()
             open(self.save_file_path + self.save_file_name_only_good, 'w').close()
+            open(self.save_file_path + self.save_file_name_per_human_initialization, 'w').close()
 
         self.set_robot_arm('rightarm')
         subtask_list = ['rightarm', 'leftarm']
@@ -390,17 +392,21 @@ class ScoreGeneratorDressingwithPhysx(object):
                 self.stretch_allowable = []
                 self.add_new_fixed_point = True
                 self.run_interleaving_optimization_outer_level(subtask=subtask, subtask_step=subtask_number,
-                                                               maxiter=2, popsize=2)
+                                                               maxiter=2, popsize=2, mode='fine')
             else:
                 if subtask_number == 1:
                     self.fixed_points_to_use = [0]
                     self.stretch_allowable = [0.5]
                     self.add_new_fixed_point = True
+                # self.run_interleaving_optimization_outer_level(subtask=subtask, subtask_step=subtask_number,
+                #                                                maxiter=500, popsize=40, mode='coarse')
                 self.run_interleaving_optimization_outer_level(subtask=subtask, subtask_step=subtask_number,
-                                                               maxiter=500, popsize=40)
+                                                               maxiter=100, popsize=20, mode='fine')
                                                                # maxiter=500, popsize=50)
 
-    def run_interleaving_optimization_outer_level(self, maxiter=1000, popsize=40, subtask='', subtask_step=0):
+    def run_interleaving_optimization_outer_level(self, maxiter=1000, popsize=40,
+                                                  subtask='', subtask_step=0, mode='fine'):
+        self.mode = mode
         self.subtask_step = subtask_step
         # self.best_overall_score = dict()
         self.best_overall_score = 10000.
@@ -426,6 +432,7 @@ class ScoreGeneratorDressingwithPhysx(object):
         parameters_max = np.array([m.radians(100.), m.radians(100.), m.radians(100),
                                    m.radians(135.)])
         parameters_scaling = (parameters_max - parameters_min) / 8.
+        parameters_scaling = np.array([m.radians(5.)]*4)
         # parameters_initialization = (parameters_max + parameters_min) / 2.
         init_start_arm_configs = [[m.radians(0.), m.radians(0.), m.radians(0.), m.radians(0.)],
                                   [m.radians(45.), m.radians(0.), m.radians(0.), m.radians(0.)],
@@ -444,8 +451,51 @@ class ScoreGeneratorDressingwithPhysx(object):
                  'scaling_of_variables': list(parameters_scaling),
                  'bounds': [list(parameters_min), list(parameters_max)]}
         regular = False
-        if regular or subtask_step==0:
-            if subtask_step==0 or False:
+        if mode == 'fine':
+            self.save_all_results = False
+            if subtask_step == 1:
+                feasible_configs = [line.rstrip('\n').split(',')
+                                    for line in open(self.save_file_path + self.save_file_name_only_good)]
+
+                for j in xrange(len(feasible_configs)):
+                    feasible_configs[j] = [float(i) for i in feasible_configs[j]]
+                feasible_configs = np.array(feasible_configs)
+                feasible_configs = np.array([x for x in feasible_configs if int(x[0]) == subtask_step])
+
+                cluster_count = 0
+                clusters = [[]]
+                while len(feasible_configs) > 0 and not rospy.is_shutdown():
+                    if len(clusters) < cluster_count + 1:
+                        clusters.append([])
+                    queue = []
+                    visited = []
+                    queue.append(list(feasible_configs[0][1:5]))
+                    delete_list = []
+                    while len(queue) > 0 and not rospy.is_shutdown():
+                        # print 'queue:\n',queue
+                        # print 'visited:\n',visited
+                        current_node = list(queue.pop(0))
+                        # print 'current node:\n',current_node
+                        # print 'visited:\n',visited
+                        if current_node not in visited:
+                            visited.append(list(current_node))
+                            clusters[cluster_count].append(current_node)
+                            delete_list.append(0)
+                        for node_i in xrange(len(feasible_configs)):
+                            if np.max(np.abs(np.array(current_node) - np.array(feasible_configs[node_i])[1:5])) < m.radians(
+                                    5.1) and list(feasible_configs[node_i][1:5]) not in visited:
+                                close_node = list(feasible_configs[node_i][1:5])
+                                queue.append(list(close_node))
+                                delete_list.append(node_i)
+                                # clusters[cluster_count.append(close_node)]
+                    feasible_configs = np.delete(feasible_configs, delete_list, axis=0)
+                    cluster_count += 1
+                clusters = np.array(clusters)
+                print 'Number of clusters:', len(clusters)
+                init_start_arm_configs = []
+                for cluster in clusters:
+                    init_start_arm_configs.append(np.array(cluster).mean(axis=0))
+            elif subtask_step==0 or False:
                 init_start_arm_configs = [(parameters_max + parameters_min) / 2.]
             for init_start_arm_config in init_start_arm_configs:
                 parameters_initialization = init_start_arm_config
@@ -461,7 +511,27 @@ class ScoreGeneratorDressingwithPhysx(object):
                                                               options=opts1)
                 print 'raw cma optimization results:\n',self.optimization_results
                 # self.optimization_results = [self.best_config, self.best_score]
+                # print '1',self.save_file_path
+                # print '2',self.save_file_name_per_human_initialization
+                # print '3',self.best_physx_config
+                # print '4',self.best_overall_score
+                # print '5',self.best_kinematics_config
+                # print '6',self.best_kinematics_score
+                with open(self.save_file_path + self.save_file_name_per_human_initialization, 'a') as myfile:
+                    myfile.write(str(self.subtask_step)
+                                 + ',' + str("{:.5f}".format(self.best_physx_config[0]))
+                                 + ',' + str("{:.5f}".format(self.best_physx_config[1]))
+                                 + ',' + str("{:.5f}".format(self.best_physx_config[2]))
+                                 + ',' + str("{:.5f}".format(self.best_physx_config[3]))
+                                 + ',' + str("{:.5f}".format(self.best_overall_score))
+                                 + ',' + str("{:.5f}".format(self.best_kinematics_config[0]))
+                                 + ',' + str("{:.5f}".format(self.best_kinematics_config[1]))
+                                 + ',' + str("{:.5f}".format(self.best_kinematics_config[2]))
+                                 + ',' + str("{:.5f}".format(self.best_kinematics_config[3]))
+                                 + ',' + str("{:.5f}".format(self.best_kinematics_score))
+                                 + '\n')
         else:
+            self.save_all_results = True
             [t for t in ((self.objective_function_traj_and_arm_config([arm1, arm2, arm3, arm4]))
                          for arm1 in np.arange(parameters_min[0], parameters_max[0]+0.0001, m.radians(5.))
                          for arm2 in np.arange(parameters_min[1], parameters_max[1]+0.0001, m.radians(5.))
@@ -776,14 +846,15 @@ class ScoreGeneratorDressingwithPhysx(object):
                 self.best_physx_score = 10. + 1. + random.random()
                 self.best_kinematics_config = np.zeros(4)
                 self.best_kinematics_score = 10. + 1. + random.random()
-            with open(self.save_file_path + self.save_file_name, 'a') as myfile:
-                myfile.write(str(self.subtask_step)
-                             + ',' + str("{:.5f}".format(params[0]))
-                             + ',' + str("{:.5f}".format(params[1]))
-                             + ',' + str("{:.5f}".format(params[2]))
-                             + ',' + str("{:.5f}".format(params[3]))
-                             + ',' + str("{:.5f}".format(this_score))
-                             + '\n')
+            if self.save_all_results:
+                with open(self.save_file_path + self.save_file_name, 'a') as myfile:
+                    myfile.write(str(self.subtask_step)
+                                 + ',' + str("{:.5f}".format(params[0]))
+                                 + ',' + str("{:.5f}".format(params[1]))
+                                 + ',' + str("{:.5f}".format(params[2]))
+                                 + ',' + str("{:.5f}".format(params[3]))
+                                 + ',' + str("{:.5f}".format(this_score))
+                                 + '\n')
             return this_score
 
         print 'arm config is not in self collision'
@@ -857,14 +928,15 @@ class ScoreGeneratorDressingwithPhysx(object):
                 self.best_physx_score = 10. + 1. + 10. * fixed_points_exceeded_amount
                 self.best_kinematics_config = np.zeros(4)
                 self.best_kinematics_score = 10. + 1. + 10. * fixed_points_exceeded_amount
-            with open(self.save_file_path + self.save_file_name, 'a') as myfile:
-                myfile.write(str(self.subtask_step)
-                             + ',' + str("{:.5f}".format(params[0]))
-                             + ',' + str("{:.5f}".format(params[1]))
-                             + ',' + str("{:.5f}".format(params[2]))
-                             + ',' + str("{:.5f}".format(params[3]))
-                             + ',' + str("{:.5f}".format(this_score))
-                             + '\n')
+            if self.save_all_results:
+                with open(self.save_file_path + self.save_file_name, 'a') as myfile:
+                    myfile.write(str(self.subtask_step)
+                                 + ',' + str("{:.5f}".format(params[0]))
+                                 + ',' + str("{:.5f}".format(params[1]))
+                                 + ',' + str("{:.5f}".format(params[2]))
+                                 + ',' + str("{:.5f}".format(params[3]))
+                                 + ',' + str("{:.5f}".format(this_score))
+                                 + '\n')
             return this_score
 
         print 'angle from horizontal = ', angle_from_horizontal
@@ -877,14 +949,15 @@ class ScoreGeneratorDressingwithPhysx(object):
                 self.best_physx_score = 10. + 10. * (abs(angle_from_horizontal) - 30.)
                 self.best_kinematics_config = np.zeros(4)
                 self.best_kinematics_score = 10. + 10. * (abs(angle_from_horizontal) - 30.)
-            with open(self.save_file_path + self.save_file_name, 'a') as myfile:
-                myfile.write(str(self.subtask_step)
-                             + ',' + str("{:.5f}".format(params[0]))
-                             + ',' + str("{:.5f}".format(params[1]))
-                             + ',' + str("{:.5f}".format(params[2]))
-                             + ',' + str("{:.5f}".format(params[3]))
-                             + ',' + str("{:.5f}".format(this_score))
-                             + '\n')
+            if self.save_all_results:
+                with open(self.save_file_path + self.save_file_name, 'a') as myfile:
+                    myfile.write(str(self.subtask_step)
+                                 + ',' + str("{:.5f}".format(params[0]))
+                                 + ',' + str("{:.5f}".format(params[1]))
+                                 + ',' + str("{:.5f}".format(params[2]))
+                                 + ',' + str("{:.5f}".format(params[3]))
+                                 + ',' + str("{:.5f}".format(this_score))
+                                 + '\n')
             return this_score
 
         print 'Number of goals: ', len(self.goals)
@@ -892,8 +965,8 @@ class ScoreGeneratorDressingwithPhysx(object):
         start_time = rospy.Time.now()
         self.set_goals()
         # print self.origin_B_grasps
-        maxiter = 100
-        popsize = 40#4*20
+        maxiter = 50
+        popsize = 20#4*20
         if self.subtask_step == 0 or False:
             maxiter = 2
             popsize = 2
@@ -925,6 +998,7 @@ class ScoreGeneratorDressingwithPhysx(object):
         self.this_best_pr2_score = 1000.
 
         for init_start_pr2_config in init_start_pr2_configs:
+            print 'Starting to evaluate a new initial PR2 configuration:', init_start_pr2_config
             parameters_initialization = init_start_pr2_config
             self.kinematics_optimization_results = cma.fmin(self.objective_function_one_config,
                                                           list(parameters_initialization),
@@ -992,39 +1066,40 @@ class ScoreGeneratorDressingwithPhysx(object):
                     print 'Torque score was: ', torque_cost
                     print 'Physx score was: ', physx_score
                     print 'Best pr2 kinematics score was: ', self.this_best_pr2_score
-                    with open(self.save_file_path+self.save_file_name, 'a') as myfile:
-                        # myfile.write('ok' +
-                                     # + ',' + str("{:.5f}".format(params[0]))
-                                     # + ',' + str("{:.5f}".format(params[1]))
-                                     # + ',' + str("{:.5f}".format(params[2]))
-                                     # + ',' + str("{:.5f}".format(params[3]))
-                                     # + ',' + str("{:.5f}".format(this_score))
-                                     # + '\n')
-                        myfile.write(str(self.subtask_step)
-                                     + ',' + str("{:.5f}".format(params[0]))
-                                     + ',' + str("{:.5f}".format(params[1]))
-                                     + ',' + str("{:.5f}".format(params[2]))
-                                     + ',' + str("{:.5f}".format(params[3]))
-                                     + ',' + str("{:.5f}".format(this_score))
-                                     + ',' + str("{:.5f}".format(self.this_best_pr2_config[0]))
-                                     + ',' + str("{:.5f}".format(self.this_best_pr2_config[1]))
-                                     + ',' + str("{:.5f}".format(self.this_best_pr2_config[2]))
-                                     + ',' + str("{:.5f}".format(self.this_best_pr2_config[3]))
-                                     + ',' + str("{:.5f}".format(self.this_best_pr2_score))
-                                     + '\n')
-                    with open(self.save_file_path + self.save_file_name_only_good, 'a') as myfile:
-                        myfile.write(str(self.subtask_step)
-                                     + ',' + str("{:.5f}".format(params[0]))
-                                     + ',' + str("{:.5f}".format(params[1]))
-                                     + ',' + str("{:.5f}".format(params[2]))
-                                     + ',' + str("{:.5f}".format(params[3]))
-                                     + ',' + str("{:.5f}".format(this_score))
-                                     + ',' + str("{:.5f}".format(self.this_best_pr2_config[0]))
-                                     + ',' + str("{:.5f}".format(self.this_best_pr2_config[1]))
-                                     + ',' + str("{:.5f}".format(self.this_best_pr2_config[2]))
-                                     + ',' + str("{:.5f}".format(self.this_best_pr2_config[3]))
-                                     + ',' + str("{:.5f}".format(self.this_best_pr2_score))
-                                     + '\n')
+                    if self.save_all_results:
+                        with open(self.save_file_path+self.save_file_name, 'a') as myfile:
+                            # myfile.write('ok' +
+                                         # + ',' + str("{:.5f}".format(params[0]))
+                                         # + ',' + str("{:.5f}".format(params[1]))
+                                         # + ',' + str("{:.5f}".format(params[2]))
+                                         # + ',' + str("{:.5f}".format(params[3]))
+                                         # + ',' + str("{:.5f}".format(this_score))
+                                         # + '\n')
+                            myfile.write(str(self.subtask_step)
+                                         + ',' + str("{:.5f}".format(params[0]))
+                                         + ',' + str("{:.5f}".format(params[1]))
+                                         + ',' + str("{:.5f}".format(params[2]))
+                                         + ',' + str("{:.5f}".format(params[3]))
+                                         + ',' + str("{:.5f}".format(this_score))
+                                         + ',' + str("{:.5f}".format(self.this_best_pr2_config[0]))
+                                         + ',' + str("{:.5f}".format(self.this_best_pr2_config[1]))
+                                         + ',' + str("{:.5f}".format(self.this_best_pr2_config[2]))
+                                         + ',' + str("{:.5f}".format(self.this_best_pr2_config[3]))
+                                         + ',' + str("{:.5f}".format(self.this_best_pr2_score))
+                                         + '\n')
+                        with open(self.save_file_path + self.save_file_name_only_good, 'a') as myfile:
+                            myfile.write(str(self.subtask_step)
+                                         + ',' + str("{:.5f}".format(params[0]))
+                                         + ',' + str("{:.5f}".format(params[1]))
+                                         + ',' + str("{:.5f}".format(params[2]))
+                                         + ',' + str("{:.5f}".format(params[3]))
+                                         + ',' + str("{:.5f}".format(this_score))
+                                         + ',' + str("{:.5f}".format(self.this_best_pr2_config[0]))
+                                         + ',' + str("{:.5f}".format(self.this_best_pr2_config[1]))
+                                         + ',' + str("{:.5f}".format(self.this_best_pr2_config[2]))
+                                         + ',' + str("{:.5f}".format(self.this_best_pr2_config[3]))
+                                         + ',' + str("{:.5f}".format(self.this_best_pr2_score))
+                                         + '\n')
                     return this_score
         self.physx_outcome = None
         self.physx_output = False
@@ -1048,20 +1123,8 @@ class ScoreGeneratorDressingwithPhysx(object):
             self.best_physx_score = physx_score
             self.best_kinematics_config = self.this_best_pr2_config
             self.best_kinematics_score = self.this_best_pr2_score
-        with open(self.save_file_path + self.save_file_name, 'a') as myfile:
-            myfile.write(str(self.subtask_step)
-                         + ',' + str("{:.5f}".format(params[0]))
-                         + ',' + str("{:.5f}".format(params[1]))
-                         + ',' + str("{:.5f}".format(params[2]))
-                         + ',' + str("{:.5f}".format(params[3]))
-                         + ',' + str("{:.5f}".format(this_score))
-                         + ',' + str("{:.5f}".format(self.this_best_pr2_config[0]))
-                         + ',' + str("{:.5f}".format(self.this_best_pr2_config[1]))
-                         + ',' + str("{:.5f}".format(self.this_best_pr2_config[2]))
-                         + ',' + str("{:.5f}".format(self.this_best_pr2_config[3]))
-                         + ',' + str("{:.5f}".format(self.this_best_pr2_score))
-                         + '\n')
-            with open(self.save_file_path + self.save_file_name_only_good, 'a') as myfile:
+        if self.save_all_results:
+            with open(self.save_file_path + self.save_file_name, 'a') as myfile:
                 myfile.write(str(self.subtask_step)
                              + ',' + str("{:.5f}".format(params[0]))
                              + ',' + str("{:.5f}".format(params[1]))
@@ -1074,6 +1137,19 @@ class ScoreGeneratorDressingwithPhysx(object):
                              + ',' + str("{:.5f}".format(self.this_best_pr2_config[3]))
                              + ',' + str("{:.5f}".format(self.this_best_pr2_score))
                              + '\n')
+                with open(self.save_file_path + self.save_file_name_only_good, 'a') as myfile:
+                    myfile.write(str(self.subtask_step)
+                                 + ',' + str("{:.5f}".format(params[0]))
+                                 + ',' + str("{:.5f}".format(params[1]))
+                                 + ',' + str("{:.5f}".format(params[2]))
+                                 + ',' + str("{:.5f}".format(params[3]))
+                                 + ',' + str("{:.5f}".format(this_score))
+                                 + ',' + str("{:.5f}".format(self.this_best_pr2_config[0]))
+                                 + ',' + str("{:.5f}".format(self.this_best_pr2_config[1]))
+                                 + ',' + str("{:.5f}".format(self.this_best_pr2_config[2]))
+                                 + ',' + str("{:.5f}".format(self.this_best_pr2_config[3]))
+                                 + ',' + str("{:.5f}".format(self.this_best_pr2_score))
+                                 + '\n')
         return this_score
 
     def calculate_scores(self, task_dict, model, ref_options):
@@ -2235,7 +2311,7 @@ if __name__ == "__main__":
     # selector.visualize_many_configurations()
     # selector.output_results_for_use()
     # selector.run_interleaving_optimization_outer_level()
-    selector.optimize_entire_dressing_task(reset_file=True)
+    selector.optimize_entire_dressing_task(reset_file=False)
     outer_elapsed_time = rospy.Time.now()-outer_start_time
     print 'Everything is complete!'
     print 'Done with optimization. Total time elapsed:', outer_elapsed_time.to_sec()

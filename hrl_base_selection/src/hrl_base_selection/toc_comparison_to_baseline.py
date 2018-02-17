@@ -311,7 +311,7 @@ class Manipulability_Testing(object):
 
 
     def run_comparisons_monty_carlo(self, reset_save_file=False, save_results=False, force_key=None,
-                        mc_sim_number=1000, seed=None, use_error=True):
+                        mc_sim_number=1000, seed=None, use_error=True, x_error=0., y_error=0.):
         if seed is None:
             seed = int(time.time())
         self.mc_sim_number = mc_sim_number
@@ -320,6 +320,9 @@ class Manipulability_Testing(object):
         raw_save_file_name_base = 'mc_scores_raw_'
         if reset_save_file:
             open(save_file_path+save_file_name, 'w').close()
+
+        # x_error = 0.
+        # y_error = 0.
 
         accuracy = np.zeros(self.mc_sim_number)
         success = np.zeros(self.mc_sim_number)
@@ -333,17 +336,19 @@ class Manipulability_Testing(object):
                     new_key[1]=force_key[1]
                     new_key[2] = force_key[2]
                     new_key[3] = force_key[3]
+                    new_key[6] = force_key[4]
+                    new_key[7] = force_key[5]
                     if force_key[3] == 'autobed' and force_key[1] == 'toc':
                         new_key[4]=2
                         new_key[5]=-10
-                        new_key[6]=0
-                        new_key[7]=0
+                        # new_key[6]=0
+                        # new_key[7]=0
                         new_key[8]=1
                     elif force_key[3] == 'autobed':
                         new_key[4] = 1
                         new_key[5] = -10
-                        new_key[6] = 0
-                        new_key[7] = 0
+                        # new_key[6] = 0
+                        # new_key[7] = 0
                         new_key[8] = 1
                     elif force_key[3] == 'chair':
                         if force_key[1] == 'toc':
@@ -351,8 +356,8 @@ class Manipulability_Testing(object):
                         else:
                             new_key[4] = 1
                         new_key[5] = 0
-                        new_key[6] = 0
-                        new_key[7] = 0
+                        # new_key[6] = 0
+                        # new_key[7] = 0
                         new_key[8] = 0
                         if new_key[0] in ['arm_cuffs', 'scratching_knee_left', 'scratching_knee_right',
                                           'scratching_upper_arm_left', 'scratching_upper_arm_right']:
@@ -423,12 +428,16 @@ class Manipulability_Testing(object):
                     # print current_seed
                     # print 'Monte-carlo simulation number', i, 'out of ', self.mc_sim_number
                     if use_error == False:
+                        error = np.zeros(6)
+                        error[0] += x_error
+                        error[1] += y_error
                         accuracy[i], success[i] = self.evaluate_configuration_mc(model, task, best_base, goal_data,
                                                                                  raw_reference_names, seed=current_seed,
-                                                                                 error=np.zeros(6))
+                                                                                 error=error)
                     else:
                         accuracy[i], success[i] = self.evaluate_configuration_mc(model, task, best_base, goal_data,
-                                                                                 raw_reference_names, seed=current_seed)
+                                                                                 raw_reference_names, seed=current_seed,
+                                                                                 x_error=x_error, y_error=y_error)
                     if save_results:
                         with open(save_file_path + raw_save_file_name, 'a') as myfile:
                             myfile.write(str("{:.4f}".format(accuracy[i]))
@@ -530,8 +539,6 @@ class Manipulability_Testing(object):
         print 'Capability Statistic and pvalue:\n', stat, pvalue
         stat, pvalue = ranksums(toc_overall_results, capability_collision_overall_results)
         print 'Capability Collision Statistic and pvalue:\n', stat, pvalue
-
-
 
     def comparisons_monty_carlo_plotting(self):
         print 'Starting to plot the comparison between TOC and baseline algorithms'
@@ -1394,7 +1401,8 @@ class Manipulability_Testing(object):
         # fig2 = plt.figure(2)
         # rospy.spin()
 
-    def evaluate_configuration_mc(self, model, task, config, goals, reference_names, seed=None, error=None):
+    def evaluate_configuration_mc(self, model, task, config, goals, reference_names, seed=None, error=None,
+                                  x_error=0., y_error=0.):
         if seed is None:
             seed = int(time.time())
         # print 'config', config
@@ -1403,7 +1411,7 @@ class Manipulability_Testing(object):
         # self.selector.model = model
         # self.selector.receive_new_goals(goals, reference_options, model=model)
         result = self.selector.mc_eval_init_config(config, goals, reference_names, model=model, task=task,
-                                                   seed=seed, error=error)
+                                                   seed=seed, error=error, x_error=x_error, y_error=y_error)
         # print 'The result of this evaluation is: ', result
         return result
 
@@ -1744,7 +1752,7 @@ if __name__ == "__main__":
                                'robustness_visualization', 'plot_comparison',
                                'base_brute_evaluation','plot_base_brute_evaluation',
                                'plot_correlation', 'comparison_significance']
-    comparison_type = comparison_type_options[3]
+    comparison_type = comparison_type_options[0]
 
     rospy.init_node('manipulability_test_cma'+comparison_type+str(time.time()).split('.')[0])
     myTest = Manipulability_Testing(visualize=False)
@@ -1754,8 +1762,9 @@ if __name__ == "__main__":
         myTest.load_scores()
         seed = 100
         # myTest.run_comparisons_monty_carlo(reset_save_file=True, save_results=True, mc_sim_number=200, seed=seed)
-        myTest.run_comparisons_monty_carlo(reset_save_file=False, save_results=False, mc_sim_number=100, seed=seed,
-                                           force_key=['shaving', 'toc', 'cma', 'chair'], use_error=False)
+        myTest.run_comparisons_monty_carlo(reset_save_file=False, save_results=False, mc_sim_number=200, seed=seed,
+                                           force_key=['wiping_mouth', 'toc', 'cma', 'autobed', 0., 0.], use_error=True,
+                                           x_error=0., y_error=0.15)
 
     if comparison_type == 'plot_comparison':
         print 'Doing plotting of TOC comparison'
