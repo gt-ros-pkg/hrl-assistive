@@ -400,7 +400,7 @@ class KinematicsLib():
 
 
 
-            if False:#count > 300:  # add this bit for constant bone lengths
+            if count > 300:  # add this bit for constant bone lengths
                 # if subject is not None:
                 torso_lengths_angles = Variable(torso_lengths_angles_v.data.clone())
 
@@ -458,9 +458,10 @@ class KinematicsLib():
                          0.41654181]).repeat(torso_lengths_angles.size()[0], 1)
                 torso_lengths_angles = Variable(torso_lengths_angles)
 
-                if False:
+                if True:
                     #torso_lengths_angles_v[:, 20] = torch.add(torch.mul(torso_lengths_angles_v[:, 20],0), 1.)
-                    torso_lengths_angles_v[:, 20] = torch.add(torch.mul(torso_lengths_angles_v[:, 20],0.1), 1)
+                    #torso_lengths_angles_v[:, 20] = torch.add(torch.mul(torso_lengths_angles_v[:, 20],0.1), 1)
+                    torso_lengths_angles_v[:, 20] = torch.add(torch.mul(torch.add(torch.nn.sigmoid(torso_lengths_angles_v[:,20]), -0.5), 0.5), 1.0)
                     torso_lengths_angles[:, 20] = torch.mul((0. + torso_lengths_angles[:, 20]),(0. + torso_lengths_angles_v[:, 20]))
                     torso_lengths_angles[:, 21] = torch.mul((0. + torso_lengths_angles[:, 21]),(0. + torso_lengths_angles_v[:, 20]))
                     torso_lengths_angles[:, 22] = torch.mul((0. + torso_lengths_angles[:, 22]),(0. + torso_lengths_angles_v[:, 20]))
