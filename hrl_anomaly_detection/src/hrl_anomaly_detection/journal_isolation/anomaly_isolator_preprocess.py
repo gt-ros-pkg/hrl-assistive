@@ -691,6 +691,7 @@ def multi_net_test(save_data_path, pkl_name='', renew=False):
         d = ut.load_pickle(file_name)
 
         # scaling
+        print "Scaling"
         scaler  = preprocessing.StandardScaler()
         x_sig_tr = scaler.fit_transform(d['x_sig_tr'])
         x_sig_te = scaler.transform(d['x_sig_te'])
@@ -701,10 +702,12 @@ def multi_net_test(save_data_path, pkl_name='', renew=False):
         method      = 'multi_net'
         noise_mag   = 0.05 #5
         patience    = 6 #4 #10
-        sam_epoch   = 40 #2:40
+        #sam_epoch   = 40 #2:40
         fine_tuning = False
-        batch_size  = 2048
+        batch_size  = 1024
+        sam_epoch   = len(x_sig_tr)/batch_size
 
+        print "Start to run multi_net"
         from hrl_anomaly_detection.journal_isolation.models import multi_net             
         sig_weights_file   = os.path.join(weights_path, 'model_weights_sig_net_'+str(idx)+'.h5')
         img_weights_file   = os.path.join(weights_path, 'model_weights_img_net_'+str(idx)+'.h5')

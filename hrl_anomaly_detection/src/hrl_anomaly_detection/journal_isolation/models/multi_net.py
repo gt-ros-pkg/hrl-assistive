@@ -154,10 +154,10 @@ def multi_net(idx, trainData, testData, batch_size=512, sam_epoch=500, \
                                             seed=3334)
 
         hist = model.fit_generator(train_generator,
-                                   samples_per_epoch=len(y_train),
-                                   nb_epoch=sam_epoch,
+                                   #samples_per_epoch=len(y_train),
+                                   steps_per_epoch=sam_epoch,
                                    validation_data=test_generator,
-                                   nb_val_samples=len(y_val),
+                                   validation_steps=len(y_val)/batch_size+1,
                                    callbacks=callbacks)
 
     y_pred = model.predict([np.array(x_img_test), np.array(x_sig_test)])
