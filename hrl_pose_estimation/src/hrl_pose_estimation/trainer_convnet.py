@@ -97,7 +97,7 @@ class PhysicalTrainer():
         print test_file
         #Entire pressure dataset with coordinates in world frame
 
-        self.save_name = '_2to8_' + opt.losstype+'vL_' + str(self.batch_size) + 'b_' + str(self.num_epochs) + 'e_'+str(self.opt.leave_out)
+        self.save_name = '_2to8_' + opt.losstype+'cL_' + str(self.batch_size) + 'b_' + str(self.num_epochs) + 'e_'+str(self.opt.leave_out)
 
 
         #change this to 'direct' when you are doing baseline methods
@@ -590,10 +590,10 @@ class PhysicalTrainer():
 
                 self.criterion = nn.L1Loss()
 
-                if True:
+                if epoch < 4:
                     loss = self.criterion(scores, scores_zeros)
-                #else:
-                #    loss = self.criterion(scores[0:10], scores_zeros[0:10])
+                else:
+                    loss = self.criterion(scores[0:10], scores_zeros[0:10])
 
 
             elif self.loss_vector_type == 'direct':

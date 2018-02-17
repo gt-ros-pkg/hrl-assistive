@@ -400,13 +400,13 @@ class KinematicsLib():
 
 
 
-            if False:#count > 300:  # add this bit for constant bone lengths
+            if count > 300:  # add this bit for constant bone lengths
                 # if subject is not None:
                 torso_lengths_angles = Variable(torso_lengths_angles_v.data.clone())
 
                 torso_lengths_angles = torso_lengths_angles.data
                 print subject, 'SCALED CONSTANT BONE LENGTHS, SUBJECT ', str(subject)
-                if subject == 9:
+                if subject == 9 or subject == 4:
                     torso_lengths_angles[:, 20:37] = torch.Tensor(
                         [0.1, 0.26832222, 0.17381444, 0.17381444, 0.28164876, 0.27695534, 0.21541507, 0.20452102,
                          0.31553109, 0.14, 0.20127556, 0.10428444, 0.10428444, 0.41213504, 0.43190713, 0.42485215,
@@ -460,7 +460,8 @@ class KinematicsLib():
 
                 if False:
                     #torso_lengths_angles_v[:, 20] = torch.add(torch.mul(torso_lengths_angles_v[:, 20],0), 1.)
-                    torso_lengths_angles_v[:, 20] = torch.add(torch.mul(torso_lengths_angles_v[:, 20],0.1), 1)
+                    #torso_lengths_angles_v[:, 20] = torch.add(torch.mul(torso_lengths_angles_v[:, 20],0.1), 1)
+                    torso_lengths_angles_v[:, 20] = torch.add(torch.mul(torch.add(F.sigmoid(torso_lengths_angles_v[:,20]), -0.5),0.25),1.0)
                     torso_lengths_angles[:, 20] = torch.mul((0. + torso_lengths_angles[:, 20]),(0. + torso_lengths_angles_v[:, 20]))
                     torso_lengths_angles[:, 21] = torch.mul((0. + torso_lengths_angles[:, 21]),(0. + torso_lengths_angles_v[:, 20]))
                     torso_lengths_angles[:, 22] = torch.mul((0. + torso_lengths_angles[:, 22]),(0. + torso_lengths_angles_v[:, 20]))
@@ -529,6 +530,9 @@ class KinematicsLib():
             torso_lengths_angles_v[:, 37] = torch.add(torso_lengths_angles_v[:, 37], 0.6)
             torso_lengths_angles_v[:, 38] = torch.add(torso_lengths_angles_v[:, 38], 1.3)
             torso_lengths_angles_v[:, 39] = torch.add(torso_lengths_angles_v[:, 39], 0.1)
+
+
+
 
             if count % 15 == 1:
                 print torso_lengths_angles[0:2, 20:26], 'cloned'
