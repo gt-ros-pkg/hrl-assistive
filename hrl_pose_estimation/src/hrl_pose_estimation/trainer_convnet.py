@@ -88,7 +88,7 @@ class PhysicalTrainer():
         self.verbose = opt.verbose
         self.opt = opt
         self.batch_size = 128
-        self.num_epochs = 200
+        self.num_epochs = 300
         self.include_inter = True
 
         self.count = 0
