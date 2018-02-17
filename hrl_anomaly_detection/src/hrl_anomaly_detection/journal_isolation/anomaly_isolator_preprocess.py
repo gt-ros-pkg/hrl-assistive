@@ -698,13 +698,14 @@ def multi_net_test(save_data_path, pkl_name='', renew=False):
         trainData = (x_sig_tr, d['x_img_tr'], d['y_tr'])
         testData  = (x_sig_te, d['x_img_te'], d['y_te'])
         
+        trainData = (x_sig_tr[:100], d['x_img_tr'][:100], d['y_tr'][:100])
 
         method      = 'multi_net'
         noise_mag   = 0.05 #5
         patience    = 6 #4 #10
         #sam_epoch   = 40 #2:40
         fine_tuning = False
-        batch_size  = 1024
+        batch_size  = 16 #1024
         sam_epoch   = len(x_sig_tr)/batch_size
 
         print "Start to run multi_net"
