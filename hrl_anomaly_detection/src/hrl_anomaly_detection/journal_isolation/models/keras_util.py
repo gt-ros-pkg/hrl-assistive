@@ -137,7 +137,7 @@ class multiGenerator():
                     else:
                         yield [x_batch_img, x], y_batch
                     
-            
+                gc.collect()
 
 
 class sigGenerator():

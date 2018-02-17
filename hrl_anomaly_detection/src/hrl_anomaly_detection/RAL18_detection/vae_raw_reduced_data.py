@@ -120,7 +120,7 @@ def lstm_test(subject_names, task_name, raw_data_path, processed_data_path, para
     # HMM-induced vector with LOPO
     for idx, (normalTrainIdx, abnormalTrainIdx, normalTestIdx, abnormalTestIdx) \
       in enumerate(d['kFoldList']):
-        #if (idx == 0 or idx==7): continue
+        if not (idx == 0 or idx==1 or idx==2): continue
         ## if idx != 3: continue
         
         print "==================== ", idx, " ========================"
