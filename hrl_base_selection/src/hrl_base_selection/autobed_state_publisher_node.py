@@ -111,8 +111,10 @@ class AutobedStatePublisherNode(object):
         if poses[0] > 79.9:
             poses[0] = 79.9
         head_angle = (poses[0]*pi/180)
+        leg_angle = (poses[2] * pi / 180 - 0.1)
+        head_angle = 55.*pi/180
+        leg_angle = 0.
 
-        leg_angle = (poses[2]*pi/180 - 0.1)
         with self.frame_lock:
             self.collated_head_angle = np.delete(self.collated_head_angle, 0)
             self.collated_head_angle = np.append(self.collated_head_angle, [head_angle])
@@ -339,7 +341,7 @@ class AutobedStatePublisherNode(object):
                 # # try:
                 elif self.listener.canTransform('/autobed/base_link', '/user_head_link', rospy.Time(0)):
                     (trans_h, rot_h) = self.listener.lookupTransform('/autobed/base_link', '/user_head_link', rospy.Time(0))
-                    unoccupied_shift.position[0] = trans_h[1]
+                    unoccupied_shift.position[0] = 15.
                 else:
                     # print 'Error with transform lookup'
                     unoccupied_shift.position[0] = 15.
