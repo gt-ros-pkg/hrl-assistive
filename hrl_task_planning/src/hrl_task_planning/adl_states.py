@@ -103,7 +103,7 @@ class FindTagState(PDDLSmachState):
         else:
             rospy.logwarn('[%s] Something went wrong in finding AR Tag. Tag not found' % rospy.get_name())
             return 'aborted'
-        return
+        return 
 
     def found_ar_tag_cb(self, msg):
         if msg.data:
