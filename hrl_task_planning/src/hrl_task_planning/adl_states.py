@@ -116,7 +116,7 @@ class TrackTagState(PDDLSmachState):
     def __init__(self, model, domain, *args, **kwargs):
         super(TrackTagState, self).__init__(domain=domain, *args, **kwargs)
         self.start_tracking_AR_publisher = rospy.Publisher('track_AR_now', Bool, queue_size=1)
-        self.model = model
+        self.model = model 
 
     def on_execute(self, ud):
         rospy.sleep(1.)
