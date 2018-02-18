@@ -146,7 +146,7 @@ class VisualizationLib():
         plt.show()
 
 
-    def visualize_pressure_map(self, p_map, targets_raw=None, scores_raw = None, p_map_val = None, targets_val = None, scores_val = None, block = False, title = None):
+    def visualize_pressure_map(self, p_map, targets_raw=None, scores_raw = None, p_map_val = None, targets_val = None, scores_val = None, block = False, title = ' '):
         #p_map_val[0, :, :] = p_map[1, : ,:]
 
         try:
@@ -321,29 +321,30 @@ class VisualizationLib():
 
     def rviz_publish_output(self, targets, scores, pseudotargets = None):
         TargetArray = MarkerArray()
-        for joint in range(0, targets.shape[0]):
-            targetPublisher = rospy.Publisher("/targets", MarkerArray)
-            Tmarker = Marker()
-            Tmarker.header.frame_id = "autobed/base_link"
-            Tmarker.type = Tmarker.SPHERE
-            Tmarker.action = Tmarker.ADD
-            Tmarker.scale.x = 0.05
-            Tmarker.scale.y = 0.05
-            Tmarker.scale.z = 0.05
-            Tmarker.color.a = 1.0
-            Tmarker.color.r = 0.0
-            Tmarker.color.g = 0.69
-            Tmarker.color.b = 0.0
-            Tmarker.pose.orientation.w = 1.0
-            Tmarker.pose.position.x = targets[joint, 0]
-            Tmarker.pose.position.y = targets[joint, 1]
-            Tmarker.pose.position.z = targets[joint, 2]
-            TargetArray.markers.append(Tmarker)
-            tid = 0
-            for m in TargetArray.markers:
-                m.id = tid
-                tid += 1
-        targetPublisher.publish(TargetArray)
+        if targets is not None:
+            for joint in range(0, targets.shape[0]):
+                targetPublisher = rospy.Publisher("/targets", MarkerArray)
+                Tmarker = Marker()
+                Tmarker.header.frame_id = "autobed/base_link"
+                Tmarker.type = Tmarker.SPHERE
+                Tmarker.action = Tmarker.ADD
+                Tmarker.scale.x = 0.05
+                Tmarker.scale.y = 0.05
+                Tmarker.scale.z = 0.05
+                Tmarker.color.a = 1.0
+                Tmarker.color.r = 0.0
+                Tmarker.color.g = 0.69
+                Tmarker.color.b = 0.0
+                Tmarker.pose.orientation.w = 1.0
+                Tmarker.pose.position.x = targets[joint, 0]
+                Tmarker.pose.position.y = targets[joint, 1]
+                Tmarker.pose.position.z = targets[joint, 2]
+                TargetArray.markers.append(Tmarker)
+                tid = 0
+                for m in TargetArray.markers:
+                    m.id = tid
+                    tid += 1
+            targetPublisher.publish(TargetArray)
 
         ScoresArray = MarkerArray()
         for joint in range(0, scores.shape[0]):
