@@ -1,0 +1,8 @@
+<!--run this launch file to get a model of the environment for rviz -->
+
+<launch>
+    <param name="autobed/robot_description" textfile="$(find hrl_pose_estimation)/urdf/bed_and_environment_henry_tray/robots/bed_and_environment_henry_tray.URDF" />
+    <node name="autobed_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" ns="autobed" output="screen"/>
+    <node name="autobed_state_publisher_node" pkg="hrl_pose_estimation" type="autobed_state_publisher_node.py" output="screen"/>
+   
+</launch>
