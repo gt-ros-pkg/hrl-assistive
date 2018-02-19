@@ -17,6 +17,7 @@ from skimage.feature import blob_doh
 from hrl_msgs.msg import FloatArrayBare
 from geometry_msgs.msg import TransformStamped
 from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import Point
 import rosbag
 import copy
 
@@ -127,8 +128,9 @@ class RealTimePose():
         if bedangle > 180: bedangle = bedangle - 360
         self.bedangle = bedangle
 
-    #def broadcast_tf_pose(self, msg):
-
+    def broadcast_tf_pose(self, msg, all_joints):
+        br = tf.TransformBroadcaster()
+        br.sendTransform((msg[0], msg[1], msg[2]), tf.transformations.quaternion_from_euler(0, 0, 0), rospy.Time.now(), all_joints, "autobed/base_link")
 
     def run(self):
 
@@ -156,26 +158,29 @@ class RealTimePose():
                 viz_image = np.array(input_stack)[0,:,:,:]
                 viz_image = np.pad(viz_image[0,:,:], 10, 'constant', constant_values=(0.))
 
-                scores = targets_est.numpy()
-                scores = scores[0, :] / 1000
-                scores = np.reshape(scores, self.output_size)
+                scores = np.reshape(np.mean(targets_est.numpy()/1000, axis = 0), self.output_size)
+                scores_std = np.std(np.linalg.norm(np.reshape(targets_est.numpy()/1000, (self.T, 10, 3)), axis = 2), axis = 0)
 
-                pseudotarget_scores = pseudotargets_est
-                pseudotarget_scores = pseudotarget_scores[0, :] / 1000
-                pseudotarget_scores = np.reshape(pseudotarget_scores, (5,3))
+                self.broadcast_tf_pose(scores[0,:], 'alljoints')
 
-                print scores
-                print pseudotarget_scores
+
+                pseudotarget_scores = np.reshape(np.mean(pseudotargets_est/1000, axis = 0), (5, 3))
+                pseudotarget_scores_std = np.std(np.linalg.norm(np.reshape(pseudotargets_est/1000, (self.T, 5, 3)), axis = 2), axis = 0)
+
+                #print scores
+                print scores_std
+                #print pseudotarget_scores
+                #print pseudotarget_scores_std
                 scores_all = np.concatenate((scores, pseudotarget_scores), axis = 0)
 
 
-                if False:#True: #publish in rviz
+                if True: #publish in rviz
                     VisualizationLib().rviz_publish_input(viz_image * 1.3, self.bedangle)
-                    VisualizationLib().rviz_publish_output(None, scores, pseudotarget_scores)
-                    #self.limbArray = VisualizationLib().rviz_publish_output_limbs(None, np.reshape(scores, self.output_size), np.reshape(pseudotarget_scores, (5, 3)),
-                    #                                                         LimbArray=self.limbArray, count=0)
+                    VisualizationLib().rviz_publish_output(None, scores, pseudotarget_scores, scores_std, pseudotarget_scores_std)
+                    self.limbArray = VisualizationLib().rviz_publish_output_limbs(None, np.reshape(scores, self.output_size), np.reshape(pseudotarget_scores, (5, 3)),
+                                                                             LimbArray=self.limbArray, count=0)
 
-                VisualizationLib().visualize_pressure_map(viz_image, targets_raw=None, scores_raw=scores_all)
+                #VisualizationLib().visualize_pressure_map(viz_image, targets_raw=None, scores_raw=scores_all)
 
 
                 self.ok_to_read_pose = False
