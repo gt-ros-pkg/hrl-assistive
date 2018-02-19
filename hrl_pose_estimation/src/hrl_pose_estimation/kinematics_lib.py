@@ -531,7 +531,7 @@ class KinematicsLib():
             torso_lengths_angles_v[:, 37] = torch.add(torso_lengths_angles_v[:, 37], 0.6)
             torso_lengths_angles_v[:, 38] = torch.add(torso_lengths_angles_v[:, 38], 1.3)
             torso_lengths_angles_v[:, 39] = torch.add(torso_lengths_angles_v[:, 39], 0.1)
-            torso_lengths_angles_v[:, 10] = 0.
+            #torso_lengths_angles_v[:, 10] = 0.
 
 
             #if count % 15 == 1:
