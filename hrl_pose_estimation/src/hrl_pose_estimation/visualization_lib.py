@@ -319,7 +319,7 @@ class VisualizationLib():
         imagePublisher.publish(markerArray)
 
 
-    def rviz_publish_output(self, targets, scores, pseudotargets = None):
+    def rviz_publish_output(self, targets, scores, pseudotargets = None, scores_std = None, pseudotarget_scores_std = None):
         TargetArray = MarkerArray()
         if targets is not None:
             for joint in range(0, targets.shape[0]):
@@ -357,9 +357,18 @@ class VisualizationLib():
             Smarker.scale.y = 0.06
             Smarker.scale.z = 0.06
             Smarker.color.a = 1.0
-            Smarker.color.r = 1.0
-            Smarker.color.g = 1.0
-            Smarker.color.b = 0.0
+            if scores_std is not None:
+                #print scores_std[joint], 'std of joint ', joint
+                #std of 3 is really uncertain
+                Smarker.color.r = 1.0
+                Smarker.color.g = 1.0 - scores_std[joint]/0.03
+                Smarker.color.b = scores_std[joint]/0.03
+
+            else:
+                Smarker.color.r = 1.0
+                Smarker.color.g = 1.0
+                Smarker.color.b = 0.0
+
             Smarker.pose.orientation.w = 1.0
             Smarker.pose.position.x = scores[joint, 0]
             Smarker.pose.position.y = scores[joint, 1]
@@ -383,9 +392,16 @@ class VisualizationLib():
                 PTmarker.scale.y = 0.03
                 PTmarker.scale.z = 0.03
                 PTmarker.color.a = 1.0
-                PTmarker.color.r = 1.0
-                PTmarker.color.g = 1.0
-                PTmarker.color.b = 0.0
+                if pseudotarget_scores_std is not None:
+                    #print scores_std[joint], 'std of joint ', joint
+                    #std of 3 is really uncertain
+                    PTmarker.color.r = 1.0
+                    PTmarker.color.g = 1.0 - pseudotarget_scores_std[joint]/0.03
+                    PTmarker.color.b = pseudotarget_scores_std[joint]/0.03
+                else:
+                    PTmarker.color.r = 1.0
+                    PTmarker.color.g = 1.0
+                    PTmarker.color.b = 0.0
                 PTmarker.pose.orientation.w = 1.0
                 PTmarker.pose.position.x = pseudotargets[joint, 0]
                 PTmarker.pose.position.y = pseudotargets[joint, 1]
