@@ -90,6 +90,7 @@ class PhysicalTrainer():
         self.batch_size = 128
         self.num_epochs = 200
         self.include_inter = True
+        self.shuffle = True
 
         self.count = 0
 
@@ -97,11 +98,11 @@ class PhysicalTrainer():
         print test_file
         #Entire pressure dataset with coordinates in world frame
 
-        self.save_name = '_2to8_' + opt.losstype+'vL_' + str(self.batch_size) + 'b_' + str(self.num_epochs) + 'e_'+str(self.opt.leave_out)
+        self.save_name = '_9to18_' + opt.losstype+'_s' +str(self.shuffle)+'_' + str(self.batch_size) + 'b_' + str(self.num_epochs) + 'e_'+str(self.opt.leave_out)
 
 
         #change this to 'direct' when you are doing baseline methods
-        self.loss_vector_type = opt.losstype  # 'arms_cascade'#'upper_angles' #this is so you train the set to joint lengths and angles
+        self.loss_vector_type = opt.losstype
 
 
         print 'appending to','train'+self.save_name+str(self.opt.leave_out)
@@ -112,9 +113,7 @@ class PhysicalTrainer():
 
 
         self.mat_size = (NUMOFTAXELS_X, NUMOFTAXELS_Y)
-        if self.loss_vector_type == 'upper_angles':
-            self.output_size = (NUMOFOUTPUTNODES - 4, NUMOFOUTPUTDIMS)
-        elif self.loss_vector_type == 'angles' or self.loss_vector_type == 'direct' or self.loss_vector_type == 'confidence':
+        if self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL' or self.loss_vector_type == 'direct':
             self.output_size = (NUMOFOUTPUTNODES, NUMOFOUTPUTDIMS)
         elif self.loss_vector_type == None:
             self.output_size = (NUMOFOUTPUTNODES - 5, NUMOFOUTPUTDIMS)
@@ -170,12 +169,7 @@ class PhysicalTrainer():
 
         self.train_y_flat = [] #Initialize the training ground truth list
         for entry in range(len(dat['images'])):
-            if self.loss_vector_type == 'upper_angles':
-                c = np.concatenate((dat['markers_xyz_m'][entry][0:18] * 1000,
-                                    dat['joint_lengths_U_m'][entry][0:9] * 100,
-                                    dat['joint_angles_U_deg'][entry][0:10]), axis=0)
-                self.train_y_flat.append(c)
-            elif self.loss_vector_type == 'angles':
+            if self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL':
                 c = np.concatenate((dat['markers_xyz_m'][entry][0:30] * 1000,
                                     dat['joint_lengths_U_m'][entry][0:9] * 100,
                                     dat['joint_angles_U_deg'][entry][0:10],
@@ -232,12 +226,7 @@ class PhysicalTrainer():
 
         self.test_y_flat = []  # Initialize the ground truth list
         for entry in range(len(test_dat['images'])):
-            if self.loss_vector_type == 'upper_angles':
-                c = np.concatenate((test_dat['markers_xyz_m'][entry][0:18] * 1000,
-                                    test_dat['joint_lengths_U_m'][entry][0:9] * 100,
-                                    test_dat['joint_angles_U_deg'][entry][0:10]), axis=0)
-                self.test_y_flat.append(c)
-            elif self.loss_vector_type == 'angles':
+            if self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL':
                 c = np.concatenate((test_dat['markers_xyz_m'][entry][0:30] * 1000,
                                     test_dat['joint_lengths_U_m'][entry][0:9] * 100,
                                     test_dat['joint_angles_U_deg'][entry][0:10],
@@ -262,10 +251,10 @@ class PhysicalTrainer():
 
 
         self.train_dataset = torch.utils.data.TensorDataset(self.train_x_tensor, self.train_y_tensor)
-        self.train_loader = torch.utils.data.DataLoader(self.train_dataset, self.batch_size, shuffle=True)
+        self.train_loader = torch.utils.data.DataLoader(self.train_dataset, self.batch_size, shuffle=self.shuffle)
 
         self.test_dataset = torch.utils.data.TensorDataset(self.test_x_tensor, self.test_y_tensor)
-        self.test_loader = torch.utils.data.DataLoader(self.test_dataset, self.batchtest_size, shuffle=True)
+        self.test_loader = torch.utils.data.DataLoader(self.test_dataset, self.batchtest_size, shuffle=self.shuffle)
 
         for batch_idx, batch in enumerate(self.train_loader):
 
@@ -465,7 +454,7 @@ class PhysicalTrainer():
 
         output_size = self.output_size[0]*self.output_size[1]
 
-        if self.loss_vector_type == 'angles':
+        if self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL':
             fc_output_size = 40#38 #18 angles for body, 17 lengths for body, 3 torso coordinates
             self.model = convnet.CNN(self.mat_size, fc_output_size, hidden_dim, kernel_size, self.loss_vector_type)
             pp = 0
@@ -475,11 +464,6 @@ class PhysicalTrainer():
                     nn = nn * s
                 pp += nn
             print pp, 'num params'
-        elif self.loss_vector_type == 'arms_cascade':
-            #we'll make a double pass through this network for the validation for each arm.
-            fc_output_size = 4 #4 angles for arms
-            self.model = convnet_cascade.CNN(self.mat_size, fc_output_size, hidden_dim, kernel_size, self.loss_vector_type)
-            self.model_cascade_prior = torch.load('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(self.opt.leave_out) + '/p_files/convnet_2to8_alldata_angles_constrained_noise_115b_100e_4.pt')
         elif self.loss_vector_type == 'direct' or self.loss_vector_type == 'confidence':
             fc_output_size = 30
             self.model = convnet.CNN(self.mat_size, fc_output_size, hidden_dim, kernel_size, self.loss_vector_type)
@@ -495,10 +479,8 @@ class PhysicalTrainer():
 
         if self.loss_vector_type == None:
             self.optimizer2 = optim.Adam(self.model.parameters(), lr=0.00002, weight_decay=0.0005)
-        elif self.loss_vector_type == 'upper_angles' or self.loss_vector_type == 'arms_cascade' or self.loss_vector_type == 'angles' or self.loss_vector_type == 'direct':
+        elif self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL' or self.loss_vector_type == 'direct':
             self.optimizer2 = optim.Adam(self.model.parameters(), lr=0.00002, weight_decay=0.0005)  #0.000002 does not converge even after 100 epochs on subjects 2-8 kin cons. use .00001
-        elif self.loss_vector_type == 'direct':
-            self.optimizer2 = optim.Adam(self.model.parameters(), lr=0.00002, weight_decay=0.0005)
         #self.optimizer = optim.RMSprop(self.model.parameters(), lr=0.000001, momentum=0.7, weight_decay=0.0005)
         self.optimizer = optim.Adam(self.model.parameters(), lr=0.00002, weight_decay=0.0005) #start with .00005
 
@@ -548,7 +530,7 @@ class PhysicalTrainer():
         #This will loop a total = training_images/batch_size times
         for batch_idx, batch in enumerate(self.train_loader):
 
-            if self.loss_vector_type == 'angles':
+            if self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL':
 
                 # append upper joint angles, lower joint angles, upper joint lengths, lower joint lengths, in that order
                 batch.append(torch.cat((batch[1][:,39:49], batch[1][:, 57:65], batch[1][:, 30:39], batch[1][:, 49:57]), dim = 1))
@@ -590,10 +572,13 @@ class PhysicalTrainer():
 
                 self.criterion = nn.L1Loss()
 
-                #if epoch < 4:
-                loss = self.criterion(scores, scores_zeros)
-                #else:
-                #    loss = self.criterion(scores[0:10], scores_zeros[0:10])
+                if self.loss_vector_type == 'anglesCL':
+                    if epoch < 4:
+                        loss = self.criterion(scores, scores_zeros) #train like its variable lengths for the first 3 epochs to get things converging
+                    else:
+                        loss = self.criterion(scores[0:10], scores_zeros[0:10])
+                elif self.loss_vector_type == 'anglesVL':
+                    loss = self.criterion(scores, scores_zeros)
 
 
             elif self.loss_vector_type == 'direct':
@@ -617,7 +602,7 @@ class PhysicalTrainer():
 
 
             if batch_idx % opt.log_interval == 0:
-                if self.loss_vector_type == 'upper_angles' or self.loss_vector_type == 'angles':
+                if self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL':
                     VisualizationLib().print_error(targets.data, targets_est, self.output_size, self.loss_vector_type, data = 'train')
                     print angles_est[0, :], 'angles'
                     print batch[0][0,2,10,10], 'bed angle'
@@ -669,7 +654,7 @@ class PhysicalTrainer():
             self.model.train()
 
 
-            if self.loss_vector_type == 'angles':
+            if self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL':
 
                 #append upper joint angles, lower joint angles, upper joint lengths, lower joint lengths, in that order
                 batch.append(torch.cat((batch[1][:,39:49], batch[1][:, 57:65], batch[1][:, 30:39], batch[1][:, 49:57]), dim = 1))
@@ -726,23 +711,22 @@ class PhysicalTrainer():
 
         VisualizationLib().print_error(targets.data, targets_est, self.output_size, self.loss_vector_type, data='validate')
 
-        if self.loss_vector_type == 'angles' or self.loss_vector_type == 'direct':
-            if self.loss_vector_type == 'angles':
-                print angles_est[0, :], 'validation angles'
-                print lengths_est[0, :], 'validation lengths'
+        if self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL':
+            print angles_est[0, :], 'validation angles'
+            print lengths_est[0, :], 'validation lengths'
 
-            print batch[0][0,2,10,10], 'validation bed angle'
-            self.im_sampleval = images.data
-            # #self.im_sampleval = self.im_sampleval[:,0,:,:]
-            self.im_sampleval = self.im_sampleval[0, :].squeeze()
-            self.tar_sampleval = targets.data
-            self.tar_sampleval = self.tar_sampleval[0, :].squeeze() / 1000
-            self.sc_sampleval = targets_est.clone()
-            self.sc_sampleval = self.sc_sampleval[0, :].squeeze() / 1000
-            self.sc_sampleval = self.sc_sampleval.view(self.output_size)
+        print batch[0][0,2,10,10], 'validation bed angle'
+        self.im_sampleval = images.data
+        # #self.im_sampleval = self.im_sampleval[:,0,:,:]
+        self.im_sampleval = self.im_sampleval[0, :].squeeze()
+        self.tar_sampleval = targets.data
+        self.tar_sampleval = self.tar_sampleval[0, :].squeeze() / 1000
+        self.sc_sampleval = targets_est.clone()
+        self.sc_sampleval = self.sc_sampleval[0, :].squeeze() / 1000
+        self.sc_sampleval = self.sc_sampleval.view(self.output_size)
 
-            if self.opt.visualize == True:
-                VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample,self.im_sampleval, self.tar_sampleval, self.sc_sampleval, block=False)
+        if self.opt.visualize == True:
+            VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample,self.im_sampleval, self.tar_sampleval, self.sc_sampleval, block=False)
 
 
         return loss
