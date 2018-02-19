@@ -20,7 +20,6 @@ from matplotlib.cbook import flatten
 
 
 class DartDressingWorld(pydart.World):
-
     def __init__(self, skel_file_name):
         rospack = rospkg.RosPack()
         self.pkg_path = rospack.get_path('hrl_base_selection')

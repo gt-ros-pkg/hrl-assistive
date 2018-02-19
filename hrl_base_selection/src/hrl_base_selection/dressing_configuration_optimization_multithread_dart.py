@@ -50,15 +50,98 @@ import gc
 import cma
 import multiprocessing as mp
 
+
+general_option = {'maxiter': 50, 'popsize': 20}
+
+DURATION = 5
+OPTIONS = general_option
+SIMULATOR = DartDressingWorld
+CMA_STEP_SIZE = 0.6
+NUM_RESTART = 1
+
+
 class SimulatorPool(object):
-    def __init__(self, population):
+    def __init__(self, population, visualize=False):
         self.simulatorPool = mp.Manager().Queue()
+        filename = 'fullbody_alex_capsule.skel'
+        rospack = rospkg.RosPack()
+        pkg_path = rospack.get_path('hrl_base_selection')
+        skel_file = pkg_path + '/models/' + filename
         for _ in range(population):
-            simulator = SIMULATOR()
+            simulator = SIMULATOR(skel_file)
             self.simulatorPool.put(simulator)
+        if population == 1 and visualize:
+            t = threading.Thread(target=visualize_dart)
+            t.start()
 
-class ScoreGeneratorDressingwithPhysx(object):
+def visualize_dart(self):
+    win = pydart.gui.viewer.PydartWindow(self.dart_world)
+    win.camera_event(1)
+    win.set_capture_rate(10)
+    win.run_application()
 
+def _init(queue):
+    global current_simulator
+    current_simulator = queue.get()
+
+
+def setBoundary(length, joint_max_l, joint_max_u, joint_min_l, joint_min_u, phi_l, phi_h):
+    lower_bounds = [0 for _ in range(length)]
+    upper_bounds = [0 for _ in range(length)]
+    for i in range(length / 3):
+        lower_bounds[i] = joint_max_l
+        lower_bounds[i + length / 3] = joint_min_l
+        lower_bounds[i + length * 2 / 3] = phi_l
+
+        upper_bounds[i] = joint_max_u
+        upper_bounds[i + length / 3] = joint_min_u
+        upper_bounds[i + length * 2 / 3] = phi_h
+
+    return lower_bounds, upper_bounds
+
+def setup_dart_thread(self):
+    # Setup Dart ENV for each thread
+    global current_simulator
+    # current_simulator.robot = self.dart_world.robot
+    # current_simulator.human = self.dart_world.human
+    # self.gown_leftarm = self.dart_world.gown_box_leftarm
+    # self.gown_rightarm = self.dart_world.gown_box_rightarm
+
+    sign_flip = 1.
+    if 'right' in current_simulator.robot_arm:
+        sign_flip = -1.
+    v = self.robot.q
+    v['l_shoulder_pan_joint'] = 1.*3.14/2
+    v['l_shoulder_lift_joint'] = -0.52
+    v['l_upper_arm_roll_joint'] = 0.
+    v['l_elbow_flex_joint'] = -3.14 * 2 / 3
+    v['l_forearm_roll_joint'] = 0.
+    v['l_wrist_flex_joint'] = 0.
+    v['l_wrist_roll_joint'] = 0.
+    v['l_gripper_l_finger_joint'] = .54
+    v['r_shoulder_pan_joint'] = -1.*3.14/2
+    v['r_shoulder_lift_joint'] = -0.52
+    v['r_upper_arm_roll_joint'] = 0.
+    v['r_elbow_flex_joint'] = -3.14*2/3
+    v['r_forearm_roll_joint'] = 0.
+    v['r_wrist_flex_joint'] = 0.
+    v['r_wrist_roll_joint'] = 0.
+    v['r_gripper_l_finger_joint'] = .54
+    v['torso_lift_joint'] = 0.3
+    current_simulator.robot.set_positions(v)
+    current_simulator.displace_gown()
+
+    positions = current_simulator.robot.positions()
+    positions['rootJoint_pos_x'] = 2.
+    positions['rootJoint_pos_y'] = 0.
+    positions['rootJoint_pos_z'] = 0.
+    positions['rootJoint_rot_z'] = 3.14
+    current_simulator.robot.set_positions(positions)
+    # self.dart_world.set_gown()
+    print 'Dart is ready!'
+
+
+class ScoreGeneratorDressingMultithread(object):
     def __init__(self, robot_arm='rightarm', human_arm='rightarm', visualize=False, standard_mode=True):
         rospack = rospkg.RosPack()
         self.pkg_path = rospack.get_path('hrl_base_selection')
@@ -162,8 +245,6 @@ class ScoreGeneratorDressingwithPhysx(object):
             self.arm_knn.fit(self.arm_configs_checked)
 
             # self.setup_ik_service()
-            self.setup_physx()
-            self.update_physx_from_dart(initialization=True)
             # self.setup_physx_calls()
 
     def output_results_for_use(self):
@@ -364,23 +445,6 @@ class ScoreGeneratorDressingwithPhysx(object):
         save_pickle(self.pr2_B_grasps, self.pkg_path+'/data/saved_results/large_search_space/pr2_grasps.pkl')
         print 'Saved!'
         rospy.spin()
-
-    def simulator_result_handler(self, msg):
-        with self.frame_lock:
-            self.physx_outcome = str(msg.outcome)
-            self.physx_outcome_method2 = str(msg.outcome_method2)
-            forces = [float(i) for i in msg.forces]
-            temp_force_cost = 0.
-            for force in forces:
-                temp_force_cost += np.max([0., force - 1.0])/9.0
-
-            temp_force_cost /= len(forces)
-            self.force_cost = copy.copy(temp_force_cost)
-            print 'Force cost from physx: ', self.force_cost
-            self.physx_output = True
-            print 'Physx simulation outcome (single-contact rays): ', self.physx_outcome
-            print 'Physx simulation outcome (point-in-polygon): ', self.physx_outcome_method2
-            return True
 
     def optimize_entire_dressing_task(self, reset_file=False):
         if reset_file:
@@ -816,7 +880,7 @@ class ScoreGeneratorDressingwithPhysx(object):
         elif False:  # for left arm
             params = [1.5707963267948966, -0.17453292519943295, 1.3962634015954636, 1.5707963267948966]
             # self.visualize = True
-        neigh_distances, neighbors = self.arm_knn.kneighbors([params], 16)
+        neigh_distances, neighbors = self.arm_knn.kneighbors([params], 8)
         for neigh_dist, neighbor in zip(neigh_distances[0], neighbors[0]):
             if np.max(np.abs(np.array(self.arm_configs_checked[neighbor] - np.array(params)))) < m.radians(15.):
                 if not self.arm_configs_eval[neighbor][5] == 'good':
@@ -888,6 +952,7 @@ class ScoreGeneratorDressingwithPhysx(object):
             print 'arm does not break fixed_points requirement'
         else:
             print 'fixed points exceeded: ', fixed_points_exceeded_amount
+
 
         ############################################
         # Body mass from https://msis.jsc.nasa.gov/sections/section03.htm for average human male
@@ -1028,91 +1093,61 @@ class ScoreGeneratorDressingwithPhysx(object):
         # print self.kinematics_optimization_results
         self.force_cost = 0.
         if self.this_best_pr2_score < 0.:
-            self.physx_output = False
-            self.physx_outcome = None
-            # traj_start = np.array(origin_B_traj_start_pos)[0:3, 3]
-            # traj_end = np.array(origin_B_traj_end_pos)[0:3, 3]
+            alpha = 1.  # cost on forces
+            beta = 1.  # cost on manipulability
+            zeta = 0.5  # cost on torque
+            physx_score = self.force_cost*alpha + torque_cost*zeta
+            this_score = physx_score + self.this_best_pr2_score*beta
+            if this_score < self.best_overall_score:
+                self.best_overall_score = this_score
+                self.best_physx_config = params
+                self.best_physx_score = physx_score
+                self.best_kinematics_config = self.this_best_pr2_config
+                self.best_kinematics_score = self.this_best_pr2_score
+            # return this_score
 
-            self.update_physx_from_dart(origin_B_forearm_pointed_down_arm=origin_B_forearm_pointed_down_arm,
-                                        origin_B_upperarm_pointed_down_shoulder=origin_B_upperarm_pointed_down_shoulder,
-                                        traj_start=origin_B_traj_start, traj_forearm_end=origin_B_traj_forearm_end,
-                                        traj_upper_end=origin_B_traj_upper_end, traj_final_end=origin_B_traj_final_end)
+            # self.arm_traj_parameters.append([params, physx_score])
 
-            # pos_a, quat_a = Bmat_to_pos_quat(origin_B_upperarm_world)
-
-            # print 'quat_a'
-            # print quat_a
-            # quat_a =
-            # quat_a = list(tft.quaternion_from_euler(params[7], -params[8], params[9], 'rzxy'))
-            # print 'quat_a'
-            # print quat_a
-            # out_msg = FloatArrayBare()
-            # out_msg.data = [float(t) for t in list(flatten([pos_t, quat_t, path_distance, params[6], quat_a]))]
-                # float(list(flatten([pos_t, quat_t, params[6], params[7], quat_a])))
-            # self.physx_output = None
-            # self.traj_to_simulator_pub.publish(out_msg)
-            while not rospy.is_shutdown() and not self.physx_output:
-                rospy.sleep(0.5)
-                # print 'waiting a sec'
-            # self.physx_outcome = None
-            self.physx_output = False
-            if self.physx_outcome == 'good':
-                with self.frame_lock:
-                    alpha = 1.  # cost on forces
-                    beta = 1.  # cost on manipulability
-                    zeta = 0.5  # cost on torque
-                    physx_score = self.force_cost*alpha + torque_cost*zeta
-                    this_score = physx_score + self.this_best_pr2_score*beta
-                    if this_score < self.best_overall_score:
-                        self.best_overall_score = this_score
-                        self.best_physx_config = params
-                        self.best_physx_score = physx_score
-                        self.best_kinematics_config = self.this_best_pr2_config
-                        self.best_kinematics_score = self.this_best_pr2_score
-                    # return this_score
-
-                    # self.arm_traj_parameters.append([params, physx_score])
-
-                    # save_pickle(self.arm_traj_parameters, self.pkg_path+'/data/all_arm_traj_configs.pkl')
-                    print 'Force cost was: ', self.force_cost
-                    print 'Torque score was: ', torque_cost
-                    print 'Physx score was: ', physx_score
-                    print 'Best pr2 kinematics score was: ', self.this_best_pr2_score
-                    if self.save_all_results:
-                        with open(self.save_file_path+self.save_file_name, 'a') as myfile:
-                            # myfile.write('ok' +
-                                         # + ',' + str("{:.5f}".format(params[0]))
-                                         # + ',' + str("{:.5f}".format(params[1]))
-                                         # + ',' + str("{:.5f}".format(params[2]))
-                                         # + ',' + str("{:.5f}".format(params[3]))
-                                         # + ',' + str("{:.5f}".format(this_score))
-                                         # + '\n')
-                            myfile.write(str(self.subtask_step)
-                                         + ',' + str("{:.5f}".format(params[0]))
-                                         + ',' + str("{:.5f}".format(params[1]))
-                                         + ',' + str("{:.5f}".format(params[2]))
-                                         + ',' + str("{:.5f}".format(params[3]))
-                                         + ',' + str("{:.5f}".format(this_score))
-                                         + ',' + str("{:.5f}".format(self.this_best_pr2_config[0]))
-                                         + ',' + str("{:.5f}".format(self.this_best_pr2_config[1]))
-                                         + ',' + str("{:.5f}".format(self.this_best_pr2_config[2]))
-                                         + ',' + str("{:.5f}".format(self.this_best_pr2_config[3]))
-                                         + ',' + str("{:.5f}".format(self.this_best_pr2_score))
-                                         + '\n')
-                        with open(self.save_file_path + self.save_file_name_only_good, 'a') as myfile:
-                            myfile.write(str(self.subtask_step)
-                                         + ',' + str("{:.5f}".format(params[0]))
-                                         + ',' + str("{:.5f}".format(params[1]))
-                                         + ',' + str("{:.5f}".format(params[2]))
-                                         + ',' + str("{:.5f}".format(params[3]))
-                                         + ',' + str("{:.5f}".format(this_score))
-                                         + ',' + str("{:.5f}".format(self.this_best_pr2_config[0]))
-                                         + ',' + str("{:.5f}".format(self.this_best_pr2_config[1]))
-                                         + ',' + str("{:.5f}".format(self.this_best_pr2_config[2]))
-                                         + ',' + str("{:.5f}".format(self.this_best_pr2_config[3]))
-                                         + ',' + str("{:.5f}".format(self.this_best_pr2_score))
-                                         + '\n')
-                    return this_score
+            # save_pickle(self.arm_traj_parameters, self.pkg_path+'/data/all_arm_traj_configs.pkl')
+            print 'Force cost was: ', self.force_cost
+            print 'Torque score was: ', torque_cost
+            print 'Physx score was: ', physx_score
+            print 'Best pr2 kinematics score was: ', self.this_best_pr2_score
+            if self.save_all_results:
+                with open(self.save_file_path+self.save_file_name, 'a') as myfile:
+                    # myfile.write('ok' +
+                                 # + ',' + str("{:.5f}".format(params[0]))
+                                 # + ',' + str("{:.5f}".format(params[1]))
+                                 # + ',' + str("{:.5f}".format(params[2]))
+                                 # + ',' + str("{:.5f}".format(params[3]))
+                                 # + ',' + str("{:.5f}".format(this_score))
+                                 # + '\n')
+                    myfile.write(str(self.subtask_step)
+                                 + ',' + str("{:.5f}".format(params[0]))
+                                 + ',' + str("{:.5f}".format(params[1]))
+                                 + ',' + str("{:.5f}".format(params[2]))
+                                 + ',' + str("{:.5f}".format(params[3]))
+                                 + ',' + str("{:.5f}".format(this_score))
+                                 + ',' + str("{:.5f}".format(self.this_best_pr2_config[0]))
+                                 + ',' + str("{:.5f}".format(self.this_best_pr2_config[1]))
+                                 + ',' + str("{:.5f}".format(self.this_best_pr2_config[2]))
+                                 + ',' + str("{:.5f}".format(self.this_best_pr2_config[3]))
+                                 + ',' + str("{:.5f}".format(self.this_best_pr2_score))
+                                 + '\n')
+                with open(self.save_file_path + self.save_file_name_only_good, 'a') as myfile:
+                    myfile.write(str(self.subtask_step)
+                                 + ',' + str("{:.5f}".format(params[0]))
+                                 + ',' + str("{:.5f}".format(params[1]))
+                                 + ',' + str("{:.5f}".format(params[2]))
+                                 + ',' + str("{:.5f}".format(params[3]))
+                                 + ',' + str("{:.5f}".format(this_score))
+                                 + ',' + str("{:.5f}".format(self.this_best_pr2_config[0]))
+                                 + ',' + str("{:.5f}".format(self.this_best_pr2_config[1]))
+                                 + ',' + str("{:.5f}".format(self.this_best_pr2_config[2]))
+                                 + ',' + str("{:.5f}".format(self.this_best_pr2_config[3]))
+                                 + ',' + str("{:.5f}".format(self.this_best_pr2_score))
+                                 + '\n')
+            return this_score
         self.physx_outcome = None
         self.physx_output = False
         alpha = 1.  # cost on forces
@@ -1756,71 +1791,6 @@ class ScoreGeneratorDressingwithPhysx(object):
         win.set_capture_rate(10)
         win.run_application()
 
-    def setup_dart(self, filename='fullbody_alex_capsule.skel'):
-        # Setup Dart ENV
-        pydart.init()
-        print('pydart initialization OK')
-        skel_file = self.pkg_path+'/models/'+filename
-        self.dart_world = DartDressingWorld(skel_file)
-
-        # Lets you visualize dart.
-        if self.visualize:
-            t = threading.Thread(target=self.visualize_dart)
-            t.start()
-
-        self.robot = self.dart_world.robot
-        self.human = self.dart_world.human
-        self.gown_leftarm = self.dart_world.gown_box_leftarm
-        self.gown_rightarm = self.dart_world.gown_box_rightarm
-
-        sign_flip = 1.
-        if 'right' in self.robot_arm:
-            sign_flip = -1.
-        v = self.robot.q
-        v['l_shoulder_pan_joint'] = 1.*3.14/2
-        v['l_shoulder_lift_joint'] = -0.52
-        v['l_upper_arm_roll_joint'] = 0.
-        v['l_elbow_flex_joint'] = -3.14 * 2 / 3
-        v['l_forearm_roll_joint'] = 0.
-        v['l_wrist_flex_joint'] = 0.
-        v['l_wrist_roll_joint'] = 0.
-        v['l_gripper_l_finger_joint'] = .54
-        v['r_shoulder_pan_joint'] = -1.*3.14/2
-        v['r_shoulder_lift_joint'] = -0.52
-        v['r_upper_arm_roll_joint'] = 0.
-        v['r_elbow_flex_joint'] = -3.14*2/3
-        v['r_forearm_roll_joint'] = 0.
-        v['r_wrist_flex_joint'] = 0.
-        v['r_wrist_roll_joint'] = 0.
-        v['r_gripper_l_finger_joint'] = .54
-        v['torso_lift_joint'] = 0.3
-        self.robot.set_positions(v)
-        self.dart_world.displace_gown()
-
-        # robot_start = np.matrix([[1., 0., 0., 0.],
-        #                          [0., 1., 0., 0.],
-        #                          [0., 0., 1., 0.],
-        #                          [0., 0., 0., 1.]])
-        # positions = self.robot.positions()
-        # pos, ori = Bmat_to_pos_quat(robot_start)
-        # eulrpy = tft.euler_from_quaternion(ori, 'sxyz')
-        # positions['rootJoint_pos_x'] = pos[0]
-        # positions['rootJoint_pos_y'] = pos[1]
-        # positions['rootJoint_pos_z'] = pos[2]
-        # positions['rootJoint_rot_x'] = eulrpy[0]
-        # positions['rootJoint_rot_y'] = eulrpy[1]
-        # positions['rootJoint_rot_z'] = eulrpy[2]
-        # self.robot.set_positions(positions)
-
-        positions = self.robot.positions()
-        positions['rootJoint_pos_x'] = 2.
-        positions['rootJoint_pos_y'] = 0.
-        positions['rootJoint_pos_z'] = 0.
-        positions['rootJoint_rot_z'] = 3.14
-        self.robot.set_positions(positions)
-        # self.dart_world.set_gown()
-        print 'Dart is ready!'
-
     def setup_openrave(self):
         # Setup Openrave ENV
         op.RaveSetDebugLevel(op.DebugLevel.Error)
@@ -1923,21 +1893,6 @@ class ScoreGeneratorDressingwithPhysx(object):
         feasible_ik = True
         return feasible_ik, max_joint_change
 
-    # Setup physx services and initialized the human in Physx
-    def setup_physx(self):
-        print 'Setting up services and looking for Physx services'
-
-        # print 'Found Physx services'
-        self.physx_output_service = rospy.Service('physx_output', PhysxOutput, self.simulator_result_handler)
-        rospy.wait_for_service('init_physx_body_model')
-        self.init_physx_service = rospy.ServiceProxy('init_physx_body_model', InitPhysxBodyModel)
-        rospy.wait_for_service('body_config_input_to_physx')
-        self.update_physx_config_service = rospy.ServiceProxy('body_config_input_to_physx', PhysxInputWaypoints)
-
-        self.traj_to_simulator_pub = rospy.Publisher('physx_simulator_input', FloatArrayBare, queue_size=1)
-        # self.simulator_result_sub = rospy.Subscriber('physx_simulator_result', PhysxOutcome, self.simulator_result_cb)
-        print 'Physx calls are ready!'
-
     def set_human_model_dof_dart(self, dof, human_arm):
         # bth = m.degrees(headrest_th)
         if not len(dof) == 4:
@@ -1969,82 +1924,6 @@ class ScoreGeneratorDressingwithPhysx(object):
             print 'I am not sure what arm to set the dof for.'
             return False
         self.human.set_positions(q)
-
-    def update_physx_from_dart(self,
-                               origin_B_forearm_pointed_down_arm=[],
-                               origin_B_upperarm_pointed_down_shoulder=[],
-                               traj_start=[], traj_forearm_end=[],
-                               traj_upper_end=[], traj_final_end=[],
-                               initialization=False):
-        links = []
-        spheres = []
-        for bodypart in self.dart_world.skel_bodies:
-            if 'visualization_shape' in bodypart.keys():
-                if 'multi_sphere' in bodypart['visualization_shape']['geometry'].keys():
-                    multisphere = bodypart['visualization_shape']['geometry']['multi_sphere']['sphere']
-                    first_sphere_transform = np.eye(4)
-                    first_sphere_transform[0:3, 3] = np.array([float(t) for t in multisphere[0]['position'].split(' ')])
-                    transform = np.matrix(self.human.bodynode(bodypart['@name']).world_transform()) * np.matrix(
-                        first_sphere_transform)
-                    position = np.round(
-                        copy.copy(np.array(transform)[0:3, 3]) - self.dart_world.human_reference_center_floor_point, 10)
-                    radius = float(np.round(float(multisphere[0]['radius']), 10))
-                    sphere_data = copy.copy(list(flatten([position, radius])))
-                    if sphere_data not in spheres:
-                        sphere_1_index = len(spheres)
-                        spheres.append(copy.copy(list(flatten([position, radius]))))
-                    else:
-                        sphere_1_index = spheres.index(sphere_data)
-
-                    second_sphere_transform = np.eye(4)
-                    second_sphere_transform[0:3, 3] = np.array(
-                        [float(t) for t in multisphere[1]['position'].split(' ')])
-                    transform = np.matrix(self.human.bodynode(bodypart['@name']).world_transform()) * np.matrix(
-                        second_sphere_transform)
-                    position = np.round(
-                        copy.copy(np.array(transform)[0:3, 3]) - self.dart_world.human_reference_center_floor_point, 10)
-                    radius = float(np.round(float(multisphere[1]['radius']), 10))
-                    sphere_data = copy.copy(list(flatten([position, radius])))
-                    if sphere_data not in spheres:
-                        sphere_2_index = len(spheres)
-                        spheres.append(copy.copy(list(flatten([position, radius]))))
-                    else:
-                        print 'the sphere was already there!!'
-                        sphere_2_index = spheres.index(sphere_data)
-                    links.append([sphere_1_index, sphere_2_index])
-        spheres = np.array(spheres)
-        links = np.array(links)
-        spheres_x = [float(i) for i in spheres[:, 0]]
-        spheres_y = [float(i) for i in spheres[:, 1]]
-        spheres_z = [float(i) for i in spheres[:, 2]]
-        spheres_r = [float(i) for i in spheres[:, 3]]
-        first_sphere_list = [int(i) for i in links[:, 0]]
-        second_sphere_list = [int(i) for i in links[:, 1]]
-        if initialization:
-            resp = self.init_physx_service(spheres_x, spheres_y, spheres_z, spheres_r,
-                                           first_sphere_list, second_sphere_list)
-            print 'Is physx initialized with the person model?', resp
-        else:
-            if traj_start == []:
-                traj_start = self.traj_start
-            if traj_forearm_end == []:
-                traj_forearm_end = self.traj_forearm_end
-            if traj_forearm_end == [] or traj_start == [] or origin_B_upperarm_pointed_down_shoulder == []:
-                print 'I am missing a start trajectory, an end trajectory, or the transform from origin to pointing ' \
-                      'down shoulder'
-                return False
-            origin_B_forearm_pointed_down_arm = list(flatten(np.array(origin_B_forearm_pointed_down_arm)))
-            origin_B_upperarm_pointed_down_shoulder = list(flatten(np.array(origin_B_upperarm_pointed_down_shoulder)))
-            traj_start = list(flatten(np.array(traj_start)))
-            traj_forearm_end = list(flatten(np.array(traj_forearm_end)))
-            traj_upper_end = list(flatten(np.array(traj_upper_end)))
-            traj_final_end = list(flatten(np.array(traj_final_end)))
-            # print 'right here'
-            resp = self.update_physx_config_service(spheres_x, spheres_y, spheres_z, spheres_r, first_sphere_list,
-                                                    second_sphere_list, traj_start, traj_forearm_end, traj_upper_end,
-                                                    traj_final_end, origin_B_forearm_pointed_down_arm,
-                                                    origin_B_upperarm_pointed_down_shoulder)
-        return resp
 
     def visualize_many_configurations(self):
         arm_traj_configs = load_pickle(self.pkg_path+'/data/saved_results/large_search_space/all_arm_traj_configs.pkl')
@@ -2318,7 +2197,29 @@ if __name__ == "__main__":
     rospy.init_node('score_generator')
     # start_time = time.time()
     outer_start_time = rospy.Time.now()
-    selector = ScoreGeneratorDressingwithPhysx(human_arm='rightarm', visualize=False)
+
+    pydart.init()
+    print('pydart initialization OK')
+
+    filename = 'fullbody_alex_capsule.skel'
+    rospack = rospkg.RosPack()
+    pkg_path = rospack.get_path('hrl_base_selection')
+    skel_file = pkg_path + '/models/' + filename
+
+    testSimulator = SIMULATOR(skel_file)
+    testSimulator = SIMULATOR()
+
+    joint_max = testSimulator.controller.joint_max
+    joint_min = testSimulator.controller.joint_min
+    phi = testSimulator.controller.phi
+
+    x0 = np.concatenate((joint_max, joint_min, phi))
+
+    lb, hb = setBoundary(len(x0), 0, np.pi / 3, -np.pi / 3, 0, -np.pi, np.pi)
+    OPTIONS['boundary_handling'] = cma.BoundTransform
+    OPTIONS['bounds'] = [lb, hb]
+
+    selector = ScoreGeneratorDressingMultithread(human_arm='rightarm', visualize=False)
     # selector.visualize_many_configurations()
     # selector.output_results_for_use()
     # selector.run_interleaving_optimization_outer_level()
