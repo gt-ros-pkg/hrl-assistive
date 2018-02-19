@@ -298,8 +298,8 @@ class VisualizationLib():
                     #print marker.pose.position.x, 'x'
                 else:
 
-                    marker.pose.position.y = (51) * 0.0286 + (33 - j) * 0.0286 * np.cos(np.deg2rad(angle)) - 0.0286*3*np.sin(np.deg2rad(angle))
-                    marker.pose.position.z = (33-j)*0.0286*np.sin(np.deg2rad(angle)) -0.1
+                    marker.pose.position.y = (51) * 0.0286 + (33 - j) * 0.0286 * np.cos(np.deg2rad(angle)) - (0.0286*3*np.sin(np.deg2rad(angle)))*0.85
+                    marker.pose.position.z = ((33-j)*0.0286*np.sin(np.deg2rad(angle)))*0.85 -0.1
                     #print j, marker.pose.position.z, marker.pose.position.y, 'head'
 
                 # We add the new marker to the MarkerArray, removing the oldest
@@ -328,9 +328,9 @@ class VisualizationLib():
                 Tmarker.header.frame_id = "autobed/base_link"
                 Tmarker.type = Tmarker.SPHERE
                 Tmarker.action = Tmarker.ADD
-                Tmarker.scale.x = 0.05
-                Tmarker.scale.y = 0.05
-                Tmarker.scale.z = 0.05
+                Tmarker.scale.x = 0.07
+                Tmarker.scale.y = 0.07
+                Tmarker.scale.z = 0.07
                 Tmarker.color.a = 1.0
                 Tmarker.color.r = 0.0
                 Tmarker.color.g = 0.69
@@ -353,9 +353,9 @@ class VisualizationLib():
             Smarker.header.frame_id = "autobed/base_link"
             Smarker.type = Smarker.SPHERE
             Smarker.action = Smarker.ADD
-            Smarker.scale.x = 0.04
-            Smarker.scale.y = 0.04
-            Smarker.scale.z = 0.04
+            Smarker.scale.x = 0.06
+            Smarker.scale.y = 0.06
+            Smarker.scale.z = 0.06
             Smarker.color.a = 1.0
             Smarker.color.r = 1.0
             Smarker.color.g = 1.0
@@ -379,9 +379,9 @@ class VisualizationLib():
                 PTmarker.header.frame_id = "autobed/base_link"
                 PTmarker.type = PTmarker.SPHERE
                 PTmarker.action = PTmarker.ADD
-                PTmarker.scale.x = 0.02
-                PTmarker.scale.y = 0.02
-                PTmarker.scale.z = 0.02
+                PTmarker.scale.x = 0.03
+                PTmarker.scale.y = 0.03
+                PTmarker.scale.z = 0.03
                 PTmarker.color.a = 1.0
                 PTmarker.color.r = 1.0
                 PTmarker.color.g = 1.0
@@ -452,8 +452,8 @@ class VisualizationLib():
             ROT_mat[0:3, 0] = np.copy(np.reshape(x_orth, [3,1]))
             ROT_mat[0:3, 1] = np.copy(np.reshape(y_orth, [3,1]))
             ROT_mat[0:3, 2] = np.copy(np.reshape(z_vector, [3,1]))
-            Lmarker.scale.x = 0.02
-            Lmarker.scale.y = 0.02
+            Lmarker.scale.x = 0.025
+            Lmarker.scale.y = 0.025
             Lmarker.scale.z = z_mag
 
             if count <= 1:
@@ -522,8 +522,8 @@ class VisualizationLib():
             ROT_mat[0:3, 0] = np.copy(np.reshape(x_orth, [3,1]))
             ROT_mat[0:3, 1] = np.copy(np.reshape(y_orth, [3,1]))
             ROT_mat[0:3, 2] = np.copy(np.reshape(z_vector, [3,1]))
-            Lmarker.scale.x = 0.02
-            Lmarker.scale.y = 0.02
+            Lmarker.scale.x = 0.025
+            Lmarker.scale.y = 0.025
             Lmarker.scale.z = z_mag
 
             if count <= 1:

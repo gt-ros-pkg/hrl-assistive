@@ -97,7 +97,7 @@ class PhysicalTrainer():
         print test_file
         #Entire pressure dataset with coordinates in world frame
 
-        self.save_name = '_2to8_' + opt.losstype+'cL_' + str(self.batch_size) + 'b_' + str(self.num_epochs) + 'e_'+str(self.opt.leave_out)
+        self.save_name = '_2to8_' + opt.losstype+'vL_' + str(self.batch_size) + 'b_' + str(self.num_epochs) + 'e_'+str(self.opt.leave_out)
 
 
         #change this to 'direct' when you are doing baseline methods

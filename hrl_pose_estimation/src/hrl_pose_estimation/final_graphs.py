@@ -159,11 +159,11 @@ class DataVisualizer():
         threshold_error = {}
         joint_percent = {}
         joint_percent_keep = {}
-        for modeltype in ['KNN','LRR','KRR','direct','kinvL']:
+        for modeltype in ['KNN','LRR','KRR','direct','kincL','kinvL']:
             error_avg_flat = None
-            for subject in [10]:
-                if modeltype == 'kinvL' or modeltype == 'direct':
-                    error_avg, _ = load_pickle(self.dump_path + '/Final_Data/error_avg_std_T25_subject'+str(subject)+'_'+str(modeltype)+'.p')
+            for subject in [9,10,11,12,13,14,15,16,17,18]:
+                if modeltype == 'kinvL' or modeltype == 'kincL' or modeltype == 'direct':
+                    error_avg, _ = load_pickle(self.dump_path+'/Final_Data/error_avg_std_T25_subject'+str(subject)+'_'+str(modeltype)+'.p')
                     # size (P x N) each: number of images, number of joints
                     try:
                         error_avg_flat = np.concatenate((error_avg_flat, np.array(error_avg).flatten()), axis=0)
@@ -172,7 +172,7 @@ class DataVisualizer():
                     print np.shape(error_avg_flat), subject, modeltype
 
                 elif modeltype == 'KNN' or modeltype == 'LRR' or modeltype == 'KRR':
-                    error_avg = load_pickle(self.dump_path + '/Final_Data/error_avg_subject'+str(subject)+'_'+str(modeltype)+'.p')
+                    error_avg = load_pickle(self.dump_path+'/Final_Data/error_avg_subject'+str(subject)+'_'+str(modeltype)+'.p')
                     try:
                         error_avg_flat = np.concatenate((error_avg_flat, np.array(error_avg).flatten()/10), axis=0)
                     except:
@@ -211,17 +211,18 @@ class DataVisualizer():
         xlim = [0, 300]
         ylim1 = [0, 1.0]
         fig, ax1 = plt.subplots()
-        plt.suptitle('Subject '+str(subject)+ ' Error Thresholding.  All joints.', fontsize=16)
+        #plt.suptitle('Subject '+str(subject)+ ' Error Thresholding.  All joints.', fontsize=16)
         ax1.set_xlim(xlim)
         ax1.set_ylim(ylim1)
         ax1.set_xlabel('Error Threshold (mm)', fontsize=16)
         ax1.set_ylabel('Fraction of joints \n below the error threshold', color='k', fontsize=16)
-        ratioKNN = ax1.plot(threshold_error['KNN'] * 10, joint_percent['KNN'], 'c-', lw=4, label='KNN')
-        ratioLRR = ax1.plot(threshold_error['LRR'] * 10, joint_percent['LRR'], 'm-', lw=4, label='LRR')
-        ratioKRR = ax1.plot(threshold_error['KRR'] * 10, joint_percent['KRR'], 'y-', lw=4, label='KRR')
-        ratiodirect = ax1.plot(threshold_error['direct'] * 10, joint_percent['direct'], 'r-', lw=4, label='CNN direct')
-        ratiokinvL = ax1.plot(threshold_error['kinvL'] * 10, joint_percent['kinvL'], 'b-', lw=4, label='CNN kin. regr. '+r"$\boldsymbol{l}$")
-        lns = ratioKNN+ratioLRR+ratioKRR+ratiodirect+ratiokinvL
+        ratioKNN = ax1.plot(threshold_error['KNN'] * 10, joint_percent['KNN'], 'c-', lw=3, label='KNN')
+        ratioLRR = ax1.plot(threshold_error['LRR'] * 10, joint_percent['LRR'], 'm-', lw=3, label='LRR')
+        ratioKRR = ax1.plot(threshold_error['KRR'] * 10, joint_percent['KRR'], 'y-', lw=3, label='KRR')
+        ratiodirect = ax1.plot(threshold_error['direct'] * 10, joint_percent['direct'], 'r-', lw=3, label='CNN direct')
+        ratiokincL = ax1.plot(threshold_error['kincL'] * 10, joint_percent['kincL'], 'g-', lw=3, label='CNN kin. avg. '+r"$\boldsymbol{l}$")
+        ratiokinvL = ax1.plot(threshold_error['kinvL'] * 10, joint_percent['kinvL'], 'b-', lw=3, label='CNN kin. regr. '+r"$\boldsymbol{l}$")
+        lns = ratioKNN+ratioLRR+ratioKRR+ratiodirect+ratiokincL+ratiokinvL
         labs = [l.get_label() for l in lns]
         plt.legend(lns, labs, loc=0)
         plt.show()
@@ -229,17 +230,18 @@ class DataVisualizer():
         xlim = [0, 300]
         ylim1 = [0, 1.0]
         fig, ax1 = plt.subplots()
-        plt.suptitle('Subject 10 Std. Dev. Thresholding for keeping points.  All joints.', fontsize=16)
+        #plt.suptitle('Subject 10 Std. Dev. Thresholding for keeping points.  All joints.', fontsize=16)
         ax1.set_xlim(xlim)
         ax1.set_ylim(ylim1)
         ax1.set_xlabel('Error Threshold (mm)', fontsize=16)
-        ax1.set_ylabel('Fraction of joints \n above the error threshold', color='g', fontsize=16)
-        ratioKNN = ax1.plot(threshold_error['KNN'] * 10, joint_percent_keep['KNN'], 'c-', lw=4, label='KNN')
-        ratioLRR = ax1.plot(threshold_error['LRR'] * 10, joint_percent_keep['LRR'], 'm-', lw=4, label='LRR')
-        ratioKRR = ax1.plot(threshold_error['KRR'] * 10, joint_percent_keep['KRR'], 'y-', lw=4, label='KRR')
-        ratiodirect = ax1.plot(threshold_error['direct'] * 10, joint_percent_keep['direct'], 'r-', lw=4, label='CNN direct')
-        ratiokinvL = ax1.plot(threshold_error['kinvL'] * 10, joint_percent_keep['kinvL'], 'b-', lw=4, label='CNN kin. regr. ' + r"$\boldsymbol{l}$")
-        lns = ratioKNN + ratioLRR + ratioKRR + ratiodirect+ratiokinvL
+        ax1.set_ylabel('Fraction of joints \n above the error threshold', color='k', fontsize=16)
+        ratioKNN = ax1.plot(threshold_error['KNN'] * 10, joint_percent_keep['KNN'], 'c-', lw=3, label='KNN')
+        ratioLRR = ax1.plot(threshold_error['LRR'] * 10, joint_percent_keep['LRR'], 'm-', lw=3, label='LRR')
+        ratioKRR = ax1.plot(threshold_error['KRR'] * 10, joint_percent_keep['KRR'], 'y-', lw=3, label='KRR')
+        ratiodirect = ax1.plot(threshold_error['direct'] * 10, joint_percent_keep['direct'], 'r-', lw=3, label='CNN direct')
+        ratiokincL = ax1.plot(threshold_error['kincL'] * 10, joint_percent_keep['kincL'], 'g-', lw=3, label='CNN kin. avg. '+r"$\boldsymbol{l}$")
+        ratiokinvL = ax1.plot(threshold_error['kinvL'] * 10, joint_percent_keep['kinvL'], 'b-', lw=3, label='CNN kin. regr. ' + r"$\boldsymbol{l}$")
+        lns = ratioKNN + ratioLRR + ratioKRR + ratiodirect+ratiokincL+ratiokinvL
         labs = [l.get_label() for l in lns]
         plt.legend(lns, labs, loc=0)
         plt.show()
@@ -386,6 +388,41 @@ class DataVisualizer():
 
 
 
+    def p_information_std(self):
+
+        for subject in [9]:
+            p_info_sum_rl, knee_ankle_std = load_pickle(self.dump_path + '/Final_Data/sumRL_sumLL_stdKA_T25_subject' + str(subject) + '_kinvL.p')
+
+            try:
+                error_avg_flat = np.concatenate((error_avg_flat, np.array(error_avg).flatten()), axis = 0)
+                error_std_flat = np.concatenate((error_std_flat, np.array(error_std).flatten()), axis = 0)
+
+            except:
+                right_knee_std = knee_ankle_std[:,0]
+                right_ankle_std = knee_ankle_std[:,2]
+                right_std = np.mean([right_knee_std,right_ankle_std], axis = 0)
+
+                left_knee_std = knee_ankle_std[:,1]
+                left_ankle_std = knee_ankle_std[:,3]
+                left_std = np.mean([left_knee_std,left_ankle_std], axis = 0)
+
+                sums = np.concatenate((p_info_sum_rl[:, 0], p_info_sum_rl[:, 1]), axis = 0)
+                std = np.concatenate((right_std, left_std), axis = 0)
+
+
+                print np.mean(sums), np.std(sums), 'mean, std of right side sums'
+
+            fig = plt.figure()
+            ax1 = fig.add_subplot(1, 1, 1)
+            ax1.plot(sums, std, 'ro')
+            plt.show()
+
+            error_avg_flat = np.array(error_avg).flatten()
+            error_std_flat = np.array(error_std).flatten()
+
+            print np.shape(error_avg_flat)
+
+
     def all_joint_error(self):
         # here is some example to for plotting
         posture = 'sitting'
@@ -417,8 +454,8 @@ class DataVisualizer():
             Std_KRR = [50.21,17.44,55.54,62.49,103.94,112.84,25.28,29.67,31.08,28.45,0]
             DirectCNN  = [60.43,47.80,53.04,62.11,93.74,108.37,58.79,80.23,62.64,51.95,67.91]
             Std_DirectCNN = [21.28,14.57,46.13,48.66,94.90,101.16,20.21,25.31,23.88,23.431,0]
-            KinCNNcL  = [0067.80,45.25,58.08,65.67,105.64,115.57,69.26,85.03,67.98,54.95,73.52]
-            Std_KinCNNcL = [0021.74,12.87,45.53,54.37,92.17,110.90,21.53,21.29,28.31,21.41,0]
+            KinCNNcL  = [66.60,47.45,70.97,71.62,125.92,122.52,74.30,82.91,71.99,57.10,79.14]
+            Std_KinCNNcL = [21.93,15.54,58.56,63.22,120.55,114.32,25.17,24.72,32.71,27.06,0]
             KinCNNvL  = [61.72,46.72,59.81,66.99,108.99,116.04,68.03,79.50,68.01,49.97,72.58]
             Std_KinCNNvL = [19.31,14.11,46.43,58.37,98.78,120.66,24.64,24.91,26.80,24.66,0]
             ax.set_ylabel('Supine Posture: GMPJPE (mm)')
@@ -432,8 +469,8 @@ class DataVisualizer():
             Std_KRR = [45.83,15.17,49.90,52.99,86.88,89.51,30.07,28.53,31.62,32.57,0]
             DirectCNN = [80.01,43.62,65.55,62.20,110.98,102.38,62.78,83.67,75.03,70.20,75.64]
             Std_DirectCNN = [34.36,9.66,50.45,44.90,93.93,85.01,23.89,23.79,23.40,23.59,0]
-            KinCNNcL = [0084.91,42.70,75.40,61.94,123.50,107.46,77.80,154.92,77.41,66.94,87.30]
-            Std_KinCNNcL = [0034.07,11.14,54.95,46.99,94.55,86.15,24.59,20.33,27.56,25.17,0]
+            KinCNNcL = [82.23,52.12,72.47,65.63,123.63,116.01,99.39,110.78,71.29,74.06,86.76]
+            Std_KinCNNcL = [34.98,13.90,53.12,65.57,104.36,103.51,25.83,23.15,29.04,28.55,0]
             KinCNNvL = [84.63,50.06,69.18,60.21,119.44,100.02,85.51,98.70,70.13,66.01,80.39]
             Std_KinCNNvL = [32.60,12.54,51.54,45.89,94.74,87.94,26.97,22.69,23.46,24.11,0]
             ax.set_ylabel('Sitting Posture: GMPJPE (mm)')
@@ -502,7 +539,7 @@ class DataVisualizer():
 
         # Setting the x-axis and y-axis limits
         plt.xlim(min(pos)-width, max(pos)+width*4+0.4)
-        plt.ylim([0, max(KNN + LRR + KRR + DirectCNN + KinCNNcL + KinCNNvL) * 1.05])
+        plt.ylim([0, max(KNN + LRR + KRR + DirectCNN + KinCNNcL + KinCNNvL) * 1.07])
 
         ax.text(max(pos)+0.13*0+0.015, KNN[10]+25, str(np.round(KNN[10],2)), color='black', fontweight = 'normal',rotation = 'vertical',fontsize=8)
         ax.text(max(pos)+0.13*1+0.015, LRR[10]+25, str(np.round(LRR[10],2)), color='black', fontweight = 'normal',rotation = 'vertical',fontsize=8)
@@ -544,5 +581,6 @@ if __name__ == "__main__":
 
     #p.all_joint_error()
     #p.dropout_std_threshold()
-    p.error_threshold()
+    #p.error_threshold()
+    p.p_information_std()
     sys.exit()

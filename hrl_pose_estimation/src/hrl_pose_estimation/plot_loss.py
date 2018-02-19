@@ -406,34 +406,56 @@ class DataVisualizer():
                     except:
                         self.error_avg_list = []
                         self.error_std_list = []
+                        self.error_avg_list.append(error_avg)
+                        self.error_std_list.append(error_avg_std)
+
+                    leg_patchR = np.squeeze(batch0.numpy()[0,:])[0, 58:74, 10:23]
+                    leg_patchL = np.squeeze(batch0.numpy()[0,:])[0, 58:74, 24:37]
+                    print np.sum(leg_patchR), np.sum(leg_patchL), 'leg patch sum'
+                    try:
+                        self.leg_patch_sums.append([np.sum(leg_patchR), np.sum(leg_patchL)])
+                    except:
+                        self.leg_patch_sums = []
+                        self.leg_patch_sums.append([np.sum(leg_patchR), np.sum(leg_patchL)])
 
 
                 count2 = 0
                 while count2 < limit:
-                    print angles_est[0,:]
+                    #print angles_est[0,:]
 
                     self.im_sample = batch0.numpy()
                     self.im_sample = np.squeeze(self.im_sample[count2, :])
+
                     self.tar_sample = targets
                     self.tar_sample = np.squeeze(self.tar_sample[count2, :]) / 1000
+                    print targets_est.size(), 'tar size'
                     self.sc_sample = targets_est
                     self.sc_sample = np.squeeze(self.sc_sample[count2, :]) / 1000
                     self.sc_sample = np.reshape(self.sc_sample, self.output_size)
+
+
                     self.pseudo_sample = pseudotargets_est
                     self.pseudo_sample = np.squeeze(self.pseudo_sample[count2, :]) / 1000
                     self.pseudo_sample = np.reshape(self.pseudo_sample, (5, 3))
 
 
-                    if False:# self.opt.visualize == True:
-                        if count2 <= 1: VisualizationLib().rviz_publish_input(self.im_sample[0, :, :]*1.3, self.im_sample[-1, 10, 10])
-                        #else: VisualizationLib().rviz_publish_input(self.im_sample[1, :, :]/2, self.im_sample[-1, 10, 10])
+                    if self.opt.visualize == True:
+                        print np.array(self.error_std_list)[batch_idx, 6:10]
+                        if True:#np.sum(leg_patchL) < 1000:# or np.sum(leg_patchL) < 100:
+                            if count2 <= 1: VisualizationLib().rviz_publish_input(self.im_sample[0, :, :] * 1.3,self.im_sample[-1, 10, 10])
+                            # else: VisualizationLib().rviz_publish_input(self.im_sample[1, :, :]/2, self.im_sample[-1, 10, 10])
 
-                        VisualizationLib().rviz_publish_output(np.reshape(self.tar_sample, self.output_size), self.sc_sample, self.pseudo_sample)
-                        limbArray = VisualizationLib().rviz_publish_output_limbs(np.reshape(self.tar_sample, self.output_size), self.sc_sample, self.pseudo_sample, LimbArray=limbArray, count = count2)
+                            VisualizationLib().rviz_publish_output(np.reshape(self.tar_sample, self.output_size),
+                                                                   self.sc_sample, self.pseudo_sample)
+                            limbArray = VisualizationLib().rviz_publish_output_limbs(
+                                np.reshape(self.tar_sample, self.output_size), self.sc_sample, self.pseudo_sample,
+                                LimbArray=limbArray, count=count2)
 
-                        skip_image = VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample,block=True, title = 'Kinematic Embedding')
-                        #VisualizationLib().visualize_error_from_distance(bed_distances, error_norm)
-                        if skip_image == 1:
+                            skip_image = VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample,block=True, title = 'Kinematic Embedding')
+                            #VisualizationLib().visualize_error_from_distance(bed_distances, error_norm)
+                            if skip_image == 1:
+                                count2 = limit
+                        else:
                             count2 = limit
 
                     count2 += 1
@@ -470,9 +492,12 @@ class DataVisualizer():
                     self.y4.append(error[4])
                     self.x5.append(std_error[5])
                     self.y5.append(error[5])
-                    print batch_idx
+                    print batch_idx, np.array(self.error_std_list)[batch_idx,6:10], np.array(self.leg_patch_sums)[batch_idx,:]
                     if batch_idx == 1669:
-                        pkl.dump([self.error_avg_list, self.error_std_list], open('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/Final_Data/error_avg_std_T25_subject'+str(self.opt.leave_out)+'_kinvL.p', 'wb'))
+                        #pkl.dump([self.error_avg_list, self.error_std_list], open('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/Final_Data/error_avg_std_T25_subject'+str(self.opt.leave_out)+'_kinvL.p', 'wb'))
+                        #pkl.dump([np.array(self.leg_patch_sums), np.array(self.error_std_list)[:,6:10]], open(
+                        #    '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/Final_Data/sumRL_sumLL_stdKA_T25_subject' + str(
+                        #        self.opt.leave_out) + '_kinvL.p', 'wb'))
 
                         xlim = [0, 20]
                         ylim = [0, 60]
@@ -581,7 +606,7 @@ class DataVisualizer():
                     self.sc_sample = self.sc_sample[count2, :].squeeze() / 1000
                     self.sc_sample = self.sc_sample.view(self.output_size)
 
-                    if False:#self.opt.visualize == True:
+                    if self.opt.visualize == True:
                         VisualizationLib().rviz_publish_input(self.im_sample[0, :, :] * 1.3, self.im_sample[-1, 10, 10])
                         # else: VisualizationLib().rviz_publish_input(self.im_sample[1, :, :]/2, self.im_sample[-1, 10, 10])
 
@@ -597,8 +622,8 @@ class DataVisualizer():
 
 
                 if generate_confidence == True:
-                    if batch_idx == 1669:
-                        pkl.dump([self.error_avg_list, self.error_std_list], open('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/Final_Data/error_avg_std_T25_subject' + str(self.opt.leave_out) + '_direct.p', 'wb'))
+                    #if batch_idx == 1669:
+                        #pkl.dump([self.error_avg_list, self.error_std_list], open('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/Final_Data/error_avg_std_T25_subject' + str(self.opt.leave_out) + '_direct.p', 'wb'))
 
                     print cum_distance.size()
                     cum_distance = np.array(cum_distance)
@@ -695,7 +720,7 @@ class DataVisualizer():
     def run(self):
         '''Runs either the synthetic database creation script or the
         raw dataset creation script to create a dataset'''
-        for subject in [11,12,13,14,15,16,17,18]:
+        for subject in [self.opt.leave_out]:
 
             self.opt.leave_out = subject
             self.init(self.opt.leave_out)

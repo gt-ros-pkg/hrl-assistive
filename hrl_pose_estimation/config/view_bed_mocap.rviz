@@ -14,6 +14,7 @@ Panels:
         - /MarkerArray2
         - /MarkerArray3
         - /MarkerArray4
+        - /MarkerArray5
         - /MarkerArray6
       Splitter Ratio: 0.721713
     Tree Height: 750
@@ -132,7 +133,7 @@ Visualization Manager:
       Marker Topic: /limbscoresdirect
       Name: MarkerArray
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
       Value: true
   Enabled: true
@@ -171,10 +172,10 @@ Visualization Manager:
         Z: -0.314191
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 1.2648
+      Pitch: 1.4198
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.38472
+      Yaw: 4.01471
     Saved: ~
 Window Geometry:
   Displays:
@@ -192,5 +193,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1855
-  X: 558
-  Y: 29
+  X: 55
+  Y: 19

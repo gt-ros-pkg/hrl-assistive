@@ -260,27 +260,25 @@ class CNN(nn.Module):
         )
 
         self.CNN_pack2 = nn.Sequential(
-            nn.Conv2d(3, 8, kernel_size = 7, stride = 1, padding = 0),
+            nn.Conv2d(3, 64, kernel_size = 7, stride = 2, padding = 1),
             nn.ReLU(inplace = True),
-            nn.Conv2d(8, 16, kernel_size=5, stride=1, padding= 0),
+            nn.Dropout(p = 0.1, inplace=False),
+            nn.MaxPool2d(3, stride=2),
+            nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=0),
             nn.ReLU(inplace=True),
-            nn.Conv2d(16, 24, kernel_size=5, stride=1, padding= 0),
+            nn.Dropout(p=0.1, inplace=False),
+            nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=0),
             nn.ReLU(inplace=True),
-            nn.Conv2d(24, 24, kernel_size=4, stride=1, padding= 0),
-            nn.ReLU(inplace=True),
+            nn.Dropout(p=0.1, inplace=False),
+
         )
 
 
 
         self.CNN_pack3 = nn.Sequential(
-            nn.Conv2d(24, 24, kernel_size = 1, stride = 1, padding = 0),
-            nn.ReLU(inplace = True),
-            nn.Conv2d(24, 24, kernel_size=1, stride=1, padding= 0),
+            nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=0),
             nn.ReLU(inplace=True),
-            nn.Conv2d(24, 24, kernel_size=1, stride=1, padding= 0),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(24, 10, kernel_size=1, stride=1, padding= 0),
-            nn.ReLU(inplace=True),
+            nn.Dropout(p=0.1, inplace=False),
 
         )
 
@@ -369,13 +367,6 @@ class CNN(nn.Module):
         #print scores_size, 'scores conv1'
 
 
-        #scores = self.CNN_pack2(scores)
-        #scores_size = scores.size()
-        #print scores_size, 'scores conv2'
-
-        #scores = self.CNN_pack3(scores)
-        #scores_size = scores.size()
-        #print scores_size, 'scores conv3'
 
         #scores = self.CNN_pack4(scores)
         #scores_size = scores.size()
@@ -468,6 +459,7 @@ class CNN(nn.Module):
         scores = None
         targets_est = None
         lengths_est = None
+
 
         scores_cnn = self.CNN_pack1(images)
         scores_size = scores_cnn.size()
