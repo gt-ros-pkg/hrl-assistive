@@ -590,10 +590,10 @@ class PhysicalTrainer():
 
                 self.criterion = nn.L1Loss()
 
-                if epoch < 4:
-                    loss = self.criterion(scores, scores_zeros)
-                else:
-                    loss = self.criterion(scores[0:10], scores_zeros[0:10])
+                #if epoch < 4:
+                loss = self.criterion(scores, scores_zeros)
+                #else:
+                #    loss = self.criterion(scores[0:10], scores_zeros[0:10])
 
 
             elif self.loss_vector_type == 'direct':
