@@ -148,7 +148,7 @@ class CNN(nn.Module):
             # nn.Dropout(p = 0.1, inplace=False),
             # nn.MaxPool2d(3, stride=2),
             # nn.Conv2d(32, 32, kernel_size=3, stride=1, padding= 0),
-            # nn.ReLU(inplace=True),
+            # nn.ReLU(inplace=True),/home/henryclever/catkin_ws/src/hrl-assistive/hrl_pose_estimation/src/hrl_pose_estimation/create_dataset.py
             # nn.Dropout(p = 0.1, inplace=False),
             # nn.Conv2d(32, 64, kernel_size=3, stride=1, padding= 0),
             # nn.ReLU(inplace=True),

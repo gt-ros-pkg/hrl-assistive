@@ -129,6 +129,10 @@ class DataVisualizer():
                 plt.show()
             plt.close()
 
+        elif opt.computer == 'aws':
+            if self.loss_vector_type == 'direct':
+                print self.dump_path + '/subject_' + str(self.opt.leave_out) + '/losses_9to18_direct_sTrue_128b_300e_'+str(self.opt.leave_out)+'.p'
+
 
         rospy.init_node('plot_loss')
         self.count = 0
@@ -195,11 +199,12 @@ class DataVisualizer():
         #angle_model = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/p_files/convnet_2to8_alldata_armsonly_upper_angles_115b_adam_200e_4.pt')
 
         if self.loss_vector_type == 'anglesVL' and self.opt.mltype == 'convnet':
-            print 'loading kinematic CNN, subject ', self.opt.leave_out
+            print 'loading kinematic variable bone lengths CNN, subject ', self.opt.leave_out
             if self.opt.computer == 'aws':
-                model_kin = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnet_2to8_angles128b_200e_' + str(self.opt.leave_out) + '.pt')
+                if self.loss_vector_type == 'anglesVL':
+                model_kin = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnet_9to18_anglesVL_sTrue_128b_200e_'+str(self.opt.leave_out)+'.pt')
             else:
-                model_kin = torch.load(self.dump_path + '/subject_' + str(13) + '/convnets/convnet_2to8_anglesvL_128b_200e_' + str(13) + '.pt', map_location=lambda storage, loc: storage)
+                model_kin = torch.load(self.dump_path + '/subject_' + str(self.opt) + '/convnets/convnet_9to18_anglesVL_sTrue_128b_200e_' + str(13) + '.pt', map_location=lambda storage, loc: storage)
             pp = 0
             for p in list(model_kin.parameters()):
                 nn = 1
@@ -210,7 +215,7 @@ class DataVisualizer():
         if self.loss_vector_type == 'direct' and self.opt.mltype == 'convnet':
             print 'loading direct CNN'
             if self.opt.computer == 'aws':
-                model_dir = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnet_2to8_direct128b_200e_'+str(self.opt.leave_out)+'.pt')
+                model_dir = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnet_9to18_direct_sTrue_128b_300e_'+str(self.opt.leave_out)+'.pt')
             else:
                 model_dir = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/p_files/convnet_2to8_direct128b_200e_'+str(self.opt.leave_out)+'.pt', map_location=lambda storage, loc: storage)
             pp = 0
@@ -220,6 +225,16 @@ class DataVisualizer():
                     nn = nn * s
                 pp += nn
             print pp, 'num params'
+
+
+        if self.loss_vector_type == 'anglesCL' and self.opt.mltype == 'convnet':
+            model_kin = torch.load(self.dump_path + '/subject_' + str(
+                self.opt.leave_out) + '/convnet_9to18_anglesCL_sTrue_128b_200e_' + str(self.opt.leave_out) + '.pt')
+
+
+        elif self.loss_vector_type == 'anglesSTVL':
+            model_kin = torch.load(self.dump_path + '/subject_' + str(
+                self.opt.leave_out) + '/convnet_9to18_anglesSTVL_sTrue_128b_200e_' + str(self.opt.leave_out) + '.pt')
 
         all_eval = False
 
@@ -274,7 +289,7 @@ class DataVisualizer():
                 limbArray = None
 
                 if generate_confidence == True:
-                    limit = 5
+                    limit = 25
                 else:
                     limit = 1
 

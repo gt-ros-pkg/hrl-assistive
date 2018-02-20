@@ -415,7 +415,7 @@ class PhysicalTrainer():
                 #print targets[0]
 
                 #print regr.predict(images_up_test[0]) - targets[0]
-                #VisualizationLib().print_error(scores, targets, self.output_size, loss_vector_type=self.loss_vector_type, data='test', printerror=True)
+                VisualizationLib().print_error(scores, targets, self.output_size, loss_vector_type=self.loss_vector_type, data='test', printerror=True)
 
                 self.im_sample = np.squeeze(images_test[0, :])
                 #print self.im_sample.shape
@@ -480,7 +480,7 @@ class PhysicalTrainer():
         # Run model on GPU if available
         if torch.cuda.is_available():
             self.model = self.model.cuda()
-            
+
 
         self.criterion = F.cross_entropy
 
@@ -615,28 +615,22 @@ class PhysicalTrainer():
                     print targets.data.size()
                     print targets_est.shape
 
-                    #VisualizationLib().print_error(targets.data, targets_est, self.output_size, self.loss_vector_type, data = 'train')
+                    VisualizationLib().print_error(targets.data, targets_est, self.output_size, self.loss_vector_type, data = 'train')
                     print angles_est[0, :], 'angles'
                     print batch[0][0,2,10,10], 'bed angle'
-                    self.im_sample = images.data
-                    # #self.im_sample = self.im_sample[:,0,:,:]
-                    self.im_sample = self.im_sample[0, :].squeeze()
-                    self.tar_sample = targets.data
-                    self.tar_sample = self.tar_sample[0, :].squeeze()/1000
-                    self.sc_sample = targets_est.clone()
-                    self.sc_sample = self.sc_sample[0, :].squeeze() / 1000
-                    self.sc_sample = self.sc_sample.view(self.output_size)
 
                 elif self.loss_vector_type == 'direct':
-                    #VisualizationLib().print_error(targets.data, targets_est, self.output_size, self.loss_vector_type, data='train')
-                    self.im_sample = images.data
-                    #self.im_sample = self.im_sample[:, 1, :, :]
-                    self.im_sample = self.im_sample[0, :].squeeze()
-                    self.tar_sample = targets.data
-                    self.tar_sample = self.tar_sample[0, :].squeeze()/1000
-                    self.sc_sample = targets_est.clone()
-                    self.sc_sample = self.sc_sample[0, :].squeeze() / 1000
-                    self.sc_sample = self.sc_sample.view(self.output_size)
+                    pass
+
+                VisualizationLib().print_error(targets.data, targets_est, self.output_size, self.loss_vector_type, data='train')
+                self.im_sample = images.data
+                #self.im_sample = self.im_sample[:,1, :, :]
+                self.im_sample = self.im_sample[0, :].squeeze()
+                self.tar_sample = targets.data
+                self.tar_sample = self.tar_sample[0, :].squeeze()/1000
+                self.sc_sample = targets_est.clone()
+                self.sc_sample = self.sc_sample[0, :].squeeze() / 1000
+                self.sc_sample = self.sc_sample.view(self.output_size)
 
                 val_loss = self.validate_convnet(n_batches=4)
                 train_loss = loss.data[0]
@@ -721,7 +715,7 @@ class PhysicalTrainer():
         loss *= 1000
 
 
-        #VisualizationLib().print_error(targets.data, targets_est, self.output_size, self.loss_vector_type, data='validate')
+        VisualizationLib().print_error(targets.data, targets_est, self.output_size, self.loss_vector_type, data='validate')
 
         if self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL' or self.loss_vector_type == 'anglesSTVL':
             print angles_est[0, :], 'validation angles'
