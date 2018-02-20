@@ -480,6 +480,7 @@ class PhysicalTrainer():
         # Run model on GPU if available
         if torch.cuda.is_available():
             self.model = self.model.cuda()
+            self.model = torch.nn.DataParallel(self.model, device_ids=[self.opt.gpu])
 
 
         self.criterion = F.cross_entropy
@@ -770,6 +771,10 @@ if __name__ == "__main__":
                  dest='computer', \
                  default='lab_harddrive', \
                  help='Set path to the training database on lab harddrive.')
+    p.add_option('--gpu', action='store', type = 'string',
+                 dest='gpu', \
+                 default='0', \
+                 help='Set the GPU you will use.')
     p.add_option('--mltype', action='store', type = 'string',
                  dest='mltype', \
                  default='convnet', \
