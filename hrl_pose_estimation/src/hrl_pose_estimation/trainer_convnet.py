@@ -113,7 +113,7 @@ class PhysicalTrainer():
 
 
         self.mat_size = (NUMOFTAXELS_X, NUMOFTAXELS_Y)
-        if self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL' or self.loss_vector_type == 'direct':
+        if self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL' or  self.loss_vector_type == 'anglesSTVL' or self.loss_vector_type == 'direct':
             self.output_size = (NUMOFOUTPUTNODES, NUMOFOUTPUTDIMS)
         elif self.loss_vector_type == None:
             self.output_size = (NUMOFOUTPUTNODES - 5, NUMOFOUTPUTDIMS)
@@ -169,7 +169,7 @@ class PhysicalTrainer():
 
         self.train_y_flat = [] #Initialize the training ground truth list
         for entry in range(len(dat['images'])):
-            if self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL':
+            if self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL'  or self.loss_vector_type == 'anglesSTVL':
                 c = np.concatenate((dat['markers_xyz_m'][entry][0:30] * 1000,
                                     dat['joint_lengths_U_m'][entry][0:9] * 100,
                                     dat['joint_angles_U_deg'][entry][0:10],
@@ -226,7 +226,7 @@ class PhysicalTrainer():
 
         self.test_y_flat = []  # Initialize the ground truth list
         for entry in range(len(test_dat['images'])):
-            if self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL':
+            if self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL' or self.loss_vector_type == 'anglesSTVL':
                 c = np.concatenate((test_dat['markers_xyz_m'][entry][0:30] * 1000,
                                     test_dat['joint_lengths_U_m'][entry][0:9] * 100,
                                     test_dat['joint_angles_U_deg'][entry][0:10],
@@ -454,7 +454,7 @@ class PhysicalTrainer():
 
         output_size = self.output_size[0]*self.output_size[1]
 
-        if self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL':
+        if self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL' or self.loss_vector_type == 'anglesSTVL':
             fc_output_size = 40#38 #18 angles for body, 17 lengths for body, 3 torso coordinates
             self.model = convnet.CNN(self.mat_size, fc_output_size, hidden_dim, kernel_size, self.loss_vector_type)
             pp = 0
@@ -479,7 +479,7 @@ class PhysicalTrainer():
 
         if self.loss_vector_type == None:
             self.optimizer2 = optim.Adam(self.model.parameters(), lr=0.00002, weight_decay=0.0005)
-        elif self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL' or self.loss_vector_type == 'direct':
+        elif self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL' or self.loss_vector_type == 'anglesSTVL' or self.loss_vector_type == 'direct':
             self.optimizer2 = optim.Adam(self.model.parameters(), lr=0.00002, weight_decay=0.0005)  #0.000002 does not converge even after 100 epochs on subjects 2-8 kin cons. use .00001
         #self.optimizer = optim.RMSprop(self.model.parameters(), lr=0.000001, momentum=0.7, weight_decay=0.0005)
         self.optimizer = optim.Adam(self.model.parameters(), lr=0.00002, weight_decay=0.0005) #start with .00005
@@ -530,7 +530,7 @@ class PhysicalTrainer():
         #This will loop a total = training_images/batch_size times
         for batch_idx, batch in enumerate(self.train_loader):
 
-            if self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL':
+            if self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL' or self.loss_vector_type == 'anglesSTVL':
 
                 # append upper joint angles, lower joint angles, upper joint lengths, lower joint lengths, in that order
                 batch.append(torch.cat((batch[1][:,39:49], batch[1][:, 57:65], batch[1][:, 30:39], batch[1][:, 49:57]), dim = 1))
@@ -577,7 +577,7 @@ class PhysicalTrainer():
                         loss = self.criterion(scores, scores_zeros) #train like its variable lengths for the first 3 epochs to get things converging
                     else:
                         loss = self.criterion(scores[0:10], scores_zeros[0:10])
-                elif self.loss_vector_type == 'anglesVL':
+                elif self.loss_vector_type == 'anglesVL' or self.loss_vector_type == 'anglesSTVL':
                     loss = self.criterion(scores, scores_zeros)
 
 
@@ -602,7 +602,7 @@ class PhysicalTrainer():
 
 
             if batch_idx % opt.log_interval == 0:
-                if self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL':
+                if self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL' or self.loss_vector_type == 'anglesSTVL':
                     VisualizationLib().print_error(targets.data, targets_est, self.output_size, self.loss_vector_type, data = 'train')
                     print angles_est[0, :], 'angles'
                     print batch[0][0,2,10,10], 'bed angle'
@@ -654,7 +654,7 @@ class PhysicalTrainer():
             self.model.train()
 
 
-            if self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL':
+            if self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL' or self.loss_vector_type == 'anglesSTVL':
 
                 #append upper joint angles, lower joint angles, upper joint lengths, lower joint lengths, in that order
                 batch.append(torch.cat((batch[1][:,39:49], batch[1][:, 57:65], batch[1][:, 30:39], batch[1][:, 49:57]), dim = 1))
@@ -711,7 +711,7 @@ class PhysicalTrainer():
 
         VisualizationLib().print_error(targets.data, targets_est, self.output_size, self.loss_vector_type, data='validate')
 
-        if self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL':
+        if self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL' or self.loss_vector_type == 'anglesSTVL':
             print angles_est[0, :], 'validation angles'
             print lengths_est[0, :], 'validation lengths'
 
