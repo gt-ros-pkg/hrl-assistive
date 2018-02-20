@@ -78,32 +78,21 @@ class DataVisualizer():
     cutting up the pressure maps and creating synthetic database'''
     def __init__(self, pkl_directory,  opt):
         self.opt = opt
-        self.sitting = False
-        self.armsup = False
-        self.alldata = False
         self.verbose = True
-        self.old = False
-        self.normalize = True
         self.include_inter = True
         self.loss_vector_type = self.opt.losstype
         # Set initial parameters
         self.dump_path = pkl_directory.rstrip('/')
 
         self.mat_size = (NUMOFTAXELS_X, NUMOFTAXELS_Y)
-
-
-        self.mat_size = (NUMOFTAXELS_X, NUMOFTAXELS_Y)
-        if self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL' or self.loss_vector_type == 'anglesSTVL' or self.loss_vector_type == 'direct':
-            self.output_size = (NUMOFOUTPUTNODES, NUMOFOUTPUTDIMS)
-        elif self.loss_vector_type == None:
-            self.output_size = (NUMOFOUTPUTNODES - 5, NUMOFOUTPUTDIMS)
+        self.output_size = (NUMOFOUTPUTNODES, NUMOFOUTPUTDIMS)
 
         if self.opt.computer == 'lab_harddrive':
-            print self.dump_path + 'subject_'+str(self.opt.leave_out)+'/convnets/losses_2to8_anglesvL_128b_200e_'+str(self.opt.leave_out)+'.p'
-            train_val_loss = load_pickle(self.dump_path + '/subject_'+str(self.opt.leave_out)+'/convnets/losses_2to8_anglesvL_128b_200e_'+str(self.opt.leave_out)+'.p')
+            print self.dump_path + 'subject_'+str(self.opt.leave_out)+'/convnets/losses_9to18_' + str(self.opt.losstype)+'_sTrue_128b_200e_'+str(self.opt.leave_out)+'.p'
+            train_val_loss = load_pickle(self.dump_path + 'subject_'+str(self.opt.leave_out)+'/convnets/losses_9to18_' + str(self.opt.losstype)+'_sTrue_128b_200e_'+str(self.opt.leave_out)+'.p')
             for key in train_val_loss:
                 print key
-            print '###########################  done with subject ',str(self.opt.leave_out),', ',self.loss_vector_type,' #######################'
+            print '###########################  done with subject ',str(self.opt.leave_out),', ',self.loss_vector_type,' ##############################'
 
             if self.loss_vector_type == 'anglesVL':
                 plt.plot(train_val_loss['epoch_2to8_anglesvL_128b_200e_'+str(self.opt.leave_out)],train_val_loss['val_2to8_anglesvL_128b_200e_'+str(self.opt.leave_out)],'y')
@@ -166,7 +155,6 @@ class DataVisualizer():
         test_xa = PreprocessingLib().preprocessing_create_pressure_angle_stack(self.test_x_flat, self.test_a_flat, self.include_inter, self.mat_size, self.verbose)
         test_xa = np.array(test_xa)
         self.test_x_tensor = torch.Tensor(test_xa)
-
         print 'Finished converting inputs to a torch tensor'
 
         self.test_y_flat = []  # Initialize the ground truth list
@@ -178,7 +166,6 @@ class DataVisualizer():
                                 test_dat['joint_angles_L_deg'][entry][0:8]), axis=0)
             self.test_y_flat.append(c)
         self.test_y_tensor = torch.Tensor(self.test_y_flat)
-
         print 'Finished converting outputs to a torch tensor'
 
 
@@ -188,36 +175,71 @@ class DataVisualizer():
 
 
         print len(self.validation_set), 'size of validation set'
-        batch_size = 1
-        generate_confidence = True
+        batch_size = 1 #always do 1! you have to do 25 forward passes with a single labeled image
+
         self.test_dataset = torch.utils.data.TensorDataset(self.test_x_tensor, self.test_y_tensor)
         self.test_loader = torch.utils.data.DataLoader(self.test_dataset, batch_size, shuffle=True)
 
+        models = []
+        all_eval = False
 
 
-        #torso_length_model = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/p_files/convnet_2to8_alldata_armsonly_torso_lengths_115b_adam_100e_4.pt')
-        #angle_model = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/p_files/convnet_2to8_alldata_armsonly_upper_angles_115b_adam_200e_4.pt')
-
-        if self.loss_vector_type == 'anglesVL' and self.opt.mltype == 'convnet':
+        if all_eval == True: self.loss_vector_type = 'anglesVL'
+        if self.loss_vector_type == 'anglesVL':
+            models.append('anglesVL')
             print 'loading kinematic variable bone lengths CNN, subject ', self.opt.leave_out
             if self.opt.computer == 'aws':
-                if self.loss_vector_type == 'anglesVL':
-                model_kin = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnet_9to18_anglesVL_sTrue_128b_200e_'+str(self.opt.leave_out)+'.pt')
+                model_kinVL = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnet_9to18_anglesVL_sTrue_128b_200e_'+str(self.opt.leave_out)+'.pt')
             else:
-                model_kin = torch.load(self.dump_path + '/subject_' + str(self.opt) + '/convnets/convnet_9to18_anglesVL_sTrue_128b_200e_' + str(13) + '.pt', map_location=lambda storage, loc: storage)
+                model_kinVL = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_ou) + '/convnets/convnet_9to18_anglesVL_sTrue_128b_200e_' + str(self.opt.leave_ou) + '.pt', map_location=lambda storage, loc: storage)
             pp = 0
-            for p in list(model_kin.parameters()):
+            for p in list(model_kinVL.parameters()):
                 nn = 1
                 for s in list(p.size()):
                     nn = nn * s
                 pp += nn
             print pp, 'num params'
-        if self.loss_vector_type == 'direct' and self.opt.mltype == 'convnet':
+
+        if all_eval == True: self.loss_vector_type = 'anglesCL'
+        if self.loss_vector_type == 'anglesCL':
+            models.append('anglesCL')
+            print 'loading kinematic constant bone lengths CNN, subject ', self.opt.leave_out
+            if self.opt.computer == 'aws':
+                model_kinCL = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnet_9to18_anglesCL_sTrue_128b_200e_'+str(self.opt.leave_out)+'.pt')
+            else:
+                model_kinCL = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_ou) + '/convnets/convnet_9to18_anglesCL_sTrue_128b_200e_' + str(self.opt.leave_ou) + '.pt', map_location=lambda storage, loc: storage)
+            pp = 0
+            for p in list(model_kinCL.parameters()):
+                nn = 1
+                for s in list(p.size()):
+                    nn = nn * s
+                pp += nn
+            print pp, 'num params'
+
+        if all_eval == True: self.loss_vector_type = 'anglesSTVL'
+        if self.loss_vector_type == 'anglesSTVL':
+            models.append('anglesSTVL')
+            print 'loading kinematic variable bone lengths straight through CNN, subject ', self.opt.leave_out
+            if self.opt.computer == 'aws':
+                model_kinSTVL = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnet_9to18_anglesSTVL_sTrue_128b_200e_'+str(self.opt.leave_out)+'.pt')
+            else:
+                model_kinSTVL = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_ou) + '/convnets/convnet_9to18_anglesSTVL_sTrue_128b_200e_' + str(self.opt.leave_ou) + '.pt', map_location=lambda storage, loc: storage)
+            pp = 0
+            for p in list(model_kinSTVL.parameters()):
+                nn = 1
+                for s in list(p.size()):
+                    nn = nn * s
+                pp += nn
+            print pp, 'num params'
+
+        if all_eval == True: self.loss_vector_type = 'direct'
+        if self.loss_vector_type == 'direct':
+            models.append('direct')
             print 'loading direct CNN'
             if self.opt.computer == 'aws':
                 model_dir = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnet_9to18_direct_sTrue_128b_300e_'+str(self.opt.leave_out)+'.pt')
             else:
-                model_dir = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/p_files/convnet_2to8_direct128b_200e_'+str(self.opt.leave_out)+'.pt', map_location=lambda storage, loc: storage)
+                model_dir = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/p_files/convnet_9to18_direct_sTrue_128b_300e_'+str(self.opt.leave_out)+'.pt', map_location=lambda storage, loc: storage)
             pp = 0
             for p in list(model_dir.parameters()):
                 nn = 1
@@ -227,35 +249,28 @@ class DataVisualizer():
             print pp, 'num params'
 
 
-        if self.loss_vector_type == 'anglesCL' and self.opt.mltype == 'convnet':
-            model_kin = torch.load(self.dump_path + '/subject_' + str(
-                self.opt.leave_out) + '/convnet_9to18_anglesCL_sTrue_128b_200e_' + str(self.opt.leave_out) + '.pt')
-
-
-        elif self.loss_vector_type == 'anglesSTVL':
-            model_kin = torch.load(self.dump_path + '/subject_' + str(
-                self.opt.leave_out) + '/convnet_9to18_anglesSTVL_sTrue_128b_200e_' + str(self.opt.leave_out) + '.pt')
-
-        all_eval = False
-
-        if all_eval == True: self.opt.mltype = 'KNN'
-        if self.opt.mltype == 'KNN':
+        if all_eval == True: self.loss_vector_type = 'KNN'
+        if self.loss_vector_type == 'KNN':
+            models.append('KNN')
             print 'loading KNN'
             if self.opt.computer == 'aws':
                 regr_KNN = load_pickle(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/HoG_KNN_p'+str(self.opt.leave_out)+'.p')
             else:
                 print self.dump_path + '/subject_' + str(self.opt.leave_out) + '/p_files/HoG_KNN_p'+str(self.opt.leave_out)+'.p'
                 regr_KNN = load_pickle(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/p_files/HoG_KNN_p'+str(self.opt.leave_out)+'.p')
-        if all_eval == True: self.opt.mltype = 'Ridge'
-        if self.opt.mltype == 'Ridge':
+
+        if all_eval == True: self.loss_vector_type = 'Ridge'
+        if self.loss_vector_type == 'Ridge':
+            models.append('Ridge')
             print 'loading Ridge'
             if self.opt.computer == 'aws':
                 regr_Ridge = load_pickle(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/HoG_Ridge_p'+str(self.opt.leave_out)+'.p')
             else:
                 regr_Ridge = load_pickle(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/p_files/HoG_Ridge_p'+str(self.opt.leave_out)+'.p')
 
-        if all_eval == True: self.opt.mltype = 'KRidge'
-        if self.opt.mltype == 'KRidge':
+        if all_eval == True: self.loss_vector_type = 'KRidge'
+        if self.loss_vector_type == 'KRidge':
+            models.append('KRidge')
             print 'loading Kernel Ridge'
             if self.opt.computer == 'aws':
                 regr_KRidge = load_pickle(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/HoG_KRidge_p'+str(self.opt.leave_out)+'.p')
@@ -266,399 +281,164 @@ class DataVisualizer():
 
 
         self.count = 0
-        self.x2, self.y2, self.x3, self.y3, self.x4, self.y4, self.x5, self.y5 = [], [], [], [], [], [], [], []
 
+        print '############################### STARTING ON MODELS', models, ' ##########################################'
 
         for batch_idx, batch in enumerate(self.test_loader):
+            for model_key in models:
 
-            # append upper joint angles, lower joint angles, upper joint lengths, lower joint lengths, in that order
-            batch.append(torch.cat((batch[1][:, 39:49], batch[1][:, 57:65], batch[1][:, 30:39], batch[1][:, 49:57]), dim=1))
+                # append upper joint angles, lower joint angles, upper joint lengths, lower joint lengths, in that order
+                batch.append(torch.cat((batch[1][:, 39:49], batch[1][:, 57:65], batch[1][:, 30:39], batch[1][:, 49:57]), dim=1))
 
-            # get the direct joint locations
-            batch[1] = batch[1][:, 0:30]
+                # get the direct joint locations
+                batch[1] = batch[1][:, 0:30]
 
-            self.count += 1
-            #print count
-
-            #model_kin.eval()
-
-            if self.loss_vector_type == 'anglesVL' and self.opt.mltype == 'convnet':
+                self.count += 1
+                #print count
 
 
-                cum_error = []
                 limbArray = None
 
-                if generate_confidence == True:
-                    limit = 25
-                else:
-                    limit = 1
+                T = 25 #STOCHASTIC FORWARD PASSES
 
 
-                if generate_confidence == True:
-                    batch0 = batch[0].clone()
-                    batch1 = batch[1].clone()
-                    batch0, batch1,_ = SyntheticLib().synthetic_master(batch0, batch1,flip=False, shift=False, scale=False,bedangle=True, include_inter=self.include_inter, loss_vector_type=self.loss_vector_type)
-                    batch0 = batch0.expand(limit, 3, 84, 47)
-                    batch1 = batch1.expand(limit, 30)
-
-                else:
-                    batch0 = batch[0].clone()
-                    batch1 = batch[1].clone()
+                batch0 = batch[0].clone()
+                batch1 = batch[1].clone()
+                batch0, batch1,_ = SyntheticLib().synthetic_master(batch0, batch1,flip=False, shift=False, scale=False,bedangle=True, include_inter=self.include_inter, loss_vector_type=self.loss_vector_type)
+                batch0 = batch0.expand(T, 3, 84, 47)
+                batch1 = batch1.expand(T, 30)
 
                 print batch0.size()
                 print batch1.size(), 'size'
 
-                images_up = batch0.numpy()
-                images_up = images_up[:, :, 10:74, 10:37]
+                images, targets, constraints = Variable(batch0, volatile=True, requires_grad=False), Variable(batch1, volatile=True, requires_grad=False), Variable(batch[2], volatile=True, requires_grad=False)
+                images_up = batch0.numpy()[:, :, 10:74, 10:37]
                 images_up = PreprocessingLib().preprocessing_pressure_map_upsample(images_up)
-                images_up = np.array(images_up)
-                #images_up = PreprocessingLib().preprocessing_add_image_noise(images_up)
-                images_up = Variable(torch.Tensor(images_up), volatile = True, requires_grad=False)
-                #print images_up.size()
 
-                images, targets, constraints = Variable(batch0, volatile = True, requires_grad=False), Variable(batch1, volatile = True, requires_grad=False), Variable(batch[2], volatile = True, requires_grad=False)
-
-                _, targets_est, angles_est, lengths_est, pseudotargets_est = model_kin.forward_kinematic_jacobian(images_up, targets, constraints, forward_only = True, subject = self.opt.leave_out, loss_vector_type = self.loss_vector_type)
-
-                #print lengths_est, 'lengths'
-                #print targets_est
-
-                bed_distances = KinematicsLib().get_bed_distance(images, targets)
+                if model_key == 'anglesVL' or model_key == 'anglesCL' or model_key == 'anglesSTVL' or model_key == 'direct':
+                    images_up = np.array(images_up)
+                    images_up = Variable(torch.Tensor(images_up), volatile = True, requires_grad=False)
+                    #print images_up.size()
 
 
-                targets = targets.data
+                    if model_key == 'anglesVL':
+                        _, targets_est, angles_est, lengths_est, pseudotargets_est = model_kinVL.forward_kinematic_jacobian(images_up, targets, constraints, forward_only = True, subject = self.opt.leave_out, loss_vector_type = self.loss_vector_type)
+                    elif model_key == 'anglesCL':
+                        _, targets_est, angles_est, lengths_est, pseudotargets_est = model_kinCL.forward_kinematic_jacobian(images_up, targets, constraints, forward_only = True, subject = self.opt.leave_out, loss_vector_type = self.loss_vector_type)
+                    elif model_key == 'anglesSTVL':
+                        _, targets_est, angles_est, lengths_est, pseudotargets_est = model_kinSTVL.forward_kinematic_jacobian(images_up, targets, constraints, forward_only = True, subject = self.opt.leave_out, loss_vector_type = self.loss_vector_type)
+                    elif model_key == 'direct':
+                        _, targets_est = model_dir.forward_direct(images_up, targets)
 
-                error_norm, error_avg, error_avg_std = VisualizationLib().print_error(targets, targets_est, self.output_size, self.loss_vector_type, data=str(self.count), printerror =  True)
+                        print torch.norm(targets.data[0, 6:9] - targets.data[0, 12:15]), 'ground truth R forearm length'
+                        print torch.norm(targets_est[0, 6:9] - targets_est[0, 12:15]), 'estimated R forearm length'
+                        print torch.norm(targets.data[0, 9:12] - targets.data[0, 15:18]), 'ground truth L forearm length'
+                        print torch.norm(targets_est[0, 9:12] - targets_est[0, 15:18]), 'estimated L forearm length'
+
+                    targets = targets.data
+
+                elif model_key == 'KNN':
+                    images_up = PreprocessingLib().compute_HoG(images_up)
+                    targets_est = regr_KNN.predict(images_up)
+                elif model_key == 'Ridge':
+                    images_up = PreprocessingLib().compute_HoG(images_up)
+                    targets_est = regr_Ridge.predict(images_up)
+                elif model_key == 'KRidge':
+                    images_up = PreprocessingLib().compute_HoG(images_up)
+                    targets_est = regr_KRidge.predict(images_up)
+
+                error_norm, error_avg, error_avg_std = VisualizationLib().print_error(targets, targets_est, self.output_size, model_key, data=str(self.count), printerror =  True)
                 error_norm = error_norm/1000
 
+                if model_key == 'anglesVL' or model_key == 'anglesCL' or model_key == 'anglesSTVL' or model_key == 'direct':
+                    print '################## PERFORMED ',str(T),' STOCHASTIC FWD PASSES ON ',str(model_key),' CT. ',batch_idx, ' ##################'
+                if model_key == 'KNN' or model_key == 'Ridge' or model_key == 'KRidge':
+                    print '################## PERFORMED 1 FWD PASSES ON ',str(model_key),' CT. ',batch_idx, ' ##################'
 
-                #print 'blah'
-                if generate_confidence == True:
-                    print batch_idx #angles_est
-                    cum_error.append(error_norm[0])
-                    #cum_distance=bed_distances[0]*50
+                print error_avg.shape
+                print error_avg_std.shape
+                print targets.shape
+                print targets_est.shape
 
-                    try:
-                        cum_distance = torch.cat((cum_distance, (targets_est - targets)), 0)
-                        cum_angles = torch.cat((cum_angles, angles_est), 0)
-                    except:
-                        cum_distance = (targets_est - targets)
-                        cum_angles = angles_est.clone()
-                        #cum_distance = cum_distance.unsqueeze(0)
+                try:
+                    self.error_avg_list.append(error_avg) #change this for the 3 first baselines! just append the error norm, targets, and targets est
+                    self.error_std_list.append(error_avg_std)
+                    self.targets_list.append(targets)
+                    self.targets_est_list.append(targets_est_mean)
+                except:
+                    self.error_avg_list = []
+                    self.error_std_list = []
+                    self.targets_list = []
+                    self.targets_est_list = []
+                    self.error_avg_list.append(error_avg)
+                    self.error_std_list.append(error_avg_std)
+                    self.targets_list.append(targets)
+                    self.targets_est_list.append(targets_est_mean)
 
-                    try:
-                        self.error_avg_list.append(error_avg)
-                        self.error_std_list.append(error_avg_std)
-                    except:
-                        self.error_avg_list = []
-                        self.error_std_list = []
-                        self.error_avg_list.append(error_avg)
-                        self.error_std_list.append(error_avg_std)
-
-                    leg_patchR = np.squeeze(batch0.numpy()[0,:])[0, 58:74, 10:23]
-                    leg_patchL = np.squeeze(batch0.numpy()[0,:])[0, 58:74, 24:37]
-                    print np.sum(leg_patchR), np.sum(leg_patchL), 'leg patch sum'
-                    try:
-                        self.leg_patch_sums.append([np.sum(leg_patchR), np.sum(leg_patchL)])
-                    except:
-                        self.leg_patch_sums = []
-                        self.leg_patch_sums.append([np.sum(leg_patchR), np.sum(leg_patchL)])
+                    #leg_patchR = np.squeeze(batch0.numpy()[0,:])[0, 58:74, 10:23]
+                    #leg_patchL = np.squeeze(batch0.numpy()[0,:])[0, 58:74, 24:37]
+                    #print np.sum(leg_patchR), np.sum(leg_patchL), 'leg patch sum'
+                    #try:
+                    #    self.leg_patch_sums.append([np.sum(leg_patchR), np.sum(leg_patchL)])
+                    #xcept:
+                    #   self.leg_patch_sums = []
+                    #   self.leg_patch_sums.append([np.sum(leg_patchR), np.sum(leg_patchL)])
 
 
                 count2 = 0
-                while count2 < limit:
-                    #print angles_est[0,:]
 
-                    self.im_sample = batch0.numpy()
-                    self.im_sample = np.squeeze(self.im_sample[count2, :])
-
-                    self.tar_sample = targets
-                    self.tar_sample = np.squeeze(self.tar_sample[count2, :]) / 1000
-                    print targets_est.size(), 'tar size'
-                    self.sc_sample = targets_est
-                    self.sc_sample = np.squeeze(self.sc_sample[count2, :]) / 1000
-                    self.sc_sample = np.reshape(self.sc_sample, self.output_size)
+                if self.opt.visualize == True:
+                    while count2 < T:
+                        #print angles_est[0,:]
 
 
-                    self.pseudo_sample = pseudotargets_est
-                    self.pseudo_sample = np.squeeze(self.pseudo_sample[count2, :]) / 1000
-                    self.pseudo_sample = np.reshape(self.pseudo_sample, (5, 3))
+                        self.im_sample = batch0.numpy()
+                        self.im_sample = np.squeeze(self.im_sample[count2, :])
+                        self.tar_sample = targets
+                        self.tar_sample = np.squeeze(self.tar_sample[count2, :]) / 1000
+                        self.sc_sample = targets_est
+                        self.sc_sample = np.squeeze(self.sc_sample[count2, :]) / 1000
+                        self.sc_sample = np.reshape(self.sc_sample, self.output_size)
 
 
-                    if self.opt.visualize == True:
                         print np.array(self.error_std_list)[batch_idx, 6:10]
-                        if np.max(error_avg) > 60:#np.sum(leg_patchL) < 1000:# or np.sum(leg_patchL) < 100:
-                            if count2 <= 1: VisualizationLib().rviz_publish_input(self.im_sample[0, :, :] * 1.3,self.im_sample[-1, 10, 10])
-                            # else: VisualizationLib().rviz_publish_input(self.im_sample[1, :, :]/2, self.im_sample[-1, 10, 10])
-
-                            VisualizationLib().rviz_publish_output(np.reshape(self.tar_sample, self.output_size),  self.sc_sample, self.pseudo_sample)
-                            limbArray = VisualizationLib().rviz_publish_output_limbs(
-                                np.reshape(self.tar_sample, self.output_size), self.sc_sample, self.pseudo_sample,
-                                LimbArray=limbArray, count=count2)
-
-                            skip_image = VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample,block=True, title = 'Kinematic Embedding')
-                            #VisualizationLib().visualize_error_from_distance(bed_distances, error_norm)
-                            if skip_image == 1:
-                                count2 = limit
-                        else:
-                            count2 = limit
-
-                    count2 += 1
-
-                if generate_confidence == True:
-                    cum_distance = np.array(cum_distance)
-                    mean_distance = np.mean(cum_distance, axis = 0)
-
-
-                    cum_distance = np.reshape(cum_distance, (cum_distance.shape[0], 10, 3))
-
-
-                    mean_distance = np.reshape(mean_distance, (10, 3))
-                    std_distance = 0.
-                    for point in np.arange(cum_distance.shape[0]):
-                        #print np.square(cum_distance[point,:,0] - mean_distance[:,0])
-                        std_distance += (np.square(cum_distance[point,:,0] - mean_distance[:,0]) + np.square(cum_distance[point,:,1] - mean_distance[:,1]) + np.square(cum_distance[point,:,2] - mean_distance[:,2]))/cum_distance.shape[0]
-                    std_distance = np.sqrt(std_distance)/10
-                    #print angles_est
-
-
-                if generate_confidence == True:
-
-                    error = np.mean(np.array(cum_error) * 100, axis=0)
-                    std_error = std_distance
-
-                    self.x2.append(std_error[2])
-
-
-                    self.y2.append(error[2])
-                    self.x3.append(std_error[3])
-                    self.y3.append(error[3])
-                    self.x4.append(std_error[4])
-                    self.y4.append(error[4])
-                    self.x5.append(std_error[5])
-                    self.y5.append(error[5])
-                    print batch_idx, np.array(self.error_std_list)[batch_idx,6:10], np.array(self.leg_patch_sums)[batch_idx,:]
-                    if batch_idx == 1669:
-                        #pkl.dump([self.error_avg_list, self.error_std_list], open('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/Final_Data/error_avg_std_T25_subject'+str(self.opt.leave_out)+'_kinvL.p', 'wb'))
-                        #pkl.dump([np.array(self.leg_patch_sums), np.array(self.error_std_list)[:,6:10]], open(
-                        #    '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/Final_Data/sumRL_sumLL_stdKA_T25_subject' + str(
-                        #        self.opt.leave_out) + '_kinvL.p', 'wb'))
-
-                        xlim = [0, 20]
-                        ylim = [0, 60]
-                        fig = plt.figure()
-                        plt.suptitle('Subject 4 Validation. Euclidean Error as a function of Gaussian noise perturbations to input images and shifting augmentation', fontsize = 16)
-
-                        ax1 = fig.add_subplot(2, 2, 1)
-                        ax1.set_xlim(xlim)
-                        ax1.set_ylim(ylim)
-                        ax1.set_xlabel('Std. Dev of 3D joint position following 15 noise perturbations per image')
-                        ax1.set_ylabel('Mean Euclidean Error across 15 forward passes')
-                        ax1.plot(self.x2, self.y2, 'ro')
-                        ax1.set_title('Right Elbow')
-
-                        ax2 = fig.add_subplot(2, 2, 2)
-                        ax2.set_xlim(xlim)
-                        ax2.set_ylim(ylim)
-                        ax2.set_xlabel('Std. Dev of 3D joint position following 15 noise perturbations per image')
-                        ax2.set_ylabel('Mean Euclidean Error across 15 forward passes')
-                        ax2.plot(self.x3, self.y3, 'bo')
-                        ax2.set_title('Left Elbow')
-
-                        ax3 = fig.add_subplot(2, 2, 3)
-                        ax3.set_xlim(xlim)
-                        ax3.set_ylim(ylim)
-                        ax3.set_xlabel('Std. Dev of 3D joint position following 15 noise perturbations per image')
-                        ax3.set_ylabel('Mean Euclidean Error across 15 forward passes')
-                        ax3.plot(self.x4, self.y4, 'ro')
-                        ax3.set_title('Right Hand')
-
-                        ax4 = fig.add_subplot(2, 2, 4)
-                        ax4.set_xlim(xlim)
-                        ax4.set_ylim(ylim)
-                        ax4.set_xlabel('Std. Dev of 3D joint position following 15 noise perturbations per image')
-                        ax4.set_ylabel('Mean Euclidean Error across 15 forward passes')
-                        ax4.plot(self.x5, self.y5, 'bo')
-                        ax4.set_title('Left Hand')
-
-                        if self.opt.visualize == True:
-                            plt.show()
-
-            if self.loss_vector_type == 'direct' and self.opt.mltype == 'convnet':
-
-                count2 = 0
-                limbArray = None
-
-                if generate_confidence == True:
-                    limit = 25
-                else:
-                    limit = 1
-
-                if generate_confidence == True:
-                    batch0 = batch[0].clone()
-                    batch1 = batch[1].clone()
-                    batch0, batch1,_ = SyntheticLib().synthetic_master(batch0, batch1,flip=False, shift=False, scale=False,bedangle=True, include_inter=self.include_inter, loss_vector_type=self.loss_vector_type)
-                    batch0 = batch0.expand(limit, 3, 84, 47)
-                    batch1 = batch1.expand(limit, 30)
-
-                else:
-                    batch0 = batch[0].clone()
-                    batch1 = batch[1].clone()
-
-
-
-                images_up = batch0.numpy()
-                images_up = images_up[:, :, 10:74, 10:37]
-                images_up = PreprocessingLib().preprocessing_pressure_map_upsample(images_up)
-                images_up = np.array(images_up)
-                images_up = Variable(torch.Tensor(images_up), volatile=True, requires_grad=False)
-
-                images, targets = Variable(batch0, volatile=True, requires_grad=False), Variable(batch1,volatile=True,requires_grad=False)
-
-                _, targets_est = model_dir.forward_direct(images_up, targets)
-
-                print torch.norm(targets.data[0,6:9]-targets.data[0,12:15]), 'ground truth R forearm length'
-                print torch.norm(targets_est[0,6:9]-targets_est[0,12:15]), 'estimated R forearm length'
-                print torch.norm(targets.data[0,9:12]-targets.data[0,15:18]), 'ground truth L forearm length'
-                print torch.norm(targets_est[0,9:12]-targets_est[0,15:18]), 'estimated L forearm length'
-
-                error_norm, error_avg, error_avg_std = VisualizationLib().print_error(targets.data, targets_est, self.output_size,self.loss_vector_type, data=str(self.count),printerror=True)
-                error_norm = error_norm /1000
-                print error_norm.shape
-
-
-
-                if generate_confidence == True:
-                    try:
-                        cum_distance = torch.cat((cum_distance, (targets_est - targets.data)), 0)
-                    except:
-                        cum_distance = (targets_est - targets.data)
-                        #cum_distance = cum_distance.unsqueeze(0)
-
-                    try:
-                        self.error_avg_list.append(error_avg)
-                        self.error_std_list.append(error_avg_std)
-                    except:
-                        self.error_avg_list = []
-                        self.error_std_list = []
-
-                while count2 < limit:
-                    self.im_sample = batch0.numpy()
-                    self.im_sample = self.im_sample[count2, :].squeeze()
-                    self.tar_sample = targets.data
-                    self.tar_sample = self.tar_sample[count2, :].squeeze() / 1000
-                    self.sc_sample = targets_est
-                    self.sc_sample = self.sc_sample[count2, :].squeeze() / 1000
-                    self.sc_sample = self.sc_sample.view(self.output_size)
-
-                    if self.opt.visualize == True:
-                        VisualizationLib().rviz_publish_input(self.im_sample[0, :, :] * 1.3, self.im_sample[-1, 10, 10])
+                        if count2 <= 1: VisualizationLib().rviz_publish_input(self.im_sample[0, :, :] * 1.3,self.im_sample[-1, 10, 10])
                         # else: VisualizationLib().rviz_publish_input(self.im_sample[1, :, :]/2, self.im_sample[-1, 10, 10])
 
-                        VisualizationLib().rviz_publish_output(np.reshape(self.tar_sample, self.output_size), self.sc_sample)
-                        limbArray = VisualizationLib().rviz_publish_output_limbs_direct(np.reshape(self.tar_sample, self.output_size), self.sc_sample, LimbArray=limbArray, count=count2)
+                        if self.loss_vector_type == 'anglesVL' or self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesSTVL':
 
-                        skip_image = VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample,self.sc_sample, block=True, title = 'Direct Regression')
+                            self.pseudo_sample = pseudotargets_est
+                            self.pseudo_sample = np.squeeze(self.pseudo_sample[count2, :]) / 1000
+                            self.pseudo_sample = np.reshape(self.pseudo_sample, (5, 3))
+                            VisualizationLib().rviz_publish_output(np.reshape(self.tar_sample, self.output_size),  self.sc_sample, self.pseudo_sample)
+                            limbArray = VisualizationLib().rviz_publish_output_limbs(np.reshape(self.tar_sample, self.output_size), self.sc_sample, self.pseudo_sample,LimbArray=limbArray, count=count2)
+                        else:
+                            VisualizationLib().rviz_publish_output(np.reshape(self.tar_sample, self.output_size), self.sc_sample)
+                            limbArray = VisualizationLib().rviz_publish_output_limbs_direct(np.reshape(self.tar_sample, self.output_size), self.sc_sample, LimbArray=limbArray,count=count2)
+
+                        skip_image = VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample,block=True, title = str(model_key))
+                        #VisualizationLib().visualize_error_from_distance(bed_distances, error_norm)
                         if skip_image == 1:
-                            count2 = limit
-
-                    count2 += 1
+                            count2 = T
 
 
 
-                if generate_confidence == True:
-                    #if batch_idx == 1669:
-                        #pkl.dump([self.error_avg_list, self.error_std_list], open('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/Final_Data/error_avg_std_T25_subject' + str(self.opt.leave_out) + '_direct.p', 'wb'))
 
-                    print cum_distance.size()
-                    cum_distance = np.array(cum_distance)
-                    mean_distance = np.mean(cum_distance, axis = 0)
+                if batch_idx == 1669 and self.opt.visualize == False:
+                    if model_key == 'anglesVL' or model_key == 'anglesCL' or model_key == 'anglesSTVL' or model_key == 'direct':
+                        pkl.dump([self.error_avg_list, self.error_std_list, self.targets_list, self.targets_est_list], open('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/Final_Data/error_avg_std_T'+str(limit)+'_subject'+str(self.opt.leave_out)+'_'+str(model_key)+'.p', 'wb'))
+                    elif model_key == 'KNN' or model_key == 'Ridge' or model_key == 'KRidge':
+                        pkl.dump(error_norm, open('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/Final_Data/error_avg_subject' + str(self.opt.leave_out) + '_'+str(model_key)+'.p', 'wb'))
 
-
-                    cum_distance = np.reshape(cum_distance, (cum_distance.shape[0], 10, 3))
-
-                    mean_distance = np.reshape(mean_distance, (10, 3))
-                    std_distance = 0.
-                    for point in np.arange(cum_distance.shape[0]):
-                        #print np.square(cum_distance[point,:,0] - mean_distance[:,0])
-                        std_distance += (np.square(cum_distance[point,:,0] - mean_distance[:,0]) + np.square(cum_distance[point,:,1] - mean_distance[:,1]) + np.square(cum_distance[point,:,2] - mean_distance[:,2]))/cum_distance.shape[0]
-                    std_distance = np.sqrt(std_distance)/10
-                    #print angles_est
-
-
-            if self.opt.mltype == 'KNN' or self.opt.mltype == 'Ridge' or self.opt.mltype == 'KRidge':
-
-                batch0 = batch[0].clone()
-                batch1 = batch[1].clone()
-                images = batch0.numpy()[:, 0, :, :]
-                targets = batch1.numpy()
-
-                # upsample the images
-                images_up = PreprocessingLib().preprocessing_pressure_map_upsample(images)
-
-                print np.shape(images_up)
-                # Compute HoG of the current(training) pressure map dataset
-                images_up = PreprocessingLib().compute_HoG(images_up)
-
-                if all_eval == True: self.opt.mltype = 'KNN'
-                if self.opt.mltype == 'KNN':
-                    scores = regr_KNN.predict(images_up)
-
-                    error_norm,_, _ =VisualizationLib().print_error(scores, targets, self.output_size,loss_vector_type=self.loss_vector_type, data='test', printerror=True)
-
-                    pkl.dump(error_norm, open( '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/Final_Data/error_avg_subject' + str(self.opt.leave_out) + '_KNN.p', 'wb'))
-
-                    self.im_sample = np.squeeze(images[0, :])
-                    print self.im_sample.shape
-
-                    self.tar_sample = np.squeeze(targets[0, :]) / 1000
-                    self.sc_sample = np.copy(scores)
-                    self.sc_sample = np.squeeze(self.sc_sample[0, :]) / 1000
-                    self.sc_sample = np.reshape(self.sc_sample, self.output_size)
-                    if self.opt.visualize == True:
-                        VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample,block=True, title = 'KNN')
-
-                if all_eval == True: self.opt.mltype = 'Ridge'
-                if self.opt.mltype == 'Ridge':
-                    scores = regr_Ridge.predict(images_up)
-
-                    error_norm, _, _ = VisualizationLib().print_error(scores, targets, self.output_size,loss_vector_type=self.loss_vector_type, data='test', printerror=True)
-
-                    pkl.dump(error_norm, open('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/Final_Data/error_avg_subject' + str(self.opt.leave_out) + '_LRR.p', 'wb'))
-
-                    self.im_sample = np.squeeze(images[0, :])
-                    print self.im_sample.shape
-
-                    self.tar_sample = np.squeeze(targets[0, :]) / 1000
-                    self.sc_sample = np.copy(scores)
-                    self.sc_sample = np.squeeze(self.sc_sample[0, :]) / 1000
-                    self.sc_sample = np.reshape(self.sc_sample, self.output_size)
-                    if self.opt.visualize == True:
-                        VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample,block=True, title = 'Linear Ridge')
-
-                if all_eval == True: self.opt.mltype = 'KRidge'
-                if self.opt.mltype == 'KRidge':
-                    scores = regr_KRidge.predict(images_up)
-
-                    error_norm, _, _ = VisualizationLib().print_error(scores, targets, self.output_size,loss_vector_type=self.loss_vector_type, data='test', printerror=True)
-
-                    pkl.dump(error_norm, open('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/Final_Data/error_avg_subject' + str(self.opt.leave_out) + '_KRR.p', 'wb'))
-
-                    self.im_sample = np.squeeze(images[0, :])
-                    print self.im_sample.shape
-
-                    self.tar_sample = np.squeeze(targets[0, :]) / 1000
-                    self.sc_sample = np.copy(scores)
-                    self.sc_sample = np.squeeze(self.sc_sample[0, :]) / 1000
-                    self.sc_sample = np.reshape(self.sc_sample, self.output_size)
-                    if self.opt.visualize == True:
-                        VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample,block=True, title = 'Kernel Ridge')
+                        #print batch_idx, np.array(self.error_std_list)[batch_idx, 6:10], np.array(self.leg_patch_sums)[
+                     #                                                                batch_idx, :]
+                    #pkl.dump([np.array(self.leg_patch_sums), np.array(self.error_std_list)[:,6:10]], open(
+                    #    '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/Final_Data/sumRL_sumLL_stdKA_T25_subject' + str(
+                    #        self.opt.leave_out) + '_kinvL.p', 'wb'))
 
 
         return
 
-
-   # def forward_batch(self, batch_idx, batch):
 
 
 
@@ -681,14 +461,6 @@ if __name__ == "__main__":
     import optparse
     p = optparse.OptionParser()
 
-    p.add_option('--training_data_path', '--path',  action='store', type='string', \
-                 dest='trainingPath',\
-                 default='/home/henryclever/hrl_file_server/Autobed/pose_estimation_data/subject_', \
-                 help='Set path to the training database.')
-    p.add_option('--lab_hd', action='store_true',
-                 dest='lab_harddrive', \
-                 default=False, \
-                 help='Set path to the training database on lab harddrive.')
     p.add_option('--leave_out', action='store', type=int, \
                  dest='leave_out', \
                  help='Specify which subject to leave out for validation')
@@ -696,10 +468,6 @@ if __name__ == "__main__":
                  dest='computer', \
                  default='lab_harddrive', \
                  help='Set path to the training database on lab harddrive.')
-    p.add_option('--mltype', action='store', type = 'string',
-                 dest='mltype', \
-                 default='convnet', \
-                 help='Set if you want to do baseline ML or convnet.')
     p.add_option('--losstype', action='store', type = 'string',
                  dest='losstype', \
                  default='direct', \
