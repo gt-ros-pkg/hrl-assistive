@@ -311,7 +311,7 @@ class CNN(nn.Module):
             # 6
             # nn.Linear(9216, out_size),
             # 7
-            nn.Linear(18432, out_size),
+            nn.Linear(22400, out_size),
             
             # 8
             # nn.Linear(5120, out_size),
