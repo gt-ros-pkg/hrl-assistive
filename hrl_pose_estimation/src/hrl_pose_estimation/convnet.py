@@ -128,7 +128,7 @@ class CNN(nn.Module):
             # nn.Dropout(p = 0.1, inplace=False),
 
             # 7
-            nn.Conv2d(3, 64, kernel_size = 7, stride = 2, padding = 1),
+            nn.Conv2d(3, 64, kernel_size = 7, stride = 2, padding = 3),
             nn.ReLU(inplace = True),
             nn.Dropout(p = 0.1, inplace=False),
             nn.MaxPool2d(3, stride=2),

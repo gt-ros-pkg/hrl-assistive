@@ -130,7 +130,7 @@ class DataVisualizer():
             plt.close()
 
 
-            rospy.init_node('plot_loss')
+        rospy.init_node('plot_loss')
         self.count = 0
 
 
@@ -139,9 +139,10 @@ class DataVisualizer():
         if self.opt.computer == 'aws':
             self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p')
         else:
-            self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p')
+            #self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p')
             #self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll.p')
             #self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainval_sit175rlh_sit120rll.p')
+            self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/150RL_LL_air.p')
 
 
         test_dat = self.validation_set
@@ -198,7 +199,7 @@ class DataVisualizer():
             if self.opt.computer == 'aws':
                 model_kin = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnet_2to8_angles128b_200e_' + str(self.opt.leave_out) + '.pt')
             else:
-                model_kin = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnets/convnet_2to8_anglesvL_128b_200e_' + str(self.opt.leave_out) + '.pt', map_location=lambda storage, loc: storage)
+                model_kin = torch.load(self.dump_path + '/subject_' + str(13) + '/convnets/convnet_2to8_anglesvL_128b_200e_' + str(13) + '.pt', map_location=lambda storage, loc: storage)
             pp = 0
             for p in list(model_kin.parameters()):
                 nn = 1
@@ -273,7 +274,7 @@ class DataVisualizer():
                 limbArray = None
 
                 if generate_confidence == True:
-                    limit = 25
+                    limit = 5
                 else:
                     limit = 1
 
@@ -314,6 +315,7 @@ class DataVisualizer():
 
                 error_norm, error_avg, error_avg_std = VisualizationLib().print_error(targets, targets_est, self.output_size, self.loss_vector_type, data=str(self.count), printerror =  True)
                 error_norm = error_norm/1000
+
 
                 #print 'blah'
                 if generate_confidence == True:
@@ -370,7 +372,7 @@ class DataVisualizer():
 
                     if self.opt.visualize == True:
                         print np.array(self.error_std_list)[batch_idx, 6:10]
-                        if True:#np.sum(leg_patchL) < 1000:# or np.sum(leg_patchL) < 100:
+                        if np.max(error_avg) > 60:#np.sum(leg_patchL) < 1000:# or np.sum(leg_patchL) < 100:
                             if count2 <= 1: VisualizationLib().rviz_publish_input(self.im_sample[0, :, :] * 1.3,self.im_sample[-1, 10, 10])
                             # else: VisualizationLib().rviz_publish_input(self.im_sample[1, :, :]/2, self.im_sample[-1, 10, 10])
 

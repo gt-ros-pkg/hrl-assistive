@@ -244,8 +244,8 @@ class BagfileToPickle():
 
             if self.mat_sampled == True:
                 # print self.params_length, 'length'
-                if len(p_mat) == 1728:# and self.params_length[4] > 0.15 and self.params_length[4] < 0.5 and self.params_length[5] > 0.15 and self.params_length[5] < 0.5 and self.params_length[6] > 0.1 and self.params_length[6] < 0.35 and self.params_length[7] > 0.1 and self.params_length[7] < 0.35:
-                    if targets[0,1] != 0 and targets[1,1] != 0 and targets[2,1] != 0 and targets[4,1] != 0 and targets[5,1] != 0 and targets[6,1] > 1.2:#
+                if len(p_mat) == 1728 and self.params_length[4] > 0.15 and self.params_length[4] < 0.5 and self.params_length[5] > 0.15 and self.params_length[5] < 0.5 and self.params_length[6] > 0.1 and self.params_length[6] < 0.35 and self.params_length[7] > 0.1 and self.params_length[7] < 0.35:
+                    if np.count_nonzero(targets) == 30:#targets[0,1] != 0 and targets[1,1] != 0 and targets[2,1] != 0 and targets[4,1] != 0 and targets[5,1] != 0 and targets[6,1] > 1.2:#
                         # print 'pressure mat has been scanned'
                         #print targets
                         # print np.count_nonzero(targets)
@@ -335,23 +335,23 @@ if __name__ == '__main__':
         # x.append('home_sitting')
         # file_details.append(x)
 
-        #x = []
-        #x.append(subject)
-        #x.append('_full_trial_sitting_LH.bag')
-        #x.append('LH_sitting')
-        #ile_details.append(x)
+        x = []
+        x.append(subject)
+        x.append('_full_trial_sitting_LH.bag')
+        x.append('LH_sitting')
+        file_details.append(x)
 
-        #x = []
-        #x.append(subject)
-        #x.append('_full_trial_sitting_RH.bag')
-        #x.append('RH_sitting')
-        #file_details.append(x)
+        x = []
+        x.append(subject)
+        x.append('_full_trial_sitting_RH.bag')
+        x.append('RH_sitting')
+        file_details.append(x)
 
-        #x = []
-        #x.append(subject)
-        #x.append('_full_trial_sitting_LL.bag')
-        #x.append('LL_sitting')
-        #ile_details.append(x)
+        x = []
+        x.append(subject)
+        x.append('_full_trial_sitting_LL.bag')
+        x.append('LL_sitting')
+        file_details.append(x)
 
         x = []
         x.append(subject)

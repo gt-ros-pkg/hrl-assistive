@@ -681,8 +681,8 @@ class DatabaseCreator():
         angle_i = []
         #for subject in [2,3,4,5,6,7,8]:
 
-        for subject in [9,10,11,12,13,14,15,16,17,18]:
-        #for subject in [16]:#13, 14, 15, 16, 17, 18]:
+        for subject in [18]:
+        #for subject in [18]:#13, 14, 15, 16, 17, 18]:
 
             self.final_dataset = {}
             self.final_dataset['joint_lengths_L_m'] = []
@@ -698,8 +698,8 @@ class DatabaseCreator():
 
 
 
-            for movement in ['RH_sitting','LH_sitting','RL_sitting','LL_sitting']:#,'RH1','LH1','RH2','LH2','RH3','LH3','RL','LL']:#,
-            #for movement in ['LH2','LH3','LL'
+            #for movement in ['RH_sitting','LH_sitting','RL_sitting','LL_sitting']:#,'RH1','LH1','RH2','LH2','RH3','LH3','RL','LL']:#,
+            for movement in ['LL_air','RL_air']:
         # ,'RL']:
 
             #for movement in ['RL_sitting']:#'LH_sitting','RL_sitting','LL_sitting']:
@@ -711,7 +711,7 @@ class DatabaseCreator():
 
 
 
-                indexlist = self.rand_index_p_length(p_file, shuffle = True)
+                indexlist = self.rand_index_p_length(p_file, shuffle = False)
 
 
                 if movement == 'head':
@@ -728,8 +728,8 @@ class DatabaseCreator():
                     num_samp = 175
                 elif movement == 'RL_sitting' or movement == 'LL_sitting':
                     num_samp = 120
-
-                #num_samp = 280
+                elif movement == 'RL_air' or movement == 'LL_air':
+                    num_samp = 300
 
                 print 'working on subject: ',subject, '  movement type:', movement, '  length: ',len(p_file), '  Number sampled: ',num_samp
 
@@ -873,9 +873,9 @@ class DatabaseCreator():
                     kin_targets = np.concatenate((arm_targets, leg_targets), axis = 0)
                     pseudotargets = np.concatenate((arm_pseudotargets, leg_pseudotargets), axis = 0)
 
-                    #if index % 1 == 0:
-                    #    VisualizationLib().rviz_publish_input(rot_p_map, angle)
-                    #    VisualizationLib().rviz_publish_output(rot_target_mat, kin_targets / 1000, pseudotargets)
+                    if index % 2 == 0:
+                        VisualizationLib().rviz_publish_input(rot_p_map, angle)
+                        VisualizationLib().rviz_publish_output(rot_target_mat, kin_targets / 1000, pseudotargets)
 
                     #get the distances from the bed. this will help us to do an a per instance loss and for final error evaluation,
                     #so we can throw out joint poses that are too far away.
@@ -962,7 +962,7 @@ class DatabaseCreator():
             #print np.mean(np.array(std_lengths)), 'mean of standard devs'
             print 'Output file size: ~', int(len(self.final_dataset['images']) * 0.08958031837*3948/1728), 'Mb'
             print "Saving final_dataset"
-            pkl.dump(self.final_dataset, open(os.path.join(self.training_dump_path+str(subject)+'/p_files/trainval_sit175rlh_sit120rll.p'), 'wb')) #_200rlh1_115rlh2_75rlh3_150rll
+            #pkl.dump(self.final_dataset, open(os.path.join(self.training_dump_path+str(subject)+'/p_files/_200rlh1_115rlh2_75rlh3_175rllair.p'), 'wb')) #_trainval_sit175rlh_sit120rll
 
             print 'Done.'
         return
