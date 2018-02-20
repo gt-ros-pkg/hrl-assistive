@@ -71,7 +71,7 @@ LOW_TAXEL_THRESH_Y = 0
 HIGH_TAXEL_THRESH_X = (NUMOFTAXELS_X - 1)
 HIGH_TAXEL_THRESH_Y = (NUMOFTAXELS_Y - 1)
 
-torch.set_num_threads(1)
+#torch.set_num_threads(1)
 if torch.cuda.is_available():
     # Use for GPU
     dtype = torch.cuda.FloatTensor
