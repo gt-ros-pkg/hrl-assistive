@@ -93,18 +93,13 @@ class DataVisualizer():
 
 
         self.mat_size = (NUMOFTAXELS_X, NUMOFTAXELS_Y)
-        if self.loss_vector_type == 'upper_angles':
-            self.output_size = (NUMOFOUTPUTNODES - 4, NUMOFOUTPUTDIMS)
-        elif self.loss_vector_type == 'arms_cascade':
-            self.output_size = (NUMOFOUTPUTNODES - 8, NUMOFOUTPUTDIMS) #because of symmetry, we can train on just one side via synthetic flipping
-            self.val_output_size = (NUMOFOUTPUTNODES - 6, NUMOFOUTPUTDIMS) #however, we still want to make a validation double forward pass through both sides
-        elif self.loss_vector_type == 'angles' or self.loss_vector_type == 'direct':
+        if self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL' or self.loss_vector_type == 'anglesSTVL' or self.loss_vector_type == 'direct':
             self.output_size = (NUMOFOUTPUTNODES, NUMOFOUTPUTDIMS)
         elif self.loss_vector_type == None:
             self.output_size = (NUMOFOUTPUTNODES - 5, NUMOFOUTPUTDIMS)
 
         if self.opt.computer == 'lab_harddrive':
-            train_val_loss = load_pickle(self.dump_path + '/train_val_losses.p')
+            train_val_loss = load_pickle(self.dump_path + '/subject_'+str(self.opt.leave_out)+'/convnets/losses_2to8_anglesvL_128b_200e_'+str(self.opt.leave_out)+'.p')
             train_val_loss_desk = load_pickle(self.dump_path + '/train_val_losses_hcdesktop.p')
             train_val_loss_13 = load_pickle(self.dump_path + '/train_val_losses_all_13.p')
             train_val_loss_GPU2 = load_pickle(self.dump_path + '/train_val_losses_GPU2.p')
@@ -114,33 +109,6 @@ class DataVisualizer():
             train_val_loss_GPU2new = load_pickle(self.dump_path + '/train_val_lossesGPU2_021018.p')
             train_val_loss_GPU3new = load_pickle(self.dump_path + '/train_val_lossesGPU3_021018.p')
             train_val_loss_GPU4new = load_pickle(self.dump_path + '/train_val_lossesGPU4_021018.p')
-            for key in train_val_loss:
-                print key
-            print '###########################  done with laptop #################'
-            for key in train_val_loss_desk:
-                print key
-            print '###########################  done with desktop ################'
-            for key in train_val_loss_13:
-                print key
-            print '###########################  done with 13 cL ################'
-            for key in train_val_loss_GPU4:
-                print key
-            print '###########################  done with GPU4 ################'
-            for key in train_val_loss_GPU3:
-                print key
-            print '###########################  done with GPU3 ################'
-            for key in train_val_loss_GPU2:
-                print key
-            print '###########################  done with GPU2 ################'
-            for key in train_val_loss_GPU4new:
-                print key
-            print '###########################  done with GPU4new ################'
-            for key in train_val_loss_GPU3new:
-                print key
-            print '###########################  done with GPU3new ################'
-            for key in train_val_loss_GPU2new:
-                print key
-            print '###########################  done with GPU2new ################'
 
             if self.opt.leave_out == 1:
 
@@ -149,48 +117,13 @@ class DataVisualizer():
                 #plt.plot(train_val_loss_desk['epoch_armsup_flip_shift_scale10_700e_1'],train_val_loss_desk['val_armsup_flip_shift_scale10_700e_1'], 'g',label='Synthetic Flipping+Shifting: $X,Y \sim N(\mu,\sigma), \mu = 0 cm, \sigma \~= 9 cm$')
                 #plt.plot(train_val_loss_desk['epoch_armsup_flip_shift_scale5_nd_nohome_700e_1'],train_val_loss_desk['val_armsup_flip_shift_scale5_nd_nohome_700e_1'], 'y', label='Synthetic Flipping+Shifting+Scaling: $S_C \sim N(\mu,\sigma), \mu = 1, \sigma \~= 1.02$')
                 plt.legend()
-                plt.ylabel('Mean squared error loss over 30 joint vectors')
-                plt.xlabel('Epochs, where 700 epochs ~ 4 hours')
-                plt.title('Subject 1 laying validation Loss, training performed on subjects 2, 3, 4, 5, 6, 7, 8')
 
 
-            elif self.opt.leave_out == 4:
-                if pathkey == 'lab_hd': #results presented to hrl dressing 171106
 
-
-                    #plt.plot(train_val_loss_all['epoch_2to8_alldata_angles_115b_adam_200e_44'], train_val_loss_all['train_2to8_alldata_angles_115b_adam_200e_44'], 'k')
-                    #plt.plot(train_val_loss_all['epoch_2to8_alldata_angles_115b_adam_200e_44'], train_val_loss_all['val_2to8_alldata_angles_115b_adam_200e_44'], 'y')
-                    #plt.plot(train_val_loss_all['epoch_2to8_alldata_angles_constrained_noise_115b_100e_44'], train_val_loss_all['train_2to8_alldata_angles_constrained_noise_115b_100e_44'], 'b')
-                    #plt.plot(train_val_loss_all['epoch_2to8_alldata_angles_constrained_noise_115b_100e_44'], train_val_loss_all['val_2to8_alldata_angles_constrained_noise_115b_100e_44'], 'r')
-                    #plt.plot(train_val_loss_all['epoch_2to8_alldata_angles_s10to18_115b_50e_44'], train_val_loss_all['val_2to8_alldata_angles_s10to18_115b_50e_44'], 'g')
-                    #plt.plot(train_val_loss_all['epoch_2to8_alldata_angles_implbedang_115b_100e_44'], train_val_loss_all['val_2to8_alldata_angles_implbedang_115b_100e_44'], 'g')
-                    #plt.plot(train_val_loss_all['epoch_2to8_angles_direct128b_200e_44'], train_val_loss_all['train_2to8_angles_direct128b_200e_44'], 'k')
-                    #plt.plot(train_val_loss_GPU3['epoch_2to8_angles_angles128b_200e_44'], train_val_loss_GPU3['train_2to8_angles_angles128b_200e_44'], 'b')
-                    #plt.plot(train_val_loss_GPU4['epoch_2to8_angles128b_200e_44'], train_val_loss_GPU4['val_2to8_angles128b_200e_44'], 'k') #pull out lengths weighted 1
-                    #plt.plot(train_val_loss_GPU3['epoch_2to8_angles128b_200e_44'], train_val_loss_GPU3['val_2to8_angles128b_200e_44'], 'r') #propogated lengths weighted 1
-                    plt.plot(train_val_loss_GPU3new['epoch_2to8_angles128b_200e_44'], train_val_loss_GPU3new['val_2to8_angles128b_200e_44'], 'y') #propogated lengths weighted 0.2
-                    plt.plot(train_val_loss_GPU2['epoch_2to8_angles_direct128b_200e_44'],train_val_loss_GPU2['val_2to8_angles_direct128b_200e_44'], 'g')
-                    plt.plot(train_val_loss_GPU4new['epoch_2to8_direct128b_200e_411'],train_val_loss_GPU4new['val_2to8_direct128b_200e_411'], 'c')
-                    #plt.plot(train_val_loss_GPU2new['epoch_2to8_angles128b_250e_44'],train_val_loss_GPU2new['val_2to8_angles128b_250e_44'], 'b') #pull out lengths weighted 2
-
-                    if False:
-                        plt.plot(train_val_loss['epoch_sitting_700e_4'],train_val_loss['val_sitting_700e_4'],'k', label='Raw Pressure Map Input')
-                        plt.plot(train_val_loss['epoch_sitting_flip_700e_4'], train_val_loss['val_sitting_flip_700e_4'], 'c', label='Synthetic Flipping: $Pr(X=flip)=0.5$')
-                        plt.plot(train_val_loss['epoch_sitting_flip_shift_nd_700e4'],train_val_loss['val_sitting_flip_shift_nd_700e4'], 'g', label='Synthetic Flipping+Shifting: $X,Y \sim N(\mu,\sigma), \mu = 0 cm, \sigma \~= 9 cm$')
-                        plt.plot(train_val_loss['epoch_sitting_flip_shift_scale10_700e_4'],train_val_loss['val_sitting_flip_shift_scale10_700e_4'], 'y', label='Synthetic Flipping+Shifting+Scaling: $S_C \sim N(\mu,\sigma), \mu = 1, \sigma \~= 1.02$')
-                        plt.plot(train_val_loss['epoch_alldata_flip_shift_scale5_nd_nohome_500e_4'],train_val_loss['val_alldata_flip_shift_scale5_nd_nohome_500e_4'], 'r',label='Standing+Sitting: Synthetic Flipping+Shifting+Scaling: $S_C \sim N(\mu,\sigma), \mu = 1, \sigma \~= 1.02$')
-                    #plt.plot(train_val_loss['epoch_sitting_flip_shift_scale5_700e_4'],train_val_loss['val_sitting_flip_shift_scale_700e_4'], 'y',label='Synthetic Flipping+Shifting+Scaling: $S_C \sim N(\mu,\sigma), \mu = 1, \sigma \~= 1.02$')
-
-                        plt.plot(train_val_loss_171106['epoch_sitting_flip_shift_scale5_b50_700e_4'],train_val_loss_171106['train_sitting_flip_shift_scale5_b50_700e_4'], 'b', label='Synthetic Flipping+Shifting+Scaling: $S_C \sim N(\mu,\sigma), \mu = 1, \sigma \~= 1.02$')
-                        plt.legend()
-                        plt.ylabel('Mean squared error loss over 30 joint vectors')
-                        plt.xlabel('Epochs, where 700 epochs ~ 4 hours')
-                        plt.title('Subject 4 sitting validation Loss, training performed on subjects 2, 3, 5, 6, 7, 8')
-
-            elif self.opt.leave_out == 13:
-
-                plt.plot(train_val_loss_13['epoch_2to8_angles128b_200e_413'], train_val_loss_13['train_2to8_angles128b_200e_413'], 'k')
-                plt.plot(train_val_loss_13['epoch_2to8_angles128b_200e_413'], train_val_loss_13['val_2to8_angles128b_200e_413'], 'y')
+                
+            plt.ylabel('L1 loss over Euclidean joints')
+            plt.xlabel('Epochs, where 200 epochs ~ 10 hours')
+            plt.title('Subject '+str(self.opt.leave_out)+ 'laying validation Loss, training performed on subjects 2, 3, 4, 5, 6, 7, 8', 'y')
 
 
 
@@ -269,7 +202,7 @@ class DataVisualizer():
             if self.opt.computer == 'aws':
                 model_kin = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnet_2to8_angles128b_200e_' + str(self.opt.leave_out) + '.pt')
             else:
-                model_kin = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/p_files/convnet_2to8_anglesvL_128b_200e_' + str(self.opt.leave_out) + '.pt', map_location=lambda storage, loc: storage)
+                model_kin = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnets/convnet_2to8_anglesvL_128b_200e_' + str(self.opt.leave_out) + '.pt', map_location=lambda storage, loc: storage)
             pp = 0
             for p in list(model_kin.parameters()):
                 nn = 1

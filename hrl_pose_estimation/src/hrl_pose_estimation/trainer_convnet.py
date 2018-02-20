@@ -85,10 +85,19 @@ class PhysicalTrainer():
         '''Opens the specified pickle files to get the combined dataset:
         This dataset is a dictionary of pressure maps with the corresponding
         3d position and orientation of the markers associated with it.'''
+
+
+        #change this to 'direct' when you are doing baseline methods
+        self.loss_vector_type = opt.losstype
+
         self.verbose = opt.verbose
         self.opt = opt
         self.batch_size = 128
-        self.num_epochs = 200
+
+        if self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL' or self.loss_vector_type == 'anglesSTVL':
+            self.num_epochs = 200
+        elif self.loss_vector_type == 'direct':
+            self.num_epochs = 300
         self.include_inter = True
         self.shuffle = True
 
@@ -100,9 +109,6 @@ class PhysicalTrainer():
 
         self.save_name = '_9to18_' + opt.losstype+'_s' +str(self.shuffle)+'_' + str(self.batch_size) + 'b_' + str(self.num_epochs) + 'e_'+str(self.opt.leave_out)
 
-
-        #change this to 'direct' when you are doing baseline methods
-        self.loss_vector_type = opt.losstype
 
 
         print 'appending to','train'+self.save_name+str(self.opt.leave_out)
@@ -603,6 +609,9 @@ class PhysicalTrainer():
 
             if batch_idx % opt.log_interval == 0:
                 if self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL' or self.loss_vector_type == 'anglesSTVL':
+                    print targets.data.size()
+                    print targets_est.shape
+
                     VisualizationLib().print_error(targets.data, targets_est, self.output_size, self.loss_vector_type, data = 'train')
                     print angles_est[0, :], 'angles'
                     print batch[0][0,2,10,10], 'bed angle'

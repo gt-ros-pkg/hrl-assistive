@@ -239,22 +239,7 @@ class SyntheticLib():
         # swap in the z
         dummy = zeros((tar_mod.shape))
 
-        if self.loss_vector_type == 'upper_angles':
-
-            dummy[:, [2, 4], :] = tar_mod[:, [2, 4], :]
-            tar_mod[:, [2, 4], :] = tar_mod[:, [3, 5], :]
-            tar_mod[:, [3, 5], :] = dummy[:, [2, 4], :]
-            if pcons is not None:
-                pcons_orig = np.multiply(pcons, original[:, np.newaxis])
-                pcons_mod = np.multiply(pcons, modified[:, np.newaxis])
-                dummy2 = zeros((pcons_mod.shape))
-                dummy2[:, [0, 2, 4, 6, 14, 16]] = pcons_mod[:, [0, 2, 4, 6, 14, 16]]
-                pcons_mod[:, [0, 2, 4, 6, 14, 16]] = pcons_mod[:, [1, 3, 5, 7, 15, 17]]
-                pcons_mod[:, [1, 3, 5, 7, 15, 17]] = dummy2[:, [0, 2, 4, 6, 14, 16]]
-                pcons_mod = np.multiply(pcons_mod, modified[:, np.newaxis])
-                pcons = pcons_orig + pcons_mod
-
-        elif self.loss_vector_type == 'angles':
+        if self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL' or self.loss_vector_type == 'anglesSTVL':
 
             dummy[:, [2, 4, 6, 8], :] = tar_mod[:, [2, 4, 6, 8], :]
             tar_mod[:, [2, 4, 6, 8], :] = tar_mod[:, [3, 5, 7, 9], :]
@@ -269,22 +254,6 @@ class SyntheticLib():
                 pcons_mod[:, [1, 3, 5, 7, 11, 13, 15, 17, 23, 25, 32, 34]] = dummy2[:, [0, 2, 4, 6, 10, 12, 14, 16, 22, 24, 31, 33]]
                 pcons_mod = np.multiply(pcons_mod, modified[:, np.newaxis])
                 pcons = pcons_orig + pcons_mod
-
-        elif self.loss_vector_type == 'arms_cascade':
-
-            dummy[:, [2, 4, 6, 8, 11, 13], :] = tar_mod[:, [2, 4, 6, 8, 11, 13], :]
-            tar_mod[:, [2, 4, 6, 8, 11, 13], :] = tar_mod[:, [3, 5, 7, 9, 12, 14], :]
-            tar_mod[:, [3, 5, 7, 9, 12, 14], :] = dummy[:, [2, 4, 6, 8, 11, 13], :]
-            if pcons is not None:
-                pcons_orig = np.multiply(pcons, original[:, np.newaxis])
-                pcons_mod = np.multiply(pcons, modified[:, np.newaxis])
-                dummy2 = zeros((pcons_mod.shape))
-                dummy2[:, [0, 2, 4, 6, 10, 12, 14, 16, 22, 24, 31, 33]] = pcons_mod[:, [0, 2, 4, 6, 10, 12, 14, 16, 22, 24, 31, 33]]
-                pcons_mod[:, [0, 2, 4, 6, 10, 12, 14, 16, 22, 24, 31, 33]] = pcons_mod[:, [1, 3, 5, 7, 11, 13, 15, 17, 23, 25, 32, 34]]
-                pcons_mod[:, [1, 3, 5, 7, 11, 13, 15, 17, 23, 25, 32, 34]] = dummy2[:, [0, 2, 4, 6, 10, 12, 14, 16, 22, 24, 31, 33]]
-                pcons_mod = np.multiply(pcons_mod, modified[:, np.newaxis])
-                pcons = pcons_orig + pcons_mod
-
 
 
         elif self.loss_vector_type == 'direct':

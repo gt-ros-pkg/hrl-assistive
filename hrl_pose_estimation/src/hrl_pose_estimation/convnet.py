@@ -487,10 +487,11 @@ class CNN(nn.Module):
         if kincons is not None:
             kincons = kincons / 100
 
+
         if self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL':
-            scores, angles_est, pseudotargets_est = KinematicsLib().forward_kinematics_pytorch(images, scores, self.loss_vector_type, kincons, targets, forward_only = forward_only, subject = subject, count = self.count)
+            scores, angles_est, pseudotargets_est = KinematicsLib().forward_kinematics_pytorch(images, scores, self.loss_vector_type, kincons, forward_only = forward_only, subject = subject, count = self.count)
         elif self.loss_vector_type == 'anglesSTVL':
-            scores, angles_est, pseudotargets_est = KinematicsLib().forward_kinematics_lengthsv_pytorch(images, scores, self.loss_vector_type, kincons, targets, forward_only = forward_only, subject = subject)
+            scores, angles_est, pseudotargets_est = KinematicsLib().forward_kinematics_lengthsv_pytorch(images, scores, self.loss_vector_type, kincons, forward_only = forward_only, subject = subject)
 
 
         #print scores.size(), ''

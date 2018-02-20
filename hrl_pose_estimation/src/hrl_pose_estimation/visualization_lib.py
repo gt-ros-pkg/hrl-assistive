@@ -61,6 +61,9 @@ class VisualizationLib():
 
         error = (score - target)
         error = np.reshape(error, (error.shape[0], output_size[0], output_size[1]))
+
+        print error.shape
+
         error_norm = np.expand_dims(np.linalg.norm(error, axis = 2),2)
         error = np.concatenate((error, error_norm), axis = 2)
 
@@ -74,11 +77,7 @@ class VisualizationLib():
                                      (output_size[0], output_size[1] + 1))
 
 
-        if loss_vector_type == 'upper_angles':
-            error_avg_print = np.transpose(np.concatenate(([['Average Error for Last Batch', '       ', ' Head  ', ' Torso ', 'R Elbow', 'L Elbow',
-                                                       'R Hand ', 'L Hand ']], np.transpose(
-                np.concatenate(([['', '', '', ''], [' x, cm ', ' y, cm ', ' z, cm ', '  norm ']], error_avg_print))))))
-        elif loss_vector_type == 'direct' or loss_vector_type == 'angles':
+        if loss_vector_type == 'direct' or loss_vector_type == 'anglesCL' or loss_vector_type == 'anglesVL' or loss_vector_type == 'anglesSTVL':
             error_avg_print = np.transpose(np.concatenate(([['Average Error for Last Batch', '       ', 'Head   ',
                                                        'Torso  ', 'R Elbow', 'L Elbow', 'R Hand ', 'L Hand ',
                                                        'R Knee ', 'L Knee ', 'R Foot ', 'L Foot ']], np.transpose(
@@ -103,11 +102,7 @@ class VisualizationLib():
         error_std_print = np.reshape(np.array(["%.2f" % w for w in error_std.reshape(error_std.size)]),
                                      (output_size[0], output_size[1] + 1))
 
-        if loss_vector_type == 'upper_angles':
-            error_std_print = np.transpose(np.concatenate(([['Error Standard Deviation for Last Batch', '       ', ' Head  ', ' Torso ', 'R Elbow',
-                                                       'L Elbow', 'R Hand ', 'L Hand ']], np.transpose(
-                np.concatenate(([['', '', '',''], ['x, cm', 'y, cm', 'z, cm', '  norm ']], error_std_print))))))
-        elif loss_vector_type == 'direct' or loss_vector_type == 'angles':
+        if loss_vector_type == 'direct' or loss_vector_type == 'anglesCL' or loss_vector_type == 'anglesVL' or loss_vector_type == 'anglesSTVL':
             error_std_print = np.transpose(np.concatenate(([['Error Standard Deviation for Last Batch', '       ', 'Head   ', 'Torso  ',
                                   'R Elbow', 'L Elbow', 'R Hand ', 'L Hand ', 'R Knee ', 'L Knee ',
                                   'R Foot ', 'L Foot ']], np.transpose(
