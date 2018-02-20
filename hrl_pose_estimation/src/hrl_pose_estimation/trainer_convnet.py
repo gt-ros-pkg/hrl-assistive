@@ -480,7 +480,8 @@ class PhysicalTrainer():
         # Run model on GPU if available
         if torch.cuda.is_available():
             self.model = self.model.cuda()
-            self.model = torch.nn.DataParallel(self.model, device_ids=[self.opt.gpu])
+            #print '######################################## USING GPU',self.opt.gpu, '#############################################'
+            self.model = torch.nn.DataParallel(self.model)
 
 
         self.criterion = F.cross_entropy
