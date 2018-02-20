@@ -109,9 +109,9 @@ class PreprocessingLib():
         queue = np.copy(images[:, 0:2, :, :])
         queue[queue != 0] = 1.
 
-        x = np.arange(-20, 20)
+        x = np.arange(-10, 10)
         xU, xL = x + 0.5, x - 0.5
-        prob = ss.norm.cdf(xU, scale=5) - ss.norm.cdf(xL,scale=5)  # scale is the standard deviation using a cumulative density function
+        prob = ss.norm.cdf(xU, scale=1) - ss.norm.cdf(xL,scale=1)  # scale is the standard deviation using a cumulative density function
         prob = prob / prob.sum()  # normalize the probabilities so their sum is 1
         image_noise = np.random.choice(x, size=(images.shape[0], images.shape[1]-1, images.shape[2], images.shape[3]), p=prob)
 

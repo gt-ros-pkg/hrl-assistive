@@ -26,6 +26,7 @@ class CNN(nn.Module):
         #############################################################################
         #print mat_size
         self.loss_vector_type = loss_vector_type
+        print '$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$'
 
         hidden_dim1= 32
         hidden_dim2 = 48
@@ -260,7 +261,7 @@ class CNN(nn.Module):
         )
 
         self.CNN_pack2 = nn.Sequential(
-            nn.Conv2d(3, 64, kernel_size = 7, stride = 2, padding = 1),
+            nn.Conv2d(3, 64, kernel_size = 5, stride = 2, padding = 3),
             nn.ReLU(inplace = True),
             nn.Dropout(p = 0.1, inplace=False),
             nn.MaxPool2d(3, stride=2),
@@ -455,10 +456,11 @@ class CNN(nn.Module):
 
 
 
-    def forward_kinematic_jacobian(self, images, targets=None, kincons=None, prior_cascade = None, forward_only = False, subject = None):
+    def forward_kinematic_jacobian(self, images, targets=None, kincons=None, forward_only = False, subject = None, loss_vector_type = None):
         scores = None
         targets_est = None
         lengths_est = None
+
 
 
         scores_cnn = self.CNN_pack1(images)
@@ -487,11 +489,12 @@ class CNN(nn.Module):
         if kincons is not None:
             kincons = kincons / 100
 
+        print loss_vector_type, 'LOSS VECT'
 
-        if self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL':
-            scores, angles_est, pseudotargets_est = KinematicsLib().forward_kinematics_pytorch(images, scores, self.loss_vector_type, kincons, forward_only = forward_only, subject = subject, count = self.count)
-        elif self.loss_vector_type == 'anglesSTVL':
-            scores, angles_est, pseudotargets_est = KinematicsLib().forward_kinematics_lengthsv_pytorch(images, scores, self.loss_vector_type, kincons, forward_only = forward_only, subject = subject)
+        if loss_vector_type == 'anglesCL' or loss_vector_type == 'anglesVL':
+            scores, angles_est, pseudotargets_est = KinematicsLib().forward_kinematics_pytorch(images, scores, loss_vector_type, kincons, forward_only = forward_only, subject = subject, count = self.count)
+        elif loss_vector_type == 'anglesSTVL':
+            scores, angles_est, pseudotargets_est = KinematicsLib().forward_kinematics_lengthsv_pytorch(images, scores, loss_vector_type, kincons, forward_only = forward_only, subject = subject)
 
 
         #print scores.size(), ''

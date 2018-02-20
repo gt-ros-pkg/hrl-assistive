@@ -570,7 +570,7 @@ class PhysicalTrainer():
                 scores_zeros = Variable(torch.Tensor(scores_zeros).type(dtype))
                 scores_zeros[:, 10:27] = constraints[:, 18:35]/100 #divide by 100 for direct output. divide by 10 if you multiply the estimate length by 10.
 
-                scores, targets_est, angles_est, lengths_est, _ = self.model.forward_kinematic_jacobian(images_up, targets, constraints, prior_cascade = None, forward_only = False, subject = self.opt.leave_out) # scores is a variable with 27 for 10 euclidean errors and 17 lengths in meters. targets est is a numpy array in mm.
+                scores, targets_est, angles_est, lengths_est, _ = self.model.forward_kinematic_jacobian(images_up, targets, constraints, forward_only = False, subject = self.opt.leave_out, loss_vector_type=self.loss_vector_type) # scores is a variable with 27 for 10 euclidean errors and 17 lengths in meters. targets est is a numpy array in mm.
                 #print lengths_est[0,0:10], 'lengths est'
                 #print batch[0][0,2,10,10], 'angle'
 
@@ -686,7 +686,7 @@ class PhysicalTrainer():
                 scores_zeros = Variable(torch.Tensor(scores_zeros).type(dtype))
                 scores_zeros[:, 10:27] = constraints[:, 18:35]/100
 
-                scores, targets_est, angles_est, lengths_est, _ = self.model.forward_kinematic_jacobian(images_up, targets, prior_cascade = None, forward_only = False, subject = self.opt.leave_out)
+                scores, targets_est, angles_est, lengths_est, _ = self.model.forward_kinematic_jacobian(images_up, targets, forward_only = False, subject = self.opt.leave_out, loss_vector_type=self.loss_vector_type)
 
 
                 self.criterion = nn.L1Loss()

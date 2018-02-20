@@ -99,16 +99,15 @@ class DataVisualizer():
             self.output_size = (NUMOFOUTPUTNODES - 5, NUMOFOUTPUTDIMS)
 
         if self.opt.computer == 'lab_harddrive':
+            print self.dump_path + 'subject_'+str(self.opt.leave_out)+'/convnets/losses_2to8_anglesvL_128b_200e_'+str(self.opt.leave_out)+'.p'
             train_val_loss = load_pickle(self.dump_path + '/subject_'+str(self.opt.leave_out)+'/convnets/losses_2to8_anglesvL_128b_200e_'+str(self.opt.leave_out)+'.p')
-            train_val_loss_desk = load_pickle(self.dump_path + '/train_val_losses_hcdesktop.p')
-            train_val_loss_13 = load_pickle(self.dump_path + '/train_val_losses_all_13.p')
-            train_val_loss_GPU2 = load_pickle(self.dump_path + '/train_val_losses_GPU2.p')
-            train_val_loss_GPU3 = load_pickle(self.dump_path + '/train_val_losses_GPU3.p')
-            train_val_loss_GPU4 = load_pickle(self.dump_path + '/train_val_losses_GPU4.p')
-            train_val_loss_13 = load_pickle(self.dump_path + '/train_val_losses_all_13.p')
-            train_val_loss_GPU2new = load_pickle(self.dump_path + '/train_val_lossesGPU2_021018.p')
-            train_val_loss_GPU3new = load_pickle(self.dump_path + '/train_val_lossesGPU3_021018.p')
-            train_val_loss_GPU4new = load_pickle(self.dump_path + '/train_val_lossesGPU4_021018.p')
+            for key in train_val_loss:
+                print key
+            print '###########################  done with subject ',str(self.opt.leave_out),', ',self.loss_vector_type,' #######################'
+
+            if self.loss_vector_type == 'anglesVL':
+                plt.plot(train_val_loss['epoch_2to8_anglesvL_128b_200e_'+str(self.opt.leave_out)],train_val_loss['val_2to8_anglesvL_128b_200e_'+str(self.opt.leave_out)],'y')
+
 
             if self.opt.leave_out == 1:
 
@@ -119,18 +118,15 @@ class DataVisualizer():
                 plt.legend()
 
 
-
-                
-            plt.ylabel('L1 loss over Euclidean joints')
+            plt.ylabel('L1 loss over 10 joint Euclidean errors')
             plt.xlabel('Epochs, where 200 epochs ~ 10 hours')
-            plt.title('Subject '+str(self.opt.leave_out)+ 'laying validation Loss, training performed on subjects 2, 3, 4, 5, 6, 7, 8', 'y')
-
+            plt.title('Subject '+str(self.opt.leave_out)+' validation Loss')
 
 
             #plt.axis([0,410,0,30000])
-            plt.axis([0, 200, 10, 30])
-            #if self.opt.visualize == True:
-            #    plt.show()
+            plt.axis([0, 200, 0, 30])
+            if self.opt.visualize == True:
+                plt.show()
             plt.close()
 
 
@@ -197,7 +193,7 @@ class DataVisualizer():
         #torso_length_model = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/p_files/convnet_2to8_alldata_armsonly_torso_lengths_115b_adam_100e_4.pt')
         #angle_model = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/p_files/convnet_2to8_alldata_armsonly_upper_angles_115b_adam_200e_4.pt')
 
-        if self.loss_vector_type == 'angles' and self.opt.mltype == 'convnet':
+        if self.loss_vector_type == 'anglesVL' and self.opt.mltype == 'convnet':
             print 'loading kinematic CNN, subject ', self.opt.leave_out
             if self.opt.computer == 'aws':
                 model_kin = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnet_2to8_angles128b_200e_' + str(self.opt.leave_out) + '.pt')
@@ -270,7 +266,7 @@ class DataVisualizer():
 
             #model_kin.eval()
 
-            if self.loss_vector_type == 'angles' and self.opt.mltype == 'convnet':
+            if self.loss_vector_type == 'anglesVL' and self.opt.mltype == 'convnet':
 
 
                 cum_error = []
@@ -306,7 +302,7 @@ class DataVisualizer():
 
                 images, targets, constraints = Variable(batch0, volatile = True, requires_grad=False), Variable(batch1, volatile = True, requires_grad=False), Variable(batch[2], volatile = True, requires_grad=False)
 
-                _, targets_est, angles_est, lengths_est, pseudotargets_est = model_kin.forward_kinematic_jacobian(images_up, targets, constraints, prior_cascade = None, forward_only = True, subject = self.opt.leave_out)
+                _, targets_est, angles_est, lengths_est, pseudotargets_est = model_kin.forward_kinematic_jacobian(images_up, targets, constraints, forward_only = True, subject = self.opt.leave_out, loss_vector_type = self.loss_vector_type)
 
                 #print lengths_est, 'lengths'
                 #print targets_est
@@ -378,8 +374,7 @@ class DataVisualizer():
                             if count2 <= 1: VisualizationLib().rviz_publish_input(self.im_sample[0, :, :] * 1.3,self.im_sample[-1, 10, 10])
                             # else: VisualizationLib().rviz_publish_input(self.im_sample[1, :, :]/2, self.im_sample[-1, 10, 10])
 
-                            VisualizationLib().rviz_publish_output(np.reshape(self.tar_sample, self.output_size),
-                                                                   self.sc_sample, self.pseudo_sample)
+                            VisualizationLib().rviz_publish_output(np.reshape(self.tar_sample, self.output_size),  self.sc_sample, self.pseudo_sample)
                             limbArray = VisualizationLib().rviz_publish_output_limbs(
                                 np.reshape(self.tar_sample, self.output_size), self.sc_sample, self.pseudo_sample,
                                 LimbArray=limbArray, count=count2)
