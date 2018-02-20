@@ -552,7 +552,7 @@ class PhysicalTrainer():
 
 
                 # targets_2D = CascadeLib().get_2D_projection(images.data.numpy(), np.reshape(targets.data.numpy(), (targets.size()[0], 10, 3)))
-                targets_2D = CascadeLib().get_2D_projection(images.data, targets.data.view(targets.size()[0], 10, 3))
+                #targets_2D = CascadeLib().get_2D_projection(images.data, targets.data.view(targets.size()[0], 10, 3))
 
                 #image_coords = np.round(targets_2D[:, :, 0:2] / 28.6, 0)
                 #print image_coords[0, :, :]
