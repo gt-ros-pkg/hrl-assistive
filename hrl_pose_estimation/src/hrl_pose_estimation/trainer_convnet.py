@@ -625,7 +625,7 @@ class PhysicalTrainer():
                     self.sc_sample = self.sc_sample.view(self.output_size)
 
                 elif self.loss_vector_type == 'direct':
-                    VisualizationLib().print_error(targets.data, targets_est, self.output_size, self.loss_vector_type, data='train')
+                    #VisualizationLib().print_error(targets.data, targets_est, self.output_size, self.loss_vector_type, data='train')
                     self.im_sample = images.data
                     #self.im_sample = self.im_sample[:, 1, :, :]
                     self.im_sample = self.im_sample[0, :].squeeze()
