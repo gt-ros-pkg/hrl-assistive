@@ -36,6 +36,7 @@ from visualization_msgs.msg import MarkerArray
 
 # HRL libraries
 #roslib.load_manifest('hrl_lib')
+import cPickle as pickle
 def load_pickle(filename):
     with open(filename, 'rb') as f:
         return pickle.load(f)
