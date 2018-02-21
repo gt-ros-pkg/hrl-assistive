@@ -35,10 +35,10 @@ from visualization_msgs.msg import MarkerArray
 
 
 # HRL libraries
-import hrl_lib.util as ut
-import pickle
 #roslib.load_manifest('hrl_lib')
-from hrl_lib.util import load_pickle
+def load_pickle(filename):
+    with open(filename, 'rb') as f:
+        return pickle.load(f)
 
 # Pose Estimation Libraries
 from create_dataset_lib import CreateDatasetLib
