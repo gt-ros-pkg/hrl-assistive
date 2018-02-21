@@ -102,7 +102,7 @@ class PhysicalTrainer():
         elif self.loss_vector_type == 'direct':
             self.num_epochs = 300
         self.include_inter = True
-        self.shuffle = True
+        self.shuffle = False
 
         self.count = 0
 
@@ -550,7 +550,9 @@ class PhysicalTrainer():
 
                 batch[0], batch[1], batch[2]= SyntheticLib().synthetic_master(batch[0], batch[1], batch[2], flip=True, shift=True, scale=True, bedangle=True, include_inter=self.include_inter, loss_vector_type=self.loss_vector_type)
 
-                images_up = Variable(torch.Tensor(PreprocessingLib().preprocessing_add_image_noise(np.array(PreprocessingLib().preprocessing_pressure_map_upsample(batch[0].numpy()[:, :, 10:74, 10:37])))).type(dtype), requires_grad=False)
+                #images_up = Variable(torch.Tensor(PreprocessingLib().preprocessing_add_image_noise(np.array(PreprocessingLib().preprocessing_pressure_map_upsample(batch[0].numpy()[:, :, 10:74, 10:37])))).type(dtype), requires_grad=False)
+                images_up = Variable(torch.Tensor(np.array(PreprocessingLib().preprocessing_pressure_map_upsample(batch[0].numpy()[:, :, 10:74, 10:37]))).type(dtype), requires_grad=False)
+
                 images, targets, constraints = Variable(batch[0].type(dtype), requires_grad = False), Variable(batch[1].type(dtype), requires_grad = False), Variable(batch[2].type(dtype), requires_grad = False)
 
 
@@ -657,7 +659,7 @@ class PhysicalTrainer():
         n_examples = 0
         for batch_i, batch in enumerate(self.test_loader):
 
-            self.model.train()
+            self.model.eval()
 
 
             if self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL' or self.loss_vector_type == 'anglesSTVL':
