@@ -98,7 +98,7 @@ class PhysicalTrainer():
         self.batch_size = 128
 
         if self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL' or self.loss_vector_type == 'anglesSTVL':
-            self.num_epochs = 200
+            self.num_epochs = 150
         elif self.loss_vector_type == 'direct':
             self.num_epochs = 300
         self.include_inter = True
