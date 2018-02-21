@@ -55,7 +55,7 @@ general_option = {'maxiter': 50, 'popsize': 20}
 
 DURATION = 5
 OPTIONS = general_option
-SIMULATOR = DartDressingWorld
+SIMULATOR_PROCESS = DressingSimulationProcess
 CMA_STEP_SIZE = 0.6
 NUM_RESTART = 1
 
@@ -63,22 +63,10 @@ NUM_RESTART = 1
 class SimulatorPool(object):
     def __init__(self, population, visualize=False):
         self.simulatorPool = mp.Manager().Queue()
-        filename = 'fullbody_alex_capsule.skel'
-        rospack = rospkg.RosPack()
-        pkg_path = rospack.get_path('hrl_base_selection')
-        skel_file = pkg_path + '/models/' + filename
-        for _ in range(population):
-            simulator = SIMULATOR(skel_file)
-            self.simulatorPool.put(simulator)
-        if population == 1 and visualize:
-            t = threading.Thread(target=visualize_dart)
-            t.start()
+        for _ in xrange(population):
+            simulator_process = SIMULATOR_PROCESS(process_number=_, visualize=visualize)
+            self.simulatorPool.put(simulator_process)
 
-def visualize_dart(self):
-    win = pydart.gui.viewer.PydartWindow(self.dart_world)
-    win.camera_event(1)
-    win.set_capture_rate(10)
-    win.run_application()
 
 def _init(queue):
     global current_simulator
@@ -102,61 +90,26 @@ def setBoundary(length, joint_max_l, joint_max_u, joint_min_l, joint_min_u, phi_
 def setup_dart_thread(self):
     # Setup Dart ENV for each thread
     global current_simulator
-    # current_simulator.robot = self.dart_world.robot
-    # current_simulator.human = self.dart_world.human
-    # self.gown_leftarm = self.dart_world.gown_box_leftarm
-    # self.gown_rightarm = self.dart_world.gown_box_rightarm
+    # Set up multithreading which is used in the inner loop
+    processCnt = mp.cpu_count()
+    simulatorPool = SimulatorPool(processCnt).simulatorPool
+    pool = mp.Pool(processCnt, _init, (simulatorPool,))
 
-    sign_flip = 1.
-    if 'right' in current_simulator.robot_arm:
-        sign_flip = -1.
-    v = self.robot.q
-    v['l_shoulder_pan_joint'] = 1.*3.14/2
-    v['l_shoulder_lift_joint'] = -0.52
-    v['l_upper_arm_roll_joint'] = 0.
-    v['l_elbow_flex_joint'] = -3.14 * 2 / 3
-    v['l_forearm_roll_joint'] = 0.
-    v['l_wrist_flex_joint'] = 0.
-    v['l_wrist_roll_joint'] = 0.
-    v['l_gripper_l_finger_joint'] = .54
-    v['r_shoulder_pan_joint'] = -1.*3.14/2
-    v['r_shoulder_lift_joint'] = -0.52
-    v['r_upper_arm_roll_joint'] = 0.
-    v['r_elbow_flex_joint'] = -3.14*2/3
-    v['r_forearm_roll_joint'] = 0.
-    v['r_wrist_flex_joint'] = 0.
-    v['r_wrist_roll_joint'] = 0.
-    v['r_gripper_l_finger_joint'] = .54
-    v['torso_lift_joint'] = 0.3
-    current_simulator.robot.set_positions(v)
-    current_simulator.displace_gown()
+class DressingMultithreadedOptimization(object):
+    def __init__(self, number_of_processes=1, visualize=False):
 
-    positions = current_simulator.robot.positions()
-    positions['rootJoint_pos_x'] = 2.
-    positions['rootJoint_pos_y'] = 0.
-    positions['rootJoint_pos_z'] = 0.
-    positions['rootJoint_rot_z'] = 3.14
-    current_simulator.robot.set_positions(positions)
-    # self.dart_world.set_gown()
-    print 'Dart is ready!'
-
-
-class ScoreGeneratorDressingMultithread(object):
-    def __init__(self, robot_arm='rightarm', human_arm='rightarm', visualize=False, standard_mode=True):
+class DressingSimulationProcess(object):
+    def __init__(self, process_number=0, robot_arm='rightarm', human_arm='rightarm', visualize=False):
         rospack = rospkg.RosPack()
         self.pkg_path = rospack.get_path('hrl_base_selection')
         self.save_file_path = self.pkg_path + '/data/'
-        self.save_file_name = 'arm_config_scores.log'
-        self.save_file_name_only_good = 'arm_configs_feasible.log'
-        self.save_file_name_per_human_initialization = 'arm_configs_per_human_initialization.log'
+        self.save_file_name_coarse_raw = 'arm_config_coarse_raw.log'
+        self.save_file_name_coarse_feasible = 'arm_configs_coarse_feasible.log'
+        self.save_file_name_fine_raw = 'arm_configs_fine_raw.log'
+        self.save_file_name_fine = 'arm_configs_fine.log'
+        self.save_file_name_super_fine = 'arm_configs_super_fine.log'
+        # self.save_file_name_per_human_initialization = 'arm_configs_per_human_initialization.log'
         self.visualize = visualize
-        self.frame_lock = threading.RLock()
-
-        # Set up multithreading which is used in the inner loop
-        processCnt = mp.cpu_count()
-        simulatorPool = SimulatorPool(processCnt).simulatorPool
-        pool = mp.Pool(processCnt, _init, (simulatorPool,))
-
 
         self.robot_arm = None
         self.robot_opposite_arm = None
@@ -171,9 +124,6 @@ class ScoreGeneratorDressingMultithread(object):
 
         self.axis = []
         self.angle = None
-
-        rospack = rospkg.RosPack()
-        self.pkg_path = rospack.get_path('hrl_base_selection')
 
         self.stretch_allowable = []
 
@@ -192,16 +142,6 @@ class ScoreGeneratorDressingMultithread(object):
         self.task_dict = None
 
         self.reference_names = None
-
-        self.best_physx_score = dict() #100.
-        self.best_pr2_results = dict()
-
-        self.arm_traj_parameters = []
-        self.pr2_parameters = []
-
-        # self.reachable = {}
-        # self.manipulable = {}
-        # self.scores = {}
 
         self.distance = 0.
         # self.score_length = {}
@@ -223,228 +163,21 @@ class ScoreGeneratorDressingMultithread(object):
         self.goals = []
 
         self.optimal_z_offset = 0.05
-        self.physx_output = False
-        self.physx_outcome = None
 
-        self.standard_mode = standard_mode
+        self.setup_openrave()
 
-        if self.standard_mode:
-            self.setup_openrave()
+        self.set_robot_arm(robot_arm)
+        self.set_human_arm(human_arm)
 
-            self.set_robot_arm(robot_arm)
-            self.set_human_arm(human_arm)
+        self.setup_dart(filename='fullbody_50percentile_capsule.skel')
 
-            self.setup_dart(filename='fullbody_50percentile_capsule.skel')
-
-            self.arm_configs_eval = load_pickle(rospack.get_path('hrl_dressing') +
-                                               '/data/forearm_trajectory_evaluation/entire_results_list.pkl')
-            self.arm_configs_checked = []
-            for line in self.arm_configs_eval:
-                self.arm_configs_checked.append(line[0:4])
-            self.arm_knn = NearestNeighbors(8, m.radians(15.))
-            self.arm_knn.fit(self.arm_configs_checked)
-
-            # self.setup_ik_service()
-            # self.setup_physx_calls()
-
-    def output_results_for_use(self):
-        traj_and_arm_config_results = load_pickle(self.pkg_path+'/data/saved_results/large_search_space/best_trajectory_and_arm_config.pkl')
-        pr2_config_results = load_pickle(self.pkg_path+'/data/saved_results/large_search_space/best_pr2_config.pkl')
-        traj_and_arm_config = traj_and_arm_config_results[0]
-        params = traj_and_arm_config
-        pr2_config = pr2_config_results[0]
-        self.set_human_model_dof([traj_and_arm_config[7], traj_and_arm_config[8], -traj_and_arm_config[9], traj_and_arm_config[6], 0, 0, 0], 'rightarm', 'green_kevin')
-
-        uabl = self.human_model.GetLink('green_kevin/arm_left_base_link')
-        uabr = self.human_model.GetLink('green_kevin/arm_right_base_link')
-        ual = self.human_model.GetLink('green_kevin/arm_left_link')
-        uar = self.human_model.GetLink('green_kevin/arm_right_link')
-        fal = self.human_model.GetLink('green_kevin/forearm_left_link')
-        far = self.human_model.GetLink('green_kevin/forearm_right_link')
-        hl = self.human_model.GetLink('green_kevin/hand_left_link')
-        hr = self.human_model.GetLink('green_kevin/hand_right_link')
-        origin_B_uabl = np.matrix(uabl.GetTransform())
-        origin_B_uabr = np.matrix(uabr.GetTransform())
-        origin_B_ual = np.matrix(ual.GetTransform())
-        origin_B_uar = np.matrix(uar.GetTransform())
-        origin_B_fal = np.matrix(fal.GetTransform())
-        origin_B_far = np.matrix(far.GetTransform())
-        origin_B_hl = np.matrix(hl.GetTransform())
-        origin_B_hr = np.matrix(hr.GetTransform())
-
-        uabr_B_uabr_corrected = np.matrix([[ 0.,  0., -1., 0.],
-                                           [ 1.,  0.,  0., 0.],
-                                           [ 0., -1.,  0., 0.],
-                                           [ 0.,  0.,  0., 1.]])
-
-        z_origin = np.array([0., 0., 1.])
-        x_vector = np.reshape(np.array(origin_B_hr[0:3, 0]), [1, 3])[0]
-        y_orth = np.cross(z_origin, x_vector)
-        y_orth = y_orth/np.linalg.norm(y_orth)
-        z_orth = np.cross(x_vector, y_orth)
-        z_orth = z_orth/np.linalg.norm(z_orth)
-        origin_B_hr_rotated = np.matrix(np.eye(4))
-        # print 'x_vector'
-        # print x_vector
-        # print 'origin_B_hr_rotated'
-        # print origin_B_hr_rotated
-        # print 'np.reshape(x_vector, [3, 1])'
-        # print np.reshape(x_vector, [3, 1])
-        # print 'origin_B_hr_rotated[0:3, 0]'
-        # print origin_B_hr_rotated[0:3, 0]
-        origin_B_hr_rotated[0:3, 0] = copy.copy(np.reshape(x_vector, [3, 1]))
-        origin_B_hr_rotated[0:3, 1] = copy.copy(np.reshape(y_orth, [3, 1]))
-        origin_B_hr_rotated[0:3, 2] = copy.copy(np.reshape(z_orth, [3, 1]))
-        origin_B_hr_rotated[0:3, 3] = copy.copy(origin_B_hr[0:3, 3])
-        origin_B_hr_rotated = np.matrix(origin_B_hr_rotated)
-
-        hr_rotated_B_traj_start_pos = np.matrix(np.eye(4))
-        hr_rotated_B_traj_start_pos[0:3, 3] = copy.copy(np.reshape([params[0:3]], [3, 1]))
-        hr_rotated_B_traj_start_pos[0, 3] = hr_rotated_B_traj_start_pos[0, 3] + 0.07
-
-        origin_B_traj_start_pos = origin_B_hr_rotated*hr_rotated_B_traj_start_pos
-
-        # print 'origin_B_traj_start_pos'
-        # print origin_B_traj_start_pos
-
-        # origin_B_world_rotated_shoulder = createBMatrix(np.reshape(np.array(origin_B_uabr[0:3, 3]), [1, 3])[0], list(tft.quaternion_from_euler(params[7], -params[8], params[9], 'rzxy')))
-
-        origin_B_world_rotated_shoulder = origin_B_uar*uabr_B_uabr_corrected
-
-        # Because green kevin has the upper with a bend in it, I shift the shoulder location by that bend offset.
-        shoulder_origin_B_should_origin_shifted_green_kevin = np.matrix(np.eye(4))
-        shoulder_origin_B_should_origin_shifted_green_kevin[1, 3] = -0.04953
-        origin_B_world_rotated_shoulder = origin_B_world_rotated_shoulder*shoulder_origin_B_should_origin_shifted_green_kevin
-
-        origin_B_uabr[0:3, 3] = origin_B_world_rotated_shoulder[0:3, 3]
-        origin_B_uar[0:3, 3] = origin_B_world_rotated_shoulder[0:3, 3]
-
-        z_origin = np.array([0., 0., 1.])
-        x_vector = np.reshape(np.array(-1*origin_B_world_rotated_shoulder[0:3, 2]), [1, 3])[0]
-        y_orth = np.cross(z_origin, x_vector)
-        y_orth = y_orth/np.linalg.norm(y_orth)
-        z_orth = np.cross(x_vector, y_orth)
-        z_orth = z_orth/np.linalg.norm(z_orth)
-        origin_B_rotated_pointed_down_shoulder = np.matrix(np.eye(4))
-        origin_B_rotated_pointed_down_shoulder[0:3, 0] = np.reshape(x_vector, [3, 1])
-        origin_B_rotated_pointed_down_shoulder[0:3, 1] = np.reshape(y_orth, [3, 1])
-        origin_B_rotated_pointed_down_shoulder[0:3, 2] = np.reshape(z_orth, [3, 1])
-        origin_B_rotated_pointed_down_shoulder[0:3, 3] = origin_B_uabr[0:3, 3]
-        # origin_B_rotated_pointed_down_shoulder = origin_B_uabr*uabr_B_uabr_corrected*np.matrix(shoulder_origin_B_rotated_pointed_down_shoulder)
-        # print 'origin_B_rotated_pointed_down_shoulder'
-        # print origin_B_rotated_pointed_down_shoulder
-
-        # origin_B_rotated_pointed_down_shoulder[0:3, 3] = origin_B_world_rotated_shoulder[0:3, 3]
-
-        rotated_pointed_down_shoulder_B_traj_end_pos = np.matrix(np.eye(4))
-        rotated_pointed_down_shoulder_B_traj_end_pos[0:3, 3] = copy.copy(np.reshape([params[3:6]], [3, 1]))
-
-        # print 'rotated_pointed_down_shoulder_B_traj_end_pos'
-        # print rotated_pointed_down_shoulder_B_traj_end_pos
-        # print 'origin_B_traj_start_pos'
-        # print origin_B_traj_start_pos
-        origin_B_traj_end_pos = origin_B_rotated_pointed_down_shoulder*rotated_pointed_down_shoulder_B_traj_end_pos
-        # print 'origin_B_traj_end_pos'
-        # print origin_B_traj_end_pos
-
-        # print 'origin_B_uabr_corrected'
-        # print origin_B_uabr*uabr_B_uabr_corrected
-
-        th = m.radians(180.)
-        #
-        # x_vector = np.array(params[0:3])-np.array(params[3:6])
-        # x_vector /= np.linalg.norm(x_vector)
-        # y_orth = np.cross(z_origin, x_vector)
-        # y_orth = y_orth/np.linalg.norm(y_orth)
-        # z_orth = np.cross(x_vector, y_orth)
-        # z_orth = z_orth/np.linalg.norm(z_orth)
-        # origin_B_traj_start = np.eye(4)
-        # origin_B_traj_start[0:3, 0] = np.reshape(x_vector, [3, 1])
-        # origin_B_traj_start[0:3, 1] = np.reshape(y_orth, [3, 1])
-        # origin_B_traj_start[0:3, 2] = np.reshape(z_orth, [3, 1])
-        # origin_B_traj_start[0:3, 3] = np.reshape(params[0:3], [3, 1])
-        # origin_B_traj_start = np.matrix(origin_B_traj_start)
-
-        z_origin = np.array([0., 0., 1.])
-        x_vector = np.reshape(np.array(origin_B_traj_end_pos[0:3, 3] - origin_B_traj_start_pos[0:3, 3]), [1, 3])[0]
-        x_vector = x_vector/np.linalg.norm(x_vector)
-        y_orth = np.cross(z_origin, x_vector)
-        y_orth = y_orth/np.linalg.norm(y_orth)
-        z_orth = np.cross(x_vector, y_orth)
-        z_orth = z_orth/np.linalg.norm(z_orth)
-        origin_B_traj_start = np.matrix(np.eye(4))
-        origin_B_traj_start[0:3, 0] = np.reshape(x_vector, [3, 1])
-        origin_B_traj_start[0:3, 1] = np.reshape(y_orth, [3, 1])
-        origin_B_traj_start[0:3, 2] = np.reshape(z_orth, [3, 1])
-        origin_B_traj_start[0:3, 3] = copy.copy(origin_B_traj_start_pos[0:3, 3])
-        translation, quaternion = Bmat_to_pos_quat(origin_B_traj_start)
-        self.axis, self.angle = calc_axis_angle(quaternion)
-
-        # print 'origin_B_traj_start'
-        # print origin_B_traj_start
-
-        path_distance = np.linalg.norm(np.reshape(np.array(origin_B_traj_end_pos[0:3, 3] - origin_B_traj_start_pos[0:3, 3]), [1, 3])[0])
-        # print 'path_distance'
-        # print path_distance
-        uabr_corrected_B_traj_start = uabr_B_uabr_corrected.I*origin_B_uabr.I*origin_B_traj_start
-        # test_world_shoulder_B_sleeve_start_rotz = np.matrix([[ m.cos(th), -m.sin(th),     0.],
-        #                                                      [ m.sin(th),  m.cos(th),     0.],
-        #                                                       [        0.,         0.,     1.]])
-        # hr_rotated_B_traj_start = createBMatrix([params[0], params[1], params[2]],
-        #                                   tft.quaternion_from_euler(params[3], params[4], params[5], 'rzyx'))
-        pos_t, quat_t = Bmat_to_pos_quat(uabr_corrected_B_traj_start)
-
-        path_waypoints = np.arange(0., path_distance+path_distance*0.01, path_distance/5.)
-
-        self.goals = []
-        for goal in path_waypoints:
-            traj_start_B_traj_waypoint = np.matrix(np.eye(4))
-            traj_start_B_traj_waypoint[0, 3] = goal
-            origin_B_traj_waypoint = origin_B_traj_start*traj_start_B_traj_waypoint
-            self.goals.append(copy.copy(origin_B_traj_waypoint))
-
-        self.origin_B_grasps = []
-        for num in xrange(len(self.goals)):
-            self.origin_B_grasps.append(np.array(np.matrix(self.goals[num])*np.matrix(self.gripper_B_tool.I)))
-
-        x = pr2_config[0]
-        y = pr2_config[1]
-        th = pr2_config[2]
-        z = pr2_config[3]
-
-        origin_B_pr2 = np.matrix([[ m.cos(th), -m.sin(th),     0.,         x],
-                                  [ m.sin(th),  m.cos(th),     0.,         y],
-                                  [        0.,         0.,     1.,        0.],
-                                  [        0.,         0.,     0.,        1.]])
-
-        self.robot.SetTransform(np.array(origin_B_pr2))
-        v = self.robot.GetActiveDOFValues()
-        v[self.robot.GetJoint('torso_lift_joint').GetDOFIndex()] = z
-        self.robot.SetActiveDOFValues(v, 2)
-        self.env.UpdatePublishedBodies()
-
-        self.pr2_B_grasps = []
-        for num in xrange(len(self.origin_B_grasps)):
-            self.pr2_B_grasps.append(origin_B_pr2.I*np.matrix(self.origin_B_grasps[num]))
-        # self.pr2_B_grasps.append(np.matrix(np.eye(4)))
-        # poseArray = PoseArray()
-        # poseArray.header.stamp = rospy.Time.now()
-        # poseArray.header.frame_id = 'base_footprint'
-        # for pose in self.pr2_B_grasps:
-        #     newPose = Pose()
-        #     pos_g, ori_g = Bmat_to_pos_quat(pose)
-        #     newPose.position.x = pos_g[0]
-        #     newPose.position.y = pos_g[1]
-        #     newPose.position.z = pos_g[2]
-        #     newPose.orientation.x = ori_g[0]
-        #     newPose.orientation.y = ori_g[1]
-        #     newPose.orientation.z = ori_g[2]
-        #     newPose.orientation.w = ori_g[3]
-        #     poseArray.poses.append(copy.copy(newPose))
-
-        save_pickle(self.pr2_B_grasps, self.pkg_path+'/data/saved_results/large_search_space/pr2_grasps.pkl')
-        print 'Saved!'
-        rospy.spin()
+        self.arm_configs_eval = load_pickle(rospack.get_path('hrl_dressing') +
+                                            '/data/forearm_trajectory_evaluation/entire_results_list.pkl')
+        self.arm_configs_checked = []
+        for line in self.arm_configs_eval:
+            self.arm_configs_checked.append(line[0:4])
+        self.arm_knn = NearestNeighbors(8, m.radians(15.))
+        self.arm_knn.fit(self.arm_configs_checked)
 
     def optimize_entire_dressing_task(self, reset_file=False):
         if reset_file:
@@ -862,11 +595,7 @@ class ScoreGeneratorDressingMultithread(object):
                np.matrix(origin_B_traj_final_end), angle_from_horizontal, \
                np.matrix(forearm_B_upper_arm), fixed_point_exceeded_amount
 
-    def objective_function_traj_and_arm_config(self, params):
-        # params[7:] = [0., 0., 1.]
-        # params = [0.1, 0.,  0.1,
-        #           -0.1,  0.0, 0.1,
-        #           0.,
+    def objective_function_coarse(self, params):
         # params = [m.radians(90.0),  m.radians(0.), m.radians(45.), m.radians(0.)]
         # print 'doing subtask', self.subtask_step
         # print 'params:\n', params
@@ -880,19 +609,15 @@ class ScoreGeneratorDressingMultithread(object):
         elif False:  # for left arm
             params = [1.5707963267948966, -0.17453292519943295, 1.3962634015954636, 1.5707963267948966]
             # self.visualize = True
-        neigh_distances, neighbors = self.arm_knn.kneighbors([params], 8)
+
+        # Check if all arm configurations within a ball in configuration space of the current configuration are 'good'
+        neigh_distances, neighbors = self.arm_knn.kneighbors([params], 16)
         for neigh_dist, neighbor in zip(neigh_distances[0], neighbors[0]):
             if np.max(np.abs(np.array(self.arm_configs_checked[neighbor] - np.array(params)))) < m.radians(15.):
                 if not self.arm_configs_eval[neighbor][5] == 'good':
                     # print 'arm evaluation found this configuration to be bad'
                     this_score = 10. + 10. + 4. + random.random()
-                    if this_score < self.best_overall_score:
-                        self.best_overall_score = this_score
-                        self.best_physx_config = params
-                        self.best_physx_score = 10. + 2. + random.random()
-                        self.best_kinematics_config = np.zeros(4)
-                        self.best_kinematics_score = 10. + 2. + random.random()
-                    with open(self.save_file_path+self.save_file_name, 'a') as myfile:
+                    with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
                         myfile.write(str(self.subtask_step)
                                      + ',' + str("{:.5f}".format(params[0]))
                                      + ',' + str("{:.5f}".format(params[1]))
@@ -904,27 +629,195 @@ class ScoreGeneratorDressingMultithread(object):
         print 'arm config is not bad'
         arm = self.human_arm.split('a')[0]
 
-        testing = False
-
-        # path_distance = np.linalg.norm(np.array(params[0:3])-np.array(params[3:6]))
-        # print 'params'
-        # print params
+        # Set both of the human's arms in DART. The opposite arm is held by the side of the body. The arm that will be
+        # dressed is set to the values of this objective function evaluation.
         self.set_human_model_dof_dart([0, 0, 0, 0], self.human_opposite_arm)
-        # self.set_human_model_dof_dart([params[0], params[1], params[2], params[3]], self.human_opposite_arm)
         self.set_human_model_dof_dart([params[0], params[1], params[2], params[3]], self.human_arm)
 
-        # self.set_human_model_dof_dart([params[0], params[1], params[2], params[3]], 'leftarm')
+        # Check if the person is in self collision, which means parts of the arm are in collision with anything other
+        # than the shoulder or itself.
+        if self.is_human_in_self_collision():
+            this_score = 10. + 10. + 2. + random.random()
+            if self.save_all_results:
+                with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
+                    myfile.write(str(self.subtask_step)
+                                 + ',' + str("{:.5f}".format(params[0]))
+                                 + ',' + str("{:.5f}".format(params[1]))
+                                 + ',' + str("{:.5f}".format(params[2]))
+                                 + ',' + str("{:.5f}".format(params[3]))
+                                 + ',' + str("{:.5f}".format(this_score))
+                                 + '\n')
+            return this_score
+
+        print 'arm config is not in self collision'
+
+        # Now generates the trajectories based on the arm configuration. Here we also set and check constraints on the
+        # trajectory. For example, once one arm is dressed, the gown must stay on that arm. That adds a constraint
+        # that the top of that gown basically stays above the dressed shoulder. So all trajectories for the second arm
+        # must stay within some distance of the fixed point.
+        self.goals, \
+        origin_B_forearm_pointed_down_arm, \
+        origin_B_upperarm_pointed_down_shoulder, \
+        origin_B_hand, \
+        origin_B_wrist, \
+        origin_B_traj_start, \
+        origin_B_traj_forearm_end, \
+        origin_B_traj_upper_end, \
+        origin_B_traj_final_end, \
+        angle_from_horizontal, \
+        forearm_B_upper_arm, \
+        fixed_points_exceeded_amount = self.find_reference_coordinate_frames_and_goals(arm)
+        if fixed_points_exceeded_amount <= 0:
+            print 'arm does not break fixed_points requirement'
+        else:
+            print 'fixed points exceeded: ', fixed_points_exceeded_amount
+
+        if fixed_points_exceeded_amount > 0.:
+            # print 'The gown is being stretched too much to try to do the next part of the task.'
+            # return 10. + 1. + 10. * fixed_points_exceeded_amount
+            this_score = 10. + 10. + 1. + 10. * fixed_points_exceeded_amount
+            if self.save_all_results:
+                with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
+                    myfile.write(str(self.subtask_step)
+                                 + ',' + str("{:.5f}".format(params[0]))
+                                 + ',' + str("{:.5f}".format(params[1]))
+                                 + ',' + str("{:.5f}".format(params[2]))
+                                 + ',' + str("{:.5f}".format(params[3]))
+                                 + ',' + str("{:.5f}".format(this_score))
+                                 + '\n')
+            return this_score
+
+        # We also have calculated when generating the trajectories, the angle from horizontal of the forearm. We have
+        # previous simulation that gives a range of angles for which dressing can succeed. We apply that constraint
+        # here
+        print 'angle from horizontal = ', angle_from_horizontal
+        if abs(angle_from_horizontal) > 30.:
+            print 'Angle of forearm is too high for success'
+            this_score = 10. + 10. + 10. * (abs(angle_from_horizontal) - 30.)
+            if self.save_all_results:
+                with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
+                    myfile.write(str(self.subtask_step)
+                                 + ',' + str("{:.5f}".format(params[0]))
+                                 + ',' + str("{:.5f}".format(params[1]))
+                                 + ',' + str("{:.5f}".format(params[2]))
+                                 + ',' + str("{:.5f}".format(params[3]))
+                                 + ',' + str("{:.5f}".format(this_score))
+                                 + '\n')
+            return this_score
+
+        # Here we calculate the torque on the shoulder of the person based on average limb weights. We scale that
+        # torque by an estimated maximum torque, which is the torque with the arm fully extended. This gives us a
+        # torque cost that ranges from 0 to 1.
+        ############################################
+        # Body mass from https://msis.jsc.nasa.gov/sections/section03.htm for average human male
+        # upper arm: 2.500 kg
+        # fore arm: 1.450 kg
+        # hand: 0.530 kg
+        upper_arm_force = np.array([0, 0, 2.5 * -9.8])
+        forearm_force = np.array([0., 0., 1.45 * -9.8])
+        hand_force = np.array([0., 0., 0.53 * -9.8])
+        shoulder_to_upper_arm_midpoint = (np.array(origin_B_forearm_pointed_down_arm)[0:3, 3] -
+                                          np.array(origin_B_upperarm_pointed_down_shoulder)[0:3, 3]) / 2.
+        shoulder_to_forearm = (np.array(origin_B_forearm_pointed_down_arm)[0:3, 3] -
+                               np.array(origin_B_upperarm_pointed_down_shoulder)[0:3, 3])
+        shoulder_to_forearm_midpoint = (np.array(origin_B_forearm_pointed_down_arm)[0:3, 3] -
+                                        np.array(origin_B_upperarm_pointed_down_shoulder)[0:3, 3]) + \
+                                       (np.array(origin_B_wrist)[0:3, 3] -
+                                        np.array(origin_B_forearm_pointed_down_arm)[0:3, 3]) / 2.
+        shoulder_to_hand_midpoint = (np.array(origin_B_hand)[0:3, 3] -
+                                     np.array(origin_B_upperarm_pointed_down_shoulder)[0:3, 3])
+        # elbow_to_forearm_midpoint = (np.array(origin_B_wrist)[0:3, 3] -
+        #                              np.array(origin_B_forearm_pointed_down_arm)[0:3, 3]) / 2.
+        # elbow_to_hand_midpoint = (np.array(origin_B_hand)[0:3, 3] -
+        #                           np.array(origin_B_forearm_pointed_down_arm)[0:3, 3])
+        # print 'shoulder_to_upper_arm_midpoint\n', shoulder_to_upper_arm_midpoint
+        # print 'shoulder_to_forearm\n', shoulder_to_forearm
+        # print 'shoulder_to_forearm_midpoint\n', shoulder_to_forearm_midpoint
+        # print 'shoulder_to_hand_midpoint\n', shoulder_to_hand_midpoint
+        torque_at_shoulder = np.cross(-1 * shoulder_to_upper_arm_midpoint, upper_arm_force) + \
+                             np.cross(-1 * shoulder_to_forearm_midpoint, forearm_force) + \
+                             np.cross(-1 * shoulder_to_hand_midpoint, hand_force)
+        # torque_at_elbow = np.cross(-1 * elbow_to_forearm_midpoint, forearm_force) + \
+        #                   np.cross(-1 * elbow_to_hand_midpoint, hand_force)
+        # forearm_mass*np.linalg.norm(shoulder_to_forearm_midpoint[0:2]) + \
+        # hand_mass*np.linalg.norm(shoulder_to_hand_midpoint[0:2])
+        torque_magnitude = np.linalg.norm(torque_at_shoulder)  # + np.linalg.norm(torque_at_elbow)
+        max_possible_torque = 12.376665  # found manually with arm straight out from arm
+        # print 'torque_at_shoulder\n', torque_at_shoulder
+        # print 'torque_magnitude\n', torque_magnitude
+        torque_cost = torque_magnitude / max_possible_torque
+
+        ############################################
+
+        self.force_cost = 0.
+
+        alpha = 1.  # cost on forces
+        beta = 1.  # cost on manipulability
+        zeta = 0.5  # cost on torque
+        physx_score = self.force_cost * alpha + torque_cost * zeta
+        this_score = physx_score
+
+        print 'Physx score was: ', physx_score
+        if self.save_all_results:
+            with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
+                myfile.write(str(self.subtask_step)
+                             + ',' + str("{:.5f}".format(params[0]))
+                             + ',' + str("{:.5f}".format(params[1]))
+                             + ',' + str("{:.5f}".format(params[2]))
+                             + ',' + str("{:.5f}".format(params[3]))
+                             + ',' + str("{:.5f}".format(this_score))
+                             + '\n')
+            with open(self.save_file_path + self.save_file_name_coarse_feasible, 'a') as myfile:
+                myfile.write(str(self.subtask_step)
+                             + ',' + str("{:.5f}".format(params[0]))
+                             + ',' + str("{:.5f}".format(params[1]))
+                             + ',' + str("{:.5f}".format(params[2]))
+                             + ',' + str("{:.5f}".format(params[3]))
+                             + ',' + str("{:.5f}".format(this_score))
+                             + '\n')
+        return this_score
+
+    def objective_function_fine(self, params):
+        # params = [m.radians(90.0),  m.radians(0.), m.radians(45.), m.radians(0.)]
+        # print 'doing subtask', self.subtask_step
+        # print 'params:\n', params
+        if self.subtask_step == 0 or False:  # for right arm
+            # params = [1.41876758,  0.13962405,  1.47350044,  0.95524629]  # old solution with joint jump
+            # params = [1.73983062, -0.13343737,  0.42208647,  0.26249355]  # solution with arm snaking
+            # params = [0.3654207,  0.80081779,  0.44793856,  1.83270078]  # without checking with phsyx
+            params = [0.9679925, 0.18266905, 0.87995157, 0.77562143]
+            # self.visualize = False
+
+        elif False:  # for left arm
+            params = [1.5707963267948966, -0.17453292519943295, 1.3962634015954636, 1.5707963267948966]
+            # self.visualize = True
+
+        # Check if all arm configurations within a ball in configuration space of the current configuration are 'good'
+        neigh_distances, neighbors = self.arm_knn.kneighbors([params], 16)
+        for neigh_dist, neighbor in zip(neigh_distances[0], neighbors[0]):
+            if np.max(np.abs(np.array(self.arm_configs_checked[neighbor] - np.array(params)))) < m.radians(15.):
+                if not self.arm_configs_eval[neighbor][5] == 'good':
+                    # print 'arm evaluation found this configuration to be bad'
+                    this_score = 10. + 10. + 4. + random.random()
+                    with open(self.save_file_path+self.save_file_name_fine_raw, 'a') as myfile:
+                        myfile.write(str(self.subtask_step)
+                                     + ',' + str("{:.5f}".format(params[0]))
+                                     + ',' + str("{:.5f}".format(params[1]))
+                                     + ',' + str("{:.5f}".format(params[2]))
+                                     + ',' + str("{:.5f}".format(params[3]))
+                                     + ',' + str("{:.5f}".format(this_score))
+                                     + '\n')
+                    return this_score
+        print 'arm config is not bad'
+        arm = self.human_arm.split('a')[0]
+
+        self.set_human_model_dof_dart([0, 0, 0, 0], self.human_opposite_arm)
+        self.set_human_model_dof_dart([params[0], params[1], params[2], params[3]], self.human_arm)
 
         if self.is_human_in_self_collision():
             this_score = 10. + 10. + 2. + random.random()
-            if this_score < self.best_overall_score:
-                self.best_overall_score = this_score
-                self.best_physx_config = params
-                self.best_physx_score = 10. + 1. + random.random()
-                self.best_kinematics_config = np.zeros(4)
-                self.best_kinematics_score = 10. + 1. + random.random()
             if self.save_all_results:
-                with open(self.save_file_path + self.save_file_name, 'a') as myfile:
+                with open(self.save_file_path + self.save_file_name_fine_raw, 'a') as myfile:
                     myfile.write(str(self.subtask_step)
                                  + ',' + str("{:.5f}".format(params[0]))
                                  + ',' + str("{:.5f}".format(params[1]))
@@ -953,17 +846,46 @@ class ScoreGeneratorDressingMultithread(object):
         else:
             print 'fixed points exceeded: ', fixed_points_exceeded_amount
 
+        if fixed_points_exceeded_amount > 0.:
+            # print 'The gown is being stretched too much to try to do the next part of the task.'
+            # return 10. + 1. + 10. * fixed_points_exceeded_amount
+            this_score = 10. + 10. + 1. + 10. * fixed_points_exceeded_amount
+            if self.save_all_results:
+                with open(self.save_file_path + self.save_file_name_fine_raw, 'a') as myfile:
+                    myfile.write(str(self.subtask_step)
+                                 + ',' + str("{:.5f}".format(params[0]))
+                                 + ',' + str("{:.5f}".format(params[1]))
+                                 + ',' + str("{:.5f}".format(params[2]))
+                                 + ',' + str("{:.5f}".format(params[3]))
+                                 + ',' + str("{:.5f}".format(this_score))
+                                 + '\n')
+            return this_score
+
+        print 'angle from horizontal = ', angle_from_horizontal
+        if abs(angle_from_horizontal) > 30.:
+            print 'Angle of forearm is too high for success'
+            this_score = 10. + 10. + 10. * (abs(angle_from_horizontal) - 30.)
+            if self.save_all_results:
+                with open(self.save_file_path + self.save_file_name_fine_raw, 'a') as myfile:
+                    myfile.write(str(self.subtask_step)
+                                 + ',' + str("{:.5f}".format(params[0]))
+                                 + ',' + str("{:.5f}".format(params[1]))
+                                 + ',' + str("{:.5f}".format(params[2]))
+                                 + ',' + str("{:.5f}".format(params[3]))
+                                 + ',' + str("{:.5f}".format(this_score))
+                                 + '\n')
+            return this_score
 
         ############################################
         # Body mass from https://msis.jsc.nasa.gov/sections/section03.htm for average human male
         # upper arm: 2.500 kg
         # fore arm: 1.450 kg
         # hand: 0.530 kg
-        upper_arm_force = np.array([0, 0, 2.5*-9.8])
-        forearm_force = np.array([0., 0., 1.45*-9.8])
-        hand_force = np.array([0., 0., 0.53*-9.8])
+        upper_arm_force = np.array([0, 0, 2.5 * -9.8])
+        forearm_force = np.array([0., 0., 1.45 * -9.8])
+        hand_force = np.array([0., 0., 0.53 * -9.8])
         shoulder_to_upper_arm_midpoint = (np.array(origin_B_forearm_pointed_down_arm)[0:3, 3] -
-                                          np.array(origin_B_upperarm_pointed_down_shoulder)[0:3, 3])/2.
+                                          np.array(origin_B_upperarm_pointed_down_shoulder)[0:3, 3]) / 2.
         shoulder_to_forearm = (np.array(origin_B_forearm_pointed_down_arm)[0:3, 3] -
                                np.array(origin_B_upperarm_pointed_down_shoulder)[0:3, 3])
         shoulder_to_forearm_midpoint = (np.array(origin_B_forearm_pointed_down_arm)[0:3, 3] -
@@ -980,96 +902,49 @@ class ScoreGeneratorDressingMultithread(object):
         # print 'shoulder_to_forearm\n', shoulder_to_forearm
         # print 'shoulder_to_forearm_midpoint\n', shoulder_to_forearm_midpoint
         # print 'shoulder_to_hand_midpoint\n', shoulder_to_hand_midpoint
-        torque_at_shoulder = np.cross(-1*shoulder_to_upper_arm_midpoint, upper_arm_force) + \
+        torque_at_shoulder = np.cross(-1 * shoulder_to_upper_arm_midpoint, upper_arm_force) + \
                              np.cross(-1 * shoulder_to_forearm_midpoint, forearm_force) + \
                              np.cross(-1 * shoulder_to_hand_midpoint, hand_force)
         # torque_at_elbow = np.cross(-1 * elbow_to_forearm_midpoint, forearm_force) + \
         #                   np.cross(-1 * elbow_to_hand_midpoint, hand_force)
-                             # forearm_mass*np.linalg.norm(shoulder_to_forearm_midpoint[0:2]) + \
-                             # hand_mass*np.linalg.norm(shoulder_to_hand_midpoint[0:2])
-        torque_magnitude = np.linalg.norm(torque_at_shoulder) #+ np.linalg.norm(torque_at_elbow)
+        # forearm_mass*np.linalg.norm(shoulder_to_forearm_midpoint[0:2]) + \
+        # hand_mass*np.linalg.norm(shoulder_to_hand_midpoint[0:2])
+        torque_magnitude = np.linalg.norm(torque_at_shoulder)  # + np.linalg.norm(torque_at_elbow)
         max_possible_torque = 12.376665  # found manually with arm straight out from arm
         # print 'torque_at_shoulder\n', torque_at_shoulder
         # print 'torque_magnitude\n', torque_magnitude
-        torque_cost = torque_magnitude/max_possible_torque
+        torque_cost = torque_magnitude / max_possible_torque
 
         ############################################
 
-        if fixed_points_exceeded_amount > 0.:
-            # print 'The gown is being stretched too much to try to do the next part of the task.'
-            # return 10. + 1. + 10. * fixed_points_exceeded_amount
-            this_score = 10. + 10. + 1. + 10. * fixed_points_exceeded_amount
-            if this_score < self.best_overall_score:
-                self.best_overall_score = this_score
-                self.best_physx_config = params
-                self.best_physx_score = 10. + 1. + 10. * fixed_points_exceeded_amount
-                self.best_kinematics_config = np.zeros(4)
-                self.best_kinematics_score = 10. + 1. + 10. * fixed_points_exceeded_amount
-            if self.save_all_results:
-                with open(self.save_file_path + self.save_file_name, 'a') as myfile:
-                    myfile.write(str(self.subtask_step)
-                                 + ',' + str("{:.5f}".format(params[0]))
-                                 + ',' + str("{:.5f}".format(params[1]))
-                                 + ',' + str("{:.5f}".format(params[2]))
-                                 + ',' + str("{:.5f}".format(params[3]))
-                                 + ',' + str("{:.5f}".format(this_score))
-                                 + '\n')
-            return this_score
-
-        print 'angle from horizontal = ', angle_from_horizontal
-        if abs(angle_from_horizontal) > 30.:
-            print 'Angle of forearm is too high for success'
-            this_score = 10. + 10. + 10. * (abs(angle_from_horizontal) - 30.)
-            if this_score < self.best_overall_score:
-                self.best_overall_score = this_score
-                self.best_physx_config = params
-                self.best_physx_score = 10. + 10. * (abs(angle_from_horizontal) - 30.)
-                self.best_kinematics_config = np.zeros(4)
-                self.best_kinematics_score = 10. + 10. * (abs(angle_from_horizontal) - 30.)
-            if self.save_all_results:
-                with open(self.save_file_path + self.save_file_name, 'a') as myfile:
-                    myfile.write(str(self.subtask_step)
-                                 + ',' + str("{:.5f}".format(params[0]))
-                                 + ',' + str("{:.5f}".format(params[1]))
-                                 + ',' + str("{:.5f}".format(params[2]))
-                                 + ',' + str("{:.5f}".format(params[3]))
-                                 + ',' + str("{:.5f}".format(this_score))
-                                 + '\n')
-            return this_score
-
-        print 'Number of goals: ', len(self.goals)
-        print 'This arm config is:\n', params
         start_time = rospy.Time.now()
         self.set_goals()
         # print self.origin_B_grasps
         maxiter = 50
         popsize = 20#4*20
-        if self.subtask_step == 0 or False:
-            maxiter = 2
-            popsize = 2
 
         # cma parameters: [pr2_base_x, pr2_base_y, pr2_base_theta, pr2_base_height,
         # human_arm_dof_1, human_arm_dof_2, human_arm_dof_3, human_arm_dof_4, human_arm_dof_5,
         # human_arm_dof_6, human_arm_dof_7]
-        parameters_min = np.array([-1.5, -1.5, -6.5*m.pi-.001, 0.0])
-        parameters_max = np.array([1.5, 1.5, 6.5*m.pi+.001, 0.3])
+        parameters_min_pr2 = np.array([-1.5, -1.5, -6.5*m.pi-.001, 0.0])
+        parameters_max_pr2 = np.array([1.5, 1.5, 6.5*m.pi+.001, 0.3])
         # [0.3, -0.9, 1.57 * m.pi / 3., 0.3]
         # parameters_min = np.array([-0.1, -1.0, m.pi/2. - .001, 0.2])
         # parameters_max = np.array([0.8, -0.3, 2.5*m.pi/2. + .001, 0.3])
-        parameters_scaling = (parameters_max-parameters_min)/8.
+        parameters_scaling_pr2 = (parameters_max_pr2-parameters_min_pr2)/8.
 
         init_start_pr2_configs = [[0.1, 0.6, m.radians(180.), 0.3],
                                   [0.1, -0.6, m.radians(0.), 0.3],
                                   [0.6, 0.0, m.radians(90.), 0.3]]
 
-        parameters_initialization = (parameters_max+parameters_min)/2.
-        opts2 = {'seed': 1234, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter,
-                 'maxfevals': 1e8, 'CMA_cmean': 0.25, 'tolfun': 1e-3,
-                 'tolfunhist': 1e-12, 'tolx': 5e-4,
-                 'maxstd': 4.0, 'tolstagnation': 100,
-                 'verb_filenameprefix': 'outcma_pr2_base',
-                 'scaling_of_variables': list(parameters_scaling),
-                 'bounds': [list(parameters_min), list(parameters_max)]}
+        parameters_initialization_pr2 = (parameters_max_pr2+parameters_min_pr2)/2.
+        opts_cma_pr2 = {'seed': 1234, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter,
+                        'maxfevals': 1e8, 'CMA_cmean': 0.25, 'tolfun': 1e-3,
+                        'tolfunhist': 1e-12, 'tolx': 5e-4,
+                        'maxstd': 4.0, 'tolstagnation': 100,
+                        'verb_filenameprefix': 'outcma_pr2_base',
+                        'scaling_of_variables': list(parameters_scaling_pr2),
+                        'bounds': [list(parameters_min_pr2), list(parameters_max_pr2)]}
 
         self.this_best_pr2_config = None
         self.this_best_pr2_score = 1000.
@@ -1080,7 +955,7 @@ class ScoreGeneratorDressingMultithread(object):
             self.kinematics_optimization_results = cma.fmin(self.objective_function_one_config,
                                                           list(parameters_initialization),
                                                           1.,
-                                                          options=opts2)
+                                                          options=opts_cma_pr2)
             print 'This arm config is:\n',params
             print 'Best PR2 configuration for this arm config so far: \n', self.this_best_pr2_config
             print 'Associated score: ', self.this_best_pr2_score
@@ -1092,36 +967,18 @@ class ScoreGeneratorDressingMultithread(object):
         print 'Openrave results:'
         # print self.kinematics_optimization_results
         self.force_cost = 0.
+        alpha = 1.  # cost on forces
+        beta = 1.  # cost on manipulability
+        zeta = 0.5  # cost on torque
         if self.this_best_pr2_score < 0.:
-            alpha = 1.  # cost on forces
-            beta = 1.  # cost on manipulability
-            zeta = 0.5  # cost on torque
             physx_score = self.force_cost*alpha + torque_cost*zeta
             this_score = physx_score + self.this_best_pr2_score*beta
-            if this_score < self.best_overall_score:
-                self.best_overall_score = this_score
-                self.best_physx_config = params
-                self.best_physx_score = physx_score
-                self.best_kinematics_config = self.this_best_pr2_config
-                self.best_kinematics_score = self.this_best_pr2_score
-            # return this_score
-
-            # self.arm_traj_parameters.append([params, physx_score])
-
-            # save_pickle(self.arm_traj_parameters, self.pkg_path+'/data/all_arm_traj_configs.pkl')
             print 'Force cost was: ', self.force_cost
             print 'Torque score was: ', torque_cost
             print 'Physx score was: ', physx_score
             print 'Best pr2 kinematics score was: ', self.this_best_pr2_score
             if self.save_all_results:
-                with open(self.save_file_path+self.save_file_name, 'a') as myfile:
-                    # myfile.write('ok' +
-                                 # + ',' + str("{:.5f}".format(params[0]))
-                                 # + ',' + str("{:.5f}".format(params[1]))
-                                 # + ',' + str("{:.5f}".format(params[2]))
-                                 # + ',' + str("{:.5f}".format(params[3]))
-                                 # + ',' + str("{:.5f}".format(this_score))
-                                 # + '\n')
+                with open(self.save_file_path+self.save_file_name_fine_raw, 'a') as myfile:
                     myfile.write(str(self.subtask_step)
                                  + ',' + str("{:.5f}".format(params[0]))
                                  + ',' + str("{:.5f}".format(params[1]))
@@ -1134,7 +991,7 @@ class ScoreGeneratorDressingMultithread(object):
                                  + ',' + str("{:.5f}".format(self.this_best_pr2_config[3]))
                                  + ',' + str("{:.5f}".format(self.this_best_pr2_score))
                                  + '\n')
-                with open(self.save_file_path + self.save_file_name_only_good, 'a') as myfile:
+                with open(self.save_file_path + self.save_file_name_fine, 'a') as myfile:
                     myfile.write(str(self.subtask_step)
                                  + ',' + str("{:.5f}".format(params[0]))
                                  + ',' + str("{:.5f}".format(params[1]))
@@ -1148,30 +1005,15 @@ class ScoreGeneratorDressingMultithread(object):
                                  + ',' + str("{:.5f}".format(self.this_best_pr2_score))
                                  + '\n')
             return this_score
-        self.physx_outcome = None
-        self.physx_output = False
-        alpha = 1.  # cost on forces
-        beta = 1.  # cost on manipulability
-        zeta = 0.5  # cost on torque
-        # self.arm_traj_parameters.append([params, 10. + self.force_cost*alpha + self.kinematics_optimization_results[1]*beta + torque_cost*zeta])
-        # save_each_config_score = False
-        # if save_each_config_score:
-        #     save_pickle(self.arm_traj_parameters, self.pkg_path+'/data/all_arm_traj_configs.pkl')
-        # physx_score = 10. + self.force_cost*alpha + self.kinematics_optimization_results[1]*beta + torque_cost*zeta
+
         print 'Force cost was: ', self.force_cost
         print 'Kinematics score was: ', self.this_best_pr2_score
         print 'Torque score was: ', torque_cost
         physx_score = self.force_cost*alpha + torque_cost*zeta
         this_score = 10. + physx_score + self.this_best_pr2_score*beta
         print 'Total score was: ', this_score
-        if this_score < self.best_overall_score:
-            self.best_overall_score = this_score
-            self.best_physx_config = params
-            self.best_physx_score = physx_score
-            self.best_kinematics_config = self.this_best_pr2_config
-            self.best_kinematics_score = self.this_best_pr2_score
         if self.save_all_results:
-            with open(self.save_file_path + self.save_file_name, 'a') as myfile:
+            with open(self.save_file_path + self.save_file_name_fine_raw, 'a') as myfile:
                 myfile.write(str(self.subtask_step)
                              + ',' + str("{:.5f}".format(params[0]))
                              + ',' + str("{:.5f}".format(params[1]))
@@ -1184,130 +1026,12 @@ class ScoreGeneratorDressingMultithread(object):
                              + ',' + str("{:.5f}".format(self.this_best_pr2_config[3]))
                              + ',' + str("{:.5f}".format(self.this_best_pr2_score))
                              + '\n')
-                with open(self.save_file_path + self.save_file_name_only_good, 'a') as myfile:
-                    myfile.write(str(self.subtask_step)
-                                 + ',' + str("{:.5f}".format(params[0]))
-                                 + ',' + str("{:.5f}".format(params[1]))
-                                 + ',' + str("{:.5f}".format(params[2]))
-                                 + ',' + str("{:.5f}".format(params[3]))
-                                 + ',' + str("{:.5f}".format(this_score))
-                                 + ',' + str("{:.5f}".format(self.this_best_pr2_config[0]))
-                                 + ',' + str("{:.5f}".format(self.this_best_pr2_config[1]))
-                                 + ',' + str("{:.5f}".format(self.this_best_pr2_config[2]))
-                                 + ',' + str("{:.5f}".format(self.this_best_pr2_config[3]))
-                                 + ',' + str("{:.5f}".format(self.this_best_pr2_score))
-                                 + '\n')
         return this_score
-
-    def calculate_scores(self, task_dict, model, ref_options):
-        self.model = model
-        self.task_dict = task_dict
-        self.reference_names = ref_options
-
-        self.setup_human_openrave(model)
-
-        self.handle_score_generation()
-
-    def receive_new_goals(self, goals, task, human_arm, pr2_arm, reference_options=None):
-        if pr2_arm == 'rightarm':
-            pass
-            # self.gripper_B_tool = np.matrix([[0., -1., 0., 0.03],
-            #                                  [1., 0., 0., 0.0],
-            #                                  [0., 0., 1., -0.08],
-            #                                  [0., 0., 0., 1.]])
-        else:
-            print 'I do not know the transform for this pr2 arm tool'
-
-        if reference_options:
-            self.reference_names = reference_options
-            self.origin_B_references = []
-            if self.model == 'green_kevin':
-                if human_arm == 'rightarm':
-                    if task == 'hospital_gown':
-                        headmodel = self.human_model.GetLink('green_kevin/head_link')
-                        ual = self.human_model.GetLink('green_kevin/arm_left_link')
-                        uar = self.human_model.GetLink('green_kevin/arm_right_link')
-                        fal = self.human_model.GetLink('green_kevin/forearm_left_link')
-                        far = self.human_model.GetLink('green_kevin/forearm_right_link')
-                        hl = self.human_model.GetLink('green_kevin/hand_left_link')
-                        hr = self.human_model.GetLink('green_kevin/hand_right_link')
-                        thl = self.human_model.GetLink('green_kevin/quad_left_link')
-                        thr = self.human_model.GetLink('green_kevin/quad_right_link')
-                        calfl = self.human_model.GetLink('green_kevin/calf_left_link')
-                        calfr = self.human_model.GetLink('green_kevin/calf_right_link')
-                        ub = self.human_model.GetLink('green_kevin/upper_body_link')
-                        origin_B_head = np.matrix(headmodel.GetTransform())
-                        origin_B_ual = np.matrix(ual.GetTransform())
-                        origin_B_uar = np.matrix(uar.GetTransform())
-                        origin_B_fal = np.matrix(fal.GetTransform())
-                        origin_B_far = np.matrix(far.GetTransform())
-                        origin_B_hl = np.matrix(hl.GetTransform())
-                        origin_B_hr = np.matrix(hr.GetTransform())
-                        origin_B_thl = np.matrix(thl.GetTransform())
-                        origin_B_thr = np.matrix(thr.GetTransform())
-                        origin_B_calfl = np.matrix(calfl.GetTransform())
-                        origin_B_calfr = np.matrix(calfr.GetTransform())
-                        origin_B_ub = np.matrix(ub.GetTransform())
-                        origin_B_head = np.matrix(headmodel.GetTransform())
-            else:
-                print 'I GOT A BAD MODEL. NOT SURE WHAT TO DO NOW!'
-
-            for y in self.reference_names:
-                if y == 'head':
-                    self.origin_B_references.append(origin_B_head)
-                elif y == 'base_link':
-                    self.origin_B_references.append(np.matrix(np.eye(4)))
-                elif y == 'upper_arm_left':
-                    self.origin_B_references.append(origin_B_ual)
-                elif y == 'upper_arm_right':
-                    self.origin_B_references.append(origin_B_uar)
-                elif y == 'forearm_left':
-                    self.origin_B_references.append(origin_B_fal)
-                elif y == 'forearm_right':
-                    self.origin_B_references.append(origin_B_far)
-                elif y == 'hand_left':
-                    self.origin_B_references.append(origin_B_hl)
-                elif y == 'hand_right':
-                    self.origin_B_references.append(origin_B_hr)
-                elif y == 'thigh_left':
-                    self.origin_B_references.append(origin_B_thl)
-                elif y == 'thigh_right':
-                    self.origin_B_references.append(origin_B_thr)
-                elif y == 'knee_left':
-                    self.origin_B_references.append(origin_B_calfl)
-                elif y == 'knee_right':
-                    self.origin_B_references.append(origin_B_calfr)
-                elif y == 'upper_body':
-                    self.origin_B_references.append(origin_B_ub)
-                else:
-                    print 'The refence options is bogus! I dont know what to do!'
-                    return
-            self.goals = goals
-        # print 'Score generator received a new list of desired goal locations. It contains ', len(goals), ' goal ' \
-        #                                                                                                  'locations.'
-        self.selection_mat = np.zeros(len(self.goals))
-        self.goal_list = np.zeros([len(self.goals), 4, 4])
-        self.reference_mat = np.zeros(len(self.goals))
-        for w in xrange(len(self.goals)):
-            temp_B = self.origin_B_references[int(self.reference_mat[w])]*\
-                          np.matrix(self.goals[w, 0])
-            temp_B[2, 3] += self.optimal_z_offset
-
-            #self.goal_list.append(pr2_B_head*np.matrix(target[0])*goal_B_gripper)
-            self.reference_mat[w] = int(self.goals[w, 2])
-            self.goal_list[w] = np.matrix(copy.copy(temp_B))*self.gripper_B_tool
-            self.selection_mat[w] = self.goals[w, 1]
-
-        self.set_goals()
 
     def set_goals(self, single_goal=False):
         self.origin_B_grasps = []
         for num in xrange(len(self.goals)):
             self.origin_B_grasps.append(np.array(np.matrix(self.goals[num]))*np.matrix(self.gripper_B_tool.I))#*np.matrix(self.goal_B_gripper)))
-            # print 'self.goals[', num, ']'
-            # print self.goals[num]
-            # print 'self.origin_B_grasps[', num, ']'
-            # print self.origin_B_grasps[num]
 
     def set_robot_arm(self, arm):
         if self.robot_arm == arm:
@@ -1427,14 +1151,7 @@ class ScoreGeneratorDressingMultithread(object):
         distance_from_origin = np.linalg.norm(origin_B_pr2[:2, 3])
         if distance_from_origin <= 0.334:
             this_pr2_score = 10. + 1. + (0.4 - distance_from_origin)
-            if this_pr2_score < self.this_best_pr2_score:
-                self.this_best_pr2_config = current_parameters
-                self.this_best_pr2_score = this_pr2_score
             return this_pr2_score
-
-        # v = self.robot.q
-        # v['torso_lift_joint'] = z
-        # self.robot.set_positions(v)
 
         distance = 10000000.
         out_of_reach = True
@@ -1448,9 +1165,6 @@ class ScoreGeneratorDressingMultithread(object):
         if out_of_reach:
             # print 'location is out of reach'
             this_pr2_score = 10. +1.+ 20.*(distance - 1.25)
-            if this_pr2_score < self.this_best_pr2_score:
-                self.this_best_pr2_config = current_parameters
-                self.this_best_pr2_score = this_pr2_score
             return this_pr2_score
 
         reach_score = 0.
@@ -1533,22 +1247,6 @@ class ScoreGeneratorDressingMultithread(object):
 
             for num, origin_B_grasp in enumerate(self.origin_B_grasps):
                 pr2_B_grasp = origin_B_pr2.I * origin_B_grasp
-
-                # resp = self.call_ik_service(pr2_B_grasp, z)
-                # sols = resp.ik_sols.data
-                # print 'sols'
-                # print sols
-                # jacobians = resp.jacobians.data
-                # jacobians = [float(i) for i in jacobians]
-                # if len(sols) > 0:
-                #     sols = np.reshape(sols, [len(sols)/7, 7])
-                #     print 'sols reshape:'
-                    # print sols
-                    # jacobians = np.reshape(jacobians, [len(jacobians)/42, 6, 7])
-                # else:
-                #     sols = []
-                #     jacobians = []
-                # sols = self.manip.FindIKSolutions(pr2_B_grasp, filteroptions=op.IkFilterOptions.CheckEnvCollisions)
                 single_goal_sols, single_goal_jacobians = self.ik_request(pr2_B_grasp, z)
                 all_sols.append(list(single_goal_sols))
                 all_jacobians.append(list(single_goal_jacobians))
@@ -1675,9 +1373,6 @@ class ScoreGeneratorDressingMultithread(object):
             # print 'In base collision! single config distance: ', distance
             if distance < 2.0:
                 this_pr2_score = 10. + 1. + (1.25 - distance)
-                if this_pr2_score < self.this_best_pr2_score:
-                    self.this_best_pr2_config = current_parameters
-                    self.this_best_pr2_score = this_pr2_score
                 return this_pr2_score
 
         # self.human_model.SetActiveManipulator('leftarm')
@@ -1706,9 +1401,6 @@ class ScoreGeneratorDressingMultithread(object):
         zeta = 0.05  # Weight on torques
         if reach_score == 0.:
             this_pr2_score = 10. + 1.+ 2*random.random()
-            if this_pr2_score < self.this_best_pr2_score:
-                self.this_best_pr2_config = current_parameters
-                self.this_best_pr2_score = this_pr2_score
             return this_pr2_score
         else:
             # print 'Reach score: ', reach_score
@@ -1720,9 +1412,6 @@ class ScoreGeneratorDressingMultithread(object):
             # print 'reach_score:', reach_score
             # print 'manip_score:', manip_score
             this_pr2_score = 10.-beta*reach_score-gamma*manip_score #+ zeta*angle_cost
-            if this_pr2_score < self.this_best_pr2_score:
-                self.this_best_pr2_config = current_parameters
-                self.this_best_pr2_score = this_pr2_score
             return this_pr2_score
 
     def is_dart_base_in_collision(self):
@@ -1924,234 +1613,6 @@ class ScoreGeneratorDressingMultithread(object):
             print 'I am not sure what arm to set the dof for.'
             return False
         self.human.set_positions(q)
-
-    def visualize_many_configurations(self):
-        arm_traj_configs = load_pickle(self.pkg_path+'/data/saved_results/large_search_space/all_arm_traj_configs.pkl')
-        pr2_configs = load_pickle(self.pkg_path+'/data/saved_results/large_search_space/all_pr2_configs.pkl')
-        # arm_traj_configs = load_pickle(self.pkg_path+'/data/all_arm_traj_configs.pkl')
-        # pr2_configs = load_pickle(self.pkg_path+'/data/all_pr2_configs.pkl')
-        print len(arm_traj_configs)
-        print len(pr2_configs)
-
-        for i in xrange(len(arm_traj_configs)):
-            print arm_traj_configs[i]
-            traj_and_arm_config = arm_traj_configs[i][0]
-            params = traj_and_arm_config
-            pr2_config = pr2_configs[i][0]
-            self.set_human_model_dof([traj_and_arm_config[7], traj_and_arm_config[8], -traj_and_arm_config[9], traj_and_arm_config[6], 0, 0, 0], 'rightarm', 'green_kevin')
-
-            uabl = self.human_model.GetLink('green_kevin/arm_left_base_link')
-            uabr = self.human_model.GetLink('green_kevin/arm_right_base_link')
-            ual = self.human_model.GetLink('green_kevin/arm_left_link')
-            uar = self.human_model.GetLink('green_kevin/arm_right_link')
-            fal = self.human_model.GetLink('green_kevin/forearm_left_link')
-            far = self.human_model.GetLink('green_kevin/forearm_right_link')
-            hl = self.human_model.GetLink('green_kevin/hand_left_link')
-            hr = self.human_model.GetLink('green_kevin/hand_right_link')
-            origin_B_uabl = np.matrix(uabl.GetTransform())
-            origin_B_uabr = np.matrix(uabr.GetTransform())
-            origin_B_ual = np.matrix(ual.GetTransform())
-            origin_B_uar = np.matrix(uar.GetTransform())
-            origin_B_fal = np.matrix(fal.GetTransform())
-            origin_B_far = np.matrix(far.GetTransform())
-            origin_B_hl = np.matrix(hl.GetTransform())
-            origin_B_hr = np.matrix(hr.GetTransform())
-
-            uabr_B_uabr_corrected = np.matrix([[ 0.,  0., -1., 0.],
-                                               [ 1.,  0.,  0., 0.],
-                                               [ 0., -1.,  0., 0.],
-                                               [ 0.,  0.,  0., 1.]])
-
-            z_origin = np.array([0., 0., 1.])
-            x_vector = np.reshape(np.array(origin_B_hr[0:3, 0]), [1, 3])[0]
-            y_orth = np.cross(z_origin, x_vector)
-            y_orth = y_orth/np.linalg.norm(y_orth)
-            z_orth = np.cross(x_vector, y_orth)
-            z_orth = z_orth/np.linalg.norm(z_orth)
-            origin_B_hr_rotated = np.matrix(np.eye(4))
-            # print 'x_vector'
-            # print x_vector
-            # print 'origin_B_hr_rotated'
-            # print origin_B_hr_rotated
-            # print 'np.reshape(x_vector, [3, 1])'
-            # print np.reshape(x_vector, [3, 1])
-            # print 'origin_B_hr_rotated[0:3, 0]'
-            # print origin_B_hr_rotated[0:3, 0]
-            origin_B_hr_rotated[0:3, 0] = copy.copy(np.reshape(x_vector, [3, 1]))
-            origin_B_hr_rotated[0:3, 1] = copy.copy(np.reshape(y_orth, [3, 1]))
-            origin_B_hr_rotated[0:3, 2] = copy.copy(np.reshape(z_orth, [3, 1]))
-            origin_B_hr_rotated[0:3, 3] = copy.copy(origin_B_hr[0:3, 3])
-            origin_B_hr_rotated = np.matrix(origin_B_hr_rotated)
-
-            hr_rotated_B_traj_start_pos = np.matrix(np.eye(4))
-            hr_rotated_B_traj_start_pos[0:3, 3] = copy.copy(np.reshape([params[0:3]], [3, 1]))
-            hr_rotated_B_traj_start_pos[0, 3] = hr_rotated_B_traj_start_pos[0, 3] + 0.07
-
-            origin_B_traj_start_pos = origin_B_hr_rotated*hr_rotated_B_traj_start_pos
-
-            # print 'origin_B_traj_start_pos'
-            # print origin_B_traj_start_pos
-
-            # origin_B_world_rotated_shoulder = createBMatrix(np.reshape(np.array(origin_B_uabr[0:3, 3]), [1, 3])[0], list(tft.quaternion_from_euler(params[7], -params[8], params[9], 'rzxy')))
-
-            origin_B_world_rotated_shoulder = origin_B_uar*uabr_B_uabr_corrected
-
-            # Because green kevin has the upper with a bend in it, I shift the shoulder location by that bend offset.
-            shoulder_origin_B_should_origin_shifted_green_kevin = np.matrix(np.eye(4))
-            shoulder_origin_B_should_origin_shifted_green_kevin[1, 3] = -0.04953
-            origin_B_world_rotated_shoulder = origin_B_world_rotated_shoulder*shoulder_origin_B_should_origin_shifted_green_kevin
-
-            origin_B_uabr[0:3, 3] = origin_B_world_rotated_shoulder[0:3, 3]
-            origin_B_uar[0:3, 3] = origin_B_world_rotated_shoulder[0:3, 3]
-
-            z_origin = np.array([0., 0., 1.])
-            x_vector = np.reshape(np.array(-1*origin_B_world_rotated_shoulder[0:3, 2]), [1, 3])[0]
-            y_orth = np.cross(z_origin, x_vector)
-            y_orth = y_orth/np.linalg.norm(y_orth)
-            z_orth = np.cross(x_vector, y_orth)
-            z_orth = z_orth/np.linalg.norm(z_orth)
-            origin_B_rotated_pointed_down_shoulder = np.matrix(np.eye(4))
-            origin_B_rotated_pointed_down_shoulder[0:3, 0] = np.reshape(x_vector, [3, 1])
-            origin_B_rotated_pointed_down_shoulder[0:3, 1] = np.reshape(y_orth, [3, 1])
-            origin_B_rotated_pointed_down_shoulder[0:3, 2] = np.reshape(z_orth, [3, 1])
-            origin_B_rotated_pointed_down_shoulder[0:3, 3] = origin_B_uabr[0:3, 3]
-            # origin_B_rotated_pointed_down_shoulder = origin_B_uabr*uabr_B_uabr_corrected*np.matrix(shoulder_origin_B_rotated_pointed_down_shoulder)
-            # print 'origin_B_rotated_pointed_down_shoulder'
-            # print origin_B_rotated_pointed_down_shoulder
-
-            # origin_B_rotated_pointed_down_shoulder[0:3, 3] = origin_B_world_rotated_shoulder[0:3, 3]
-
-            rotated_pointed_down_shoulder_B_traj_end_pos = np.matrix(np.eye(4))
-            rotated_pointed_down_shoulder_B_traj_end_pos[0:3, 3] = copy.copy(np.reshape([params[3:6]], [3, 1]))
-
-            # print 'rotated_pointed_down_shoulder_B_traj_end_pos'
-            # print rotated_pointed_down_shoulder_B_traj_end_pos
-            # print 'origin_B_traj_start_pos'
-            # print origin_B_traj_start_pos
-            origin_B_traj_end_pos = origin_B_rotated_pointed_down_shoulder*rotated_pointed_down_shoulder_B_traj_end_pos
-            # print 'origin_B_traj_end_pos'
-            # print origin_B_traj_end_pos
-
-            # print 'origin_B_uabr_corrected'
-            # print origin_B_uabr*uabr_B_uabr_corrected
-
-            th = m.radians(180.)
-            #
-            # x_vector = np.array(params[0:3])-np.array(params[3:6])
-            # x_vector /= np.linalg.norm(x_vector)
-            # y_orth = np.cross(z_origin, x_vector)
-            # y_orth = y_orth/np.linalg.norm(y_orth)
-            # z_orth = np.cross(x_vector, y_orth)
-            # z_orth = z_orth/np.linalg.norm(z_orth)
-            # origin_B_traj_start = np.eye(4)
-            # origin_B_traj_start[0:3, 0] = np.reshape(x_vector, [3, 1])
-            # origin_B_traj_start[0:3, 1] = np.reshape(y_orth, [3, 1])
-            # origin_B_traj_start[0:3, 2] = np.reshape(z_orth, [3, 1])
-            # origin_B_traj_start[0:3, 3] = np.reshape(params[0:3], [3, 1])
-            # origin_B_traj_start = np.matrix(origin_B_traj_start)
-
-            z_origin = np.array([0., 0., 1.])
-            x_vector = np.reshape(np.array(origin_B_traj_end_pos[0:3, 3] - origin_B_traj_start_pos[0:3, 3]), [1, 3])[0]
-            x_vector = x_vector/np.linalg.norm(x_vector)
-            y_orth = np.cross(z_origin, x_vector)
-            y_orth = y_orth/np.linalg.norm(y_orth)
-            z_orth = np.cross(x_vector, y_orth)
-            z_orth = z_orth/np.linalg.norm(z_orth)
-            origin_B_traj_start = np.matrix(np.eye(4))
-            origin_B_traj_start[0:3, 0] = np.reshape(x_vector, [3, 1])
-            origin_B_traj_start[0:3, 1] = np.reshape(y_orth, [3, 1])
-            origin_B_traj_start[0:3, 2] = np.reshape(z_orth, [3, 1])
-            origin_B_traj_start[0:3, 3] = copy.copy(origin_B_traj_start_pos[0:3, 3])
-
-            # print 'origin_B_traj_start'
-            # print origin_B_traj_start
-
-            path_distance = np.linalg.norm(np.reshape(np.array(origin_B_traj_end_pos[0:3, 3] - origin_B_traj_start_pos[0:3, 3]), [1, 3])[0])
-            # print 'path_distance'
-            # print path_distance
-            uabr_corrected_B_traj_start = uabr_B_uabr_corrected.I*origin_B_uabr.I*origin_B_traj_start
-            # test_world_shoulder_B_sleeve_start_rotz = np.matrix([[ m.cos(th), -m.sin(th),     0.],
-            #                                                      [ m.sin(th),  m.cos(th),     0.],
-            #                                                       [        0.,         0.,     1.]])
-            # hr_rotated_B_traj_start = createBMatrix([params[0], params[1], params[2]],
-            #                                   tft.quaternion_from_euler(params[3], params[4], params[5], 'rzyx'))
-            pos_t, quat_t = Bmat_to_pos_quat(uabr_corrected_B_traj_start)
-
-            path_waypoints = np.arange(0., path_distance+path_distance*0.01, path_distance/5.)
-
-            self.goals = []
-            for goal in path_waypoints:
-                traj_start_B_traj_waypoint = np.matrix(np.eye(4))
-                traj_start_B_traj_waypoint[0, 3] = goal
-                origin_B_traj_waypoint = origin_B_traj_start*traj_start_B_traj_waypoint
-                self.goals.append(copy.copy(origin_B_traj_waypoint))
-
-            self.set_goals()
-
-            x = pr2_config[0]
-            y = pr2_config[1]
-            th = pr2_config[2]
-            z = pr2_config[3]
-
-            origin_B_pr2 = np.matrix([[ m.cos(th), -m.sin(th),     0.,         x],
-                                      [ m.sin(th),  m.cos(th),     0.,         y],
-                                      [        0.,         0.,     1.,        0.],
-                                      [        0.,         0.,     0.,        1.]])
-
-            self.robot.SetTransform(np.array(origin_B_pr2))
-            v = self.robot.GetActiveDOFValues()
-            v[self.robot.GetJoint('torso_lift_joint').GetDOFIndex()] = z
-            self.robot.SetActiveDOFValues(v, 2)
-            self.env.UpdatePublishedBodies()
-
-            rospy.sleep(4.0)
-
-            with self.robot:
-                sign_flip = 1.
-                if 'right' in self.robot_arm:
-                    sign_flip = -1.
-                v = self.robot.GetActiveDOFValues()
-                v[self.robot.GetJoint(self.robot_opposite_arm[0]+'_shoulder_pan_joint').GetDOFIndex()] = -sign_flip*3.14/2
-                v[self.robot.GetJoint(self.robot_opposite_arm[0]+'_shoulder_lift_joint').GetDOFIndex()] = -0.52
-                v[self.robot.GetJoint(self.robot_opposite_arm[0]+'_upper_arm_roll_joint').GetDOFIndex()] = 0.
-                v[self.robot.GetJoint(self.robot_opposite_arm[0]+'_elbow_flex_joint').GetDOFIndex()] = -3.14*2/3
-                v[self.robot.GetJoint(self.robot_opposite_arm[0]+'_forearm_roll_joint').GetDOFIndex()] = 0.
-                v[self.robot.GetJoint(self.robot_opposite_arm[0]+'_wrist_flex_joint').GetDOFIndex()] = 0.
-                v[self.robot.GetJoint(self.robot_opposite_arm[0]+'_wrist_roll_joint').GetDOFIndex()] = 0.
-                self.robot.SetActiveDOFValues(v, 2)
-                self.env.UpdatePublishedBodies()
-                not_close_to_collision = True
-                if self.manip.CheckIndependentCollision(op.CollisionReport()):
-                    not_close_to_collision = False
-
-                if not_close_to_collision:
-                    for num, Tgrasp in enumerate(self.origin_B_grasps):
-                        sols = []
-                        sols = self.manip.FindIKSolutions(Tgrasp, filteroptions=op.IkFilterOptions.CheckEnvCollisions)
-                        if not list(sols):
-                            sign_flip = 1.
-                            if 'right' in self.robot_arm:
-                                sign_flip = -1.
-                            v = self.robot.GetActiveDOFValues()
-                            v[self.robot.GetJoint(self.robot_opposite_arm[0]+'_shoulder_pan_joint').GetDOFIndex()] = -sign_flip*0.023593
-                            v[self.robot.GetJoint(self.robot_opposite_arm[0]+'_shoulder_lift_joint').GetDOFIndex()] = 1.1072800
-                            v[self.robot.GetJoint(self.robot_opposite_arm[0]+'_upper_arm_roll_joint').GetDOFIndex()] = -sign_flip*1.5566882
-                            v[self.robot.GetJoint(self.robot_opposite_arm[0]+'_elbow_flex_joint').GetDOFIndex()] = -2.124408
-                            v[self.robot.GetJoint(self.robot_opposite_arm[0]+'_forearm_roll_joint').GetDOFIndex()] = -sign_flip*1.4175
-                            v[self.robot.GetJoint(self.robot_opposite_arm[0]+'_wrist_flex_joint').GetDOFIndex()] = -1.8417
-                            v[self.robot.GetJoint(self.robot_opposite_arm[0]+'_wrist_roll_joint').GetDOFIndex()] = 0.21436
-                            self.robot.SetActiveDOFValues(v, 2)
-                            self.env.UpdatePublishedBodies()
-                            sols = self.manip.FindIKSolutions(Tgrasp, filteroptions=op.IkFilterOptions.CheckEnvCollisions)
-
-                        if list(sols):  # not None:
-                            # for solution in sols:
-                            #     self.robot.SetDOFValues(solution, self.manip.GetArmIndices())
-                            #     self.env.UpdatePublishedBodies()
-                            self.robot.SetDOFValues(sols[0], self.manip.GetArmIndices())
-                            self.env.UpdatePublishedBodies()
-                            # rospy.sleep(1.5)
-                            rospy.sleep(0.1)
 
     def get_best_traj_offset(self):
         return 0.0, 0.1
