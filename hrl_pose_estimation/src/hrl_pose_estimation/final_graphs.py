@@ -151,7 +151,59 @@ class DataVisualizer():
         rospy.init_node('final_graphs')
         self.count = 0
 
+    def final_error(self):
+        for modeltype in ['anglesSTVL']:
+            error_avg_flat = None
+            for subject in [9, 10, 11, 12, 13, 14, 15, 16, 17, 18]:
+                if modeltype == 'anglesCL' or modeltype == 'anglesSTVL' or modeltype == 'direct':
+                    _, _, targets, targets_est = load_pickle(self.dump_path + '/Final_Data/error_avg_std_T25_subject' + str(subject) + '_' + str(modeltype) + '.p')
+                    # size (P x N) each: number of images, number of joints
 
+                    print np.shape(targets)
+                    print np.shape(targets_est)
+                    try:
+                        error_avg_flat = np.concatenate((error_avg_flat, np.array(error_avg).flatten()), axis=0)
+                    except:
+                        error_avg_flat = np.array(error_avg).flatten()
+                    print np.shape(error_avg_flat), subject, modeltype
+
+                elif modeltype == 'KNN' or modeltype == 'LRR' or modeltype == 'KRR':
+                    error_avg = load_pickle(
+                        self.dump_path + '/Final_Data/error_avg_subject' + str(subject) + '_' + str(modeltype) + '.p')
+                    try:
+                        error_avg_flat = np.concatenate((error_avg_flat, np.array(error_avg).flatten() / 10), axis=0)
+                    except:
+                        error_avg_flat = np.array(error_avg).flatten() / 10
+                    print np.shape(error_avg_flat), subject, modeltype
+
+            error_avg = np.array(error_avg_flat).flatten()
+
+            threshold_error[modeltype] = np.flip(np.linspace(0, np.max(error_avg), num=200), axis=0)
+            joint_percent[modeltype] = np.zeros_like(threshold_error[modeltype])
+            joint_percent_keep[modeltype] = np.zeros_like(threshold_error[modeltype])
+
+            # print np.mean(error_avg), 'GMPJPE'
+
+            for i in range(threshold_error[modeltype].shape[0]):
+                joint_percent_queue = 0.
+                joint_percent_queue_keep = 0.
+
+                for j in range(error_avg.shape[0]):
+                    # print error_var[j], threshold_variance[i], 'std and threshold'
+                    if error_avg[j] <= threshold_error[modeltype][
+                        i]:  # if our variance is less than the threshold, keep the value
+                        joint_percent_queue += 1
+                    if error_avg[j] >= threshold_error[modeltype][i]:
+                        joint_percent_queue_keep += 1
+
+                joint_percent[modeltype][i] = joint_percent_queue
+                joint_percent_keep[modeltype][i] = joint_percent_queue_keep
+
+            joint_percent[modeltype] = joint_percent[modeltype] / np.max(joint_percent[modeltype])
+            joint_percent_keep[modeltype] = joint_percent_keep[modeltype] / np.max(joint_percent_keep[modeltype])
+
+
+        plt.show()
 
 
 

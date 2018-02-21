@@ -157,12 +157,14 @@ class DataVisualizer():
     def init(self, subject_num):
         print 'loading subject ', subject_num
         if self.opt.computer == 'aws':
-            self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/trainval_200rlh1_115rlh2_75rlh3_175rllair.p')
+            #self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/trainval_200rlh1_115rlh2_75rlh3_175rllair.p')
+            self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/trainval_sit175rlh_sit120rll.p')
+
         else:
 
             #self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p')
-            self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair.p')
-            #self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainval_sit175rlh_sit120rll.p')
+            #self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair.p')
+            self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainval_sit175rlh_sit120rll.p')
             #self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/150RL_LL_air.p')
 
 
@@ -454,10 +456,10 @@ class DataVisualizer():
 
 
 
-                if batch_idx == 1129 and self.opt.visualize == False:
+                if batch_idx == 589 and self.opt.visualize == False:
                     if model_key == 'anglesVL' or model_key == 'anglesCL' or model_key == 'anglesSTVL' or model_key == 'direct':
                         print "DUMPING!!!!!"
-                        pkl.dump([self.error_avg_list, self.error_std_list, self.targets_list, self.targets_est_list], open(self.dump_path+'/Final_Data/error_avg_std_T'+str(T)+'_subject'+str(self.opt.leave_out)+'_'+str(model_key)+'.p', 'wb'))
+                        pkl.dump([self.error_avg_list, self.error_std_list, self.targets_list, self.targets_est_list], open(self.dump_path+'/Final_Data/error_avg_std_T'+str(T)+'_subject'+str(self.opt.leave_out)+'_'+str(model_key)+'_sit.p', 'wb'))
                     elif model_key == 'KNN' or model_key == 'Ridge' or model_key == 'KRidge':
                         pkl.dump(error_norm, open(self.dump_path+'/Final_Data/error_avg_subject' + str(self.opt.leave_out) + '_'+str(model_key)+'.p', 'wb'))
 
