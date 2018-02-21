@@ -138,7 +138,8 @@ class DataVisualizer():
                 print self.dump_path + '/subject_' + str(self.opt.leave_out) + '/losses_9to18_direct_sTrue_128b_300e_'+str(self.opt.leave_out)+'.p'
 
 
-        rospy.init_node('plot_loss')
+        if self.opt.visualize == True:
+            rospy.init_node('plot_loss')
         self.count = 0
 
 
