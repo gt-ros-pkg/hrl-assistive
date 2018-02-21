@@ -73,6 +73,16 @@ LOW_TAXEL_THRESH_Y = 0
 HIGH_TAXEL_THRESH_X = (NUMOFTAXELS_X - 1)
 HIGH_TAXEL_THRESH_Y = (NUMOFTAXELS_Y - 1)
 
+torch.set_num_threads(1)
+if torch.cuda.is_available():
+    # Use for GPU
+    dtype = torch.cuda.FloatTensor
+    print '######################### CUDA is available! #############################'
+else:
+    # Use for CPU
+    dtype = torch.FloatTensor
+    print '############################## USING CPU #################################'
+
 
 class DataVisualizer():
     '''Gets the directory of pkl database and iteratively go through each file,
@@ -209,9 +219,9 @@ class DataVisualizer():
             models.append('anglesVL')
             print 'loading kinematic variable bone lengths CNN, subject ', self.opt.leave_out
             if self.opt.computer == 'aws':
-                model_kinVL = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnet_9to18_anglesVL_sTrue_128b_200e_'+str(self.opt.leave_out)+'.pt')
+                model_kinVL = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnets/convnet_9to18_anglesVL_sTrue_128b_200e_'+str(self.opt.leave_out)+'.pt', map_location=lambda storage, loc: storage)
             else:
-                model_kinVL = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_ou) + '/convnets/convnet_9to18_anglesVL_sTrue_128b_200e_' + str(self.opt.leave_ou) + '.pt', map_location=lambda storage, loc: storage)
+                model_kinVL = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnets/convnet_9to18_anglesVL_sTrue_128b_200e_' + str(self.opt.leave_out) + '.pt', map_location=lambda storage, loc: storage)
             pp = 0
             if dropout == False: model_kinVL.eval()
             for p in list(model_kinVL.parameters()):
@@ -226,7 +236,7 @@ class DataVisualizer():
             models.append('anglesCL')
             print 'loading kinematic constant bone lengths CNN, subject ', self.opt.leave_out
             if self.opt.computer == 'aws':
-                model_kinCL = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnet_9to18_anglesCL_sTrue_128b_200e_'+str(self.opt.leave_out)+'.pt')
+                model_kinCL = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnets/convnet_9to18_anglesCL_sTrue_128b_200e_'+str(self.opt.leave_out)+'.pt', map_location=lambda storage, loc: storage)
             else:
                 model_kinCL = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnets/convnet_9to18_anglesCL_sTrue_128b_200e_' + str(self.opt.leave_out) + '.pt', map_location=lambda storage, loc: storage)
             if dropout == False: model_kinCL.eval()
@@ -243,7 +253,7 @@ class DataVisualizer():
             models.append('anglesSTVL')
             print 'loading kinematic variable bone lengths straight through CNN, subject ', self.opt.leave_out
             if self.opt.computer == 'aws':
-                model_kinSTVL = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnet_9to18_anglesSTVL_sTrue_128b_200e_'+str(self.opt.leave_out)+'.pt')
+                model_kinSTVL = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnets/convnet_9to18_anglesSTVL_sTrue_128b_200e_'+str(self.opt.leave_out)+'.pt', map_location=lambda storage, loc: storage)
             else:
                 model_kinSTVL = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnets/convnet_9to18_anglesSTVL_sTrue_128b_200e_' + str(self.opt.leave_out) + '.pt', map_location=lambda storage, loc: storage)
             if dropout == False: model_kinSTVL.eval()
@@ -260,7 +270,7 @@ class DataVisualizer():
             models.append('direct')
             print 'loading direct CNN'
             if self.opt.computer == 'aws':
-                model_dir = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnet_9to18_direct_sTrue_128b_300e_'+str(self.opt.leave_out)+'.pt')
+                model_dir = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnets/convnet_9to18_direct_sTrue_128b_300e_'+str(self.opt.leave_out)+'.pt', map_location=lambda storage, loc: storage)
             else:
                 model_dir = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnets/convnet_9to18_direct_sTrue_128b_300e_'+str(self.opt.leave_out)+'.pt', map_location=lambda storage, loc: storage)
             if dropout == False: model_dir.eval()
