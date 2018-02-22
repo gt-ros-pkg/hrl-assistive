@@ -49,13 +49,15 @@ import gc
 
 import cma
 import multiprocessing as mp
+import fileinput
+import glob
 
 
 general_option = {'maxiter': 50, 'popsize': 20}
 
 DURATION = 5
 OPTIONS = general_option
-SIMULATOR_PROCESS = DressingSimulationProcess
+# SIMULATOR_PROCESS = DressingSimulationProcess
 CMA_STEP_SIZE = 0.6
 NUM_RESTART = 1
 
@@ -64,50 +66,376 @@ class SimulatorPool(object):
     def __init__(self, population, visualize=False):
         self.simulatorPool = mp.Manager().Queue()
         for _ in xrange(population):
-            simulator_process = SIMULATOR_PROCESS(process_number=_, visualize=visualize)
+            simulator_process = BaseEmptySimulationProcess(process_number=_, visualize=visualize)
             self.simulatorPool.put(simulator_process)
 
+
+class BaseEmptySimulationProcess(object):
+    def __init__(self, process_number=0, visualize=False):
+        self.process_number = process_number
+        self.visualize = visualize
+        self.optimizer = None
+
+    def start_dressing_simulation_process(self):
+        self.optimizer = DressingSimulationProcess(process_number=self.process_number,
+                                                   visualize=self.visualize)
+        self.optimizer.save_all_results = True
+        return True
 
 def _init(queue):
     global current_simulator
     current_simulator = queue.get()
 
-
-def setBoundary(length, joint_max_l, joint_max_u, joint_min_l, joint_min_u, phi_l, phi_h):
-    lower_bounds = [0 for _ in range(length)]
-    upper_bounds = [0 for _ in range(length)]
-    for i in range(length / 3):
-        lower_bounds[i] = joint_max_l
-        lower_bounds[i + length / 3] = joint_min_l
-        lower_bounds[i + length * 2 / 3] = phi_l
-
-        upper_bounds[i] = joint_max_u
-        upper_bounds[i + length / 3] = joint_min_u
-        upper_bounds[i + length * 2 / 3] = phi_h
-
-    return lower_bounds, upper_bounds
-
-def setup_dart_thread(self):
-    # Setup Dart ENV for each thread
+def test_process_function(x):
     global current_simulator
-    # Set up multithreading which is used in the inner loop
-    processCnt = mp.cpu_count()
-    simulatorPool = SimulatorPool(processCnt).simulatorPool
-    pool = mp.Pool(processCnt, _init, (simulatorPool,))
+    print current_simulator.process_number
+    print x
+    print 'ok'
+    return True
 
-class DressingMultithreadedOptimization(object):
-    def __init__(self, number_of_processes=1, visualize=False):
+def initialize_process(dummy_input):
+    global current_simulator
+    current_simulator.start_dressing_simulation_process()
+    return True
+
+def set_new_fixed_point(dummy_input):
+    global current_simulator
+    current_simulator.optimizer.add_new_fixed_point = True
+    return True
+
+def set_stretch_allowable(input):
+    stretch_allowable, fixed_points_to_use = input
+    global current_simulator
+    current_simulator.optimizer.stretch_allowable = stretch_allowable
+    current_simulator.optimizer.fixed_points_to_use = fixed_points_to_use
+    return True
+
+def set_arms(input):
+    human_arm, robot_arm, subtask_number = input
+    global current_simulator
+
+    current_simulator.optimizer.set_human_arm(human_arm)
+    current_simulator.optimizer.set_robot_arm(robot_arm)
+    current_simulator.optimizer.subtask_step = subtask_number
+    return True
+
+def brute_force_func(x):
+    global current_simulator
+    res = current_simulator.optimizer.objective_function_coarse(x)
+    return [x, res]
+
+def fine_func(x):
+    global current_simulator
+    res = current_simulator.optimizer.objective_function_fine(x)
+    return [x, res]
+
+def fine_pr2_func(x):
+    global current_simulator
+    res = current_simulator.optimizer.objective_function_fine_pr2(x)
+    return [x, res]
+
+def set_process_subtask(subtask_number):
+    global current_simulator
+    current_simulator.optimizer.subtask_number = subtask_number
+    return True
+
+def set_arm_config(config):
+    global current_simulator
+    current_simulator.optimizer.set_arm_config(config)
+    return True
+
+class DressingMultiProcessOptimization(object):
+    def __init__(self, number_of_processes=0, visualize=False):
+        rospack = rospkg.RosPack()
+        self.pkg_path = rospack.get_path('hrl_base_selection')
+        self.save_file_path = self.pkg_path + '/data/'
+        self.save_file_name_coarse_feasible = 'arm_config_coarse_feasible.log'
+        self.save_file_name_fine_output = 'arm_config_fine_output.log'
+        self.save_file_name_final_output = 'arm_config_final_output.log'
+        self.arm_config_min = np.array([m.radians(-5.), m.radians(-10.), m.radians(-10.),
+                                        0.])
+        self.arm_config_max = np.array([m.radians(100.), m.radians(100.), m.radians(100),
+                                        m.radians(135.)])
+        self.pr2_config_min = np.array([-1.5, -1.5, -6.5 * m.pi - .001, 0.0])
+        self.pr2_config_max = np.array([1.5, 1.5, 6.5 * m.pi + .001, 0.3])
+
+        # Set up the multi-process pool
+        if number_of_processes == 0:
+            self.processCnt = mp.cpu_count()
+        else:
+            self.processCnt = number_of_processes
+        simulatorPool = SimulatorPool(self.processCnt).simulatorPool
+        self.pool = mp.Pool(self.processCnt, _init, (simulatorPool,))
+        # self.pool.map(test_process_function, ['here']*self.processCnt)
+        # self.pool.map(test_process_function, ['here'] * self.processCnt)
+        self.pool.map(initialize_process, [0]*self.processCnt)
+
+    def optimize_entire_dressing_task(self, reset_file=False):
+        if reset_file:
+            open(self.save_file_path + self.save_file_name_coarse_feasible, 'w').close()
+            open(self.save_file_path + self.save_file_name_fine_output, 'w').close()
+            open(self.save_file_path + self.save_file_name_final_output, 'w').close()
+
+        subtask_list = ['rightarm', 'leftarm']
+        robot_arm_to_use = ['rightarm', 'rightarm']
+        fixed_points_to_use = [[], [0]]
+        stretch_allowable = [[], [0.5]]
+        self.pool.map(set_new_fixed_point, [0]*self.processCnt)
+        self.pool.map(set_stretch_allowable, [[stretch_allowable, fixed_points_to_use]] * self.processCnt)
+
+        for subtask_number, subtask in enumerate(subtask_list):
+            self.pool.map(set_arms, [[subtask_list[subtask_number],
+                          robot_arm_to_use[subtask_number],
+                          subtask_number]]*self.processCnt)
+            print 'starting coarse optimization for ', subtask
+            self.run_coarse_optimization(subtask_number)
+            print 'completed coarse optimization for ', subtask
+
+        self.combine_process_files(self.save_file_path + 'arm_configs_coarse_feasible',
+                                   self.save_file_path + self.save_file_name_coarse_feasible)
+
+        for subtask_number, subtask in enumerate(subtask_list):
+            self.pool.map(set_arms, [[subtask_list[subtask_number],
+                          robot_arm_to_use[subtask_number],
+                          subtask_number]]*self.processCnt)
+            print 'starting fine optimization for ', subtask
+            self.run_fine_optimization(subtask_number)
+            print 'completed fine optimization for ', subtask
+
+        for subtask_number, subtask in enumerate(subtask_list):
+            self.pool.map(set_arms, [[subtask_list[subtask_number],
+                          robot_arm_to_use[subtask_number],
+                          subtask_number]]*self.processCnt)
+            print 'starting fine optimization for ', subtask
+            self.run_fine_pr2_optimization(subtask_number)
+            print 'completed fine optimization for ', subtask
+
+    def run_coarse_optimization(self, subtask_number):
+        print 'Running coarse optimization (using brute-force) to find arm ' \
+              'configurations that are reasonable'
+
+        # self.pool.map(set_process_subtask,[subtask_number]*self.processCnt)
+
+        amin = self.arm_config_min
+        amax = self.arm_config_max
+        # [t for t in ((self.pool.apply_async(brute_force_func, [arm1, arm2, arm3, arm4]))
+        #              for arm1 in np.arange(parameters_min[0], parameters_max[0] + 0.0001, m.radians(5.))
+        #              for arm2 in np.arange(parameters_min[1], parameters_max[1] + 0.0001, m.radians(5.))
+        #              for arm3 in np.arange(parameters_min[2], parameters_max[2] + 0.0001, m.radians(5.))
+        #              for arm4 in np.arange(parameters_min[3], parameters_max[3] + 0.0001, m.radians(5.))
+        #              )
+        #  ]
+        self.pool.map(brute_force_func, [t for t in (([arm1, arm2, arm3, arm4])
+                                                             for arm1 in np.arange(amin[0], amax[0] + 0.0001,
+                                                                       m.radians(5.))
+                                                             for arm2 in np.arange(amin[1], amax[1] + 0.0001,
+                                                                       m.radians(5.))
+                                                             for arm3 in np.arange(amin[2], amax[2] + 0.0001,
+                                                                       m.radians(5.))
+                                                             for arm4 in np.arange(amin[3], amax[3] + 0.0001,
+                                                                       m.radians(5.))
+                                                             )
+                                                 ])
+        gc.collect()
+        return True
+
+    # Combines several log files created by different processes into a single file.
+    # Takes as input the majority of the input file, up until the '_pXX.log' part where XX
+    # is the process number. Output is the combined file. Will look for files and put
+    # output file in the hrl_base_selection data folder.
+    def combine_process_files(self, input_file_name, output_file_name):
+        print 'Combining files'
+        file_list = glob.glob(input_file_name+"_p*.log")
+
+        with open(output_file_name, 'w') as file:
+            input_lines = fileinput.input(file_list)
+            file.writelines(input_lines)
+        print 'Files combined into: ', output_file_name
+        return True
+
+    def run_fine_optimization(self, subtask_number, popsize=20, maxiter=50):
+        print 'Running fine optimization (using cma) to find a good arm configuration that has ' \
+              'a reasonable pr2 configuration'
+
+        # self.pool.map(set_process_subtask, [subtask_number] * self.processCnt)
+
+        parameters_scaling = np.array([m.radians(5.)] * 4)
+
+        OPTIONS['boundary_handling'] = cma.BoundTransform
+        OPTIONS['bounds'] = [self.arm_config_min, self.arm_config_max]
+        OPTIONS['seed'] = 1234
+        OPTIONS['ftarget'] = -1.
+        OPTIONS['popsize'] = popsize
+        OPTIONS['maxiter'] = maxiter
+        OPTIONS['maxfevals'] = 1e8
+        OPTIONS['CMA_cmean'] = 0.25
+        OPTIONS['tolfun'] = 1e-3
+        OPTIONS['tolfunhist'] = 1e-12
+        OPTIONS['tolx'] = 5e-4
+        OPTIONS['maxstd'] = 4.0
+        OPTIONS['tolstagnation'] = 100
+        OPTIONS['scaling_of_variables'] = list(parameters_scaling)
+
+        init_start_arm_configs = self.find_clusters(self.save_file_name_coarse_feasible)
+        best_result = [[], 10000.]
+        for x0 in init_start_arm_configs:
+            es = cma.CMAEvolutionStrategy(x0, 1.0, OPTIONS)
+            while not es.stop():
+                X = es.ask()
+                fit = []
+                for i in range(int(np.ceil(es.popsize / self.processCnt)) + 1):
+                    if (len(X[i * self.processCnt:]) < self.processCnt):
+                        batchFit = self.pool.map(fine_func, X[i * self.processCnt:])
+                    else:
+                        batchFit = self.pool.map(fine_func, X[i * self.processCnt:(i + 1) * self.processCnt])
+                    fit.extend(batchFit)
+
+                es.tell(X, fit)
+                es.disp()
+                es.logger.add()
+            this_res = es.result()
+            if this_res[1] < best_result[1]:
+                best_result = this_res
+        with open(self.save_file_path + self.save_file_name_fine_output, 'a') as myfile:
+            myfile.write(str(subtask_number)
+                         + ',' + str("{:.5f}".format(best_result[0][0]))
+                         + ',' + str("{:.5f}".format(best_result[0][1]))
+                         + ',' + str("{:.5f}".format(best_result[0][2]))
+                         + ',' + str("{:.5f}".format(best_result[0][3]))
+                         + ',' + str("{:.5f}".format(best_result[1]))
+                         + '\n')
+        return best_result
+
+    def run_fine_pr2_optimization(self, subtask_number, popsize=20, maxiter=50):
+        print 'Running fine optimization (using cma) to find a good pr2 configuration for ' \
+              'the good arm configuration'
+
+        best_arm_configs = [line.rstrip('\n').split(',')
+                            for line in open(self.save_file_path + self.save_file_name_fine_output)]
+
+        for j in xrange(len(best_arm_configs)):
+            best_arm_configs[j] = [float(i) for i in best_arm_configs[j]]
+        best_arm_configs = np.array(best_arm_configs)
+        # best_arm_config = np.array([x for x in best_arm_configs if int(x[0]) == subtask_number])[-1]
+
+        parameters_scaling = (self.pr2_config_max - self.pr2_config_min) / 8.
+
+        OPTIONS['boundary_handling'] = cma.BoundTransform
+        OPTIONS['bounds'] = [self.pr2_config_min, self.pr2_config_max]
+        OPTIONS['seed'] = 1234
+        OPTIONS['ftarget'] = -1.
+        OPTIONS['popsize'] = popsize
+        OPTIONS['maxiter'] = maxiter
+        OPTIONS['maxfevals'] = 1e8
+        OPTIONS['CMA_cmean'] = 0.25
+        OPTIONS['tolfun'] = 1e-3
+        OPTIONS['tolfunhist'] = 1e-12
+        OPTIONS['tolx'] = 5e-4
+        OPTIONS['maxstd'] = 4.0
+        OPTIONS['tolstagnation'] = 100
+        OPTIONS['scaling_of_variables'] = list(parameters_scaling)
+        final_results = []
+        for best_arm_config in best_arm_configs:
+            self.pool.map(set_arm_config, [best_arm_config]*self.processCnt)
+            # self.pool.map(set_process_subtask, [subtask_number] * self.processCnt)
+            init_start_pr2_configs = [[0.1, 0.6, m.radians(180.), 0.3],
+                                      [0.1, -0.6, m.radians(0.), 0.3],
+                                      [0.6, 0.0, m.radians(90.), 0.3]]
+            best_result = [[], 10000.]
+            for x0 in init_start_pr2_configs:
+                es = cma.CMAEvolutionStrategy(x0, 1.0, OPTIONS)
+                while not es.stop():
+                    X = es.ask()
+                    fit = []
+                    for i in range(int(np.ceil(es.popsize / self.processCnt)) + 1):
+                        if (len(X[i * self.processCnt:]) < self.processCnt):
+                            batchFit = self.pool.map(fine_pr2_func, X[i * self.processCnt:])
+                        else:
+                            batchFit = self.pool.map(fine_pr2_func, X[i * self.processCnt:(i + 1) * self.processCnt])
+                        fit.extend(batchFit)
+
+                    es.tell(X, fit)
+                    es.disp()
+                    es.logger.add()
+                this_res = es.result()
+                if this_res[1] < best_result[1]:
+                    best_result = this_res
+            with open(self.save_file_path + self.save_file_name_final_output, 'a') as myfile:
+                myfile.write(str(subtask_number)
+                             + ',' + str("{:.5f}".format(best_arm_config[0]))
+                             + ',' + str("{:.5f}".format(best_arm_config[1]))
+                             + ',' + str("{:.5f}".format(best_arm_config[2]))
+                             + ',' + str("{:.5f}".format(best_arm_config[3]))
+                             + ',' + str("{:.5f}".format(best_arm_config[4]))
+                             + ',' + str("{:.5f}".format(best_result[0][0]))
+                             + ',' + str("{:.5f}".format(best_result[0][1]))
+                             + ',' + str("{:.5f}".format(best_result[0][2]))
+                             + ',' + str("{:.5f}".format(best_result[0][3]))
+                             + ',' + str("{:.5f}".format(best_result[1]))
+                             + '\n')
+            final_results.append([best_arm_config, best_result])
+        return final_results
+
+
+    # From data saved previously (typically from the coarse optimization) find
+    # all connected clusters of configurations and the center of each cluster.
+    # The cluster center is used as initialization of the more fine optimizations.
+    def find_clusters(self, load_file_name, subtask_number):
+
+        feasible_configs = [line.rstrip('\n').split(',')
+                            for line in open(self.save_file_path + load_file_name)]
+
+        for j in xrange(len(feasible_configs)):
+            feasible_configs[j] = [float(i) for i in feasible_configs[j]]
+        feasible_configs = np.array(feasible_configs)
+        feasible_configs = np.array([x for x in feasible_configs if int(x[0]) == subtask_number])
+
+        cluster_count = 0
+        clusters = [[]]
+        while len(feasible_configs) > 0 and not rospy.is_shutdown():
+            if len(clusters) < cluster_count + 1:
+                clusters.append([])
+            queue = []
+            visited = []
+            queue.append(list(feasible_configs[0][1:5]))
+            delete_list = []
+            while len(queue) > 0 and not rospy.is_shutdown():
+                # print 'queue:\n',queue
+                # print 'visited:\n',visited
+                current_node = list(queue.pop(0))
+                # print 'current node:\n',current_node
+                # print 'visited:\n',visited
+                if current_node not in visited:
+                    visited.append(list(current_node))
+                    clusters[cluster_count].append(current_node)
+                    delete_list.append(0)
+                for node_i in xrange(len(feasible_configs)):
+                    if np.max(np.abs(np.array(current_node) - np.array(feasible_configs[node_i])[1:5])) < m.radians(
+                            5.1) and list(feasible_configs[node_i][1:5]) not in visited:
+                        close_node = list(feasible_configs[node_i][1:5])
+                        queue.append(list(close_node))
+                        delete_list.append(node_i)
+                        # clusters[cluster_count.append(close_node)]
+            feasible_configs = np.delete(feasible_configs, delete_list, axis=0)
+            cluster_count += 1
+        clusters = np.array(clusters)
+        print 'Number of clusters:', len(clusters)
+        cluster_means = []
+        for cluster in clusters:
+            cluster_means.append(np.array(cluster).mean(axis=0))
+        return cluster_means
+
 
 class DressingSimulationProcess(object):
     def __init__(self, process_number=0, robot_arm='rightarm', human_arm='rightarm', visualize=False):
         rospack = rospkg.RosPack()
         self.pkg_path = rospack.get_path('hrl_base_selection')
         self.save_file_path = self.pkg_path + '/data/'
-        self.save_file_name_coarse_raw = 'arm_config_coarse_raw.log'
-        self.save_file_name_coarse_feasible = 'arm_configs_coarse_feasible.log'
-        self.save_file_name_fine_raw = 'arm_configs_fine_raw.log'
-        self.save_file_name_fine = 'arm_configs_fine.log'
-        self.save_file_name_super_fine = 'arm_configs_super_fine.log'
+        self.save_file_name_coarse_raw = 'arm_config_coarse_raw_p'+str(process_number)+'.log'
+        self.save_file_name_coarse_feasible = 'arm_configs_coarse_feasible_p'+str(process_number)+'.log'
+        self.save_file_name_fine_raw = 'arm_configs_fine_raw_p'+str(process_number)+'.log'
+        self.save_file_name_fine = 'arm_configs_fine_p'+str(process_number)+'.log'
+        self.save_file_name_super_fine = 'arm_configs_super_fine_p'+str(process_number)+'.log'
         # self.save_file_name_per_human_initialization = 'arm_configs_per_human_initialization.log'
         self.visualize = visualize
 
@@ -178,6 +506,7 @@ class DressingSimulationProcess(object):
             self.arm_configs_checked.append(line[0:4])
         self.arm_knn = NearestNeighbors(8, m.radians(15.))
         self.arm_knn.fit(self.arm_configs_checked)
+        # print 'I GOT HERE'
 
     def optimize_entire_dressing_task(self, reset_file=False):
         if reset_file:
@@ -574,7 +903,7 @@ class DressingSimulationProcess(object):
         if self.add_new_fixed_point:
             self.add_new_fixed_point = False
             self.fixed_points.append(np.array(goals[-1])[0:3, 3])
-        for point_i in self.fixed_points_to_use:
+        for point_i in self.fixed_points_to_use[self.subtask_step]:
             fixed_point = self.fixed_points[point_i]
             # fixed_position = np.array(fixed_point)[0:3, 3]
             # print 'fixed point:\n', fixed_point
@@ -584,7 +913,7 @@ class DressingSimulationProcess(object):
                 # print 'stretch allowable:\n', self.stretch_allowable
                 # print 'amount stretched:\n', np.linalg.norm(fixed_point - goal_position)
                 # print 'amount exceeded by this goal:\n', np.linalg.norm(fixed_point - goal_position) - self.stretch_allowable[point_i]
-                fixed_point_exceeded_amount = np.max([fixed_point_exceeded_amount, np.linalg.norm(fixed_point - goal_position) - self.stretch_allowable[point_i]])
+                fixed_point_exceeded_amount = np.max([fixed_point_exceeded_amount, np.linalg.norm(fixed_point - goal_position) - self.stretch_allowable[self.subtask_step][point_i]])
             # if fixed_point_exceeded_amount > 0.:
             #     print 'The gown is being stretched too much to try to do the next part of the task.'
 
@@ -599,7 +928,7 @@ class DressingSimulationProcess(object):
         # params = [m.radians(90.0),  m.radians(0.), m.radians(45.), m.radians(0.)]
         # print 'doing subtask', self.subtask_step
         # print 'params:\n', params
-        if self.subtask_step == 0 or False:  # for right arm
+        if self.subtask_step == 0 and False:  # for right arm
             # params = [1.41876758,  0.13962405,  1.47350044,  0.95524629]  # old solution with joint jump
             # params = [1.73983062, -0.13343737,  0.42208647,  0.26249355]  # solution with arm snaking
             # params = [0.3654207,  0.80081779,  0.44793856,  1.83270078]  # without checking with phsyx
@@ -781,7 +1110,7 @@ class DressingSimulationProcess(object):
         # params = [m.radians(90.0),  m.radians(0.), m.radians(45.), m.radians(0.)]
         # print 'doing subtask', self.subtask_step
         # print 'params:\n', params
-        if self.subtask_step == 0 or False:  # for right arm
+        if self.subtask_step == 0 and False:  # for right arm
             # params = [1.41876758,  0.13962405,  1.47350044,  0.95524629]  # old solution with joint jump
             # params = [1.73983062, -0.13343737,  0.42208647,  0.26249355]  # solution with arm snaking
             # params = [0.3654207,  0.80081779,  0.44793856,  1.83270078]  # without checking with phsyx
@@ -952,7 +1281,7 @@ class DressingSimulationProcess(object):
         for init_start_pr2_config in init_start_pr2_configs:
             print 'Starting to evaluate a new initial PR2 configuration:', init_start_pr2_config
             parameters_initialization = init_start_pr2_config
-            self.kinematics_optimization_results = cma.fmin(self.objective_function_one_config,
+            self.kinematics_optimization_results = cma.fmin(self.objective_function_pr2_config,
                                                           list(parameters_initialization),
                                                           1.,
                                                           options=opts_cma_pr2)
@@ -1085,7 +1414,7 @@ class DressingSimulationProcess(object):
             print 'I do not know what arm to be using'
             return False
 
-    def objective_function_one_config(self, current_parameters):
+    def objective_function_pr2_config(self, current_parameters):
         # start_time = rospy.Time.now()
         # current_parameters = [0.3, -0.9, 1.57*m.pi/3., 0.3]
         if self.subtask_step == 0 or False:  # right arm
@@ -1480,10 +1809,72 @@ class DressingSimulationProcess(object):
         win.set_capture_rate(10)
         win.run_application()
 
+    def setup_dart(self, filename='fullbody_alex_capsule.skel'):
+        # Setup Dart ENV
+        skel_file = self.pkg_path+'/models/'+filename
+        self.dart_world = DartDressingWorld(skel_file)
+
+        # Lets you visualize dart.
+        if self.visualize:
+            t = threading.Thread(target=self.visualize_dart)
+            t.start()
+
+        self.robot = self.dart_world.robot
+        self.human = self.dart_world.human
+        self.gown_leftarm = self.dart_world.gown_box_leftarm
+        self.gown_rightarm = self.dart_world.gown_box_rightarm
+
+        sign_flip = 1.
+        if 'right' in self.robot_arm:
+            sign_flip = -1.
+        v = self.robot.q
+        v['l_shoulder_pan_joint'] = 1.*3.14/2
+        v['l_shoulder_lift_joint'] = -0.52
+        v['l_upper_arm_roll_joint'] = 0.
+        v['l_elbow_flex_joint'] = -3.14 * 2 / 3
+        v['l_forearm_roll_joint'] = 0.
+        v['l_wrist_flex_joint'] = 0.
+        v['l_wrist_roll_joint'] = 0.
+        v['l_gripper_l_finger_joint'] = .54
+        v['r_shoulder_pan_joint'] = -1.*3.14/2
+        v['r_shoulder_lift_joint'] = -0.52
+        v['r_upper_arm_roll_joint'] = 0.
+        v['r_elbow_flex_joint'] = -3.14*2/3
+        v['r_forearm_roll_joint'] = 0.
+        v['r_wrist_flex_joint'] = 0.
+        v['r_wrist_roll_joint'] = 0.
+        v['r_gripper_l_finger_joint'] = .54
+        v['torso_lift_joint'] = 0.3
+        self.robot.set_positions(v)
+        self.dart_world.displace_gown()
+
+        # robot_start = np.matrix([[1., 0., 0., 0.],
+        #                          [0., 1., 0., 0.],
+        #                          [0., 0., 1., 0.],
+        #                          [0., 0., 0., 1.]])
+        # positions = self.robot.positions()
+        # pos, ori = Bmat_to_pos_quat(robot_start)
+        # eulrpy = tft.euler_from_quaternion(ori, 'sxyz')
+        # positions['rootJoint_pos_x'] = pos[0]
+        # positions['rootJoint_pos_y'] = pos[1]
+        # positions['rootJoint_pos_z'] = pos[2]
+        # positions['rootJoint_rot_x'] = eulrpy[0]
+        # positions['rootJoint_rot_y'] = eulrpy[1]
+        # positions['rootJoint_rot_z'] = eulrpy[2]
+        # self.robot.set_positions(positions)
+
+        positions = self.robot.positions()
+        positions['rootJoint_pos_x'] = 2.
+        positions['rootJoint_pos_y'] = 0.
+        positions['rootJoint_pos_z'] = 0.
+        positions['rootJoint_rot_z'] = 3.14
+        self.robot.set_positions(positions)
+        # self.dart_world.set_gown()
+        print 'Dart is ready!'
+
     def setup_openrave(self):
         # Setup Openrave ENV
-        op.RaveSetDebugLevel(op.DebugLevel.Error)
-        InitOpenRAVELogging()
+
         self.env = op.Environment()
 
         self.check_self_collision = True
@@ -1662,29 +2053,16 @@ if __name__ == "__main__":
     pydart.init()
     print('pydart initialization OK')
 
-    filename = 'fullbody_alex_capsule.skel'
-    rospack = rospkg.RosPack()
-    pkg_path = rospack.get_path('hrl_base_selection')
-    skel_file = pkg_path + '/models/' + filename
+    op.RaveSetDebugLevel(op.DebugLevel.Error)
+    InitOpenRAVELogging()
 
-    testSimulator = SIMULATOR(skel_file)
-    testSimulator = SIMULATOR()
+    # filename = 'fullbody_alex_capsule.skel'
+    # rospack = rospkg.RosPack()
+    # pkg_path = rospack.get_path('hrl_base_selection')
+    # skel_file = pkg_path + '/models/' + filename
 
-    joint_max = testSimulator.controller.joint_max
-    joint_min = testSimulator.controller.joint_min
-    phi = testSimulator.controller.phi
-
-    x0 = np.concatenate((joint_max, joint_min, phi))
-
-    lb, hb = setBoundary(len(x0), 0, np.pi / 3, -np.pi / 3, 0, -np.pi, np.pi)
-    OPTIONS['boundary_handling'] = cma.BoundTransform
-    OPTIONS['bounds'] = [lb, hb]
-
-    selector = ScoreGeneratorDressingMultithread(human_arm='rightarm', visualize=False)
-    # selector.visualize_many_configurations()
-    # selector.output_results_for_use()
-    # selector.run_interleaving_optimization_outer_level()
-    selector.optimize_entire_dressing_task(reset_file=False)
+    optimizer = DressingMultiProcessOptimization(number_of_processes=3, visualize=False)
+    optimizer.optimize_entire_dressing_task(reset_file=False)
     outer_elapsed_time = rospy.Time.now()-outer_start_time
     print 'Everything is complete!'
     print 'Done with optimization. Total time elapsed:', outer_elapsed_time.to_sec()
