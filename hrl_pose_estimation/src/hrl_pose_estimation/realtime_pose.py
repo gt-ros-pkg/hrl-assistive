@@ -284,7 +284,7 @@ if __name__ == '__main__':
 
     #print file_details_dict['9']
     #database_path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials'
-    database_path = '/home/henryclever/Autobed_OFFICIAL'
+    database_path = '/home/ari/data'
 
     getpose = RealTimePose(database_path, opt)
 
