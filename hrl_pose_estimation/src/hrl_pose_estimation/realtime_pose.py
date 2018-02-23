@@ -63,12 +63,12 @@ HIGH_TAXEL_THRESH_Y = (NUMOFTAXELS_Y - 1)
 
 class RealTimePose():
     '''Detects the head of a person sleeping on the autobed'''
-    def __init__(self, database_path):
+    def __init__(self, database_path, opt):
         self.mat_size = (NUMOFTAXELS_X, NUMOFTAXELS_Y)
         self.elapsed_time = []
         self.database_path = database_path
         #[self.p_world_mat, self.R_world_mat] = load_pickle('/home/henryclever/hrl_file_server/Autobed/pose_estimation_data/mat_axes15.p')
-
+        self.loss_vector_type = opt.losstype
         self.mat_pose_sampled = False
         self.ok_to_read_pose = False
         self.subject = 9
@@ -183,7 +183,7 @@ class RealTimePose():
                 print input_tensor.size(),'input tensor'
                 print self.bedangle, 'bedangle'
 
-                _, targets_est, angles_est, lengths_est, pseudotargets_est = self.kin_model.forward_kinematic_jacobian(input_tensor, forward_only=True, subject=self.subject)
+                _, targets_est, angles_est, lengths_est, pseudotargets_est = self.kin_model.forward_kinematic_jacobian(input_tensor, forward_only=True, subject=self.subject, loss_vector_type = self.loss_vector_type)
 
                 #targets_est = np.mean(error, axis=0) / 10
 
@@ -230,11 +230,63 @@ class RealTimePose():
 if __name__ == '__main__':
     rospy.init_node('real_time_pose')
 
+    import optparse
+
+    p = optparse.OptionParser()
+    p.add_option('--training_dataset', '--train_dataset', action='store', type='string', \
+                 dest='trainPath', \
+                 default='/home/henryclever/hrl_file_server/Autobed/pose_estimation_data/basic_train_dataset.p', \
+                 help='Specify path to the training database.')
+    p.add_option('--leave_out', action='store', type=int, \
+                 dest='leave_out', \
+                 help='Specify which subject to leave out for validation')
+    p.add_option('--only_test', '--t', action='store_true', dest='only_test',
+                 default=False, help='Whether you want only testing of previously stored model')
+    p.add_option('--training_model', '--model', action='store', type='string', \
+                 dest='modelPath', \
+                 default='/home/henryclever/hrl_file_server/Autobed/pose_estimation_data', \
+                 help='Specify path to the trained model')
+    p.add_option('--testing_dataset', '--test_dataset', action='store', type='string', \
+                 dest='testPath', \
+                 default='/home/henryclever/hrl_file_server/Autobed/pose_estimation_data/basic_test_dataset.p', \
+                 help='Specify path to the training database.')
+    p.add_option('--computer', action='store', type='string',
+                 dest='computer', \
+                 default='lab_harddrive', \
+                 help='Set path to the training database on lab harddrive.')
+    p.add_option('--gpu', action='store', type='string',
+                 dest='gpu', \
+                 default='0', \
+                 help='Set the GPU you will use.')
+    p.add_option('--mltype', action='store', type='string',
+                 dest='mltype', \
+                 default='convnet', \
+                 help='Set if you want to do baseline ML or convnet.')
+    p.add_option('--losstype', action='store', type='string',
+                 dest='losstype', \
+                 default='direct', \
+                 help='Set if you want to do baseline ML or convnet.')
+    p.add_option('--qt', action='store_true',
+                 dest='quick_test', \
+                 default=False, \
+                 help='Train only on data from the arms, both sitting and laying.')
+    p.add_option('--viz', action='store_true',
+                 dest='visualize', \
+                 default=False, \
+                 help='Train only on data from the arms, both sitting and laying.')
+
+    p.add_option('--verbose', '--v', action='store_true', dest='verbose',
+                 default=False, help='Printout everything (under construction).')
+    p.add_option('--log_interval', type=int, default=10, metavar='N',
+                 help='number of batches between logging train status')
+
+    opt, args = p.parse_args()
+
     #print file_details_dict['9']
     #database_path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials'
     database_path = '/home/henryclever/Autobed_OFFICIAL'
 
-    getpose = RealTimePose(database_path)
+    getpose = RealTimePose(database_path, opt)
 
     getpose.run()
 
