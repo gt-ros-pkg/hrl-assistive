@@ -274,7 +274,7 @@ class MoveArmState(PDDLSmachState):
                 rospy.loginfo('[%s] Reaching to left knee.' % rospy.get_name())
                 self.ignore_next_goal_pose = True
                 self.l_arm_pose_pub.publish(goal)
-            elif self.task.upper() == 'FEEDING' or self.task.upper() == 'SHAVING':
+            elif False:# and self.task.upper() == 'FEEDING' or self.task.upper() == 'SHAVING':
                 self.goal_position = [0.25, 0., -0.1]
                 self.goal_orientation = [0., 0., 1., 0.]
                 self.reference_frame = '/'+str(self.model.lower())+'/head_link'
@@ -294,10 +294,10 @@ class MoveArmState(PDDLSmachState):
                                                                                       '/base_link',
                                                                                       rospy.Time(0))
                 if current_position[1] > 0:
-                    self.reference_frame = '/' + str(self.model.lower()) + '/upper_arm_right_link'
-                else:
                     self.reference_frame = '/' + str(self.model.lower()) + '/upper_arm_left_link'
-                self.goal_position = [0.15, 0., -0.19]
+                else:
+                    self.reference_frame = '/' + str(self.model.lower()) + '/upper_arm_right_link'
+                self.goal_position = [0.30, 0., -0.10]
                 self.goal_orientation = [0., 0., 1., 0.]
                 goal.pose.position.x = self.goal_position[0]
                 goal.pose.position.y = self.goal_position[1]
@@ -310,7 +310,7 @@ class MoveArmState(PDDLSmachState):
                 rospy.loginfo('[%s] Reaching to arm.' % rospy.get_name())
                 self.ignore_next_goal_pose = True
                 self.l_arm_pose_pub.publish(goal)
-            elif self.task.upper() == 'WIPING_MOUTH' or self.task.upper() == 'FOREHEAD':
+            elif self.task.upper() == 'FEEDING' or self.task.upper() == 'WIPING_MOUTH' or self.task.upper() == 'FOREHEAD':
                 # self.goal_position = [0.25, 0., -0.1]
                 # self.goal_orientation = [0., 0., 1., 0.]
                 # self.reference_frame = '/'+str(self.model.lower())+'/head_link'
@@ -594,6 +594,7 @@ class CallBaseSelectionState(PDDLSmachState):
         #         configuration_goals.append(item)
         # elif len(distance_array) == 2:
         config_num_closest = np.argmin(distance_array)
+#        config_num_closest = 1 # Used in case two configurations are very close together and hard to differentiate by start position.
         for item in goal_array[config_num_closest*7:(config_num_closest*7+7)]:
             base_goals.append(item)
         for item in config_array[config_num_closest*3:(config_num_closest*3+3)]:
