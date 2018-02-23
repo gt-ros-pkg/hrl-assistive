@@ -84,7 +84,7 @@ class RealTimePose():
 
         print self.database_path+'/subject_18/p_files/convnet_2to8_anglesvL_128b_200e_18.pt'
         try:
-            self.kin_model = torch.load(self.database_path+'/subject_18/p_files/convnet_2to8_anglesvL_128b_200e_18.pt', map_location=lambda storage, loc: storage)
+            self.kin_model = torch.load(self.database_path+'/subject_18/p_files/convnet_9to18_anglesSTVL_sTrue_128b_200e_18.pt', map_location=lambda storage, loc: storage)
             print '###################################### MODEL SUCCESSFULLY LOADED ####################################'
         except:
             print '######################################## MODEL DOES NOT EXIST #######################################'
@@ -183,7 +183,7 @@ class RealTimePose():
                 print input_tensor.size(),'input tensor'
                 print self.bedangle, 'bedangle'
 
-                _, targets_est, angles_est, lengths_est, pseudotargets_est = self.kin_model.forward_kinematic_jacobian(input_tensor, prior_cascade=None, forward_only=True, subject=self.subject)
+                _, targets_est, angles_est, lengths_est, pseudotargets_est = self.kin_model.forward_kinematic_jacobian(input_tensor, forward_only=True, subject=self.subject)
 
                 #targets_est = np.mean(error, axis=0) / 10
 
