@@ -277,7 +277,7 @@ class MoveArmState(PDDLSmachState):
                 self.l_arm_pose_pub.publish(goal)
             elif self.task.upper() == 'FEEDING' or self.task.upper() == 'SHAVING':
                 self.goal_position = [0.12, 0., 0.12]
-                self.goal_orientation = tft.quaternion_from_euler(0.0, m.radians(225.), 0.0)
+                self.goal_orientation = tft.quaternion_from_euler(0.0, m.radians(135.), 0.0)
                 self.reference_frame = '/head'
                 goal.pose.position.x = self.goal_position[0]
                 goal.pose.position.y = self.goal_position[1]
