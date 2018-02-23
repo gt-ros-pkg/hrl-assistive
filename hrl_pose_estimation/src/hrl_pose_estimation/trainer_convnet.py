@@ -103,6 +103,7 @@ class PhysicalTrainer():
             self.num_epochs = 300
         self.include_inter = True
         self.shuffle = False
+        self.tensor = True
 
         self.count = 0
 
@@ -120,144 +121,176 @@ class PhysicalTrainer():
         self.train_val_losses['val'+self.save_name] = []
         self.train_val_losses['epoch'+self.save_name] = []
 
-
         self.mat_size = (NUMOFTAXELS_X, NUMOFTAXELS_Y)
-        if self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL' or  self.loss_vector_type == 'anglesSTVL' or self.loss_vector_type == 'direct':
-            self.output_size = (NUMOFOUTPUTNODES, NUMOFOUTPUTDIMS)
-        elif self.loss_vector_type == None:
-            self.output_size = (NUMOFOUTPUTNODES - 5, NUMOFOUTPUTDIMS)
+        self.output_size = (NUMOFOUTPUTNODES, NUMOFOUTPUTDIMS)
 
 
-
-        #load in the training files.  This may take a while.
-        for some_subject in training_database_file:
-            print some_subject
-            dat_curr = load_pickle(some_subject)
-            for key in dat_curr:
-                if np.array(dat_curr[key]).shape[0] != 0:
-                    for inputgoalset in np.arange(len(dat_curr['images'])):
-                        try:
-                            dat[key].append(dat_curr[key][inputgoalset])
-                        except:
+        if self.tensor == True:
+            #load in the training files.  This may take a while.
+            for some_subject in training_database_file:
+                print some_subject
+                dat_curr = load_pickle(some_subject)
+                for key in dat_curr:
+                    if np.array(dat_curr[key]).shape[0] != 0:
+                        for inputgoalset in np.arange(len(dat_curr['images'])):
                             try:
-                                dat[key] = []
                                 dat[key].append(dat_curr[key][inputgoalset])
                             except:
-                                dat = {}
-                                dat[key] = []
-                                dat[key].append(dat_curr[key][inputgoalset])
+                                try:
+                                    dat[key] = []
+                                    dat[key].append(dat_curr[key][inputgoalset])
+                                except:
+                                    dat = {}
+                                    dat[key] = []
+                                    dat[key].append(dat_curr[key][inputgoalset])
 
 
 
 
-        #create a tensor for our training dataset.  First print out how many input/output sets we have and what data we have
-        for key in dat:
-            print 'training set: ', key, np.array(dat[key]).shape
+            #create a tensor for our training dataset.  First print out how many input/output sets we have and what data we have
+            for key in dat:
+                print 'training set: ', key, np.array(dat[key]).shape
 
-        self.train_x_flat = []  # Initialize the testing pressure mat list
-        for entry in range(len(dat['images'])):
-            self.train_x_flat.append(dat['images'][entry])
-        # test_x = PreprocessingLib().preprocessing_pressure_array_resize(self.test_x_flat, self.mat_size, self.verbose)
-        # test_x = np.array(test_x)
+            self.train_x_flat = []  # Initialize the testing pressure mat list
+            for entry in range(len(dat['images'])):
+                self.train_x_flat.append(dat['images'][entry])
+            # test_x = PreprocessingLib().preprocessing_pressure_array_resize(self.test_x_flat, self.mat_size, self.verbose)
+            # test_x = np.array(test_x)
 
-        self.train_a_flat = []  # Initialize the testing pressure mat angle list
-        for entry in range(len(dat['images'])):
-            self.train_a_flat.append(dat['bed_angle_deg'][entry])
-        train_xa = PreprocessingLib().preprocessing_create_pressure_angle_stack(self.train_x_flat, self.train_a_flat, self.include_inter, self.mat_size, self.verbose)
-        train_xa = np.array(train_xa)
+            self.train_a_flat = []  # Initialize the testing pressure mat angle list
+            for entry in range(len(dat['images'])):
+                self.train_a_flat.append(dat['bed_angle_deg'][entry])
+            train_xa = PreprocessingLib().preprocessing_create_pressure_angle_stack(self.train_x_flat, self.train_a_flat, self.include_inter, self.mat_size, self.verbose)
+            train_xa = np.array(train_xa)
 
-        # Standardize data to values between [0, 1]
-        # print 'Standardizing training data'
-        # mins = [np.min(train_xa[:, ii]) for ii in xrange(np.shape(train_xa)[1])]
-        # maxs = [np.max(train_xa[:, ii]) for ii in xrange(np.shape(train_xa)[1])]
-        # print 'mins:', mins, 'maxs:', maxs
-        # for ii in xrange(np.shape(train_xa)[1]):
-        #     train_xa[:, ii] = (train_xa[:, ii] - mins[ii]) / (maxs[ii] - mins[ii])
+            # Standardize data to values between [0, 1]
+            # print 'Standardizing training data'
+            # mins = [np.min(train_xa[:, ii]) for ii in xrange(np.shape(train_xa)[1])]
+            # maxs = [np.max(train_xa[:, ii]) for ii in xrange(np.shape(train_xa)[1])]
+            # print 'mins:', mins, 'maxs:', maxs
+            # for ii in xrange(np.shape(train_xa)[1]):
+            #     train_xa[:, ii] = (train_xa[:, ii] - mins[ii]) / (maxs[ii] - mins[ii])
 
-        self.train_x_tensor = torch.Tensor(train_xa)
+            self.train_x_tensor = torch.Tensor(train_xa)
 
-        self.train_y_flat = [] #Initialize the training ground truth list
-        for entry in range(len(dat['images'])):
-            if self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL'  or self.loss_vector_type == 'anglesSTVL':
-                c = np.concatenate((dat['markers_xyz_m'][entry][0:30] * 1000,
-                                    dat['joint_lengths_U_m'][entry][0:9] * 100,
-                                    dat['joint_angles_U_deg'][entry][0:10],
-                                    dat['joint_lengths_L_m'][entry][0:8] * 100,
-                                    dat['joint_angles_L_deg'][entry][0:8]), axis=0)
-                self.train_y_flat.append(c)
-            else:
-                self.train_y_flat.append(dat['markers_xyz_m'][entry] * 1000)
-        self.train_y_tensor = torch.Tensor(self.train_y_flat)
+            self.train_y_flat = [] #Initialize the training ground truth list
+            for entry in range(len(dat['images'])):
+                if self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL'  or self.loss_vector_type == 'anglesSTVL':
+                    c = np.concatenate((dat['markers_xyz_m'][entry][0:30] * 1000,
+                                        dat['joint_lengths_U_m'][entry][0:9] * 100,
+                                        dat['joint_angles_U_deg'][entry][0:10],
+                                        dat['joint_lengths_L_m'][entry][0:8] * 100,
+                                        dat['joint_angles_L_deg'][entry][0:8]), axis=0)
+                    self.train_y_flat.append(c)
+                else:
+                    self.train_y_flat.append(dat['markers_xyz_m'][entry] * 1000)
+            self.train_y_tensor = torch.Tensor(self.train_y_flat)
 
 
-        #load in the test file
-        for some_subject in test_file:
-            print some_subject
-            dat_curr = load_pickle(some_subject)
-            for key in dat_curr:
-                if np.array(dat_curr[key]).shape[0] != 0:
-                    for inputgoalset in np.arange(len(dat_curr['images'])):
-                        try:
-                            test_dat[key].append(dat_curr[key][inputgoalset])
-                        except:
+            #load in the test file
+            for some_subject in test_file:
+                print some_subject
+                dat_curr = load_pickle(some_subject)
+                for key in dat_curr:
+                    if np.array(dat_curr[key]).shape[0] != 0:
+                        for inputgoalset in np.arange(len(dat_curr['images'])):
                             try:
-                                test_dat[key] = []
                                 test_dat[key].append(dat_curr[key][inputgoalset])
                             except:
-                                test_dat = {}
-                                test_dat[key] = []
-                                test_dat[key].append(dat_curr[key][inputgoalset])
+                                try:
+                                    test_dat[key] = []
+                                    test_dat[key].append(dat_curr[key][inputgoalset])
+                                except:
+                                    test_dat = {}
+                                    test_dat[key] = []
+                                    test_dat[key].append(dat_curr[key][inputgoalset])
 
 
 
-        # create a tensor for our testing dataset.  First print out how many input/output sets we have and what data we have
-        for key in test_dat:
-            print 'testing set: ', key, np.array(test_dat[key]).shape
+            # create a tensor for our testing dataset.  First print out how many input/output sets we have and what data we have
+            for key in test_dat:
+                print 'testing set: ', key, np.array(test_dat[key]).shape
 
-        self.test_x_flat = []  # Initialize the testing pressure mat list
-        for entry in range(len(test_dat['images'])):
-            self.test_x_flat.append(test_dat['images'][entry])
-        # test_x = PreprocessingLib.preprocessing_pressure_array_resize(self.test_x_flat, self.mat_size, self.verbose)
-        # test_x = np.array(test_x)
+            self.test_x_flat = []  # Initialize the testing pressure mat list
+            for entry in range(len(test_dat['images'])):
+                self.test_x_flat.append(test_dat['images'][entry])
+            # test_x = PreprocessingLib.preprocessing_pressure_array_resize(self.test_x_flat, self.mat_size, self.verbose)
+            # test_x = np.array(test_x)
 
-        self.test_a_flat = []  # Initialize the testing pressure mat angle list
-        for entry in range(len(test_dat['images'])):
-            self.test_a_flat.append(test_dat['bed_angle_deg'][entry])
-        test_xa = PreprocessingLib().preprocessing_create_pressure_angle_stack(self.test_x_flat, self.test_a_flat, self.include_inter, self.mat_size, self.verbose)
-        test_xa = np.array(test_xa)
+            self.test_a_flat = []  # Initialize the testing pressure mat angle list
+            for entry in range(len(test_dat['images'])):
+                self.test_a_flat.append(test_dat['bed_angle_deg'][entry])
+            test_xa = PreprocessingLib().preprocessing_create_pressure_angle_stack(self.test_x_flat, self.test_a_flat, self.include_inter, self.mat_size, self.verbose)
+            test_xa = np.array(test_xa)
 
-        # Standardize data to values between [0, 1]
-        # print 'Standardizing test data'
-        # for ii in xrange(np.shape(test_xa)[1]):
-        #     test_xa[:, ii] = (test_xa[:, ii] - mins[ii]) / (maxs[ii] - mins[ii])
+            # Standardize data to values between [0, 1]
+            # print 'Standardizing test data'
+            # for ii in xrange(np.shape(test_xa)[1]):
+            #     test_xa[:, ii] = (test_xa[:, ii] - mins[ii]) / (maxs[ii] - mins[ii])
 
-        self.test_x_tensor = torch.Tensor(test_xa)
+            self.test_x_tensor = torch.Tensor(test_xa)
 
-        self.test_y_flat = []  # Initialize the ground truth list
-        for entry in range(len(test_dat['images'])):
-            if self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL' or self.loss_vector_type == 'anglesSTVL':
-                c = np.concatenate((test_dat['markers_xyz_m'][entry][0:30] * 1000,
-                                    test_dat['joint_lengths_U_m'][entry][0:9] * 100,
-                                    test_dat['joint_angles_U_deg'][entry][0:10],
-                                    test_dat['joint_lengths_L_m'][entry][0:8] * 100,
-                                    test_dat['joint_angles_L_deg'][entry][0:8]), axis=0)
-                self.test_y_flat.append(c)
-            elif self.loss_vector_type == 'direct' or self.loss_vector_type == 'confidence':
-                self.test_y_flat.append(test_dat['markers_xyz_m'][entry] * 1000)
-            else:
-                print "ERROR! SPECIFY A VALID LOSS VECTOR TYPE."
-        self.test_y_flat = np.array(self.test_y_flat)
-        self.test_y_tensor = torch.Tensor(self.test_y_flat)
+            self.test_y_flat = []  # Initialize the ground truth list
+            for entry in range(len(test_dat['images'])):
+                if self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL' or self.loss_vector_type == 'anglesSTVL':
+                    c = np.concatenate((test_dat['markers_xyz_m'][entry][0:30] * 1000,
+                                        test_dat['joint_lengths_U_m'][entry][0:9] * 100,
+                                        test_dat['joint_angles_U_deg'][entry][0:10],
+                                        test_dat['joint_lengths_L_m'][entry][0:8] * 100,
+                                        test_dat['joint_angles_L_deg'][entry][0:8]), axis=0)
+                    self.test_y_flat.append(c)
+                elif self.loss_vector_type == 'direct' or self.loss_vector_type == 'confidence':
+                    self.test_y_flat.append(test_dat['markers_xyz_m'][entry] * 1000)
+                else:
+                    print "ERROR! SPECIFY A VALID LOSS VECTOR TYPE."
+            self.test_y_flat = np.array(self.test_y_flat)
+            self.test_y_tensor = torch.Tensor(self.test_y_flat)
 
 
-    def baseline_train(self, baseline):
-        n_neighbors = 5
-        cv_fold = 3
+        else:
+            #load in the training files.  This may take a while.
+            for some_subject in training_database_file:
+                print some_subject
+                images_train, targets_train = load_pickle(some_subject)
+                images_train = np.array(images_train)
+                targets_train = np.array(targets_train)
+                print some_subject
+                try:
+                    images_train_aggregated = np.concatenate((images_train_aggregated, images_train), axis=0)
+                except:
+                    images_train_aggregated = np.array(images_train)
+                try:
+                    targets_train_aggregated = np.concatenate((targets_train_aggregated, targets_train), axis=0)
+                except:
+                    targets_train_aggregated = np.array(targets_train)
+            self.images_train_aggregated = images_train_aggregated
+            self.targets_train_aggregated = targets_train_aggregated
+            print self.images_train_aggregated.shape, self.targets_train_aggregated.shape
 
-        #for knn we don't really care about the variable function in pytorch, but it's a nice utility for shuffling the data.
+            # load in the test file
+            for some_subject in test_file:
+                images_test, targets_test = load_pickle(some_subject)
+                images_test = np.array(images_test)
+                targets_test = np.array(targets_test)
+                print some_subject
+
+                try:
+                    images_test_aggregated = np.concatenate((images_test_aggregated, images_test), axis=0)
+                except:
+                    images_test_aggregated = np.array(images_test)
+                try:
+                    targets_test_aggregated = np.concatenate((targets_test_aggregated, targets_test), axis=0)
+                except:
+                    targets_test_aggregated = np.array(targets_test)
+            self.images_test_aggregated = images_test_aggregated
+            self.targets_test_aggregated = targets_test_aggregated
+            print self.images_test_aggregated.shape, self.targets_test_aggregated.shape
+
+
+    def baseline_createHOGset(self, baseline):
+        # for knn we don't really care about the variable function in pytorch, but it's a nice utility for shuffling the data.
         self.batch_size = self.train_y_tensor.numpy().shape[0]
-        self.batchtest_size = 1#self.test_y_tensor.numpy().shape[0]
-
+        self.batchtest_size = 11  # self.test_y_tensor.numpy().shape[0]
 
         self.train_dataset = torch.utils.data.TensorDataset(self.train_x_tensor, self.train_y_tensor)
         self.train_loader = torch.utils.data.DataLoader(self.train_dataset, self.batch_size, shuffle=self.shuffle)
@@ -266,171 +299,177 @@ class PhysicalTrainer():
         self.test_loader = torch.utils.data.DataLoader(self.test_dataset, self.batchtest_size, shuffle=self.shuffle)
 
         for batch_idx, batch in enumerate(self.train_loader):
+            print batch[0].size(), 'batch size'
 
             # get the whole body x y z
             batch[1] = batch[1][:, 0:30]
 
             batch[0], batch[1], _ = SyntheticLib().synthetic_master(batch[0], batch[1], flip=True,
-                                                                           shift=True, scale=True,
-                                                                           bedangle=True,
-                                                                           include_inter=self.include_inter,
-                                                                           loss_vector_type=self.loss_vector_type)
+                                                                    shift=True, scale=True,
+                                                                    bedangle=True,
+                                                                    include_inter=self.include_inter,
+                                                                    loss_vector_type=self.loss_vector_type)
 
-
-            images = batch[0].numpy()[:,0,:,:]
+            images = batch[0].numpy()[:, 0, :, :]
             targets = batch[1].numpy()
 
-
-            #upsample the images
+            # upsample the images
             images_up = PreprocessingLib().preprocessing_pressure_map_upsample(images)
-            #targets = list(targets)
-            #print images[0].shape
+            # targets = list(targets)
+            # print images[0].shape
 
 
 
             # Compute HoG of the current(training) pressure map dataset
             images_up = PreprocessingLib().compute_HoG(images_up)
 
-            #images_up = np.reshape(images, (images.shape[0], images.shape[1]*images.shape[2]))
+            print np.shape(images_up)
+            print np.shape(targets), 'target shape'
 
-            #images_up = [[0], [1], [2], [3]]
-            #targets = [0, 0, 1, 1]
+            # images_up = np.reshape(images, (images.shape[0], images.shape[1]*images.shape[2]))
+
+            # images_up = [[0], [1], [2], [3]]
+            # targets = [0, 0, 1, 1]
 
             print np.shape(images_up)
             print np.shape(targets)
+            pkl.dump([images_up, targets], open(os.path.join('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_9/p_files/trainval_sit175rlh_sit120rll_HOG.p'), 'wb'))  # _trainval_sit175rlh_sit120rll
 
-            print 'fitting KNN'
-            baseline = 'KNN'
+    def baseline_train(self, baseline):
+        n_neighbors = 5
+        cv_fold = 3
 
-            #if baseline == 'KNN':
-            regr = neighbors.KNeighborsRegressor(10, weights='distance')
+        images_up = self.images_train_aggregated
+        targets = self.targets_train_aggregated
+
+
+        print 'fitting KNN'
+        baseline = 'KNN'
+
+        #if baseline == 'KNN':
+        regr = neighbors.KNeighborsRegressor(10, weights='distance', algorithm = 'auto', p=2, metric = 'minkowski')
+        regr.fit(images_up, targets)
+
+        print 'done fitting KNN'
+
+        if self.opt.computer == 'lab_harddrive':
+            print 'saving to ', '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
+                self.opt.leave_out) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p'
+            pkl.dump(regr, open(
+                '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
+                    self.opt.leave_out) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p',
+                'wb'))
+            print 'saved successfully'
+        elif self.opt.computer == 'aws':
+            pkl.dump(regr, open('/home/ubuntu/Autobed_OFFICIAL_Trials/subject_' + str(
+                self.opt.leave_out) + '/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p', 'wb'))
+            print 'saved successfully'
+
+
+        print 'fitting Ridge'
+        baseline = 'Ridge'
+        #elif baseline == 'Ridge':
+        regr = linear_model.Ridge(alpha=0.01) # complexity parameter that controls the amount of shrinkage:
+        # the larger the value of \alpha, the greater the amount of shrinkage and thus the coefficients become more robust to collinearity
+        # a zero value for alpha is the same as doing OLS (ordinary least squares. More complex model in this case and more prone to overfitting
+        # The shrinkage is a regularization term. coefficients in the regularization correspond to those in the least squares part
+        #OLS can overfit to data with high variance.  the alpha term helps to keep this from happpening
+
+        regr.fit(images_up, targets)
+
+        print 'done fitting Ridge'
+
+        if self.opt.computer == 'lab_harddrive':
+            print 'saving to ', '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
+                self.opt.leave_out) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p'
+            pkl.dump(regr, open(
+                '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
+                    self.opt.leave_out) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p',
+                'wb'))
+            print 'saved successfully'
+        elif self.opt.computer == 'aws':
+            pkl.dump(regr, open('/home/ubuntu/Autobed_OFFICIAL_Trials/subject_' + str(
+                self.opt.leave_out) + '/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p', 'wb'))
+            print 'saved successfully'
+
+
+
+
+        print 'fitting KRidge'
+        baseline = 'KRidge'
+        #elif baseline == 'KRidge':
+        regr = kernel_ridge.KernelRidge(alpha=0.01, kernel='rbf')
+        regr.fit(images_up, targets)
+
+        print 'done fitting KRidge'
+
+        if self.opt.computer == 'lab_harddrive':
+            print 'saving to ', '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
+                self.opt.leave_out) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p'
+            pkl.dump(regr, open(
+                '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
+                    self.opt.leave_out) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p','wb'))
+            print 'saved successfully'
+        elif self.opt.computer == 'aws':
+            pkl.dump(regr, open('/home/ubuntu/Autobed_OFFICIAL_Trials/subject_' + str(
+                self.opt.leave_out) + '/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p', 'wb'))
+            print 'saved successfully'
+
+
+
+        if baseline == 'SVM':
+            regr = MultiOutputRegressor(estimator=svm.SVR(C=1.0, kernel='rbf', verbose = True))
+            regr.fit(images_up, targets)
+            #SVR(C=1.0, kernel='rbf', verbose = True)
+            #SVR(C=1.0, cache_size=200, coef0=0.0, degree=3, epsilon=0.1, gamma='auto',
+            #                    kernel='rbf', max_iter=-1, shrinking=True, tol=0.001, verbose=False)
+
+        elif baseline == 'kmeans_SVM':
+            k_means = KMeans(n_clusters=10, n_init=4)
+            k_means.fit(images_up)
+            labels = k_means.labels_
+            print labels.shape, 'label shape'
+            print targets.shape, 'target shape'
+            print 'done fitting kmeans'
+            svm_classifier = svm.SVC(kernel='rbf', verbose = True)
+            svm_classifier.fit(labels, targets)
+            print 'done fitting svm'
+            regr = linear_model.LinearRegression()
+            regr.fit(labels, targets)
+            print 'done fitting linear model'
+
+        elif baseline == 'Linear':
+            regr = linear_model.LinearRegression()
             regr.fit(images_up, targets)
 
-            print 'done fitting KNN'
-
-            if self.opt.computer == 'lab_harddrive':
-                print 'saving to ', '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
-                    self.opt.leave_out) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p'
-                pkl.dump(regr, open(
-                    '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
-                        self.opt.leave_out) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p',
-                    'wb'))
-                print 'saved successfully'
-            elif self.opt.computer == 'aws':
-                pkl.dump(regr, open('/home/ubuntu/Autobed_OFFICIAL_Trials/subject_' + str(
-                    self.opt.leave_out) + '/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p', 'wb'))
-                print 'saved successfully'
 
 
-            print 'fitting Ridge'
-            baseline = 'Ridge'
-            #elif baseline == 'Ridge':
-            regr = linear_model.Ridge(alpha=0.01)
-            regr.fit(images_up, targets)
+        #validation
+        for test_data_length in range(self.targets_test_aggregated.shape[0]):
+            scores = regr.predict(self.images_test_aggregated[test_data_length, :])
+            targets = self.targets_test_aggregated[test_data_length, :]
+            #print scores.shape
+            #print targets.shape
+            #print scores[0]
+            #print targets[0]
 
-            print 'done fitting Ridge'
+            #print regr.predict(images_up_test[0]) - targets[0]
+            VisualizationLib().print_error(scores, targets, self.output_size, loss_vector_type=self.loss_vector_type, data='test', printerror=True)
 
-            if self.opt.computer == 'lab_harddrive':
-                print 'saving to ', '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
-                    self.opt.leave_out) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p'
-                pkl.dump(regr, open(
-                    '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
-                        self.opt.leave_out) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p',
-                    'wb'))
-                print 'saved successfully'
-            elif self.opt.computer == 'aws':
-                pkl.dump(regr, open('/home/ubuntu/Autobed_OFFICIAL_Trials/subject_' + str(
-                    self.opt.leave_out) + '/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p', 'wb'))
-                print 'saved successfully'
+            self.im_sample = np.squeeze(images_test[0, :])
+            #print self.im_sample.shape
 
+            self.tar_sample = np.squeeze(targets[0, :]) / 1000
+            self.sc_sample = np.copy(scores)
+            self.sc_sample = np.squeeze(self.sc_sample[0, :]) / 1000
+            self.sc_sample = np.reshape(self.sc_sample, self.output_size)
+            if self.opt.visualize == True:
+                VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample, block=True)
 
-
-
-            print 'fitting KRidge'
-            baseline = 'KRidge'
-            #elif baseline == 'KRidge':
-            regr = kernel_ridge.KernelRidge(alpha=0.01, kernel='rbf')
-            regr.fit(images_up, targets)
-
-            print 'done fitting KRidge'
-
-            if self.opt.computer == 'lab_harddrive':
-                print 'saving to ', '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
-                    self.opt.leave_out) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p'
-                pkl.dump(regr, open(
-                    '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
-                        self.opt.leave_out) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p','wb'))
-                print 'saved successfully'
-            elif self.opt.computer == 'aws':
-                pkl.dump(regr, open('/home/ubuntu/Autobed_OFFICIAL_Trials/subject_' + str(
-                    self.opt.leave_out) + '/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p', 'wb'))
-                print 'saved successfully'
-
-
-
-            if baseline == 'SVM':
-                regr = MultiOutputRegressor(estimator=svm.SVR(C=1.0, kernel='rbf', verbose = True))
-                regr.fit(images_up, targets)
-                #SVR(C=1.0, kernel='rbf', verbose = True)
-                #SVR(C=1.0, cache_size=200, coef0=0.0, degree=3, epsilon=0.1, gamma='auto',
-                #                    kernel='rbf', max_iter=-1, shrinking=True, tol=0.001, verbose=False)
-
-            elif baseline == 'kmeans_SVM':
-                k_means = KMeans(n_clusters=10, n_init=4)
-                k_means.fit(images_up)
-                labels = k_means.labels_
-                print labels.shape, 'label shape'
-                print targets.shape, 'target shape'
-                print 'done fitting kmeans'
-                svm_classifier = svm.SVC(kernel='rbf', verbose = True)
-                svm_classifier.fit(labels, targets)
-                print 'done fitting svm'
-                regr = linear_model.LinearRegression()
-                regr.fit(labels, targets)
-                print 'done fitting linear model'
-
-            elif baseline == 'Linear':
-                regr = linear_model.LinearRegression()
-                regr.fit(images_up, targets)
-
-
-
-            #validation
-            for batchtest_idx, batchtest in enumerate(self.test_loader):
-                images_test = batchtest[0].numpy()[:, 0, :, :]
-                targets = batchtest[1].numpy()
-
-                images_up_test = PreprocessingLib().preprocessing_pressure_map_upsample(images_test)
-                #targets = list(targets)
-
-                images_up_test = PreprocessingLib().compute_HoG(images_up_test)
-                #images_up_test = np.reshape(images_test, (images_test.shape[0], images_test.shape[1] * images_test.shape[2]))
-
-
-                scores = regr.predict(images_up_test)
-
-                #print scores.shape
-                #print targets.shape
-                #print scores[0]
-                #print targets[0]
-
-                #print regr.predict(images_up_test[0]) - targets[0]
-                VisualizationLib().print_error(scores, targets, self.output_size, loss_vector_type=self.loss_vector_type, data='test', printerror=True)
-
-                self.im_sample = np.squeeze(images_test[0, :])
-                #print self.im_sample.shape
-
-                self.tar_sample = np.squeeze(targets[0, :]) / 1000
-                self.sc_sample = np.copy(scores)
-                self.sc_sample = np.squeeze(self.sc_sample[0, :]) / 1000
-                self.sc_sample = np.reshape(self.sc_sample, self.output_size)
-                if self.opt.visualize == True:
-                    VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample, block=True)
-
-            print len(scores)
-            print scores[0].shape
-            print scores.shape
-            print targets.shape
+        print len(scores)
+        print scores[0].shape
+        print scores.shape
+        print targets.shape
 
 
 
@@ -794,6 +833,9 @@ if __name__ == "__main__":
 
     opt, args = p.parse_args()
 
+    if opt.mltype == 'convnet': filetag = ''
+    else: filetag = '_HOG'
+
     if opt.computer == 'lab_harddrive':
 
         opt.subject2Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_2/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
@@ -804,26 +846,26 @@ if __name__ == "__main__":
         opt.subject7Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_7/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
         opt.subject8Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_8/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
 
-        opt.subject9Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_9/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair.p'
-        opt.subject10Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_10/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair.p'
-        opt.subject11Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_11/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair.p'
-        opt.subject12Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_12/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair.p'
-        opt.subject13Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_13/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair.p'
-        opt.subject14Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_14/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair.p'
-        opt.subject15Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_15/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair.p'
-        opt.subject16Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_16/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair.p'
-        opt.subject17Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_17/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair.p'
-        opt.subject18Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_18/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair.p'
-        opt.subject9PathB = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_9/p_files/trainval_sit175rlh_sit120rll.p'
-        opt.subject10PathB = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_10/p_files/trainval_sit175rlh_sit120rll.p'
-        opt.subject11PathB = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_11/p_files/trainval_sit175rlh_sit120rll.p'
-        opt.subject12PathB = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_12/p_files/trainval_sit175rlh_sit120rll.p'
-        opt.subject13PathB = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_13/p_files/trainval_sit175rlh_sit120rll.p'
-        opt.subject14PathB = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_14/p_files/trainval_sit175rlh_sit120rll.p'
-        opt.subject15PathB = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_15/p_files/trainval_sit175rlh_sit120rll.p'
-        opt.subject16PathB = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_16/p_files/trainval_sit175rlh_sit120rll.p'
-        opt.subject17PathB = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_17/p_files/trainval_sit175rlh_sit120rll.p'
-        opt.subject18PathB = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_18/p_files/trainval_sit175rlh_sit120rll.p'
+        opt.subject9Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_9/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+        opt.subject10Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_10/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+        opt.subject11Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_11/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+        opt.subject12Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_12/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+        opt.subject13Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_13/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+        opt.subject14Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_14/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+        opt.subject15Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_15/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+        opt.subject16Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_16/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+        opt.subject17Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_17/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+        opt.subject18Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_18/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+        opt.subject9PathB = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_9/p_files/trainval_sit175rlh_sit120rll'+filetag+'.p'
+        opt.subject10PathB = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_10/p_files/trainval_sit175rlh_sit120rll'+filetag+'.p'
+        opt.subject11PathB = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_11/p_files/trainval_sit175rlh_sit120rll'+filetag+'.p'
+        opt.subject12PathB = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_12/p_files/trainval_sit175rlh_sit120rll'+filetag+'.p'
+        opt.subject13PathB = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_13/p_files/trainval_sit175rlh_sit120rll'+filetag+'.p'
+        opt.subject14PathB = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_14/p_files/trainval_sit175rlh_sit120rll'+filetag+'.p'
+        opt.subject15PathB = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_15/p_files/trainval_sit175rlh_sit120rll'+filetag+'.p'
+        opt.subject16PathB = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_16/p_files/trainval_sit175rlh_sit120rll'+filetag+'.p'
+        opt.subject17PathB = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_17/p_files/trainval_sit175rlh_sit120rll'+filetag+'.p'
+        opt.subject18PathB = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_18/p_files/trainval_sit175rlh_sit120rll'+filetag+'.p'
 
         #shortcut:
 
@@ -841,26 +883,26 @@ if __name__ == "__main__":
         opt.subject6Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_6/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
         opt.subject7Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_7/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
         opt.subject8Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_8/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
-        opt.subject9Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_9/trainval_200rlh1_115rlh2_75rlh3_175rllair.p'
-        opt.subject10Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_10/trainval_200rlh1_115rlh2_75rlh3_175rllair.p'
-        opt.subject11Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_11/trainval_200rlh1_115rlh2_75rlh3_175rllair.p'
-        opt.subject12Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_12/trainval_200rlh1_115rlh2_75rlh3_175rllair.p'
-        opt.subject13Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_13/trainval_200rlh1_115rlh2_75rlh3_175rllair.p'
-        opt.subject14Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_14/trainval_200rlh1_115rlh2_75rlh3_175rllair.p'
-        opt.subject15Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_15/trainval_200rlh1_115rlh2_75rlh3_175rllair.p'
-        opt.subject16Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_16/trainval_200rlh1_115rlh2_75rlh3_175rllair.p'
-        opt.subject17Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_17/trainval_200rlh1_115rlh2_75rlh3_175rllair.p'
-        opt.subject18Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_18/trainval_200rlh1_115rlh2_75rlh3_175rllair.p'
-        opt.subject9PathB = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_9/trainval_sit175rlh_sit120rll.p'
-        opt.subject10PathB = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_10/trainval_sit175rlh_sit120rll.p'
-        opt.subject11PathB = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_11/trainval_sit175rlh_sit120rll.p'
-        opt.subject12PathB = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_12/trainval_sit175rlh_sit120rll.p'
-        opt.subject13PathB = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_13/trainval_sit175rlh_sit120rll.p'
-        opt.subject14PathB = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_14/trainval_sit175rlh_sit120rll.p'
-        opt.subject15PathB = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_15/trainval_sit175rlh_sit120rll.p'
-        opt.subject16PathB = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_16/trainval_sit175rlh_sit120rll.p'
-        opt.subject17PathB = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_17/trainval_sit175rlh_sit120rll.p'
-        opt.subject18PathB = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_18/trainval_sit175rlh_sit120rll.p'
+        opt.subject9Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_9/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+        opt.subject10Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_10/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+        opt.subject11Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_11/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+        opt.subject12Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_12/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+        opt.subject13Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_13/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+        opt.subject14Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_14/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+        opt.subject15Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_15/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+        opt.subject16Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_16/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+        opt.subject17Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_17/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+        opt.subject18Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_18/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+        opt.subject9PathB = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_9/trainval_sit175rlh_sit120rll'+filetag+'.p'
+        opt.subject10PathB = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_10/trainval_sit175rlh_sit120rll'+filetag+'.p'
+        opt.subject11PathB = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_11/trainval_sit175rlh_sit120rll'+filetag+'.p'
+        opt.subject12PathB = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_12/trainval_sit175rlh_sit120rll'+filetag+'.p'
+        opt.subject13PathB = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_13/trainval_sit175rlh_sit120rll'+filetag+'.p'
+        opt.subject14PathB = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_14/trainval_sit175rlh_sit120rll'+filetag+'.p'
+        opt.subject15PathB = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_15/trainval_sit175rlh_sit120rll'+filetag+'.p'
+        opt.subject16PathB = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_16/trainval_sit175rlh_sit120rll'+filetag+'.p'
+        opt.subject17PathB = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_17/trainval_sit175rlh_sit120rll'+filetag+'.p'
+        opt.subject18PathB = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_18/trainval_sit175rlh_sit120rll'+filetag+'.p'
 
         #shortcut:
 
@@ -917,25 +959,25 @@ if __name__ == "__main__":
 
     elif opt.leave_out == 9:
         test_database_file.append(opt.subject9Path)
-        test_database_file.append(opt.subject9PathB)
-        training_database_file.append(opt.subject10Path)
-        training_database_file.append(opt.subject11Path)
-        training_database_file.append(opt.subject12Path)
-        training_database_file.append(opt.subject13Path)
-        training_database_file.append(opt.subject14Path)
-        training_database_file.append(opt.subject15Path)
-        training_database_file.append(opt.subject16Path)
-        training_database_file.append(opt.subject17Path)
-        training_database_file.append(opt.subject18Path)
-        training_database_file.append(opt.subject10PathB)
-        training_database_file.append(opt.subject11PathB)
-        training_database_file.append(opt.subject12PathB)
-        training_database_file.append(opt.subject13PathB)
-        training_database_file.append(opt.subject14PathB)
-        training_database_file.append(opt.subject15PathB)
-        training_database_file.append(opt.subject16PathB)
-        training_database_file.append(opt.subject17PathB)
-        training_database_file.append(opt.subject18PathB)
+        #test_database_file.append(opt.subject9PathB)
+        training_database_file.append(opt.subject9Path)
+        #training_database_file.append(opt.subject11Path)
+        #training_database_file.append(opt.subject12Path)
+        #training_database_file.append(opt.subject13Path)
+        #training_database_file.append(opt.subject14Path)
+        #training_database_file.append(opt.subject15Path)
+        #training_database_file.append(opt.subject16Path)
+        #training_database_file.append(opt.subject17Path)
+        #training_database_file.append(opt.subject18Path)
+        #training_database_file.append(opt.subject10PathB)
+        #training_database_file.append(opt.subject11PathB)
+        #training_database_file.append(opt.subject12PathB)
+        #training_database_file.append(opt.subject13PathB)
+        #training_database_file.append(opt.subject14PathB)
+        #training_database_file.append(opt.subject15PathB)
+        #training_database_file.append(opt.subject16PathB)
+        #training_database_file.append(opt.subject17PathB)
+        #training_database_file.append(opt.subject18PathB)
     elif opt.leave_out == 10:
         test_database_file.append(opt.subject10Path)
         test_database_file.append(opt.subject10PathB)

@@ -25,6 +25,7 @@ from scipy import interpolate
 from scipy.misc import imresize
 from scipy.ndimage.interpolation import zoom
 import scipy.stats as ss
+from scipy.stats import ttest_ind
 ## from skimage import data, color, exposure
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import normalize
@@ -92,6 +93,8 @@ class DataVisualizer():
 
         self.mat_size = (NUMOFTAXELS_X, NUMOFTAXELS_Y)
 
+        self.output_size = (10, 3)
+
 
 
 
@@ -152,55 +155,128 @@ class DataVisualizer():
         self.count = 0
 
     def final_error(self):
+        flat_errors = {}
+
+        for modeltype in ['direct','anglesSTVL', 'anglesCL']:
+            error_norm_flat = None
+            for posture in ['seated']:
+                for subject in [9, 10, 11, 12, 13, 14, 15, 16, 17, 18]:
+                    if modeltype == 'anglesCL' or modeltype == 'anglesSTVL' or modeltype == 'direct':
+
+                        if posture == 'supine':
+                            _, _, targets, targets_est = load_pickle(self.dump_path + '/Final_Data/error_avg_std_T25_subject' + str(subject) + '_' + str(modeltype) + '.p')
+                        elif posture == 'seated':
+                            _, _, targets, targets_est = load_pickle(self.dump_path + '/Final_Data/error_avg_std_T25_subject' + str(subject) + '_' + str(modeltype) + '_sit.p')
+                        # size (P x N) each: number of images, number of joints
+
+
+                        targets = np.array(targets)
+                        targets_est = np.array(targets_est)
+                        #print np.reshape(targets, (targets.shape[0], self.output_size[0], self.output_size[1]))[0, :, :]
+                        #print np.reshape(targets,(targets.shape[0],self.output_size[0], self.output_size[1]))[0, :, :] - np.reshape(targets_est, (targets.shape[0],self.output_size[0], self.output_size[1]))[0, :, :]
+
+
+                        error_norm, _, _ = VisualizationLib().print_error(targets, targets_est, self.output_size, modeltype, data=str(subject), printerror=True)
+
+                        #error_norm = error_norm[:, 2:4]
+                        print error_norm.shape
+
+                        try:
+                            error_norm_flat = np.concatenate((error_norm_flat, error_norm.flatten()), axis=0)
+                        except:
+                            error_norm_flat = error_norm.flatten()
+
+
+
+
+                    elif modeltype == 'KNN' or modeltype == 'LRR' or modeltype == 'KRR':
+                        error_avg = load_pickle(
+                            self.dump_path + '/Final_Data/error_avg_subject' + str(subject) + '_' + str(modeltype) + '.p')
+                        try:
+                            error_avg_flat = np.concatenate((error_avg_flat, np.array(error_avg).flatten() / 10), axis=0)
+                        except:
+                            error_avg_flat = np.array(error_avg).flatten() / 10
+                        print np.shape(error_avg_flat), subject, modeltype
+
+
+            flat_errors[modeltype] = error_norm_flat
+
+
+        for modeltype in flat_errors:
+            print modeltype
+            print np.mean(flat_errors[modeltype]), 'mean'
+            print np.std(flat_errors[modeltype]), 'std'
+            print flat_errors[modeltype].shape, 'size'
+            print np.shape(flat_errors[modeltype]), 'count'
+
+        print ttest_ind(flat_errors['anglesSTVL'], flat_errors['anglesCL'], equal_var=True), 'Students T test on direct and anglesCL'
+        print ttest_ind(flat_errors['anglesSTVL'], flat_errors['direct'], equal_var=True), 'Students T test on direct and anglesSTVL'
+        print ttest_ind(flat_errors['anglesSTVL'], flat_errors['anglesCL'], equal_var=False), 'Welchs T test on direct and anglesCL'
+        print ttest_ind(flat_errors['direct'], flat_errors['direct'], equal_var=True), 'Students T test on direct and direct'
+
+
+        plt.show()
+
+
+    def final_foot_variance(self):
+        flat_errors = {}
+
         for modeltype in ['anglesSTVL']:
-            error_avg_flat = None
+            error_norm_flat = None
             for subject in [9, 10, 11, 12, 13, 14, 15, 16, 17, 18]:
                 if modeltype == 'anglesCL' or modeltype == 'anglesSTVL' or modeltype == 'direct':
-                    _, _, targets, targets_est = load_pickle(self.dump_path + '/Final_Data/error_avg_std_T25_subject' + str(subject) + '_' + str(modeltype) + '.p')
-                    # size (P x N) each: number of images, number of joints
 
-                    print np.shape(targets)
-                    print np.shape(targets_est)
+                    _, error_std_airR, _, _ = load_pickle(self.dump_path + '/Feet_Variance/error_avg_std_T25_subject' + str(subject) + '_' + str(modeltype) + '_RLair_only.p')
+                    _, error_std_gndR, _, _ = load_pickle(self.dump_path + '/Feet_Variance/error_avg_std_T25_subject' + str(subject) + '_' + str(modeltype) + '_RLgnd_only.p')
+
+                    _, error_std_airL, _, _ = load_pickle(self.dump_path + '/Feet_Variance/error_avg_std_T25_subject' + str(subject) + '_' + str(modeltype) + '_LLair_only.p')
+                    _, error_std_gndL, _, _ = load_pickle(self.dump_path + '/Feet_Variance/error_avg_std_T25_subject' + str(subject) + '_' + str(modeltype) + '_LLgnd_only.p')
+
+                    error_std_airR = np.concatenate((np.array(error_std_airR)[:,6:7], np.array(error_std_airR)[:,8:9]), axis = 1)
+                    error_std_gndR = np.concatenate((np.array(error_std_gndR)[:,6:7], np.array(error_std_gndR)[:,8:9]), axis = 1)
+                    error_std_airL = np.concatenate((np.array(error_std_airL)[:,7:8], np.array(error_std_airL)[:,9:10]), axis = 1)
+                    error_std_gndL = np.concatenate((np.array(error_std_gndL)[:,7:8], np.array(error_std_gndL)[:,9:10]), axis = 1)
+
+
+
                     try:
-                        error_avg_flat = np.concatenate((error_avg_flat, np.array(error_avg).flatten()), axis=0)
+                        error_std_airR_all = np.concatenate((error_std_airR_all, error_std_airR), axis=0)
+                        error_std_gndR_all = np.concatenate((error_std_gndR_all, error_std_gndR), axis=0)
+                        error_std_airL_all = np.concatenate((error_std_airL_all, error_std_airL), axis=0)
+                        error_std_gndL_all = np.concatenate((error_std_gndL_all, error_std_gndL), axis=0)
                     except:
-                        error_avg_flat = np.array(error_avg).flatten()
-                    print np.shape(error_avg_flat), subject, modeltype
+                        error_std_airR_all = error_std_airR
+                        error_std_gndR_all = error_std_gndR
+                        error_std_airL_all = error_std_airL
+                        error_std_gndL_all = error_std_gndL
 
-                elif modeltype == 'KNN' or modeltype == 'LRR' or modeltype == 'KRR':
-                    error_avg = load_pickle(
-                        self.dump_path + '/Final_Data/error_avg_subject' + str(subject) + '_' + str(modeltype) + '.p')
-                    try:
-                        error_avg_flat = np.concatenate((error_avg_flat, np.array(error_avg).flatten() / 10), axis=0)
-                    except:
-                        error_avg_flat = np.array(error_avg).flatten() / 10
-                    print np.shape(error_avg_flat), subject, modeltype
+                    print np.shape(error_std_airR_all)
+                    print np.shape(error_std_gndR_all)
+                    print np.shape(error_std_airL_all)
+                    print np.shape(error_std_gndL_all)
 
-            error_avg = np.array(error_avg_flat).flatten()
 
-            threshold_error[modeltype] = np.flip(np.linspace(0, np.max(error_avg), num=200), axis=0)
-            joint_percent[modeltype] = np.zeros_like(threshold_error[modeltype])
-            joint_percent_keep[modeltype] = np.zeros_like(threshold_error[modeltype])
 
-            # print np.mean(error_avg), 'GMPJPE'
+        print np.mean(error_std_airR_all[:,0]), 'mean R knee air, ', np.mean(error_std_airR_all[:,1]), 'mean R ankle air', np.std(error_std_airR_all[:,0]), 'std R knee air, ', np.std(error_std_airR_all[:,1]), 'std R ankle air, '
 
-            for i in range(threshold_error[modeltype].shape[0]):
-                joint_percent_queue = 0.
-                joint_percent_queue_keep = 0.
+        print np.mean(error_std_gndR_all[:,0]), 'mean R knee gnd, ', np.mean(error_std_gndR_all[:,1]), 'mean R ankle gnd, ', np.std(error_std_gndR_all[:,0]), 'std R knee gnd, ', np.std(error_std_gndR_all[:,1]), 'std R ankle gnd, '
 
-                for j in range(error_avg.shape[0]):
-                    # print error_var[j], threshold_variance[i], 'std and threshold'
-                    if error_avg[j] <= threshold_error[modeltype][
-                        i]:  # if our variance is less than the threshold, keep the value
-                        joint_percent_queue += 1
-                    if error_avg[j] >= threshold_error[modeltype][i]:
-                        joint_percent_queue_keep += 1
+        print np.mean(error_std_airL_all[:,0]), 'mean L knee air, ', np.mean(error_std_airL_all[:,1]), 'mean L ankle air, ', np.std(error_std_airL_all[:,0]), 'std L knee air, ', np.std(error_std_airL_all[:,1]), 'std L ankle air, '
 
-                joint_percent[modeltype][i] = joint_percent_queue
-                joint_percent_keep[modeltype][i] = joint_percent_queue_keep
+        print np.mean(error_std_gndL_all[:,0]), 'mean L knee gnd, ', np.mean(error_std_gndL_all[:,1]), 'mean L ankle gnd, ', np.std(error_std_gndL_all[:,0]), 'std L knee gnd, ', np.std(error_std_gndL_all[:,1]), 'std L ankle gnd, '
 
-            joint_percent[modeltype] = joint_percent[modeltype] / np.max(joint_percent[modeltype])
-            joint_percent_keep[modeltype] = joint_percent_keep[modeltype] / np.max(joint_percent_keep[modeltype])
+
+        print ttest_ind(error_std_airR_all[:,0], error_std_gndR_all[:,0], equal_var=False), 'Welchs T test on R knee air and R knee gnd'
+        print ttest_ind(error_std_airR_all[:,1], error_std_gndR_all[:,1], equal_var=False), 'Welchs T test on R ankle air and R ankle gnd'
+        print ttest_ind(error_std_airL_all[:,0], error_std_gndL_all[:,0], equal_var=False), 'Welchs T test on L knee air and L knee gnd'
+        print ttest_ind(error_std_airL_all[:,1], error_std_gndL_all[:,1], equal_var=False), 'Welchs T test on L ankle air and L ankle gnd'
+
+        error_std_air_all = np.concatenate((error_std_airR_all,error_std_airL_all), axis = 0)
+        error_std_gnd_all = np.concatenate((error_std_gndR_all,error_std_gndL_all), axis = 0)
+
+
+        print ttest_ind(error_std_air_all[:,0], error_std_gnd_all[:,0], equal_var=False), 'Welchs T test on all knee air and all knee gnd'
+        print ttest_ind(error_std_air_all[:,1], error_std_gnd_all[:,1], equal_var=False), 'Welchs T test on all ankle air and all ankle gnd'
 
 
         plt.show()
@@ -634,5 +710,6 @@ if __name__ == "__main__":
     #p.all_joint_error()
     #p.dropout_std_threshold()
     #p.error_threshold()
-    p.p_information_std()
+    #p.p_information_std()
+    p.final_foot_variance()
     sys.exit()

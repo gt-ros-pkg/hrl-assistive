@@ -163,9 +163,10 @@ class DataVisualizer():
         else:
 
             #self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p')
-            #self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair.p')
-            self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainval_sit175rlh_sit120rll.p')
+           # self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair.p')
+            #self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainval_sit175rlh_sit120rll.p')
             #self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/150RL_LL_air.p')
+            self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainvalLL_air_only.p')
 
 
         test_dat = self.validation_set
@@ -393,18 +394,27 @@ class DataVisualizer():
 
                 try:
                     self.error_avg_list.append(error_avg) #change this for the 3 first baselines! just append the error norm, targets, and targets est
-                    self.error_std_list.append(error_avg_std)
                     self.targets_list.append(targets[0,:].numpy())
                     self.targets_est_list.append(np.mean(targets_est.numpy(), axis = 0))
+
                 except:
                     self.error_avg_list = []
-                    self.error_std_list = []
                     self.targets_list = []
                     self.targets_est_list = []
+                    self.variance_est_list = []
                     self.error_avg_list.append(error_avg)
-                    self.error_std_list.append(error_avg_std)
                     self.targets_list.append(targets[0,:].numpy())
                     self.targets_est_list.append(np.mean(targets_est.numpy(), axis = 0))
+
+
+                    print targets_est.shape
+                    print np.std((targets_est.numpy() - np.mean(targets_est.numpy(), axis = 0)), axis =0)
+                    #self.variance_est_list.append()
+
+
+
+
+
 
                     #leg_patchR = np.squeeze(batch0.numpy()[0,:])[0, 58:74, 10:23]
                     #leg_patchL = np.squeeze(batch0.numpy()[0,:])[0, 58:74, 24:37]
@@ -417,22 +427,63 @@ class DataVisualizer():
 
 
                 count2 = 0
+                print np.concatenate((np.expand_dims(np.mean(angles_est.data.numpy(), axis=0), axis=0), np.expand_dims(np.std(angles_est.data.numpy(), axis=0), axis = 0)),axis = 0)
+                print np.array(self.error_std_list)[batch_idx, 6:10]
 
-                if self.opt.visualize == True:
+                if self.opt.visualize == True and np.array(self.error_std_list)[batch_idx, 9] > 5:
+
+                    self.im_sample = batch0.numpy()
+                    self.im_sample = np.squeeze(self.im_sample[count2, :])
+                    self.tar_sample = targets
+                    self.tar_sample = np.squeeze(self.tar_sample[count2, :]) / 1000
+
+                    self.sc_sample_mean = targets_est
+                    self.sc_sample_mean = np.squeeze(self.sc_sample_mean[:, :]) / 1000
+                    self.sc_sample_mean = np.mean(self.sc_sample_mean.numpy(), axis=0)
+                    self.sc_sample_mean = np.reshape(self.sc_sample_mean, self.output_size)
+                    print np.array(self.error_std_list)[batch_idx, 6:10]
+                    print np.array(self.error_avg_list)[batch_idx, 6:10]
+                    #print np.concatenate((np.expand_dims(np.mean(angles_est.data.numpy(), axis=0), axis=0), np.expand_dims(np.std(angles_est.data.numpy(), axis=0), axis = 0)),axis = 0)
+
+
+                    if count2 <= 1: VisualizationLib().rviz_publish_input(self.im_sample[0, :, :] * 1.3,
+                                                                          self.im_sample[-1, 10, 10])
+                    # else: VisualizationLib().rviz_publish_input(self.im_sample[1, :, :]/2, self.im_sample[-1, 10, 10])
+
+                    if self.loss_vector_type == 'anglesVL' or self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesSTVL':
+
+                        self.pseudo_sample_mean = pseudotargets_est
+                        self.pseudo_sample_mean = np.squeeze(self.pseudo_sample_mean[:, :]) / 1000
+                        self.pseudo_sample_mean = np.mean(self.pseudo_sample_mean, axis=0)
+                        self.pseudo_sample_mean = np.reshape(self.pseudo_sample_mean, (5, 3))
+
+                        VisualizationLib().rviz_publish_output(np.reshape(self.tar_sample, self.output_size),
+                                                               self.sc_sample_mean, self.pseudo_sample_mean)
+                        limbArray = VisualizationLib().rviz_publish_output_limbs(
+                            np.reshape(self.tar_sample, self.output_size), self.sc_sample_mean, self.pseudo_sample_mean,
+                            LimbArray=limbArray, count=0)
+                    else:
+                        VisualizationLib().rviz_publish_output(np.reshape(self.tar_sample, self.output_size),
+                                                               self.sc_sample_mean)
+                        limbArray = VisualizationLib().rviz_publish_output_limbs_direct(
+                            np.reshape(self.tar_sample, self.output_size), self.sc_sample_mean, LimbArray=limbArray,
+                            count=-1)
+
+                    skip_image = VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample_mean,
+                                                              block=True, title=str(model_key))
+                    if skip_image == 1:
+                        count2 = T
+                    count2 += 1
+
                     while count2 < T:
                         #print angles_est[0,:]
 
 
-                        self.im_sample = batch0.numpy()
-                        self.im_sample = np.squeeze(self.im_sample[count2, :])
-                        self.tar_sample = targets
-                        self.tar_sample = np.squeeze(self.tar_sample[count2, :]) / 1000
                         self.sc_sample = targets_est
                         self.sc_sample = np.squeeze(self.sc_sample[count2, :]) / 1000
                         self.sc_sample = np.reshape(self.sc_sample, self.output_size)
 
 
-                        print np.array(self.error_std_list)[batch_idx, 6:10]
                         if count2 <= 1: VisualizationLib().rviz_publish_input(self.im_sample[0, :, :] * 1.3,self.im_sample[-1, 10, 10])
                         # else: VisualizationLib().rviz_publish_input(self.im_sample[1, :, :]/2, self.im_sample[-1, 10, 10])
 
@@ -441,25 +492,41 @@ class DataVisualizer():
                             self.pseudo_sample = pseudotargets_est
                             self.pseudo_sample = np.squeeze(self.pseudo_sample[count2, :]) / 1000
                             self.pseudo_sample = np.reshape(self.pseudo_sample, (5, 3))
-                            VisualizationLib().rviz_publish_output(np.reshape(self.tar_sample, self.output_size),  self.sc_sample, self.pseudo_sample)
                             limbArray = VisualizationLib().rviz_publish_output_limbs(np.reshape(self.tar_sample, self.output_size), self.sc_sample, self.pseudo_sample,LimbArray=limbArray, count=count2)
                         else:
-                            VisualizationLib().rviz_publish_output(np.reshape(self.tar_sample, self.output_size), self.sc_sample)
                             limbArray = VisualizationLib().rviz_publish_output_limbs_direct(np.reshape(self.tar_sample, self.output_size), self.sc_sample, LimbArray=limbArray,count=count2)
 
                         skip_image = VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample,block=True, title = str(model_key))
                         #VisualizationLib().visualize_error_from_distance(bed_distances, error_norm)
                         if skip_image == 1:
                             count2 = T
+
                         count2 += 1
+                        if count2 == T:
+                            VisualizationLib().rviz_publish_output_limbs(np.reshape(self.tar_sample, self.output_size), self.sc_sample_mean, self.pseudo_sample_mean, LimbArray=limbArray, count=-1)
+                            VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample, block=True, title=str(model_key))
+
+                            VisualizationLib().rviz_publish_input(self.im_sample[0, :, :] * 1.3, self.im_sample[-1, 10, 10])
+                            VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample, block=True, title=str(model_key))
 
 
 
 
-                if batch_idx == 589 and self.opt.visualize == False:
+
+
+
+
+
+
+
+
+
+                batch_idx_limit = np.shape(self.validation_set['images'])[0]-1
+
+                if batch_idx == batch_idx_limit and self.opt.visualize == False:
                     if model_key == 'anglesVL' or model_key == 'anglesCL' or model_key == 'anglesSTVL' or model_key == 'direct':
                         print "DUMPING!!!!!"
-                        pkl.dump([self.error_avg_list, self.error_std_list, self.targets_list, self.targets_est_list], open(self.dump_path+'/Final_Data/error_avg_std_T'+str(T)+'_subject'+str(self.opt.leave_out)+'_'+str(model_key)+'_sit.p', 'wb'))
+                        pkl.dump([self.error_avg_list, self.error_std_list, self.targets_list, self.targets_est_list], open(self.dump_path+'/Feet_Variance/error_avg_std_T'+str(T)+'_subject'+str(self.opt.leave_out)+'_'+str(model_key)+'_LLair_only.p', 'wb'))
                     elif model_key == 'KNN' or model_key == 'Ridge' or model_key == 'KRidge':
                         pkl.dump(error_norm, open(self.dump_path+'/Final_Data/error_avg_subject' + str(self.opt.leave_out) + '_'+str(model_key)+'.p', 'wb'))
 

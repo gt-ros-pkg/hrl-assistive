@@ -670,7 +670,7 @@ class DatabaseCreator():
         return lengths, angles, pseudotargets
 
 
-    def create_raw_database(self):
+    def create_raw_database(self, prev=None):
         '''Creates a database using the raw pressure values(full_body) and only
         transforms world frame coordinates to mat coordinates'''
 
@@ -696,10 +696,12 @@ class DatabaseCreator():
             self.final_dataset['joint_angles_U_deg'] = []
             self.final_dataset['joint_angles_L_deg'] = []
 
-
+            if prev == None: movement = 'LL_air_only'
+            else: movement = 'LL'
 
             #for movement in ['RH_sitting','LH_sitting','RL_sitting','LL_sitting']:#,'RH1','LH1','RH2','LH2','RH3','LH3','RL','LL']:#,
-            for movement in ['LL_air','RL_air']:
+            for movement in [movement]:
+
         # ,'RL']:
 
             #for movement in ['RL_sitting']:#'LH_sitting','RL_sitting','LL_sitting']:
@@ -730,11 +732,21 @@ class DatabaseCreator():
                     num_samp = 120
                 elif movement == 'RL_air' or movement == 'LL_air':
                     num_samp = 300
+                elif movement == 'RL_air_only' or movement == 'LL_air_only':
+                    num_samp = 100
+
+                if prev == None:
+                    num_samp = np.min((np.shape(indexlist)[0], 75))
+                else:
+                    num_samp = prev
+
+                print num_samp
 
                 print 'working on subject: ',subject, '  movement type:', movement, '  length: ',len(p_file), '  Number sampled: ',num_samp
 
 
                 self.index_queue = []
+
 
                 for i in np.arange(num_samp):
 
@@ -826,7 +838,7 @@ class DatabaseCreator():
                     if legs[0, 0] > legs[1, 0]:
                         print movement
                         print 'flipped elbow ************************************************************************'
-                        self.visualize_single_pressure_map(rot_p_map, rot_target_mat)
+                        #self.visualize_single_pressure_map(rot_p_map, rot_target_mat)
                     if legs[2, 0] > legs[3, 0]:
                         print movement
                         print 'flipped hand ************************************************************************'
@@ -873,7 +885,7 @@ class DatabaseCreator():
                     kin_targets = np.concatenate((arm_targets, leg_targets), axis = 0)
                     pseudotargets = np.concatenate((arm_pseudotargets, leg_pseudotargets), axis = 0)
 
-                    if index % 2 == 0:
+                    if index % 1 == 0:
                         VisualizationLib().rviz_publish_input(rot_p_map, angle)
                         VisualizationLib().rviz_publish_output(rot_target_mat, kin_targets / 1000, pseudotargets)
 
@@ -886,7 +898,7 @@ class DatabaseCreator():
 
                     sleep(0.01)
 
-                    if i < 0:
+                    if movement == 'LL_air_only':#i < 100:
                         self.visualize_single_pressure_map(rot_p_map, rot_target_mat)
                         if self.keep_image == True:
                             self.final_dataset['images'].append(list(rot_p_map.flatten()))
@@ -962,16 +974,23 @@ class DatabaseCreator():
             #print np.mean(np.array(std_lengths)), 'mean of standard devs'
             print 'Output file size: ~', int(len(self.final_dataset['images']) * 0.08958031837*3948/1728), 'Mb'
             print "Saving final_dataset"
-            #pkl.dump(self.final_dataset, open(os.path.join(self.training_dump_path+str(subject)+'/p_files/_200rlh1_115rlh2_75rlh3_175rllair.p'), 'wb')) #_trainval_sit175rlh_sit120rll
+            print (self.training_dump_path+str(subject)+'/p_files/trainval'+movement+'.p')
 
+            pkl.dump(self.final_dataset, open(os.path.join(self.training_dump_path+str(subject)+'/p_files/trainval'+movement+'.p'), 'wb')) #_trainval_200rlh1_115rlh2_75rlh3_175rllair_sit175rlh_sit120rll
+
+            print len(self.final_dataset['images']), num_samp
             print 'Done.'
-        return
+
+        return len(self.final_dataset['images'])
 
 
     def run(self):
         '''Runs either the synthetic database creation script or the 
         raw dataset creation script to create a dataset'''
-        self.create_raw_database()
+        next_num = self.create_raw_database()
+
+        self.create_raw_database(175-next_num)
+
         return
 
 
@@ -1004,4 +1023,9 @@ if __name__ == "__main__":
     #Initialize trainer with a training database file
     p = DatabaseCreator(training_database_pkl_directory=opt.trainingPath,verbose = opt.verbose, select = opt.select)
     p.run()
+
+
+
+
+
     sys.exit()

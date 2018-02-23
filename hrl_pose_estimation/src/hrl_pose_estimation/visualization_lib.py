@@ -356,8 +356,8 @@ class VisualizationLib():
                 #print scores_std[joint], 'std of joint ', joint
                 #std of 3 is really uncertain
                 Smarker.color.r = 1.0
-                Smarker.color.g = 1.0 - scores_std[joint]/0.03
-                Smarker.color.b = scores_std[joint]/0.03
+                Smarker.color.g = 1.0 - scores_std[joint]/0.05
+                Smarker.color.b = scores_std[joint]/0.05
 
             else:
                 Smarker.color.r = 1.0
@@ -463,14 +463,16 @@ class VisualizationLib():
             ROT_mat[0:3, 0] = np.copy(np.reshape(x_orth, [3,1]))
             ROT_mat[0:3, 1] = np.copy(np.reshape(y_orth, [3,1]))
             ROT_mat[0:3, 2] = np.copy(np.reshape(z_vector, [3,1]))
-            Lmarker.scale.x = 0.025
-            Lmarker.scale.y = 0.025
             Lmarker.scale.z = z_mag
 
-            if count <= 1:
+            if count <= 0:
                 Lmarker.color.a = 1.0
+                Lmarker.scale.x = 0.025
+                Lmarker.scale.y = 0.025
             else:
-                Lmarker.color.a = 0.2
+                Lmarker.color.a = 0.4
+                Lmarker.scale.x = 0.015
+                Lmarker.scale.y = 0.015
 
             Lmarker.color.r = 1.0
             Lmarker.color.g = 1.0
@@ -533,14 +535,18 @@ class VisualizationLib():
             ROT_mat[0:3, 0] = np.copy(np.reshape(x_orth, [3,1]))
             ROT_mat[0:3, 1] = np.copy(np.reshape(y_orth, [3,1]))
             ROT_mat[0:3, 2] = np.copy(np.reshape(z_vector, [3,1]))
-            Lmarker.scale.x = 0.025
-            Lmarker.scale.y = 0.025
+
+
             Lmarker.scale.z = z_mag
 
-            if count <= 1:
+            if count <= 0:
                 Lmarker.color.a = 1.0
+                Lmarker.scale.x = 0.025
+                Lmarker.scale.y = 0.025
             else:
-                Lmarker.color.a = 0.2
+                Lmarker.color.a = 0.5
+                Lmarker.scale.x = 0.015
+                Lmarker.scale.y = 0.015
 
             Lmarker.color.r = 1.0
             Lmarker.color.g = 1.0
