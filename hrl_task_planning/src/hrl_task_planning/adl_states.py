@@ -26,6 +26,7 @@ import hrl_lib.util as utils
 # pylint: disable=W0102
 from task_smacher import PDDLSmachState
 from hrl_task_planning.pddl_utils import PlanStep, State, GoalState, Predicate
+import tf.transformations as tft
 
 SPA = ["succeeded", "preempted", "aborted"]
 
@@ -148,7 +149,7 @@ class RegisterHeadState(PDDLSmachState):
         print 'Trying to find head now'
         if self.model.upper() == "AUTOBED":
             #print 'model is autobed'
-            head_registered = self.get_head_pose()
+            head_registered = self.get_head_pose(head_frame="/head")
             #print 'head registered is', head_registered
         elif self.model.upper() == "WHEELCHAIR":
             head_registered = True
@@ -260,9 +261,9 @@ class MoveArmState(PDDLSmachState):
         goal = PoseStamped()
         if self.model.upper() == 'AUTOBED':
             if self.task.upper() == 'SCRATCHING' or self.task.upper() == 'BLANKET' or self.task.upper() == 'BATHING':
-                self.goal_position = [0.28, 0, -0.1]
-                self.goal_orientation = [0.,   0.,   1., 0.]
-                self.reference_frame = '/'+str(self.model.lower())+'/knee_left_link'
+                self.goal_position = [0.0, 0., 0.2]
+                self.goal_orientation = tft.quaternion_from_euler(0.0, m.radians(180.), 0.0)
+                self.reference_frame = 'l_knee'
                 goal.pose.position.x = self.goal_position[0]
                 goal.pose.position.y = self.goal_position[1]
                 goal.pose.position.z = self.goal_position[2]
@@ -275,9 +276,9 @@ class MoveArmState(PDDLSmachState):
                 self.ignore_next_goal_pose = True
                 self.l_arm_pose_pub.publish(goal)
             elif self.task.upper() == 'FEEDING' or self.task.upper() == 'SHAVING':
-                self.goal_position = [0.25, 0., -0.1]
-                self.goal_orientation = [0., 0., 1., 0.]
-                self.reference_frame = '/'+str(self.model.lower())+'/head_link'
+                self.goal_position = [0.12, 0., 0.12]
+                self.goal_orientation = tft.quaternion_from_euler(0.0, m.radians(225.), 0.0)
+                self.reference_frame = '/head'
                 goal.pose.position.x = self.goal_position[0]
                 goal.pose.position.y = self.goal_position[1]
                 goal.pose.position.z = self.goal_position[2]
@@ -289,41 +290,6 @@ class MoveArmState(PDDLSmachState):
                 rospy.loginfo('[%s] Reaching to head.' % rospy.get_name())
                 self.ignore_next_goal_pose = True
                 self.l_arm_pose_pub.publish(goal)
-            elif self.task.upper() == 'DRESSING':
-                current_position, current_orientation = self.listener.lookupTransform('/autobed/base_link',
-                                                                                      '/base_link',
-                                                                                      rospy.Time(0))
-                if current_position[1] > 0:
-                    self.reference_frame = '/' + str(self.model.lower()) + '/upper_arm_right_link'
-                else:
-                    self.reference_frame = '/' + str(self.model.lower()) + '/upper_arm_left_link'
-                self.goal_position = [0.15, 0., -0.19]
-                self.goal_orientation = [0., 0., 1., 0.]
-                goal.pose.position.x = self.goal_position[0]
-                goal.pose.position.y = self.goal_position[1]
-                goal.pose.position.z = self.goal_position[2]
-                goal.pose.orientation.x = self.goal_orientation[0]
-                goal.pose.orientation.y = self.goal_orientation[1]
-                goal.pose.orientation.z = self.goal_orientation[2]
-                goal.pose.orientation.w = self.goal_orientation[3]
-                goal.header.frame_id = self.reference_frame
-                rospy.loginfo('[%s] Reaching to arm.' % rospy.get_name())
-                self.ignore_next_goal_pose = True
-                self.l_arm_pose_pub.publish(goal)
-            elif self.task.upper() == 'WIPING_MOUTH' or self.task.upper() == 'FOREHEAD':
-                # self.goal_position = [0.25, 0., -0.1]
-                # self.goal_orientation = [0., 0., 1., 0.]
-                # self.reference_frame = '/'+str(self.model.lower())+'/head_link'
-                # goal.pose.position.x = self.goal_position[0]
-                # goal.pose.position.y = self.goal_position[1]
-                # goal.pose.position.z = self.goal_position[2]
-                # goal.pose.orientation.x = self.goal_orientation[0]
-                # goal.pose.orientation.y = self.goal_orientation[1]
-                # goal.pose.orientation.z = self.goal_orientation[2]
-                # goal.pose.orientation.w = self.goal_orientation[3]
-                # goal.header.frame_id = self.reference_frame
-                self.skip_arm_movement = True
-                rospy.loginfo('[%s] Because of the complexity around the head, leaving all arm movement to the user.' % rospy.get_name())
             else:
                 rospy.logwarn('[%s] Cannot Find ARM GOAL to reach. Have you specified the right task? [%s]' % (rospy.get_name(), self.task))
                 return False
