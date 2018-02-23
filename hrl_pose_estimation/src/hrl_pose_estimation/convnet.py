@@ -26,6 +26,7 @@ class CNN(nn.Module):
         #############################################################################
         #print mat_size
         self.loss_vector_type = loss_vector_type
+        print '$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$'
 
         hidden_dim1= 32
         hidden_dim2 = 48
@@ -127,7 +128,7 @@ class CNN(nn.Module):
             # nn.Dropout(p = 0.1, inplace=False),
 
             # 7
-            nn.Conv2d(3, 64, kernel_size = 7, stride = 2, padding = 1),
+            nn.Conv2d(3, 64, kernel_size = 7, stride = 2, padding = 3),
             nn.ReLU(inplace = True),
             nn.Dropout(p = 0.1, inplace=False),
             nn.MaxPool2d(3, stride=2),
@@ -147,7 +148,7 @@ class CNN(nn.Module):
             # nn.Dropout(p = 0.1, inplace=False),
             # nn.MaxPool2d(3, stride=2),
             # nn.Conv2d(32, 32, kernel_size=3, stride=1, padding= 0),
-            # nn.ReLU(inplace=True),
+            # nn.ReLU(inplace=True),/home/henryclever/catkin_ws/src/hrl-assistive/hrl_pose_estimation/src/hrl_pose_estimation/create_dataset.py
             # nn.Dropout(p = 0.1, inplace=False),
             # nn.Conv2d(32, 64, kernel_size=3, stride=1, padding= 0),
             # nn.ReLU(inplace=True),
@@ -260,16 +261,16 @@ class CNN(nn.Module):
         )
 
         self.CNN_pack2 = nn.Sequential(
-            nn.Conv2d(3, 64, kernel_size = 7, stride = 2, padding = 1),
+            nn.Conv2d(3, 64, kernel_size = 7, stride = 2, padding = 3),
             nn.ReLU(inplace = True),
-            nn.Dropout(p = 0.1, inplace=False),
-            nn.MaxPool2d(3, stride=2),
-            nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=0),
-            nn.ReLU(inplace=True),
-            nn.Dropout(p=0.1, inplace=False),
-            nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=0),
-            nn.ReLU(inplace=True),
-            nn.Dropout(p=0.1, inplace=False),
+            #nn.Dropout(p = 0.1, inplace=False),
+            #nn.MaxPool2d(3, stride=2),
+            #nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=0),
+            #nn.ReLU(inplace=True),
+            #nn.Dropout(p=0.1, inplace=False),
+            #nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=0),
+            #nn.ReLU(inplace=True),
+            #nn.Dropout(p=0.1, inplace=False),
 
         )
 
@@ -310,7 +311,7 @@ class CNN(nn.Module):
             # 6
             # nn.Linear(9216, out_size),
             # 7
-            nn.Linear(18432, out_size),
+            nn.Linear(22400, out_size),
             
             # 8
             # nn.Linear(5120, out_size),
@@ -455,10 +456,11 @@ class CNN(nn.Module):
 
 
 
-    def forward_kinematic_jacobian(self, images, targets=None, kincons=None, prior_cascade = None, forward_only = False, subject = None):
+    def forward_kinematic_jacobian(self, images, targets=None, kincons=None, forward_only = False, subject = None, loss_vector_type = None):
         scores = None
         targets_est = None
         lengths_est = None
+
 
 
         scores_cnn = self.CNN_pack1(images)
@@ -487,8 +489,12 @@ class CNN(nn.Module):
         if kincons is not None:
             kincons = kincons / 100
 
+        print loss_vector_type, 'LOSS VECT'
 
-        scores, angles_est, pseudotargets_est = KinematicsLib().forward_kinematics_pytorch(images, scores, self.loss_vector_type, kincons, targets, prior_cascade = prior_cascade, forward_only = forward_only, subject = subject, count = self.count)
+        if loss_vector_type == 'anglesCL' or loss_vector_type == 'anglesVL':
+            scores, angles_est, pseudotargets_est = KinematicsLib().forward_kinematics_pytorch(images, scores, loss_vector_type, kincons, forward_only = forward_only, subject = subject, count = self.count)
+        elif loss_vector_type == 'anglesSTVL':
+            scores, angles_est, pseudotargets_est = KinematicsLib().forward_kinematics_lengthsv_pytorch(images, scores, loss_vector_type, kincons, forward_only = forward_only, subject = subject)
 
 
         #print scores.size(), ''
