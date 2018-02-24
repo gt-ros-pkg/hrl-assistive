@@ -109,6 +109,7 @@ class PhysicalTrainer():
 
 
         print test_file
+        print self.num_epochs, 'NUM EPOCHS!'
         #Entire pressure dataset with coordinates in world frame
 
         self.save_name = '_9to18_' + opt.losstype+'_s' +str(self.shuffle)+'_' + str(self.batch_size) + 'b_' + str(self.num_epochs) + 'e_'+str(self.opt.leave_out)
