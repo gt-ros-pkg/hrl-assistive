@@ -55,7 +55,7 @@ import gc
 
 
 
-def multi_net(idx, trainData, testData, batch_size=512, sam_epoch=500, \
+def multi_net(idx, trainData, testData, batch_size=512, nb_epoch=1, \
               patience=20, fine_tuning=False, noise_mag=0.0,\
               weights_file=None, renew=False, **kwargs):
     """
@@ -76,13 +76,20 @@ def multi_net(idx, trainData, testData, batch_size=512, sam_epoch=500, \
     print "Labels: ", np.unique(y_train), " #Labels: ", n_labels
     print "Labels: ", np.unique(y_test), " #Labels: ", n_labels
 
-    ## x_sig_train = x_sig_train[:20]
-    ## x_img_train = x_img_train[:20]
-    ## y_train = y_train[:20]
-    ## x_sig_test = x_sig_test[:20]
-    ## x_img_test = x_img_test[:20]
-    ## y_test = y_test[:20]
+    # tf mode scales to -1 to 1
+    x_img_train = np.array(x_img_train)
+    x_img_train[:,0] += 123.68
+    x_img_train[:,1] += 103.939
+    x_img_train[:,2] += 116.779
+    x_img_train /= 127.5
+    x_img_train -= 1.
 
+    x_img_test = np.array(x_img_test)
+    x_img_test[:,0] += 123.68
+    x_img_test[:,1] += 103.939
+    x_img_test[:,2] += 116.779
+    x_img_test /= 127.5
+    x_img_test -= 1.
 
     # Load weights
     if weights_file is not None:
@@ -113,20 +120,20 @@ def multi_net(idx, trainData, testData, batch_size=512, sam_epoch=500, \
     # Convert labels to categorical one-hot encoding
     y_train = keras.utils.to_categorical(y_train, num_classes=n_labels)
     y_val   = keras.utils.to_categorical(y_val, num_classes=n_labels)
-    #y_test  = keras.utils.to_categorical(y_test, num_classes=n_labels)
+    #y_val_test = keras.utils.to_categorical(y_test, num_classes=n_labels)
 
     if multi_weights_file is not None and os.path.isfile(multi_weights_file) and\
         fine_tuning is False and renew is False and False:
         model.load_weights(multi_weights_file)
     else:
-        callbacks = [EarlyStopping(monitor='val_loss', min_delta=0.0005, patience=patience,
+        callbacks = [EarlyStopping(monitor='val_loss', min_delta=0.001, patience=patience,
                                    verbose=0, mode='auto'),
                      ModelCheckpoint(multi_weights_file,
                                      save_best_only=True,
                                      save_weights_only=True,
                                      monitor='val_loss'),
                      ReduceLROnPlateau(monitor='val_loss', factor=0.2,
-                                       patience=3, min_lr=0.00001)]
+                                       patience=2, min_lr=0.0001)]
 
 
         if fine_tuning and os.path.isfile(multi_weights_file):
@@ -143,22 +150,28 @@ def multi_net(idx, trainData, testData, batch_size=512, sam_epoch=500, \
             
         ## model = km.vgg_multi_top_net(np.shape(x_train)[1:], n_labels, weights_path)
         model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
+        #model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])  
         print(model.summary())
 
+        # 
+        
 
         train_datagen   = ku.multiGenerator(augmentation=True, noise_mag=noise_mag )
         test_datagen    = ku.multiGenerator(augmentation=False, noise_mag=0.0)
         train_generator = train_datagen.flow(x_img_train, x_sig_train, y_train, batch_size=batch_size,
-                                             seed=3334)
-        test_generator  = test_datagen.flow(x_img_val, x_sig_val, y_val, batch_size=batch_size,
+                                             shuffle=False, seed=3334)        
+        test_generator  = test_datagen.flow(x_img_val, x_sig_val, y_val,
+                                            batch_size=batch_size, shuffle=False,
                                             seed=3334)
 
         hist = model.fit_generator(train_generator,
+                                   epochs=10,
                                    #samples_per_epoch=len(y_train),
-                                   steps_per_epoch=sam_epoch,
+                                   steps_per_epoch=len(y_train)/batch_size*nb_epoch,
                                    validation_data=test_generator,
-                                   validation_steps=len(y_val)/batch_size+1,
+                                   validation_steps=len(y_val)/batch_size,
                                    callbacks=callbacks)
+
 
     y_pred = model.predict([np.array(x_img_test), np.array(x_sig_test)])
     y_pred = np.argmax(y_pred, axis=1).tolist()
