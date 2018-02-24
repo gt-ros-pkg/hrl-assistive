@@ -360,8 +360,12 @@ class VisualizationLib():
                 Smarker.color.b = scores_std[joint]/0.05
 
             else:
-                Smarker.color.r = 1.0
-                Smarker.color.g = 1.0
+                if joint == 1:
+                    Smarker.color.r = 1.0
+                    Smarker.color.g = 0.0
+                else:
+                    Smarker.color.r = 1.0
+                    Smarker.color.g = 1.0
                 Smarker.color.b = 0.0
 
             Smarker.pose.orientation.w = 1.0

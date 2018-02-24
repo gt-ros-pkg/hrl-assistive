@@ -98,9 +98,9 @@ class PhysicalTrainer():
         self.batch_size = 128
 
         if self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL' or self.loss_vector_type == 'anglesSTVL':
-            self.num_epochs = 150
-        elif self.loss_vector_type == 'direct':
             self.num_epochs = 300
+        elif self.loss_vector_type == 'direct':
+            self.num_epochs = 400
         self.include_inter = True
         self.shuffle = False
         self.tensor = True
@@ -287,7 +287,7 @@ class PhysicalTrainer():
             print self.images_test_aggregated.shape, self.targets_test_aggregated.shape
 
 
-    def baseline_createHOGset(self, baseline):
+    def baseline_createHOGset(self, opt):
         # for knn we don't really care about the variable function in pytorch, but it's a nice utility for shuffling the data.
         self.batch_size = self.train_y_tensor.numpy().shape[0]
         self.batchtest_size = 11  # self.test_y_tensor.numpy().shape[0]
@@ -295,8 +295,6 @@ class PhysicalTrainer():
         self.train_dataset = torch.utils.data.TensorDataset(self.train_x_tensor, self.train_y_tensor)
         self.train_loader = torch.utils.data.DataLoader(self.train_dataset, self.batch_size, shuffle=self.shuffle)
 
-        self.test_dataset = torch.utils.data.TensorDataset(self.test_x_tensor, self.test_y_tensor)
-        self.test_loader = torch.utils.data.DataLoader(self.test_dataset, self.batchtest_size, shuffle=self.shuffle)
 
         for batch_idx, batch in enumerate(self.train_loader):
             print batch[0].size(), 'batch size'
@@ -333,7 +331,7 @@ class PhysicalTrainer():
 
             print np.shape(images_up)
             print np.shape(targets)
-            pkl.dump([images_up, targets], open(os.path.join('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_9/p_files/trainval_sit175rlh_sit120rll_HOG.p'), 'wb'))  # _trainval_sit175rlh_sit120rll
+            pkl.dump([images_up, targets], open(os.path.join('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_'+str(opt.leave_out)+'/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair_HOGshiftscale.p'), 'wb'))  # _trainval_sit175rlh_sit120rll
 
     def baseline_train(self, baseline):
         n_neighbors = 5
@@ -834,7 +832,7 @@ if __name__ == "__main__":
     opt, args = p.parse_args()
 
     if opt.mltype == 'convnet': filetag = ''
-    else: filetag = '_HOG'
+    else: filetag = ''#''_HOG'
 
     if opt.computer == 'lab_harddrive':
 
@@ -912,6 +910,7 @@ if __name__ == "__main__":
 
 
 
+
     test_database_file = []
     training_database_file = []
     if opt.leave_out == 4:
@@ -959,25 +958,25 @@ if __name__ == "__main__":
 
     elif opt.leave_out == 9:
         test_database_file.append(opt.subject9Path)
-        #test_database_file.append(opt.subject9PathB)
+        test_database_file.append(opt.subject9PathB)
         training_database_file.append(opt.subject9Path)
-        #training_database_file.append(opt.subject11Path)
-        #training_database_file.append(opt.subject12Path)
-        #training_database_file.append(opt.subject13Path)
-        #training_database_file.append(opt.subject14Path)
-        #training_database_file.append(opt.subject15Path)
-        #training_database_file.append(opt.subject16Path)
-        #training_database_file.append(opt.subject17Path)
-        #training_database_file.append(opt.subject18Path)
-        #training_database_file.append(opt.subject10PathB)
-        #training_database_file.append(opt.subject11PathB)
-        #training_database_file.append(opt.subject12PathB)
-        #training_database_file.append(opt.subject13PathB)
-        #training_database_file.append(opt.subject14PathB)
-        #training_database_file.append(opt.subject15PathB)
-        #training_database_file.append(opt.subject16PathB)
-        #training_database_file.append(opt.subject17PathB)
-        #training_database_file.append(opt.subject18PathB)
+        training_database_file.append(opt.subject11Path)
+        training_database_file.append(opt.subject12Path)
+        training_database_file.append(opt.subject13Path)
+        training_database_file.append(opt.subject14Path)
+        training_database_file.append(opt.subject15Path)
+        training_database_file.append(opt.subject16Path)
+        training_database_file.append(opt.subject17Path)
+        training_database_file.append(opt.subject18Path)
+        training_database_file.append(opt.subject10PathB)
+        training_database_file.append(opt.subject11PathB)
+        training_database_file.append(opt.subject12PathB)
+        training_database_file.append(opt.subject13PathB)
+        training_database_file.append(opt.subject14PathB)
+        training_database_file.append(opt.subject15PathB)
+        training_database_file.append(opt.subject16PathB)
+        training_database_file.append(opt.subject17PathB)
+        training_database_file.append(opt.subject18PathB)
     elif opt.leave_out == 10:
         test_database_file.append(opt.subject10Path)
         test_database_file.append(opt.subject10PathB)
@@ -1198,7 +1197,7 @@ if __name__ == "__main__":
         if opt.mltype == 'convnet':
             p.init_convnet_train()
         elif opt.mltype != 'convnet':
-            p.baseline_train(opt.mltype)
+            p.baseline_createHOGset(opt)
 
         #else:
         #    print 'Please specify correct training type:1. HoG_KNN 2. convnet_2'

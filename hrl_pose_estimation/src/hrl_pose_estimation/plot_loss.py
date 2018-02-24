@@ -163,10 +163,10 @@ class DataVisualizer():
         else:
 
             #self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p')
-           # self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair.p')
+            self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair.p')
             #self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainval_sit175rlh_sit120rll.p')
             #self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/150RL_LL_air.p')
-            self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainvalLL_air_only.p')
+            #self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainvalLL.p')
 
 
         test_dat = self.validation_set
@@ -396,20 +396,27 @@ class DataVisualizer():
                     self.error_avg_list.append(error_avg) #change this for the 3 first baselines! just append the error norm, targets, and targets est
                     self.targets_list.append(targets[0,:].numpy())
                     self.targets_est_list.append(np.mean(targets_est.numpy(), axis = 0))
+                    xyz_std = np.reshape(np.std((targets_est.numpy() - np.mean(targets_est.numpy(), axis=0)), axis=0),self.output_size)
+                    norm_std = np.linalg.norm(xyz_std, axis=1)
+                    self.variance_est_list.append(norm_std)
 
                 except:
                     self.error_avg_list = []
                     self.targets_list = []
                     self.targets_est_list = []
                     self.variance_est_list = []
+
+
                     self.error_avg_list.append(error_avg)
                     self.targets_list.append(targets[0,:].numpy())
                     self.targets_est_list.append(np.mean(targets_est.numpy(), axis = 0))
-
-
-                    print targets_est.shape
-                    print np.std((targets_est.numpy() - np.mean(targets_est.numpy(), axis = 0)), axis =0)
+                    xyz_std = np.reshape(np.std((targets_est.numpy() - np.mean(targets_est.numpy(), axis = 0)), axis =0), self.output_size)
+                    norm_std = np.linalg.norm(xyz_std, axis = 1)
+                    self.variance_est_list.append(norm_std)
+                    print norm_std
                     #self.variance_est_list.append()
+
+                print np.shape(self.variance_est_list)
 
 
 
@@ -428,9 +435,9 @@ class DataVisualizer():
 
                 count2 = 0
                 print np.concatenate((np.expand_dims(np.mean(angles_est.data.numpy(), axis=0), axis=0), np.expand_dims(np.std(angles_est.data.numpy(), axis=0), axis = 0)),axis = 0)
-                print np.array(self.error_std_list)[batch_idx, 6:10]
+                print np.array(self.variance_est_list)[batch_idx, 0:10]
 
-                if self.opt.visualize == True and np.array(self.error_std_list)[batch_idx, 9] > 5:
+                if self.opt.visualize == True and np.array(self.variance_est_list)[batch_idx, 4] > 0:
 
                     self.im_sample = batch0.numpy()
                     self.im_sample = np.squeeze(self.im_sample[count2, :])
@@ -441,8 +448,7 @@ class DataVisualizer():
                     self.sc_sample_mean = np.squeeze(self.sc_sample_mean[:, :]) / 1000
                     self.sc_sample_mean = np.mean(self.sc_sample_mean.numpy(), axis=0)
                     self.sc_sample_mean = np.reshape(self.sc_sample_mean, self.output_size)
-                    print np.array(self.error_std_list)[batch_idx, 6:10]
-                    print np.array(self.error_avg_list)[batch_idx, 6:10]
+                    print np.array(self.error_avg_list)[batch_idx, 0:10]*10
                     #print np.concatenate((np.expand_dims(np.mean(angles_est.data.numpy(), axis=0), axis=0), np.expand_dims(np.std(angles_est.data.numpy(), axis=0), axis = 0)),axis = 0)
 
 
@@ -526,7 +532,7 @@ class DataVisualizer():
                 if batch_idx == batch_idx_limit and self.opt.visualize == False:
                     if model_key == 'anglesVL' or model_key == 'anglesCL' or model_key == 'anglesSTVL' or model_key == 'direct':
                         print "DUMPING!!!!!"
-                        pkl.dump([self.error_avg_list, self.error_std_list, self.targets_list, self.targets_est_list], open(self.dump_path+'/Feet_Variance/error_avg_std_T'+str(T)+'_subject'+str(self.opt.leave_out)+'_'+str(model_key)+'_LLair_only.p', 'wb'))
+                        pkl.dump([self.error_avg_list, self.variance_est_list, self.targets_list, self.targets_est_list], open(self.dump_path+'/Feet_Variance/error_avg_std_T'+str(T)+'_subject'+str(self.opt.leave_out)+'_'+str(model_key)+'_LLair_only.p', 'wb'))
                     elif model_key == 'KNN' or model_key == 'Ridge' or model_key == 'KRidge':
                         pkl.dump(error_norm, open(self.dump_path+'/Final_Data/error_avg_subject' + str(self.opt.leave_out) + '_'+str(model_key)+'.p', 'wb'))
 
