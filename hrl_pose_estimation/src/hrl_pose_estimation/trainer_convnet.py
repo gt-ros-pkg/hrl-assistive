@@ -103,7 +103,7 @@ class PhysicalTrainer():
             self.num_epochs = 400
         self.include_inter = True
         self.shuffle = False
-        self.tensor = False
+        self.tensor = True
 
         self.count = 0
 
