@@ -32,8 +32,8 @@ from keras import regularizers
 #from .imagenet_utils import _obtain_input_shape
 
 
-WEIGHTS_PATH = 'https://github.com/fchollet/deep-learning-models/releases/download/v0.1/vgg16_weights_tf_dim_ordering_tf_kernels.h5'
-WEIGHTS_PATH_NO_TOP = 'https://github.com/fchollet/deep-learning-models/releases/download/v0.1/vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5'
+WEIGHTS_PATH = 'https://github.com/fchollet/deep-learning-models/releases/download/v0.1/vgg16_weights_th_dim_ordering_tf_kernels.h5'
+WEIGHTS_PATH_NO_TOP = 'https://github.com/fchollet/deep-learning-models/releases/download/v0.1/vgg16_weights_th_dim_ordering_tf_kernels_notop.h5'
 
 
 def VGG16(include_top=True, include_multi_top=False, weights='imagenet', weights_file=None,
@@ -166,8 +166,8 @@ def VGG16(include_top=True, include_multi_top=False, weights='imagenet', weights
     
     if include_multi_top:
         model.add(Flatten(name='flatten'))
-        model.add(Dropout(0.5))
-        model.add(Dense(16, activation='relu', name='fc1',
+        model.add(Dropout(0.2))
+        model.add(Dense(128, activation='relu', name='fc1',
                   kernel_regularizer=regularizers.l2(0.03)))
         model.add(Dense(16, activation='relu', name='fc2',
                   kernel_regularizer=regularizers.l2(0.01)))
@@ -178,19 +178,21 @@ def VGG16(include_top=True, include_multi_top=False, weights='imagenet', weights
         sig_model.add(Dropout(0.3))
         sig_model.add(Dense(16, kernel_initializer='random_uniform',
                             activation='tanh', name='sig_2'))
-        sig_model.add(Dropout(0.3))
+        ## sig_model.add(Dropout(0.3))
 
-        merged = Concatenate()([model.output, sig_model.output]) 
-        
+        merged = Concatenate()([model.output, sig_model.output])
+
+        out = Dropout(0.3)(merged)        
         out = Dense(16, activation='tanh', kernel_initializer='random_uniform', name='fc3_1',
-                       kernel_regularizer=regularizers.l2(0.05))(merged)
+                    kernel_regularizer=regularizers.l2(0.05))(out)
+        #out = Dropout(0.2)(out)
         out = Dense(classes, activation='softmax', name='fc_out')(out)
         multi_model = Model([model.input, sig_model.input], out)
         
     elif include_top:
         model.add(Flatten(name='flatten'))
-        model.add(Dropout(0.5))
-        model.add(Dense(16, activation='relu', name='fc1',
+        model.add(Dropout(0.2))
+        model.add(Dense(128, activation='relu', name='fc1',
                   kernel_regularizer=regularizers.l2(0.03)))
         model.add(Dense(16, activation='relu', name='fc2',
                   kernel_regularizer=regularizers.l2(0.01)))
@@ -210,8 +212,12 @@ def VGG16(include_top=True, include_multi_top=False, weights='imagenet', weights
             if weights_file[2] is not None:
                 multi_model.load_weights(weights_file[2])
             else:
+                #try:
                 multi_model.load_weights(weights_file[0], by_name=True)
                 multi_model.load_weights(weights_file[1], by_name=True)
+                #except:
+                #    print "failed to load weights"
+                #    sys.exit()
         elif include_top and weights_file is not None:
             multi_model.load_weights(weights_file[1], by_name=True)
             

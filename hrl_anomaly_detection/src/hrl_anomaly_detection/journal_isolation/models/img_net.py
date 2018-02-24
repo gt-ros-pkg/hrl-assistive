@@ -49,8 +49,9 @@ import keras
 
 from sklearn.metrics import accuracy_score
 
-from hrl_execution_monitor.keras_util import keras_util as ku
-## from hrl_anomaly_detection.vae import util as vutil
+from hrl_anomaly_detection.journal_isolation.models import keras_util as ku
+from keras.preprocessing.image import ImageDataGenerator
+#hrl_anomaly_detection.vae import util as vutil
 from . import vgg16
 
 import gc
@@ -61,9 +62,9 @@ vgg_weights_path = os.path.expanduser('~')+'/git/keras_test/vgg16_weights.h5'
 y_group = [[3,5,10],[2,7,8,9,11],[1,6],[0,4]]
 
 
-def img_net(idx, trainData, testData, save_data_path, batch_size=512, nb_epoch=500, \
+def img_net(idx, trainData, testData, save_data_path, batch_size=512, nb_epoch=1, \
             patience=20, fine_tuning=False, img_scale=0.25, img_feature_type='vgg',\
-            weights_file=None, save_weights_file='sig_weights.h5', renew=False,
+            weights_file=None, save_weights_file='img_weights.h5', renew=False,
             load_weights=False, cause_class=True, **kwargs):
     """
     Variational Autoencoder with two LSTMs and one fully-connected layer
@@ -72,11 +73,6 @@ def img_net(idx, trainData, testData, save_data_path, batch_size=512, nb_epoch=5
 
     y_train should contain all labels
     """
-    if img_feature_type == 'vgg': vgg=True
-    else: vgg=False
-    if vgg: prefix = 'vgg_'
-    else: prefix = ''
-
     
     x_train = trainData[0]
     y_train = np.expand_dims(trainData[1], axis=-1)-2
@@ -86,10 +82,25 @@ def img_net(idx, trainData, testData, save_data_path, batch_size=512, nb_epoch=5
     n_labels = len(np.unique(y_train))
     print "Labels: ", np.unique(y_train), " #Labels: ", n_labels
     print "Labels: ", np.unique(y_test), " #Labels: ", n_labels
-    print np.shape(x_train), np.shape(y_train), np.shape(x_test), np.shape(y_test)
 
-    x_train, y_train, x_test, y_test = get_bottleneck_image(idx, (x_train, y_train), (x_test, y_test),
-                                                            save_data_path, n_labels, renew=renew)    
+
+    # tf mode scales to -1 to 1
+    x_train = np.array(x_train)
+    x_train[:,0] += 123.68
+    x_train[:,1] += 103.939
+    x_train[:,2] += 116.779
+    x_train /= 127.5
+    x_train -= 1.
+
+    x_test = np.array(x_test)
+    x_test[:,0] += 123.68
+    x_test[:,1] += 103.939
+    x_test[:,2] += 116.779
+    x_test /= 127.5
+    x_test -= 1.
+
+    ## x_train, y_train, x_test, y_test = get_bottleneck_image(idx, (x_train, y_train), (x_test, y_test),
+    ##                                                         save_data_path, n_labels, renew=renew)    
 
     # Convert labels to categorical one-hot encoding
     y_train = keras.utils.to_categorical(y_train, num_classes=n_labels)
@@ -101,15 +112,15 @@ def img_net(idx, trainData, testData, save_data_path, batch_size=512, nb_epoch=5
     x = np.array(x_train)[idx_list]
     y = y_train[idx_list]
 
+    x_val = x[int(len(x)*0.7):]
+    y_val = y[int(len(x)*0.7):]  
+
     x_train = x[:int(len(x)*0.7)]
     y_train = y[:int(len(x)*0.7)]
 
-    x_val = x[int(len(x)*0.7):]
-    y_val = y[int(len(x)*0.7):]
-    
 
     # Model construction (VGG16) ---------------------------------------------------------
-    if weights_file is not None and os.path.isfile(weights_file) and renew is False:
+    if weights_file is not None and os.path.isfile(weights_file) and renew is False and False:
         model.load_weights(weights_file)
     else:
         callbacks = [EarlyStopping(monitor='val_loss', min_delta=0.001, patience=patience,
@@ -121,35 +132,39 @@ def img_net(idx, trainData, testData, save_data_path, batch_size=512, nb_epoch=5
                      ReduceLROnPlateau(monitor='val_loss', factor=0.2,
                                        patience=2, min_lr=0.00001)]
 
-        if load_weights is False:
-
-            model = vgg16.vgg_image_top_net(np.shape(x_train)[1:], n_labels)
-            ## optimizer = SGD(lr=0.001, decay=1e-6, momentum=0.9, nesterov=True)
-            optimizer = RMSprop(lr=0.001, rho=0.9, epsilon=1e-08, decay=0.001)
-            ## model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
-            model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
-        else:
-            if vgg: model = km.vgg_image_top_net(np.shape(x_train)[1:], n_labels, weights_path)
-            else: sys.exit()
-            optimizer = SGD(lr=0.0001, decay=1e-7, momentum=0.9, nesterov=True)                
-            #model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
-            model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
+        model = vgg16.VGG16(include_top=True, include_multi_top=False,
+                            input_shape=np.shape(x_train)[1:],
+                            classes=n_labels)
+        ## model = km.vgg_image_top_net(np.shape(x_train)[1:], n_labels, weights_path)
+        ## optimizer = SGD(lr=0.0001, decay=1e-7, momentum=0.9, nesterov=True)                
+        #model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+        model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
+        print(model.summary())
 
 
-        class_weight={}
-        for i in xrange(n_labels):
-            class_weight[i] = 1.0
-        ## class_weight[1]  = 0.1 # noisy env
-        ## class_weight[6]  = 0.1 # anomalous snd
-        ## class_weight[-3] = 0.5 # spoon miss by sys
-        ## class_weight[-2] = 0.5 # spoon collision by sys
-        ## class_weight[-1] = 0.5 # freeze
-
-        model.fit(x_train, y_train, nb_epoch=nb_epoch, batch_size=4096, shuffle=True,
-                  validation_data=(x_val, y_val), callbacks=callbacks,
-                  class_weight=class_weight)
+        train_datagen   = ku.imgGenerator(augmentation=True, noise_mag=0.01 )
+        test_datagen    = ku.imgGenerator(augmentation=False, noise_mag=0.0)
+        
+        train_generator = train_datagen.flow(x_train, y_train, batch_size=batch_size,
+                                             shuffle=True, seed=3334)        
+        test_generator  = test_datagen.flow(x_val, y_val, batch_size=batch_size,
+                                            shuffle=False, seed=3334)
 
 
+        hist = model.fit_generator(train_generator,
+                                   epochs=10,
+                                   #samples_per_epoch=len(y_train),
+                                   steps_per_epoch=len(y_train)/batch_size*nb_epoch,
+                                   validation_data=test_generator,
+                                   validation_steps=len(y_val)/batch_size,
+                                   callbacks=callbacks)
+
+        #model.fit(x_train, y_train, nb_epoch=sam_epoch, batch_size=batch_size, shuffle=True,
+        #          validation_data=(x_val, y_val), callbacks=callbacks)
+
+    #scale
+    x_test = np.array(x_test) #/255.0
+    
     y_pred = model.predict(x_test)
     y_test_list = []
     y_pred_list = []
@@ -214,7 +229,7 @@ def get_bottleneck_image(idx, train_data, test_data, save_data_path, n_labels, u
     from keras.preprocessing.image import ImageDataGenerator
     train_datagen = ImageDataGenerator(
         rotation_range=20,
-        rescale=1./255,
+        rescale=1,
         width_shift_range=0.1,
         height_shift_range=0.1,
         zoom_range=0.1,
@@ -241,7 +256,7 @@ def get_bottleneck_image(idx, train_data, test_data, save_data_path, n_labels, u
 
     # ------------------------------------------------------------
     test_datagen = ImageDataGenerator(
-        rescale=1./255,
+        rescale=1,
         horizontal_flip=False,
         data_format=K.image_data_format())
 

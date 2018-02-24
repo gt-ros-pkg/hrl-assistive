@@ -34,6 +34,7 @@ from scipy.stats import truncnorm
 import gc
 
 from keras.preprocessing.image import ImageDataGenerator
+from keras import backend as K
 import hrl_lib.util as ut
 import cv2
 
@@ -46,33 +47,33 @@ np.random.seed(3334)
 class multiGenerator():
     ''' image + signal data augmentation '''
     
-    def __init__(self, augmentation=False, noise_mag=0.03, rescale=1.0):
+    def __init__(self, augmentation=False, noise_mag=0.0, rescale=1):
 
         self.noise_mag     = noise_mag
         self.augmentation  = augmentation
         self.total_batches_seen = 0
         self.batch_index = 0
 
-        if augmentation:
+        if self.augmentation:
             self.datagen = ImageDataGenerator(
-                rotation_range=20,
+                rotation_range=5,
                 rescale=rescale,
-                width_shift_range=0.05,
-                height_shift_range=0.05,
-                zoom_range=0.1,
+                width_shift_range=0.1,
+                height_shift_range=0.1,
+                zoom_range=0.005,
                 horizontal_flip=False,
                 fill_mode='nearest',
-                data_format="channels_first")
+                data_format=K.image_data_format())
         else:
             self.datagen = ImageDataGenerator(
                 rescale=rescale,
-                data_format="channels_first")
+                data_format=K.image_data_format())
         pass
 
     def reset(self):
         self.batch_index = 0
         
-    def flow(self, x_img, x_sig, y, batch_size=32, shuffle=True, seed=None):
+    def flow(self, x_img, x_sig, y, batch_size=32, shuffle=False, seed=None):
 
         assert len(x_img) == len(y), "data should have the same length"
         assert len(x_img) == len(x_sig), "data should have the same length"
@@ -95,7 +96,7 @@ class multiGenerator():
             y_new = np.vstack([y_new, y_new[:n_add] ])
         
 
-        n = len(x_img)
+        n = len(y_new)
             
         while 1:
 
@@ -132,12 +133,104 @@ class multiGenerator():
                     i += 1
                     x = x_sig_new[i*batch_size:(i+1)*batch_size]
                     if self.augmentation:
-                        noise = np.random.normal(0.0, self.noise_mag, np.shape(x))
+                        if self.noise_mag > 0:
+                            noise = np.random.normal(0.0, self.noise_mag, np.shape(x))
+                        else:
+                            noise = 0
                         yield [x_batch_img, x+noise], y_batch
                     else:
                         yield [x_batch_img, x], y_batch
                     
                 gc.collect()
+
+
+class imgGenerator():
+    ''' image data augmentation '''
+    
+    def __init__(self, augmentation=False, noise_mag=0.0, rescale=1):
+
+        self.noise_mag     = noise_mag
+        self.augmentation  = augmentation
+        self.total_batches_seen = 0
+        self.batch_index = 0
+
+        if self.augmentation:
+            self.datagen = ImageDataGenerator(
+                rotation_range=5, #20,
+                rescale=rescale,
+                width_shift_range=0.1,
+                height_shift_range=0.1,
+                zoom_range=0.005,
+                horizontal_flip=False,
+                fill_mode='nearest',
+                data_format=K.image_data_format())
+        else:
+            self.datagen = ImageDataGenerator(
+                rescale=rescale,
+                data_format=K.image_data_format())
+        pass
+
+    def reset(self):
+        self.batch_index = 0
+        
+    def flow(self, x, y, batch_size=32, shuffle=False, seed=None):
+
+        assert len(x) == len(y), "data should have the same length"
+        
+        if type(x) is not np.ndarray: x = np.array(x)
+        if type(y) is not np.ndarray: y = np.array(y)
+
+        # Ensure self.batch_index is 0.
+        self.reset()
+        x_new = x[:]
+        y_new = y[:]
+
+        # TODO: Need to add random selection
+        if len(y_new) % batch_size > 0:
+            n_add = batch_size - len(y_new) % batch_size
+            x_new = np.vstack([x_new, x_new[:n_add] ])
+            y_new = np.vstack([y_new, y_new[:n_add] ])
+        
+
+        n = len(y_new)
+            
+        while 1:
+
+            if seed is not None:
+                np.random.seed(seed + self.total_batches_seen)
+            
+            if self.batch_index == 0:
+                idx_list = range(n)
+                if shuffle: random.shuffle(idx_list)
+                x_new = x_new[idx_list]
+                y_new = y_new[idx_list]
+
+            current_index = (self.batch_index * batch_size) % n
+            if n > current_index + batch_size:
+                current_batch_size = batch_size
+                self.batch_index += 1
+            else:
+                current_batch_size = n - current_index
+                self.batch_index = 0
+
+            self.total_batches_seen += 1
+
+            i = -1
+            for x_batch, y_batch in self.datagen.flow(x_new[idx_list], y_new[idx_list],
+                                                          batch_size=batch_size, shuffle=shuffle):
+
+                if x_batch is None:
+                    sys.exit()
+
+                if (i+1)*batch_size >= len(y_new):
+                    break
+                else:
+                    i += 1
+                    yield x_batch, y_batch
+                    
+            gc.collect()
+
+
 
 
 class sigGenerator():
@@ -257,7 +350,7 @@ def get_bottleneck_image(save_data_path, n_labels, fold_list, vgg=True, use_extr
         # ------------------------------------------------------------
         train_datagen = ImageDataGenerator(
             rotation_range=20,
-            rescale=1./255,
+            rescale=1,
             width_shift_range=0.1,
             height_shift_range=0.1,
             zoom_range=0.1,
@@ -284,7 +377,7 @@ def get_bottleneck_image(save_data_path, n_labels, fold_list, vgg=True, use_extr
 
         # ------------------------------------------------------------
         test_datagen = ImageDataGenerator(
-            rescale=1./255,
+            rescale=1,
             horizontal_flip=False,
             dim_ordering="th")
 

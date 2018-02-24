@@ -635,12 +635,17 @@ def img_net_test(save_data_path, pkl_name='', renew=False):
         print "----------------------"
         print "Subject ", idx
         print "----------------------"
-        if idx<6 or idx>6: continue
+        if idx>0: continue
 
         np.random.seed(3334+idx)
 
         file_name = os.path.join(save_data_path, pkl_name+'_'+str(idx)+'.pkl')
         d = ut.load_pickle(file_name)
+
+        # change shape to channel first to channel last
+        d['x_img_tr'] = np.array(d['x_img_tr']).transpose((0,2,3,1))
+        d['x_img_te'] = np.array(d['x_img_te']).transpose((0,2,3,1))
+        
         trainData = (d['x_img_tr'], d['y_tr'])
         testData  = (d['x_img_te'], d['y_te'])
 
@@ -648,16 +653,16 @@ def img_net_test(save_data_path, pkl_name='', renew=False):
 
         method      = 'img_net'
         patience    = 4 #4 #10
-        sam_epoch   = 40 #2:40
+        batch_size  = 256 #128 #2048
+        nb_epoch   = 3
         fine_tuning = False
-        batch_size  = 2048
 
         from hrl_anomaly_detection.journal_isolation.models import img_net             
         weights_file = os.path.join(weights_path,'model_weights_'+method+'_'+str(idx)+'.h5')
         ml, score = img_net.img_net(idx, trainData, testData, save_data_path,
                                     weights_file=weights_file, patience=patience,
                                     batch_size=batch_size,\
-                                    sam_epoch=sam_epoch, renew=False,
+                                    nb_epoch=nb_epoch, renew=False,
                                     fine_tuning=fine_tuning)
 
         # test
@@ -690,6 +695,11 @@ def multi_net_test(save_data_path, pkl_name='', renew=False):
         file_name = os.path.join(save_data_path, pkl_name+'_'+str(idx)+'.pkl')
         d = ut.load_pickle(file_name)
 
+        # change shape to channel first to channel last
+        d['x_img_tr'] = np.array(d['x_img_tr']).transpose((0,2,3,1))
+        d['x_img_te'] = np.array(d['x_img_te']).transpose((0,2,3,1))
+
+
         # scaling
         print "Scaling"
         scaler  = preprocessing.StandardScaler()
@@ -698,15 +708,14 @@ def multi_net_test(save_data_path, pkl_name='', renew=False):
         trainData = (x_sig_tr, d['x_img_tr'], d['y_tr'])
         testData  = (x_sig_te, d['x_img_te'], d['y_te'])
         
-        trainData = (x_sig_tr[:100], d['x_img_tr'][:100], d['y_tr'][:100])
+        #trainData = (x_sig_tr[:100], d['x_img_tr'][:100], d['y_tr'][:100])
 
         method      = 'multi_net'
-        noise_mag   = 0.05 #5
-        patience    = 6 #4 #10
-        #sam_epoch   = 40 #2:40
+        noise_mag   = 0.01 #5
+        patience    = 4 #10
         fine_tuning = False
-        batch_size  = 16 #1024
-        sam_epoch   = len(x_sig_tr)/batch_size
+        batch_size  = 256 #256
+        nb_epoch    = 3
 
         print "Start to run multi_net"
         from hrl_anomaly_detection.journal_isolation.models import multi_net             
@@ -717,7 +726,7 @@ def multi_net_test(save_data_path, pkl_name='', renew=False):
                                         weights_file=(sig_weights_file, img_weights_file,
                                                       multi_weights_file),
                                         patience=patience, batch_size=batch_size,\
-                                        noise_mag=noise_mag, sam_epoch=sam_epoch, renew=False,
+                                        noise_mag=noise_mag, nb_epoch=nb_epoch, renew=False,
                                         fine_tuning=fine_tuning)
 
         # test

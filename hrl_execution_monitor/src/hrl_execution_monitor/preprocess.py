@@ -166,7 +166,7 @@ def extract_image(f, img_feature_type='vgg', img_scale=None, img_ordering='th'):
         img = img[(img_size[0]-crop_size[0])//2:(img_size[0]+crop_size[0])//2
                   ,(img_size[1]-crop_size[1])//2:(img_size[1]+crop_size[1])//2,:]
 
-        # for vgg but lets use
+        # for vgg but lets use => BGR
         img[:,:,0] -= 103.939
         img[:,:,1] -= 116.779
         img[:,:,2] -= 123.68
