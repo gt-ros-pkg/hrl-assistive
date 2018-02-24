@@ -103,7 +103,7 @@ class PhysicalTrainer():
             self.num_epochs = 400
         self.include_inter = True
         self.shuffle = False
-        self.tensor = True
+        self.tensor = False
 
         self.count = 0
 
@@ -833,7 +833,7 @@ if __name__ == "__main__":
     opt, args = p.parse_args()
 
     if opt.mltype == 'convnet': filetag = ''
-    else: filetag = ''#''_HOG'
+    else: filetag = '_HOG'
 
     if opt.computer == 'lab_harddrive':
 
@@ -960,7 +960,7 @@ if __name__ == "__main__":
     elif opt.leave_out == 9:
         test_database_file.append(opt.subject9Path)
         test_database_file.append(opt.subject9PathB)
-        training_database_file.append(opt.subject9Path)
+        training_database_file.append(opt.subject10Path)
         training_database_file.append(opt.subject11Path)
         training_database_file.append(opt.subject12Path)
         training_database_file.append(opt.subject13Path)
@@ -1198,7 +1198,7 @@ if __name__ == "__main__":
         if opt.mltype == 'convnet':
             p.init_convnet_train()
         elif opt.mltype != 'convnet':
-            p.baseline_createHOGset(opt)
+            p.baseline_train(opt)
 
         #else:
         #    print 'Please specify correct training type:1. HoG_KNN 2. convnet_2'
