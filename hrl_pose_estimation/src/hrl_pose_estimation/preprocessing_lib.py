@@ -109,9 +109,9 @@ class PreprocessingLib():
         queue = np.copy(images[:, 0:2, :, :])
         queue[queue != 0] = 1.
 
-        x = np.arange(-20, 20)
+        x = np.arange(-10, 10)
         xU, xL = x + 0.5, x - 0.5
-        prob = ss.norm.cdf(xU, scale=5) - ss.norm.cdf(xL,scale=5)  # scale is the standard deviation using a cumulative density function
+        prob = ss.norm.cdf(xU, scale=1) - ss.norm.cdf(xL,scale=1)  # scale is the standard deviation using a cumulative density function
         prob = prob / prob.sum()  # normalize the probabilities so their sum is 1
         image_noise = np.random.choice(x, size=(images.shape[0], images.shape[1]-1, images.shape[2], images.shape[3]), p=prob)
 
@@ -142,9 +142,11 @@ class PreprocessingLib():
         if verbose: print len(p_map_dataset[0]),'x',len(p_map_dataset[0][0]), 'size of a resized pressure map'
         return p_map_dataset
 
-    def preprocessing_create_pressure_angle_stack_realtime(self, p_map, bedangle):
+    def preprocessing_create_pressure_angle_stack_realtime(self, p_map, bedangle, mat_size):
         '''This is for creating a 2-channel input using the height of the bed. '''
+        p_map = np.reshape(p_map, mat_size)
         print np.shape(p_map)
+        print p_map.shape
         print np.shape(bedangle), 'angle dat'
 
         print 'calculating height matrix and sobel filter'
@@ -162,6 +164,8 @@ class PreprocessingLib():
         sx = ndimage.sobel(p_map, axis=0, mode='constant')
         sy = ndimage.sobel(p_map, axis=1, mode='constant')
         p_map_inter = np.hypot(sx, sy)
+
+        print np.shape(p_map_inter)
         p_map_dataset.append([p_map, p_map_inter, a_map])
 
         return p_map_dataset
@@ -207,12 +211,12 @@ class PreprocessingLib():
         '''Will upsample an incoming pressure map dataset'''
         p_map_highres_dataset = []
 
-        if len(data.shape) == 3:
+        if len(np.shape(data)) == 3:
             for map_index in range(len(data)):
                 #Upsample the current map using bilinear interpolation
                 p_map_highres_dataset.append(
                         ndimage.zoom(data[map_index], multiple, order=order))
-        elif len(data.shape) == 4:
+        elif len(np.shape(data)) == 4:
             for map_index in range(len(data)):
                 p_map_highres_dataset_subindex = []
                 for map_subindex in range(len(data[map_index])):
