@@ -102,8 +102,12 @@ class PhysicalTrainer():
         elif self.loss_vector_type == 'direct':
             self.num_epochs = 400
         self.include_inter = True
-        self.shuffle = False
-        self.tensor = True
+        self.shuffle = True
+
+        if opt.mltype == 'convnet':
+            self.tensor = True
+        else:
+            self.tensor = False
 
         self.count = 0
 
@@ -255,7 +259,6 @@ class PhysicalTrainer():
                 images_train, targets_train = load_pickle(some_subject)
                 images_train = np.array(images_train)
                 targets_train = np.array(targets_train)
-                print some_subject
                 try:
                     images_train_aggregated = np.concatenate((images_train_aggregated, images_train), axis=0)
                 except:
@@ -353,10 +356,10 @@ class PhysicalTrainer():
 
         if self.opt.computer == 'lab_harddrive':
             print 'saving to ', '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
-                self.opt.leave_out) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p'
+                self.opt.leave_out) + '/p_files/HoGshift_' + baseline + '_p' + str(self.opt.leave_out) + '.p'
             pkl.dump(regr, open(
                 '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
-                    self.opt.leave_out) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p',
+                    self.opt.leave_out) + '/p_files/HoGshift_' + baseline + '_p' + str(self.opt.leave_out) + '.p',
                 'wb'))
             print 'saved successfully'
         elif self.opt.computer == 'aws':
@@ -380,10 +383,10 @@ class PhysicalTrainer():
 
         if self.opt.computer == 'lab_harddrive':
             print 'saving to ', '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
-                self.opt.leave_out) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p'
+                self.opt.leave_out) + '/p_files/HoGshift_' + baseline + '_p' + str(self.opt.leave_out) + '.p'
             pkl.dump(regr, open(
                 '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
-                    self.opt.leave_out) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p',
+                    self.opt.leave_out) + '/p_files/HoGshift_' + baseline + '_p' + str(self.opt.leave_out) + '.p',
                 'wb'))
             print 'saved successfully'
         elif self.opt.computer == 'aws':
@@ -404,10 +407,10 @@ class PhysicalTrainer():
 
         if self.opt.computer == 'lab_harddrive':
             print 'saving to ', '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
-                self.opt.leave_out) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p'
+                self.opt.leave_out) + '/p_files/HoGshift_' + baseline + '_p' + str(self.opt.leave_out) + '.p'
             pkl.dump(regr, open(
                 '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
-                    self.opt.leave_out) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p','wb'))
+                    self.opt.leave_out) + '/p_files/HoGshift_' + baseline + '_p' + str(self.opt.leave_out) + '.p','wb'))
             print 'saved successfully'
         elif self.opt.computer == 'aws':
             pkl.dump(regr, open('/home/ubuntu/Autobed_OFFICIAL_Trials/subject_' + str(
@@ -833,7 +836,7 @@ if __name__ == "__main__":
     opt, args = p.parse_args()
 
     if opt.mltype == 'convnet': filetag = ''
-    else: filetag = '_HOG'
+    else: filetag = '_HOGshift'
 
     if opt.computer == 'lab_harddrive':
 
