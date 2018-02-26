@@ -399,7 +399,7 @@ class KinematicsLib():
 
 
 
-            if count > 300 and loss_vector_type == 'anglesCL':  # add this bit for constant bone lengths
+            if True:#scount > 300 and loss_vector_type == 'anglesCL':  # add this bit for constant bone lengths
                 # if subject is not None:
                 torso_lengths_angles = Variable(torso_lengths_angles_v.data.clone())
 
