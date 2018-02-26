@@ -372,55 +372,55 @@ class PhysicalTrainer():
         #     print 'saved successfully'
         #
         #
-        # print 'fitting Ridge'
-        # baseline = 'Ridge'
-        # #elif baseline == 'Ridge':
-        # regr = linear_model.Ridge(alpha=0.01) # complexity parameter that controls the amount of shrinkage:
-        # # the larger the value of \alpha, the greater the amount of shrinkage and thus the coefficients become more robust to collinearity
+        print 'fitting Ridge'
+        baseline = 'Ridge'
+        #elif baseline == 'Ridge':
+        regr = linear_model.Ridge(alpha=0.01) # complexity parameter that controls the amount of shrinkage:
+        # the larger the value of \alpha, the greater the amount of shrinkage and thus the coefficients become more robust to collinearity
         # a zero value for alpha is the same as doing OLS (ordinary least squares. More complex model in this case and more prone to overfitting
         # The shrinkage is a regularization term. coefficients in the regularization correspond to those in the least squares part
         #OLS can overfit to data with high variance.  the alpha term helps to keep this from happpening
 
-        # regr.fit(images_up, targets)
-        #
-        # print 'done fitting Ridge'
-        #
-        # if self.opt.computer == 'lab_harddrive':
-        #     print 'saving to ', '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
-        #         self.opt.leave_out) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p'
-        #     pkl.dump(regr, open(
-        #         '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
-        #             self.opt.leave_out) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p',
-        #         'wb'))
-        #     print 'saved successfully'
-        # elif self.opt.computer == 'aws':
-        #     pkl.dump(regr, open('/home/ubuntu/Autobed_OFFICIAL_Trials/subject_' + str(
-        #         self.opt.leave_out) + '/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p', 'wb'))
-        #     print 'saved successfully'
-
-
-
-
-        print 'fitting KRidge'
-        baseline = 'KRidge'
-        #elif baseline == 'KRidge':
-        #regr = kernel_ridge.KernelRidge(alpha=0.8, kernel='rbf')
-        regr = kernel_ridge.KernelRidge(kernel='polynomial')
         regr.fit(images_up, targets)
 
-        print 'done fitting KRidge'
+        print 'done fitting Ridge'
 
         if self.opt.computer == 'lab_harddrive':
             print 'saving to ', '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
-                self.opt.leave_out) + '/p_files/HoGpoly_' + baseline + '_p' + str(self.opt.leave_out) + '.p'
+                self.opt.leave_out) + '/p_files/HoGshift0.01_' + baseline + '_p' + str(self.opt.leave_out) + '.p'
             pkl.dump(regr, open(
                 '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
-                    self.opt.leave_out) + '/p_files/HoGpoly_' + baseline + '_p' + str(self.opt.leave_out) + '.p','wb'))
+                    self.opt.leave_out) + '/p_files/HoGshift0.01_' + baseline + '_p' + str(self.opt.leave_out) + '.p',
+                'wb'))
             print 'saved successfully'
         elif self.opt.computer == 'aws':
             pkl.dump(regr, open('/home/ubuntu/Autobed_OFFICIAL_Trials/subject_' + str(
                 self.opt.leave_out) + '/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p', 'wb'))
             print 'saved successfully'
+
+
+
+        #
+        # print 'fitting KRidge'
+        # baseline = 'KRidge'
+        # #elif baseline == 'KRidge':
+        # regr = kernel_ridge.KernelRidge(alpha=0.8, kernel='rbf')
+        # #regr = kernel_ridge.KernelRidge(kernel='polynomial')
+        # regr.fit(images_up, targets)
+        #
+        # print 'done fitting KRidge'
+        #
+        # if self.opt.computer == 'lab_harddrive':
+        #     print 'saving to ', '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
+        #         self.opt.leave_out) + '/p_files/HoGshift_' + baseline + '_p' + str(self.opt.leave_out) + '.p'
+        #     pkl.dump(regr, open(
+        #         '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
+        #             self.opt.leave_out) + '/p_files/HoGshift_' + baseline + '_p' + str(self.opt.leave_out) + '.p','wb'))
+        #     print 'saved successfully'
+        # elif self.opt.computer == 'aws':
+        #     pkl.dump(regr, open('/home/ubuntu/Autobed_OFFICIAL_Trials/subject_' + str(
+        #         self.opt.leave_out) + '/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p', 'wb'))
+        #     print 'saved successfully'
 
 
 
@@ -512,7 +512,7 @@ class PhysicalTrainer():
         if self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL' or self.loss_vector_type == 'anglesSTVL':
             fc_output_size = 40#38 #18 angles for body, 17 lengths for body, 3 torso coordinates
             self.model = convnet.CNN(self.mat_size, fc_output_size, hidden_dim, kernel_size, self.loss_vector_type)
-            #self.model = torch.load('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials' + '/subject_' + str(self.opt.leave_out) + '/convnets/convnet_9to18_'+str(self.loss_vector_type)+'_sTrue_128b_200e_' + str(self.opt.leave_out) + '.pt', map_location=lambda storage, loc: storage)
+            self.model = torch.load('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials' + '/subject_' + str(self.opt.leave_out) + '/convnets/convnet_9to18_'+str(self.loss_vector_type)+'_sTrue_128b_200e_' + str(self.opt.leave_out) + '.pt', map_location=lambda storage, loc: storage)
             print 'LOADED!!!!!!!!!!!!!!!!!1'
             pp = 0
             for p in list(self.model.parameters()):
@@ -846,7 +846,7 @@ if __name__ == "__main__":
     opt, args = p.parse_args()
 
     if opt.mltype == 'convnet': filetag = ''
-    else: filetag = ''#''_HOGshift'
+    else: filetag = '_HOGshift'
 
     if opt.computer == 'lab_harddrive':
 
