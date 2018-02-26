@@ -344,7 +344,7 @@ class KinematicsLib():
 
 
 
-    def forward_kinematics_pytorch(self, images_v, torso_lengths_angles_v, loss_vector_type, targets_v=None,  kincons_v = None, forward_only = False, body_side = None, subject = None, count = 500):
+    def forward_kinematics_pytorch(self, images_v, torso_lengths_angles_v, loss_vector_type, targets_v=None,  kincons_v = None, forward_only = False, subject = None, count = 500):
 
         test_ground_truth = False
         pseudotargets = None
@@ -640,7 +640,7 @@ class KinematicsLib():
 
 
 
-    def forward_kinematics_lengthsv_pytorch(self, images_v, torso_lengths_angles_v, loss_vector_type, kincons_v = None, forward_only = False, body_side = None, subject = None):
+    def forward_kinematics_lengthsv_pytorch(self, images_v, torso_lengths_angles_v, loss_vector_type, kincons_v = None, forward_only = False, subject = None):
 
         test_ground_truth = False
         pseudotargets = None
@@ -713,6 +713,8 @@ class KinematicsLib():
             torso_lengths_angles_v[:, 37] = torch.add(torso_lengths_angles_v[:, 37], 0.6)
             torso_lengths_angles_v[:, 38] = torch.add(torso_lengths_angles_v[:, 38], 1.3)
             torso_lengths_angles_v[:, 39] = torch.add(torso_lengths_angles_v[:, 39], 0.1)
+
+            #print torso_lengths_angles_v[0, 20:39], 'LENGTHS!'
 
 
 

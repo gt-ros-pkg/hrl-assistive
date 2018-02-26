@@ -90,7 +90,7 @@ class BagfileToPickle():
         bed_pos = np.zeros((1,3))
         p_mat = []
 
-        if filename == '_full_trial_LL2.bag' or filename == '_full_trial_RL2.bag':
+        if filename == '_full_trial_BH2.bag':# or filename == '_full_trial_RL2.bag':
             pass
         else:
             self.mat_tar_pos = []
@@ -240,7 +240,7 @@ class BagfileToPickle():
 
             if self.mat_sampled == True:
                 #print self.params_length, 'length'
-                if len(p_mat) == 1728:# and self.params_length[4] > 0.15 and self.params_length[4] < 0.5 and self.params_length[5] > 0.15 and self.params_length[5] < 0.5 and self.params_length[6] > 0.1 and self.params_length[6] < 0.35 and self.params_length[7] > 0.1 and self.params_length[7] < 0.35:
+                if len(p_mat) == 1728 and self.params_length[4] > 0.15 and self.params_length[4] < 0.5 and self.params_length[5] > 0.15 and self.params_length[5] < 0.5 and self.params_length[6] > 0.1 and self.params_length[6] < 0.35 and self.params_length[7] > 0.1 and self.params_length[7] < 0.35:
                     if np.count_nonzero(targets) == 30:# and CreateDatasetLib().world_to_mat(targets, self.p_world_mat, self.R_world_mat)[9,1] < 1.0 and CreateDatasetLib().world_to_mat(targets, self.p_world_mat, self.R_world_mat)[8,1] < 1.0:# and CreateDatasetLib().world_to_mat(targets, self.p_world_mat, self.R_world_mat)[9, 1] < 1.0:# and CreateDatasetLib().world_to_mat(targets, self.p_world_mat, self.R_world_mat)[9, 1] < 1.2 and np.abs(CreateDatasetLib().world_to_mat(targets, self.p_world_mat, self.R_world_mat)[8, 0] - CreateDatasetLib().world_to_mat(targets, self.p_world_mat, self.R_world_mat)[9, 0]) > 0.05: #we need to fill in the foot on s10 RH2, so pass it for that part
 
 
@@ -412,7 +412,7 @@ class BagfileToPickle():
 
 
         print count, len(self.mat_tar_pos), len(self.mat_tar_pos[0]), 'count, count, number of datatypes (should be 3)'
-        return self.mat_tar_pos_2
+        return self.mat_tar_pos
 
     
 
@@ -440,11 +440,16 @@ if __name__ == '__main__':
         # x.append('home')
         # file_details.append(x)
         #
-        #x = []
-        #x.append(subject)
-        #x.append('_full_trial_LH1.bag')
-        #x.append('LH1')
-        #file_details.append(x)
+        x = []
+        x.append(subject)
+        x.append('_full_trial_BH1.bag')
+        x.append('LH1')
+        file_details.append(x)
+        x = []
+        x.append(subject)
+        x.append('_full_trial_BH2.bag')
+        x.append('LH1')
+        file_details.append(x)
 
         #x = []
         #x.append(subject)
@@ -482,11 +487,11 @@ if __name__ == '__main__':
         #x.append('LL')
         #file_details.append(x)
 
-        x = []
-        x.append(subject)
-        x.append('_full_trial_RL.bag')
-        x.append('RL')
-        file_details.append(x)
+        #x = []
+        #x.append(subject)
+        #x.append('_full_trial_RL.bag')
+        #x.append('RL')
+        #file_details.append(x)
         file_details_dict[str(subject)] = file_details
 
     for subject in [8]:
@@ -629,7 +634,7 @@ if __name__ == '__main__':
     database_path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials'
 
     #for subject in [7]:
-    for subject in [18]:
+    for subject in [9]:
         print subject
 
 
@@ -645,6 +650,6 @@ if __name__ == '__main__':
             #pkl.dump(database_path, open(database_path+detail[2],'.p', "wb"))
 
             #do this when you want to overwrite the current files
-            pkl.dump(subject_detaildata,open(os.path.join(database_path,'subject_'+str(subject),'p_files',detail[2]+'_air_only.p'), 'wb'))
+            pkl.dump(subject_detaildata,open(os.path.join(database_path,'subject_'+str(subject),'p_files',detail[2]+'.p'), 'wb'))
 
 

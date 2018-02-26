@@ -97,10 +97,13 @@ class PhysicalTrainer():
         self.opt = opt
         self.batch_size = 128
 
-        if self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL' or self.loss_vector_type == 'anglesSTVL':
-            self.num_epochs = 300
-        elif self.loss_vector_type == 'direct':
-            self.num_epochs = 400
+        #self.model = torch.load(
+        #    '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials' + '/subject_' + str(
+        #        self.opt.leave_out) + '/convnets/convnet_9to18_anglesSTVL_sTrue_128b_200e_' + str(
+        #        self.opt.leave_out) + '.pt', map_location=lambda storage, loc: storage)
+        #print 'LOADED!!!!!!!!!!!!!!!!!1'
+
+        self.num_epochs = 300
         self.include_inter = True
         self.shuffle = True
 
@@ -297,29 +300,31 @@ class PhysicalTrainer():
         self.batchtest_size = 11  # self.test_y_tensor.numpy().shape[0]
 
         self.train_dataset = torch.utils.data.TensorDataset(self.train_x_tensor, self.train_y_tensor)
-        self.train_loader = torch.utils.data.DataLoader(self.train_dataset, self.batch_size, shuffle=self.shuffle)
+        self.train_loader = torch.utils.data.DataLoader(self.train_dataset, self.batch_size, shuffle=True)
 
 
         for batch_idx, batch in enumerate(self.train_loader):
-            print batch[0].size(), 'batch size'
 
             # get the whole body x y z
             batch[1] = batch[1][:, 0:30]
 
             batch[0], batch[1], _ = SyntheticLib().synthetic_master(batch[0], batch[1], flip=True,
-                                                                    shift=True, scale=True,
+                                                                    shift=True, scale=False,
                                                                     bedangle=True,
                                                                     include_inter=self.include_inter,
                                                                     loss_vector_type=self.loss_vector_type)
 
-            images = batch[0].numpy()[:, 0, :, :]
+            images = batch[0].numpy()[:, 0, 10:74, 10:37]
             targets = batch[1].numpy()
+
+            print images.shape
 
             # upsample the images
             images_up = PreprocessingLib().preprocessing_pressure_map_upsample(images)
             # targets = list(targets)
             # print images[0].shape
 
+            print np.shape(images_up), 'IMAGES UP SHAPE upsample'
 
 
             # Compute HoG of the current(training) pressure map dataset
@@ -333,9 +338,9 @@ class PhysicalTrainer():
             # images_up = [[0], [1], [2], [3]]
             # targets = [0, 0, 1, 1]
 
-            print np.shape(images_up)
+            print np.shape(images_up), 'IMAGES UP SHAPE'
             print np.shape(targets)
-            pkl.dump([images_up, targets], open(os.path.join('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_'+str(opt.leave_out)+'/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair_HOGshiftscale.p'), 'wb'))  # _trainval_sit175rlh_sit120rll
+            pkl.dump([images_up, targets], open(os.path.join('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_'+str(opt.leave_out)+'/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair_HOGshift.p'), 'wb'))  #shiftscale_ #sit175rlh_sit120rll_HOG
 
     def baseline_train(self, baseline):
         n_neighbors = 5
@@ -343,56 +348,55 @@ class PhysicalTrainer():
 
         images_up = self.images_train_aggregated
         targets = self.targets_train_aggregated
-
-
-        print 'fitting KNN'
-        baseline = 'KNN'
-
-        #if baseline == 'KNN':
-        regr = neighbors.KNeighborsRegressor(10, weights='distance', algorithm = 'auto', p=2, metric = 'minkowski')
-        regr.fit(images_up, targets)
-
-        print 'done fitting KNN'
-
-        if self.opt.computer == 'lab_harddrive':
-            print 'saving to ', '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
-                self.opt.leave_out) + '/p_files/HoGshift_' + baseline + '_p' + str(self.opt.leave_out) + '.p'
-            pkl.dump(regr, open(
-                '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
-                    self.opt.leave_out) + '/p_files/HoGshift_' + baseline + '_p' + str(self.opt.leave_out) + '.p',
-                'wb'))
-            print 'saved successfully'
-        elif self.opt.computer == 'aws':
-            pkl.dump(regr, open('/home/ubuntu/Autobed_OFFICIAL_Trials/subject_' + str(
-                self.opt.leave_out) + '/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p', 'wb'))
-            print 'saved successfully'
-
-
-        print 'fitting Ridge'
-        baseline = 'Ridge'
-        #elif baseline == 'Ridge':
-        regr = linear_model.Ridge(alpha=0.01) # complexity parameter that controls the amount of shrinkage:
-        # the larger the value of \alpha, the greater the amount of shrinkage and thus the coefficients become more robust to collinearity
+        #
+        # print 'fitting KNN'
+        # baseline = 'KNN'
+        #
+        # #if baseline == 'KNN':
+        # regr = neighbors.KNeighborsRegressor(10, weights='distance', algorithm = 'auto', p=2, metric = 'minkowski')
+        # regr.fit(images_up, targets)
+        #
+        # print 'done fitting KNN'
+        #
+        # if self.opt.computer == 'lab_harddrive':
+        #     print 'saving to ', '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
+        #         self.opt.leave_out) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p'
+        #     pkl.dump(regr, open(
+        #         '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
+        #             self.opt.leave_out) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p',
+        #         'wb'))
+        #     print 'saved successfully'
+        # elif self.opt.computer == 'aws':
+        #     pkl.dump(regr, open('/home/ubuntu/Autobed_OFFICIAL_Trials/subject_' + str(
+        #         self.opt.leave_out) + '/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p', 'wb'))
+        #     print 'saved successfully'
+        #
+        #
+        # print 'fitting Ridge'
+        # baseline = 'Ridge'
+        # #elif baseline == 'Ridge':
+        # regr = linear_model.Ridge(alpha=0.01) # complexity parameter that controls the amount of shrinkage:
+        # # the larger the value of \alpha, the greater the amount of shrinkage and thus the coefficients become more robust to collinearity
         # a zero value for alpha is the same as doing OLS (ordinary least squares. More complex model in this case and more prone to overfitting
         # The shrinkage is a regularization term. coefficients in the regularization correspond to those in the least squares part
         #OLS can overfit to data with high variance.  the alpha term helps to keep this from happpening
 
-        regr.fit(images_up, targets)
-
-        print 'done fitting Ridge'
-
-        if self.opt.computer == 'lab_harddrive':
-            print 'saving to ', '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
-                self.opt.leave_out) + '/p_files/HoGshift_' + baseline + '_p' + str(self.opt.leave_out) + '.p'
-            pkl.dump(regr, open(
-                '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
-                    self.opt.leave_out) + '/p_files/HoGshift_' + baseline + '_p' + str(self.opt.leave_out) + '.p',
-                'wb'))
-            print 'saved successfully'
-        elif self.opt.computer == 'aws':
-            pkl.dump(regr, open('/home/ubuntu/Autobed_OFFICIAL_Trials/subject_' + str(
-                self.opt.leave_out) + '/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p', 'wb'))
-            print 'saved successfully'
+        # regr.fit(images_up, targets)
+        #
+        # print 'done fitting Ridge'
+        #
+        # if self.opt.computer == 'lab_harddrive':
+        #     print 'saving to ', '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
+        #         self.opt.leave_out) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p'
+        #     pkl.dump(regr, open(
+        #         '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
+        #             self.opt.leave_out) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p',
+        #         'wb'))
+        #     print 'saved successfully'
+        # elif self.opt.computer == 'aws':
+        #     pkl.dump(regr, open('/home/ubuntu/Autobed_OFFICIAL_Trials/subject_' + str(
+        #         self.opt.leave_out) + '/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p', 'wb'))
+        #     print 'saved successfully'
 
 
 
@@ -400,17 +404,18 @@ class PhysicalTrainer():
         print 'fitting KRidge'
         baseline = 'KRidge'
         #elif baseline == 'KRidge':
-        regr = kernel_ridge.KernelRidge(alpha=0.01, kernel='rbf')
+        #regr = kernel_ridge.KernelRidge(alpha=0.8, kernel='rbf')
+        regr = kernel_ridge.KernelRidge(kernel='polynomial')
         regr.fit(images_up, targets)
 
         print 'done fitting KRidge'
 
         if self.opt.computer == 'lab_harddrive':
             print 'saving to ', '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
-                self.opt.leave_out) + '/p_files/HoGshift_' + baseline + '_p' + str(self.opt.leave_out) + '.p'
+                self.opt.leave_out) + '/p_files/HoGpoly_' + baseline + '_p' + str(self.opt.leave_out) + '.p'
             pkl.dump(regr, open(
                 '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
-                    self.opt.leave_out) + '/p_files/HoGshift_' + baseline + '_p' + str(self.opt.leave_out) + '.p','wb'))
+                    self.opt.leave_out) + '/p_files/HoGpoly_' + baseline + '_p' + str(self.opt.leave_out) + '.p','wb'))
             print 'saved successfully'
         elif self.opt.computer == 'aws':
             pkl.dump(regr, open('/home/ubuntu/Autobed_OFFICIAL_Trials/subject_' + str(
@@ -507,6 +512,8 @@ class PhysicalTrainer():
         if self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL' or self.loss_vector_type == 'anglesSTVL':
             fc_output_size = 40#38 #18 angles for body, 17 lengths for body, 3 torso coordinates
             self.model = convnet.CNN(self.mat_size, fc_output_size, hidden_dim, kernel_size, self.loss_vector_type)
+            self.model = torch.load('/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials' + '/subject_' + str(self.opt.leave_out) + '/convnets/convnet_9to18_'+str(self.loss_vector_type)+'_sTrue_128b_200e_' + str(self.opt.leave_out) + '.pt', map_location=lambda storage, loc: storage)
+            print 'LOADED!!!!!!!!!!!!!!!!!1'
             pp = 0
             for p in list(self.model.parameters()):
                 nn = 1
@@ -630,6 +637,9 @@ class PhysicalTrainer():
                     else:
                         loss = self.criterion(scores[0:10], scores_zeros[0:10])
                 elif self.loss_vector_type == 'anglesVL' or self.loss_vector_type == 'anglesSTVL':
+                    #print scores_zeros[0, :]
+                    #print scores[0,:]
+
                     loss = self.criterion(scores, scores_zeros)
 
 
@@ -836,7 +846,7 @@ if __name__ == "__main__":
     opt, args = p.parse_args()
 
     if opt.mltype == 'convnet': filetag = ''
-    else: filetag = '_HOGshift'
+    else: filetag = ''#''_HOGshift'
 
     if opt.computer == 'lab_harddrive':
 
@@ -1175,6 +1185,11 @@ if __name__ == "__main__":
         print 'please specify which subject to leave out for validation using --leave_out _'
 
 
+    #test_database_file = []
+    #training_database_file = []
+
+    #test_database_file.append(opt.subject18PathB)
+    #training_database_file.append(opt.subject9Path)
 
     print opt.testPath, 'testpath'
     print opt.modelPath, 'modelpath'

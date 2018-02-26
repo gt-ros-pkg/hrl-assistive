@@ -217,14 +217,14 @@ class DataVisualizer():
         dropout = True
 
 
-        if all_eval == True: self.loss_vector_type = 'anglesVL'
+        #if all_eval == True: self.loss_vector_type = 'anglesVL'
         if self.loss_vector_type == 'anglesVL':
             models.append('anglesVL')
             print 'loading kinematic variable bone lengths CNN, subject ', self.opt.leave_out
             if self.opt.computer == 'aws':
-                model_kinVL = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnets/convnet_9to18_anglesVL_sTrue_128b_200e_'+str(self.opt.leave_out)+'.pt', map_location=lambda storage, loc: storage)
+                model_kinVL = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnets/convnet_9to18_anglesVL_sTrue_128b_150e_'+str(self.opt.leave_out)+'.pt', map_location=lambda storage, loc: storage)
             else:
-                model_kinVL = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnets/convnet_9to18_anglesVL_sTrue_128b_200e_' + str(self.opt.leave_out) + '.pt', map_location=lambda storage, loc: storage)
+                model_kinVL = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnets/convnet_9to18_anglesVL_sTrue_128b_150e_' + str(self.opt.leave_out) + '.pt', map_location=lambda storage, loc: storage)
             pp = 0
             if dropout == False: model_kinVL.eval()
             for p in list(model_kinVL.parameters()):
@@ -234,7 +234,7 @@ class DataVisualizer():
                 pp += nn
             print pp, 'num params'
 
-        if all_eval == True: self.loss_vector_type = 'anglesCL'
+        #if all_eval == True: self.loss_vector_type = 'anglesCL'
         if self.loss_vector_type == 'anglesCL':
             models.append('anglesCL')
             print 'loading kinematic constant bone lengths CNN, subject ', self.opt.leave_out
@@ -251,7 +251,7 @@ class DataVisualizer():
                 pp += nn
             print pp, 'num params'
 
-        if all_eval == True: self.loss_vector_type = 'anglesSTVL'
+       # if all_eval == True: self.loss_vector_type = 'anglesSTVL'
         if self.loss_vector_type == 'anglesSTVL':
             models.append('anglesSTVL')
             print 'loading kinematic variable bone lengths straight through CNN, subject ', self.opt.leave_out
@@ -268,7 +268,7 @@ class DataVisualizer():
                 pp += nn
             print pp, 'num params'
 
-        if all_eval == True: self.loss_vector_type = 'direct'
+        #if all_eval == True: self.loss_vector_type = 'direct'
         if self.loss_vector_type == 'direct':
             models.append('direct')
             print 'loading direct CNN'
@@ -310,9 +310,9 @@ class DataVisualizer():
             models.append('KRidge')
             print 'loading Kernel Ridge'
             if self.opt.computer == 'aws':
-                regr_KRidge = load_pickle(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/HoG_KRidge_p'+str(self.opt.leave_out)+'.p')
+                regr_KRidge = load_pickle(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/HoGpoly_KRidge_p'+str(self.opt.leave_out)+'.p')
             else:
-                regr_KRidge = load_pickle(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/p_files/HoG_KRidge_p'+str(self.opt.leave_out)+'.p')
+                regr_KRidge = load_pickle(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/p_files/HoGpoly_KRidge_p'+str(self.opt.leave_out)+'.p')
 
 
 
@@ -321,16 +321,18 @@ class DataVisualizer():
         print '############################### STARTING ON MODELS', models, ' ##########################################'
 
         for batch_idx, batch in enumerate(self.test_loader):
+
+            # append upper joint angles, lower joint angles, upper joint lengths, lower joint lengths, in that order
+            batch.append(torch.cat((batch[1][:, 39:49], batch[1][:, 57:65], batch[1][:, 30:39], batch[1][:, 49:57]), dim=1))
+
+            # get the direct joint locations
+            batch[1] = batch[1][:, 0:30]
+
+            self.count += 1
+            # print count
             for model_key in models:
 
-                # append upper joint angles, lower joint angles, upper joint lengths, lower joint lengths, in that order
-                batch.append(torch.cat((batch[1][:, 39:49], batch[1][:, 57:65], batch[1][:, 30:39], batch[1][:, 49:57]), dim=1))
-
-                # get the direct joint locations
-                batch[1] = batch[1][:, 0:30]
-
-                self.count += 1
-                #print count
+                print model_key, 'MODEL KEY'
 
 
                 limbArray = None
@@ -341,8 +343,10 @@ class DataVisualizer():
                 batch0 = batch[0].clone()
                 batch1 = batch[1].clone()
                 batch0, batch1,_ = SyntheticLib().synthetic_master(batch0, batch1,flip=False, shift=False, scale=False,bedangle=True, include_inter=self.include_inter, loss_vector_type=self.loss_vector_type)
-                batch0 = batch0.expand(T, 3, 84, 47)
-                batch1 = batch1.expand(T, 30)
+
+                if model_key == 'anglesVL' or model_key == 'anglesCL' or model_key == 'anglesSTVL' or model_key == 'direct':
+                    batch0 = batch0.expand(T, 3, 84, 47)
+                    batch1 = batch1.expand(T, 30)
 
                 print batch0.size()
                 print batch1.size(), 'size'
@@ -363,6 +367,9 @@ class DataVisualizer():
                         _, targets_est, angles_est, lengths_est, pseudotargets_est = model_kinCL.forward_kinematic_jacobian(images_up, targets, constraints, forward_only = True, subject = self.opt.leave_out, loss_vector_type = self.loss_vector_type)
                     elif model_key == 'anglesSTVL':
                         _, targets_est, angles_est, lengths_est, pseudotargets_est = model_kinSTVL.forward_kinematic_jacobian(images_up, targets, constraints, forward_only = True, subject = self.opt.leave_out, loss_vector_type = self.loss_vector_type)
+
+                        #print targets_est[0, :]
+                        #print lengths_est[0, :]
                     elif model_key == 'direct':
                         _, targets_est = model_dir.forward_direct(images_up, targets)
 
@@ -371,18 +378,19 @@ class DataVisualizer():
                         print torch.norm(targets.data[0, 9:12] - targets.data[0, 15:18]), 'ground truth L forearm length'
                         print torch.norm(targets_est[0, 9:12] - targets_est[0, 15:18]), 'estimated L forearm length'
 
-                    targets = targets.data
 
                 elif model_key == 'KNN':
-                    images_up = PreprocessingLib().compute_HoG(images_up)
-                    targets_est = regr_KNN.predict(images_up)
+                    images_HOG = PreprocessingLib().compute_HoG(np.array(images_up)[:, 0, :, :])
+                    targets_est = torch.Tensor(regr_KNN.predict(images_HOG))
                 elif model_key == 'Ridge':
-                    images_up = PreprocessingLib().compute_HoG(images_up)
-                    targets_est = regr_Ridge.predict(images_up)
+                    images_HOG = PreprocessingLib().compute_HoG(np.array(images_up)[:, 0, :, :])
+                    print np.shape(images_HOG)
+                    targets_est = torch.Tensor(regr_Ridge.predict(images_HOG))
                 elif model_key == 'KRidge':
-                    images_up = PreprocessingLib().compute_HoG(images_up)
-                    targets_est = regr_KRidge.predict(images_up)
+                    images_HOG = PreprocessingLib().compute_HoG(np.array(images_up)[:, 0, :, :])
+                    targets_est = torch.Tensor(regr_KRidge.predict(images_HOG))
 
+                targets = targets.data
                 error_norm, error_avg, error_avg_std = VisualizationLib().print_error(targets, targets_est, self.output_size, model_key, data=str(self.count), printerror =  True)
                 error_norm = error_norm/1000
 
@@ -390,6 +398,13 @@ class DataVisualizer():
                     print '################## PERFORMED ',str(T),' STOCHASTIC FWD PASSES ON ',str(model_key),' CT. ',batch_idx, ' ##################'
                 if model_key == 'KNN' or model_key == 'Ridge' or model_key == 'KRidge':
                     print '################## PERFORMED 1 FWD PASSES ON ',str(model_key),' CT. ',batch_idx, ' ##################'
+
+
+
+
+
+
+
 
 
                 try:
@@ -434,19 +449,19 @@ class DataVisualizer():
 
 
                 count2 = 0
-                print np.concatenate((np.expand_dims(np.mean(angles_est.data.numpy(), axis=0), axis=0), np.expand_dims(np.std(angles_est.data.numpy(), axis=0), axis = 0)),axis = 0)
-                print np.array(self.variance_est_list)[batch_idx, 0:10]
+                if model_key == 'anglesVL' or model_key == 'anglesCL' or model_key == 'anglesSTVL' or model_key == 'direct':
+                    print np.concatenate((np.expand_dims(np.mean(angles_est.data.numpy(), axis=0), axis=0), np.expand_dims(np.std(angles_est.data.numpy(), axis=0), axis = 0)),axis = 0)
+                    print np.array(self.variance_est_list)[batch_idx, 0:10]
 
-                if self.opt.visualize == True and np.array(self.variance_est_list)[batch_idx, 4] > 0:
-
+                if self.opt.visualize == True:
                     self.im_sample = batch0.numpy()
                     self.im_sample = np.squeeze(self.im_sample[count2, :])
                     self.tar_sample = targets
                     self.tar_sample = np.squeeze(self.tar_sample[count2, :]) / 1000
 
-                    self.sc_sample_mean = targets_est
+                    self.sc_sample_mean = targets_est.numpy()
                     self.sc_sample_mean = np.squeeze(self.sc_sample_mean[:, :]) / 1000
-                    self.sc_sample_mean = np.mean(self.sc_sample_mean.numpy(), axis=0)
+                    self.sc_sample_mean = np.mean(self.sc_sample_mean, axis=0)
                     self.sc_sample_mean = np.reshape(self.sc_sample_mean, self.output_size)
                     print np.array(self.error_avg_list)[batch_idx, 0:10]*10
                     #print np.concatenate((np.expand_dims(np.mean(angles_est.data.numpy(), axis=0), axis=0), np.expand_dims(np.std(angles_est.data.numpy(), axis=0), axis = 0)),axis = 0)
@@ -514,16 +529,6 @@ class DataVisualizer():
 
                             VisualizationLib().rviz_publish_input(self.im_sample[0, :, :] * 1.3, self.im_sample[-1, 10, 10])
                             VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample, block=True, title=str(model_key))
-
-
-
-
-
-
-
-
-
-
 
 
 
