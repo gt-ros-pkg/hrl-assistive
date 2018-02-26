@@ -206,7 +206,7 @@ class DataVisualizer():
 
 
         print len(self.validation_set), 'size of validation set'
-        batch_size = 1#always do 1! you have to do 25 forward passes with a single labeled image
+        batch_size = 1670#always do 1! you have to do 25 forward passes with a single labeled image
 
         self.test_dataset = torch.utils.data.TensorDataset(self.test_x_tensor, self.test_y_tensor)
         self.test_loader = torch.utils.data.DataLoader(self.test_dataset, batch_size, shuffle=True)
@@ -301,9 +301,9 @@ class DataVisualizer():
             models.append('Ridge')
             print 'loading Ridge'
             if self.opt.computer == 'aws':
-                regr_Ridge = load_pickle(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/HoG_Ridge_p'+str(self.opt.leave_out)+'.p')
+                regr_Ridge = load_pickle(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/HoGshift0.5_Ridge_p'+str(self.opt.leave_out)+'.p')
             else:
-                regr_Ridge = load_pickle(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/p_files/HoG_Ridge_p'+str(self.opt.leave_out)+'.p')
+                regr_Ridge = load_pickle(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/p_files/HoGshift0.5_Ridge_p'+str(self.opt.leave_out)+'.p')
 
         if all_eval == True: self.loss_vector_type = 'KRidge'
         if self.loss_vector_type == 'KRidge':
@@ -337,7 +337,7 @@ class DataVisualizer():
 
                 limbArray = None
 
-                T = 25 #STOCHASTIC FORWARD PASSES
+                T = 1 #STOCHASTIC FORWARD PASSES
 
 
                 batch0 = batch[0].clone()
