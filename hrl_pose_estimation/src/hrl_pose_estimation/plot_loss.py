@@ -301,9 +301,9 @@ class DataVisualizer():
             models.append('Ridge')
             print 'loading Ridge'
             if self.opt.computer == 'aws':
-                regr_Ridge = load_pickle(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/HoGshift0.5_Ridge_p'+str(self.opt.leave_out)+'.p')
+                regr_Ridge = load_pickle(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/HoGshift0.7_Ridge_p'+str(self.opt.leave_out)+'.p')
             else:
-                regr_Ridge = load_pickle(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/p_files/HoGshift0.5_Ridge_p'+str(self.opt.leave_out)+'.p')
+                regr_Ridge = load_pickle(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/p_files/HoGshift0.7_Ridge_p'+str(self.opt.leave_out)+'.p')
 
         if all_eval == True: self.loss_vector_type = 'KRidge'
         if self.loss_vector_type == 'KRidge':

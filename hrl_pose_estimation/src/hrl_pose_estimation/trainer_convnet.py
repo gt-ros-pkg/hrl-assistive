@@ -103,7 +103,7 @@ class PhysicalTrainer():
         #        self.opt.leave_out) + '.pt', map_location=lambda storage, loc: storage)
         #print 'LOADED!!!!!!!!!!!!!!!!!1'
 
-        self.num_epochs = 300
+        self.num_epochs = 100
         self.include_inter = True
         self.shuffle = True
 
@@ -375,7 +375,7 @@ class PhysicalTrainer():
         print 'fitting Ridge'
         baseline = 'Ridge'
         #elif baseline == 'Ridge':
-        regr = linear_model.Ridge(alpha=0.5) # complexity parameter that controls the amount of shrinkage:
+        regr = linear_model.Ridge(alpha=0.7) # complexity parameter that controls the amount of shrinkage:
         # the larger the value of \alpha, the greater the amount of shrinkage and thus the coefficients become more robust to collinearity
         # a zero value for alpha is the same as doing OLS (ordinary least squares. More complex model in this case and more prone to overfitting
         # The shrinkage is a regularization term. coefficients in the regularization correspond to those in the least squares part
@@ -387,10 +387,10 @@ class PhysicalTrainer():
 
         if self.opt.computer == 'lab_harddrive':
             print 'saving to ', '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
-                self.opt.leave_out) + '/p_files/HoGshift0.5_' + baseline + '_p' + str(self.opt.leave_out) + '.p'
+                self.opt.leave_out) + '/p_files/HoGshift0.7_' + baseline + '_p' + str(self.opt.leave_out) + '.p'
             pkl.dump(regr, open(
                 '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
-                    self.opt.leave_out) + '/p_files/HoGshift0.5_' + baseline + '_p' + str(self.opt.leave_out) + '.p',
+                    self.opt.leave_out) + '/p_files/HoGshift0.7_' + baseline + '_p' + str(self.opt.leave_out) + '.p',
                 'wb'))
             print 'saved successfully'
         elif self.opt.computer == 'aws':
@@ -512,7 +512,7 @@ class PhysicalTrainer():
         if self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL' or self.loss_vector_type == 'anglesSTVL':
             fc_output_size = 40#38 #18 angles for body, 17 lengths for body, 3 torso coordinates
             self.model = convnet.CNN(self.mat_size, fc_output_size, hidden_dim, kernel_size, self.loss_vector_type)
-            #self.model = torch.load('/home/ubuntu/Autobed_OFFICIAL_Trials' + '/subject_' + str(self.opt.leave_out) + '/convnets/convnet_9to18_'+str(self.loss_vector_type)+'_sTrue_128b_200e_' + str(self.opt.leave_out) + '.pt', map_location=lambda storage, loc: storage)
+            self.model = torch.load('/home/ubuntu/Autobed_OFFICIAL_Trials' + '/subject_' + str(self.opt.leave_out) + '/convnets/convnet_9to18_'+str(self.loss_vector_type)+'_sTrue_128b_200e_' + str(self.opt.leave_out) + '.pt', map_location=lambda storage, loc: storage)
             print 'LOADED!!!!!!!!!!!!!!!!!1'
             pp = 0
             for p in list(self.model.parameters()):
