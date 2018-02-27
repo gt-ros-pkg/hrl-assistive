@@ -239,9 +239,9 @@ class DataVisualizer():
             models.append('anglesCL')
             print 'loading kinematic constant bone lengths CNN, subject ', self.opt.leave_out
             if self.opt.computer == 'aws':
-                model_kinCL = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnets/convnet_9to18_anglesCL_sTrue_128b_200e_'+str(self.opt.leave_out)+'.pt', map_location=lambda storage, loc: storage)
+                model_kinCL = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnets/convnet_9to18_anglesCL_sTrue_128b_100e_'+str(self.opt.leave_out)+'.pt', map_location=lambda storage, loc: storage)
             else:
-                model_kinCL = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnets/convnet_9to18_anglesCL_sTrue_128b_200e_' + str(self.opt.leave_out) + '.pt', map_location=lambda storage, loc: storage)
+                model_kinCL = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnets/convnet_9to18_anglesCL_sTrue_128b_100e_' + str(self.opt.leave_out) + '.pt', map_location=lambda storage, loc: storage)
             if dropout == False: model_kinCL.eval()
             pp = 0
             for p in list(model_kinCL.parameters()):
@@ -256,9 +256,9 @@ class DataVisualizer():
             models.append('anglesSTVL')
             print 'loading kinematic variable bone lengths straight through CNN, subject ', self.opt.leave_out
             if self.opt.computer == 'aws':
-                model_kinSTVL = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnets/convnet_9to18_anglesSTVL_sTrue_128b_200e_'+str(self.opt.leave_out)+'.pt', map_location=lambda storage, loc: storage)
+                model_kinSTVL = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnets/convnet_9to18_anglesSTVL_sTrue_128b_100e_'+str(self.opt.leave_out)+'.pt', map_location=lambda storage, loc: storage)
             else:
-                model_kinSTVL = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnets/convnet_9to18_anglesSTVL_sTrue_128b_200e_' + str(self.opt.leave_out) + '.pt', map_location=lambda storage, loc: storage)
+                model_kinSTVL = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnets/convnet_9to18_anglesSTVL_sTrue_128b_100e_' + str(self.opt.leave_out) + '.pt', map_location=lambda storage, loc: storage)
             if dropout == False: model_kinSTVL.eval()
             pp = 0
             for p in list(model_kinSTVL.parameters()):
