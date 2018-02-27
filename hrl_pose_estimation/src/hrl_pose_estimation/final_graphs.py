@@ -158,10 +158,10 @@ class DataVisualizer():
         flat_errors = {}
 
         #for modeltype in ['direct','anglesSTVL', 'anglesCL']:
-        for modeltype in ['anglesSTVL']:
+        for modeltype in ['anglesCL']:
             error_norm_flat = None
-            for posture in ['supine']:
-                for subject in [9]:#, 10, 11, 12, 13, 14, 15, 16, 17, 18]:
+            for posture in ['supine', 'seated']:
+                for subject in [18]:#, 10, 11, 12, 13, 14, 15, 16, 17, 18]:
                     if modeltype == 'anglesCL' or modeltype == 'anglesSTVL' or modeltype == 'direct':
 
                         if posture == 'supine':
