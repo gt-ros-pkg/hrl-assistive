@@ -103,7 +103,7 @@ class PhysicalTrainer():
         #        self.opt.leave_out) + '.pt', map_location=lambda storage, loc: storage)
         #print 'LOADED!!!!!!!!!!!!!!!!!1'
 
-        self.num_epochs = 300
+        self.num_epochs = 10
         self.include_inter = True
         self.shuffle = True
 

@@ -163,8 +163,8 @@ class DataVisualizer():
         else:
 
             #self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p')
-            self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair.p')
-            #self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainval_sit175rlh_sit120rll.p')
+            #self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair.p')
+            self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainval_sit175rlh_sit120rll.p')
             #self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/150RL_LL_air.p')
             #self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/p_files/trainvalLL.p')
 

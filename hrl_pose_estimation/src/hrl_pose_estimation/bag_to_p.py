@@ -90,7 +90,7 @@ class BagfileToPickle():
         bed_pos = np.zeros((1,3))
         p_mat = []
 
-        if filename == '_full_trial_BH2.bag':# or filename == '_full_trial_RL2.bag':
+        if filename == '_full_trial_BH2.bag' or filename == '_full_trial_BL.bag':# or filename == '_full_trial_RL2.bag':
             pass
         else:
             self.mat_tar_pos = []
@@ -443,12 +443,17 @@ if __name__ == '__main__':
         x = []
         x.append(subject)
         x.append('_full_trial_BH1.bag')
-        x.append('LH1')
+        x.append('B')
         file_details.append(x)
         x = []
         x.append(subject)
         x.append('_full_trial_BH2.bag')
-        x.append('LH1')
+        x.append('B')
+        file_details.append(x)
+        x = []
+        x.append(subject)
+        x.append('_full_trial_BL.bag')
+        x.append('B')
         file_details.append(x)
 
         #x = []
