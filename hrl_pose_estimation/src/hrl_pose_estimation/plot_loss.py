@@ -206,13 +206,13 @@ class DataVisualizer():
 
 
         print len(self.validation_set), 'size of validation set'
-        batch_size = 1670#always do 1! you have to do 25 forward passes with a single labeled image
+        batch_size = 1#always do 1! you have to do 25 forward passes with a single labeled image
 
         self.test_dataset = torch.utils.data.TensorDataset(self.test_x_tensor, self.test_y_tensor)
         self.test_loader = torch.utils.data.DataLoader(self.test_dataset, batch_size, shuffle=True)
 
         models = []
-        all_eval = False
+        all_eval = False#True
 
         dropout = True
 
@@ -310,9 +310,9 @@ class DataVisualizer():
             models.append('KRidge')
             print 'loading Kernel Ridge'
             if self.opt.computer == 'aws':
-                regr_KRidge = load_pickle(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/HoGpoly_KRidge_p'+str(self.opt.leave_out)+'.p')
+                regr_KRidge = load_pickle(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/HoGshift0.4_KRidge_p'+str(self.opt.leave_out)+'.p')
             else:
-                regr_KRidge = load_pickle(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/p_files/HoGpoly_KRidge_p'+str(self.opt.leave_out)+'.p')
+                regr_KRidge = load_pickle(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/p_files/HoGshift0.4_KRidge_p'+str(self.opt.leave_out)+'.p')
 
 
 
@@ -337,7 +337,7 @@ class DataVisualizer():
 
                 limbArray = None
 
-                T = 1 #STOCHASTIC FORWARD PASSES
+                T = 25 #STOCHASTIC FORWARD PASSES
 
 
                 batch0 = batch[0].clone()
@@ -537,9 +537,12 @@ class DataVisualizer():
                 if batch_idx == batch_idx_limit and self.opt.visualize == False:
                     if model_key == 'anglesVL' or model_key == 'anglesCL' or model_key == 'anglesSTVL' or model_key == 'direct':
                         print "DUMPING!!!!!"
-                        pkl.dump([self.error_avg_list, self.variance_est_list, self.targets_list, self.targets_est_list], open(self.dump_path+'/Feet_Variance/error_avg_std_T'+str(T)+'_subject'+str(self.opt.leave_out)+'_'+str(model_key)+'_LLair_only.p', 'wb'))
-                    elif model_key == 'KNN' or model_key == 'Ridge' or model_key == 'KRidge':
-                        pkl.dump(error_norm, open(self.dump_path+'/Final_Data/error_avg_subject' + str(self.opt.leave_out) + '_'+str(model_key)+'.p', 'wb'))
+                        pkl.dump([self.error_avg_list, self.variance_est_list, self.targets_list, self.targets_est_list], open(self.dump_path+'/Final_Data_V2/error_avg_std_T'+str(T)+'_subject'+str(self.opt.leave_out)+'_'+str(model_key)+'supine.p', 'wb'))
+                        #pkl.dump([self.error_avg_list, self.variance_est_list, self.targets_list, self.targets_est_list], open(self.dump_path+'/Feet_Variance/error_avg_std_T'+str(T)+'_subject'+str(self.opt.leave_out)+'_'+str(model_key)+'.p', 'wb'))
+
+                if self.opt.visualize == False:
+                    if model_key == 'KNN' or model_key == 'Ridge' or model_key == 'KRidge':
+                        pkl.dump(error_norm, open(self.dump_path+'/Final_Data/error_avg_subject' + str(self.opt.leave_out) + '_'+str(model_key)+'seated.p', 'wb'))
 
                         #print batch_idx, np.array(self.error_std_list)[batch_idx, 6:10], np.array(self.leg_patch_sums)[
                      #                                                                batch_idx, :]

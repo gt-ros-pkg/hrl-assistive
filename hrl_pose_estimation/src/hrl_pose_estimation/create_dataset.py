@@ -699,7 +699,7 @@ class DatabaseCreator():
             #if prev == None: movement = 'LL_air_only'
             #else: movement = 'LL'
 
-            for movement in ['RH1','LH1','RH2','LH2','RH3','LH3','RL_air','LL_air']:#,
+            for movement in ['RH1','LH1','RH2','LH2','RH3','LH3','RL_air','LL_air','RL_sitting','LH_sitting','RL_sitting','LL_sitting']:#,
             #for movement in [movement]:
 
         # ,'RL']:
@@ -976,7 +976,7 @@ class DatabaseCreator():
             print "Saving final_dataset"
             print (self.training_dump_path+str(subject)+'/p_files/trainval'+movement+'.p')
 
-            pkl.dump(self.final_dataset, open(os.path.join(self.training_dump_path+str(subject)+'/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair.p'), 'wb')) #_trainval_200rlh1_115rlh2_75rlh3_175rllair_sit175rlh_sit120rll
+            pkl.dump(self.final_dataset, open(os.path.join(self.training_dump_path+str(subject)+'/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair_sit175rlh_sit120rll.p'), 'wb')) #_trainval_200rlh1_115rlh2_75rlh3_175rllair_sit175rlh_sit120rll
 
             print len(self.final_dataset['images']), num_samp
             print 'Done.'

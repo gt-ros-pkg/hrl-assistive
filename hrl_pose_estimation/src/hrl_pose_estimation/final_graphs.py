@@ -157,16 +157,17 @@ class DataVisualizer():
     def final_error(self):
         flat_errors = {}
 
-        for modeltype in ['direct','anglesSTVL', 'anglesCL']:
+        #for modeltype in ['direct','anglesSTVL', 'anglesCL']:
+        for modeltype in ['anglesSTVL']:
             error_norm_flat = None
-            for posture in ['seated']:
-                for subject in [9, 10, 11, 12, 13, 14, 15, 16, 17, 18]:
+            for posture in ['supine']:
+                for subject in [9]:#, 10, 11, 12, 13, 14, 15, 16, 17, 18]:
                     if modeltype == 'anglesCL' or modeltype == 'anglesSTVL' or modeltype == 'direct':
 
                         if posture == 'supine':
-                            _, _, targets, targets_est = load_pickle(self.dump_path + '/Final_Data/error_avg_std_T25_subject' + str(subject) + '_' + str(modeltype) + '.p')
+                            _, _, targets, targets_est = load_pickle(self.dump_path + '/Final_Data_V2/error_avg_std_T25_subject' + str(subject) + '_' + str(modeltype) + 'supine.p')
                         elif posture == 'seated':
-                            _, _, targets, targets_est = load_pickle(self.dump_path + '/Final_Data/error_avg_std_T25_subject' + str(subject) + '_' + str(modeltype) + '_sit.p')
+                            _, _, targets, targets_est = load_pickle(self.dump_path + '/Final_Data_V2/error_avg_std_T25_subject' + str(subject) + '_' + str(modeltype) + 'seated.p')
                         # size (P x N) each: number of images, number of joints
 
 
@@ -287,11 +288,12 @@ class DataVisualizer():
         threshold_error = {}
         joint_percent = {}
         joint_percent_keep = {}
-        for modeltype in ['KNN','LRR','KRR','direct','kincL','kinvL']:
+        #for modeltype in ['KNN','LRR','KRR','direct','kincL','kinvL']:
+        for modeltype in ['anglesSTVL_supine']:
             error_avg_flat = None
             for subject in [9,10,11,12,13,14,15,16,17,18]:
-                if modeltype == 'kinvL' or modeltype == 'kincL' or modeltype == 'direct':
-                    error_avg, _ = load_pickle(self.dump_path+'/Final_Data/error_avg_std_T25_subject'+str(subject)+'_'+str(modeltype)+'.p')
+                if modeltype == 'anglesSTVL_supine' or modeltype == 'kincL' or modeltype == 'direct':
+                    error_avg, _ = load_pickle(self.dump_path+'/Final_Data_V2/error_avg_std_T25_subject'+str(subject)+'_'+str(modeltype)+'.p')
                     # size (P x N) each: number of images, number of joints
                     try:
                         error_avg_flat = np.concatenate((error_avg_flat, np.array(error_avg).flatten()), axis=0)
@@ -711,5 +713,6 @@ if __name__ == "__main__":
     #p.dropout_std_threshold()
     #p.error_threshold()
     #p.p_information_std()
-    p.final_foot_variance()
+    #p.final_foot_variance()
+    p.final_error()
     sys.exit()

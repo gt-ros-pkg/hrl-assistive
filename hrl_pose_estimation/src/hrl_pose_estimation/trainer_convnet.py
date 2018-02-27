@@ -349,27 +349,27 @@ class PhysicalTrainer():
         images_up = self.images_train_aggregated
         targets = self.targets_train_aggregated
         #
-        # print 'fitting KNN'
-        # baseline = 'KNN'
+        print 'fitting KNN'
+        baseline = 'KNN'
         #
-        # #if baseline == 'KNN':
-        # regr = neighbors.KNeighborsRegressor(10, weights='distance', algorithm = 'auto', p=2, metric = 'minkowski')
-        # regr.fit(images_up, targets)
+        #if baseline == 'KNN':
+        regr = neighbors.KNeighborsRegressor(10, weights='distance', algorithm = 'auto', p=2, metric = 'minkowski')
+        regr.fit(images_up, targets)
         #
         # print 'done fitting KNN'
         #
-        # if self.opt.computer == 'lab_harddrive':
-        #     print 'saving to ', '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
-        #         self.opt.leave_out) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p'
-        #     pkl.dump(regr, open(
-        #         '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
-        #             self.opt.leave_out) + '/p_files/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p',
-        #         'wb'))
-        #     print 'saved successfully'
-        # elif self.opt.computer == 'aws':
-        #     pkl.dump(regr, open('/home/ubuntu/Autobed_OFFICIAL_Trials/subject_' + str(
-        #         self.opt.leave_out) + '/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p', 'wb'))
-        #     print 'saved successfully'
+        if self.opt.computer == 'lab_harddrive':
+            print 'saving to ', '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
+                self.opt.leave_out) + '/p_files/HoGshift_' + baseline + '_p' + str(self.opt.leave_out) + '.p'
+            pkl.dump(regr, open(
+                '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
+                    self.opt.leave_out) + '/p_files/HoGshift_' + baseline + '_p' + str(self.opt.leave_out) + '.p',
+                'wb'))
+            print 'saved successfully'
+        elif self.opt.computer == 'aws':
+            pkl.dump(regr, open('/home/ubuntu/Autobed_OFFICIAL_Trials/subject_' + str(
+                self.opt.leave_out) + '/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p', 'wb'))
+            print 'saved successfully'
         #
         #
         print 'fitting Ridge'
@@ -401,26 +401,26 @@ class PhysicalTrainer():
 
 
         #
-        # print 'fitting KRidge'
-        # baseline = 'KRidge'
-        # #elif baseline == 'KRidge':
-        # regr = kernel_ridge.KernelRidge(alpha=0.4, kernel='rbf')
-        # #regr = kernel_ridge.KernelRidge(kernel='polynomial')
-        # regr.fit(images_up, targets)
+        print 'fitting KRidge'
+        baseline = 'KRidge'
+        #elif baseline == 'KRidge':
+        regr = kernel_ridge.KernelRidge(alpha=0.4, kernel='rbf')
+        #regr = kernel_ridge.KernelRidge(kernel='polynomial')
+        regr.fit(images_up, targets)
         #
-        # print 'done fitting KRidge'
+        print 'done fitting KRidge'
         #
-        # if self.opt.computer == 'lab_harddrive':
-        #     print 'saving to ', '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
-        #         self.opt.leave_out) + '/p_files/HoGshift0.4_' + baseline + '_p' + str(self.opt.leave_out) + '.p'
-        #     pkl.dump(regr, open(
-        #         '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
-        #             self.opt.leave_out) + '/p_files/HoGshift0.4_' + baseline + '_p' + str(self.opt.leave_out) + '.p','wb'))
-        #     print 'saved successfully'
-        # elif self.opt.computer == 'aws':
-        #     pkl.dump(regr, open('/home/ubuntu/Autobed_OFFICIAL_Trials/subject_' + str(
-        #         self.opt.leave_out) + '/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p', 'wb'))
-        #     print 'saved successfully'
+        if self.opt.computer == 'lab_harddrive':
+            print 'saving to ', '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
+                self.opt.leave_out) + '/p_files/HoGshift0.4_' + baseline + '_p' + str(self.opt.leave_out) + '.p'
+            pkl.dump(regr, open(
+                '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_' + str(
+                    self.opt.leave_out) + '/p_files/HoGshift0.4_' + baseline + '_p' + str(self.opt.leave_out) + '.p','wb'))
+            print 'saved successfully'
+        elif self.opt.computer == 'aws':
+            pkl.dump(regr, open('/home/ubuntu/Autobed_OFFICIAL_Trials/subject_' + str(
+                self.opt.leave_out) + '/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p', 'wb'))
+            print 'saved successfully'
 
 
 
