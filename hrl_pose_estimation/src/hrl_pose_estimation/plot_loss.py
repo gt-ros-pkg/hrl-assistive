@@ -157,8 +157,8 @@ class DataVisualizer():
     def init(self, subject_num):
         print 'loading subject ', subject_num
         if self.opt.computer == 'aws':
-            #self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/trainval_200rlh1_115rlh2_75rlh3_175rllair.p')
-            self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/trainval_sit175rlh_sit120rll.p')
+            self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/trainval_200rlh1_115rlh2_75rlh3_175rllair.p')
+            #self.validation_set = load_pickle(self.dump_path + '/subject_' + str(subject_num) + '/trainval_sit175rlh_sit120rll.p')
 
         else:
 
