@@ -689,7 +689,7 @@ class KinematicsLib():
             torso_lengths_angles_v[:, 16] = torch.clamp(torch.add(torso_lengths_angles_v[:, 16], 1.5), 0.2, 1.8)
             torso_lengths_angles_v[:, 17] = torch.clamp(torch.add(torso_lengths_angles_v[:, 17], 1.5), 0.2, 1.8)
             torso_lengths_angles_v[:, 18] = torch.clamp(torch.add(torso_lengths_angles_v[:, 18], 0.2), -0.5, 1.3) #torso angle for upper
-            torso_lengths_angles_v[:, 19] = torch.clamp(torch.add(torso_lengths_angles_v[:, 19], 0.), -1.3, 0.1) #torso angle for lower
+            torso_lengths_angles_v[:, 19] = torch.clamp(torch.add(torso_lengths_angles_v[:, 19], 0.), -1.3, 0.5) #torso angle for lower
 
             print 'VARIABLE BONE LENGTHS, STRAIGHT THROUGH, SUBJECT ', str(subject)
 
