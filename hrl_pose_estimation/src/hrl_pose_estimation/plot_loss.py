@@ -60,6 +60,7 @@ from torch.autograd import Variable
 
 
 
+
 MAT_WIDTH = 0.762 #metres
 MAT_HEIGHT = 1.854 #metres
 MAT_HALF_WIDTH = MAT_WIDTH/2
@@ -107,19 +108,19 @@ class DataVisualizer():
             print '###########################  done with subject ',str(self.opt.leave_out),', direct ##############################'
 
 
-            train_val_lossCL = load_pickle(self.dump_path + '/subject_'+str(self.opt.leave_out)+'/convnets/losses_9to18_anglesCL_sTrue_128b_200e_'+str(self.opt.leave_out)+'.p')
+            train_val_lossCL = load_pickle(self.dump_path + '/subject_'+str(self.opt.leave_out)+'/convnets/losses_9to18_anglesCL_sTrue_128b_300e_'+str(self.opt.leave_out)+'.p')
             for key in train_val_lossCL:
                 print key
             print '###########################  done with subject ',str(self.opt.leave_out),', anglesCL ##############################'
 
-            train_val_lossSTVL = load_pickle(self.dump_path + '/subject_'+str(self.opt.leave_out)+'/convnets/losses_9to18_anglesSTVL_sTrue_128b_200e_'+str(self.opt.leave_out)+'.p')
+            train_val_lossSTVL = load_pickle(self.dump_path + '/subject_'+str(self.opt.leave_out)+'/convnets/losses_9to18_anglesSTVL_sTrue_128b_300e_'+str(self.opt.leave_out)+'.p')
             for key in train_val_lossSTVL:
                 print key
             print '###########################  done with subject ',str(self.opt.leave_out),', anglesSTVL ##############################'
 
             plt.plot(train_val_lossdir['epoch_9to18_direct_sTrue_128b_300e_' + str(self.opt.leave_out)],train_val_lossdir['val_9to18_direct_sTrue_128b_300e_' + str(self.opt.leave_out)], 'r',label='Direct CNN')
-            plt.plot(train_val_lossCL['epoch_9to18_anglesCL_sTrue_128b_200e_'+str(self.opt.leave_out)],train_val_lossCL['val_9to18_anglesCL_sTrue_128b_200e_'+str(self.opt.leave_out)],'g',label='Kinematic CNN, const L')
-            plt.plot(train_val_lossSTVL['epoch_9to18_anglesSTVL_sTrue_128b_200e_'+str(self.opt.leave_out)],train_val_lossSTVL['val_9to18_anglesSTVL_sTrue_128b_200e_'+str(self.opt.leave_out)],'b',label='Kinematic CNN, var L')
+            plt.plot(train_val_lossCL['epoch_9to18_anglesCL_sTrue_128b_300e_'+str(self.opt.leave_out)],train_val_lossCL['val_9to18_anglesCL_sTrue_128b_300e_'+str(self.opt.leave_out)],'g',label='Kinematic CNN, const L')
+            plt.plot(train_val_lossSTVL['epoch_9to18_anglesSTVL_sTrue_128b_300e_'+str(self.opt.leave_out)],train_val_lossSTVL['val_9to18_anglesSTVL_sTrue_128b_300e_'+str(self.opt.leave_out)],'b',label='Kinematic CNN, var L')
 
 
             if self.opt.leave_out == 1:
@@ -206,43 +207,26 @@ class DataVisualizer():
 
 
         print len(self.validation_set), 'size of validation set'
-        batch_size = 1670#always do 1! you have to do 25 forward passes with a single labeled image
+        batch_size = 1#always do 1! you have to do 25 forward passes with a single labeled image
 
         self.test_dataset = torch.utils.data.TensorDataset(self.test_x_tensor, self.test_y_tensor)
         self.test_loader = torch.utils.data.DataLoader(self.test_dataset, batch_size, shuffle=True)
 
         models = []
-        all_eval = True
+        all_eval = False
 
         dropout = True
 
-
-        #if all_eval == True: self.loss_vector_type = 'anglesVL'
-        if self.loss_vector_type == 'anglesVL':
-            models.append('anglesVL')
-            print 'loading kinematic variable bone lengths CNN, subject ', self.opt.leave_out
-            if self.opt.computer == 'aws':
-                model_kinVL = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnets/convnet_9to18_anglesVL_sTrue_128b_150e_'+str(self.opt.leave_out)+'.pt', map_location=lambda storage, loc: storage)
-            else:
-                model_kinVL = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnets/convnet_9to18_anglesVL_sTrue_128b_150e_' + str(self.opt.leave_out) + '.pt', map_location=lambda storage, loc: storage)
-            pp = 0
-            if dropout == False: model_kinVL.eval()
-            for p in list(model_kinVL.parameters()):
-                nn = 1
-                for s in list(p.size()):
-                    nn = nn * s
-                pp += nn
-            print pp, 'num params'
 
         #if all_eval == True: self.loss_vector_type = 'anglesCL'
         if self.loss_vector_type == 'anglesCL':
             models.append('anglesCL')
             print 'loading kinematic constant bone lengths CNN, subject ', self.opt.leave_out
             if self.opt.computer == 'aws':
-                model_kinCL = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnets/convnet_9to18_anglesCL_sTrue_128b_100e_'+str(self.opt.leave_out)+'.pt', map_location=lambda storage, loc: storage)
+                model_kinCL = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnets/convnet_9to18_anglesCL_sTrue_128b_300e_'+str(self.opt.leave_out)+'.pt', map_location=lambda storage, loc: storage)
             else:
-                model_kinCL = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnets/convnet_9to18_anglesCL_sTrue_128b_100e_' + str(self.opt.leave_out) + '.pt', map_location=lambda storage, loc: storage)
-            if dropout == False: model_kinCL.eval()
+                model_kinCL = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnets/convnet_9to18_anglesCL_sTrue_128b_300e_' + str(self.opt.leave_out) + '.pt', map_location=lambda storage, loc: storage)
+            model_kinCL.train()
             pp = 0
             for p in list(model_kinCL.parameters()):
                 nn = 1
@@ -256,10 +240,10 @@ class DataVisualizer():
             models.append('anglesSTVL')
             print 'loading kinematic variable bone lengths straight through CNN, subject ', self.opt.leave_out
             if self.opt.computer == 'aws':
-                model_kinSTVL = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnets/convnet_9to18_anglesSTVL_sTrue_128b_100e_'+str(self.opt.leave_out)+'.pt', map_location=lambda storage, loc: storage)
+                model_kinSTVL = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnets/convnet_9to18_anglesSTVL_sTrue_128b_300e_'+str(self.opt.leave_out)+'.pt', map_location=lambda storage, loc: storage)
             else:
-                model_kinSTVL = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnets/convnet_9to18_anglesSTVL_sTrue_128b_100e_' + str(self.opt.leave_out) + '.pt', map_location=lambda storage, loc: storage)
-            if dropout == False: model_kinSTVL.eval()
+                model_kinSTVL = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnets/convnet_9to18_anglesSTVL_sTrue_128b_300e_' + str(self.opt.leave_out) + '.pt', map_location=lambda storage, loc: storage)
+            model_kinSTVL.train()
             pp = 0
             for p in list(model_kinSTVL.parameters()):
                 nn = 1
@@ -276,7 +260,7 @@ class DataVisualizer():
                 model_dir = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnets/convnet_9to18_direct_sTrue_128b_300e_'+str(self.opt.leave_out)+'.pt', map_location=lambda storage, loc: storage)
             else:
                 model_dir = torch.load(self.dump_path + '/subject_' + str(self.opt.leave_out) + '/convnets/convnet_9to18_direct_sTrue_128b_300e_'+str(self.opt.leave_out)+'.pt', map_location=lambda storage, loc: storage)
-            if dropout == False: model_dir.eval()
+            model_dir.train()
             pp = 0
             for p in list(model_dir.parameters()):
                 nn = 1
@@ -337,7 +321,7 @@ class DataVisualizer():
 
                 limbArray = None
 
-                T = 1 #STOCHASTIC FORWARD PASSES
+                T = 25 #STOCHASTIC FORWARD PASSES
 
 
                 batch0 = batch[0].clone()
@@ -412,9 +396,16 @@ class DataVisualizer():
                     self.targets_list.append(targets[0,:].numpy())
                     self.targets_est_list.append(np.mean(targets_est.numpy(), axis = 0))
                     xyz_std = np.reshape(np.std((targets_est.numpy() - np.mean(targets_est.numpy(), axis=0)), axis=0),self.output_size)
+                    #print targets_est.numpy()[0, :]
+
+                    #print np.mean(targets_est.numpy(), axis = 0)
+                    #print (targets_est.numpy() - np.mean(targets_est.numpy(), axis = 0))[:,0]
+
+
                     norm_std = np.linalg.norm(xyz_std, axis=1)
                     self.variance_est_list.append(norm_std)
-
+                    #print error_avg, 'error_avg'
+                    #print norm_std, 'norm std'
                 except:
                     self.error_avg_list = []
                     self.targets_list = []
@@ -428,7 +419,7 @@ class DataVisualizer():
                     xyz_std = np.reshape(np.std((targets_est.numpy() - np.mean(targets_est.numpy(), axis = 0)), axis =0), self.output_size)
                     norm_std = np.linalg.norm(xyz_std, axis = 1)
                     self.variance_est_list.append(norm_std)
-                    print norm_std
+                    #print norm_std
                     #self.variance_est_list.append()
 
                 print np.shape(self.variance_est_list)
@@ -449,8 +440,9 @@ class DataVisualizer():
 
 
                 count2 = 0
-                if model_key == 'anglesVL' or model_key == 'anglesCL' or model_key == 'anglesSTVL' or model_key == 'direct':
+                if model_key == 'anglesVL' or model_key == 'anglesCL' or model_key == 'anglesSTVL':
                     print np.concatenate((np.expand_dims(np.mean(angles_est.data.numpy(), axis=0), axis=0), np.expand_dims(np.std(angles_est.data.numpy(), axis=0), axis = 0)),axis = 0)
+                if model_key == 'anglesVL' or model_key == 'anglesCL' or model_key == 'anglesSTVL' or model_key == 'direct':
                     print np.array(self.variance_est_list)[batch_idx, 0:10]
 
                 if self.opt.visualize == True:
@@ -537,7 +529,7 @@ class DataVisualizer():
                 if batch_idx == batch_idx_limit and self.opt.visualize == False:
                     if model_key == 'anglesVL' or model_key == 'anglesCL' or model_key == 'anglesSTVL' or model_key == 'direct':
                         print "DUMPING!!!!!"
-                        pkl.dump([self.error_avg_list, self.variance_est_list, self.targets_list, self.targets_est_list], open(self.dump_path+'/Final_Data_V2/error_avg_std_T'+str(T)+'_subject'+str(self.opt.leave_out)+'_'+str(model_key)+'supine.p', 'wb'))
+                        pkl.dump([self.error_avg_list, self.variance_est_list, self.targets_list, self.targets_est_list], open(self.dump_path+'/Final_Data_V2/error_avg_std_T'+str(T)+'_subject'+str(self.opt.leave_out)+'_'+str(model_key)+'seated.p', 'wb'))
                         #pkl.dump([self.error_avg_list, self.variance_est_list, self.targets_list, self.targets_est_list], open(self.dump_path+'/Feet_Variance/error_avg_std_T'+str(T)+'_subject'+str(self.opt.leave_out)+'_'+str(model_key)+'.p', 'wb'))
 
                 if self.opt.visualize == False:
