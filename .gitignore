@@ -20,6 +20,8 @@
 ###################################
 *.wav
 *.pkl
+*.log
+*.txt
 
 # ROS specific files and folders #
 ##################################
@@ -36,4 +38,12 @@ data
 *.dat
 *.dae
 *.zip
+*.SLDPRT
+*.SLDASM
+*.tar.gz
 assistive_teleop/www/jqueryui
+hrl_base_selection/models/PR2/
+hrl_base_selection/urdf/bed_tray_cali_and_environment_henry_2/
+hrl_base_selection/urdf/bed_and_environment_mannequin/
+hrl_base_selection/urdf/bed_and_environment_cali_henry_tray/
+hrl_base_selection/urdf/bed_and_environment_henry_tray/

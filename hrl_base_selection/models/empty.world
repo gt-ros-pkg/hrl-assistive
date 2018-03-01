@@ -1,0 +1,72 @@
+<?xml version="1.0" ?>
+<sdf version="1.4">
+    <world name="default">
+        <physics type="ode">
+            <gravity>0 0 -9.81</gravity>
+            <max_step_size>0.001</max_step_size>
+            <real_time_factor>1</real_time_factor>
+            <real_time_update_rate>1000</real_time_update_rate>
+            <ode>
+                <solver>
+                    <type>quick</type>
+                    <iters>50</iters>
+                    <sor>1.4</sor>
+                </solver>
+                <constraints>
+                    <cfm>0</cfm>
+                    <erp>1</erp>
+                    <contact_max_correcting_vel>0</contact_max_correcting_vel>
+                    <contact_surface_layer>0</contact_surface_layer>
+                </constraints>
+            </ode>
+        </physics>
+
+        <state world_name='default'>
+            <sim_time>15 517000000</sim_time>
+            <real_time>15 594027395</real_time>
+            <wall_time>1423606992 994698489</wall_time>
+            <!--<insertions>-->
+                <!--<model name='human_model'>-->
+
+                    <!--<pose>0 0 2 0 0 0</pose>-->
+
+                <!--</model>-->
+            <!--</insertions>-->
+        </state>
+
+        <model name="ground_model">
+            <static>true</static>
+            <link name="ground_link">
+                <must_be_base_link>true</must_be_base_link>
+                <visual name="visual">
+                    <pose>0 0 0 0 0 0</pose>
+                    <geometry>
+                        <box>
+                            <size>10.0 10. 0.1</size>
+                        </box>
+                    </geometry>
+                    <material>
+                        <script>Gazebo/WoodPallet</script>
+                    </material>
+                </visual>
+                <collision name="collision">
+                    <pose>0 0 0 0 0 0</pose>
+                    <geometry>
+                        <box>
+                            <size>10.0 10.0 0.1</size>
+                        </box>
+                    </geometry>
+                </collision>
+            </link>
+            <!--<joint type="fixed" name="world_to_ground_joint">-->
+            <!--<parent>world</parent>-->
+            <!--<child>ground_link</child>-->
+            <!--<pose>0 0 0 0 0 0</pose>-->
+            <!--<axis>-->
+            <!--<xyz>1 0 0</xyz>-->
+            <!--</axis>-->
+            <!--</joint>-->
+        </model>
+
+    </world>
+</sdf>

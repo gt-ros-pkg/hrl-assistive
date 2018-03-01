@@ -1,0 +1,1299 @@
+<?xml version="1.0" ?>
+<robot name="human_model">
+    <!--<self_collide>true</self_collide>-->
+    <!--<static>false</static>-->
+    <!--<pose>0 0 2 1.5708 0 0</pose>-->
+    <!--<pose>0 0 2 0 -1.5708 0</pose>-->
+    <link name ="human_model/pelvis_link">
+        <!--<pose>0 0 0 0 0 0</pose>-->
+        <!--<inertial>
+            <origin
+                    xyz="0.0 0.0 0.0"
+                    rpy="0 0 0" />
+            <mass value="5.6154"/>
+        </inertial>-->
+        <visual name="visual">
+            <origin
+                    xyz="0.0 0.0 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box
+                        size="0.1088 0.1088 0.23936"/>
+
+            </geometry>
+        </visual>
+        <collision name="collision">
+            <origin
+                    xyz="0.0 0.0 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box
+                        size="0.1088 0.1088 0.23936"/>
+
+            </geometry>
+        </collision>
+    </link>
+
+    <!-- Left Leg -->
+    <link name ="human_model/thigh_left_rotz_link">
+    </link>
+
+    <link name ="human_model/thigh_left_roty_link">
+    </link>
+
+    <link name ="human_model/thigh_left_link">
+        <!--<pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>-->
+        <!--<inertial>
+            <mass value="6.5709"/>
+            <origin
+                    xyz="0.0 -0.18605 0.0"
+                    rpy="0 0 0" />
+        </inertial>-->
+        <visual name="visual">
+            <origin
+                    xyz="0.0 -0.18605 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box size="0.093025 0.3721 0.093025"/>
+                <!--size>0.2500*0.3721 1.0000*0.3721 0.2500*0.3721</size-->
+            </geometry>
+        </visual>
+        <collision name="collision">
+            <origin
+                    xyz="0.0 -0.18605 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box size="0.093025 0.3721 0.093025"/>
+                <!--size>0.2500*0.3721 1.0000*0.3721 0.2500*0.3721</size-->
+            </geometry>
+        </collision>
+    </link>
+
+    <link name ="human_model/shin_left_link">
+        <!--<pose>0.01649408 -0.42984016 -0.09072832 0.0 0.0 0.0</pose>-->
+        <!--<inertial>
+            <mass value="1.7738"/>
+            <origin
+                    xyz="0.0 -0.18685 0.0"
+                    rpy="0 0 0" />
+        </inertial>-->
+        <visual name="visual">
+            <origin
+                    xyz="0.0 -0.18685 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box size="0.07474 0.3737 0.07474"/>
+                <!--size>0.2000*0.3737 1.0000*0.3737 0.2000*0.3737</size-->
+            </geometry>
+        </visual>
+        <collision name="collision">
+            <origin
+                    xyz="0.0 -0.18685 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box size="0.07474 0.3737 0.07474"/>
+                <!--size>0.2000*0.3737 1.0000*0.3737 0.2000*0.3737</size-->
+            </geometry>
+        </collision>
+    </link>
+
+    <link name ="human_model/heel_left_rotz_link">
+    </link>
+
+    <link name ="human_model/heel_left_link">
+        <!--<pose>0.01649408 -0.80354016 -0.09072832 0.0 0.0 0.0</pose>-->
+        <!--<inertial>
+            <mass value="0.5831"/>
+            <origin
+                    xyz="0.0216 0.0 0.0"
+                    rpy="0 0 0" />
+        </inertial>-->
+        <visual name="visual">
+            <origin
+                    xyz="0.0216 0.0 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box size="0.1080 0.0540 0.1080"/>
+                <!--size>1.0000*0.108 0.5000*0.108 1.0000*0.108</size-->
+            </geometry>
+            <!--<color>1.0 0.5 0.0</color>-->
+        </visual>
+        <collision name="collision">
+            <origin
+                    xyz="0.0216 0.0 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box size="0.1080 0.0540 0.1080"/>
+                <!--size>1.0000*0.108 0.5000*0.108 1.0000*0.108</size-->
+            </geometry>
+        </collision>
+    </link>
+
+    <link name ="human_model/toe_left_link">
+        <!--<pose>0.12649408 -0.80354016 -0.09072832 0.0 0.0 0.0</pose>-->
+        <!--<inertial>
+            <mass value="0.50"/>
+            <origin
+                    xyz="0.02 0.0 0.0"
+                    rpy="0 0 0" />
+        </inertial>-->
+        <visual name="visual">
+            <origin
+                    xyz="0.02 0.0 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box size="0.1000 0.0500 0.0800"/>
+                <!--size>1.0000*0.1 0.5000*0.1 0.8000*0.1</size-->
+            </geometry>
+            <!--<color>1.0 0.5 0.0</color>-->
+        </visual>
+        <collision name="collision">
+            <origin
+                    xyz="0.02 0.0 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box size="0.1000 0.0500 0.0800"/>
+                <!--size>1.0000*0.1 0.5000*0.1 0.8000*0.1</size-->
+            </geometry>
+        </collision>
+    </link>
+
+    <!-- Right Leg -->
+    <link name ="human_model/thigh_right_rotz_link">
+        <!--<pose>0.01649408 -0.05774016 0.09072832 0.0 0.0 0.0</pose>-->
+    </link>
+
+    <link name ="human_model/thigh_right_roty_link">
+    </link>
+
+    <link name ="human_model/thigh_right_link">
+        <!--<pose>0.0 0.0 0.0 0.0 0.0 0.0</pose>-->
+        <!--<inertial>
+            <origin
+                    xyz="0.0 -0.18605 0.0"
+                    rpy="0 0 0" />
+            <mass value="6.5709"/>
+        </inertial>-->
+        <visual name="visual">
+            <origin
+                    xyz="0.0 -0.18605 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box size="0.093025 0.3721 0.093025"/>
+                <!--size>0.2500*0.3721 1.0000*0.3721 0.2500*0.3721</size-->
+            </geometry>
+        </visual>
+        <collision name="collision">
+            <origin
+                    xyz="0.0 -0.18605 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box size="0.093025 0.3721 0.093025"/>
+                <!--size>0.2500*0.3721 1.0000*0.3721 0.2500*0.3721</size-->
+            </geometry>
+        </collision>
+    </link>
+
+    <link name ="human_model/shin_right_link">
+        <!--<pose>0.01649408 -0.42984016 0.09072832 0.0 0.0 0.0</pose>-->
+        <!--<inertial>
+            <origin
+                    xyz="0.0 -0.18685 0.0"
+                    rpy="0 0 0" />
+            <mass value="1.7738"/>
+        </inertial>-->
+        <visual name="visual">
+            <origin
+                    xyz="0.0 -0.18685 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box size="0.07474 0.3737 0.07474"/>
+                <!--size>0.2000*0.3737 1.0000*0.3737 0.2000*0.3737</size-->
+            </geometry>
+        </visual>
+        <collision name="collision">
+            <origin
+                    xyz="0.0 -0.18685 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box size="0.07474 0.3737 0.07474"/>
+                <!--size>0.2000*0.3737 1.0000*0.3737 0.2000*0.3737</size-->
+            </geometry>
+        </collision>
+    </link>
+
+    <link name ="human_model/heel_right_rotz_link">
+    </link>
+
+    <link name ="human_model/heel_right_link">
+        <!--<pose>0.01649408 -0.80354016 0.09072832 0.0 0.0 0.0</pose>-->
+        <!--<inertial>
+            <mass value="0.5831"/>
+            <origin
+                    xyz="0.0216 0.0 0.0"
+                    rpy="0 0 0" />
+        </inertial>-->
+        <visual name="visual">
+            <origin
+                    xyz="0.0216 0.0 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box size="0.1080 0.0540 0.1080"/>
+                <!--size>1.0000*0.108 0.5000*0.108 1.0000*0.108</size-->
+            </geometry>
+            <!--<color>1.0 0.5 0.0</color>-->
+        </visual>
+        <collision name="collision">
+            <origin
+                    xyz="0.0 0.0 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box size="0.1080 0.0540 0.1080"/>
+                <!--size>1.0000*0.108 0.5000*0.108 1.0000*0.108</size-->
+            </geometry>
+        </collision>
+    </link>
+
+    <link name ="human_model/toe_right_link">
+        <!--<pose>0.12649408 -0.80354016 0.09072832 0.0 0.0 0.0</pose>-->
+        <!--<inertial>
+            <mass value="0.50"/>
+            <origin
+                    xyz="0.02 0.0 0.0"
+                    rpy="0 0 0" />
+        </inertial>-->
+        <visual name="visual">
+            <origin
+                    xyz="0.02 0.0 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box size="0.1000 0.0500 0.0800"/>
+                <!--size>1.0000*0.1 0.5000*0.1 0.8000*0.1</size-->
+            </geometry>
+            <!--<color>1.0 0.5 0.0</color>-->
+        </visual>
+        <collision name="collision">
+            <origin
+                    xyz="0.02 0.0 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box size="0.1000 0.0500 0.0800"/>
+                <!--size>1.0000*0.1 0.5000*0.1 0.8000*0.1</size-->
+            </geometry>
+        </collision>
+    </link>
+
+    <!-- Upper link -->
+    <link name ="human_model/abdomen_rotx_link">
+    </link>
+
+    <link name ="human_model/abdomen_link">
+        <!--<pose>0.0 0.0562 0.0 0.0 0.0 0.0</pose>-->
+        <!--<inertial>
+            <mass value="4.1846"/>
+            <origin
+                    xyz="0.0 0.12535 0.0"
+                    rpy="0 0 0" />
+        </inertial>-->
+        <visual name="visual">
+            <origin
+                    xyz="0.0 0.12535 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box size="0.12535 0.2507 0.17549"/>
+                <!--size>0.5000*0.2507 1.0000*0.2507 0.7000*0.2507</size-->
+            </geometry>
+        </visual>
+        <collision name="collision">
+            <origin
+                    xyz="0.0 0.12535 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box size="0.12535 0.2507 0.17549"/>
+                <!--size>0.5000*0.2507 1.0000*0.2507 0.7000*0.2507</size-->
+            </geometry>
+        </collision>
+    </link>
+
+    <link name ="human_model/spine_link">
+        <!--<pose>0.0 0.3069 0.0 0.0 0.0 0.0</pose>-->
+        <!--<inertial>
+            <mass value="4.8608"/>
+            <origin
+                    xyz="0.0 0.0908 0.0"
+                    rpy="0 0 0" />
+        </inertial>-->
+        <visual name="visual">
+            <origin
+                    xyz="0.0 0.0908 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box size="0.0908 0.1816 0.0908"/>
+                <!--size>0.5000*0.1816 1.0000*0.1816 0.5000*0.1816</size-->
+            </geometry>
+        </visual>
+        <collision name="collision">
+            <origin
+                    xyz="0.0 0.0908 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box size="0.0908 0.1816 0.0908"/>
+                <!--size>0.5000*0.1816 1.0000*0.1816 0.5000*0.1816</size-->
+            </geometry>
+        </collision>
+    </link>
+
+    <link name ="human_model/head_rotz_link">
+    </link>
+
+    <link name ="human_model/head_link">
+        <pose>0.0 0.4885 0.0 0.0 0.0 0.0</pose>
+        <!--<inertial>
+            <mass value="3.92"/>
+            <origin
+                    xyz="0.0 0.07825 0.0"
+                    rpy="0 0 0" />
+        </inertial>-->
+        <visual name="visual">
+            <origin
+                    xyz="0.0 0.07825 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box size="0.101725 0.1565 0.1252"/>
+                <!--size>0.6500*0.1565 1.0000*0.1565 0.8000*0.1565</size-->
+            </geometry>
+            <!--<color>1.0 0.5 0.0</color>-->
+        </visual>
+        <collision name="collision">
+            <origin
+                    xyz="0.0 0.07825 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box size="0.101725 0.1565 0.1252"/>
+                <!--size>0.6500*0.1565 1.0000*0.1565 0.8000*0.1565</size-->
+            </geometry>
+        </collision>
+    </link>
+
+    <!-- Left Arm -->
+    <link name ="human_model/scapula_left_link">
+        <!--<pose>0.0 0.3069 0.0 -0.9423 0.0 0.0</pose>-->
+        <!--<inertial>
+            <mass value="2.6264"/>
+            <origin
+                    xyz="0.0 0.09615 0.0"
+                    rpy="0 0 0" />
+        </inertial>-->
+        <visual name="visual">
+            <origin
+                    xyz="0.0 0.09615 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box size="0.09615 0.1923 0.09615"/>
+                <!--size>0.5000*0.1923 1.0000*0.1923 0.5000*0.1923</size-->
+            </geometry>
+        </visual>
+        <collision name="collision">
+            <origin
+                    xyz="0.0 0.09615 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box size="0.09615 0.1923 0.09615"/>
+                <!--size>0.5000*0.1923 1.0000*0.1923 0.5000*0.1923</size-->
+            </geometry>
+        </collision>
+    </link>
+
+    <link name ="human_model/bicep_midjoint_left_rotx_link">
+    </link>
+
+    <link name ="human_model/bicep_midjoint_left_roty_link">
+    </link>
+
+    <link name ="human_model/bicep_midjoint_left_link">
+        <!--<pose>0.0 0.397146 -0.169809 0.0 0.0 0.0</pose>-->
+        <!--<inertial>
+            <mass value="1.6219"/>
+            <origin
+                    xyz="0.0 -0.1308 0.0"
+                    rpy="0 0 0" />
+        </inertial>-->
+        <visual name="visual">
+            <origin
+                    xyz="0.0 -0.1308 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box size="0.07848 0.2616 0.07848"/>
+                <!--size>0.3000*0.2616 1.0000*0.2616 0.3000*0.2616</size-->
+            </geometry>
+        </visual>
+        <collision name="collision">
+            <origin
+                    xyz="0.0 -0.1308 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box size="0.07848 0.2616 0.07848"/>
+                <!--size>0.3000*0.2616 1.0000*0.2616 0.3000*0.2616</size-->
+            </geometry>
+        </collision>
+    </link>
+
+    <link name ="human_model/bicep_left_link">
+        <!--<pose>0.0 0.397146 -0.169809 0.0 0.0 0.0</pose>-->
+        <!--<inertial>
+            <mass value="1.6219"/>
+            <origin
+                    xyz="0.0 -0.1308 0.0"
+                    rpy="0 0 0" />
+        </inertial>-->
+        <visual name="visual">
+            <origin
+                    xyz="0.0 -0.1308 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box size="0.07848 0.2616 0.07848"/>
+                <!--size>0.3000*0.2616 1.0000*0.2616 0.3000*0.2616</size-->
+            </geometry>
+        </visual>
+        <collision name="collision">
+            <origin
+                    xyz="0.0 -0.1308 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box size="0.07848 0.2616 0.07848"/>
+                <!--size>0.3000*0.2616 1.0000*0.2616 0.3000*0.2616</size-->
+            </geometry>
+        </collision>
+    </link>
+
+    <link name ="human_model/forearm_left_rotz_link">
+    </link>
+
+    <link name ="human_model/forearm_left_link">
+        <!--<pose>0.0 0.135546 -0.169809 0.0 0.0 0.0</pose>-->
+        <!--<inertial>
+            <mass value="0.6909"/>
+            <origin
+                    xyz="0.0 -0.1012 0.0"
+                    rpy="0 0 0" />
+        </inertial>-->
+        <visual name="visual">
+            <origin
+                    xyz="0.0 -0.1012 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box size="0.0506 0.2024 0.0506"/>
+                <!--size>0.2500*0.2024 1.0000*0.2024 0.2500*0.2024</size-->
+            </geometry>
+        </visual>
+        <collision name="collision">
+            <origin
+                    xyz="0.0 -0.1012 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box size="0.0506 0.2024 0.0506"/>
+                <!--size>0.2500*0.2024 1.0000*0.2024 0.2500*0.2024</size-->
+            </geometry>
+        </collision>
+    </link>
+
+    <link name ="human_model/hand_left_rotz_link">
+    </link>
+
+    <link name ="human_model/hand_left_link">
+        <!--<pose>0.0 -0.066854 -0.169809 0.0 0.0 0.0</pose>-->
+        <!--<inertial>
+            <mass value="0.175"/>
+            <origin
+                    xyz="0.0 -0.035 0.0"
+                    rpy="0 0 0" />
+        </inertial>-->
+        <visual name="visual">
+            <origin
+                    xyz="0.0 -0.035 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box
+                        size="0.04 0.07 0.04"/>
+
+            </geometry>
+            <!--<color>1.0 0.5 0.0</color>-->
+        </visual>
+        <collision name="collision">
+            <origin
+                    xyz="0.0 -0.035 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box
+                        size="0.04 0.07 0.04"/>
+
+            </geometry>
+        </collision>
+    </link>
+
+    <link name ="human_model/hand2_left_link">
+        <!--<pose>0.0 -0.137 -0.169809 0.0 0.0 0.0</pose>-->
+        <!--<inertial>
+            <mass value="0.12"/>
+            <origin
+                    xyz="0.0 -0.035 0.0"
+                    rpy="0 0 0" />
+        </inertial>-->
+        <visual name="visual">
+            <origin
+                    xyz="0.0 -0.035 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box
+                        size="0.03 0.07 0.03"/>
+
+            </geometry>
+            <!--<color>1.0 0.5 0.0</color>-->
+        </visual>
+        <collision name="collision">
+            <origin
+                    xyz="0.0 -0.035 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box
+                        size="0.03 0.07 0.03"/>
+
+            </geometry>
+        </collision>
+    </link>
+
+    <!-- Right Arm -->
+    <link name ="human_model/scapula_right_link">
+        <!--<pose>0.0 0.3069 0.0 0.9423 0.0 0.0</pose>-->
+        <!--<inertial>
+            <mass value="2.6264"/>
+            <origin
+                    xyz="0.0 0.09615 0.0"
+                    rpy="0 0 0" />
+        </inertial>-->
+        <visual name="visual">
+            <origin
+                    xyz="0.0 0.09615 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box size="0.09615 0.1923 0.09615"/>
+                <!--size>0.5000*0.1923 1.0000*0.1923 0.5000*0.1923</size-->
+            </geometry>
+        </visual>
+        <collision name="collision">
+            <origin
+                    xyz="0.0 0.09615 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box size="0.09615 0.1923 0.09615"/>
+                <!--size>0.5000*0.1923 1.0000*0.1923 0.5000*0.1923</size-->
+            </geometry>
+        </collision>
+    </link>
+
+    <link name ="human_model/bicep_midjoint_right_rotx_link">
+    </link>
+
+    <link name ="human_model/bicep_midjoint_right_roty_link">
+    </link>
+
+    <link name ="human_model/bicep_midjoint_right_link">
+        <!--<inertial>
+            <mass value="1.6219"/>
+            <origin
+                    xyz="0.0 -0.1308 0.0"
+                    rpy="0 0 0" />
+        </inertial>-->
+        <visual name="visual">
+            <origin
+                    xyz="0.0 -0.1308 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box size="0.07848 0.2616 0.07848"/>
+                <!--size>0.3000*0.2616 1.0000*0.2616 0.3000*0.2616</size-->
+            </geometry>
+        </visual>
+        <collision name="collision">
+            <origin
+                    xyz="0.0 -0.1308 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box size="0.07848 0.2616 0.07848"/>
+                <!--size>0.3000*0.2616 1.0000*0.2616 0.3000*0.2616</size-->
+            </geometry>
+        </collision>
+    </link>
+
+    <link name ="human_model/bicep_right_link">
+        <!--<inertial>
+            <mass value="1.6219"/>
+            <origin
+                    xyz="0.0 -0.1308 0.0"
+                    rpy="0 0 0" />
+        </inertial>-->
+        <visual name="visual">
+            <origin
+                    xyz="0.0 -0.1308 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box size="0.07848 0.2616 0.07848"/>
+                <!--size>0.3000*0.2616 1.0000*0.2616 0.3000*0.2616</size-->
+            </geometry>
+        </visual>
+        <collision name="collision">
+            <origin
+                    xyz="0.0 -0.1308 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box size="0.07848 0.2616 0.07848"/>
+                <!--size>0.3000*0.2616 1.0000*0.2616 0.3000*0.2616</size-->
+            </geometry>
+        </collision>
+    </link>
+
+    <link name ="human_model/forearm_right_rotz_link">
+    </link>
+
+    <link name ="human_model/forearm_right_link">
+        <!--<pose>0.0 0.135546 0.169809 0.0 0.0 0.0</pose>-->
+        <!--<inertial>
+            <mass value="0.6909"/>
+            <origin
+                    xyz="0.0 -0.1012 0.0"
+                    rpy="0 0 0" />
+        </inertial>-->
+        <visual name="visual">
+            <origin
+                    xyz="0.0 -0.1012 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box size="0.0506 0.2024 0.0506"/>
+                <!--size>0.2500*0.2024 1.0000*0.2024 0.2500*0.2024</size-->
+            </geometry>
+        </visual>
+        <collision name="collision">
+            <origin
+                    xyz="0.0 -0.1012 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box size="0.0506 0.2024 0.0506"/>
+                <!--size>0.2500*0.2024 1.0000*0.2024 0.2500*0.2024</size-->
+            </geometry>
+        </collision>
+    </link>
+
+    <link name ="human_model/hand_right_rotz_link">
+    </link>
+
+    <link name ="human_model/hand_right_link">
+        <!--<pose>0.0 -0.066854 0.169809 0.0 0.0 0.0</pose>-->
+        <!--<inertial>
+            <mass value="0.175"/>
+            <origin
+                    xyz="0.0 -0.035 0.0"
+                    rpy="0 0 0" />
+        </inertial>-->
+        <visual name="visual">
+            <origin
+                    xyz="0.0 -0.035 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box size="0.04 0.07 0.04"/>
+
+            </geometry>
+            <!--<color>1.0 0.5 0.0</color>-->
+        </visual>
+        <collision name="collision">
+            <origin
+                    xyz="0.0 -0.035 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box size="0.04 0.07 0.04"/>
+
+            </geometry>
+        </collision>
+    </link>
+
+    <link name ="human_model/hand2_right_link">
+        <!--<pose>0.0 -0.137 0.169809 0.0 0.0 0.0</pose>-->
+        <!--<inertial>
+            <mass value="0.12"/>
+            <origin
+                    xyz="0.0 -0.035 0.0"
+                    rpy="0 0 0" />
+        </inertial>-->
+        <visual name="visual">
+            <origin
+                    xyz="0.0 -0.035 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box
+                        size="0.03 0.07 0.03"/>
+
+            </geometry>
+            <!--<color>1.0 0.5 0.0</color>-->
+        </visual>
+        <collision name="collision">
+            <origin
+                    xyz="0.0 -0.035 0.0"
+                    rpy="0 0 0" />
+            <geometry>
+                <box
+                        size="0.03 0.07 0.03"/>
+
+            </geometry>
+        </collision>
+    </link>
+
+
+    <!-- JOINT: Pelvis -->
+    <!--<joint type="ball" name="j_pelvis">-->
+    <!--<parent>world</parent>-->
+    <!--<child>h_head</child>-->
+    <!--&lt;!&ndash;<init_pos>0 0 0 0 0 0</init_pos>&ndash;&gt;-->
+    <!--&lt;!&ndash;<init_vel>0 0 0 0 0 0</init_vel>&ndash;&gt;-->
+    <!--</joint>-->
+
+    <!-- JOINT: Left Leg -->
+    <joint type="revolute" name="human_model/pelvis_thigh_left_z_joint">
+        <origin
+                xyz="0.01649408 -0.05774016 -0.09072832"
+                rpy="0 0 0" />
+        <parent link ="human_model/pelvis_link"/>
+        <child link ="human_model/thigh_left_rotz_link"/>
+        <axis
+                xyz="0 0 1" />
+        <limit effort="0" velocity="0"
+               lower="-3.14159"
+               upper="3.14159" />
+    </joint>
+
+    <joint type="revolute" name="human_model/pelvis_thigh_left_y_joint">
+        <origin
+                xyz="0 0 0"
+                rpy="0 0 0" />
+        <parent link ="human_model/thigh_left_rotz_link"/>
+        <child link ="human_model/thigh_left_roty_link"/>
+        <axis
+                xyz="0 1 0" />
+        <limit effort="0" velocity="0"
+               lower="-0.75"
+               upper="0.75" />
+    </joint>
+
+    <joint type="revolute" name="human_model/pelvis_thigh_left_x_joint">
+        <origin
+                xyz="0 0 0"
+                rpy="0 0 0" />
+        <parent link ="human_model/thigh_left_roty_link"/>
+        <child link ="human_model/thigh_left_link"/>
+        <axis
+                xyz="1 0 0" />
+        <limit effort="0" velocity="0"
+               lower="-3.14159"
+               upper="3.14159" />
+    </joint>
+
+    <joint type="revolute" name="human_model/thigh_shin_left_joint">
+        <origin
+                xyz="0.01649408 -0.42984016 -0.09072832"
+                rpy="0 0 0" />
+        <parent link ="human_model/thigh_left_link"/>
+        <child link ="human_model/shin_left_link"/>
+        <axis
+                xyz="0 0 1" />
+        <limit effort="0" velocity="0"
+               lower="-2.6416"
+               upper="0" />
+        <!--<init_pos>-0.17</init_pos>-->
+        <!--<init_vel>0</init_vel>-->
+    </joint>
+
+    <joint type="revolute" name="human_model/shin_heel_left_z_joint">
+        <origin
+                xyz="0.01649408 -0.80354016 -0.09072832"
+                rpy="0 0 0" />
+        <parent link ="human_model/shin_left_link"/>
+        <child link ="human_model/heel_left_rotz_link"/>
+        <axis
+                xyz="0.0 0.0 1.0"/>
+        <limit effort="0" velocity="0"
+               lower="-1.136"
+               upper="0.350"/>
+        <!--<init_pos>0 0</init_pos>-->
+        <!--<init_vel>0 0</init_vel>-->
+    </joint>
+
+    <joint type="revolute" name="human_model/shin_heel_left_y_joint">
+        <origin
+                xyz="0 0 0"
+                rpy="0 0 0" />
+        <parent link ="human_model/heel_left_rotz_link"/>
+        <child link ="human_model/heel_left_link"/>
+        <axis
+                xyz="0.0 1.0 0.0"/>
+        <limit effort="0" velocity="0"
+               lower="-0.2854"
+               upper="0.3854"/>
+        <!--<init_pos>0 0</init_pos>-->
+        <!--<init_vel>0 0</init_vel>-->
+    </joint>
+
+    <joint type="revolute" name="human_model/heel_toe_left_joint">
+        <origin
+                xyz="0.12649408 -0.80354016 -0.09072832"
+                rpy="0 0 0" />
+        <parent link ="human_model/heel_left_link"/>
+        <child link ="human_model/toe_left_link"/>
+        <axis
+                xyz="0 0 1" />
+        <limit effort="0" velocity="0"
+               lower="-0.4236"
+               upper="0.5536"/>
+        <!--<init_pos>0</init_pos>-->
+        <!--<init_vel>0</init_vel>-->
+    </joint>
+
+    <!-- JOINT: Right Leg -->
+    <joint type="revolute" name="human_model/pelvis_thigh_right_z_joint">
+        <origin
+                xyz="0.01649408 -0.05774016 0.09072832"
+                rpy="0 0 0" />
+        <parent link ="human_model/pelvis_link"/>
+        <child link ="human_model/thigh_right_rotz_link"/>
+        <axis
+                xyz="0 0 1" />
+        <limit effort="0" velocity="0"
+               lower="-3.14159"
+               upper="3.14159" />
+    </joint>
+
+    <joint type="revolute" name="human_model/pelvis_thigh_right_y_joint">
+        <origin
+                xyz="0 0 0"
+                rpy="0 0 0" />
+        <parent link ="human_model/thigh_right_rotz_link"/>
+        <child link ="human_model/thigh_right_roty_link"/>
+        <axis
+                xyz="0 1 0" />
+        <limit effort="0" velocity="0"
+               lower="-0.75"
+               upper="0.75" />
+    </joint>
+
+    <joint type="revolute" name="human_model/pelvis_thigh_right_x_joint">
+        <origin
+                xyz="0 0 0"
+                rpy="0 0 0" />
+        <parent link ="human_model/thigh_right_roty_link"/>
+        <child link ="human_model/thigh_right_link"/>
+        <axis
+                xyz="1 0 0" />
+        <limit effort="0" velocity="0"
+               lower="-3.14159"
+               upper="3.14159" />
+    </joint>
+
+    <joint type="revolute" name="human_model/thigh_shin_right_joint">
+        <origin
+                xyz="0.01649408 -0.42984016 0.09072832"
+                rpy="0 0 0" />
+        <parent link ="human_model/thigh_right_link"/>
+        <child link ="human_model/shin_right_link"/>
+        <axis
+                xyz="0 0 1" />
+        <limit effort="0" velocity="0"
+               lower="-2.6416"
+               upper="0" />
+        <!--<init_pos>-0.17</init_pos>-->
+        <!--<init_vel>0</init_vel>-->
+    </joint>
+
+    <joint type="revolute" name="human_model/shin_heel_right_z_joint">
+        <origin
+                xyz="0.01649408 -0.80354016 0.09072832"
+                rpy="0 0 0" />
+        <parent link ="human_model/shin_right_link"/>
+        <child link ="human_model/heel_right_rotz_link"/>
+        <axis
+                xyz="0.0 0.0 1.0"/>
+        <limit effort="0" velocity="0"
+               lower="-1.136"
+               upper="0.350"/>
+        <!--<init_pos>0 0</init_pos>-->
+        <!--<init_vel>0 0</init_vel>-->
+    </joint>
+
+    <joint type="revolute" name="human_model/shin_heel_right_y_joint">
+        <origin
+                xyz="0 0 0"
+                rpy="0 0 0" />
+        <parent link ="human_model/heel_right_rotz_link"/>
+        <child link ="human_model/heel_right_link"/>
+        <axis
+                xyz="0.0 1.0 0.0"/>
+        <limit effort="0" velocity="0"
+               lower="-0.2854"
+               upper="0.3854"/>
+        <!--<init_pos>0 0</init_pos>-->
+        <!--<init_vel>0 0</init_vel>-->
+    </joint>
+
+    <joint type="revolute" name="human_model/shin_heel_toe_right_joint">
+        <origin
+                xyz="0.12649408 -0.80354016 0.09072832"
+                rpy="0 0 0" />
+        <parent link ="human_model/heel_right_link"/>
+        <child link ="human_model/toe_right_link"/>
+        <axis
+                xyz="0 0 1" />
+        <limit effort="0" velocity="0"
+               lower="-0.4236"
+               upper="0.5536"/>
+        <!--<init_pos>0</init_pos>-->
+        <!--<init_vel>0</init_vel>-->
+    </joint>
+
+    <!-- -->
+    <joint type="revolute" name="human_model/pelvis_abdomen_x_joint">
+        <origin
+                xyz="0.0 0.0562 0.0"
+                rpy="0 0 0" />
+        <parent link ="human_model/pelvis_link"/>
+        <child link ="human_model/abdomen_rotx_link"/>
+        <axis
+                xyz="1.0 0.0 0.0"/>
+        <limit effort="0" velocity="0"
+               lower="-0.5"
+               upper="0.5"/>
+        <!--<init_pos>0 0</init_pos>-->
+        <!--<init_vel>0 0</init_vel>-->
+    </joint>
+
+    <joint type="revolute" name="human_model/pelvis_abdomen_z_joint">
+        <origin
+                xyz="0 0 0"
+                rpy="0 0 0" />
+        <parent link ="human_model/abdomen_rotx_link"/>
+        <child link ="human_model/abdomen_link"/>
+        <axis
+                xyz="0.0 0.0 1.0"/>
+        <limit effort="0" velocity="0"
+               lower="-0.85"
+               upper="0.5"/>
+        <!--<init_pos>0 0</init_pos>-->
+        <!--<init_vel>0 0</init_vel>-->
+    </joint>
+
+    <joint type="revolute" name="human_model/abdomen_spine_joint">
+        <origin
+                xyz="0.0 0.3069 0.0"
+                rpy="0 0 0" />
+        <parent link ="human_model/abdomen_link"/>
+        <child link ="human_model/spine_link"/>
+        <axis
+                xyz="0 1 0" />
+        <limit effort="0" velocity="0"
+               lower="-1.0"
+               upper="1.0" />
+        <!--<init_pos>-0.17</init_pos>-->
+        <!--<init_vel>0</init_vel>-->
+    </joint>
+
+    <joint type="revolute" name="human_model/spine_head_z_joint">
+        <origin
+                xyz="0.0 0.4885 0.0"
+                rpy="0 0 0" />
+        <parent link ="human_model/spine_link"/>
+        <child link ="human_model/head_rotz_link"/>
+        <axis
+                xyz="0.0 0.0 1.0"/>
+        <limit effort="0" velocity="0"
+               lower="-1.0472"
+               upper="1.0472"/>
+        <!--<init_pos>0 0</init_pos>-->
+        <!--<init_vel>0 0</init_vel>-->
+    </joint>
+
+    <joint type="revolute" name="human_model/spine_head_x_joint">
+        <origin
+                xyz="0 0 0"
+                rpy="0 0 0" />
+        <parent link ="human_model/head_rotz_link"/>
+        <child link ="human_model/head_link"/>
+        <axis
+                xyz="1.0 0.0 0.0"/>
+        <limit effort="0" velocity="0"
+               lower="-1.0472"
+               upper="1.0472"/>
+        <!--<init_pos>0 0</init_pos>-->
+        <!--<init_vel>0 0</init_vel>-->
+    </joint>
+
+    <!-- JOINT: Left Arm -->
+    <joint type="revolute" name="human_model/spine_scapula_left_joint">
+        <origin
+                xyz="0.0 0.3069 0.0"
+                rpy="-0.9423 0.0 0.0" />
+        <parent link ="human_model/spine_link"/>
+        <child link ="human_model/scapula_left_link"/>
+        <axis
+                xyz="1.0 0.0 0.0"/>
+        <limit effort="0" velocity="0"
+               lower="-0.2491"
+               upper="0.2491"/>
+    </joint>
+
+    <joint type="revolute" name="human_model/scapula_bicep_midjoint_left_x_joint">
+        <origin
+                xyz="0.0 0.397146 -0.169809"
+                rpy="-1.2423 0 0" />
+        <parent link ="human_model/scapula_left_link"/>
+        <child link ="human_model/bicep_midjoint_left_rotx_link"/>
+        <axis
+                xyz="1 0 0" />
+        <limit effort="0" velocity="0"
+               lower="-0.65"
+               upper="2.7" />
+    </joint>
+
+    <joint type="revolute" name="human_model/scapula_bicep_midjoint_left_y_joint">
+        <origin
+                xyz="0 0 0"
+                rpy="0 0 0" />
+        <parent link ="human_model/bicep_midjoint_left_rotx_link"/>
+        <child link ="human_model/bicep_midjoint_left_roty_link"/>
+        <axis
+                xyz="0 1 0" />
+        <limit effort="0" velocity="0"
+               lower="-3.14159"
+               upper="1.7" />
+    </joint>
+
+    <joint type="revolute" name="human_model/scapula_bicep_midjoint_left_z_joint">
+        <origin
+                xyz="0 0 0"
+                rpy="0 0 0" />
+        <parent link ="human_model/bicep_midjoint_left_roty_link"/>
+        <child link ="human_model/bicep_midjoint_left_link"/>
+        <axis
+                xyz="0 0 1" />
+        <limit effort="0" velocity="0"
+               lower="-0.001"
+               upper="0.001" />
+    </joint>
+
+    <joint type="revolute" name="human_model/bicep_midjoint_bicep_left_joint">
+        <origin
+                xyz="0.0 0.397146 -0.169809"
+                rpy="0 0 0" />
+        <parent link ="human_model/bicep_midjoint_left_link"/>
+        <child link ="human_model/bicep_left_link"/>
+        <axis
+                xyz="0 1 0" />
+        <limit effort="0" velocity="0"
+               lower="-1.3"
+               upper="0.7" />
+    </joint>
+
+    <joint type="revolute" name="human_model/bicep_forearm_left_z_joint">
+        <origin
+                xyz="0.0 0.135546 -0.169809"
+                rpy="0 0 0" />
+        <parent link ="human_model/bicep_left_link"/>
+        <child link ="human_model/forearm_left_rotz_link"/>
+        <axis
+                xyz="0.0 0.0 1.0"/>
+        <limit effort="0" velocity="0"
+               lower="0"
+               upper="2.7"/>
+        <!--<init_pos>0 0</init_pos>-->
+        <!--<init_vel>0 0</init_vel>-->
+    </joint>
+
+    <joint type="revolute" name="human_model/bicep_forearm_left_y_joint">
+        <origin
+                xyz="0 0 0"
+                rpy="0 0 0" />
+        <parent link ="human_model/forearm_left_rotz_link"/>
+        <child link ="human_model/forearm_left_link"/>
+        <axis
+                xyz="0.0 1.0 0.0"/>
+        <limit effort="0" velocity="0"
+               lower="-3.0"
+               upper="0.0"/>
+    </joint>
+
+    <joint type="revolute" name="human_model/forearm_hand_left_z_joint">
+        <origin
+                xyz="0.0 -0.066854 -0.169809"
+                rpy="0 0 0" />
+        <parent link ="human_model/forearm_left_link"/>
+        <child link ="human_model/hand_left_rotz_link"/>
+        <axis
+                xyz="0.0 0.0 1.0"/>
+        <limit effort="0" velocity="0"
+               lower="-1.2"
+               upper="1.5"/>
+    </joint>
+
+    <joint type="revolute" name="human_model/forearm_hand_left_x_joint">
+        <origin
+                xyz="0 0 0"
+                rpy="0 0 0" />
+        <parent link ="human_model/hand_left_rotz_link"/>
+        <child link ="human_model/hand_left_link"/>
+        <axis
+                xyz="1.0 0.0 0.0"/>
+        <limit effort="0" velocity="0"
+               lower="-0.5"
+               upper="0.5"/>
+    </joint>
+
+    <joint type="revolute" name="human_model/hand_hand2_left_joint">
+        <origin
+                xyz="0.0 -0.137 -0.169809"
+                rpy="0 0 0" />
+        <parent link ="human_model/hand_left_link"/>
+        <child link ="human_model/hand2_left_link"/>
+        <axis
+                xyz="0.0 0.0 1.0"/>
+        <limit effort="0" velocity="0"
+               lower="-0.5"
+               upper="1.6"/>
+    </joint>
+
+    <!-- JOINT: Right Arm -->
+    <joint type="revolute" name="human_model/spine_scapula_right_joint">
+        <origin
+                xyz="0.0 0.3069 0.0"
+                rpy="0.9423 0.0 0.0" />
+        <parent link ="human_model/spine_link"/>
+        <child link ="human_model/scapula_right_link"/>
+        <axis
+                xyz="1.0 0.0 0.0"/>
+        <limit effort="0" velocity="0"
+               lower="-0.2491"
+               upper="0.2491"/>
+    </joint>
+
+    <joint type="revolute" name="human_model/scapula_bicep_midjoint_right_x_joint">
+        <origin
+                xyz="0.0 0.397146 0.169809"
+                rpy="1.2423 0 0" />
+        <parent link ="human_model/scapula_right_link"/>
+        <child link ="human_model/bicep_midjoint_right_rotx_link"/>
+        <axis
+                xyz="1 0 0" />
+        <limit effort="0" velocity="0"
+               lower="-2.7"
+               upper="0.65" />
+    </joint>
+
+    <joint type="revolute" name="human_model/scapula_bicep_midjoint_right_y_joint">
+        <origin
+                xyz="0 0 0"
+                rpy="0 0 0" />
+        <parent link ="human_model/bicep_midjoint_right_rotx_link"/>
+        <child link ="human_model/bicep_midjoint_right_roty_link"/>
+        <axis
+                xyz="0 1 0" />
+        <limit effort="0" velocity="0"
+               lower="-1.7"
+               upper="3.14159" />
+    </joint>
+
+    <joint type="revolute" name="human_model/scapula_bicep_midjoint_right_z_joint">
+        <origin
+                xyz="0 0 0"
+                rpy="0 0 0" />
+        <parent link ="human_model/bicep_midjoint_right_roty_link"/>
+        <child link ="human_model/bicep_midjoint_right_link"/>
+        <axis
+                xyz="0 0 1" />
+        <limit effort="0" velocity="0"
+               lower="-0.001"
+               upper="0.001" />
+    </joint>
+
+    <joint type="revolute" name="human_model/bicep_midjoint_bicep_right_joint">
+        <origin
+                xyz="0.0 0.397146 0.169809"
+                rpy="0 0 0" />
+        <parent link ="human_model/bicep_midjoint_right_link"/>
+        <child link ="human_model/bicep_right_link"/>
+        <axis
+                xyz="0 1 0" />
+        <limit effort="0" velocity="0"
+               lower="-0.7"
+               upper="1.3" />
+    </joint>
+
+    <joint type="revolute" name="human_model/bicep_forearm_right_z_joint">
+        <origin
+                xyz="0.0 0.135546 0.169809"
+                rpy="0 0 0" />
+        <parent link ="human_model/bicep_right_link"/>
+        <child link ="human_model/forearm_right_rotz_link"/>
+        <axis
+                xyz="0.0 0.0 1.0"/>
+        <limit effort="0" velocity="0"
+               lower="0"
+               upper="2.7"/>
+        <!--<init_pos>0 0</init_pos>-->
+        <!--<init_vel>0 0</init_vel>-->
+    </joint>
+
+    <joint type="revolute" name="human_model/bicep_forearm_right_y_joint">
+        <origin
+                xyz="0 0 0"
+                rpy="0 0 0" />
+        <parent link ="human_model/forearm_right_rotz_link"/>
+        <child link ="human_model/forearm_right_link"/>
+        <axis
+                xyz="0.0 1.0 0.0"/>
+        <limit effort="0" velocity="0"
+               lower="0.0"
+               upper="3.0"/>
+    </joint>
+
+    <joint type="revolute" name="human_model/forearm_hand_right_z_joint">
+        <origin
+                xyz="0.0 -0.066854 0.169809"
+                rpy="0 0 0" />
+        <parent link ="human_model/forearm_right_link"/>
+        <child link ="human_model/hand_right_rotz_link"/>
+        <axis
+                xyz="0.0 0.0 1.0"/>
+        <limit effort="0" velocity="0"
+               lower="-1.2"
+               upper="1.5"/>
+    </joint>
+
+    <joint type="revolute" name="human_model/forearm_hand_right_x_joint">
+        <origin
+                xyz="0 0 0"
+                rpy="0 0 0" />
+        <parent link ="human_model/hand_right_rotz_link"/>
+        <child link ="human_model/hand_right_link"/>
+        <axis
+                xyz="1.0 0.0 0.0"/>
+        <limit effort="0" velocity="0"
+               lower="-0.5"
+               upper="0.5"/>
+    </joint>
+
+    <joint type="revolute" name="human_model/hand_hand2_right_joint">
+        <origin
+                xyz="0.0 -0.137 0.169809"
+                rpy="0 0 0" />
+        <parent link ="human_model/hand_right_link"/>
+        <child link ="human_model/hand2_right_link"/>
+        <axis
+                xyz="0.0 0.0 1.0"/>
+        <limit effort="0" velocity="0"
+               lower="-0.5"
+               upper="1.6"/>
+    </joint>
+
+</robot>

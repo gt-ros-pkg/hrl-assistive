@@ -1,0 +1,8 @@
+<launch>
+
+    <param name="autobed/robot_description" textfile="$(find hrl_base_selection)/urdf/bed_pose_estimation_basic/robots/bed_only.URDF" />
+    #<node name="autobed_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" ns="autobed" output="screen"/>
+    <node name="autobed_state_publisher_node" pkg="hrl_base_selection" type="autobed_state_publisher_node.py" output="screen"/>
+
+
+</launch>
