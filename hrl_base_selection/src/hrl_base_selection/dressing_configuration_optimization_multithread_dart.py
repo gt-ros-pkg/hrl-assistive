@@ -65,6 +65,7 @@ NUM_RESTART = 1
 class SimulatorPool(object):
     def __init__(self, population, visualize=False):
         self.simulatorPool = mp.Manager().Queue()
+        print 'SIMULATOR POOL SIZE IS', population
         for _ in xrange(population):
             simulator_process = BaseEmptySimulationProcess(process_number=_, visualize=visualize)
             self.simulatorPool.put(simulator_process)
@@ -143,6 +144,9 @@ def set_arm_config(config):
     global current_simulator
     current_simulator.optimizer.set_arm_config(config)
     return True
+
+def chunker(seq, size):
+    return (seq[pos:pos + size] for pos in xrange(0, len(seq), size))
 
 class DressingMultiProcessOptimization(object):
     def __init__(self, number_of_processes=0, visualize=False):
@@ -225,17 +229,30 @@ class DressingMultiProcessOptimization(object):
         #              for arm4 in np.arange(parameters_min[3], parameters_max[3] + 0.0001, m.radians(5.))
         #              )
         #  ]
-        self.pool.map(brute_force_func, [t for t in (([arm1, arm2, arm3, arm4])
-                                                             for arm1 in np.arange(amin[0], amax[0] + 0.0001,
-                                                                       m.radians(5.))
-                                                             for arm2 in np.arange(amin[1], amax[1] + 0.0001,
-                                                                       m.radians(5.))
-                                                             for arm3 in np.arange(amin[2], amax[2] + 0.0001,
-                                                                       m.radians(5.))
-                                                             for arm4 in np.arange(amin[3], amax[3] + 0.0001,
-                                                                       m.radians(5.))
-                                                             )
-                                                 ])
+        # self.pool.map(brute_force_func, [t for t in (([arm1, arm2, arm3, arm4])
+        #                                                      for arm1 in np.arange(amin[0], amax[0] + 0.0001,
+        #                                                                m.radians(5.))
+        #                                                      for arm2 in np.arange(amin[1], amax[1] + 0.0001,
+        #                                                                m.radians(5.))
+        #                                                      for arm3 in np.arange(amin[2], amax[2] + 0.0001,
+        #                                                                m.radians(5.))
+        #                                                      for arm4 in np.arange(amin[3], amax[3] + 0.0001,
+        #                                                                m.radians(5.))
+        #                                                      )
+        #                                          ])
+        coarse_configs = [t for t in (([arm1, arm2, arm3, arm4])
+                                      for arm1 in np.arange(amin[0], amax[0] + 0.0001,
+                                                            m.radians(5.))
+                                      for arm2 in np.arange(amin[1], amax[1] + 0.0001,
+                                                            m.radians(5.))
+                                      for arm3 in np.arange(amin[2], amax[2] + 0.0001,
+                                                            m.radians(5.))
+                                      for arm4 in np.arange(amin[3], amax[3] + 0.0001,
+                                                            m.radians(5.))
+                                      )
+                          ]
+        for chunk in chunker(coarse_configs, self.processCnt):
+            self.pool.map(brute_force_func, chunk)
         gc.collect()
         return True
 
@@ -276,7 +293,7 @@ class DressingMultiProcessOptimization(object):
         OPTIONS['tolstagnation'] = 100
         OPTIONS['scaling_of_variables'] = list(parameters_scaling)
 
-        init_start_arm_configs = self.find_clusters(self.save_file_name_coarse_feasible)
+        init_start_arm_configs = self.find_clusters(self.save_file_name_coarse_feasible, subtask_number)
         best_result = [[], 10000.]
         for x0 in init_start_arm_configs:
             es = cma.CMAEvolutionStrategy(x0, 1.0, OPTIONS)
