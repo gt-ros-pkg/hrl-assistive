@@ -32,7 +32,7 @@ from hrl_base_selection.srv import InitPhysxBodyModel, PhysxInput, IKService, Ph
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from hrl_msgs.msg import FloatArrayBare
 
-import random, threading
+import random, threading, time
 
 import openravepy as op
 from openravepy.misc import InitOpenRAVELogging
@@ -392,14 +392,14 @@ class DressingMultiProcessOptimization(object):
 
         cluster_count = 0
         clusters = [[]]
-        while len(feasible_configs) > 0 and not rospy.is_shutdown():
+        while len(feasible_configs) > 0:
             if len(clusters) < cluster_count + 1:
                 clusters.append([])
             queue = []
             visited = []
             queue.append(list(feasible_configs[0][1:5]))
             delete_list = []
-            while len(queue) > 0 and not rospy.is_shutdown():
+            while len(queue) > 0:
                 # print 'queue:\n',queue
                 # print 'visited:\n',visited
                 current_node = list(queue.pop(0))
@@ -603,14 +603,14 @@ class DressingSimulationProcess(object):
 
                 cluster_count = 0
                 clusters = [[]]
-                while len(feasible_configs) > 0 and not rospy.is_shutdown():
+                while len(feasible_configs) > 0:
                     if len(clusters) < cluster_count + 1:
                         clusters.append([])
                     queue = []
                     visited = []
                     queue.append(list(feasible_configs[0][1:5]))
                     delete_list = []
-                    while len(queue) > 0 and not rospy.is_shutdown():
+                    while len(queue) > 0:
                         # print 'queue:\n',queue
                         # print 'visited:\n',visited
                         current_node = list(queue.pop(0))
@@ -1246,7 +1246,7 @@ class DressingSimulationProcess(object):
 
         ############################################
 
-        start_time = rospy.Time.now()
+        # start_time = rospy.Time.now()
         self.set_goals()
         # print self.origin_B_grasps
         maxiter = 50
@@ -1291,7 +1291,7 @@ class DressingSimulationProcess(object):
         # self.pr2_parameters.append([self.kinematics_optimization_results[0], self.kinematics_optimization_results[1]])
         # save_pickle(self.pr2_parameters, self.pkg_path+'/data/all_pr2_configs.pkl')
         gc.collect()
-        elapsed_time = rospy.Time.now()-start_time
+        # elapsed_time = rospy.Time.now()-start_time
         print 'Done with openrave round. Time elapsed:', elapsed_time.to_sec()
         print 'Openrave results:'
         # print self.kinematics_optimization_results
@@ -1440,7 +1440,7 @@ class DressingSimulationProcess(object):
         # For a solution for a bit to get screenshots, etc. Check colllision removes old collision markers.
         if False:
             self.dart_world.check_collision()
-            rospy.sleep(20)
+            # rospy.sleep(20)
 
         v['rootJoint_pos_x'] = x
         v['rootJoint_pos_y'] = y
@@ -1696,7 +1696,7 @@ class DressingSimulationProcess(object):
                     self.dart_world.displace_gown()
                     self.dart_world.check_collision()
                     self.dart_world.set_gown([self.robot_arm])
-                    rospy.sleep(1.5)
+                    # rospy.sleep(1.5)
                     # rospy.sleep(0.1)
         else:
             # print 'In base collision! single config distance: ', distance
@@ -1737,7 +1737,7 @@ class DressingSimulationProcess(object):
             if reach_score == 1.:
                 if self.visualize:
                     # rospy.sleep(2.0)
-                    rospy.sleep(0.1)
+                    time.sleep(0.1)
             # print 'reach_score:', reach_score
             # print 'manip_score:', manip_score
             this_pr2_score = 10.-beta*reach_score-gamma*manip_score #+ zeta*angle_cost
@@ -1779,7 +1779,7 @@ class DressingSimulationProcess(object):
             self.robot.set_positions(v)
             self.dart_world.set_gown([self.robot_arm])
             if self.visualize:
-                rospy.sleep(0.5)
+                time.sleep(0.5)
             if self.is_dart_in_collision():
                 return False
         return True
@@ -1907,13 +1907,6 @@ class DressingSimulationProcess(object):
         # self.set_openrave_arm(self.robot_opposite_arm)
         # self.set_openrave_arm(self.robot_arm)
         print 'Openrave IK is now ready'
-
-    def setup_ik_service(self):
-        print 'Looking for IK service.'
-        rospy.wait_for_service('ikfast_service')
-        print 'Found IK service.'
-        self.ik_service = rospy.ServiceProxy('ikfast_service', IKService, persistent=True)
-        print 'IK service is ready for use!'
 
     def ik_request(self, pr2_B_grasp, spine_height):
         with self.frame_lock:
@@ -2046,9 +2039,9 @@ class DressingSimulationProcess(object):
         return np.diag(weights)
 
 if __name__ == "__main__":
-    rospy.init_node('score_generator')
+    # rospy.init_node('score_generator')
     # start_time = time.time()
-    outer_start_time = rospy.Time.now()
+    # outer_start_time = rospy.Time.now()
 
     pydart.init()
     print('pydart initialization OK')
@@ -2063,9 +2056,9 @@ if __name__ == "__main__":
 
     optimizer = DressingMultiProcessOptimization(number_of_processes=3, visualize=False)
     optimizer.optimize_entire_dressing_task(reset_file=False)
-    outer_elapsed_time = rospy.Time.now()-outer_start_time
+    # outer_elapsed_time = rospy.Time.now()-outer_start_time
     print 'Everything is complete!'
-    print 'Done with optimization. Total time elapsed:', outer_elapsed_time.to_sec()
+    # print 'Done with optimization. Total time elapsed:', outer_elapsed_time.to_sec()
     # rospy.spin()
 
     #selector.choose_task(mytask)
