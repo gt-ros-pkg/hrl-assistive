@@ -43,11 +43,11 @@ class DartDressingWorld(pydart.World):
         # skel_model = self.add_skeleton(pkg_path + '/models/fullbody1_alex_optimized.skel')
         # pr2_model = self.add_skeleton(pkg_path+'/models/PR2/pr2.urdf')
 
+
         self.robot = self.add_skeleton(self.pkg_path+'/models/PR2/pr2.urdf')
+        # self.robot = self.add_skeleton('/opt/ros/indigo/share/robot_state_publisher/test/pr2.urdf')
         self.gown_box_leftarm = self.add_skeleton(self.pkg_path + '/models/gown_box_only.urdf')
         self.gown_box_rightarm = self.add_skeleton(self.pkg_path + '/models/gown_box_only.urdf')
-
-
 
         print('pydart added pr2 OK')
         # self.set_gravity([0.0, 0.0, -9.81])
