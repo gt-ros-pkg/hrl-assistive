@@ -276,11 +276,11 @@ class DressingMultiProcessOptimization(object):
         robot_arm_to_use = ['rightarm', 'rightarm']
         fixed_points_to_use = [[], [0]]
         stretch_allowable = [[], [0.5]]
-        fixed_points = self.pool.apply(find_fixed_points, [subtask_list[0],
+        fixed_points = self.pool.apply(find_fixed_points, [[subtask_list[0],
                                                            robot_arm_to_use[0],
                                                            0,
                                                            stretch_allowable[0],
-                                                           fixed_points_to_use[0]])
+                                                           fixed_points_to_use[0]]])
         # time.sleep(0.5)
         # self.pool.map(set_new_fixed_point, [0]*self.processCnt)
 
