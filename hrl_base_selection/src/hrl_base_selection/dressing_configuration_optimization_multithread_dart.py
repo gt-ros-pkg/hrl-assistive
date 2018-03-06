@@ -204,9 +204,24 @@ def fine_pr2_func(input):
     res = current_simulator.optimizer.objective_function_fine_pr2(x)
     return [x, res]
 
-def find_fixed_points(human_arm):
+def find_fixed_points(input):
+    human_arm, robot_arm, \
+    subtask_number, stretch_allowable, \
+    fixed_points_to_use = input
     global current_simulator
     arm = human_arm.split('a')[0]
+    if not current_simulator.simulator_started:
+        current_simulator.start_dressing_simulation_process()
+    if not subtask_number == current_simulator.optimizer.subtask_step:
+        current_simulator.optimizer.subtask_step = subtask_number
+    if not human_arm == current_simulator.optimizer.human_arm:
+        current_simulator.optimizer.set_human_arm(human_arm)
+    if not robot_arm == current_simulator.optimizer.robot_arm:
+        current_simulator.optimizer.set_robot_arm(robot_arm)
+    if not stretch_allowable == current_simulator.optimizer.stretch_allowable:
+        current_simulator.optimizer.stretch_allowable = stretch_allowable
+    if not fixed_points_to_use == current_simulator.optimizer.fixed_points_to_use:
+        current_simulator.optimizer.fixed_points_to_use = fixed_points_to_use
     current_simulator.optimizer.add_new_fixed_point = True
     current_simulator.optimizer.find_reference_coordinate_frames_and_goals(arm)
     return current_simulator.optimizer.fixed_points
@@ -261,7 +276,11 @@ class DressingMultiProcessOptimization(object):
         robot_arm_to_use = ['rightarm', 'rightarm']
         fixed_points_to_use = [[], [0]]
         stretch_allowable = [[], [0.5]]
-        fixed_points = self.pool.apply(find_fixed_points)
+        fixed_points = self.pool.apply(find_fixed_points, [subtask_list[0],
+                                                           robot_arm_to_use[0],
+                                                           0,
+                                                           stretch_allowable[0],
+                                                           fixed_points_to_use[0]])
         # time.sleep(0.5)
         # self.pool.map(set_new_fixed_point, [0]*self.processCnt)
 
@@ -343,9 +362,10 @@ class DressingMultiProcessOptimization(object):
                           ]
         for chunk in chunker(coarse_configs, self.processCnt):
             print 'global human arm in coarse optimization function', human_arm
-            self.pool.map_async(brute_force_func, [chunk, human_arm, robot_arm,
-                                                   subtask_n, stretch,
-                                                   fixed_point_index, fixed_p]).get()
+            chunksize = len(chunk)
+            self.pool.map_async(brute_force_func, zip(chunk, [human_arm]*chunksize, [robot_arm]*chunksize,
+                                                      [subtask_n]*chunksize, [stretch]*chunksize,
+                                                      [fixed_point_index]*chunksize, [fixed_p]*chunksize)).get()
         gc.collect()
         return True
 
@@ -395,15 +415,12 @@ class DressingMultiProcessOptimization(object):
             while not es.stop():
                 X = es.ask()
                 fit = []
-                for i in range(int(np.ceil(es.popsize / self.processCnt)) + 1):
-                    if (len(X[i * self.processCnt:]) < self.processCnt):
-                        batchFit = self.pool.map_async(fine_func, [X[i * self.processCnt:], human_arm, robot_arm, subtask_n,
-                                                                   stretch, fixed_point_index, fixed_p]).get()
-                    else:
-                        batchFit = self.pool.map_async(fine_func, [X[i * self.processCnt:(i + 1) * self.processCnt], human_arm, robot_arm, subtask_n,
-                                                                   stretch, fixed_point_index, fixed_p]).get()
+                for chunk in chunker(X, self.processCnt):
+                    chunksize = len(chunk)
+                    batchFit = self.pool.map_async(fine_func, zip(chunk, [human_arm]*chunksize, [robot_arm]*chunksize,
+                                                                  [subtask_n]*chunksize, [stretch]*chunksize,
+                                                                  [fixed_point_index]*chunksize, [fixed_p]*chunksize)).get()
                     fit.extend(batchFit)
-
                 es.tell(X, fit)
                 es.disp()
                 es.logger.add()
@@ -462,13 +479,13 @@ class DressingMultiProcessOptimization(object):
                 while not es.stop():
                     X = es.ask()
                     fit = []
-                    for i in range(int(np.ceil(es.popsize / self.processCnt)) + 1):
-                        if (len(X[i * self.processCnt:]) < self.processCnt):
-                            batchFit = self.pool.map_async(fine_pr2_func, [X[i * self.processCnt:], human_arm, robot_arm, subtask_n,
-                                                                           stretch, fixed_point_index, fixed_p, best_arm_config]).get()
-                        else:
-                            batchFit = self.pool.map_async(fine_pr2_func, [X[i * self.processCnt:(i + 1) * self.processCnt], human_arm, robot_arm, subtask_n,
-                                                                           stretch, fixed_point_index, fixed_p, best_arm_config]).get()
+                    for chunk in chunker(X, self.processCnt):
+                        chunksize = len(chunk)
+                        batchFit = self.pool.map_async(fine_pr2_func,
+                                                       zip(chunk, [human_arm] * chunksize, [robot_arm] * chunksize,
+                                                           [subtask_n] * chunksize, [stretch] * chunksize,
+                                                           [fixed_point_index] * chunksize,
+                                                           [fixed_p] * chunksize, [best_arm_config]*chunksize)).get()
                         fit.extend(batchFit)
 
                     es.tell(X, fit)
@@ -1024,7 +1041,7 @@ class DressingSimulationProcess(object):
         if self.add_new_fixed_point:
             self.add_new_fixed_point = False
             self.fixed_points.append(np.array(goals[-1])[0:3, 3])
-        for point_i in self.fixed_points_to_use[self.subtask_step]:
+        for point_i in self.fixed_points_to_use:
             fixed_point = self.fixed_points[point_i]
             # fixed_position = np.array(fixed_point)[0:3, 3]
             # print 'fixed point:\n', fixed_point
