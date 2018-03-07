@@ -204,6 +204,7 @@ def find_fixed_points(input):
     subtask_number, stretch_allowable, \
     fixed_points_to_use = input
     global current_simulator
+    pn = current_simulator.process_number
     arm = human_arm.split('a')[0]
     if not current_simulator.simulator_started:
         current_simulator.start_dressing_simulation_process()
