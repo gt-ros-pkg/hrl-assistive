@@ -132,25 +132,19 @@ def brute_force_func(input):
     pn = current_simulator.process_number
     if not current_simulator.simulator_started:
         current_simulator.start_dressing_simulation_process()
-    print 'here 1'
+        print 'Simulator all set up.', pn
     if not subtask_number == current_simulator.optimizer.subtask_step:
         current_simulator.optimizer.subtask_step = subtask_number
-    print 'here 2'
     if not human_arm == current_simulator.optimizer.human_arm:
         current_simulator.optimizer.set_human_arm(human_arm)
-    print 'here 3'
     if not robot_arm == current_simulator.optimizer.robot_arm:
         current_simulator.optimizer.set_robot_arm(robot_arm)
-    print 'here 4'
     if not stretch_allowable == current_simulator.optimizer.stretch_allowable:
         current_simulator.optimizer.stretch_allowable = stretch_allowable
-    print 'here 5'
     if not fixed_points_to_use == current_simulator.optimizer.fixed_points_to_use:
         current_simulator.optimizer.fixed_points_to_use = fixed_points_to_use
-    print 'here 6'
-    if not fixed_points == current_simulator.optimizer.fixed_points:
+    if not np.array_equal(fixed_points,current_simulator.optimizer.fixed_points):
         current_simulator.optimizer.fixed_points = fixed_points
-    print 'Simulator all set up.', pn
     res = current_simulator.optimizer.objective_function_coarse(x)
     return [x, res]
 
@@ -162,6 +156,7 @@ def fine_func(input):
     pn = current_simulator.process_number
     if not current_simulator.simulator_started:
         current_simulator.start_dressing_simulation_process()
+        print 'Simulator all set up.', pn
     if not subtask_number == current_simulator.optimizer.subtask_step:
         current_simulator.optimizer.subtask_step = subtask_number
     if not human_arm == current_simulator.optimizer.human_arm:
@@ -174,7 +169,6 @@ def fine_func(input):
         current_simulator.optimizer.fixed_points_to_use = fixed_points_to_use
     if not fixed_points == current_simulator.optimizer.fixed_points:
         current_simulator.optimizer.fixed_points = fixed_points
-    print 'Simulator all set up.', pn
     res = current_simulator.optimizer.objective_function_fine(x)
     return [x, res]
 
@@ -186,6 +180,7 @@ def fine_pr2_func(input):
     pn = current_simulator.process_number
     if not current_simulator.simulator_started:
         current_simulator.start_dressing_simulation_process()
+        print 'Simulator all set up.', pn
     if not subtask_number == current_simulator.optimizer.subtask_step:
         current_simulator.optimizer.subtask_step = subtask_number
     if not human_arm == current_simulator.optimizer.human_arm:
@@ -212,6 +207,7 @@ def find_fixed_points(input):
     arm = human_arm.split('a')[0]
     if not current_simulator.simulator_started:
         current_simulator.start_dressing_simulation_process()
+        print 'Simulator all set up.', pn
     if not subtask_number == current_simulator.optimizer.subtask_step:
         current_simulator.optimizer.subtask_step = subtask_number
     if not human_arm == current_simulator.optimizer.human_arm:
@@ -276,11 +272,12 @@ class DressingMultiProcessOptimization(object):
         robot_arm_to_use = ['rightarm', 'rightarm']
         fixed_points_to_use = [[], [0]]
         stretch_allowable = [[], [0.5]]
-        fixed_points = self.pool.apply(find_fixed_points, [[subtask_list[0],
-                                                           robot_arm_to_use[0],
-                                                           0,
-                                                           stretch_allowable[0],
-                                                           fixed_points_to_use[0]]])
+        all_fixed_points = self.pool.apply(find_fixed_points, [[subtask_list[0],
+                                                               robot_arm_to_use[0],
+                                                               0,
+                                                               stretch_allowable[0],
+                                                               fixed_points_to_use[0]]])
+        print 'all fixed points', all_fixed_points
         # time.sleep(0.5)
         # self.pool.map(set_new_fixed_point, [0]*self.processCnt)
 
@@ -296,7 +293,7 @@ class DressingMultiProcessOptimization(object):
                                          subtask_number,
                                          stretch_allowable[subtask_number],
                                          fixed_points_to_use[subtask_number],
-                                         fixed_points)
+                                         all_fixed_points)
             print 'completed coarse optimization for ', subtask
 
         self.combine_process_files(self.save_file_path + 'arm_configs_coarse_feasible',
@@ -309,7 +306,7 @@ class DressingMultiProcessOptimization(object):
                                        subtask_number,
                                        stretch_allowable[subtask_number],
                                        fixed_points_to_use[subtask_number],
-                                       fixed_points)
+                                       all_fixed_points)
             print 'completed fine optimization for ', subtask
 
         for subtask_number, subtask in enumerate(subtask_list):
@@ -319,7 +316,7 @@ class DressingMultiProcessOptimization(object):
                                            subtask_number,
                                            stretch_allowable[subtask_number],
                                            fixed_points_to_use[subtask_number],
-                                           fixed_points)
+                                           all_fixed_points)
             print 'completed fine optimization for ', subtask
 
     def run_coarse_optimization(self, human_arm, robot_arm, subtask_n,
@@ -361,7 +358,6 @@ class DressingMultiProcessOptimization(object):
                                       )
                           ]
         for chunk in chunker(coarse_configs, self.processCnt):
-            print 'global human arm in coarse optimization function', human_arm
             chunksize = len(chunk)
             self.pool.map_async(brute_force_func, zip(chunk, [human_arm]*chunksize, [robot_arm]*chunksize,
                                                       [subtask_n]*chunksize, [stretch]*chunksize,
@@ -638,12 +634,13 @@ class DressingSimulationProcess(object):
         self.arm_configs_eval = load_pickle(rospack.get_path('hrl_dressing') +
                                             '/data/forearm_trajectory_evaluation/entire_results_list.pkl')
         print 'Loaded forearm trajectory pickle file'
+
         self.arm_configs_checked = []
         for line in self.arm_configs_eval:
             self.arm_configs_checked.append(line[0:4])
-        self.arm_knn = NearestNeighbors(8, m.radians(15.))
+        self.arm_knn = NearestNeighbors(16, m.radians(15.))
         self.arm_knn.fit(self.arm_configs_checked)
-        print 'Simulator process init file completed execution'
+        print 'Simulator process init completed', self.process_number
         # print 'I GOT HERE'
 
     def optimize_entire_dressing_task(self, reset_file=False):
@@ -1076,7 +1073,6 @@ class DressingSimulationProcess(object):
         elif False:  # for left arm
             params = [1.5707963267948966, -0.17453292519943295, 1.3962634015954636, 1.5707963267948966]
             # self.visualize = True
-
         # Check if all arm configurations within a ball in configuration space of the current configuration are 'good'
         neigh_distances, neighbors = self.arm_knn.kneighbors([params], 16)
         for neigh_dist, neighbor in zip(neigh_distances[0], neighbors[0]):
@@ -1134,6 +1130,7 @@ class DressingSimulationProcess(object):
         angle_from_horizontal, \
         forearm_B_upper_arm, \
         fixed_points_exceeded_amount = self.find_reference_coordinate_frames_and_goals(arm)
+
         if fixed_points_exceeded_amount <= 0:
             pass
             # print 'arm does not break fixed_points requirement'
