@@ -19,7 +19,7 @@ def createBMatrix(pos, ori):
 
 def Bmat_to_pos_quat(Bmat):
     pos  = np.array([Bmat[0,3],Bmat[1,3],Bmat[2,3]])
-    quat = tft.quaternion_from_matrix(Bmat) # order is xyzw because ROS uses xyzw order.    
+    quat = np.array(tft.quaternion_from_matrix(Bmat)) # order is xyzw because ROS uses xyzw order.
 
     return pos, quat
 

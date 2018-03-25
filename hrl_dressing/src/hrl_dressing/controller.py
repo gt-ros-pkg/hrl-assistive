@@ -19,8 +19,8 @@ class Controller:
         self.rightJointLimitsMin = np.radians([-122.349, -20.26, -214.859, -121.54, -360.0, -114.59, -360.0])
         # self.rightJointLimitsMax = np.radians([26.0, 68.0, 41.0, 0.01, 180.0, 0.01, 180.0])
         # self.rightJointLimitsMin = np.radians([-109.0, -24.0, -220.0, -132.0, -180.0, -120.0, -180.0])
-        self.leftJointLimitsMax = np.radians([109.0, 68.0, 220.0, 0.01, 270.0, 0.01, 180.0]) # TODO: Update based on new soft limits for right arm
-        self.leftJointLimitsMin = np.radians([-26.0, -24.0, -41.0, -132.0, -270.0, -120.0, -180.0]) # TODO: Update based on new soft limits for right arm
+        self.leftJointLimitsMax = np.radians([122.349, 74.2725, 214.859, 0.01, 360.0, 0.01, 360.0]) # TODO: Update based on new soft limits for right arm
+        self.leftJointLimitsMin = np.radians([-32.349, -20.26, -37.242, -121.54, -360.0, -114.59, -360.0]) # TODO: Update based on new soft limits for right arm
         # self.initRightJointGuess = np.array([-0.236, 0.556, -0.091, -1.913, -1.371, -1.538, -3.372])
         # self.initLeftJointGuess = np.array([0.203, 0.846, 1.102, -1.671, 5.592, -1.189, -3.640])
         self.initRightJointGuess = np.array([0.13, 0.2, 0.63, -3.23, -2.0, -0.96, -0.1]) # TODO: incorrect
@@ -123,14 +123,20 @@ class Controller:
         rotatedWristAngles[-1] += self.leftGripperAngle
         self.moveToJointAngles(rotatedWristAngles, timeout=2.0, wait=True, rightArm=False)
 
-    def moveGripperTo(self, position, rollpitchyaw=[-np.pi, 0.0, 0.0], timeout=1, wait=False, rightArm=True, useInitGuess=False, ret=False):
+    # Move using IK and joint trajectory controller
+    # Attach new pose to a frame
+    def moveGripperTo(self, position, quaternion=None, rollpitchyaw=None, timeout=1, wait=False, rightArm=True, useInitGuess=False, ret=False):
         # TODO: Repalce this with standard PR2 inverse kinematics
         # TODO: Repalce this with standard PR2 inverse kinematics
 
-        # Move using IK and joint trajectory controller
-        # Attach new pose to a frame
-        poseData = list(position) + list(rollpitchyaw)
-        pose = self.arrayToPose(poseData)
+        # Create a pose message from the desired position and orientation
+        if rollpitchyaw is None and quaternion is None:
+            rollpitchyaw = [-np.pi, 0.0, 0.0]
+        elif quaternion is not None:
+            pose = self.position_quat_to_pose(position, quaternion)
+        elif rollpitchyaw is not None:
+            poseData = list(position) + list(rollpitchyaw)
+            pose = self.arrayToPose(poseData)
 
         # Create a PoseStamped message and perform transformation to given frame
         ps = PoseStamped()
