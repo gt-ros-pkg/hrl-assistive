@@ -472,7 +472,7 @@ class DressingMultiProcessOptimization(object):
             best_arm_configs[j] = [float(i) for i in best_arm_configs[j]]
         best_arm_configs = np.array(best_arm_configs)
         best_arm_config = np.array([x for x in best_arm_configs if int(x[0]) == subtask_n])[-1]
-
+        print '\n best_arm_config:', best_arm_config,'\n'
         parameters_scaling = (self.pr2_config_max - self.pr2_config_min) / 8.
         OPTIONS = dict()
         #OPTIONS['boundary_handling'] = cma.BoundTransform  # cma version on obie3 uses this
@@ -491,48 +491,48 @@ class DressingMultiProcessOptimization(object):
         OPTIONS['tolstagnation'] = 100
         OPTIONS['scaling_of_variables'] = list(parameters_scaling)
         final_results = []
-        for best_arm_config in best_arm_configs:
-            # self.pool.map(set_arm_config, [best_arm_config]*self.processCnt)
-            # self.pool.map(set_process_subtask, [subtask_n] * self.processCnt)
-            init_start_pr2_configs = [[0.1, 0.6, m.radians(180.), 0.3],
-                                      [0.1, -0.6, m.radians(0.), 0.3],
-                                      [0.6, 0.0, m.radians(90.), 0.3]]
-            best_result = [[], 10000.]
-            for x0 in init_start_pr2_configs:
-                es = cma.CMAEvolutionStrategy(x0, 1.0, OPTIONS)
-                while not es.stop():
-                    X = es.ask()
-                    fit = []
-                    for chunk in chunker(X, self.processCnt):
-                        chunksize = len(chunk)
-                        batchFit = self.pool.map(fine_pr2_func,
-                                                       zip(chunk, [human_arm] * chunksize, [robot_arm] * chunksize,
-                                                           [subtask_n] * chunksize, [stretch] * chunksize,
-                                                           [fixed_point_index] * chunksize,
-                                                           [fixed_p] * chunksize, [best_arm_config]*chunksize))
-                        fit.extend(batchFit)
+        # self.pool.map(set_arm_config, [best_arm_config]*self.processCnt)
+        # self.pool.map(set_process_subtask, [subtask_n] * self.processCnt)
+        init_start_pr2_configs = [[0.1, 0.6, m.radians(180.), 0.3],
+                                  [0.1, -0.6, m.radians(0.), 0.3],
+                                  [0.6, 0.0, m.radians(90.), 0.3]]
+        best_result = [[], 10000.]
+        for x0 in init_start_pr2_configs:
+            es = cma.CMAEvolutionStrategy(x0, 1.0, OPTIONS)
+            while not es.stop():
+                X = es.ask()
+                fit = []
+                for chunk in chunker(X, self.processCnt):
+                    chunksize = len(chunk)
+                    batchFit = self.pool.map(fine_pr2_func,
+                                                   zip(chunk, [human_arm] * chunksize, [robot_arm] * chunksize,
+                                                       [subtask_n] * chunksize, [stretch] * chunksize,
+                                                       [fixed_point_index] * chunksize,
+                                                       [fixed_p] * chunksize, [best_arm_config]*chunksize))
+                    fit.extend(batchFit)
 
-                    es.tell(X, fit)
-                    es.disp()
-                    es.logger.add()
-                #this_res = es.result()  # This is for running on machine in lab (cma version)
-                this_res = es.result  # This is for running on amazon machine (cma version)
-                if this_res[1] < best_result[1]:
-                    best_result = this_res
-            with open(self.save_file_path + self.save_file_name_final_output, 'a') as myfile:
-                myfile.write(str(subtask_n)
-                             + ',' + str("{:.5f}".format(best_arm_config[1]))
-                             + ',' + str("{:.5f}".format(best_arm_config[2]))
-                             + ',' + str("{:.5f}".format(best_arm_config[3]))
-                             + ',' + str("{:.5f}".format(best_arm_config[4]))
-                             + ',' + str("{:.5f}".format(best_arm_config[5]))
-                             + ',' + str("{:.5f}".format(best_result[0][0]))
-                             + ',' + str("{:.5f}".format(best_result[0][1]))
-                             + ',' + str("{:.5f}".format(best_result[0][2]))
-                             + ',' + str("{:.5f}".format(best_result[0][3]))
-                             + ',' + str("{:.5f}".format(best_result[1]))
-                             + '\n')
-            final_results.append([best_arm_config, best_result])
+                es.tell(X, fit)
+                es.disp()
+                es.logger.add()
+            #this_res = es.result()  # This is for running on machine in lab (cma version)
+            this_res = es.result  # This is for running on amazon machine (cma version)
+            if this_res[1] < best_result[1]:
+                best_result[0] = this_res[0]
+                best_result[1] = this_res[1]
+        with open(self.save_file_path + self.save_file_name_final_output, 'a') as myfile:
+            myfile.write(str(subtask_n)
+                         + ',' + str("{:.5f}".format(best_arm_config[1]))
+                         + ',' + str("{:.5f}".format(best_arm_config[2]))
+                         + ',' + str("{:.5f}".format(best_arm_config[3]))
+                         + ',' + str("{:.5f}".format(best_arm_config[4]))
+                         + ',' + str("{:.5f}".format(best_arm_config[5]))
+                         + ',' + str("{:.5f}".format(best_result[0][0]))
+                         + ',' + str("{:.5f}".format(best_result[0][1]))
+                         + ',' + str("{:.5f}".format(best_result[0][2]))
+                         + ',' + str("{:.5f}".format(best_result[0][3]))
+                         + ',' + str("{:.5f}".format(best_result[1]))
+                         + '\n')
+        final_results.append([best_arm_config, best_result])
         return final_results
 
     # From data saved previously (typically from the coarse optimization) find
