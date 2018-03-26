@@ -32,12 +32,12 @@ class DartDressingWorld(pydart.World):
 
 
         pydart.World.__init__(self, 1.0 / 2000.0, skel_file_name)
-        print('pydart create_world OK')
+        #print('pydart create_world OK')
         self.ground = self.skeletons[0]
 
         self.human = self.skeletons[1]
         self.set_collision_detector(pydart.World.BULLET_COLLISION_DETECTOR)
-        print("detector = %s" % self.collision_detector_string())
+        #print("detector = %s" % self.collision_detector_string())
 
         # self.world = pydart.World(1.0 / 2000.0)
         # skel_model = self.add_skeleton(pkg_path + '/models/fullbody1_alex_optimized.skel')
@@ -49,7 +49,7 @@ class DartDressingWorld(pydart.World):
         self.gown_box_leftarm = self.add_skeleton(self.pkg_path + '/models/gown_box_only.urdf')
         self.gown_box_rightarm = self.add_skeleton(self.pkg_path + '/models/gown_box_only.urdf')
 
-        print('pydart added pr2 OK')
+        #print('pydart added pr2 OK')
         # self.set_gravity([0.0, 0.0, -9.81])
         # Lock the first joint
         self.robot.joints[0].set_actuator_type(pydart.joint.Joint.LOCKED)
@@ -189,7 +189,7 @@ class DartDressingWorld(pydart.World):
         z_position = self.human.joint(self.skel_joints[self.lowest_reference_joint_index]['@name']).position_in_world_frame()[2] - self.joint_to_floor_z
 
         self.human_reference_center_floor_point = np.array([x_position, y_position, z_position])
-        print 'Position of the floor center of the human body with respect to the floor: ', self.human_reference_center_floor_point
+        #print 'Position of the floor center of the human body with respect to the floor: ', self.human_reference_center_floor_point
 
     # def on_key_press(self, key):
     #     if key == 'J':
