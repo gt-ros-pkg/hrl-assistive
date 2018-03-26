@@ -461,7 +461,7 @@ class DressingMultiProcessOptimization(object):
         return best_result
 
     def run_fine_pr2_optimization(self,  human_arm, robot_arm, subtask_n,
-                                  stretch, fixed_point_index, fixed_p, popsize=30, maxiter=100):
+                                  stretch, fixed_point_index, fixed_p, popsize=20, maxiter=200):
         print 'Running fine optimization (using cma) to find a good pr2 configuration for ' \
               'the good arm configuration'
 
@@ -473,13 +473,13 @@ class DressingMultiProcessOptimization(object):
         best_arm_configs = np.array(best_arm_configs)
         best_arm_config = np.array([x for x in best_arm_configs if int(x[0]) == subtask_n])[-1][1:]
         print '\n best_arm_config:', best_arm_config,'\n'
-        parameters_scaling = (self.pr2_config_max - self.pr2_config_min) / 8.
+        parameters_scaling = [0.2, 0.2, m.radians(10.), 0.03  ]#(self.pr2_config_max - self.pr2_config_min) / 8.
         OPTIONS = dict()
         #OPTIONS['boundary_handling'] = cma.BoundTransform  # cma version on obie3 uses this
         OPTIONS['BoundaryHandler'] = cma.BoundTransform  # cma version on aws uses this
         OPTIONS['bounds'] = [self.pr2_config_min, self.pr2_config_max]
         OPTIONS['verb_filenameprefix'] = 'outcma_pr2_final_opt_config_' + str(subtask_n) + '_'
-        OPTIONS['seed'] = 123456
+        OPTIONS['seed'] = 12345
         OPTIONS['ftarget'] = -1.
         OPTIONS['popsize'] = popsize
         OPTIONS['maxiter'] = maxiter
