@@ -33,8 +33,6 @@ import pydart2 as pydart
 import openravepy as op
 from openravepy.misc import InitOpenRAVELogging
 
-from hrl_haptic_manipulation_in_clutter_srvs.srv import EnableHapticMPC
-
 from hrl_base_selection.helper_functions import createBMatrix, Bmat_to_pos_quat
 
 from geometry_msgs.msg import PoseArray, Pose, PoseStamped, Point, Quaternion, PoseWithCovarianceStamped, Twist
