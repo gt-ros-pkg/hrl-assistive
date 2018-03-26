@@ -475,7 +475,8 @@ class DressingMultiProcessOptimization(object):
 
         parameters_scaling = (self.pr2_config_max - self.pr2_config_min) / 8.
         OPTIONS = dict()
-        OPTIONS['boundary_handling'] = cma.BoundTransform
+        #OPTIONS['boundary_handling'] = cma.BoundTransform  # cma version on obie3 uses this
+        OPTIONS['BoundaryHandler'] = cma.BoundTransform  # cma version on aws uses this
         OPTIONS['bounds'] = [self.pr2_config_min, self.pr2_config_max]
         OPTIONS['seed'] = 123456
         OPTIONS['ftarget'] = -1.
@@ -514,7 +515,8 @@ class DressingMultiProcessOptimization(object):
                     es.tell(X, fit)
                     es.disp()
                     es.logger.add()
-                this_res = es.result()
+                #this_res = es.result()  # This is for running on machine in lab (cma version)
+                this_res = es.result  # This is for running on amazon machine (cma version)
                 if this_res[1] < best_result[1]:
                     best_result = this_res
             with open(self.save_file_path + self.save_file_name_final_output, 'a') as myfile:
