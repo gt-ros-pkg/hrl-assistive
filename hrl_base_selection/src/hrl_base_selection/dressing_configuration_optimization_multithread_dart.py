@@ -871,7 +871,11 @@ class DressingSimulationProcess(object):
         # save_pickle(self.final_results, self.pkg_path+'/data/best_trajectory_and_arm_config.pkl')
         save_pickle(self.final_results, self.pkg_path+'/data/dressing_results.pkl')
 
-    def find_reference_coordinate_frames_and_goals(self, arm):
+    def find_reference_coordinate_frames_and_goals(self, arm, high_res_interpolation=False):
+        if high_res_interpolation:
+            interpolation = 8.
+        else:
+            interpolation = 2.
         skeleton_frame_B_worldframe = np.matrix([[1., 0., 0., 0.],
                                                  [0., 0., 1., 0.],
                                                  [0., -1., 0., 0.],
@@ -1029,7 +1033,8 @@ class DressingSimulationProcess(object):
         # Goals along forearm
         path_distance = np.linalg.norm(np.array(origin_B_traj_start)[0:3, 3] -
                                        np.array(origin_B_traj_forearm_end)[0:3, 3])
-        path_waypoints = np.arange(0., path_distance + path_distance * 0.01, (path_distance - 0.15) / 2.)
+
+        path_waypoints = np.arange(0., path_distance + path_distance * 0.01, (path_distance - 0.15) / interpolation)
         for goal in path_waypoints:
             traj_start_B_traj_waypoint = np.matrix(np.eye(4))
             traj_start_B_traj_waypoint[0, 3] = goal
@@ -1040,7 +1045,7 @@ class DressingSimulationProcess(object):
         # Goals along upper arm
         path_distance = np.linalg.norm(np.array(origin_B_traj_forearm_end)[0:3, 3] -
                                        np.array(origin_B_traj_upper_end)[0:3, 3])
-        path_waypoints = np.arange(path_distance, 0.0 - path_distance *0.01, -path_distance / 2.)
+        path_waypoints = np.arange(path_distance, 0.0 - path_distance *0.01, -path_distance / interpolation)
         for goal in path_waypoints:
             traj_start_B_traj_waypoint = np.matrix(np.eye(4))
             traj_start_B_traj_waypoint[0, 3] = -goal
@@ -2106,7 +2111,7 @@ class DressingSimulationProcess(object):
         # self.set_openrave_arm(self.robot_arm)
         print 'Openrave IK is now ready'
 
-    def ik_request(self, pr2_B_grasp, spine_height):
+    def ik_request(self, pr2_B_grasp, spine_height=None):
         with self.frame_lock:
             jacobians = []
             with self.env:
@@ -2125,7 +2130,8 @@ class DressingSimulationProcess(object):
                 v[self.op_robot.GetJoint('r_forearm_roll_joint').GetDOFIndex()] = 0.
                 v[self.op_robot.GetJoint('r_wrist_flex_joint').GetDOFIndex()] = 0.
                 v[self.op_robot.GetJoint('r_wrist_roll_joint').GetDOFIndex()] = 0.
-                v[self.op_robot.GetJoint('torso_lift_joint').GetDOFIndex()] = spine_height
+                if spine_height is not None:
+                    v[self.op_robot.GetJoint('torso_lift_joint').GetDOFIndex()] = spine_height
                 self.op_robot.SetActiveDOFValues(v, checklimits=2)
                 self.env.UpdatePublishedBodies()
 
@@ -2163,6 +2169,205 @@ class DressingSimulationProcess(object):
         max_joint_change = 1.0
         feasible_ik = True
         return feasible_ik, max_joint_change
+
+    def generate_dressing_trajectory(self, arm, visualize=False):
+        self.goals, \
+        origin_B_forearm_pointed_down_arm, \
+        origin_B_upperarm_pointed_down_shoulder, \
+        origin_B_hand, \
+        origin_B_wrist, \
+        origin_B_traj_start, \
+        origin_B_traj_forearm_end, \
+        origin_B_traj_upper_end, \
+        origin_B_traj_final_end, \
+        angle_from_horizontal, \
+        forearm_B_upper_arm, \
+        fixed_points_exceeded_amount = self.find_reference_coordinate_frames_and_goals(arm, high_res_interpolation=True)
+        self.set_goals()
+
+        all_sols = []
+        all_jacobians = []
+
+        for num, origin_B_grasp in enumerate(self.origin_B_grasps):
+            pr2_B_grasp = self.origin_B_pr2.I * origin_B_grasp
+            single_goal_sols, single_goal_jacobians = self.ik_request(pr2_B_grasp)
+            all_sols.append(list(single_goal_sols))
+            all_jacobians.append(list(single_goal_jacobians))
+
+        graph = SimpleGraph()
+        graph.edges['start'] = []
+        graph.value['start'] = 0
+        graph.edges['end'] = []
+        graph.value['end'] = 0
+        for goal_i in xrange(len(all_sols)):
+            for sol_i in xrange(len(all_sols[goal_i])):
+                v = self.robot.q
+                v[self.robot_arm[0] + '_shoulder_pan_joint'] = all_sols[goal_i][sol_i][0]
+                v[self.robot_arm[0] + '_shoulder_lift_joint'] = all_sols[goal_i][sol_i][1]
+                v[self.robot_arm[0] + '_upper_arm_roll_joint'] = all_sols[goal_i][sol_i][2]
+                v[self.robot_arm[0] + '_elbow_flex_joint'] = all_sols[goal_i][sol_i][3]
+                v[self.robot_arm[0] + '_forearm_roll_joint'] = all_sols[goal_i][sol_i][4]
+                v[self.robot_arm[0] + '_wrist_flex_joint'] = all_sols[goal_i][sol_i][5]
+                v[self.robot_arm[0] + '_wrist_roll_joint'] = all_sols[goal_i][sol_i][6]
+                self.robot.set_positions(v)
+                self.dart_world.set_gown([self.robot_arm])
+                if not self.is_dart_in_collision():
+                    graph.edges[str(goal_i) + '-' + str(sol_i)] = []
+                    J = np.matrix(all_jacobians[goal_i][sol_i])
+                    joint_limit_weight = self.gen_joint_limit_weight(all_sols[goal_i][sol_i], self.robot_arm)
+                    manip = (m.pow(np.linalg.det(J * joint_limit_weight * J.T), (1. / 6.))) / (
+                    np.trace(J * joint_limit_weight * J.T) / 6.)
+                    graph.value[str(goal_i) + '-' + str(sol_i)] = manip
+        # print sorted(graph.edges)
+        for node in graph.edges.keys():
+            if not node == 'start' and not node == 'end':
+                goal_i = int(node.split('-')[0])
+                sol_i = int(node.split('-')[1])
+                if goal_i == 0:
+                    graph.edges['start'].append(str(goal_i) + '-' + str(sol_i))
+                if goal_i == len(all_sols) - 1:
+                    graph.edges[str(goal_i) + '-' + str(sol_i)].append('end')
+                else:
+                    possible_next_nodes = [t for t in (a
+                                                       for a in graph.edges.keys())
+                                           if str(goal_i + 1) in t.split('-')[0]
+                                           ]
+                    for next_node in possible_next_nodes:
+                        goal_j = int(next_node.split('-')[0])
+                        sol_j = int(next_node.split('-')[1])
+                        if np.max(np.abs(np.array(all_sols[goal_j][sol_j])[[0, 1, 2, 3, 5]] -
+                                                 np.array(all_sols[goal_i][sol_i])[[0, 1, 2, 3, 5]])) < m.radians(40.):
+                            # if self.path_is_clear(np.array(all_sols[goal_j][sol_j]), np.array(all_sols[goal_i][sol_i])):
+                            graph.edges[str(goal_i) + '-' + str(sol_i)].append(str(goal_j) + '-' + str(sol_j))
+
+        path_confirmation_complete = False
+        while not path_confirmation_complete:
+            came_from, value_so_far = a_star_search(graph, 'start', 'end')
+            path = reconstruct_path(came_from, 'start', 'end')
+            # print 'came_from\n', came_from
+            # print sorted(graph.edges)
+            # print 'path\n', path
+            if not path:
+                path_confirmation_complete = True
+                if len(value_so_far) == 1:
+                    reach_score = 0.
+                    manip_score = 0.
+                else:
+                    value_so_far.pop('start')
+                    furthest_reached = np.argmax([t for t in ((int(a[0].split('-')[0]))
+                                                              for a in value_so_far.items())
+                                                  ])
+                    # print value_so_far.keys()
+                    # print 'furthest reached', furthest_reached
+                    # print value_so_far.items()[furthest_reached]
+                    reach_score = 1. * int(value_so_far.items()[furthest_reached][0].split('-')[0]) / len(
+                        self.origin_B_grasps)
+                    manip_score = 1. * value_so_far.items()[furthest_reached][1] / len(self.origin_B_grasps)
+            else:
+                path_confirmation_complete = True
+                # print 'I FOUND A SOLUTION'
+                # print 'value_so_far[end]:', value_so_far['end']
+                path.pop(0)
+                path.pop(path.index('end'))
+
+                reach_score = 1.
+                manip_score = value_so_far['end'] / len(self.origin_B_grasps)
+
+        if visualize:
+            if path:
+                goal_i = int(path[0].split('-')[0])
+                sol_i = int(path[0].split('-')[1])
+                prev_sol = np.array(all_sols[goal_i][sol_i])
+                # print 'Solution being visualized:'
+                cont = raw_input('\nEnter Q (q) or N (n) to stop visualization of this task. '
+                                  'Otherwise visualizes again.\n')
+                while not cont.upper() == 'Q' or not cont.upper() == 'N' or not rospy.is_shutdown():
+                    for path_step in path:
+                        # if not path_step == 'start' and not path_step == 'end':
+                        goal_i = int(path_step.split('-')[0])
+                        sol_i = int(path_step.split('-')[1])
+                        # print 'solution:\n', all_sols[goal_i][sol_i]
+                        # print 'diff:\n', np.abs(np.array(all_sols[goal_i][sol_i]) - prev_sol)
+                        # print 'max diff:\n', np.degrees(
+                        #     np.max(np.abs(np.array(all_sols[goal_i][sol_i])[[0, 1, 2, 3, 5]] - prev_sol[[0, 1, 2, 3, 5]])))
+                        prev_sol = np.array(all_sols[goal_i][sol_i])
+
+                        v = self.robot.q
+                        v[self.robot_arm[0] + '_shoulder_pan_joint'] = all_sols[goal_i][sol_i][0]
+                        v[self.robot_arm[0] + '_shoulder_lift_joint'] = all_sols[goal_i][sol_i][1]
+                        v[self.robot_arm[0] + '_upper_arm_roll_joint'] = all_sols[goal_i][sol_i][2]
+                        v[self.robot_arm[0] + '_elbow_flex_joint'] = all_sols[goal_i][sol_i][3]
+                        v[self.robot_arm[0] + '_forearm_roll_joint'] = all_sols[goal_i][sol_i][4]
+                        v[self.robot_arm[0] + '_wrist_flex_joint'] = all_sols[goal_i][sol_i][5]
+                        v[self.robot_arm[0] + '_wrist_roll_joint'] = all_sols[goal_i][sol_i][6]
+                        self.robot.set_positions(v)
+                        self.dart_world.displace_gown()
+                        self.dart_world.check_collision()
+                        self.dart_world.set_gown([self.robot_arm])
+                        rospy.sleep(0.5)
+                    cont = raw_input('\nEnter Q (q) or N (n) to stop visualization of this task. '
+                                     'Otherwise visualizes again.\n')
+        return self.goals, \
+               origin_B_forearm_pointed_down_arm, \
+               origin_B_upperarm_pointed_down_shoulder, \
+               origin_B_hand, \
+               origin_B_wrist, \
+               origin_B_traj_start, \
+               origin_B_traj_forearm_end, \
+               origin_B_traj_upper_end, \
+               origin_B_traj_final_end, \
+               angle_from_horizontal, \
+               forearm_B_upper_arm, path, all_sols
+
+    def set_pr2_model_dof_dart(self, dof):
+        x = dof[0]
+        y = dof[1]
+        th = dof[2]
+        z = dof[3]
+
+        origin_B_pr2 = np.matrix([[m.cos(th), -m.sin(th), 0., x],
+                                  [m.sin(th), m.cos(th), 0., y],
+                                  [0., 0., 1., 0.],
+                                  [0., 0., 0., 1.]])
+        self.origin_B_pr2 = origin_B_pr2
+        v = self.robot.positions()
+
+        # For a solution for a bit to get screenshots, etc. Check colllision removes old collision markers.
+        if False:
+            self.dart_world.check_collision()
+            # rospy.sleep(20)
+
+        v['rootJoint_pos_x'] = x
+        v['rootJoint_pos_y'] = y
+        v['rootJoint_pos_z'] = 0.
+        v['rootJoint_rot_z'] = th
+        self.dart_world.displace_gown()
+        # sign_flip = 1.
+        # if 'right' in self.robot_arm:
+        #     sign_flip = -1.
+        v['l_shoulder_pan_joint'] = 3.14 / 2
+        v['l_shoulder_lift_joint'] = -0.52
+        v['l_upper_arm_roll_joint'] = 0.
+        v['l_elbow_flex_joint'] = -3.14 * 2 / 3
+        v['l_forearm_roll_joint'] = 0.
+        v['l_wrist_flex_joint'] = 0.
+        v['l_wrist_roll_joint'] = 0.
+        v['l_gripper_l_finger_joint'] = .24
+        v['l_gripper_r_finger_joint'] = .24
+        v['r_shoulder_pan_joint'] = -1 * 3.14 / 2
+        v['r_shoulder_lift_joint'] = -0.52
+        v['r_upper_arm_roll_joint'] = 0.
+        v['r_elbow_flex_joint'] = -3.14 * 2 / 3
+        v['r_forearm_roll_joint'] = 0.
+        v['r_wrist_flex_joint'] = 0.
+        v['r_wrist_roll_joint'] = 0.
+        v['r_gripper_l_finger_joint'] = .24
+        v['r_gripper_r_finger_joint'] = .24
+        v['torso_lift_joint'] = 0.3
+
+        v['torso_lift_joint'] = z
+
+        self.robot.set_positions(v)
 
     def set_human_model_dof_dart(self, dof, human_arm):
         # bth = m.degrees(headrest_th)
