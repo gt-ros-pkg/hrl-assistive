@@ -29,9 +29,13 @@ from matplotlib.path import Path
 import matplotlib.patches as patches
 import tf.transformations as tft
 
+import pydart2 as pydart
+import openravepy as op
+from openravepy.misc import InitOpenRAVELogging
+
 from hrl_haptic_manipulation_in_clutter_srvs.srv import EnableHapticMPC
 
-from helper_functions import createBMatrix, Bmat_to_pos_quat
+from hrl_base_selection.helper_functions import createBMatrix, Bmat_to_pos_quat
 
 from geometry_msgs.msg import PoseArray, Pose, PoseStamped, Point, Quaternion, PoseWithCovarianceStamped, Twist
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
@@ -59,15 +63,99 @@ class TOORAD_Dressing_PR2(object):
         rospack = rospkg.RosPack()
         self.pkg_path = rospack.get_path('hrl_base_selection')
         self.save_file_path = self.pkg_path + '/data/'
-        self.save_file_name_final_output = 'arm_config_final_output.log'
+        self.save_file_name_final_output = 'arm_configs_final_output.log'
+        self.trajectory_pickle_file_name = 'trajectory_data.pkl'
         configs = self.load_configs(self.save_file_path+self.save_file_name_final_output)
+        if self.machine == 'generate_trajectory':
+            # Generates the trajectory and saves all relevant info to a pickle file.
+            pydart.init()
+            print('pydart initialization OK')
+            self.toorad = DressingSimulationProcess(visualize=False)
+            print 'Starting to generate the dressing trajectories from the saved configurations. This will then ' \
+                  'be used by the PR2 for execution or by another machine for visualization.'
+            save_data = []
+            for arm in ['right', 'left']:
+                if arm.upper()[0] == 'R':
+                    h_config = configs[0][0]
+                    r_config = configs[0][1]
+                    self.toorad.set_robot_arm('rightarm')
+                    self.toorad.set_human_arm('rightarm')
+                elif arm.upper()[0] == 'L':
+                    h_config = configs[1][0]
+                    r_config = configs[1][1]
+                    self.toorad.set_robot_arm('rightarm')
+                    self.toorad.set_human_arm('leftarm')
+                else:
+                    print 'HOW DID THIS GO WRONG?? '
+                    return
 
-        # If this is on desktop for visualization, run the visualization
-        if self.machine == 'desktop':
+                # print 'objective_function_fine =', self.toorad.objective_function_fine(h_config)
+
+                # Set up the simulator for the configuration loaded
+                self.toorad.set_human_model_dof_dart([0, 0, 0, 0], self.toorad.human_opposite_arm)
+                self.toorad.set_human_model_dof_dart(h_config, self.toorad.human_arm)
+                self.toorad.set_pr2_model_dof_dart(r_config)
+
+                # Calculate the trajectories based on the configuration in the simulator
+                s_arm = self.toorad.human_arm.split('a')[0]
+                origin_B_goals, \
+                origin_B_forearm_pointed_down_arm, \
+                origin_B_upperarm_pointed_down_shoulder, \
+                origin_B_hand, \
+                origin_B_wrist, \
+                origin_B_traj_start, \
+                origin_B_traj_forearm_end, \
+                origin_B_traj_upper_end, \
+                origin_B_traj_final_end, \
+                forearm_B_upper_arm, traj_path, all_sols = self.toorad.generate_dressing_trajectory(s_arm,
+                                                                                                    visualize=False)
+                print arm
+                print not traj_path
+                print traj_path
+
+                # print 'robot positions',self.toorad.robot.positions()
+                # print 'robot q', self.toorad.robot.q
+                # print 'human q', self.toorad.human.q
+                # print 'human'
+                # print self.toorad.human.q['j_bicep_' + arm + '_x']
+                # print self.toorad.human.q['j_bicep_' + arm + '_y']
+                # print self.toorad.human.q['j_bicep_' + arm + '_z']
+                # print self.toorad.human.q['j_forearm_' + arm + '_1']
+                # print 'robot'
+                # print self.toorad.robot.q['rootJoint_pos_x']
+                # print self.toorad.robot.q['rootJoint_pos_y']
+                # print self.toorad.robot.q['rootJoint_pos_z']
+                # print self.toorad.robot.q['rootJoint_rot_z']
+                # print self.toorad.robot.q['torso_lift_joint']
+
+
+
+                save_data.append([arm, origin_B_goals,
+                                  origin_B_forearm_pointed_down_arm,
+                                  origin_B_upperarm_pointed_down_shoulder,
+                                  origin_B_hand,
+                                  origin_B_wrist,
+                                  origin_B_traj_start,
+                                  origin_B_traj_forearm_end,
+                                  origin_B_traj_upper_end,
+                                  origin_B_traj_final_end,
+                                  forearm_B_upper_arm, traj_path, all_sols])
+
+            save_pickle(save_data, self.save_file_path+self.trajectory_pickle_file_name)
+            print 'File saved successfully!'
+
+        elif self.machine == 'desktop':
+            # If this is on desktop for visualization, run the visualization
             # Set up TOORAD process that includes DART simulation environment
-            self.toorad = DressingSimulationProcess(visualize=True)
+
+
+            loaded_data = load_pickle(self.save_file_path+self.trajectory_pickle_file_name)
+            print 'Trajectory data loaded succesfully!'
+
+            # self.toorad = DressingSimulationProcess(visualize=False)
             print 'Starting visualization of the desired configuration for the dressing task. First select the arm ' \
                   'to be dressed'
+            # rospy.sleep(20)
             arm = raw_input('\nEnter R (r) for right arm (should be done first. Enter L (l) for left arm (should be '
                             'done second). Otherwise ends.\n')
             while not arm.upper() == 'Q' or not arm.upper() == 'N' or not rospy.is_shutdown():
@@ -93,7 +181,17 @@ class TOORAD_Dressing_PR2(object):
 
                 # Calculate the trajectories based on the configuration in the simulator
                 s_arm = self.toorad.human_arm.split('a')[0]
-                self.toorad.generate_dressing_trajectory(s_arm, visualize=True)
+                origin_B_goals, \
+                origin_B_forearm_pointed_down_arm, \
+                origin_B_upperarm_pointed_down_shoulder, \
+                origin_B_hand, \
+                origin_B_wrist, \
+                origin_B_traj_start, \
+                origin_B_traj_forearm_end, \
+                origin_B_traj_upper_end, \
+                origin_B_traj_final_end, \
+                angle_from_horizontal, \
+                forearm_B_upper_arm, traj_path, all_sols = self.toorad.generate_dressing_trajectory(s_arm, visualize=True)
 
                 arm = raw_input('\nEnter R (r) for right arm (should be done first. Enter L (l) for left arm (should be '
                                 'done second). Otherwise ends.\n')
@@ -422,6 +520,8 @@ class TOORAD_Dressing_PR2(object):
         for j in xrange(len(saved_configs)):
             saved_configs[j] = [float(i) for i in saved_configs[j]]
         saved_configs = np.array(saved_configs)
+        saved_configs = np.array([[0,0.49400,0.10217,0.82392,0.40534,0.05529,0.10348,-0.90135,1.47876,0.29157,-0.35238],
+                                 [1,1.46493,0.53184,1.60065,1.42140,0.04144,0.96188,0.37199,4.38764,0.29960,-0.32370]])
         # saved_configs = np.array([x for x in saved_configs if int(x[0]) == subtask_number])
         out_configs = []
         out_configs.append([saved_configs[0][1:5], saved_configs[0][6:10]])
@@ -576,6 +676,6 @@ if __name__ == '__main__':
 
     toorad_dressing = TOORAD_Dressing_PR2(participant=opt.participant, trial=opt.participant,
                                           enable_realtime_HMM=False, visualize=opt.visualize,
-                                          visually_estimate_arm_pose=False, adjust_arm_pose_visually=False
-                                          )
+                                          visually_estimate_arm_pose=False, adjust_arm_pose_visually=False,
+                                          machine=opt.machine)
 

@@ -1057,6 +1057,7 @@ class DressingSimulationProcess(object):
             goals.append(copy.copy(origin_B_traj_waypoint))
 
         # Goals at the top of the shoulder
+        origin_B_traj_final_end = np.matrix(origin_B_traj_final_end)
         origin_B_traj_waypoint[0:3, 0:3] = origin_B_traj_final_end[0:3, 0:3]
         goals.append(copy.copy(origin_B_traj_waypoint))
         goals.append(copy.copy(origin_B_traj_final_end))
@@ -2197,7 +2198,7 @@ class DressingSimulationProcess(object):
         origin_B_traj_final_end, \
         angle_from_horizontal, \
         forearm_B_upper_arm, \
-        fixed_points_exceeded_amount = self.find_reference_coordinate_frames_and_goals(arm, high_res_interpolation=True)
+        fixed_points_exceeded_amount = self.find_reference_coordinate_frames_and_goals(arm, high_res_interpolation=False)
         self.set_goals()
 
         all_sols = []
@@ -2287,6 +2288,8 @@ class DressingSimulationProcess(object):
 
                 reach_score = 1.
                 manip_score = value_so_far['end'] / len(self.origin_B_grasps)
+        print 'reach score:', reach_score
+        print 'manip score:', manip_score
 
         if visualize:
             if path:
@@ -2331,7 +2334,6 @@ class DressingSimulationProcess(object):
                origin_B_traj_forearm_end, \
                origin_B_traj_upper_end, \
                origin_B_traj_final_end, \
-               angle_from_horizontal, \
                forearm_B_upper_arm, path, all_sols
 
     def set_pr2_model_dof_dart(self, dof):
