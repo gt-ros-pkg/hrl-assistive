@@ -78,7 +78,7 @@ class BaseEmptySimulationProcess(object):
         self.visualize = visualize
         self.optimizer = None
         self.simulator_started = False
-        self.arm_fixed = False
+        self.arm_fixed = [False, False]
 
     def start_dressing_simulation_process(self):
         self.optimizer = DressingSimulationProcess(process_number=self.process_number,
@@ -196,10 +196,10 @@ def fine_pr2_func(input):
         current_simulator.optimizer.fixed_points_to_use = fixed_points_to_use
     if not np.array_equal(fixed_points,current_simulator.optimizer.fixed_points):
         current_simulator.optimizer.fixed_points = fixed_points
-    if not current_simulator.arm_fixed:
+    if not current_simulator.arm_fixed[subtask_number]:
         current_simulator.optimizer.set_human_model_dof_dart([0, 0, 0, 0], current_simulator.optimizer.human_opposite_arm)
         current_simulator.optimizer.set_human_model_dof_dart(arm_config, human_arm)
-        current_simulator.arm_fixed = True
+        current_simulator.arm_fixed[subtask_number] = True
     res = current_simulator.optimizer.objective_function_fine_pr2(x)
     return res
 
