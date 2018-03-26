@@ -200,7 +200,7 @@ def fine_pr2_func(input):
         current_simulator.optimizer.set_human_model_dof_dart([0, 0, 0, 0], current_simulator.optimizer.human_opposite_arm)
         current_simulator.optimizer.set_human_model_dof_dart(arm_config, human_arm)
         current_simulator.arm_fixed = True
-    res = current_simulator.optimizer.objective_function_pr2(x)
+    res = current_simulator.optimizer.objective_function_fine_pr2(x)
     return res
 
 def find_fixed_points(input):
