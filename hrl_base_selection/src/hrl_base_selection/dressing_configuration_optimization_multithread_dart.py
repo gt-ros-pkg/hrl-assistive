@@ -197,9 +197,10 @@ def fine_pr2_func(input):
     if not np.array_equal(fixed_points,current_simulator.optimizer.fixed_points):
         current_simulator.optimizer.fixed_points = fixed_points
     if not current_simulator.arm_fixed:
-        current_simulator.optimizer.set_human_model_dof_dart(arm_config,human_arm)
+        current_simulator.optimizer.set_human_model_dof_dart([0, 0, 0, 0], current_simulator.optimizer.human_opposite_arm)
+        current_simulator.optimizer.set_human_model_dof_dart(arm_config, human_arm)
         current_simulator.arm_fixed = True
-    res = current_simulator.optimizer.objective_function_pr2(x)
+    res = current_simulator.optimizer.objective_function_pr2_config(x)
     return res
 
 def find_fixed_points(input):
@@ -305,16 +306,16 @@ class DressingMultiProcessOptimization(object):
 
         for subtask_number, subtask in enumerate(subtask_list):
             print 'starting fine optimization for ', subtask
-            self.run_fine_optimization(subtask_list[subtask_number],
-                                       robot_arm_to_use[subtask_number],
-                                       subtask_number,
-                                       all_stretch_allowable[subtask_number],
-                                       all_fixed_points_to_use[subtask_number],
-                                       all_fixed_points)
+            # self.run_fine_optimization(subtask_list[subtask_number],
+            #                            robot_arm_to_use[subtask_number],
+            #                            subtask_number,
+            #                            all_stretch_allowable[subtask_number],
+            #                            all_fixed_points_to_use[subtask_number],
+            #                            all_fixed_points)
             print 'completed fine optimization for ', subtask
-        '''
+
         for subtask_number, subtask in enumerate(subtask_list):
-            print 'starting fine optimization for ', subtask
+            print 'starting fine optimization of pr2 configuration for ', subtask
             self.run_fine_pr2_optimization(subtask_list[subtask_number],
                                            robot_arm_to_use[subtask_number],
                                            subtask_number,
@@ -322,7 +323,7 @@ class DressingMultiProcessOptimization(object):
                                            all_fixed_points_to_use[subtask_number],
                                            all_fixed_points)
             print 'completed fine optimization for ', subtask
-        '''
+
 
     def run_coarse_optimization(self, human_arm, robot_arm, subtask_n,
                                 stretch, fixed_point_index, fixed_p):
@@ -460,7 +461,7 @@ class DressingMultiProcessOptimization(object):
         return best_result
 
     def run_fine_pr2_optimization(self,  human_arm, robot_arm, subtask_n,
-                                  stretch, fixed_point_index, fixed_p, popsize=20, maxiter=50):
+                                  stretch, fixed_point_index, fixed_p, popsize=30, maxiter=100):
         print 'Running fine optimization (using cma) to find a good pr2 configuration for ' \
               'the good arm configuration'
 
@@ -470,7 +471,7 @@ class DressingMultiProcessOptimization(object):
         for j in xrange(len(best_arm_configs)):
             best_arm_configs[j] = [float(i) for i in best_arm_configs[j]]
         best_arm_configs = np.array(best_arm_configs)
-        # best_arm_config = np.array([x for x in best_arm_configs if int(x[0]) == subtask_n])[-1]
+        best_arm_config = np.array([x for x in best_arm_configs if int(x[0]) == subtask_n])[-1]
 
         parameters_scaling = (self.pr2_config_max - self.pr2_config_min) / 8.
         OPTIONS = dict()
@@ -518,11 +519,11 @@ class DressingMultiProcessOptimization(object):
                     best_result = this_res
             with open(self.save_file_path + self.save_file_name_final_output, 'a') as myfile:
                 myfile.write(str(subtask_n)
-                             + ',' + str("{:.5f}".format(best_arm_config[0]))
                              + ',' + str("{:.5f}".format(best_arm_config[1]))
                              + ',' + str("{:.5f}".format(best_arm_config[2]))
                              + ',' + str("{:.5f}".format(best_arm_config[3]))
                              + ',' + str("{:.5f}".format(best_arm_config[4]))
+                             + ',' + str("{:.5f}".format(best_arm_config[5]))
                              + ',' + str("{:.5f}".format(best_result[0][0]))
                              + ',' + str("{:.5f}".format(best_result[0][1]))
                              + ',' + str("{:.5f}".format(best_result[0][2]))
@@ -1612,6 +1613,8 @@ class DressingSimulationProcess(object):
             return False
 
     def objective_function_fine_pr2(self, current_parameters):
+
+
         self.kinematics_optimization_results = cma.fmin(self.objective_function_pr2_config,
                                                             list(parameters_initialization_pr2),
                                                             1.,

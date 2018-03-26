@@ -50,12 +50,6 @@ import gc
 import cma
 import multiprocessing as mp
 
-class SimulatorPool(object):
-    def __init__(self, population):
-        self.simulatorPool = mp.Manager().Queue()
-        for _ in range(population):
-            simulator = SIMULATOR()
-            self.simulatorPool.put(simulator)
 
 class ScoreGeneratorDressingwithPhysx(object):
 
@@ -68,12 +62,6 @@ class ScoreGeneratorDressingwithPhysx(object):
         self.save_file_name_per_human_initialization = 'arm_configs_per_human_initialization.log'
         self.visualize = visualize
         self.frame_lock = threading.RLock()
-
-        # Set up multithreading which is used in the inner loop
-        processCnt = mp.cpu_count()
-        simulatorPool = SimulatorPool(processCnt).simulatorPool
-        pool = mp.Pool(processCnt, _init, (simulatorPool,))
-
 
         self.robot_arm = None
         self.robot_opposite_arm = None
@@ -401,6 +389,7 @@ class ScoreGeneratorDressingwithPhysx(object):
                 self.set_human_arm(subtask)
             # self.best_pr2_results[subtask_number] = [[], []]
             if subtask_number == 0:
+                self.visualize = False
                 self.fixed_points_to_use = []
                 self.stretch_allowable = []
                 self.add_new_fixed_point = True
@@ -408,6 +397,7 @@ class ScoreGeneratorDressingwithPhysx(object):
                                                                maxiter=2, popsize=2, mode='fine')
             else:
                 if subtask_number == 1:
+                    self.visualize = True
                     self.fixed_points_to_use = [0]
                     self.stretch_allowable = [0.5]
                     self.add_new_fixed_point = True
@@ -544,7 +534,7 @@ class ScoreGeneratorDressingwithPhysx(object):
                                  + ',' + str("{:.5f}".format(self.best_kinematics_score))
                                  + '\n')
         else:
-            self.save_all_results = True
+            self.save_all_results = False
             [t for t in ((self.objective_function_traj_and_arm_config([arm1, arm2, arm3, arm4]))
                          for arm1 in np.arange(parameters_min[0], parameters_max[0]+0.0001, m.radians(5.))
                          for arm2 in np.arange(parameters_min[1], parameters_max[1]+0.0001, m.radians(5.))
@@ -813,9 +803,12 @@ class ScoreGeneratorDressingwithPhysx(object):
             params = [0.9679925, 0.18266905, 0.87995157, 0.77562143]
             # self.visualize = False
 
-        elif False:  # for left arm
+        elif True:  # for left arm
             params = [1.5707963267948966, -0.17453292519943295, 1.3962634015954636, 1.5707963267948966]
+            params = [1.53066230425, 0.422673452728, 1.49511348819, 1.51017076321]
+            params = [1.51138,0.35479,1.41679,1.56962]
             # self.visualize = True
+
         neigh_distances, neighbors = self.arm_knn.kneighbors([params], 16)
         for neigh_dist, neighbor in zip(neigh_distances[0], neighbors[0]):
             if np.max(np.abs(np.array(self.arm_configs_checked[neighbor] - np.array(params)))) < m.radians(15.):
@@ -836,7 +829,7 @@ class ScoreGeneratorDressingwithPhysx(object):
                                      + ',' + str("{:.5f}".format(params[3]))
                                      + ',' + str("{:.5f}".format(this_score))
                                      + '\n')
-                    return this_score
+                    # return this_score
         print 'arm config is not bad'
         arm = self.human_arm.split('a')[0]
 
@@ -868,7 +861,7 @@ class ScoreGeneratorDressingwithPhysx(object):
                                  + ',' + str("{:.5f}".format(params[3]))
                                  + ',' + str("{:.5f}".format(this_score))
                                  + '\n')
-            return this_score
+            # return this_score
 
         print 'arm config is not in self collision'
 
@@ -949,7 +942,7 @@ class ScoreGeneratorDressingwithPhysx(object):
                                  + ',' + str("{:.5f}".format(params[3]))
                                  + ',' + str("{:.5f}".format(this_score))
                                  + '\n')
-            return this_score
+            # return this_score
 
         print 'angle from horizontal = ', angle_from_horizontal
         if abs(angle_from_horizontal) > 30.:
@@ -970,7 +963,7 @@ class ScoreGeneratorDressingwithPhysx(object):
                                  + ',' + str("{:.5f}".format(params[3]))
                                  + ',' + str("{:.5f}".format(this_score))
                                  + '\n')
-            return this_score
+            # return this_score
 
         print 'Number of goals: ', len(self.goals)
         print 'This arm config is:\n', params
@@ -1335,8 +1328,9 @@ class ScoreGeneratorDressingwithPhysx(object):
             # current_parameters = [2.5305254, -0.6124738, -2.37421411, 0.02080042]  # solution with arm snaking
             # current_parameters = [0.44534457, -0.85069379, 2.95625035, 0.07931574]  # solution with arm in lap, no physx
             current_parameters = [ 0.04840878, -0.83110347 , 0.97416245,  0.29999239]
-        elif False:  # left arm
+        elif True:  # left arm
             current_parameters = [0.69510576,  0.68875733, -0.85141057, 0.05047799]
+            current_parameters = [0.88160,0.56599,4.70757,0.29989]
         x = current_parameters[0]
         y = current_parameters[1]
         th = current_parameters[2]
@@ -2318,7 +2312,7 @@ if __name__ == "__main__":
     rospy.init_node('score_generator')
     # start_time = time.time()
     outer_start_time = rospy.Time.now()
-    selector = ScoreGeneratorDressingwithPhysx(human_arm='rightarm', visualize=False)
+    selector = ScoreGeneratorDressingwithPhysx(human_arm='rightarm', visualize=True)
     # selector.visualize_many_configurations()
     # selector.output_results_for_use()
     # selector.run_interleaving_optimization_outer_level()
