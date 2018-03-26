@@ -461,7 +461,7 @@ class DressingMultiProcessOptimization(object):
         return best_result
 
     def run_fine_pr2_optimization(self,  human_arm, robot_arm, subtask_n,
-                                  stretch, fixed_point_index, fixed_p, popsize=20, maxiter=200):
+                                  stretch, fixed_point_index, fixed_p, popsize=40, maxiter=200):
         print 'Running fine optimization (using cma) to find a good pr2 configuration for ' \
               'the good arm configuration'
 
@@ -473,7 +473,7 @@ class DressingMultiProcessOptimization(object):
         best_arm_configs = np.array(best_arm_configs)
         best_arm_config = np.array([x for x in best_arm_configs if int(x[0]) == subtask_n])[-1][1:]
         print '\n best_arm_config:', best_arm_config,'\n'
-        parameters_scaling = [0.2, 0.2, m.radians(10.), 0.03  ]#(self.pr2_config_max - self.pr2_config_min) / 8.
+        parameters_scaling = [0.1, 0.1, m.radians(10.), 0.02  ]#(self.pr2_config_max - self.pr2_config_min) / 8.
         OPTIONS = dict()
         #OPTIONS['boundary_handling'] = cma.BoundTransform  # cma version on obie3 uses this
         OPTIONS['BoundaryHandler'] = cma.BoundTransform  # cma version on aws uses this
@@ -484,7 +484,7 @@ class DressingMultiProcessOptimization(object):
         OPTIONS['popsize'] = popsize
         OPTIONS['maxiter'] = maxiter
         OPTIONS['maxfevals'] = 1e8
-        OPTIONS['CMA_cmean'] = 0.5
+        OPTIONS['CMA_cmean'] = 0.25
         OPTIONS['tolfun'] = 1e-3
         OPTIONS['tolfunhist'] = 1e-12
         OPTIONS['tolx'] = 5e-4
