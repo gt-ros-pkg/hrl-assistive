@@ -200,7 +200,7 @@ def fine_pr2_func(input):
         current_simulator.optimizer.set_human_model_dof_dart([0, 0, 0, 0], current_simulator.optimizer.human_opposite_arm)
         current_simulator.optimizer.set_human_model_dof_dart(arm_config, human_arm)
         current_simulator.arm_fixed = True
-    res = current_simulator.optimizer.objective_function_pr2_config(x)
+    res = current_simulator.optimizer.objective_function_pr2(x)
     return res
 
 def find_fixed_points(input):
@@ -484,7 +484,7 @@ class DressingMultiProcessOptimization(object):
         OPTIONS['popsize'] = popsize
         OPTIONS['maxiter'] = maxiter
         OPTIONS['maxfevals'] = 1e8
-        OPTIONS['CMA_cmean'] = 0.25
+        OPTIONS['CMA_cmean'] = 0.5
         OPTIONS['tolfun'] = 1e-3
         OPTIONS['tolfunhist'] = 1e-12
         OPTIONS['tolx'] = 5e-4
@@ -1614,13 +1614,23 @@ class DressingSimulationProcess(object):
             print 'I do not know what arm to be using'
             return False
 
-    def objective_function_fine_pr2(self, current_parameters):
+    def objective_function_fine_pr2(self, parameters):
+        arm = self.human_arm.split('a')[0]
+        self.goals, \
+        origin_B_forearm_pointed_down_arm, \
+        origin_B_upperarm_pointed_down_shoulder, \
+        origin_B_hand, \
+        origin_B_wrist, \
+        origin_B_traj_start, \
+        origin_B_traj_forearm_end, \
+        origin_B_traj_upper_end, \
+        origin_B_traj_final_end, \
+        angle_from_horizontal, \
+        forearm_B_upper_arm, \
+        fixed_points_exceeded_amount = self.find_reference_coordinate_frames_and_goals(arm)
+        self.set_goals()
 
-
-        self.kinematics_optimization_results = cma.fmin(self.objective_function_pr2_config,
-                                                            list(parameters_initialization_pr2),
-                                                            1.,
-                                                            options=opts_cma_pr2)
+        return self.objective_function_pr2_config(parameters)
 
     def objective_function_pr2_config(self, current_parameters):
         # start_time = rospy.Time.now()
