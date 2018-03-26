@@ -509,22 +509,23 @@ class DressingMultiProcessOptimization(object):
                                                    zip(chunk, [human_arm] * chunksize, [robot_arm] * chunksize,
                                                        [subtask_n] * chunksize, [stretch] * chunksize,
                                                        [fixed_point_index] * chunksize,
-                                                       [fixed_p] * chunksize, [best_arm_config]*chunksize))
+                                                       [fixed_p] * chunksize, [best_arm_config[:-1]]*chunksize))
                     fit.extend(batchFit)
                 es.tell(X, fit)
                 es.disp()
                 es.logger.add()
             #this_res = es.result()  # This is for running on machine in lab (cma version)
             this_res = es.result  # This is for running on amazon machine (cma version)
+            #print 'Optimization finished with x0:', x0
             if this_res[1] < best_result[1]:
                 best_result = [this_res[0], this_res[1]]
         with open(self.save_file_path + self.save_file_name_final_output, 'a') as myfile:
             myfile.write(str(subtask_n)
+                         + ',' + str("{:.5f}".format(best_arm_config[0]))
                          + ',' + str("{:.5f}".format(best_arm_config[1]))
                          + ',' + str("{:.5f}".format(best_arm_config[2]))
                          + ',' + str("{:.5f}".format(best_arm_config[3]))
                          + ',' + str("{:.5f}".format(best_arm_config[4]))
-                         + ',' + str("{:.5f}".format(best_arm_config[5]))
                          + ',' + str("{:.5f}".format(best_result[0][0]))
                          + ',' + str("{:.5f}".format(best_result[0][1]))
                          + ',' + str("{:.5f}".format(best_result[0][2]))
