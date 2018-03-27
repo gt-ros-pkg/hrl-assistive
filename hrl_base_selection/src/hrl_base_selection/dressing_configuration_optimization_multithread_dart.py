@@ -196,11 +196,14 @@ def fine_pr2_func(input):
         current_simulator.optimizer.fixed_points_to_use = fixed_points_to_use
     if not np.array_equal(fixed_points,current_simulator.optimizer.fixed_points):
         current_simulator.optimizer.fixed_points = fixed_points
-    if not current_simulator.arm_fixed[subtask_number]:
-        current_simulator.optimizer.set_human_model_dof_dart([0, 0, 0, 0], current_simulator.optimizer.human_opposite_arm)
-        current_simulator.optimizer.set_human_model_dof_dart(arm_config, human_arm)
-        current_simulator.arm_fixed[subtask_number] = True
-    res = current_simulator.optimizer.objective_function_fine_pr2(x)
+    # if not current_simulator.arm_fixed[subtask_number]:
+    #     current_simulator.optimizer.set_human_model_dof_dart([0, 0, 0, 0], current_simulator.optimizer.human_opposite_arm)
+    #     current_simulator.optimizer.set_human_model_dof_dart(arm_config, human_arm)
+    #     current_simulator.arm_fixed[subtask_number] = True
+    if not current_simulator.final_pr2_optimization:
+        current_simulator.final_pr2_optimization = True
+    res = current_simulator.optimizer.objective_function_fine(x)
+    # res = current_simulator.optimizer.objective_function_fine_pr2(x)
     return res
 
 def find_fixed_points(input):
@@ -473,69 +476,74 @@ class DressingMultiProcessOptimization(object):
         best_arm_configs = np.array(best_arm_configs)
         best_arm_config = np.array([x for x in best_arm_configs if int(x[0]) == subtask_n])[-1][1:]
         print '\n best_arm_config:', best_arm_config,'\n'
-        parameters_scaling = [0.1, 0.1, m.radians(10.), 0.02  ]#(self.pr2_config_max - self.pr2_config_min) / 8.
-        OPTIONS = dict()
-        #OPTIONS['boundary_handling'] = cma.BoundTransform  # cma version on obie3 uses this
-        OPTIONS['BoundaryHandler'] = cma.BoundTransform  # cma version on aws uses this
-        OPTIONS['bounds'] = [self.pr2_config_min, self.pr2_config_max]
-        OPTIONS['verb_filenameprefix'] = 'outcma_pr2_final_opt_config_' + str(subtask_n) + '_'
-        OPTIONS['seed'] = 12345
-        OPTIONS['ftarget'] = -1.
-        OPTIONS['popsize'] = popsize
-        OPTIONS['maxiter'] = maxiter
-        OPTIONS['maxfevals'] = 1e8
-        OPTIONS['CMA_cmean'] = 0.5
-        OPTIONS['tolfun'] = 1e-3
-        OPTIONS['tolfunhist'] = 1e-12
-        OPTIONS['tolx'] = 5e-4
-        OPTIONS['maxstd'] = 4.0
-        OPTIONS['tolstagnation'] = 100
-        OPTIONS['CMA_stds'] = list(parameters_scaling)
-        final_results = []
-        # self.pool.map(set_arm_config, [best_arm_config]*self.processCnt)
-        # self.pool.map(set_process_subtask, [subtask_n] * self.processCnt)
-        init_start_pr2_configs = [[0.1, 0.6, m.radians(215.), 0.3],
-                                  [0.1, -0.6, m.radians(35.), 0.3],
-                                  [0.8, -0.3, m.radians(45.), 0.3],
-                                  [0.8, 0.3, m.radians(-115.), 0.3],
-                                  [0.8, 0.0, m.radians(135.), 0.3]]
-        best_result = [[], 10000.]
-        for x0 in init_start_pr2_configs:
-            es = cma.CMAEvolutionStrategy(x0, 1.0, OPTIONS)
-            while not es.stop():
-                X = es.ask()
-                fit = []
-                for chunk in chunker(X, self.processCnt):
-                    chunksize = len(chunk)
-                    batchFit = self.pool.map(fine_pr2_func,
-                                                   zip(chunk, [human_arm] * chunksize, [robot_arm] * chunksize,
-                                                       [subtask_n] * chunksize, [stretch] * chunksize,
-                                                       [fixed_point_index] * chunksize,
-                                                       [fixed_p] * chunksize, [best_arm_config[:-1]]*chunksize))
-                    fit.extend(batchFit)
-                es.tell(X, fit)
-                es.disp()
-                es.logger.add()
-            #this_res = es.result()  # This is for running on machine in lab (cma version)
-            this_res = es.result  # This is for running on amazon machine (cma version)
-            #print 'Optimization finished with x0:', x0
-            if this_res[1] < best_result[1]:
-                best_result = [this_res[0], this_res[1]]
-        with open(self.save_file_path + self.save_file_name_final_output, 'a') as myfile:
-            myfile.write(str(subtask_n)
-                         + ',' + str("{:.5f}".format(best_arm_config[0]))
-                         + ',' + str("{:.5f}".format(best_arm_config[1]))
-                         + ',' + str("{:.5f}".format(best_arm_config[2]))
-                         + ',' + str("{:.5f}".format(best_arm_config[3]))
-                         + ',' + str("{:.5f}".format(best_arm_config[4]))
-                         + ',' + str("{:.5f}".format(best_result[0][0]))
-                         + ',' + str("{:.5f}".format(best_result[0][1]))
-                         + ',' + str("{:.5f}".format(best_result[0][2]))
-                         + ',' + str("{:.5f}".format(best_result[0][3]))
-                         + ',' + str("{:.5f}".format(best_result[1]))
-                         + '\n')
-        final_results.append([best_arm_config, best_result])
-        return final_results
+        self.pool.apply(fine_pr2_func, [best_arm_config[:-1], human_arm, robot_arm,
+                                        subtask_n, stretch,
+                                        fixed_point_index,
+                                        fixed_p])
+        # parameters_scaling = [0.1, 0.1, m.radians(10.), 0.02  ]#(self.pr2_config_max - self.pr2_config_min) / 8.
+        # OPTIONS = dict()
+        # #OPTIONS['boundary_handling'] = cma.BoundTransform  # cma version on obie3 uses this
+        # OPTIONS['BoundaryHandler'] = cma.BoundTransform  # cma version on aws uses this
+        # OPTIONS['bounds'] = [self.pr2_config_min, self.pr2_config_max]
+        # OPTIONS['verb_filenameprefix'] = 'outcma_pr2_final_opt_config_' + str(subtask_n) + '_'
+        # OPTIONS['seed'] = 12345
+        # OPTIONS['ftarget'] = -1.
+        # OPTIONS['popsize'] = popsize
+        # OPTIONS['maxiter'] = maxiter
+        # OPTIONS['maxfevals'] = 1e8
+        # OPTIONS['CMA_cmean'] = 0.5
+        # OPTIONS['tolfun'] = 1e-3
+        # OPTIONS['tolfunhist'] = 1e-12
+        # OPTIONS['tolx'] = 5e-4
+        # OPTIONS['maxstd'] = 4.0
+        # OPTIONS['tolstagnation'] = 100
+        # OPTIONS['CMA_stds'] = list(parameters_scaling)
+        # final_results = []
+        # # self.pool.map(set_arm_config, [best_arm_config]*self.processCnt)
+        # # self.pool.map(set_process_subtask, [subtask_n] * self.processCnt)
+        # init_start_pr2_configs = [[0.1, 0.6, m.radians(215.), 0.3],
+        #                           [0.1, -0.6, m.radians(35.), 0.3],
+        #                           [0.8, -0.3, m.radians(45.), 0.3],
+        #                           [0.8, 0.3, m.radians(-115.), 0.3],
+        #                           [0.8, 0.0, m.radians(135.), 0.3]]
+        # best_result = [[], 10000.]
+        # for x0 in init_start_pr2_configs:
+
+        #     es = cma.CMAEvolutionStrategy(x0, 1.0, OPTIONS)
+        #     while not es.stop():
+        #         X = es.ask()
+        #         fit = []
+        #         for chunk in chunker(X, self.processCnt):
+        #             chunksize = len(chunk)
+        #             batchFit = self.pool.map(fine_pr2_func,
+        #                                            zip(chunk, [human_arm] * chunksize, [robot_arm] * chunksize,
+        #                                                [subtask_n] * chunksize, [stretch] * chunksize,
+        #                                                [fixed_point_index] * chunksize,
+        #                                                [fixed_p] * chunksize, [best_arm_config[:-1]]*chunksize))
+        #             fit.extend(batchFit)
+        #         es.tell(X, fit)
+        #         es.disp()
+        #         es.logger.add()
+        #     #this_res = es.result()  # This is for running on machine in lab (cma version)
+        #     this_res = es.result  # This is for running on amazon machine (cma version)
+        #     #print 'Optimization finished with x0:', x0
+        #     if this_res[1] < best_result[1]:
+        #         best_result = [this_res[0], this_res[1]]
+        # with open(self.save_file_path + self.save_file_name_final_output, 'a') as myfile:
+        #     myfile.write(str(subtask_n)
+        #                  + ',' + str("{:.5f}".format(best_arm_config[0]))
+        #                  + ',' + str("{:.5f}".format(best_arm_config[1]))
+        #                  + ',' + str("{:.5f}".format(best_arm_config[2]))
+        #                  + ',' + str("{:.5f}".format(best_arm_config[3]))
+        #                  + ',' + str("{:.5f}".format(best_arm_config[4]))
+        #                  + ',' + str("{:.5f}".format(best_result[0][0]))
+        #                  + ',' + str("{:.5f}".format(best_result[0][1]))
+        #                  + ',' + str("{:.5f}".format(best_result[0][2]))
+        #                  + ',' + str("{:.5f}".format(best_result[0][3]))
+        #                  + ',' + str("{:.5f}".format(best_result[1]))
+        #                  + '\n')
+        # final_results.append([best_arm_config, best_result])
+        return
 
     # From data saved previously (typically from the coarse optimization) find
     # all connected clusters of configurations and the center of each cluster.
@@ -601,6 +609,7 @@ class DressingSimulationProcess(object):
         self.save_file_name_fine_raw = 'arm_configs_fine_raw_p'+str(process_number)+'.log'
         self.save_file_name_fine = 'arm_configs_fine_p'+str(process_number)+'.log'
         self.save_file_name_super_fine = 'arm_configs_super_fine_p'+str(process_number)+'.log'
+        self.save_file_name_final = 'arm_configs_final.log'
         # self.save_file_name_per_human_initialization = 'arm_configs_per_human_initialization.log'
         self.visualize = visualize
 
@@ -611,6 +620,8 @@ class DressingSimulationProcess(object):
 
         self.human_arm = None
         self.human_opposite_arm = None
+
+        self.final_pr2_optimization = False
 
         self.optimization_results = dict()
 
@@ -1305,6 +1316,10 @@ class DressingSimulationProcess(object):
         return this_score
 
     def objective_function_fine(self, params):
+        if self.final_pr2_optimization:
+            self.save_all_results = False
+            self.trajectory_pickle_output = []
+            self.trajectory_pickle_file_name = 'trajectory_data_a'+str(self.subtask_step)+'.pkl'
         # params = [m.radians(90.0),  m.radians(0.), m.radians(45.), m.radians(0.)]
         # print 'doing subtask', self.subtask_step
         # print 'params:\n', params
@@ -1327,14 +1342,15 @@ class DressingSimulationProcess(object):
             if not self.arm_configs_eval[neighbor][5] == 'good':
                 # print 'arm evaluation found this configuration to be bad'
                 this_score = 10. + 10. + 4. + random.random()
-                with open(self.save_file_path+self.save_file_name_fine_raw, 'a') as myfile:
-                    myfile.write(str(self.subtask_step)
-                                 + ',' + str("{:.5f}".format(params[0]))
-                                 + ',' + str("{:.5f}".format(params[1]))
-                                 + ',' + str("{:.5f}".format(params[2]))
-                                 + ',' + str("{:.5f}".format(params[3]))
-                                 + ',' + str("{:.5f}".format(this_score))
-                                 + '\n')
+                if self.save_all_results:
+                    with open(self.save_file_path+self.save_file_name_fine_raw, 'a') as myfile:
+                        myfile.write(str(self.subtask_step)
+                                     + ',' + str("{:.5f}".format(params[0]))
+                                     + ',' + str("{:.5f}".format(params[1]))
+                                     + ',' + str("{:.5f}".format(params[2]))
+                                     + ',' + str("{:.5f}".format(params[3]))
+                                     + ',' + str("{:.5f}".format(this_score))
+                                     + '\n')
                 return this_score
         # print 'arm config is not bad'
         arm = self.human_arm.split('a')[0]
@@ -1369,6 +1385,19 @@ class DressingSimulationProcess(object):
         angle_from_horizontal, \
         forearm_B_upper_arm, \
         fixed_points_exceeded_amount = self.find_reference_coordinate_frames_and_goals(arm)
+        if self.final_pr2_optimization:
+            self.trajectory_pickle_output.extend([self.goals,
+                                                  origin_B_forearm_pointed_down_arm,
+                                                  origin_B_upperarm_pointed_down_shoulder,
+                                                  origin_B_hand,
+                                                  origin_B_wrist,
+                                                  origin_B_traj_start,
+                                                  origin_B_traj_forearm_end,
+                                                  origin_B_traj_upper_end,
+                                                  origin_B_traj_final_end,
+                                                  angle_from_horizontal,
+                                                  forearm_B_upper_arm,
+                                                  fixed_points_exceeded_amount])
 #        if fixed_points_exceeded_amount <= 0:
 #            pass
 #            # print 'arm does not break fixed_points requirement'
@@ -1462,12 +1491,14 @@ class DressingSimulationProcess(object):
         # parameters_min = np.array([-0.1, -1.0, m.pi/2. - .001, 0.2])
         # parameters_max = np.array([0.8, -0.3, 2.5*m.pi/2. + .001, 0.3])
         parameters_scaling_pr2 = (parameters_max_pr2-parameters_min_pr2)/8.
+        parameters_scaling_pr2 = [0.1, 0.1, m.radians(10.), 0.02]
+        init_start_pr2_configs = [[0.1, 0.6, m.radians(215.), 0.3],
+                                  [0.1, -0.6, m.radians(35.), 0.3],
+                                  [0.8, -0.3, m.radians(45.), 0.3],
+                                  [0.8, 0.3, m.radians(-115.), 0.3],
+                                  [0.8, 0.0, m.radians(135.), 0.3]]
 
-        init_start_pr2_configs = [[0.1, 0.6, m.radians(180.), 0.3],
-                                  [0.1, -0.6, m.radians(0.), 0.3],
-                                  [0.6, 0.0, m.radians(90.), 0.3]]
-
-        parameters_initialization_pr2 = (parameters_max_pr2+parameters_min_pr2)/2.
+        # parameters_initialization_pr2 = (parameters_max_pr2+parameters_min_pr2)/2.
         opts_cma_pr2 = {'seed': 12345, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter,
                         'maxfevals': 1e8, 'CMA_cmean': 0.5, 'tolfun': 1e-3,
                         'tolfunhist': 1e-12, 'tolx': 5e-4,
@@ -1476,19 +1507,19 @@ class DressingSimulationProcess(object):
                         'CMA_stds': list(parameters_scaling_pr2),
                         'bounds': [list(parameters_min_pr2), list(parameters_max_pr2)]}
 
-        self.this_best_pr2_config = None
-        self.this_best_pr2_score = 1000.
+        this_best_pr2_config = None
+        this_best_pr2_score = 1000.
 
         for init_start_pr2_config in init_start_pr2_configs:
             # print 'Starting to evaluate a new initial PR2 configuration:', init_start_pr2_config
             parameters_initialization_pr2 = init_start_pr2_config
-            self.kinematics_optimization_results = cma.fmin(self.objective_function_pr2_config,
+            kinematics_optimization_results = cma.fmin(self.objective_function_pr2_config,
                                                             list(parameters_initialization_pr2),
                                                             1.,
                                                             options=opts_cma_pr2)
-            if self.kinematics_optimization_results[1] < self.this_best_pr2_score:
-                self.this_best_pr2_config = self.kinematics_optimization_results[0]
-                self.this_best_pr2_score = self.kinematics_optimization_results[1]
+            if kinematics_optimization_results[1] < this_best_pr2_score:
+                this_best_pr2_config = kinematics_optimization_results[0]
+                this_best_pr2_score = kinematics_optimization_results[1]
         #print 'This arm config is:\n',params
         #print 'Best PR2 configuration for this arm config so far: \n', self.this_best_pr2_config
         #print 'Associated score: ', self.this_best_pr2_score
@@ -1503,13 +1534,28 @@ class DressingSimulationProcess(object):
         alpha = 1.  # cost on forces
         beta = 1.  # cost on manipulability
         zeta = 0.5  # cost on torque
-        if self.this_best_pr2_score < 0.:
+        if this_best_pr2_score < 0.:
             physx_score = self.force_cost*alpha + torque_cost*zeta
-            this_score = physx_score + self.this_best_pr2_score*beta
+            this_score = physx_score + this_best_pr2_score*beta
             # print 'Force cost was: ', self.force_cost
             # print 'Torque score was: ', torque_cost
             # print 'Physx score was: ', physx_score
             # print 'Best pr2 kinematics score was: ', self.this_best_pr2_score
+            if self.final_pr2_optimization:
+                save_pickle(self.trajectory_pickle_output, self.save_file_path + self.trajectory_pickle_file_name)
+                with open(self.save_file_path+self.save_file_name_final, 'a') as myfile:
+                    myfile.write(str(self.subtask_step)
+                                 + ',' + str("{:.5f}".format(params[0]))
+                                 + ',' + str("{:.5f}".format(params[1]))
+                                 + ',' + str("{:.5f}".format(params[2]))
+                                 + ',' + str("{:.5f}".format(params[3]))
+                                 + ',' + str("{:.5f}".format(this_score))
+                                 + ',' + str("{:.5f}".format(this_best_pr2_config[0]))
+                                 + ',' + str("{:.5f}".format(this_best_pr2_config[1]))
+                                 + ',' + str("{:.5f}".format(this_best_pr2_config[2]))
+                                 + ',' + str("{:.5f}".format(this_best_pr2_config[3]))
+                                 + ',' + str("{:.5f}".format(this_best_pr2_score))
+                                 + '\n')
             if self.save_all_results:
                 with open(self.save_file_path+self.save_file_name_fine_raw, 'a') as myfile:
                     myfile.write(str(self.subtask_step)
@@ -1518,11 +1564,11 @@ class DressingSimulationProcess(object):
                                  + ',' + str("{:.5f}".format(params[2]))
                                  + ',' + str("{:.5f}".format(params[3]))
                                  + ',' + str("{:.5f}".format(this_score))
-                                 + ',' + str("{:.5f}".format(self.this_best_pr2_config[0]))
-                                 + ',' + str("{:.5f}".format(self.this_best_pr2_config[1]))
-                                 + ',' + str("{:.5f}".format(self.this_best_pr2_config[2]))
-                                 + ',' + str("{:.5f}".format(self.this_best_pr2_config[3]))
-                                 + ',' + str("{:.5f}".format(self.this_best_pr2_score))
+                                 + ',' + str("{:.5f}".format(this_best_pr2_config[0]))
+                                 + ',' + str("{:.5f}".format(this_best_pr2_config[1]))
+                                 + ',' + str("{:.5f}".format(this_best_pr2_config[2]))
+                                 + ',' + str("{:.5f}".format(this_best_pr2_config[3]))
+                                 + ',' + str("{:.5f}".format(this_best_pr2_score))
                                  + '\n')
                 with open(self.save_file_path + self.save_file_name_fine, 'a') as myfile:
                     myfile.write(str(self.subtask_step)
@@ -1531,11 +1577,11 @@ class DressingSimulationProcess(object):
                                  + ',' + str("{:.5f}".format(params[2]))
                                  + ',' + str("{:.5f}".format(params[3]))
                                  + ',' + str("{:.5f}".format(this_score))
-                                 + ',' + str("{:.5f}".format(self.this_best_pr2_config[0]))
-                                 + ',' + str("{:.5f}".format(self.this_best_pr2_config[1]))
-                                 + ',' + str("{:.5f}".format(self.this_best_pr2_config[2]))
-                                 + ',' + str("{:.5f}".format(self.this_best_pr2_config[3]))
-                                 + ',' + str("{:.5f}".format(self.this_best_pr2_score))
+                                 + ',' + str("{:.5f}".format(this_best_pr2_config[0]))
+                                 + ',' + str("{:.5f}".format(this_best_pr2_config[1]))
+                                 + ',' + str("{:.5f}".format(this_best_pr2_config[2]))
+                                 + ',' + str("{:.5f}".format(this_best_pr2_config[3]))
+                                 + ',' + str("{:.5f}".format(this_best_pr2_score))
                                  + '\n')
             return this_score
 
@@ -1553,11 +1599,26 @@ class DressingSimulationProcess(object):
                              + ',' + str("{:.5f}".format(params[2]))
                              + ',' + str("{:.5f}".format(params[3]))
                              + ',' + str("{:.5f}".format(this_score))
-                             + ',' + str("{:.5f}".format(self.this_best_pr2_config[0]))
-                             + ',' + str("{:.5f}".format(self.this_best_pr2_config[1]))
-                             + ',' + str("{:.5f}".format(self.this_best_pr2_config[2]))
-                             + ',' + str("{:.5f}".format(self.this_best_pr2_config[3]))
-                             + ',' + str("{:.5f}".format(self.this_best_pr2_score))
+                             + ',' + str("{:.5f}".format(this_best_pr2_config[0]))
+                             + ',' + str("{:.5f}".format(this_best_pr2_config[1]))
+                             + ',' + str("{:.5f}".format(this_best_pr2_config[2]))
+                             + ',' + str("{:.5f}".format(this_best_pr2_config[3]))
+                             + ',' + str("{:.5f}".format(this_best_pr2_score))
+                             + '\n')
+        if self.final_pr2_optimization:
+            save_pickle(self.trajectory_pickle_output, self.save_file_path+self.trajectory_pickle_file_name)
+            with open(self.save_file_path + self.save_file_name_final, 'a') as myfile:
+                myfile.write(str(self.subtask_step)
+                             + ',' + str("{:.5f}".format(params[0]))
+                             + ',' + str("{:.5f}".format(params[1]))
+                             + ',' + str("{:.5f}".format(params[2]))
+                             + ',' + str("{:.5f}".format(params[3]))
+                             + ',' + str("{:.5f}".format(this_score))
+                             + ',' + str("{:.5f}".format(this_best_pr2_config[0]))
+                             + ',' + str("{:.5f}".format(this_best_pr2_config[1]))
+                             + ',' + str("{:.5f}".format(this_best_pr2_config[2]))
+                             + ',' + str("{:.5f}".format(this_best_pr2_config[3]))
+                             + ',' + str("{:.5f}".format(this_best_pr2_score))
                              + '\n')
         return this_score
 
@@ -1786,13 +1847,13 @@ class DressingSimulationProcess(object):
         if not close_to_collision and not base_in_collision:
             reached = np.zeros(len(self.origin_B_grasps))
             manip = np.zeros(len(self.origin_B_grasps))
-            is_smooth_ik_possible, joint_change_amount = self.check_smooth_ik_feasiblity(self.origin_B_grasps)
-            if not is_smooth_ik_possible:
-                this_pr2_score = 10. + 1. + joint_change_amount
-                if this_pr2_score < self.this_best_pr2_score:
-                    self.this_best_pr2_config = current_parameters
-                    self.this_best_pr2_score = this_pr2_score
-                return this_pr2_score
+            # is_smooth_ik_possible, joint_change_amount = self.check_smooth_ik_feasiblity(self.origin_B_grasps)
+            # if not is_smooth_ik_possible:
+            #     this_pr2_score = 10. + 1. + joint_change_amount
+            #     if this_pr2_score < self.this_best_pr2_score:
+            #         self.this_best_pr2_config = current_parameters
+            #         self.this_best_pr2_score = this_pr2_score
+            #     return this_pr2_score
             all_sols = []
             all_jacobians = []
 
@@ -1925,7 +1986,8 @@ class DressingSimulationProcess(object):
             if distance < 2.0:
                 this_pr2_score = 10. + 1. + (1.25 - distance)
                 return this_pr2_score
-
+        if self.final_pr2_optimization:
+            self.trajectory_pickle_output.extend([path, all_sols])
         # self.human_model.SetActiveManipulator('leftarm')
         # self.human_manip = self.robot.GetActiveManipulator()
         # human_torques = self.human_manip.ComputeInverseDynamics([])
