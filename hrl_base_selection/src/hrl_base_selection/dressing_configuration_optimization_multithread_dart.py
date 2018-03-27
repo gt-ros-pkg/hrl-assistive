@@ -484,7 +484,7 @@ class DressingMultiProcessOptimization(object):
         OPTIONS['popsize'] = popsize
         OPTIONS['maxiter'] = maxiter
         OPTIONS['maxfevals'] = 1e8
-        OPTIONS['CMA_cmean'] = 0.25
+        OPTIONS['CMA_cmean'] = 0.5
         OPTIONS['tolfun'] = 1e-3
         OPTIONS['tolfunhist'] = 1e-12
         OPTIONS['tolx'] = 5e-4
@@ -494,9 +494,11 @@ class DressingMultiProcessOptimization(object):
         final_results = []
         # self.pool.map(set_arm_config, [best_arm_config]*self.processCnt)
         # self.pool.map(set_process_subtask, [subtask_n] * self.processCnt)
-        init_start_pr2_configs = [[0.1, 0.6, m.radians(180.), 0.3],
-                                  [0.1, -0.6, m.radians(0.), 0.3],
-                                  [0.6, 0.0, m.radians(90.), 0.3]]
+        init_start_pr2_configs = [[0.1, 0.6, m.radians(215.), 0.3],
+                                  [0.1, -0.6, m.radians(35.), 0.3],
+                                  [0.8, -0.3, m.radians(45.), 0.3],
+                                  [0.8, 0.3, m.radians(-115.), 0.3],
+                                  [0.8, 0.0, m.radians(135.), 0.3]]
         best_result = [[], 10000.]
         for x0 in init_start_pr2_configs:
             es = cma.CMAEvolutionStrategy(x0, 1.0, OPTIONS)
@@ -1075,6 +1077,7 @@ class DressingSimulationProcess(object):
         #                                        np.matrix(traj_start_B_traj_waypoint))
         #     goals.append(copy.copy(origin_B_traj_waypoint))
         fixed_point_exceeded_amount = 0.
+        print self.fixed_points_to_use
         # print 'stretch allowable:\n', self.stretch_allowable
         if self.add_new_fixed_point:
             self.add_new_fixed_point = False
