@@ -178,7 +178,7 @@ def fine_func(input):
 def fine_pr2_func(input):
     x, human_arm, robot_arm, \
     subtask_number, stretch_allowable, \
-    fixed_points_to_use, fixed_points, arm_config = input
+    fixed_points_to_use, fixed_points = input
     global current_simulator
     pn = current_simulator.process_number
     if not current_simulator.simulator_started:
@@ -200,8 +200,8 @@ def fine_pr2_func(input):
     #     current_simulator.optimizer.set_human_model_dof_dart([0, 0, 0, 0], current_simulator.optimizer.human_opposite_arm)
     #     current_simulator.optimizer.set_human_model_dof_dart(arm_config, human_arm)
     #     current_simulator.arm_fixed[subtask_number] = True
-    if not current_simulator.final_pr2_optimization:
-        current_simulator.final_pr2_optimization = True
+    if not current_simulator.optimizer.final_pr2_optimization:
+        current_simulator.optimizer.final_pr2_optimization = True
     res = current_simulator.optimizer.objective_function_fine(x)
     # res = current_simulator.optimizer.objective_function_fine_pr2(x)
     return res
@@ -476,10 +476,10 @@ class DressingMultiProcessOptimization(object):
         best_arm_configs = np.array(best_arm_configs)
         best_arm_config = np.array([x for x in best_arm_configs if int(x[0]) == subtask_n])[-1][1:]
         print '\n best_arm_config:', best_arm_config,'\n'
-        self.pool.apply(fine_pr2_func, [best_arm_config[:-1], human_arm, robot_arm,
+        self.pool.apply(fine_pr2_func, [[best_arm_config[:-1], human_arm, robot_arm,
                                         subtask_n, stretch,
                                         fixed_point_index,
-                                        fixed_p])
+                                        fixed_p]])
         # parameters_scaling = [0.1, 0.1, m.radians(10.), 0.02  ]#(self.pr2_config_max - self.pr2_config_min) / 8.
         # OPTIONS = dict()
         # #OPTIONS['boundary_handling'] = cma.BoundTransform  # cma version on obie3 uses this
