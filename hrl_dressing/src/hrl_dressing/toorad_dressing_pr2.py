@@ -62,8 +62,12 @@ class TOORAD_Dressing_PR2(object):
         self.pkg_path = rospack.get_path('hrl_base_selection')
         self.save_file_path = self.pkg_path + '/data/'
         self.save_file_name_final_output = 'arm_configs_final_output.log'
-        self.trajectory_pickle_file_name = 'trajectory_data.pkl'
+        self.trajectory_pickle_file_name = 'trajectory_data_a'
         configs = self.load_configs(self.save_file_path+self.save_file_name_final_output)
+
+        self.robot_arm = 'rightarm'
+        self.robot_opposite_arm = 'leftarm'
+
         if self.machine == 'generate_trajectory':
             # Generates the trajectory and saves all relevant info to a pickle file.
             pydart.init()
@@ -115,17 +119,17 @@ class TOORAD_Dressing_PR2(object):
                 # print 'robot positions',self.toorad.robot.positions()
                 # print 'robot q', self.toorad.robot.q
                 # print 'human q', self.toorad.human.q
-                print 'human pose'
-                print self.toorad.human.q['j_bicep_' + arm + '_x']
-                print self.toorad.human.q['j_bicep_' + arm + '_y']
-                print self.toorad.human.q['j_bicep_' + arm + '_z']
-                print self.toorad.human.q['j_forearm_' + arm + '_1']
-                print 'robot pose'
-                print self.toorad.robot.q['rootJoint_pos_x']
-                print self.toorad.robot.q['rootJoint_pos_y']
-                print self.toorad.robot.q['rootJoint_pos_z']
-                print self.toorad.robot.q['rootJoint_rot_z']
-                print self.toorad.robot.q['torso_lift_joint']
+                # print 'human pose'
+                # print self.toorad.human.q['j_bicep_' + arm + '_x']
+                # print self.toorad.human.q['j_bicep_' + arm + '_y']
+                # print self.toorad.human.q['j_bicep_' + arm + '_z']
+                # print self.toorad.human.q['j_forearm_' + arm + '_1']
+                # print 'robot pose'
+                # print self.toorad.robot.q['rootJoint_pos_x']
+                # print self.toorad.robot.q['rootJoint_pos_y']
+                # print self.toorad.robot.q['rootJoint_pos_z']
+                # print self.toorad.robot.q['rootJoint_rot_z']
+                # print self.toorad.robot.q['torso_lift_joint']
 
                 save_data.append([arm, origin_B_goals,
                                   origin_B_forearm_pointed_down_arm,
@@ -145,13 +149,8 @@ class TOORAD_Dressing_PR2(object):
             # If this is on desktop for visualization, run the visualization
             # Set up TOORAD process that includes DART simulation environment
 
+            self.setup_dart(visualize=True)
 
-            loaded_data = load_pickle(self.save_file_path+self.trajectory_pickle_file_name)
-            print 'Trajectory data loaded succesfully!'
-
-            # self.toorad = DressingSimulationProcess(visualize=False)
-            print 'Starting visualization of the desired configuration for the dressing task. First select the arm ' \
-                  'to be dressed'
             # rospy.sleep(20)
             arm = raw_input('\nEnter R (r) for right arm (should be done first. Enter L (l) for left arm (should be '
                             'done second). Otherwise ends.\n')
@@ -159,37 +158,114 @@ class TOORAD_Dressing_PR2(object):
                 if len(arm) == 0:
                     return
                 elif arm.upper()[0] == 'R':
-                    h_config = configs[0][0]
-                    r_config = configs[0][1]
-                    self.toorad.set_robot_arm('rightarm')
-                    self.toorad.set_human_arm('rightarm')
+                    subtask = 0
+                    h_arm = 'rightarm'
+                    h_opposite_arm = 'leftarm'
+
+                    # h_config = configs[0][0]
+                    # r_config = configs[0][1]
+                    # self.toorad.set_robot_arm('rightarm')
+                    # self.toorad.set_human_arm('rightarm')
                 elif arm.upper()[0] == 'L':
-                    h_config = configs[1][0]
-                    r_config = configs[1][1]
-                    self.toorad.set_robot_arm('rightarm')
-                    self.toorad.set_human_arm('leftarm')
+                    subtask=1
+                    h_arm = 'leftarm'
+                    h_opposite_arm = 'rightarm'
+                    # h_config = configs[1][0]
+                    # r_config = configs[1][1]
+                    # self.toorad.set_robot_arm('rightarm')
+                    # self.toorad.set_human_arm('leftarm')
                 else:
                     return
 
-                # Set up the simulator for the configuration loaded
-                self.toorad.set_human_model_dof_dart([0, 0, 0, 0], self.toorad.human_opposite_arm)
-                self.toorad.set_human_model_dof_dart(h_config, self.toorad.human_arm)
-                self.toorad.set_pr2_model_dof_dart(r_config)
+                loaded_data = load_pickle(self.save_file_path + self.trajectory_pickle_file_name+str(subtask)+'.pkl')
 
-                # Calculate the trajectories based on the configuration in the simulator
-                s_arm = self.toorad.human_arm.split('a')[0]
-                origin_B_goals, \
-                origin_B_forearm_pointed_down_arm, \
-                origin_B_upperarm_pointed_down_shoulder, \
-                origin_B_hand, \
-                origin_B_wrist, \
-                origin_B_traj_start, \
-                origin_B_traj_forearm_end, \
-                origin_B_traj_upper_end, \
-                origin_B_traj_final_end, \
-                angle_from_horizontal, \
-                forearm_B_upper_arm, traj_path, all_sols = self.toorad.generate_dressing_trajectory(s_arm, visualize=True)
+                params,\
+                z,\
+                pr2_params,\
+                pr2_B_goals,\
+                pr2_B_forearm_pointed_down_arm,\
+                pr2_B_upperarm_pointed_down_shoulder,\
+                pr2_B_hand,\
+                pr2_B_wrist,\
+                pr2_B_traj_start,\
+                pr2_B_traj_forearm_end,\
+                pr2_B_traj_upper_end,\
+                pr2_B_traj_final_end,\
+                traj_path, all_sols = loaded_data
+                print 'Trajectory data loaded succesfully!'
 
+                # self.toorad = DressingSimulationProcess(visualize=False)
+                print 'Starting visualization of the desired configuration for the dressing task. First select the arm ' \
+                      'to be dressed'
+
+                v = self.robot.positions()
+                v['rootJoint_pos_x'] = pr2_params[0]
+                v['rootJoint_pos_y'] = pr2_params[1]
+                v['rootJoint_pos_z'] = 0.
+                v['rootJoint_rot_z'] = pr2_params[2]
+                self.dart_world.displace_gown()
+                v['torso_lift_joint'] = pr2_params[3]
+                self.robot.set_positions(v)
+
+                self.set_human_model_dof_dart(params, h_arm)
+                self.set_human_model_dof_dart([0., 0., 0., 0.], h_opposite_arm)
+
+                # goal_i = int(traj_path[0].split('-')[0])
+                # sol_i = int(traj_path[0].split('-')[1])
+                # prev_sol = np.array(all_sols[goal_i][sol_i])
+                # print 'Solution being visualized:'
+                cont = raw_input('\nEnter Q (q) or N (n) to stop visualization of this task. '
+                                 'Otherwise visualizes again.\n')
+                while not cont.upper() == 'Q' or not cont.upper() == 'N' or not rospy.is_shutdown():
+                    for path_step in traj_path:
+                        # if not path_step == 'start' and not path_step == 'end':
+                        goal_i = int(path_step.split('-')[0])
+                        sol_i = int(path_step.split('-')[1])
+                        # print 'solution:\n', all_sols[goal_i][sol_i]
+                        # print 'diff:\n', np.abs(np.array(all_sols[goal_i][sol_i]) - prev_sol)
+                        # print 'max diff:\n', np.degrees(
+                        #     np.max(np.abs(np.array(all_sols[goal_i][sol_i])[[0, 1, 2, 3, 5]] - prev_sol[[0, 1, 2, 3, 5]])))
+                        # prev_sol = np.array(all_sols[goal_i][sol_i])
+
+                        v = self.robot.q
+                        v[self.robot_arm[0] + '_shoulder_pan_joint'] = all_sols[goal_i][sol_i][0]
+                        v[self.robot_arm[0] + '_shoulder_lift_joint'] = all_sols[goal_i][sol_i][1]
+                        v[self.robot_arm[0] + '_upper_arm_roll_joint'] = all_sols[goal_i][sol_i][2]
+                        v[self.robot_arm[0] + '_elbow_flex_joint'] = all_sols[goal_i][sol_i][3]
+                        v[self.robot_arm[0] + '_forearm_roll_joint'] = all_sols[goal_i][sol_i][4]
+                        v[self.robot_arm[0] + '_wrist_flex_joint'] = all_sols[goal_i][sol_i][5]
+                        v[self.robot_arm[0] + '_wrist_roll_joint'] = all_sols[goal_i][sol_i][6]
+
+                        # v = self.robot.q
+                        if self.robot_arm == 'rightarm':
+                            v['l_shoulder_pan_joint'] = 1. * 3.14 / 2
+                            v['l_shoulder_lift_joint'] = -0.52
+                            v['l_upper_arm_roll_joint'] = 0.
+                            v['l_elbow_flex_joint'] = -3.14 * 2 / 3
+                            v['l_forearm_roll_joint'] = 0.
+                            v['l_wrist_flex_joint'] = 0.
+                            v['l_wrist_roll_joint'] = 0.
+                            v['l_gripper_l_finger_joint'] = .54
+                        else:
+                            v['r_shoulder_pan_joint'] = -1. * 3.14 / 2
+                            v['r_shoulder_lift_joint'] = -0.52
+                            v['r_upper_arm_roll_joint'] = 0.
+                            v['r_elbow_flex_joint'] = -3.14 * 2 / 3
+                            v['r_forearm_roll_joint'] = 0.
+                            v['r_wrist_flex_joint'] = 0.
+                            v['r_wrist_roll_joint'] = 0.
+                            v['r_gripper_l_finger_joint'] = .54
+
+                        self.robot.set_positions(v)
+                        # self.dart_world.displace_gown()
+
+                        # self.robot.set_positions(v)
+                        # self.dart_world.displace_gown()
+                        # self.dart_world.check_collision()
+                        self.dart_world.set_gown([self.robot_arm])
+                        rospy.sleep(0.5)
+                    cont = raw_input('\nEnter Q (q) or N (n) to stop visualization of this task. '
+                                     'Otherwise visualizes again.\n')
                 arm = raw_input('\nEnter R (r) for right arm (should be done first. Enter L (l) for left arm (should be '
                                 'done second). Otherwise ends.\n')
 
@@ -655,6 +731,108 @@ class TOORAD_Dressing_PR2(object):
                 self.hmm_prediction = 'caught'
             else:
                 print 'The categories do not match expected namings. Look into this!'
+
+    def setup_dart(self, visualize=True, filename='fullbody_alex_capsule.skel'):
+        # Setup Dart ENV
+        skel_file = self.pkg_path+'/models/'+filename
+        from hrl_base_selection.dart_setup import DartDressingWorld
+        self.dart_world = DartDressingWorld(skel_file)
+
+        # Lets you visualize dart.
+        if visualize:
+            t = threading.Thread(target=self.visualize_dart)
+            t.start()
+
+        self.robot = self.dart_world.robot
+        self.human = self.dart_world.human
+        self.gown_leftarm = self.dart_world.gown_box_leftarm
+        self.gown_rightarm = self.dart_world.gown_box_rightarm
+
+        sign_flip = 1.
+        if 'right' in self.robot_arm:
+            sign_flip = -1.
+        v = self.robot.q
+        v['l_shoulder_pan_joint'] = 1.*3.14/2
+        v['l_shoulder_lift_joint'] = -0.52
+        v['l_upper_arm_roll_joint'] = 0.
+        v['l_elbow_flex_joint'] = -3.14 * 2 / 3
+        v['l_forearm_roll_joint'] = 0.
+        v['l_wrist_flex_joint'] = 0.
+        v['l_wrist_roll_joint'] = 0.
+        v['l_gripper_l_finger_joint'] = .54
+        v['r_shoulder_pan_joint'] = -1.*3.14/2
+        v['r_shoulder_lift_joint'] = -0.52
+        v['r_upper_arm_roll_joint'] = 0.
+        v['r_elbow_flex_joint'] = -3.14*2/3
+        v['r_forearm_roll_joint'] = 0.
+        v['r_wrist_flex_joint'] = 0.
+        v['r_wrist_roll_joint'] = 0.
+        v['r_gripper_l_finger_joint'] = .54
+        v['torso_lift_joint'] = 0.3
+        self.robot.set_positions(v)
+        self.dart_world.displace_gown()
+
+        # robot_start = np.matrix([[1., 0., 0., 0.],
+        #                          [0., 1., 0., 0.],
+        #                          [0., 0., 1., 0.],
+        #                          [0., 0., 0., 1.]])
+        # positions = self.robot.positions()
+        # pos, ori = Bmat_to_pos_quat(robot_start)
+        # eulrpy = tft.euler_from_quaternion(ori, 'sxyz')
+        # positions['rootJoint_pos_x'] = pos[0]
+        # positions['rootJoint_pos_y'] = pos[1]
+        # positions['rootJoint_pos_z'] = pos[2]
+        # positions['rootJoint_rot_x'] = eulrpy[0]
+        # positions['rootJoint_rot_y'] = eulrpy[1]
+        # positions['rootJoint_rot_z'] = eulrpy[2]
+        # self.robot.set_positions(positions)
+
+        positions = self.robot.positions()
+        positions['rootJoint_pos_x'] = 2.
+        positions['rootJoint_pos_y'] = 0.
+        positions['rootJoint_pos_z'] = 0.
+        positions['rootJoint_rot_z'] = 3.14
+        self.robot.set_positions(positions)
+        # self.dart_world.set_gown()
+        print 'Dart is ready!'
+
+    def visualize_dart(self):
+        win = pydart.gui.viewer.PydartWindow(self.dart_world)
+        win.camera_event(1)
+        win.set_capture_rate(10)
+        win.run_application()
+
+    def set_human_model_dof_dart(self, dof, human_arm):
+        # bth = m.degrees(headrest_th)
+        if not len(dof) == 4:
+            print 'There should be exactly 4 values used for arm configuration. Three for the shoulder and one for ' \
+                  'the elbow. But instead ' + str(len(dof)) + 'was sent. This is a ' \
+                                                              'problem!'
+            return False
+
+        q = self.human.q
+        # print 'human_arm', human_arm
+        # j_bicep_left_x,y,z are euler angles applied in xyz order. x is forward, y is opposite direction of
+        # upper arm, z is to the right.
+        # j_forearm_left_1 is bend in elbow.
+        if human_arm == 'leftarm':
+            q['j_bicep_left_x'] = dof[0]
+            q['j_bicep_left_y'] = -1*dof[1]
+            q['j_bicep_left_z'] = dof[2]
+            # q['j_bicep_left_roll'] = -1*0.
+            q['j_forearm_left_1'] = dof[3]
+            q['j_forearm_left_2'] = 0.
+        elif human_arm == 'rightarm':
+            q['j_bicep_right_x'] = -1*dof[0]
+            q['j_bicep_right_y'] = dof[1]
+            q['j_bicep_right_z'] = dof[2]
+            # q['j_bicep_right_roll'] = 0.
+            q['j_forearm_right_1'] = dof[3]
+            q['j_forearm_right_2'] = 0.
+        else:
+            print 'I am not sure what arm to set the dof for.'
+            return False
+        self.human.set_positions(q)
 
 if __name__ == '__main__':
     rospy.init_node('dressing_execution')
