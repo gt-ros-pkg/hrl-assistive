@@ -480,7 +480,7 @@ class DressingMultiProcessOptimization(object):
             best_arm_configs[j] = [float(i) for i in best_arm_configs[j]]
         best_arm_configs = np.array(best_arm_configs)
         best_arm_configs = np.array([x for x in best_arm_configs if int(x[0]) == subtask_n])
-        best_config_i = np.argmax(best_arm_configs[:, 5])
+        best_config_i = np.argmin(best_arm_configs[:, 5])
         best_arm_config = best_arm_configs[best_config_i]
         print '\n best_arm_config:', best_arm_config, '\n'
         self.pool.apply(fine_pr2_func, [[best_arm_config[1:5], human_arm, robot_arm,
@@ -1101,7 +1101,7 @@ class DressingSimulationProcess(object):
         #                                        np.matrix(traj_start_B_traj_waypoint))
         #     goals.append(copy.copy(origin_B_traj_waypoint))
         fixed_point_exceeded_amount = 0.
-        print self.fixed_points_to_use
+        #print self.fixed_points_to_use
         # print 'stretch allowable:\n', self.stretch_allowable
         if self.add_new_fixed_point:
             self.add_new_fixed_point = False
@@ -1483,8 +1483,8 @@ class DressingSimulationProcess(object):
         # start_time = rospy.Time.now()
         self.set_goals()
         # print self.origin_B_grasps
-        maxiter = 50
-        popsize = 20#4*20
+        pr2_maxiter = 20
+        pr2_popsize = 20#4*20
 
         # cma parameters: [pr2_base_x, pr2_base_y, pr2_base_theta, pr2_base_height,
         # human_arm_dof_1, human_arm_dof_2, human_arm_dof_3, human_arm_dof_4, human_arm_dof_5,
@@ -1504,7 +1504,7 @@ class DressingSimulationProcess(object):
                                            [0.8, 0.0, m.radians(135.), 0.3]]
 
         # parameters_initialization_pr2 = (parameters_max_pr2+parameters_min_pr2)/2.
-        opts_cma_pr2 = {'seed': 12345, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter,
+        opts_cma_pr2 = {'seed': 12345, 'ftarget': -1., 'popsize': pr2_popsize, 'maxiter': pr2_maxiter,
                         'maxfevals': 1e8, 'CMA_cmean': 0.5, 'tolfun': 1e-3,
                         'tolfunhist': 1e-12, 'tolx': 5e-4,
                         'maxstd': 4.0, 'tolstagnation': 100,
@@ -1539,10 +1539,10 @@ class DressingSimulationProcess(object):
                                       [        0.,         0.,     0.,        1.]])
             pr2_B_goals = []
             for goal in self.goals:
-                pr2_B_goals.append(origin_B_pr2.I*self.goals*np.matrix(self.gripper_B_tool.I))
+                pr2_B_goals.append(origin_B_pr2.I*np.matrix(goal)*self.gripper_B_tool.I)
             self.trajectory_pickle_output.extend([params,
                                                   z,
-                                                  #origin_B_pr2.I*
+                                                  this_best_pr2_config,
                                                   pr2_B_goals,
                                                   origin_B_pr2.I*origin_B_forearm_pointed_down_arm,
                                                   origin_B_pr2.I*origin_B_upperarm_pointed_down_shoulder,
@@ -1623,7 +1623,7 @@ class DressingSimulationProcess(object):
         # print 'Kinematics score was: ', self.this_best_pr2_score
         # print 'Torque score was: ', torque_cost
         physx_score = self.force_cost*alpha + torque_cost*zeta
-        this_score = 10. + physx_score + self.this_best_pr2_score*beta
+        this_score = 10. + physx_score + this_best_pr2_score*beta
         # print 'Total score was: ', this_score
         if self.save_all_results:
             with open(self.save_file_path + self.save_file_name_fine_raw, 'a') as myfile:
