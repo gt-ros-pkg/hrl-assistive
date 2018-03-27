@@ -486,7 +486,7 @@ class DressingMultiProcessOptimization(object):
         self.pool.apply(fine_pr2_func, [[best_arm_config[1:5], human_arm, robot_arm,
                                         subtask_n, stretch,
                                         fixed_point_index,
-                                        fixed_p, best_arm_configs[6:-1]]])
+                                        fixed_p, best_arm_config[6:-1]]])
         # parameters_scaling = [0.1, 0.1, m.radians(10.), 0.02  ]#(self.pr2_config_max - self.pr2_config_min) / 8.
         # OPTIONS = dict()
         # #OPTIONS['boundary_handling'] = cma.BoundTransform  # cma version on obie3 uses this
@@ -647,6 +647,10 @@ class DressingSimulationProcess(object):
         self.fixed_points_to_use = []
 
         self.init_start_pr2_configs = []
+        self.parameters_scaling_pr2 = []
+
+        self.this_sols = []
+        self.this_path = []
 
         # self.model = None
         self.force_cost = 0.
@@ -1382,7 +1386,7 @@ class DressingSimulationProcess(object):
 
         # print 'arm config is not in self collision'
         if self.final_pr2_optimization:
-            high_res = True
+            high_res = False
         else:
             high_res = False
         self.goals, \
@@ -1521,7 +1525,7 @@ class DressingSimulationProcess(object):
         this_best_pr2_config = None
         this_best_pr2_score = 1000.
 
-        for init_start_pr2_config in init_start_pr2_configs:
+        for init_start_pr2_config in self.init_start_pr2_configs:
             # print 'Starting to evaluate a new initial PR2 configuration:', init_start_pr2_config
             parameters_initialization_pr2 = init_start_pr2_config
             kinematics_optimization_results = cma.fmin(self.objective_function_pr2_config,
@@ -1531,6 +1535,11 @@ class DressingSimulationProcess(object):
             if kinematics_optimization_results[1] < this_best_pr2_score:
                 this_best_pr2_config = kinematics_optimization_results[0]
                 this_best_pr2_score = kinematics_optimization_results[1]
+                if self.final_pr2_optimization:
+                    this_path = self.this_path
+                    this_sols = self.this_sols
+        if self.final_pr2_optimization:
+            self.trajectory_pickle_output.extend([this_path, this_sols])
         #print 'This arm config is:\n',params
         #print 'Best PR2 configuration for this arm config so far: \n', self.this_best_pr2_config
         #print 'Associated score: ', self.this_best_pr2_score
@@ -1711,6 +1720,13 @@ class DressingSimulationProcess(object):
     def objective_function_pr2_config(self, current_parameters):
         # start_time = rospy.Time.now()
         # current_parameters = [0.3, -0.9, 1.57*m.pi/3., 0.3]
+        #print 'final pr2 optimization?', self.final_pr2_optimization
+        if self.final_pr2_optimization:
+            baseline = 100.
+            beta = 100.
+        else:
+            baseline = 10.
+            beta = 10.
         if self.subtask_step == 0 and False:  # right arm
             # current_parameters = [0.2743685, -0.71015745, 0.20439603, 0.29904425]
             # current_parameters = [0.2743685, -0.71015745, 2.2043960252256807, 0.29904425]  # old solution with joint jump
@@ -1773,7 +1789,7 @@ class DressingSimulationProcess(object):
         # PR2 is too close to the person (who is at the origin). PR2 base is 0.668m x 0.668m
         distance_from_origin = np.linalg.norm(origin_B_pr2[:2, 3])
         if distance_from_origin <= 0.334:
-            this_pr2_score = 10. + 1. + (0.4 - distance_from_origin)
+            this_pr2_score = baseline + 1. + (0.4 - distance_from_origin)
             return this_pr2_score
 
         distance = 10000000.
@@ -1787,7 +1803,7 @@ class DressingSimulationProcess(object):
                 break
         if out_of_reach:
             # print 'location is out of reach'
-            this_pr2_score = 10. +1.+ 20.*(distance - 1.25)
+            this_pr2_score = baseline +1.+ 20.*(distance - 1.25)
             return this_pr2_score
 
         reach_score = 0.
@@ -1995,10 +2011,12 @@ class DressingSimulationProcess(object):
         else:
             # print 'In base collision! single config distance: ', distance
             if distance < 2.0:
-                this_pr2_score = 10. + 1. + (1.25 - distance)
+                this_pr2_score = baseline + 1. + (1.25 - distance)
                 return this_pr2_score
-        if self.final_pr2_optimization:
-            self.trajectory_pickle_output.extend([path, all_sols])
+        self.this_path = path
+        self.this_sols = all_sols
+        #if self.final_pr2_optimization:
+        #    self.trajectory_pickle_output.extend([path, all_sols])
         # self.human_model.SetActiveManipulator('leftarm')
         # self.human_manip = self.robot.GetActiveManipulator()
         # human_torques = self.human_manip.ComputeInverseDynamics([])
@@ -2020,11 +2038,11 @@ class DressingSimulationProcess(object):
         # print manip_score
 
         # Set the weights for the different scores.
-        beta = 10.  # Weight on number of reachable goals
+        #beta = 10.  # Weight on number of reachable goals is set at top of function
         gamma = 1.  # Weight on manipulability of arm at each reachable goal
         zeta = 0.05  # Weight on torques
         if reach_score == 0.:
-            this_pr2_score = 10. + 1.+ 2*random.random()
+            this_pr2_score = baseline + 1.+ 2*random.random()
             return this_pr2_score
         else:
             # print 'Reach score: ', reach_score
@@ -2035,7 +2053,9 @@ class DressingSimulationProcess(object):
                     time.sleep(0.1)
             # print 'reach_score:', reach_score
             # print 'manip_score:', manip_score
-            this_pr2_score = 10.-beta*reach_score-gamma*manip_score #+ zeta*angle_cost
+            this_pr2_score = baseline-beta*reach_score-gamma*manip_score #+ zeta*angle_cost
+            if self.final_pr2_optimization:
+                this_pr2_score = baseline-beta*reach_score-gamma*manip_score
             return this_pr2_score
 
     def is_dart_base_in_collision(self):
