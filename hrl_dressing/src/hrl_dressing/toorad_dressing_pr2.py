@@ -517,8 +517,8 @@ class TOORAD_Dressing_PR2(object):
         for j in xrange(len(saved_configs)):
             saved_configs[j] = [float(i) for i in saved_configs[j]]
         saved_configs = np.array(saved_configs)
-        saved_configs = np.array([[0,0.49400,0.10217,0.82392,0.40534,0.05529,0.10348,-0.90135,1.47876,0.29157,-0.35238],
-                                 [1,1.47366,0.54646,1.47147,1.55155,0.01104,0.96537,0.43731,-1.53448,0.29994,-0.33048]])
+        # saved_configs = np.array([[0,0.49400,0.10217,0.82392,0.40534,0.05529,0.10348,-0.90135,1.47876,0.29157,-0.35238],
+        #                          [1,1.47366,0.54646,1.47147,1.55155,0.01104,0.96537,0.43731,-1.53448,0.29994,-0.33048]])
 
         # saved_configs = np.array([x for x in saved_configs if int(x[0]) == subtask_number])
         out_configs = []
