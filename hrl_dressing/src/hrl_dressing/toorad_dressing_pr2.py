@@ -40,7 +40,7 @@ from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 from hrl_base_selection.dressing_configuration_optimization_multithread_dart import DressingSimulationProcess
 
-import hrl_dressing.controller as controller
+
 
 
 # Class that runs the performance of the dressing task on a person using a PR2.
@@ -196,6 +196,7 @@ class TOORAD_Dressing_PR2(object):
 
         # If this is on the PR2, ask for arm to dress (left or right). If wrong input received, ends.
         elif self.machine.upper() == 'PR2':
+            import hrl_dressing.controller as controller
             # Set up TOORAD process that includes DART simulation environment
             self.toorad = DressingSimulationProcess(visualize=False)
             # This flag is set when the system is ready to start. It then waits for the user to put their hand under
