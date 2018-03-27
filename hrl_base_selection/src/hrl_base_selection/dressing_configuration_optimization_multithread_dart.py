@@ -1401,17 +1401,7 @@ class DressingSimulationProcess(object):
         angle_from_horizontal, \
         forearm_B_upper_arm, \
         fixed_points_exceeded_amount = self.find_reference_coordinate_frames_and_goals(arm, high_res_interpolation=high_res)
-        if self.final_pr2_optimization:
-            self.trajectory_pickle_output.extend([self.goals,
-                                                  origin_B_forearm_pointed_down_arm,
-                                                  origin_B_upperarm_pointed_down_shoulder,
-                                                  origin_B_hand,
-                                                  origin_B_wrist,
-                                                  origin_B_traj_start,
-                                                  origin_B_traj_forearm_end,
-                                                  origin_B_traj_upper_end,
-                                                  origin_B_traj_final_end,
-                                                  forearm_B_upper_arm])
+
 #        if fixed_points_exceeded_amount <= 0:
 #            pass
 #            # print 'arm does not break fixed_points requirement'
@@ -1539,7 +1529,31 @@ class DressingSimulationProcess(object):
                     this_path = self.this_path
                     this_sols = self.this_sols
         if self.final_pr2_optimization:
-            self.trajectory_pickle_output.extend([this_path, this_sols])
+            x = this_best_pr2_config[0]
+            y = this_best_pr2_config[1]
+            th = this_best_pr2_config[2]
+            z = this_best_pr2_config[3]
+            origin_B_pr2 = np.matrix([[ m.cos(th), -m.sin(th),     0.,         x],
+                                      [ m.sin(th),  m.cos(th),     0.,         y],
+                                      [        0.,         0.,     1.,        0.],
+                                      [        0.,         0.,     0.,        1.]])
+            pr2_B_goals = []
+            for goal in self.goals:
+                pr2_B_goals.append(origin_B_pr2.I*self.goals*np.matrix(self.gripper_B_tool.I))
+            self.trajectory_pickle_output.extend([params,
+                                                  z,
+                                                  #origin_B_pr2.I*
+                                                  pr2_B_goals,
+                                                  origin_B_pr2.I*origin_B_forearm_pointed_down_arm,
+                                                  origin_B_pr2.I*origin_B_upperarm_pointed_down_shoulder,
+                                                  origin_B_pr2.I*origin_B_hand,
+                                                  origin_B_pr2.I*origin_B_wrist,
+                                                  origin_B_pr2.I*origin_B_traj_start,
+                                                  origin_B_pr2.I*origin_B_traj_forearm_end,
+                                                  origin_B_pr2.I*origin_B_traj_upper_end,
+                                                  origin_B_pr2.I*origin_B_traj_final_end,
+                                                  #forearm_B_upper_arm,
+                                                  this_path, this_sols])
         #print 'This arm config is:\n',params
         #print 'Best PR2 configuration for this arm config so far: \n', self.this_best_pr2_config
         #print 'Associated score: ', self.this_best_pr2_score
