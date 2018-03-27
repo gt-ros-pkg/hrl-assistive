@@ -178,7 +178,7 @@ def fine_func(input):
 def fine_pr2_func(input):
     x, human_arm, robot_arm, \
     subtask_number, stretch_allowable, \
-    fixed_points_to_use, fixed_points = input
+    fixed_points_to_use, fixed_points, pr2_guess = input
     global current_simulator
     pn = current_simulator.process_number
     if not current_simulator.simulator_started:
@@ -202,6 +202,8 @@ def fine_pr2_func(input):
     #     current_simulator.arm_fixed[subtask_number] = True
     if not current_simulator.optimizer.final_pr2_optimization:
         current_simulator.optimizer.final_pr2_optimization = True
+    current_simulator.optimizer.parameters_scaling_pr2 = [0.05, 0.05, m.radians(5.), 0.01]
+    current_simulator.optimizer.init_start_pr2_configs = [pr2_guess]
     res = current_simulator.optimizer.objective_function_fine(x)
     # res = current_simulator.optimizer.objective_function_fine_pr2(x)
     return res
@@ -316,6 +318,9 @@ class DressingMultiProcessOptimization(object):
             #                            all_fixed_points_to_use[subtask_number],
             #                            all_fixed_points)
             print 'completed fine optimization for ', subtask
+
+        self.combine_process_files(self.save_file_path + 'arm_configs_fine',
+                                   self.save_file_path + 'arm_configs_fine_combined.log')
 
         for subtask_number, subtask in enumerate(subtask_list):
             print 'starting fine optimization of pr2 configuration for ', subtask
@@ -469,17 +474,19 @@ class DressingMultiProcessOptimization(object):
               'the good arm configuration'
 
         best_arm_configs = [line.rstrip('\n').split(',')
-                            for line in open(self.save_file_path + self.save_file_name_fine_output)]
+                            for line in open(self.save_file_path + 'arm_configs_fine_combined.log')]
 
         for j in xrange(len(best_arm_configs)):
             best_arm_configs[j] = [float(i) for i in best_arm_configs[j]]
         best_arm_configs = np.array(best_arm_configs)
-        best_arm_config = np.array([x for x in best_arm_configs if int(x[0]) == subtask_n])[-1][1:]
-        print '\n best_arm_config:', best_arm_config,'\n'
-        self.pool.apply(fine_pr2_func, [[best_arm_config[:-1], human_arm, robot_arm,
+        best_arm_configs = np.array([x for x in best_arm_configs if int(x[0]) == subtask_n])
+        best_config_i = np.argmax(best_arm_configs[:, 5])
+        best_arm_config = best_arm_configs[best_config_i]
+        print '\n best_arm_config:', best_arm_config, '\n'
+        self.pool.apply(fine_pr2_func, [[best_arm_config[1:5], human_arm, robot_arm,
                                         subtask_n, stretch,
                                         fixed_point_index,
-                                        fixed_p]])
+                                        fixed_p, best_arm_configs[6:-1]]])
         # parameters_scaling = [0.1, 0.1, m.radians(10.), 0.02  ]#(self.pr2_config_max - self.pr2_config_min) / 8.
         # OPTIONS = dict()
         # #OPTIONS['boundary_handling'] = cma.BoundTransform  # cma version on obie3 uses this
@@ -1372,7 +1379,10 @@ class DressingSimulationProcess(object):
             return this_score
 
         # print 'arm config is not in self collision'
-
+        if self.final_pr2_optimization:
+            high_res = True
+        else:
+            high_res = False
         self.goals, \
         origin_B_forearm_pointed_down_arm, \
         origin_B_upperarm_pointed_down_shoulder, \
@@ -1384,7 +1394,7 @@ class DressingSimulationProcess(object):
         origin_B_traj_final_end, \
         angle_from_horizontal, \
         forearm_B_upper_arm, \
-        fixed_points_exceeded_amount = self.find_reference_coordinate_frames_and_goals(arm)
+        fixed_points_exceeded_amount = self.find_reference_coordinate_frames_and_goals(arm, high_res_interpolation=high_res)
         if self.final_pr2_optimization:
             self.trajectory_pickle_output.extend([self.goals,
                                                   origin_B_forearm_pointed_down_arm,
@@ -1395,9 +1405,7 @@ class DressingSimulationProcess(object):
                                                   origin_B_traj_forearm_end,
                                                   origin_B_traj_upper_end,
                                                   origin_B_traj_final_end,
-                                                  angle_from_horizontal,
-                                                  forearm_B_upper_arm,
-                                                  fixed_points_exceeded_amount])
+                                                  forearm_B_upper_arm])
 #        if fixed_points_exceeded_amount <= 0:
 #            pass
 #            # print 'arm does not break fixed_points requirement'
@@ -1491,12 +1499,13 @@ class DressingSimulationProcess(object):
         # parameters_min = np.array([-0.1, -1.0, m.pi/2. - .001, 0.2])
         # parameters_max = np.array([0.8, -0.3, 2.5*m.pi/2. + .001, 0.3])
         parameters_scaling_pr2 = (parameters_max_pr2-parameters_min_pr2)/8.
-        parameters_scaling_pr2 = [0.1, 0.1, m.radians(10.), 0.02]
-        init_start_pr2_configs = [[0.1, 0.6, m.radians(215.), 0.3],
-                                  [0.1, -0.6, m.radians(35.), 0.3],
-                                  [0.8, -0.3, m.radians(45.), 0.3],
-                                  [0.8, 0.3, m.radians(-115.), 0.3],
-                                  [0.8, 0.0, m.radians(135.), 0.3]]
+        if not self.final_pr2_optimization:
+            self.parameters_scaling_pr2 = [0.1, 0.1, m.radians(10.), 0.02]
+            self.init_start_pr2_configs = [[0.1, 0.6, m.radians(215.), 0.3],
+                                           [0.1, -0.6, m.radians(35.), 0.3],
+                                           [0.8, -0.3, m.radians(45.), 0.3],
+                                           [0.8, 0.3, m.radians(-115.), 0.3],
+                                           [0.8, 0.0, m.radians(135.), 0.3]]
 
         # parameters_initialization_pr2 = (parameters_max_pr2+parameters_min_pr2)/2.
         opts_cma_pr2 = {'seed': 12345, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter,
