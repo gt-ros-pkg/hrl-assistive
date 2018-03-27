@@ -480,13 +480,13 @@ class DressingMultiProcessOptimization(object):
             best_arm_configs[j] = [float(i) for i in best_arm_configs[j]]
         best_arm_configs = np.array(best_arm_configs)
         best_arm_configs = np.array([x for x in best_arm_configs if int(x[0]) == subtask_n])
-        best_config_i = np.argmax(best_arm_configs[:, 5])
+        best_config_i = np.argmin(best_arm_configs[:, 5])
         best_arm_config = best_arm_configs[best_config_i]
         print '\n best_arm_config:', best_arm_config, '\n'
         self.pool.apply(fine_pr2_func, [[best_arm_config[1:5], human_arm, robot_arm,
                                         subtask_n, stretch,
                                         fixed_point_index,
-                                        fixed_p, best_arm_configs[6:-1]]])
+                                        fixed_p, best_arm_config[6:-1]]])
         # parameters_scaling = [0.1, 0.1, m.radians(10.), 0.02  ]#(self.pr2_config_max - self.pr2_config_min) / 8.
         # OPTIONS = dict()
         # #OPTIONS['boundary_handling'] = cma.BoundTransform  # cma version on obie3 uses this
@@ -647,6 +647,10 @@ class DressingSimulationProcess(object):
         self.fixed_points_to_use = []
 
         self.init_start_pr2_configs = []
+        self.parameters_scaling_pr2 = []
+
+        self.this_sols = []
+        self.this_path = []
 
         # self.model = None
         self.force_cost = 0.
@@ -1097,7 +1101,7 @@ class DressingSimulationProcess(object):
         #                                        np.matrix(traj_start_B_traj_waypoint))
         #     goals.append(copy.copy(origin_B_traj_waypoint))
         fixed_point_exceeded_amount = 0.
-        print self.fixed_points_to_use
+        #print self.fixed_points_to_use
         # print 'stretch allowable:\n', self.stretch_allowable
         if self.add_new_fixed_point:
             self.add_new_fixed_point = False
@@ -1382,7 +1386,7 @@ class DressingSimulationProcess(object):
 
         # print 'arm config is not in self collision'
         if self.final_pr2_optimization:
-            high_res = True
+            high_res = False
         else:
             high_res = False
         self.goals, \
@@ -1397,17 +1401,7 @@ class DressingSimulationProcess(object):
         angle_from_horizontal, \
         forearm_B_upper_arm, \
         fixed_points_exceeded_amount = self.find_reference_coordinate_frames_and_goals(arm, high_res_interpolation=high_res)
-        if self.final_pr2_optimization:
-            self.trajectory_pickle_output.extend([self.goals,
-                                                  origin_B_forearm_pointed_down_arm,
-                                                  origin_B_upperarm_pointed_down_shoulder,
-                                                  origin_B_hand,
-                                                  origin_B_wrist,
-                                                  origin_B_traj_start,
-                                                  origin_B_traj_forearm_end,
-                                                  origin_B_traj_upper_end,
-                                                  origin_B_traj_final_end,
-                                                  forearm_B_upper_arm])
+
 #        if fixed_points_exceeded_amount <= 0:
 #            pass
 #            # print 'arm does not break fixed_points requirement'
@@ -1489,8 +1483,8 @@ class DressingSimulationProcess(object):
         # start_time = rospy.Time.now()
         self.set_goals()
         # print self.origin_B_grasps
-        maxiter = 50
-        popsize = 20#4*20
+        pr2_maxiter = 20
+        pr2_popsize = 20#4*20
 
         # cma parameters: [pr2_base_x, pr2_base_y, pr2_base_theta, pr2_base_height,
         # human_arm_dof_1, human_arm_dof_2, human_arm_dof_3, human_arm_dof_4, human_arm_dof_5,
@@ -1510,7 +1504,7 @@ class DressingSimulationProcess(object):
                                            [0.8, 0.0, m.radians(135.), 0.3]]
 
         # parameters_initialization_pr2 = (parameters_max_pr2+parameters_min_pr2)/2.
-        opts_cma_pr2 = {'seed': 12345, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter,
+        opts_cma_pr2 = {'seed': 12345, 'ftarget': -1., 'popsize': pr2_popsize, 'maxiter': pr2_maxiter,
                         'maxfevals': 1e8, 'CMA_cmean': 0.5, 'tolfun': 1e-3,
                         'tolfunhist': 1e-12, 'tolx': 5e-4,
                         'maxstd': 4.0, 'tolstagnation': 100,
@@ -1521,7 +1515,7 @@ class DressingSimulationProcess(object):
         this_best_pr2_config = None
         this_best_pr2_score = 1000.
 
-        for init_start_pr2_config in init_start_pr2_configs:
+        for init_start_pr2_config in self.init_start_pr2_configs:
             # print 'Starting to evaluate a new initial PR2 configuration:', init_start_pr2_config
             parameters_initialization_pr2 = init_start_pr2_config
             kinematics_optimization_results = cma.fmin(self.objective_function_pr2_config,
@@ -1531,6 +1525,35 @@ class DressingSimulationProcess(object):
             if kinematics_optimization_results[1] < this_best_pr2_score:
                 this_best_pr2_config = kinematics_optimization_results[0]
                 this_best_pr2_score = kinematics_optimization_results[1]
+                if self.final_pr2_optimization:
+                    this_path = self.this_path
+                    this_sols = self.this_sols
+        if self.final_pr2_optimization:
+            x = this_best_pr2_config[0]
+            y = this_best_pr2_config[1]
+            th = this_best_pr2_config[2]
+            z = this_best_pr2_config[3]
+            origin_B_pr2 = np.matrix([[ m.cos(th), -m.sin(th),     0.,         x],
+                                      [ m.sin(th),  m.cos(th),     0.,         y],
+                                      [        0.,         0.,     1.,        0.],
+                                      [        0.,         0.,     0.,        1.]])
+            pr2_B_goals = []
+            for goal in self.goals:
+                pr2_B_goals.append(origin_B_pr2.I*np.matrix(goal)*self.gripper_B_tool.I)
+            self.trajectory_pickle_output.extend([params,
+                                                  z,
+                                                  this_best_pr2_config,
+                                                  pr2_B_goals,
+                                                  origin_B_pr2.I*origin_B_forearm_pointed_down_arm,
+                                                  origin_B_pr2.I*origin_B_upperarm_pointed_down_shoulder,
+                                                  origin_B_pr2.I*origin_B_hand,
+                                                  origin_B_pr2.I*origin_B_wrist,
+                                                  origin_B_pr2.I*origin_B_traj_start,
+                                                  origin_B_pr2.I*origin_B_traj_forearm_end,
+                                                  origin_B_pr2.I*origin_B_traj_upper_end,
+                                                  origin_B_pr2.I*origin_B_traj_final_end,
+                                                  #forearm_B_upper_arm,
+                                                  this_path, this_sols])
         #print 'This arm config is:\n',params
         #print 'Best PR2 configuration for this arm config so far: \n', self.this_best_pr2_config
         #print 'Associated score: ', self.this_best_pr2_score
@@ -1600,7 +1623,7 @@ class DressingSimulationProcess(object):
         # print 'Kinematics score was: ', self.this_best_pr2_score
         # print 'Torque score was: ', torque_cost
         physx_score = self.force_cost*alpha + torque_cost*zeta
-        this_score = 10. + physx_score + self.this_best_pr2_score*beta
+        this_score = 10. + physx_score + this_best_pr2_score*beta
         # print 'Total score was: ', this_score
         if self.save_all_results:
             with open(self.save_file_path + self.save_file_name_fine_raw, 'a') as myfile:
@@ -1711,6 +1734,13 @@ class DressingSimulationProcess(object):
     def objective_function_pr2_config(self, current_parameters):
         # start_time = rospy.Time.now()
         # current_parameters = [0.3, -0.9, 1.57*m.pi/3., 0.3]
+        #print 'final pr2 optimization?', self.final_pr2_optimization
+        if self.final_pr2_optimization:
+            baseline = 100.
+            beta = 100.
+        else:
+            baseline = 10.
+            beta = 10.
         if self.subtask_step == 0 and False:  # right arm
             # current_parameters = [0.2743685, -0.71015745, 0.20439603, 0.29904425]
             # current_parameters = [0.2743685, -0.71015745, 2.2043960252256807, 0.29904425]  # old solution with joint jump
@@ -1773,7 +1803,7 @@ class DressingSimulationProcess(object):
         # PR2 is too close to the person (who is at the origin). PR2 base is 0.668m x 0.668m
         distance_from_origin = np.linalg.norm(origin_B_pr2[:2, 3])
         if distance_from_origin <= 0.334:
-            this_pr2_score = 10. + 1. + (0.4 - distance_from_origin)
+            this_pr2_score = baseline + 1. + (0.4 - distance_from_origin)
             return this_pr2_score
 
         distance = 10000000.
@@ -1787,7 +1817,7 @@ class DressingSimulationProcess(object):
                 break
         if out_of_reach:
             # print 'location is out of reach'
-            this_pr2_score = 10. +1.+ 20.*(distance - 1.25)
+            this_pr2_score = baseline +1.+ 20.*(distance - 1.25)
             return this_pr2_score
 
         reach_score = 0.
@@ -1995,10 +2025,12 @@ class DressingSimulationProcess(object):
         else:
             # print 'In base collision! single config distance: ', distance
             if distance < 2.0:
-                this_pr2_score = 10. + 1. + (1.25 - distance)
+                this_pr2_score = baseline + 1. + (1.25 - distance)
                 return this_pr2_score
-        if self.final_pr2_optimization:
-            self.trajectory_pickle_output.extend([path, all_sols])
+        self.this_path = path
+        self.this_sols = all_sols
+        #if self.final_pr2_optimization:
+        #    self.trajectory_pickle_output.extend([path, all_sols])
         # self.human_model.SetActiveManipulator('leftarm')
         # self.human_manip = self.robot.GetActiveManipulator()
         # human_torques = self.human_manip.ComputeInverseDynamics([])
@@ -2020,11 +2052,11 @@ class DressingSimulationProcess(object):
         # print manip_score
 
         # Set the weights for the different scores.
-        beta = 10.  # Weight on number of reachable goals
+        #beta = 10.  # Weight on number of reachable goals is set at top of function
         gamma = 1.  # Weight on manipulability of arm at each reachable goal
         zeta = 0.05  # Weight on torques
         if reach_score == 0.:
-            this_pr2_score = 10. + 1.+ 2*random.random()
+            this_pr2_score = baseline + 1.+ 2*random.random()
             return this_pr2_score
         else:
             # print 'Reach score: ', reach_score
@@ -2035,7 +2067,9 @@ class DressingSimulationProcess(object):
                     time.sleep(0.1)
             # print 'reach_score:', reach_score
             # print 'manip_score:', manip_score
-            this_pr2_score = 10.-beta*reach_score-gamma*manip_score #+ zeta*angle_cost
+            this_pr2_score = baseline-beta*reach_score-gamma*manip_score #+ zeta*angle_cost
+            if self.final_pr2_optimization:
+                this_pr2_score = baseline-beta*reach_score-gamma*manip_score
             return this_pr2_score
 
     def is_dart_base_in_collision(self):
