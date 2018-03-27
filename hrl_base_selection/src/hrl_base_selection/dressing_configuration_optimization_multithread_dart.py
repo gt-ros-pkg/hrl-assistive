@@ -646,6 +646,8 @@ class DressingSimulationProcess(object):
         self.add_new_fixed_point = False
         self.fixed_points_to_use = []
 
+        self.init_start_pr2_configs = []
+
         # self.model = None
         self.force_cost = 0.
 
