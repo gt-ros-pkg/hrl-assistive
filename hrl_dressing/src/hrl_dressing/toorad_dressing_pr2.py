@@ -90,6 +90,7 @@ class TOORAD_Dressing_PR2(object):
                 # print 'objective_function_fine =', self.toorad.objective_function_fine(h_config)
 
                 # Set up the simulator for the configuration loaded
+
                 self.toorad.set_human_model_dof_dart([0, 0, 0, 0], self.toorad.human_opposite_arm)
                 self.toorad.set_human_model_dof_dart(h_config, self.toorad.human_arm)
                 self.toorad.set_pr2_model_dof_dart(r_config)
@@ -114,19 +115,17 @@ class TOORAD_Dressing_PR2(object):
                 # print 'robot positions',self.toorad.robot.positions()
                 # print 'robot q', self.toorad.robot.q
                 # print 'human q', self.toorad.human.q
-                # print 'human'
-                # print self.toorad.human.q['j_bicep_' + arm + '_x']
-                # print self.toorad.human.q['j_bicep_' + arm + '_y']
-                # print self.toorad.human.q['j_bicep_' + arm + '_z']
-                # print self.toorad.human.q['j_forearm_' + arm + '_1']
-                # print 'robot'
-                # print self.toorad.robot.q['rootJoint_pos_x']
-                # print self.toorad.robot.q['rootJoint_pos_y']
-                # print self.toorad.robot.q['rootJoint_pos_z']
-                # print self.toorad.robot.q['rootJoint_rot_z']
-                # print self.toorad.robot.q['torso_lift_joint']
-
-
+                print 'human pose'
+                print self.toorad.human.q['j_bicep_' + arm + '_x']
+                print self.toorad.human.q['j_bicep_' + arm + '_y']
+                print self.toorad.human.q['j_bicep_' + arm + '_z']
+                print self.toorad.human.q['j_forearm_' + arm + '_1']
+                print 'robot pose'
+                print self.toorad.robot.q['rootJoint_pos_x']
+                print self.toorad.robot.q['rootJoint_pos_y']
+                print self.toorad.robot.q['rootJoint_pos_z']
+                print self.toorad.robot.q['rootJoint_rot_z']
+                print self.toorad.robot.q['torso_lift_joint']
 
                 save_data.append([arm, origin_B_goals,
                                   origin_B_forearm_pointed_down_arm,
@@ -520,7 +519,8 @@ class TOORAD_Dressing_PR2(object):
             saved_configs[j] = [float(i) for i in saved_configs[j]]
         saved_configs = np.array(saved_configs)
         saved_configs = np.array([[0,0.49400,0.10217,0.82392,0.40534,0.05529,0.10348,-0.90135,1.47876,0.29157,-0.35238],
-                                 [1,1.46493,0.53184,1.60065,1.42140,0.04144,0.96188,0.37199,4.38764,0.29960,-0.32370]])
+                                 [1,1.47366,0.54646,1.47147,1.55155,0.01104,0.96537,0.43731,-1.53448,0.29994,-0.33048]])
+
         # saved_configs = np.array([x for x in saved_configs if int(x[0]) == subtask_number])
         out_configs = []
         out_configs.append([saved_configs[0][1:5], saved_configs[0][6:10]])
