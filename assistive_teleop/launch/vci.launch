@@ -5,7 +5,7 @@
   <arg name="kinect_points" default="/$(arg kinect_ns)/sd/points" />
   <arg name="run_ft_sensor" default="false" />
   <arg name="use_cart_ctrl" default="true" />
-  <arg name="test" default="true"/>
+  <arg name="test" default="false"/>
 
   <arg if="$(arg test)" name="ws_port" default="9091"/>
   <arg unless="$(arg test)" name="ws_port" value="9091"/>

@@ -52,7 +52,7 @@ LOW_TAXEL_THRESH_Y = 0
 HIGH_TAXEL_THRESH_X = (NUMOFTAXELS_X - 1)
 HIGH_TAXEL_THRESH_Y = (NUMOFTAXELS_Y - 1)
 
-
+8
 
 
 class VisualizationLib():
@@ -265,7 +265,7 @@ class VisualizationLib():
 
     def rviz_publish_input(self, image, angle):
         mat_size = (NUMOFTAXELS_X, NUMOFTAXELS_Y)
-
+	#angle *= 1.15
         image = np.reshape(image, mat_size)
 
         markerArray = MarkerArray()
@@ -294,13 +294,13 @@ class VisualizationLib():
                 marker.pose.position.y = i*0.0286 - (13.5+10)*0.0286
                 if j > 33:
                     marker.pose.position.x = -(84-j)*0.0286 + 0.0286*3*np.sin(np.deg2rad(angle))
-                    marker.pose.position.x += 2.15
+                    marker.pose.position.x += 2.40
                     marker.pose.position.z = -0.1 + 0.32 + 0.32
                     #print marker.pose.position.x, 'x'
                 else:
 
                     marker.pose.position.x = -(51) * 0.0286 - (33 - j) * 0.0286 * np.cos(np.deg2rad(angle)) + (0.0286*3*np.sin(np.deg2rad(angle)))*0.85
-                    marker.pose.position.x += 2.15
+                    marker.pose.position.x += 2.40
                     marker.pose.position.z = ((33-j)*0.0286*np.sin(np.deg2rad(angle)))*0.85 -0.1 + 0.32 + 0.32
                     #print j, marker.pose.position.z, marker.pose.position.y, 'head'
 
@@ -369,8 +369,8 @@ class VisualizationLib():
                 #print scores_std[joint], 'std of joint ', joint
                 #std of 3 is really uncertain
                 Smarker.color.r = 1.0
-                Smarker.color.g = 1.0 - scores_std[joint]/0.03
-                Smarker.color.b = scores_std[joint]/0.03
+                Smarker.color.g = 1.0 - scores_std[joint]/0.055
+                Smarker.color.b = scores_std[joint]/0.055
 
             else:
                 Smarker.color.r = 1.0
@@ -431,19 +431,19 @@ class VisualizationLib():
             LimbArray = MarkerArray()
 
         limbs = {}
-        limbs['right_forearm'] = [scores[2,0], scores[2,1], scores[2,2], scores[4,0], scores[4,1], scores[4,2]]
-        limbs['left_forearm'] = [scores[3,0], scores[3,1], scores[3,2], scores[5,0], scores[5,1], scores[5,2]]
-        limbs['right_upperarm'] = [pseudotargets[1,0], pseudotargets[1,1], pseudotargets[1,2], scores[2,0], scores[2,1], scores[2,2]]
-        limbs['left_upperarm'] = [pseudotargets[2,0], pseudotargets[2,1], pseudotargets[2,2], scores[3,0], scores[3,1], scores[3,2]]
+        limbs['right_forearm'] = [scores[2,0]+.0001, scores[2,1]+.0001, scores[2,2]+.0001, scores[4,0], scores[4,1], scores[4,2]]
+        limbs['left_forearm'] = [scores[3,0]+.0001, scores[3,1]+.0001, scores[3,2]+.0001, scores[5,0], scores[5,1], scores[5,2]]
+        limbs['right_upperarm'] = [pseudotargets[1,0]+.0001, pseudotargets[1,1]+.0001, pseudotargets[1,2]+.0001, scores[2,0], scores[2,1], scores[2,2]]
+        limbs['left_upperarm'] = [pseudotargets[2,0]+.0001, pseudotargets[2,1]+.0001, pseudotargets[2,2]+.0001, scores[3,0], scores[3,1], scores[3,2]]
 
-        limbs['right_calf'] = [scores[6,0], scores[6,1], scores[6,2], scores[8,0], scores[8,1], scores[8,2]]
-        limbs['left_calf'] = [scores[7,0], scores[7,1], scores[7,2], scores[9,0], scores[9,1], scores[9,2]]
-        limbs['right_thigh'] = [pseudotargets[3,0], pseudotargets[3,1], pseudotargets[3,2], scores[6,0], scores[6,1], scores[6,2]]
-        limbs['left_thigh'] = [pseudotargets[4,0], pseudotargets[4,1], pseudotargets[4,2], scores[7,0], scores[7,1], scores[7,2]]
+        limbs['right_calf'] = [scores[6,0]+.0001, scores[6,1]+.0001, scores[6,2]+.0001, scores[8,0], scores[8,1], scores[8,2]]
+        limbs['left_calf'] = [scores[7,0]+.0001, scores[7,1]+.0001, scores[7,2]+.0001, scores[9,0], scores[9,1], scores[9,2]]
+        limbs['right_thigh'] = [pseudotargets[3,0]+.0001, pseudotargets[3,1]+.0001, pseudotargets[3,2]+.0001, scores[6,0], scores[6,1], scores[6,2]]
+        limbs['left_thigh'] = [pseudotargets[4,0]+.0001, pseudotargets[4,1]+.0001, pseudotargets[4,2]+.0001, scores[7,0], scores[7,1], scores[7,2]]
         limbs['torso_drop'] = [scores[1,0], scores[1,1], scores[1,2], scores[1,0]+.0001, scores[1,1]+.0001, scores[1,2] - .12]
         limbs['torso_midhip'] = [scores[1,0]+.0001, scores[1,1]+.0001, scores[1,2] - .12, (pseudotargets[4,0]+pseudotargets[3,0])/2, (pseudotargets[3,1]+pseudotargets[4,1])/2, pseudotargets[4,2]]
-        limbs['torso_neck'] = [scores[1,0]+.0001, scores[1,1]+.0001, scores[1,2] - .12, (pseudotargets[1,0]+pseudotargets[2,0])/2, (pseudotargets[1,1]+pseudotargets[2,1])/2, pseudotargets[1,2]]
-        limbs['neck_head'] = [(pseudotargets[1,0]+pseudotargets[2,0])/2, (pseudotargets[1,1]+pseudotargets[2,1])/2, pseudotargets[1,2], scores[0,0], scores[0,1], scores[0,2]]
+        limbs['torso_neck'] = [scores[1,0]+.0001, scores[1,1]+.0001, scores[1,2] - .12, (pseudotargets[1,0]+pseudotargets[2,0])/2+.0001, (pseudotargets[1,1]+pseudotargets[2,1])/2, pseudotargets[1,2]+.0001]
+        limbs['neck_head'] = [(pseudotargets[1,0]+pseudotargets[2,0])/2+.0001, (pseudotargets[1,1]+pseudotargets[2,1])/2+.0001, pseudotargets[1,2]+.0001, scores[0,0], scores[0,1], scores[0,2]]
 
         limbs['shouldershoulder'] =  [pseudotargets[1,0]+.0001, pseudotargets[1,1]+.0001, pseudotargets[1,2]+.0001, pseudotargets[2,0], pseudotargets[2,1], pseudotargets[2,2]]
         limbs['hiphip'] =  [pseudotargets[3,0]+.0001, pseudotargets[3,1]+.0001, pseudotargets[3,2]+.0001, pseudotargets[4,0], pseudotargets[4,1], pseudotargets[4,2]]

@@ -1,4 +1,5 @@
 <launch>
-    <param name="haptic_mpc/control_params/deadzone_distance" type="double" value="0.01" />
+    <param name="left_arm/haptic_mpc/control_params/deadzone_distance" type="double" value="0.02" />
+    <param name="left_arm/haptic_mpc/control_params/deadzone_angle" type="double" value="5.0" />
     <include file="$(find assistive_teleop)/launch/vci.launch"/>
 </launch>

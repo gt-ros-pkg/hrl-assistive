@@ -192,17 +192,18 @@ class RealTimePose():
 
                 scores = np.reshape(np.mean(targets_est.numpy()/1000, axis = 0), self.output_size)
                 scores_cp = np.copy(scores)
-                scores[:,0] = -scores_cp[:,1] + 2.15
+                scores[:,0] = -scores_cp[:,1] + 2.40
                 scores[:,1] = scores_cp[:,0] - (13.5+10)*0.0286
                 scores[:,2] += 0.32
-
-                scores_std = np.std(np.linalg.norm(np.reshape(targets_est.numpy()/1000, (self.T, 10, 3)), axis = 2), axis = 0)
-
+ 
+                #scores_std = np.std(np.linalg.norm(np.reshape(targets_est.numpy()/1000, (self.T, 10, 3)), axis = 2), axis = 0)
+		xyz_std = np.reshape(np.std((targets_est.numpy() - np.mean(targets_est.numpy(), axis = 0)), axis = 0), self.output_size)
+                scores_std = np.linalg.norm(xyz_std, axis = 1)/1000
 
 
                 pseudotarget_scores = np.reshape(np.mean(pseudotargets_est/1000, axis = 0), (5, 3))
                 pseudotarget_scores_cp = np.copy(pseudotarget_scores)
-                pseudotarget_scores[:,0] = -pseudotarget_scores_cp[:,1] + 2.15
+                pseudotarget_scores[:,0] = -pseudotarget_scores_cp[:,1] + 2.40
                 pseudotarget_scores[:,1] = pseudotarget_scores_cp[:,0] - (13.5+10)*0.0286
                 pseudotarget_scores[:,2] += 0.32
                 pseudotarget_scores_std = np.std(np.linalg.norm(np.reshape(pseudotargets_est/1000, (self.T, 5, 3)), axis = 2), axis = 0)
@@ -215,12 +216,17 @@ class RealTimePose():
 
                 self.broadcast_tf_pose(scores_all)
 
-                if True: #publish in rviz
+                if np.sum(viz_image) > 7000: #publish in rviz
                     VisualizationLib().rviz_publish_input(viz_image * 1.3, self.bedangle)
                     VisualizationLib().rviz_publish_output(None, scores, pseudotarget_scores, scores_std, pseudotarget_scores_std)
                     self.limbArray = VisualizationLib().rviz_publish_output_limbs(None, np.reshape(scores, self.output_size), np.reshape(pseudotarget_scores, (5, 3)),
                                                                              LimbArray=self.limbArray, count=0)
-
+		else: #publish in rviz
+                    VisualizationLib().rviz_publish_input(viz_image * 1.3, self.bedangle)
+                    VisualizationLib().rviz_publish_output(None, scores*0., pseudotarget_scores*0., scores_std, pseudotarget_scores_std)
+                    self.limbArray = VisualizationLib().rviz_publish_output_limbs(None, np.reshape(scores*0., self.output_size), np.reshape(pseudotarget_scores*0., (5,3)),
+                                                                             LimbArray=self.limbArray, count=-5)
+		
                 #VisualizationLib().visualize_pressure_map(viz_image, targets_raw=None, scores_raw=scores_all)
 
 

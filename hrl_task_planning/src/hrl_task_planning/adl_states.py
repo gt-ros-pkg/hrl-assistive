@@ -261,8 +261,8 @@ class MoveArmState(PDDLSmachState):
         goal = PoseStamped()
         if self.model.upper() == 'AUTOBED':
             if self.task.upper() == 'SCRATCHING' or self.task.upper() == 'BLANKET' or self.task.upper() == 'BATHING':
-                self.goal_position = [0.0, 0., 0.2]
-                self.goal_orientation = tft.quaternion_from_euler(0.0, m.radians(180.), 0.0)
+                self.goal_position = [0.0, 0., 0.07]
+                self.goal_orientation = tft.quaternion_from_euler(0.0, m.radians(90.), 0.0)
                 self.reference_frame = 'l_knee'
                 goal.pose.position.x = self.goal_position[0]
                 goal.pose.position.y = self.goal_position[1]
@@ -276,7 +276,7 @@ class MoveArmState(PDDLSmachState):
                 self.ignore_next_goal_pose = True
                 self.l_arm_pose_pub.publish(goal)
             elif self.task.upper() == 'FEEDING' or self.task.upper() == 'SHAVING':
-                self.goal_position = [0.12, 0., 0.12]
+                self.goal_position = [0.07, 0., 0.07]
                 self.goal_orientation = tft.quaternion_from_euler(0.0, m.radians(135.), 0.0)
                 self.reference_frame = '/l_shoulder'
                 goal.pose.position.x = self.goal_position[0]
