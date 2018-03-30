@@ -36,6 +36,7 @@ class DartDressingWorld(pydart.World):
         self.ground = self.skeletons[0]
 
         self.human = self.skeletons[1]
+        self.chair = self.skeletons[2]
         self.set_collision_detector(pydart.World.BULLET_COLLISION_DETECTOR)
         #print("detector = %s" % self.collision_detector_string())
 
@@ -84,13 +85,13 @@ class DartDressingWorld(pydart.World):
         #                                  [1., 0., 0., 0.0],
         #                                  [0., 0., 1., -0.05],
         #                                  [0., 0., 0., 1.0]])
-        self.gripper_B_gown = [np.matrix([[0., 1., 0., 0.03],
+        self.gripper_B_gown = [np.matrix([[0., 1., 0., 0.0303],
                                           [-1., 0., 0., 0.0],
-                                          [0., 0., 1., -0.05],
+                                          [0., 0., 1., -0.04475],
                                           [0., 0., 0., 1.0]]),
-                                np.matrix([[0., -1., 0., 0.03],
+                                np.matrix([[0., -1., 0., 0.0303],
                                           [1., 0., 0., 0.0],
-                                          [0., 0., 1., -0.05],
+                                          [0., 0., 1., -0.04475],
                                           [0., 0., 0., 1.0]])]
         self.set_gown()
 

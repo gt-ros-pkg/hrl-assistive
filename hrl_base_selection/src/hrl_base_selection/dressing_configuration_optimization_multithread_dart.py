@@ -265,7 +265,7 @@ class DressingMultiProcessOptimization(object):
             self.processCnt = mp.cpu_count()
         else:
             self.processCnt = number_of_processes
-        simulatorPool = SimulatorPool(self.processCnt).simulatorPool
+        simulatorPool = SimulatorPool(self.processCnt, visualize=visualize).simulatorPool
         self.pool = mp.Pool(self.processCnt, _init, (simulatorPool,))
         # self.pool.map(test_process_function, ['here']*self.processCnt)
         # self.pool.map(test_process_function, ['here'] * self.processCnt)
@@ -279,9 +279,12 @@ class DressingMultiProcessOptimization(object):
             open(self.save_file_path + self.save_file_name_final_output, 'w').close()
 
         subtask_list = ['rightarm', 'leftarm']
+        # subtask_list = ['leftarm']
         robot_arm_to_use = ['rightarm', 'rightarm']
         all_fixed_points_to_use = [[], [0]]
         all_stretch_allowable = [[], [0.5]]
+        # all_fixed_points_to_use = [[0], [0]]
+        # all_stretch_allowable = [[0.5], [0.5]]
         all_fixed_points = self.pool.apply(find_fixed_points, [[subtask_list[0],
                                                                robot_arm_to_use[0],
                                                                0,
@@ -311,6 +314,7 @@ class DressingMultiProcessOptimization(object):
 
         for subtask_number, subtask in enumerate(subtask_list):
             print 'starting fine optimization for ', subtask
+
             # self.run_fine_optimization(subtask_list[subtask_number],
             #                            robot_arm_to_use[subtask_number],
             #                            subtask_number,
@@ -319,19 +323,19 @@ class DressingMultiProcessOptimization(object):
             #                            all_fixed_points)
             print 'completed fine optimization for ', subtask
 
-        self.combine_process_files(self.save_file_path + 'arm_configs_fine',
-                                   self.save_file_path + 'arm_configs_fine_combined.log')
+        # self.combine_process_files(self.save_file_path + 'arm_configs_fine',
+        #                            self.save_file_path + 'arm_configs_fine_combined.log')
 
         for subtask_number, subtask in enumerate(subtask_list):
-            print 'starting fine optimization of pr2 configuration for ', subtask
-            self.run_fine_pr2_optimization(subtask_list[subtask_number],
-                                           robot_arm_to_use[subtask_number],
-                                           subtask_number,
-                                           all_stretch_allowable[subtask_number],
-                                           all_fixed_points_to_use[subtask_number],
-                                           all_fixed_points)
-            print 'completed fine optimization for ', subtask
-
+            if True:
+                print 'starting fine optimization of pr2 configuration for ', subtask
+                self.run_fine_pr2_optimization(subtask_list[subtask_number],
+                                               robot_arm_to_use[subtask_number],
+                                               subtask_number,
+                                               all_stretch_allowable[subtask_number],
+                                               all_fixed_points_to_use[subtask_number],
+                                               all_fixed_points)
+                print 'completed fine optimization for ', subtask
 
     def run_coarse_optimization(self, human_arm, robot_arm, subtask_n,
                                 stretch, fixed_point_index, fixed_p):
@@ -407,8 +411,8 @@ class DressingMultiProcessOptimization(object):
 
         parameters_scaling = np.array([m.radians(10.)] * 4)
         OPTIONS = dict()
-        #OPTIONS['boundary_handling'] = cma.BoundTransform  # cma version on obie3 uses this
-        OPTIONS['BoundaryHandler'] = cma.BoundTransform  # cma version on aws uses this
+        OPTIONS['boundary_handling'] = cma.BoundTransform  # cma version on obie3 uses this
+        # OPTIONS['BoundaryHandler'] = cma.BoundTransform  # cma version on aws uses this
         OPTIONS['bounds'] = [self.arm_config_min, self.arm_config_max]
         OPTIONS['verb_filenameprefix'] = 'outcma_arm_config_'+str(subtask_n)+'_'
         OPTIONS['seed'] = 1234
@@ -452,8 +456,8 @@ class DressingMultiProcessOptimization(object):
             #print 'GOT PAST CMA'
             #print 'GOT PAST CMA'
             #print 'GOT PAST CMA'
-            #this_res = es.result()  # This is for running on machine in lab (cma version)
-            this_res = es.result  # This is for running on amazon machine (cma version)
+            this_res = es.result()  # This is for running on machine in obie3 lab (cma version)
+            # this_res = es.result  # This is for running on amazon machine (cma version)
             #print 'GOT PAST CMA-RESULT'
             #print 'this_res:',this_res
             if this_res[1] < best_result[1]:
@@ -480,6 +484,7 @@ class DressingMultiProcessOptimization(object):
             best_arm_configs[j] = [float(i) for i in best_arm_configs[j]]
         best_arm_configs = np.array(best_arm_configs)
         best_arm_configs = np.array([x for x in best_arm_configs if int(x[0]) == subtask_n])
+        # print best_arm_configs
         best_config_i = np.argmin(best_arm_configs[:, 5])
         best_arm_config = best_arm_configs[best_config_i]
         print '\n best_arm_config:', best_arm_config, '\n'
@@ -1386,7 +1391,7 @@ class DressingSimulationProcess(object):
 
         # print 'arm config is not in self collision'
         if self.final_pr2_optimization:
-            high_res = False
+            high_res = True
         else:
             high_res = False
         self.goals, \
@@ -1512,8 +1517,10 @@ class DressingSimulationProcess(object):
                         'CMA_stds': list(parameters_scaling_pr2),
                         'bounds': [list(parameters_min_pr2), list(parameters_max_pr2)]}
 
-        this_best_pr2_config = None
-        this_best_pr2_score = 1000.
+        self.this_best_pr2_config = None
+        self.this_best_pr2_score = 1000.
+        self.this_path_traj = []
+        self.this_path = []
 
         for init_start_pr2_config in self.init_start_pr2_configs:
             # print 'Starting to evaluate a new initial PR2 configuration:', init_start_pr2_config
@@ -1522,17 +1529,19 @@ class DressingSimulationProcess(object):
                                                             list(parameters_initialization_pr2),
                                                             1.,
                                                             options=opts_cma_pr2)
-            if kinematics_optimization_results[1] < this_best_pr2_score:
-                this_best_pr2_config = kinematics_optimization_results[0]
-                this_best_pr2_score = kinematics_optimization_results[1]
-                if self.final_pr2_optimization:
-                    this_path = self.this_path
-                    this_sols = self.this_sols
+            print 'optimization results:\n', kinematics_optimization_results
+            # if kinematics_optimization_results[1] < self.this_best_pr2_score:
+            #     this_best_pr2_config = kinematics_optimization_results[0]
+            #     # this_best_pr2_config = [0.93286413, 0.46091031, -20.34483501, 0.29610221]
+            #     this_best_pr2_score = kinematics_optimization_results[1]
+            #     if self.final_pr2_optimization:
+            #         this_path = self.this_path_traj
+                    # this_sols = self.this_sols
         if self.final_pr2_optimization:
-            x = this_best_pr2_config[0]
-            y = this_best_pr2_config[1]
-            th = this_best_pr2_config[2]
-            z = this_best_pr2_config[3]
+            x = self.this_best_pr2_config[0]
+            y = self.this_best_pr2_config[1]
+            th = self.this_best_pr2_config[2]
+            z = self.this_best_pr2_config[3]
             origin_B_pr2 = np.matrix([[ m.cos(th), -m.sin(th),     0.,         x],
                                       [ m.sin(th),  m.cos(th),     0.,         y],
                                       [        0.,         0.,     1.,        0.],
@@ -1542,7 +1551,7 @@ class DressingSimulationProcess(object):
                 pr2_B_goals.append(origin_B_pr2.I*np.matrix(goal)*self.gripper_B_tool.I)
             self.trajectory_pickle_output.extend([params,
                                                   z,
-                                                  this_best_pr2_config,
+                                                  self.this_best_pr2_config,
                                                   pr2_B_goals,
                                                   origin_B_pr2.I*origin_B_forearm_pointed_down_arm,
                                                   origin_B_pr2.I*origin_B_upperarm_pointed_down_shoulder,
@@ -1553,7 +1562,9 @@ class DressingSimulationProcess(object):
                                                   origin_B_pr2.I*origin_B_traj_upper_end,
                                                   origin_B_pr2.I*origin_B_traj_final_end,
                                                   #forearm_B_upper_arm,
-                                                  this_path, this_sols])
+                                                  self.this_path_traj])
+            print 'Final path trajectory:\n', self.this_path_traj
+            print 'Final path:\n', self.this_path
         #print 'This arm config is:\n',params
         #print 'Best PR2 configuration for this arm config so far: \n', self.this_best_pr2_config
         #print 'Associated score: ', self.this_best_pr2_score
@@ -1568,9 +1579,9 @@ class DressingSimulationProcess(object):
         alpha = 1.  # cost on forces
         beta = 1.  # cost on manipulability
         zeta = 0.5  # cost on torque
-        if this_best_pr2_score < 0.:
+        if self.this_best_pr2_score < 0.:
             physx_score = self.force_cost*alpha + torque_cost*zeta
-            this_score = physx_score + this_best_pr2_score*beta
+            this_score = physx_score + self.this_best_pr2_score*beta
             # print 'Force cost was: ', self.force_cost
             # print 'Torque score was: ', torque_cost
             # print 'Physx score was: ', physx_score
@@ -1584,11 +1595,11 @@ class DressingSimulationProcess(object):
                                  + ',' + str("{:.5f}".format(params[2]))
                                  + ',' + str("{:.5f}".format(params[3]))
                                  + ',' + str("{:.5f}".format(this_score))
-                                 + ',' + str("{:.5f}".format(this_best_pr2_config[0]))
-                                 + ',' + str("{:.5f}".format(this_best_pr2_config[1]))
-                                 + ',' + str("{:.5f}".format(this_best_pr2_config[2]))
-                                 + ',' + str("{:.5f}".format(this_best_pr2_config[3]))
-                                 + ',' + str("{:.5f}".format(this_best_pr2_score))
+                                 + ',' + str("{:.5f}".format(self.this_best_pr2_config[0]))
+                                 + ',' + str("{:.5f}".format(self.this_best_pr2_config[1]))
+                                 + ',' + str("{:.5f}".format(self.this_best_pr2_config[2]))
+                                 + ',' + str("{:.5f}".format(self.this_best_pr2_config[3]))
+                                 + ',' + str("{:.5f}".format(self.this_best_pr2_score))
                                  + '\n')
             if self.save_all_results:
                 with open(self.save_file_path+self.save_file_name_fine_raw, 'a') as myfile:
@@ -1598,11 +1609,11 @@ class DressingSimulationProcess(object):
                                  + ',' + str("{:.5f}".format(params[2]))
                                  + ',' + str("{:.5f}".format(params[3]))
                                  + ',' + str("{:.5f}".format(this_score))
-                                 + ',' + str("{:.5f}".format(this_best_pr2_config[0]))
-                                 + ',' + str("{:.5f}".format(this_best_pr2_config[1]))
-                                 + ',' + str("{:.5f}".format(this_best_pr2_config[2]))
-                                 + ',' + str("{:.5f}".format(this_best_pr2_config[3]))
-                                 + ',' + str("{:.5f}".format(this_best_pr2_score))
+                                 + ',' + str("{:.5f}".format(self.this_best_pr2_config[0]))
+                                 + ',' + str("{:.5f}".format(self.this_best_pr2_config[1]))
+                                 + ',' + str("{:.5f}".format(self.this_best_pr2_config[2]))
+                                 + ',' + str("{:.5f}".format(self.this_best_pr2_config[3]))
+                                 + ',' + str("{:.5f}".format(self.this_best_pr2_score))
                                  + '\n')
                 with open(self.save_file_path + self.save_file_name_fine, 'a') as myfile:
                     myfile.write(str(self.subtask_step)
@@ -1611,11 +1622,11 @@ class DressingSimulationProcess(object):
                                  + ',' + str("{:.5f}".format(params[2]))
                                  + ',' + str("{:.5f}".format(params[3]))
                                  + ',' + str("{:.5f}".format(this_score))
-                                 + ',' + str("{:.5f}".format(this_best_pr2_config[0]))
-                                 + ',' + str("{:.5f}".format(this_best_pr2_config[1]))
-                                 + ',' + str("{:.5f}".format(this_best_pr2_config[2]))
-                                 + ',' + str("{:.5f}".format(this_best_pr2_config[3]))
-                                 + ',' + str("{:.5f}".format(this_best_pr2_score))
+                                 + ',' + str("{:.5f}".format(self.this_best_pr2_config[0]))
+                                 + ',' + str("{:.5f}".format(self.this_best_pr2_config[1]))
+                                 + ',' + str("{:.5f}".format(self.this_best_pr2_config[2]))
+                                 + ',' + str("{:.5f}".format(self.this_best_pr2_config[3]))
+                                 + ',' + str("{:.5f}".format(self.this_best_pr2_score))
                                  + '\n')
             return this_score
 
@@ -1623,7 +1634,7 @@ class DressingSimulationProcess(object):
         # print 'Kinematics score was: ', self.this_best_pr2_score
         # print 'Torque score was: ', torque_cost
         physx_score = self.force_cost*alpha + torque_cost*zeta
-        this_score = 10. + physx_score + this_best_pr2_score*beta
+        this_score = 10. + physx_score + self.this_best_pr2_score*beta
         # print 'Total score was: ', this_score
         if self.save_all_results:
             with open(self.save_file_path + self.save_file_name_fine_raw, 'a') as myfile:
@@ -1633,11 +1644,11 @@ class DressingSimulationProcess(object):
                              + ',' + str("{:.5f}".format(params[2]))
                              + ',' + str("{:.5f}".format(params[3]))
                              + ',' + str("{:.5f}".format(this_score))
-                             + ',' + str("{:.5f}".format(this_best_pr2_config[0]))
-                             + ',' + str("{:.5f}".format(this_best_pr2_config[1]))
-                             + ',' + str("{:.5f}".format(this_best_pr2_config[2]))
-                             + ',' + str("{:.5f}".format(this_best_pr2_config[3]))
-                             + ',' + str("{:.5f}".format(this_best_pr2_score))
+                             + ',' + str("{:.5f}".format(self.this_best_pr2_config[0]))
+                             + ',' + str("{:.5f}".format(self.this_best_pr2_config[1]))
+                             + ',' + str("{:.5f}".format(self.this_best_pr2_config[2]))
+                             + ',' + str("{:.5f}".format(self.this_best_pr2_config[3]))
+                             + ',' + str("{:.5f}".format(self.this_best_pr2_score))
                              + '\n')
         if self.final_pr2_optimization:
             save_pickle(self.trajectory_pickle_output, self.save_file_path+self.trajectory_pickle_file_name)
@@ -1648,11 +1659,11 @@ class DressingSimulationProcess(object):
                              + ',' + str("{:.5f}".format(params[2]))
                              + ',' + str("{:.5f}".format(params[3]))
                              + ',' + str("{:.5f}".format(this_score))
-                             + ',' + str("{:.5f}".format(this_best_pr2_config[0]))
-                             + ',' + str("{:.5f}".format(this_best_pr2_config[1]))
-                             + ',' + str("{:.5f}".format(this_best_pr2_config[2]))
-                             + ',' + str("{:.5f}".format(this_best_pr2_config[3]))
-                             + ',' + str("{:.5f}".format(this_best_pr2_score))
+                             + ',' + str("{:.5f}".format(self.this_best_pr2_config[0]))
+                             + ',' + str("{:.5f}".format(self.this_best_pr2_config[1]))
+                             + ',' + str("{:.5f}".format(self.this_best_pr2_config[2]))
+                             + ',' + str("{:.5f}".format(self.this_best_pr2_config[3]))
+                             + ',' + str("{:.5f}".format(self.this_best_pr2_score))
                              + '\n')
         return this_score
 
@@ -1735,6 +1746,7 @@ class DressingSimulationProcess(object):
         # start_time = rospy.Time.now()
         # current_parameters = [0.3, -0.9, 1.57*m.pi/3., 0.3]
         #print 'final pr2 optimization?', self.final_pr2_optimization
+        path_trajectory = []
         if self.final_pr2_optimization:
             baseline = 100.
             beta = 100.
@@ -1749,6 +1761,8 @@ class DressingSimulationProcess(object):
             current_parameters = [ 0.04840878, -0.83110347 , 0.97416245,  0.29999239]
         elif False:  # left arm
             current_parameters = [0.69510576,  0.68875733, -0.85141057, 0.05047799]
+        # current_parameters = [  0.88654628,   0.58640087, -19.95598798,   0.29987895]
+        # current_parameters = [  0.93286413,   0.46091031, -20.34483501,  0.29610221]
         x = current_parameters[0]
         y = current_parameters[1]
         th = current_parameters[2]
@@ -1804,6 +1818,13 @@ class DressingSimulationProcess(object):
         distance_from_origin = np.linalg.norm(origin_B_pr2[:2, 3])
         if distance_from_origin <= 0.334:
             this_pr2_score = baseline + 1. + (0.4 - distance_from_origin)
+
+            if this_pr2_score < self.this_best_pr2_score:
+                self.this_best_pr2_config = current_parameters
+                self.this_best_pr2_score = this_pr2_score
+                if self.final_pr2_optimization:
+                    self.this_path_traj = []
+
             return this_pr2_score
 
         distance = 10000000.
@@ -1818,6 +1839,12 @@ class DressingSimulationProcess(object):
         if out_of_reach:
             # print 'location is out of reach'
             this_pr2_score = baseline +1.+ 20.*(distance - 1.25)
+
+            if this_pr2_score < self.this_best_pr2_score:
+                self.this_best_pr2_config = current_parameters
+                self.this_best_pr2_score = this_pr2_score
+                if self.final_pr2_optimization:
+                    self.this_path_traj = []
             return this_pr2_score
 
         reach_score = 0.
@@ -1939,7 +1966,7 @@ class DressingSimulationProcess(object):
                     else:
                         possible_next_nodes = [t for t in (a
                                                            for a in graph.edges.keys())
-                                               if str(goal_i+1) in t.split('-')[0]
+                                               if str(goal_i+1) == t.split('-')[0]
                                                ]
                         for next_node in possible_next_nodes:
                             goal_j = int(next_node.split('-')[0])
@@ -1992,6 +2019,22 @@ class DressingSimulationProcess(object):
                                 print 'The path I wanted had a collision. Redoing path.'
                     reach_score = 1.
                     manip_score = value_so_far['end']/len(self.origin_B_grasps)
+            path_trajectory = []
+            if self.final_pr2_optimization or self.visualize:
+                for path_step in path:
+
+                    goal_i = int(path_step.split('-')[0])
+                    sol_i = int(path_step.split('-')[1])
+
+                    path_trajectory.append([all_sols[goal_i][sol_i][0],
+                                            all_sols[goal_i][sol_i][1],
+                                            all_sols[goal_i][sol_i][2],
+                                            all_sols[goal_i][sol_i][3],
+                                            all_sols[goal_i][sol_i][4],
+                                            all_sols[goal_i][sol_i][5],
+                                            all_sols[goal_i][sol_i][6]])
+                # self.this_path_traj = path_trajectory
+                # print self.this_path_traj
 
             if self.visualize or (not self.subtask_step == 0 and False):
                 if path:
@@ -1999,36 +2042,41 @@ class DressingSimulationProcess(object):
                     sol_i = int(path[0].split('-')[1])
                     prev_sol = np.array(all_sols[goal_i][sol_i])
                     print 'Solution being visualized:'
-                for path_step in path:
+                    print path
+                    print current_parameters
+                for path_step in path_trajectory:
                     # if not path_step == 'start' and not path_step == 'end':
-                    goal_i = int(path_step.split('-')[0])
-                    sol_i = int(path_step.split('-')[1])
-                    print 'solution:\n', all_sols[goal_i][sol_i]
-                    print 'diff:\n', np.abs(np.array(all_sols[goal_i][sol_i]) - prev_sol)
-                    print 'max diff:\n', np.degrees(np.max(np.abs(np.array(all_sols[goal_i][sol_i])[[0,1,2,3,5]] - prev_sol[[0,1,2,3,5]])))
-                    prev_sol = np.array(all_sols[goal_i][sol_i])
+                    print path_step
 
                     v = self.robot.q
-                    v[self.robot_arm[0] + '_shoulder_pan_joint'] = all_sols[goal_i][sol_i][0]
-                    v[self.robot_arm[0] + '_shoulder_lift_joint'] = all_sols[goal_i][sol_i][1]
-                    v[self.robot_arm[0] + '_upper_arm_roll_joint'] = all_sols[goal_i][sol_i][2]
-                    v[self.robot_arm[0] + '_elbow_flex_joint'] = all_sols[goal_i][sol_i][3]
-                    v[self.robot_arm[0] + '_forearm_roll_joint'] = all_sols[goal_i][sol_i][4]
-                    v[self.robot_arm[0] + '_wrist_flex_joint'] = all_sols[goal_i][sol_i][5]
-                    v[self.robot_arm[0] + '_wrist_roll_joint'] = all_sols[goal_i][sol_i][6]
+                    v[self.robot_arm[0] + '_shoulder_pan_joint'] = path_step[0]
+                    v[self.robot_arm[0] + '_shoulder_lift_joint'] = path_step[1]
+                    v[self.robot_arm[0] + '_upper_arm_roll_joint'] = path_step[2]
+                    v[self.robot_arm[0] + '_elbow_flex_joint'] = path_step[3]
+                    v[self.robot_arm[0] + '_forearm_roll_joint'] = path_step[4]
+                    v[self.robot_arm[0] + '_wrist_flex_joint'] = path_step[5]
+                    v[self.robot_arm[0] + '_wrist_roll_joint'] = path_step[6]
                     self.robot.set_positions(v)
                     self.dart_world.displace_gown()
                     self.dart_world.check_collision()
                     self.dart_world.set_gown([self.robot_arm])
                     # rospy.sleep(1.5)
-                    # rospy.sleep(0.1)
+                    rospy.sleep(0.5)
         else:
             # print 'In base collision! single config distance: ', distance
             if distance < 2.0:
                 this_pr2_score = baseline + 1. + (1.25 - distance)
+
+                if this_pr2_score < self.this_best_pr2_score:
+                    self.this_best_pr2_config = current_parameters
+                    self.this_best_pr2_score = this_pr2_score
+                    if self.final_pr2_optimization:
+                        self.this_path = path
+                        self.this_path_traj = path_trajectory
                 return this_pr2_score
-        self.this_path = path
-        self.this_sols = all_sols
+        # print path
+        # self.this_path_traj = path_trajectory
+        # self.this_sols = all_sols
         #if self.final_pr2_optimization:
         #    self.trajectory_pickle_output.extend([path, all_sols])
         # self.human_model.SetActiveManipulator('leftarm')
@@ -2057,6 +2105,12 @@ class DressingSimulationProcess(object):
         zeta = 0.05  # Weight on torques
         if reach_score == 0.:
             this_pr2_score = baseline + 1.+ 2*random.random()
+            if this_pr2_score < self.this_best_pr2_score:
+                self.this_best_pr2_config = current_parameters
+                self.this_best_pr2_score = this_pr2_score
+                if self.final_pr2_optimization:
+                    self.this_path = path
+                    self.this_path_traj = path_trajectory
             return this_pr2_score
         else:
             # print 'Reach score: ', reach_score
@@ -2068,8 +2122,14 @@ class DressingSimulationProcess(object):
             # print 'reach_score:', reach_score
             # print 'manip_score:', manip_score
             this_pr2_score = baseline-beta*reach_score-gamma*manip_score #+ zeta*angle_cost
-            if self.final_pr2_optimization:
-                this_pr2_score = baseline-beta*reach_score-gamma*manip_score
+            if this_pr2_score < self.this_best_pr2_score:
+                self.this_best_pr2_config = current_parameters
+                self.this_best_pr2_score = this_pr2_score
+                if self.final_pr2_optimization:
+                    self.this_path = path
+                    self.this_path_traj = path_trajectory
+            # if self.final_pr2_optimization:
+            #     this_pr2_score = baseline-beta*reach_score-gamma*manip_score
             return this_pr2_score
 
     def is_dart_base_in_collision(self):
@@ -2090,7 +2150,13 @@ class DressingSimulationProcess(object):
                     ((self.robot == contact.skel1 or self.robot == contact.skel2) and
                          (self.gown_leftarm == contact.skel1 or self.gown_leftarm == contact.skel2)) or \
                     ((self.robot == contact.skel1 or self.robot == contact.skel2) and
-                         (self.gown_rightarm == contact.skel1 or self.gown_rightarm == contact.skel2)):
+                         (self.gown_rightarm == contact.skel1 or self.gown_rightarm == contact.skel2)) or \
+                    ((self.chair == contact.skel1 or self.chair == contact.skel2) and
+                         (self.gown_leftarm == contact.skel1 or self.gown_leftarm == contact.skel2)) or \
+                    ((self.chair == contact.skel1 or self.chair == contact.skel2) and
+                         (self.gown_rightarm == contact.skel1 or self.gown_rightarm == contact.skel2)) or \
+                    ((self.robot == contact.skel1 or self.robot == contact.skel2) and
+                         (self.chair == contact.skel1 or self.chair == contact.skel2)):
                 return True
         return False
 
@@ -2150,6 +2216,7 @@ class DressingSimulationProcess(object):
 
         self.robot = self.dart_world.robot
         self.human = self.dart_world.human
+        self.chair = self.dart_world.chair
         self.gown_leftarm = self.dart_world.gown_box_leftarm
         self.gown_rightarm = self.dart_world.gown_box_rightarm
 
@@ -2584,7 +2651,7 @@ if __name__ == "__main__":
     # pkg_path = rospack.get_path('hrl_base_selection')
     # skel_file = pkg_path + '/models/' + filename
 
-    optimizer = DressingMultiProcessOptimization(number_of_processes=0, visualize=False)
+    optimizer = DressingMultiProcessOptimization(number_of_processes=1, visualize=False)
     optimizer.optimize_entire_dressing_task(reset_file=False)
     # outer_elapsed_time = rospy.Time.now()-outer_start_time
     print 'Everything is complete!'

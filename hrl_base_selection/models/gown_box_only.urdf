@@ -9,19 +9,19 @@
     </inertial>-->
     <visual name="visual">
       <origin
-        xyz="0.0 0.0 -0.1"
+        xyz="0.0 0.0 -0.15"
         rpy="0 0 0" />
       <geometry>
-        <box size="0.04 0.12 0.25"/>
+        <box size="0.08 0.12 0.3"/>
       </geometry>
       <!--<color>1.0 0.5 0.0</color>-->
     </visual>
     <collision name="collision">
       <origin
-        xyz="0.0 0.0 -0.1"
+        xyz="0.0 0.0 -0.15"
         rpy="0 0 0" />
       <geometry>
-        <box size="0.04 0.12 0.25"/>
+        <box size="0.08 0.12 0.3"/>
       </geometry>
     </collision>
   </link>

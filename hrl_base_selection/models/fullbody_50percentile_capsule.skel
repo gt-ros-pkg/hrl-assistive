@@ -1321,5 +1321,214 @@
         <init_vel>0</init_vel>
       </joint>
     </skeleton>
+    <skeleton name="chair">
+      <transformation>0 0 0 0 0 0</transformation>
+      <joint name="j_world_chair" type="translational">
+        <transformation>0.0 0.0 0.0 0.0 0.0 0.0</transformation>
+        <parent>world</parent>
+        <child>chair_base</child>
+        <init_pos>0 0 0</init_pos>
+        <init_vel>0 0 0</init_vel>
+      </joint>
+      <body name="chair_base">
+        <transformation>0 0 0 0 0 0</transformation>
+      </body>
+      <joint name="j_base_seat" type="translational">
+        <transformation>0.0 0.0 0.0 0.0 0.0 0.0</transformation>
+        <parent>chair_base</parent>
+        <child>seat</child>
+        <init_pos>0 0 0</init_pos>
+        <init_vel>0 0 0</init_vel>
+      </joint>
+      <body name="seat">
+        <transformation>0.1 0 0.45 0 0 0</transformation>
+        <visualization_shape>
+					<geometry>
+						<box>
+							<size>0.4 0.52 0.02</size>
+						</box>
+					</geometry>
+				</visualization_shape>
+				<collision_shape>
+					<geometry>
+						<box>
+							<size>0.4 0.52 0.02</size>
+						</box>
+					</geometry>
+				</collision_shape>
+      </body>
+      <joint name="j_base_back" type="translational">
+        <transformation>0.0 0.0 0.0 0.0 0.0 0.0</transformation>
+        <parent>chair_base</parent>
+        <child>backrest</child>
+        <init_pos>0 0 0</init_pos>
+        <init_vel>0 0 0</init_vel>
+      </joint>
+      <body name="backrest">
+        <transformation>-0.13 0 0.665 0 0 0</transformation>
+        <visualization_shape>
+					<geometry>
+						<box>
+							<size>0.06 0.52 0.45</size>
+						</box>
+					</geometry>
+				</visualization_shape>
+				<collision_shape>
+					<geometry>
+						<box>
+							<size>0.02 0.52 0.44</size>
+						</box>
+					</geometry>
+				</collision_shape>
+      </body>
+      <joint name="j_base_left_armrest" type="translational">
+        <transformation>0.0 0.0 0.0 0.0 0.0 0.0</transformation>
+        <parent>chair_base</parent>
+        <child>left_armrest</child>
+        <init_pos>0 0 0</init_pos>
+        <init_vel>0 0 0</init_vel>
+      </joint>
+      <body name="left_armrest">
+        <transformation>0.1 -0.285 0.5875 0 0 0</transformation>
+        <visualization_shape>
+					<geometry>
+						<box>
+							<size>0.4 0.05 0.295</size>
+						</box>
+					</geometry>
+				</visualization_shape>
+				<collision_shape>
+					<geometry>
+						<box>
+							<size>0.4 0.05 0.295</size>
+						</box>
+					</geometry>
+				</collision_shape>
+      </body>
+      <joint name="j_base_right_armrest" type="translational">
+        <transformation>0.0 0.0 0.0 0.0 0.0 0.0</transformation>
+        <parent>chair_base</parent>
+        <child>right_armrest</child>
+        <init_pos>0 0 0</init_pos>
+        <init_vel>0 0 0</init_vel>
+      </joint>
+      <body name="right_armrest">
+        <transformation>0.1 0.285 0.5875 0 0 0</transformation>
+        <visualization_shape>
+					<geometry>
+						<box>
+							<size>0.4 0.05 0.295</size>
+						</box>
+					</geometry>
+				</visualization_shape>
+				<collision_shape>
+					<geometry>
+						<box>
+							<size>0.4 0.05 0.295</size>
+						</box>
+					</geometry>
+				</collision_shape>
+      </body>
+      <joint name="j_base_left_wheel" type="translational">
+        <transformation>0.0 0.0 0.0 0.0 0.0 0.0</transformation>
+        <parent>chair_base</parent>
+        <child>left_wheel</child>
+        <init_pos>0 0 0</init_pos>
+        <init_vel>0 0 0</init_vel>
+      </joint>
+      <body name="left_wheel">
+        <transformation>-0.1 0.29 0.305 1.5707963 0 0</transformation>
+        <visualization_shape>
+					<geometry>
+						<cylinder>
+							<height>0.06</height>
+              <radius>0.305</radius>
+						</cylinder>
+					</geometry>
+				</visualization_shape>
+				<collision_shape>
+					<geometry>
+						<cylinder>
+							<height>0.06</height>
+              <radius>0.305</radius>
+						</cylinder>
+					</geometry>
+				</collision_shape>
+      </body>
+      <joint name="j_base_right_wheel" type="translational">
+        <transformation>0.0 0.0 0.0 0.0 0.0 0.0</transformation>
+        <parent>chair_base</parent>
+        <child>right_wheel</child>
+        <init_pos>0 0 0</init_pos>
+        <init_vel>0 0 0</init_vel>
+      </joint>
+      <body name="right_wheel">
+        <transformation>-0.1 -0.29 0.305 1.5707963 0 0</transformation>
+        <visualization_shape>
+					<geometry>
+						<cylinder>
+							<height>0.06</height>
+              <radius>0.305</radius>
+						</cylinder>
+					</geometry>
+				</visualization_shape>
+				<collision_shape>
+					<geometry>
+						<cylinder>
+							<height>0.06</height>
+              <radius>0.305</radius>
+						</cylinder>
+					</geometry>
+				</collision_shape>
+      </body>
+      <joint name="j_base_front_left_wheel" type="translational">
+        <transformation>0.0 0.0 0.0 0.0 0.0 0.0</transformation>
+        <parent>chair_base</parent>
+        <child>front_left_wheel</child>
+        <init_pos>0 0 0</init_pos>
+        <init_vel>0 0 0</init_vel>
+      </joint>
+      <body name="front_left_wheel">
+        <transformation>0.33 0.29 0.22 0 0 0</transformation>
+        <visualization_shape>
+					<geometry>
+						<box>
+							<size>0.15 0.06 0.44</size>
+						</box>
+					</geometry>
+				</visualization_shape>
+				<collision_shape>
+					<geometry>
+						<box>
+							<size>0.15 0.06 0.44</size>
+						</box>
+					</geometry>
+				</collision_shape>
+      </body>
+      <joint name="j_base_front_right_wheel" type="translational">
+        <transformation>0.0 0.0 0.0 0.0 0.0 0.0</transformation>
+        <parent>chair_base</parent>
+        <child>front_right_wheel</child>
+        <init_pos>0 0 0</init_pos>
+        <init_vel>0 0 0</init_vel>
+      </joint>
+      <body name="front_right_wheel">
+        <transformation>0.33 -0.29 0.22 0 0 0</transformation>
+        <visualization_shape>
+					<geometry>
+						<box>
+							<size>0.15 0.06 0.44</size>
+						</box>
+					</geometry>
+				</visualization_shape>
+				<collision_shape>
+					<geometry>
+						<box>
+							<size>0.15 0.06 0.44</size>
+						</box>
+					</geometry>
+				</collision_shape>
+      </body>
+    </skeleton>
   </world>
 </skel>

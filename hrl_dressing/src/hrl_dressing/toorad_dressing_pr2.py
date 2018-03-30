@@ -63,7 +63,7 @@ class TOORAD_Dressing_PR2(object):
         self.save_file_path = self.pkg_path + '/data/'
         self.save_file_name_final_output = 'arm_configs_final_output.log'
         self.trajectory_pickle_file_name = 'trajectory_data_a'
-        configs = self.load_configs(self.save_file_path+self.save_file_name_final_output)
+        # configs = self.load_configs(self.save_file_path+self.save_file_name_final_output)
 
         self.robot_arm = 'rightarm'
         self.robot_opposite_arm = 'leftarm'
@@ -148,13 +148,15 @@ class TOORAD_Dressing_PR2(object):
         elif self.machine == 'desktop':
             # If this is on desktop for visualization, run the visualization
             # Set up TOORAD process that includes DART simulation environment
+            pydart.init()
+            print('pydart initialization OK')
 
-            self.setup_dart(visualize=True)
+            self.setup_dart(filename='fullbody_50percentile_capsule.skel', visualize=True)
 
             # rospy.sleep(20)
             arm = raw_input('\nEnter R (r) for right arm (should be done first. Enter L (l) for left arm (should be '
                             'done second). Otherwise ends.\n')
-            while not arm.upper() == 'Q' or not arm.upper() == 'N' or not rospy.is_shutdown():
+            while (not arm.upper() == 'Q' and not arm.upper() == 'N') and not rospy.is_shutdown():
                 if len(arm) == 0:
                     return
                 elif arm.upper()[0] == 'R':
@@ -176,7 +178,7 @@ class TOORAD_Dressing_PR2(object):
                     # self.toorad.set_human_arm('leftarm')
                 else:
                     return
-
+                print self.save_file_path + self.trajectory_pickle_file_name+str(subtask)+'.pkl'
                 loaded_data = load_pickle(self.save_file_path + self.trajectory_pickle_file_name+str(subtask)+'.pkl')
 
                 params,\
@@ -191,21 +193,48 @@ class TOORAD_Dressing_PR2(object):
                 pr2_B_traj_forearm_end,\
                 pr2_B_traj_upper_end,\
                 pr2_B_traj_final_end,\
-                traj_path, all_sols = loaded_data
+                traj_path = loaded_data
                 print 'Trajectory data loaded succesfully!'
+
+                # traj_path = ['0-31', '1-27', '2-11', '3-6', '4-16', '5-29', '6-8', '7-17', '8-19']
+                # traj_path = [[-0.83093813453219678, 0.10722346878859823, -1.7000000000000004,
+                #               -0.90766924450946551, -3.1210884013079587, -1.7235976988822328, -1.2979503464827749],
+                #              [-1.0844312131715206, 0.084027578784084733, -1.8000000000000005,
+                #               -1.4245158426488644, -3.0860995285037038, -1.9847494436312492, -1.2066037442555053],
+                #              [-1.3237652739628383, 0.53481630946466319, -1.4000000000000001,
+                #               -1.7903074753302779, 2.5252581717466005, -1.9804165085193788, -1.7478080920277961],
+                #              [-1.3428885426557267, 1.1553098372465831, -0.79999999999999993,
+                #               -2.1209661569575591, 2.1437366857958517, -1.4327286200566263, -2.2785489420275407],
+                #              [-1.5346190383328748, 1.1555836701895712, -0.20000000000000001,
+                #               -1.9862795823011854, -1.7468528114342787, -1.3068278607450263, 1.8883888682423251],
+                #              [-1.3011283435993846, 0.7949433733408604, 0.30000000000000004,
+                #               -1.6252513693263049, -1.8152922611050248, -1.6232060143257712, 1.8157493535905536],
+                #              [-1.6137876329039749, 0.4455919065390439, -0.30000000000000004,
+                #               -1.1107291766655092, -1.4617957579179848, -1.2681415736991399, 1.6837086859578969],
+                #              [-1.7791537028022975, 0.23294939953679772, -0.89999999999999991,
+                #               -0.94307056065300066, -0.86724903577067591, -0.99350475010981776, 2.0068805248176851],
+                #              [-1.8376780119135319, 0.01264066047872392, -1.5000000000000002,
+                #               -0.87736207472624372, -0.093641446870448952, -0.87638083953224066, 1.6311079158735167]]
+                print 'pr2_params', pr2_params
 
                 # self.toorad = DressingSimulationProcess(visualize=False)
                 print 'Starting visualization of the desired configuration for the dressing task. First select the arm ' \
                       'to be dressed'
 
+                x = pr2_params[0]
+                y = pr2_params[1]
+                th = pr2_params[2]
+                z = pr2_params[3]
+
                 v = self.robot.positions()
-                v['rootJoint_pos_x'] = pr2_params[0]
-                v['rootJoint_pos_y'] = pr2_params[1]
+                v['rootJoint_pos_x'] = x
+                v['rootJoint_pos_y'] = y
                 v['rootJoint_pos_z'] = 0.
-                v['rootJoint_rot_z'] = pr2_params[2]
+                v['rootJoint_rot_z'] = th
                 self.dart_world.displace_gown()
                 v['torso_lift_joint'] = pr2_params[3]
                 self.robot.set_positions(v)
+                rospy.sleep(0.1)
 
                 self.set_human_model_dof_dart(params, h_arm)
                 self.set_human_model_dof_dart([0., 0., 0., 0.], h_opposite_arm)
@@ -216,56 +245,76 @@ class TOORAD_Dressing_PR2(object):
                 # print 'Solution being visualized:'
                 cont = raw_input('\nEnter Q (q) or N (n) to stop visualization of this task. '
                                  'Otherwise visualizes again.\n')
-                while not cont.upper() == 'Q' or not cont.upper() == 'N' or not rospy.is_shutdown():
-                    for path_step in traj_path:
-                        # if not path_step == 'start' and not path_step == 'end':
-                        goal_i = int(path_step.split('-')[0])
-                        sol_i = int(path_step.split('-')[1])
-                        # print 'solution:\n', all_sols[goal_i][sol_i]
-                        # print 'diff:\n', np.abs(np.array(all_sols[goal_i][sol_i]) - prev_sol)
-                        # print 'max diff:\n', np.degrees(
-                        #     np.max(np.abs(np.array(all_sols[goal_i][sol_i])[[0, 1, 2, 3, 5]] - prev_sol[[0, 1, 2, 3, 5]])))
-                        # prev_sol = np.array(all_sols[goal_i][sol_i])
+                if len(cont) == 0:
+                    cont = ' '
+                while not cont.upper()[0] == 'Q' and not cont.upper()[0] == 'N' and not rospy.is_shutdown():
+                    count = 0
+                    while count < 2 and not rospy.is_shutdown():
+                        count += 1
+                        # print 'robot pose'
+                        # print self.robot.q['rootJoint_pos_x']
+                        # print self.robot.q['rootJoint_pos_y']
+                        # print self.robot.q['rootJoint_pos_z']
+                        # print self.robot.q['rootJoint_rot_z']
+                        # print self.robot.q['torso_lift_joint']
+                        # print traj_path
+                        for num, path_step in enumerate(traj_path):
 
-                        v = self.robot.q
-                        v[self.robot_arm[0] + '_shoulder_pan_joint'] = all_sols[goal_i][sol_i][0]
-                        v[self.robot_arm[0] + '_shoulder_lift_joint'] = all_sols[goal_i][sol_i][1]
-                        v[self.robot_arm[0] + '_upper_arm_roll_joint'] = all_sols[goal_i][sol_i][2]
-                        v[self.robot_arm[0] + '_elbow_flex_joint'] = all_sols[goal_i][sol_i][3]
-                        v[self.robot_arm[0] + '_forearm_roll_joint'] = all_sols[goal_i][sol_i][4]
-                        v[self.robot_arm[0] + '_wrist_flex_joint'] = all_sols[goal_i][sol_i][5]
-                        v[self.robot_arm[0] + '_wrist_roll_joint'] = all_sols[goal_i][sol_i][6]
+                            # print path_step
+                            # print all_sols[goal_i][sol_i][0]
+                            # print all_sols[goal_i][sol_i][1]
+                            # print all_sols[goal_i][sol_i][2]
+                            # print all_sols[goal_i][sol_i][3]
+                            # print all_sols[goal_i][sol_i][4]
+                            # print all_sols[goal_i][sol_i][5]
+                            # print all_sols[goal_i][sol_i][6]
 
-                        # v = self.robot.q
-                        if self.robot_arm == 'rightarm':
-                            v['l_shoulder_pan_joint'] = 1. * 3.14 / 2
-                            v['l_shoulder_lift_joint'] = -0.52
-                            v['l_upper_arm_roll_joint'] = 0.
-                            v['l_elbow_flex_joint'] = -3.14 * 2 / 3
-                            v['l_forearm_roll_joint'] = 0.
-                            v['l_wrist_flex_joint'] = 0.
-                            v['l_wrist_roll_joint'] = 0.
-                            v['l_gripper_l_finger_joint'] = .54
-                        else:
-                            v['r_shoulder_pan_joint'] = -1. * 3.14 / 2
-                            v['r_shoulder_lift_joint'] = -0.52
-                            v['r_upper_arm_roll_joint'] = 0.
-                            v['r_elbow_flex_joint'] = -3.14 * 2 / 3
-                            v['r_forearm_roll_joint'] = 0.
-                            v['r_wrist_flex_joint'] = 0.
-                            v['r_wrist_roll_joint'] = 0.
-                            v['r_gripper_l_finger_joint'] = .54
+                            v = self.robot.q
+                            v[self.robot_arm[0] + '_shoulder_pan_joint'] = path_step[0]
+                            v[self.robot_arm[0] + '_shoulder_lift_joint'] = path_step[1]
+                            v[self.robot_arm[0] + '_upper_arm_roll_joint'] = path_step[2]
+                            v[self.robot_arm[0] + '_elbow_flex_joint'] = path_step[3]
+                            v[self.robot_arm[0] + '_forearm_roll_joint'] = path_step[4]
+                            v[self.robot_arm[0] + '_wrist_flex_joint'] = path_step[5]
+                            v[self.robot_arm[0] + '_wrist_roll_joint'] = path_step[6]
 
-                        self.robot.set_positions(v)
-                        # self.dart_world.displace_gown()
+                            # v = self.robot.q
+                            if self.robot_arm == 'rightarm':
+                                v['l_shoulder_pan_joint'] = 1. * 3.14 / 2
+                                v['l_shoulder_lift_joint'] = -0.52
+                                v['l_upper_arm_roll_joint'] = 0.
+                                v['l_elbow_flex_joint'] = -3.14 * 2 / 3
+                                v['l_forearm_roll_joint'] = 0.
+                                v['l_wrist_flex_joint'] = 0.
+                                v['l_wrist_roll_joint'] = 0.
+                                v['l_gripper_l_finger_joint'] = .15
+                                v['l_gripper_r_finger_joint'] = .15
+                            else:
+                                v['r_shoulder_pan_joint'] = -1. * 3.14 / 2
+                                v['r_shoulder_lift_joint'] = -0.52
+                                v['r_upper_arm_roll_joint'] = 0.
+                                v['r_elbow_flex_joint'] = -3.14 * 2 / 3
+                                v['r_forearm_roll_joint'] = 0.
+                                v['r_wrist_flex_joint'] = 0.
+                                v['r_wrist_roll_joint'] = 0.
+                                v['r_gripper_l_finger_joint'] = .15
+                                v['r_gripper_r_finger_joint'] = .15
 
-                        # self.robot.set_positions(v)
-                        # self.dart_world.displace_gown()
-                        # self.dart_world.check_collision()
-                        self.dart_world.set_gown([self.robot_arm])
-                        rospy.sleep(0.5)
+                            self.robot.set_positions(v)
+                            self.dart_world.displace_gown()
+
+                            # self.robot.set_positions(v)
+                            self.dart_world.displace_gown()
+                            # self.dart_world.check_collision()
+                            self.dart_world.set_gown([self.robot_arm])
+                            if num == 0 or num == len(traj_path)-1:
+                                rospy.sleep(1.5)
+                            else:
+                                rospy.sleep(0.2)
                     cont = raw_input('\nEnter Q (q) or N (n) to stop visualization of this task. '
                                      'Otherwise visualizes again.\n')
+                    if len(cont) == 0:
+                        cont = ' '
                 arm = raw_input('\nEnter R (r) for right arm (should be done first. Enter L (l) for left arm (should be '
                                 'done second). Otherwise ends.\n')
 
@@ -294,7 +343,7 @@ class TOORAD_Dressing_PR2(object):
             self.initialize_pr2_comms(enable_realtime_HMM)
 
             arm = ''
-            while not arm.upper() == 'Y' or not rospy.is_shutdown():
+            while not arm.upper() == 'Y' and not rospy.is_shutdown():
                 print 'Will moving PR2 to initial configuration for the desired dressing task. First select the arm ' \
                       'to be dressed'
                 arm = raw_input('\nEnter R (r) for right arm (should be done first). Enter L (l) for left arm (should be '
@@ -375,7 +424,7 @@ class TOORAD_Dressing_PR2(object):
                     pr2_B_goal = pr2_B_goals[goal_i]
                     pos, quat = Bmat_to_pos_quat(pr2_B_goal)
                     inp = 'Y'
-                    while inp.upper() == 'Y' or inp.upper() == 'N' or inp.upper() == 'Q' or not rospy.is_shutdown():
+                    while (inp.upper() == 'Y' and inp.upper() == 'N' and inp.upper() == 'Q') and not rospy.is_shutdown():
                         inp = raw_input(
                             '\nEnter Y (y) to move arms to start configuration. Will attempt movement for up to 10 '
                             'seconds. N or Q ends. Otherwise continues without movement.\n')
@@ -398,7 +447,7 @@ class TOORAD_Dressing_PR2(object):
                     return
 
                 inp = ''
-                while not inp.upper() == 'Y' or not rospy.is_shutdown():
+                while not inp.upper() == 'Y' and not rospy.is_shutdown():
                     self.subtask_complete = False
                     self.ready_to_start = False
                     self.moving = False
@@ -759,7 +808,8 @@ class TOORAD_Dressing_PR2(object):
         v['l_forearm_roll_joint'] = 0.
         v['l_wrist_flex_joint'] = 0.
         v['l_wrist_roll_joint'] = 0.
-        v['l_gripper_l_finger_joint'] = .54
+        v['l_gripper_l_finger_joint'] = .15
+        v['l_gripper_r_finger_joint'] = .15
         v['r_shoulder_pan_joint'] = -1.*3.14/2
         v['r_shoulder_lift_joint'] = -0.52
         v['r_upper_arm_roll_joint'] = 0.
@@ -767,7 +817,8 @@ class TOORAD_Dressing_PR2(object):
         v['r_forearm_roll_joint'] = 0.
         v['r_wrist_flex_joint'] = 0.
         v['r_wrist_roll_joint'] = 0.
-        v['r_gripper_l_finger_joint'] = .54
+        v['r_gripper_l_finger_joint'] = .15
+        v['r_gripper_r_finger_joint'] = .15
         v['torso_lift_joint'] = 0.3
         self.robot.set_positions(v)
         self.dart_world.displace_gown()
