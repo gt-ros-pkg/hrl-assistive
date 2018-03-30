@@ -1747,6 +1747,7 @@ class DressingSimulationProcess(object):
         # current_parameters = [0.3, -0.9, 1.57*m.pi/3., 0.3]
         #print 'final pr2 optimization?', self.final_pr2_optimization
         path_trajectory = []
+        path = []
         if self.final_pr2_optimization:
             baseline = 100.
             beta = 100.
@@ -2651,7 +2652,7 @@ if __name__ == "__main__":
     # pkg_path = rospack.get_path('hrl_base_selection')
     # skel_file = pkg_path + '/models/' + filename
 
-    optimizer = DressingMultiProcessOptimization(number_of_processes=1, visualize=False)
+    optimizer = DressingMultiProcessOptimization(number_of_processes=1, visualize=True)
     optimizer.optimize_entire_dressing_task(reset_file=False)
     # outer_elapsed_time = rospy.Time.now()-outer_start_time
     print 'Everything is complete!'
