@@ -46,7 +46,8 @@ from hrl_base_selection.dressing_configuration_optimization_multithread_dart imp
 # Class that runs the performance of the dressing task on a person using a PR2.
 # Run on the PR2 to inform it of what to do. Run on another machine to visualize the person's pose.
 class TOORAD_Dressing_PR2(object):
-    def __init__(self, machine='desktop', visualize=False, participant=0, trial=0, enable_realtime_HMM=False,
+    def __init__(self, machine='desktop', visualize=False, participant=0, trial=0, model='50-percentile-no-chair',
+                 enable_realtime_HMM=False,
                  visually_estimate_arm_pose=False, adjust_arm_pose_visually=False):
         # machine is whether this is run on the PR2 or desktop for visualization.
         self.machine = machine
@@ -60,10 +61,12 @@ class TOORAD_Dressing_PR2(object):
         # Load the configurations for dressing.
         rospack = rospkg.RosPack()
         self.pkg_path = rospack.get_path('hrl_base_selection')
-        self.save_file_path = self.pkg_path + '/data/'
+        self.save_file_path = self.pkg_path + '/data/' + 'saved_results/dressing/'+model+'/'
         self.save_file_name_final_output = 'arm_configs_final_output.log'
         self.trajectory_pickle_file_name = 'trajectory_data_a'
         # configs = self.load_configs(self.save_file_path+self.save_file_name_final_output)
+
+        self.enable_realtime_HMM = enable_realtime_HMM
 
         self.robot_arm = 'rightarm'
         self.robot_opposite_arm = 'leftarm'
@@ -196,25 +199,6 @@ class TOORAD_Dressing_PR2(object):
                 traj_path = loaded_data
                 print 'Trajectory data loaded succesfully!'
 
-                # traj_path = ['0-31', '1-27', '2-11', '3-6', '4-16', '5-29', '6-8', '7-17', '8-19']
-                # traj_path = [[-0.83093813453219678, 0.10722346878859823, -1.7000000000000004,
-                #               -0.90766924450946551, -3.1210884013079587, -1.7235976988822328, -1.2979503464827749],
-                #              [-1.0844312131715206, 0.084027578784084733, -1.8000000000000005,
-                #               -1.4245158426488644, -3.0860995285037038, -1.9847494436312492, -1.2066037442555053],
-                #              [-1.3237652739628383, 0.53481630946466319, -1.4000000000000001,
-                #               -1.7903074753302779, 2.5252581717466005, -1.9804165085193788, -1.7478080920277961],
-                #              [-1.3428885426557267, 1.1553098372465831, -0.79999999999999993,
-                #               -2.1209661569575591, 2.1437366857958517, -1.4327286200566263, -2.2785489420275407],
-                #              [-1.5346190383328748, 1.1555836701895712, -0.20000000000000001,
-                #               -1.9862795823011854, -1.7468528114342787, -1.3068278607450263, 1.8883888682423251],
-                #              [-1.3011283435993846, 0.7949433733408604, 0.30000000000000004,
-                #               -1.6252513693263049, -1.8152922611050248, -1.6232060143257712, 1.8157493535905536],
-                #              [-1.6137876329039749, 0.4455919065390439, -0.30000000000000004,
-                #               -1.1107291766655092, -1.4617957579179848, -1.2681415736991399, 1.6837086859578969],
-                #              [-1.7791537028022975, 0.23294939953679772, -0.89999999999999991,
-                #               -0.94307056065300066, -0.86724903577067591, -0.99350475010981776, 2.0068805248176851],
-                #              [-1.8376780119135319, 0.01264066047872392, -1.5000000000000002,
-                #               -0.87736207472624372, -0.093641446870448952, -0.87638083953224066, 1.6311079158735167]]
                 print 'pr2_params', pr2_params
 
                 # self.toorad = DressingSimulationProcess(visualize=False)
@@ -322,7 +306,7 @@ class TOORAD_Dressing_PR2(object):
         elif self.machine.upper() == 'PR2':
             import hrl_dressing.controller as controller
             # Set up TOORAD process that includes DART simulation environment
-            self.toorad = DressingSimulationProcess(visualize=False)
+            # self.toorad = DressingSimulationProcess(visualize=False)
             # This flag is set when the system is ready to start. It then waits for the user to put their hand under
             # the robot end effector
             self.ready_to_start = False
@@ -333,6 +317,8 @@ class TOORAD_Dressing_PR2(object):
             self.moving = False
             self.hz = 20.
             self.control_rate = rospy.Rate(self.hz)
+
+            self.hmm_prediction = ''
 
             self.record_data = True
 
@@ -351,38 +337,34 @@ class TOORAD_Dressing_PR2(object):
                 if len(arm) == 0:
                     return
                 elif arm.upper()[0] == 'R':
-                    self.arm = 'rightarm'
-                    h_config = configs[0][0]
-                    r_config = configs[0][1]
-                    self.toorad.set_robot_arm('rightarm')
-                    self.toorad.set_human_arm('rightarm')
+                    subtask = 0
+                    h_arm = 'rightarm'
+                    h_opposite_arm = 'leftarm'
                 elif arm.upper()[0] == 'L':
-                    self.arm = 'leftarm'
-                    h_config = configs[1][0]
-                    r_config = configs[1][1]
-                    self.toorad.set_robot_arm('rightarm')
-                    self.toorad.set_human_arm('leftarm')
+                    subtask = 1
+                    h_arm = 'leftarm'
+                    h_opposite_arm = 'rightarm'
                 else:
                     return
 
-                # Set up the simulator for the configuration loaded
-                self.toorad.set_human_model_dof_dart([0, 0, 0, 0], self.toorad.human_opposite_arm)
-                self.toorad.set_human_model_dof_dart(h_config, self.toorad.human_arm)
-                self.toorad.set_pr2_model_dof_dart(r_config)
-
                 # Calculate the trajectories based on the configuration in the simulator
-                s_arm = self.toorad.human_arm.split('a')[0]
-                origin_B_goals, \
-                origin_B_forearm_pointed_down_arm, \
-                origin_B_upperarm_pointed_down_shoulder, \
-                origin_B_hand, \
-                origin_B_wrist, \
-                origin_B_traj_start, \
-                origin_B_traj_forearm_end, \
-                origin_B_traj_upper_end, \
-                origin_B_traj_final_end, \
-                angle_from_horizontal, \
-                forearm_B_upper_arm, traj_path, all_sols = self.toorad.generate_dressing_trajectory(s_arm, visualize=False)
+                print self.save_file_path + self.trajectory_pickle_file_name + str(subtask) + '.pkl'
+                loaded_data = load_pickle(self.save_file_path + self.trajectory_pickle_file_name + str(subtask) + '.pkl')
+
+                params, \
+                z, \
+                pr2_params, \
+                pr2_B_goals, \
+                pr2_B_forearm_pointed_down_arm, \
+                pr2_B_upperarm_pointed_down_shoulder, \
+                pr2_B_hand, \
+                pr2_B_wrist, \
+                pr2_B_traj_start, \
+                pr2_B_traj_forearm_end, \
+                pr2_B_traj_upper_end, \
+                pr2_B_traj_final_end, \
+                traj_path = loaded_data
+                print 'Trajectory data loaded succesfully!'
 
                 if visually_estimate_arm_pose:
                     # Will estimate the arm pose prior to beginning dressing using vision and will execute the
@@ -413,15 +395,25 @@ class TOORAD_Dressing_PR2(object):
                         else:
                             return
 
-                    pr2_B_goals = []
-                    for goal in origin_B_goals:
-                        pr2_B_goals.append(self.toorad.origin_B_pr2.I*goal)
+                    params, \
+                    z, \
+                    pr2_params, \
+                    pr2_B_goals, \
+                    pr2_B_forearm_pointed_down_arm, \
+                    pr2_B_upperarm_pointed_down_shoulder, \
+                    pr2_B_hand, \
+                    pr2_B_wrist, \
+                    pr2_B_traj_start, \
+                    pr2_B_traj_forearm_end, \
+                    pr2_B_traj_upper_end, \
+                    pr2_B_traj_final_end, \
+                    traj_path = loaded_data
 
                     # Find first pose from TOORAD trajectory and move robot arms to start configuration.
                     goal_i = int(traj_path[0].split('-')[0])
                     sol_i = int(traj_path[0].split('-')[1])
-                    self.control.setJointGuesses(self, rightGuess=all_sols[goal_i][sol_i], leftGuess=None)
-                    pr2_B_goal = pr2_B_goals[goal_i]
+                    self.control.setJointGuesses(self, rightGuess=traj_path[0], leftGuess=None)
+                    pr2_B_goal = pr2_B_goals[0]
                     pos, quat = Bmat_to_pos_quat(pr2_B_goal)
                     inp = 'Y'
                     while (inp.upper() == 'Y' and inp.upper() == 'N' and inp.upper() == 'Q') and not rospy.is_shutdown():
@@ -464,7 +456,7 @@ class TOORAD_Dressing_PR2(object):
                         if visually_estimate_arm_pose:
                             self.begin_dressing_trajectory_from_vision(visually_estimate_arm_pose)
                         else:
-                            self.begin_dressing_trajectory_no_vision(trial, participant, pr2_B_goals, traj_path, all_sols)
+                            self.begin_dressing_trajectory_no_vision(trial, participant, pr2_B_goals, traj_path)
                     elif inp.upper()[0] == 'R':
                         # Re-zero sensors.
                         self.zero_sensor_data()
@@ -542,34 +534,36 @@ class TOORAD_Dressing_PR2(object):
             target_position, target_orientation = Bmat_to_pos_quat(p_B_g[current_goal])
             target_position += equilibrium_point_adjustment
             angle_temp, axis_temp, discard_point = tft.rotation_from_matrix(pr2_B_current_gripper.I*p_B_g)
-            if np.linalg.norm(target_position - current_position) < 0.02 and np.abs(angle_temp) <= m.radians(5.):
+            if np.linalg.norm(target_position - current_position) < 0.02 and np.abs(angle_temp) <= m.radians(5.) and current_goal < len(p_B_g):
                 # Current goal has been reached. Move on to next goal.
                 current_goal += 1
                 target_position, target_orientation = Bmat_to_pos_quat(p_B_g[current_goal])
                 target_position += equilibrium_point_adjustment
-            if 3 < current_goal < 8 and self.distance_to_arm > 10.:
-                distance_adjustment += np.array(pr2_B_current_gripper)[0:3, 1] * (-0.5) + 0.2*np.array(pr2_B_current_gripper)[0:3, 2]
+            if 3 < current_goal < 8 and self.distance_to_arm > 0.09:
+                distance_adjustment += np.array(pr2_B_current_gripper)[0:3, 1] * (-0.05) + 0.05*np.array(pr2_B_current_gripper)[0:3, 2]
                 current_goal = 8
                 target_position, target_orientation = Bmat_to_pos_quat(p_B_g[current_goal])
                 target_position += equilibrium_point_adjustment
-            if 10 < current_goal < 16 and self.distance_to_arm > 10.:
-                distance_adjustment += np.array(pr2_B_current_gripper)[0:3, 1] * (-0.5) + 0.2 * np.array(pr2_B_current_gripper)[0:3, 2]
+            if 10 < current_goal < 16 and self.distance_to_arm > 0.09:
+                distance_adjustment += np.array(pr2_B_current_gripper)[0:3, 1] * (-0.05) + 0.05 * np.array(pr2_B_current_gripper)[0:3, 2]
                 current_goal = 16
                 target_position, target_orientation = Bmat_to_pos_quat(p_B_g[current_goal])
                 target_position += equilibrium_point_adjustment
-            if current_goal > 4:
+            if current_goal > 4 and self.enable_realtime_HMM:
                 self.run_HMM_realtime(np.dstack([self.time_series_forces[:self.array_line + 1, 0] * 1,
                                                  self.time_series_forces[:self.array_line + 1, 3] * 1,
                                                  self.time_series_forces[:self.array_line + 1, 1] * 1])[0])
-            goal_i = int(path[current_goal].split('-')[0])
-            if not goal_i == current_goal:
-                print 'Something has gone wrong. The current goal index and goal index from the path differ'
-                print 'goal_i:', goal_i
-                print 'current_goal:', current_goal
-                self.moving = False
-                break
-            sol_i = int(path[0].split('-')[1])
-            target_posture = sols[goal_i][sol_i]
+            else:
+                self.hmm_prediction = ''
+            # goal_i = int(path[current_goal].split('-')[0])
+            # if not goal_i == current_goal:
+            #     print 'Something has gone wrong. The current goal index and goal index from the path differ'
+                # print 'goal_i:', goal_i
+                # print 'current_goal:', current_goal
+                # self.moving = False
+                # break
+            # sol_i = int(path[0].split('-')[1])
+            target_posture = sols[current_goal]
             self.control.setJointGuesses(self, rightGuess=target_posture, leftGuess=None)
             error = target_position - current_position
 
