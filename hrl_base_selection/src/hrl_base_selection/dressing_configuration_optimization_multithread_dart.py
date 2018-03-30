@@ -673,9 +673,9 @@ class DressingSimulationProcess(object):
         # self.score_length = {}
         # self.sorted_scores = {}
 
-        self.gripper_B_tool = np.matrix([[0., -1., 0., 0.03],
+        self.gripper_B_tool = np.matrix([[0., -1., 0., 0.0303],
                                          [1., 0., 0., 0.0],
-                                         [0., 0., 1., -0.05],
+                                         [0., 0., 1., -0.03875],
                                          [0., 0., 0., 1.]])
 
         # Gripper coordinate system has z in direction of the gripper, x is the axis of the gripper opening and closing.
@@ -1704,17 +1704,17 @@ class DressingSimulationProcess(object):
         # Set human arm for dressing
         print 'Setting the human arm being used by base selection to ', arm
         if 'left' in arm:
-            self.gripper_B_tool = np.matrix([[0., 1., 0., 0.03],
+            self.gripper_B_tool = np.matrix([[0., 1., 0., 0.0303],
                                              [-1., 0., 0., 0.0],
-                                             [0., 0., 1., -0.05],
+                                             [0., 0., 1., -0.03875],
                                              [0., 0., 0., 1.]])
             self.human_arm = 'leftarm'
             self.human_opposite_arm = 'rightarm'
             return True
         elif 'right' in arm:
-            self.gripper_B_tool = np.matrix([[0., -1., 0., 0.03],
+            self.gripper_B_tool = np.matrix([[0., -1., 0., 0.0303],
                                              [1., 0., 0., 0.0],
-                                             [0., 0., 1., -0.05],
+                                             [0., 0., 1., -0.03875],
                                              [0., 0., 0., 1.]])
             self.human_arm = 'rightarm'
             self.human_opposite_arm = 'leftarm'
@@ -2294,10 +2294,10 @@ class DressingSimulationProcess(object):
                                          [-1., 0., 0., 0.0],
                                          [0., 0., 0., 1.0]])
 
-        self.gripper_B_tool = np.matrix([[0., -1., 0., 0.03],
+        self.gripper_B_tool = np.matrix([[0., -1., 0., 0.0303],
                                          [1., 0., 0., 0.0],
-                                         [0., 0., 1., -0.05],
-                                         [0., 0., 0., 1.0]])
+                                         [0., 0., 1., -0.03875],
+                                         [0., 0., 0., 1.]])
 
         self.origin_B_grasp = None
 
