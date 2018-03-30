@@ -301,30 +301,30 @@ class DressingMultiProcessOptimization(object):
 
         for subtask_number, subtask in enumerate(subtask_list):
             print 'starting coarse optimization for ', subtask
-            #self.run_coarse_optimization(subtask_list[subtask_number],
-            #                             robot_arm_to_use[subtask_number],
-            #                             subtask_number,
-            #                             all_stretch_allowable[subtask_number],
-            #                             all_fixed_points_to_use[subtask_number],
-            #                             all_fixed_points)
+            self.run_coarse_optimization(subtask_list[subtask_number],
+                                         robot_arm_to_use[subtask_number],
+                                         subtask_number,
+                                         all_stretch_allowable[subtask_number],
+                                         all_fixed_points_to_use[subtask_number],
+                                         all_fixed_points)
             print 'completed coarse optimization for ', subtask
 
-        #self.combine_process_files(self.save_file_path + 'arm_configs_coarse_feasible',
-        #                           self.save_file_path + self.save_file_name_coarse_feasible)
+        self.combine_process_files(self.save_file_path + 'arm_configs_coarse_feasible',
+                                   self.save_file_path + self.save_file_name_coarse_feasible)
 
         for subtask_number, subtask in enumerate(subtask_list):
             print 'starting fine optimization for ', subtask
 
-            # self.run_fine_optimization(subtask_list[subtask_number],
-            #                            robot_arm_to_use[subtask_number],
-            #                            subtask_number,
-            #                            all_stretch_allowable[subtask_number],
-            #                            all_fixed_points_to_use[subtask_number],
-            #                            all_fixed_points)
+            self.run_fine_optimization(subtask_list[subtask_number],
+                                       robot_arm_to_use[subtask_number],
+                                       subtask_number,
+                                       all_stretch_allowable[subtask_number],
+                                       all_fixed_points_to_use[subtask_number],
+                                       all_fixed_points)
             print 'completed fine optimization for ', subtask
 
-        # self.combine_process_files(self.save_file_path + 'arm_configs_fine',
-        #                            self.save_file_path + 'arm_configs_fine_combined.log')
+        self.combine_process_files(self.save_file_path + 'arm_configs_fine',
+                                   self.save_file_path + 'arm_configs_fine_combined.log')
 
         for subtask_number, subtask in enumerate(subtask_list):
             if True:
@@ -405,14 +405,14 @@ class DressingMultiProcessOptimization(object):
               'a reasonable pr2 configuration'
 
         # self.pool.map(set_process_subtask, [subtask_number] * self.processCnt)
-        if subtask_n == 0:
+        if subtask_n == 0 and False:
             popsize = 20
             maxiter = 10
 
         parameters_scaling = np.array([m.radians(10.)] * 4)
         OPTIONS = dict()
-        OPTIONS['boundary_handling'] = cma.BoundTransform  # cma version on obie3 uses this
-        # OPTIONS['BoundaryHandler'] = cma.BoundTransform  # cma version on aws uses this
+        #OPTIONS['boundary_handling'] = cma.BoundTransform  # cma version on obie3 uses this
+        OPTIONS['BoundaryHandler'] = cma.BoundTransform  # cma version on aws uses this
         OPTIONS['bounds'] = [self.arm_config_min, self.arm_config_max]
         OPTIONS['verb_filenameprefix'] = 'outcma_arm_config_'+str(subtask_n)+'_'
         OPTIONS['seed'] = 1234
@@ -456,8 +456,8 @@ class DressingMultiProcessOptimization(object):
             #print 'GOT PAST CMA'
             #print 'GOT PAST CMA'
             #print 'GOT PAST CMA'
-            this_res = es.result()  # This is for running on machine in obie3 lab (cma version)
-            # this_res = es.result  # This is for running on amazon machine (cma version)
+            #this_res = es.result()  # This is for running on machine in obie3 lab (cma version)
+            this_res = es.result  # This is for running on amazon machine (cma version)
             #print 'GOT PAST CMA-RESULT'
             #print 'this_res:',this_res
             if this_res[1] < best_result[1]:
@@ -2652,7 +2652,7 @@ if __name__ == "__main__":
     # pkg_path = rospack.get_path('hrl_base_selection')
     # skel_file = pkg_path + '/models/' + filename
 
-    optimizer = DressingMultiProcessOptimization(number_of_processes=1, visualize=True)
+    optimizer = DressingMultiProcessOptimization(number_of_processes=0, visualize=False)
     optimizer.optimize_entire_dressing_task(reset_file=False)
     # outer_elapsed_time = rospy.Time.now()-outer_start_time
     print 'Everything is complete!'
