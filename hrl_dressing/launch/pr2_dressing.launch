@@ -1,22 +1,35 @@
 <launch>
 
-  <node pkg="netft_rdt_driver" name="ft8" type="netft_node"
-        args="192.168.0.124 --rate 100" respawn="false">
+  <!--<node pkg="netft_rdt_driver" name="ft8" type="netft_node"-->
+        <!--args="192.168.0.124 &#45;&#45;rate 100" respawn="false">-->
+    <!--<remap from='netft_data' to='/force_torque_pr2_sleeve' />-->
+  <!--</node>-->
+  <node pkg="netft_rdt_driver" name="ft9" type="netft_node"
+        args="192.168.0.125 --rate 100" respawn="false">
     <remap from='netft_data' to='/force_torque_pr2_sleeve' />
   </node>
   
-  <arg name="ft_input_topic" default="/netft_gravity_zeroing/wrench_zeroed" />
-    
-  <node name="ft_taxel_driver" output="screen"
-      pkg="hrl_common_code_darpa_m3"
-      type="ft_sensor_to_taxel_array.py"
-      args="-i $(arg ft_input_topic)" >
-      <param name="magnitude_scale" value="1.0"> </param>
+  <node pkg="hrl_dressing" name="capacitive_sensor" type="capacitancepublisher.py"
+        output="screen" respawn="false">
   </node>
   
-  <node name="ft_taxel_viz" pkg="m3skin_viz"
-        type="m3skin_viz" output='screen' ns='pr2_ft_sensor'>
+  <node pkg="hrl_dressing" name="toorad_dresing_pr2" type="toorad_dressing_pr2.py"
+        args="-p 0 -t 0 -m PR2"
+        output="screen" respawn="false">
   </node>
+  
+  <!--<arg name="ft_input_topic" default="/netft_gravity_zeroing/wrench_zeroed" />-->
+    
+  <!--<node name="ft_taxel_driver" output="screen"-->
+      <!--pkg="hrl_common_code_darpa_m3"-->
+      <!--type="ft_sensor_to_taxel_array.py"-->
+      <!--args="-i $(arg ft_input_topic)" >-->
+      <!--<param name="magnitude_scale" value="1.0"> </param>-->
+  <!--</node>-->
+  
+  <!--<node name="ft_taxel_viz" pkg="m3skin_viz"-->
+        <!--type="m3skin_viz" output='screen' ns='pr2_ft_sensor'>-->
+  <!--</node>-->
 
   <!--<include file="$(find hrl_haptic_mpc)/launch/start_pr2_mpc.launch">-->
     <!--<arg name="arm" value="r"/>-->
