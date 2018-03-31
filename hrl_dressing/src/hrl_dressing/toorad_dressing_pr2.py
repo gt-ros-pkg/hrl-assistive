@@ -29,16 +29,12 @@ from matplotlib.path import Path
 import matplotlib.patches as patches
 import tf.transformations as tft
 
-import pydart2 as pydart
-import openravepy as op
-from openravepy.misc import InitOpenRAVELogging
-
 from hrl_base_selection.helper_functions import createBMatrix, Bmat_to_pos_quat
 
 from geometry_msgs.msg import PoseArray, Pose, PoseStamped, Point, Quaternion, PoseWithCovarianceStamped, Twist
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
-from hrl_base_selection.dressing_configuration_optimization_multithread_dart import DressingSimulationProcess
+
 
 
 
@@ -72,6 +68,7 @@ class TOORAD_Dressing_PR2(object):
         self.robot_opposite_arm = 'leftarm'
 
         if self.machine == 'generate_trajectory':
+            from hrl_base_selection.dressing_configuration_optimization_multithread_dart import DressingSimulationProcess
             # Generates the trajectory and saves all relevant info to a pickle file.
             pydart.init()
             print('pydart initialization OK')
@@ -149,6 +146,10 @@ class TOORAD_Dressing_PR2(object):
             print 'File saved successfully!'
 
         elif self.machine == 'desktop':
+            import pydart2 as pydart
+            import openravepy as op
+            from openravepy.misc import InitOpenRAVELogging
+
             # If this is on desktop for visualization, run the visualization
             # Set up TOORAD process that includes DART simulation environment
             pydart.init()
@@ -314,6 +315,17 @@ class TOORAD_Dressing_PR2(object):
             # This flag is used to check when the subtask is completed so it can ask about starting the next task.
             self.subtask_complete = False
 
+            self.capacitance_baseline = None
+            self.force_baseline = None
+            self.torque_baseline = None
+            self.capacitance_baseline_values = []
+            self.force_baseline_values = []
+            self.torque_baseline_values = []
+            self.zeroing = False
+            self.time_series_forces = np.zeros([20000, 4])
+            self.array_line = 0
+
+
             self.moving = False
             self.hz = 20.
             self.control_rate = rospy.Rate(self.hz)
@@ -410,9 +422,8 @@ class TOORAD_Dressing_PR2(object):
                     traj_path = loaded_data
 
                     # Find first pose from TOORAD trajectory and move robot arms to start configuration.
-                    goal_i = int(traj_path[0].split('-')[0])
-                    sol_i = int(traj_path[0].split('-')[1])
-                    self.control.setJointGuesses(self, rightGuess=traj_path[0], leftGuess=None)
+                    print traj_path[0]
+                    self.control.setJointGuesses(rightGuess=np.array(traj_path[0]), leftGuess=None)
                     pr2_B_goal = pr2_B_goals[0]
                     pos, quat = Bmat_to_pos_quat(pr2_B_goal)
                     inp = 'Y'
@@ -718,7 +729,6 @@ class TOORAD_Dressing_PR2(object):
         return 0.8438 / (cap + 4.681)
 
     def zero_sensor_data(self):
-        self.capacitance_baseline, self.force_baseline
         self.capacitance_baseline = None
         self.force_baseline = None
         self.torque_baseline = None

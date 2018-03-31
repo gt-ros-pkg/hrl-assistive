@@ -60,7 +60,7 @@ if __name__ == '__main__':
     i = 0
     while not rospy.is_shutdown():
         fa = Float64MultiArray()
-        fa.data = getData(serialTeensy, 3)
+        fa.data = getData(serialTeensy, 1)
         pub.publish(fa)
         # rospy.sleep(0.0001)
 
