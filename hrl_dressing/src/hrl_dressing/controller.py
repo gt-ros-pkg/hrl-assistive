@@ -70,6 +70,12 @@ class Controller:
             print 'Right joint names:', self.rightJointNames
             print 'Left joint names:', self.leftJointNames
 
+    def position_quat_to_pose(self, pos, quat):
+        ps = Pose()
+        ps.position.x, ps.position.y, ps.position.z = pos
+        ps.orientation.x, ps.orientation.y, ps.orientation.z, ps.orientation.w = quat
+        return ps
+
     def arrayToPose(self, poseArray):
         frameData = PyKDL.Frame()
         # Pose array to KDL frame
