@@ -42,7 +42,7 @@ from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 # Class that runs the performance of the dressing task on a person using a PR2.
 # Run on the PR2 to inform it of what to do. Run on another machine to visualize the person's pose.
 class TOORAD_Dressing_PR2(object):
-    def __init__(self, machine='desktop', visualize=False, participant=0, trial=0, model='50-percentile-no-chair',
+    def __init__(self, machine='desktop', visualize=False, participant=0, trial=0, model='50-percentile-wheelchair',
                  enable_realtime_HMM=False,
                  visually_estimate_arm_pose=False, adjust_arm_pose_visually=False):
         # machine is whether this is run on the PR2 or desktop for visualization.
@@ -427,18 +427,18 @@ class TOORAD_Dressing_PR2(object):
                     pr2_B_goal = pr2_B_goals[0]
                     pos, quat = Bmat_to_pos_quat(pr2_B_goal)
                     inp = 'Y'
-                    while (inp.upper() == 'Y' and inp.upper() == 'N' and inp.upper() == 'Q') and not rospy.is_shutdown():
+                    while (inp.upper()[0] == 'Y' or inp.upper()[0] == 'N' or inp.upper()[0] == 'Q') and not rospy.is_shutdown():
                         inp = raw_input(
                             '\nEnter Y (y) to move arms to start configuration. Will attempt movement for up to 10 '
                             'seconds. N or Q ends. Otherwise continues without movement.\n')
                         if len(inp) == 0:
-                            pass
+                            break
                         elif inp.upper()[0] == 'Y':
                             self.control.moveGripperTo(pos, quaternion=quat, useInitGuess=True, rightArm=True, timeout=10.)
                         elif inp.upper()[0] == 'N' or inp.upper()[0] == 'Q':
                             return
                         else:
-                            pass
+                            break
 
                 inp = raw_input('\nEnter Y (y) to zero sensors. Otherwise ends.\n')
                 if len(inp) == 0:
@@ -701,8 +701,8 @@ class TOORAD_Dressing_PR2(object):
                 self.force_baseline_values.append(self.force)
                 self.torque_baseline_values.append(self.torque)
                 if len(self.forceList) > 50:
-                    force_baseline = np.mean(self.forceList, axis=0)
-                    torque_baseline = np.mean(self.torqueList, axis=0)
+                    self.force_baseline = np.mean(self.forceList, axis=0)
+                    self.torque_baseline = np.mean(self.torqueList, axis=0)
 
     def capacitive_sensor_cb(self, msg):
         with self.frame_lock:
@@ -714,9 +714,9 @@ class TOORAD_Dressing_PR2(object):
 
             # Calculate the baseline value for the capacitive sensor
             if self.capacitance_baseline is None and self.zeroing:
-                self.capacitanceBaselineValues.append(raw_capacitance)
-                if len(self.capacitanceBaselineValues) > 50:
-                    self.capacitance_baseline = np.mean(self.capacitanceBaselineValues, axis=0)
+                self.capacitance_baseline_values.append(raw_capacitance)
+                if len(self.capacitance_baseline_values) > 50:
+                    self.capacitance_baseline = np.mean(self.capacitance_baseline_values, axis=0)
             elif self.capacitance_baseline is not None:
                 capacitance = max(-(raw_capacitance - self.capacitance_baseline), -3.5)
                 # capacitance = max(capacitance, -3.5)
@@ -735,9 +735,9 @@ class TOORAD_Dressing_PR2(object):
         self.capacitance_baseline_values = []
         self.force_baseline_values = []
         self.torque_baseline_values = []
-        self.zeroing = True
         self.time_series_forces = np.zeros([20000, 4])
         self.array_line = 0
+        self.zeroing = True
         print 'Zeroing data'
         while self.capacitance_baseline is None or self.force_baseline is None:
             rospy.sleep(0.1)
