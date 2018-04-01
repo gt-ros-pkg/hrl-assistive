@@ -35,10 +35,6 @@ from geometry_msgs.msg import PoseArray, Pose, PoseStamped, Point, Quaternion, P
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 
-
-
-
-
 # Class that runs the performance of the dressing task on a person using a PR2.
 # Run on the PR2 to inform it of what to do. Run on another machine to visualize the person's pose.
 class TOORAD_Dressing_PR2(object):
@@ -146,9 +142,6 @@ class TOORAD_Dressing_PR2(object):
             print 'File saved successfully!'
 
         elif self.machine == 'desktop':
-            import pydart2 as pydart
-            import openravepy as op
-            from openravepy.misc import InitOpenRAVELogging
 
             # If this is on desktop for visualization, run the visualization
             # Set up TOORAD process that includes DART simulation environment
@@ -295,7 +288,7 @@ class TOORAD_Dressing_PR2(object):
                             if num == 0 or num == len(traj_path)-1:
                                 rospy.sleep(1.5)
                             else:
-                                rospy.sleep(0.2)
+                                rospy.sleep(1.)
                     cont = raw_input('\nEnter Q (q) or N (n) to stop visualization of this task. '
                                      'Otherwise visualizes again.\n')
                     if len(cont) == 0:
@@ -905,6 +898,11 @@ if __name__ == '__main__':
     opt, args = p.parse_args()
     print 'opt', opt
     print 'args', args
+
+    if opt.machine == 'desktop':
+        import pydart2 as pydart
+        import openravepy as op
+        from openravepy.misc import InitOpenRAVELogging
 
     toorad_dressing = TOORAD_Dressing_PR2(participant=opt.participant, trial=opt.participant,
                                           enable_realtime_HMM=False, visualize=opt.visualize,
