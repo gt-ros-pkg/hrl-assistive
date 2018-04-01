@@ -100,14 +100,16 @@ class Controller:
         if leftGuess is not None:
             self.initLeftJointGuess = leftGuess
 
-    def getGripperPosition(self, rightArm=True):
+    def getGripperPosition(self, rightArm=True, this_frame=None):
         # now = rospy.Time.now()
         # self.tf.waitForTransform(self.frame, ('r' if rightArm else 'l') + '_gripper_tool_frame', now, rospy.Duration(10.0))
         # Return the most revent transformation
+        if this_frame is None:
+            this_frame = self.frame
         if rightArm:
-            return self.tf.lookupTransform(self.frame, 'r_gripper_tool_frame', rospy.Time(0))
+            return self.tf.lookupTransform(this_frame, 'r_gripper_tool_frame', rospy.Time(0))
         else:
-            return self.tf.lookupTransform(self.frame, 'l_gripper_tool_frame', rospy.Time(0))
+            return self.tf.lookupTransform(this_frame, 'l_gripper_tool_frame', rospy.Time(0))
 
     def grip(self, openGripper=True, maxEffort=200.0, rightArm=True, miniOpen=False, stopMovement=False):
         msg = Pr2GripperCommandGoal()
@@ -131,31 +133,44 @@ class Controller:
 
     # Move using IK and joint trajectory controller
     # Attach new pose to a frame
-    def moveGripperTo(self, position, quaternion=None, rollpitchyaw=None, timeout=1, wait=False, rightArm=True, useInitGuess=False, ret=False):
+    def moveGripperTo(self, position, quaternion=None, rollpitchyaw=None, timeout=1, wait=False, rightArm=True, useInitGuess=False, ret=False, this_frame=None):
         # TODO: Repalce this with standard PR2 inverse kinematics
         # TODO: Repalce this with standard PR2 inverse kinematics
 
         # Create a pose message from the desired position and orientation
         if rollpitchyaw is None and quaternion is None:
             rollpitchyaw = [-np.pi, 0.0, 0.0]
+            rollpitchyaw = [0.0, 0.0, 0.0]
+            poseData = list(position) + list(rollpitchyaw)
+            pose = self.arrayToPose(poseData)
         elif quaternion is not None:
             pose = self.position_quat_to_pose(position, quaternion)
         elif rollpitchyaw is not None:
             poseData = list(position) + list(rollpitchyaw)
             pose = self.arrayToPose(poseData)
+        if this_frame is None:
+            this_frame = self.frame
 
         # Create a PoseStamped message and perform transformation to given frame
         ps = PoseStamped()
-        ps.header.frame_id = self.frame
+        ps.header.frame_id = this_frame
         ps.pose.position = pose.position
         ps.pose.orientation = pose.orientation
+        #print 'ps before transform', ps
+        #ps = self.tf.transformPose('torso_lift_link', ps)
         ps = self.tf.transformPose(self.frame, ps)
+        #print 'ps after transform\n', ps
+        
 
         # Perform IK
         if rightArm:
             ikGoal = self.rightArmKdl.inverse(ps.pose, q_guess=self.initRightJointGuess if useInitGuess else self.rightJointPositions, min_joints=self.rightJointLimitsMin, max_joints=self.rightJointLimitsMax)
+#            print 'ikGoal1', ikGoal
+#            ikGoal = self.rightArmKdl.inverse_search(ps.pose, timeout=timeout)
+#            print 'ikgoal2:', ikGoal
         else:
             ikGoal = self.leftArmKdl.inverse(ps.pose, q_guess=self.initLeftJointGuess if useInitGuess else self.leftJointPositions, min_joints=self.leftJointLimitsMin, max_joints=self.leftJointLimitsMax)
+
         if ikGoal is not None:
             if not ret:
                 self.moveToJointAngles(ikGoal, timeout=timeout, wait=wait, rightArm=rightArm)
