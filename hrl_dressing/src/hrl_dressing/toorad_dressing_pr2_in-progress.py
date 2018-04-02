@@ -441,6 +441,9 @@ class TOORAD_Dressing_PR2(object):
                         if len(inp) == 0:
                             break
                         elif inp.upper()[0] == 'Y':
+                            left_arm_config = [1.6154592163751413, 0.9695424137001551, 0.027701832632584855, -1.9420723000482831, 
+                                               -9.848582247506826, -2.011107760186859, -7.066408502690475]
+                            self.control.moveToJointAngles(left_arm_config, rightArm=False, timeout=10.)
                             self.control.moveGripperTo(pos, quaternion=quat, useInitGuess=True, rightArm=True, timeout=5., this_frame='base_footprint')
                         elif inp.upper()[0] == 'R':
                             self.control.moveToJointAngles(traj_path[0], timeout=10.)
@@ -518,8 +521,8 @@ class TOORAD_Dressing_PR2(object):
         prev_distance_error = np.zeros(3)
 
         # Set gains for the controller
-        Kp = 0.10
-        Kd = 0.05
+        Kp = 0.2
+        Kd = 0.08
         Ki = 0.02
         Ki_max = 1.0
         error = np.array([10., 10., 10.])
@@ -595,6 +598,7 @@ class TOORAD_Dressing_PR2(object):
                 target_position, target_orientation = Bmat_to_pos_quat(target_matrix)
                 error_matrix = pr2_B_current_gripper.I * target_matrix
                 position_error, orientation_error = Bmat_to_pos_quat(error_matrix)
+                position_error[2] = 0.
                 position_error_mag = np.linalg.norm(position_error)
                 #global_position_error = np.array(target_matrix)[0:3,3] - current_position
                 #global_position_error_mag = np.linalg.norm(global_position_error)
@@ -647,10 +651,13 @@ class TOORAD_Dressing_PR2(object):
 
             #target_matrix = createBMatrix(target_position, target_orientation)
             #print 'position_error:', position_error
-            #print 'distance to arm:', self.distance_to_arm
+            print 'distance to arm:', self.distance_to_arm
             dist_error_capped = max(0.05 - self.distance_to_arm, -0.05)
             current_distance_error = dist_error_capped * np.array(pr2_B_current_gripper)[0:3, 2]
+            if 0.05 - self.distance_to_arm > 0.:
+                current_distance_error = 2.*dist_error_capped * np.array(pr2_B_current_gripper)[0:3, 2]
             #current_distance_error = np.zeros(3)
+            print 'force:', np.linalg.norm(self.force)
             if np.linalg.norm(self.force) < 4.0:
                 force_adjustment *= 0.95
             else:
@@ -659,14 +666,15 @@ class TOORAD_Dressing_PR2(object):
 
             # target_posture = traj[current_goal]
             # height_input = Kp*current_distance_error + Kd*(current_distance_error - prev_distance_error)
-            if position_error_mag > 0.05 or True:
-               position_error = position_error/position_error_mag*0.05
+            if position_error_mag > 0.04 or True:
+               position_error = position_error/position_error_mag*0.04
             #if global_position_error_mag > 0.03:
             #    global_position_error = global_position_error/global_position_error_mag*0.03
             x_error = position_error[0] * np.array(pr2_B_current_gripper)[0:3, 0]
             y_error = position_error[1] * np.array(pr2_B_current_gripper)[0:3, 1]
             z_error = position_error[2] * np.array(pr2_B_current_gripper)[0:3, 2]
-            error = x_error+y_error+current_distance_error# + z_error
+            z_error = 0.
+            error = x_error+y_error+current_distance_error + z_error
             #error = global_position_error
             #print 'x_error', x_error
             #print 'y_error', y_error
@@ -690,7 +698,7 @@ class TOORAD_Dressing_PR2(object):
             # error = np.array([0., 0., 0.05 - self.distance_to_arm])
 
             # error = np.array(current_goal_position) - np.array(current_position) + np.array([0., 0., 0.05 - self.distance_to_arm])
-            print 'new input:', added_control_input
+            #print 'new input:', added_control_input
             # new_goal = np.array(current_goal_position) + error * Kp + (error - prev_error) * Kd
             #current_goal_position += height_input + trajectory_input
             #current_goal_position = np.array(current_goal_position) + trajectory_input
@@ -708,12 +716,14 @@ class TOORAD_Dressing_PR2(object):
             #            self.control.moveGripperTo(np.array(current_position) + u, useInitGuess=False, rightArm=True, timeout=5./(self.hz), this_frame='base_footprint')
             # self.control.setJointGuesses(rightGuess=self.control.rightJointPositions, leftGuess=None)
             #self.control.setJointGuesses(rightGuess=traj[current_goal-1], leftGuess=None)
-            if self.control.moveGripperTo(current_position_input, quaternion=new_goal_orientation, useInitGuess=False, rightArm=True, timeout=2./self.hz, this_frame='base_footprint') is None and not rospy.is_shutdown():
+            if self.control.moveGripperTo(current_position_input, quaternion=new_goal_orientation, useInitGuess=False, rightArm=True, timeout=1./self.hz, this_frame='base_footprint') is None and not rospy.is_shutdown():
                 print 'Using IK from simulation'
                 self.set_joint_guess(traj[current_goal])
-                self.control.moveGripperTo(current_position_input, quaternion=new_goal_orientation, useInitGuess=True, rightArm=True, timeout=4., this_frame='base_footprint')
-                print 'IK from simulation succeeded?'
-                rospy.sleep(4.)
+                if self.control.moveGripperTo(current_position_input, quaternion=new_goal_orientation, useInitGuess=True, rightArm=True, timeout=4., this_frame='base_footprint') is not None:
+                    print 'IK from simulation succeeded'
+                    rospy.sleep(4.)
+                else:
+                    print 'IK from simulation failed'
 #            self.control.moveGripperTo(np.array(new_goal), useInitGuess=False, rightArm=True, timeout=1. / self.hz,
 #                                       this_frame='base_footprint')
 #             current_goal_position = np.array(new_goal)
