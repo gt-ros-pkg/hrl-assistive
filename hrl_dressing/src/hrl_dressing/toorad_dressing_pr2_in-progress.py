@@ -322,7 +322,7 @@ class TOORAD_Dressing_PR2(object):
 
 
             self.moving = False
-            self.hz = 10.
+            self.hz = 5.
             self.control_rate = rospy.Rate(self.hz)
 
             self.hmm_prediction = ''
@@ -441,16 +441,21 @@ class TOORAD_Dressing_PR2(object):
                         if len(inp) == 0:
                             break
                         elif inp.upper()[0] == 'Y':
-                            # self.control.moveToJointAngles(traj_path[0], timeout=10.)
                             # self.control.moveGripperTo(pos, quaternion=quat, useInitGuess=True, rightArm=True, timeout=10.)
                             # pos[0] += 0.1
                             # pos[1] -= 0.1
                             # pos[2] += 0.1
                             self.control.moveGripperTo(pos, quaternion=quat, useInitGuess=True, rightArm=True, timeout=5., this_frame='base_footprint')
+                            
+                        elif inp.upper()[0] == 'R':
+                            self.control.moveToJointAngles(traj_path[0], timeout=10.)
                         elif inp.upper()[0] == 'N' or inp.upper()[0] == 'Q':
                             return
                         else:
                             break
+                if max(np.abs(self.control.rightJointPositions)) >= m.radians(360.):
+                    print 'A joint has become spun around. Fix it by subscribing to /r_arm_controller/state and rolling it to within limits'
+                    return
 
                 inp = raw_input('\nEnter Y (y) to zero sensors. Otherwise ends.\n')
                 if len(inp) == 0:
@@ -539,13 +544,51 @@ class TOORAD_Dressing_PR2(object):
         # (current_goal_position, current_goal_orientation) = self.control.getGripperPosition(rightArm=True, this_frame='base_footprint')
         current_goal_matrix = p_B_g[0]
         current_position_input, current_orientation_input = Bmat_to_pos_quat(current_goal_matrix)
-
-        # self.control.moveGripperTo(np.array(current_goal_position), useInitGuess=False, rightArm=True, timeout=2.)
-        # rospy.sleep(2.)
+        joint_guess = traj[0]
+        print 'using traj'
+        print joint_guess
+        self.control.setJointGuesses(rightGuess=joint_guess, leftGuess=None)
+        self.control.moveGripperTo(current_position_input, quaternion=current_orientation_input, useInitGuess=True, rightArm=True, timeout=2., this_frame='base_footprint')
+        rospy.sleep(2.)
+        print self.control.rightJointPositions
+        print self.joint_positions
+        print 'using current'
+        self.control.setJointGuesses(rightGuess=self.joint_positions, leftGuess=None)
+        self.control.moveGripperTo(current_position_input, quaternion=current_orientation_input, useInitGuess=True, rightArm=True, timeout=2., this_frame='base_footprint')
+        rospy.sleep(2.)
+        print 'using traj'
+        self.control.setJointGuesses(rightGuess=joint_guess, leftGuess=None)
+        self.control.moveGripperTo(current_position_input, quaternion=current_orientation_input, useInitGuess=True, rightArm=True, timeout=2., this_frame='base_footprint')
+        rospy.sleep(2.)
+        print 'using controller current'
+        self.control.moveGripperTo(current_position_input, quaternion=current_orientation_input, useInitGuess=False, rightArm=True, timeout=2., this_frame='base_footprint')
+        rospy.sleep(2.)
+        print 'using traj'
+        self.control.setJointGuesses(rightGuess=joint_guess, leftGuess=None)
+        self.control.moveGripperTo(current_position_input, quaternion=current_orientation_input, useInitGuess=True, rightArm=True, timeout=2., this_frame='base_footprint')
+        rospy.sleep(2.)
+        self.control.moveGripperTo(current_position_input, quaternion=current_orientation_input, useInitGuess=False, rightArm=True, timeout=2., this_frame='base_footprint')
+        rospy.sleep(2.)
+        self.control.setJointGuesses(rightGuess=joint_guess, leftGuess=None)
+        self.control.moveGripperTo(current_position_input, quaternion=current_orientation_input, useInitGuess=True, rightArm=True, timeout=2., this_frame='base_footprint')
+        rospy.sleep(2.)
+        self.control.moveGripperTo(current_position_input, quaternion=current_orientation_input, useInitGuess=False, rightArm=True, timeout=2., this_frame='base_footprint')
+        rospy.sleep(2.)
+        self.control.setJointGuesses(rightGuess=joint_guess, leftGuess=None)
+        self.control.moveGripperTo(current_position_input, quaternion=current_orientation_input, useInitGuess=True, rightArm=True, timeout=2., this_frame='base_footprint')
+        rospy.sleep(2.)
+        self.control.moveGripperTo(current_position_input, quaternion=current_orientation_input, useInitGuess=False, rightArm=True, timeout=2., this_frame='base_footprint')
+        rospy.sleep(2.)
+        self.control.setJointGuesses(rightGuess=joint_guess, leftGuess=None)
+        self.control.moveGripperTo(current_position_input, quaternion=current_orientation_input, useInitGuess=True, rightArm=True, timeout=2., this_frame='base_footprint')
+        rospy.sleep(2.)
+        self.control.moveGripperTo(current_position_input, quaternion=current_orientation_input, useInitGuess=False, rightArm=True, timeout=2., this_frame='base_footprint')
+        rospy.sleep(2.)
         current_goal = 0
         exit_count = 0
         target_position, target_orientation = Bmat_to_pos_quat(p_B_g[current_goal])
         target_matrix = createBMatrix(target_position, target_orientation)
+        print 'Starting to execute task!'
         # Move!
         while self.moving and not rospy.is_shutdown():
             exit_count = 1
@@ -710,7 +753,7 @@ class TOORAD_Dressing_PR2(object):
             #            self.control.moveGripperTo(np.array(current_position) + u, useInitGuess=False, rightArm=True, timeout=5./(self.hz), this_frame='base_footprint')
             # self.control.setJointGuesses(rightGuess=self.control.rightJointPositions, leftGuess=None)
             #self.control.setJointGuesses(rightGuess=traj[current_goal-1], leftGuess=None)
-            if self.control.moveGripperTo(current_position_input, quaternion=target_orientation, useInitGuess=False, rightArm=True, timeout=1./self.hz, this_frame='base_footprint') is None and not rospy.is_shutdown():
+            if self.control.moveGripperTo(current_position_input, quaternion=target_orientation, useInitGuess=False, rightArm=True, timeout=3./self.hz, this_frame='base_footprint') is None and not rospy.is_shutdown():
                 #print 'Using IK from simulation'
                 #self.control.setJointGuesses(rightGuess=target_posture, leftGuess=None)
                 #print target_posture
@@ -722,7 +765,7 @@ class TOORAD_Dressing_PR2(object):
 #             current_goal_position = np.array(new_goal)
 #             current_goal_orientation = new_goal_orientation
             #current_goal_orientation = target_orientation
-            current_goal_matrix = createBMatrix(current_goal_position, current_goal_orientation)
+            current_goal_matrix = createBMatrix(current_position_input, target_orientation)
             self.control_rate.sleep()
             #rospy.sleep(0.2)
             continue
@@ -810,13 +853,20 @@ class TOORAD_Dressing_PR2(object):
         rospy.loginfo('FT sensor subscriber initialized')
         rospy.Subscriber('/capDressing/capacitance', Float64MultiArray, self.capacitive_sensor_cb)
         rospy.loginfo('Capacitive sensor subscriber initialized')
-        # rospy.Subscriber('/joint_states', JointState, self.joint_state_cb)
+        #self.joint_names = ['r_upper_arm_roll_joint', 'r_shoulder_pan_joint', 'r_shoulder_lift_joint', 'r_elbow_flex_joint','r_forearm_roll_joint', 'r_wrist_flex_joint', 'r_wrist_roll_joint']
+        self.joint_names = ['r_shoulder_pan_joint', 'r_shoulder_lift_joint', 'r_upper_arm_roll_joint', 'r_elbow_flex_joint', 'r_forearm_roll_joint', 'r_wrist_flex_joint', 'r_wrist_roll_joint']
+        self.joint_positions = [0.]*7
+        rospy.Subscriber('/joint_states', JointState, self.joint_state_cb)
 
         # TODO: Initialize estimated skeleton subscriber
         rospy.loginfo('Estimated human pose (from vision) subscriber initialized')
 
-    # def joint_state_cb(self, msg):
-    #     self.
+    def joint_state_cb(self, msg):
+        with self.frame_lock:
+            names = msg.name
+            positions = msg.position
+            for i in xrange(len(self.joint_names)):
+                self.joint_positions[i] = positions[names.index(self.joint_names[i])]
 
     def ft_sleeve_cb(self, msg):
         with self.frame_lock:
