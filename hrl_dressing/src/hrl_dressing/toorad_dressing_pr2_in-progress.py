@@ -322,7 +322,7 @@ class TOORAD_Dressing_PR2(object):
 
 
             self.moving = False
-            self.hz = 10.
+            self.hz = 20.
             self.control_rate = rospy.Rate(self.hz)
 
             self.hmm_prediction = ''
@@ -420,10 +420,10 @@ class TOORAD_Dressing_PR2(object):
                     import actionlib
                     from pr2_controllers_msgs.msg import SingleJointPositionActionGoal, SingleJointPositionAction, SingleJointPositionGoal
 
-
                     torso_client = actionlib.SimpleActionClient('torso_controller/position_joint_action',
                                                                 SingleJointPositionAction)
                     rospy.sleep(0.5)
+
                     torso_lift_msg = SingleJointPositionGoal()
                     torso_lift_msg.position = z
                     torso_client.send_goal(torso_lift_msg)
@@ -433,6 +433,7 @@ class TOORAD_Dressing_PR2(object):
 
                     pr2_B_goal = pr2_B_goals[0]
                     pos, quat = Bmat_to_pos_quat(pr2_B_goal)
+
                     inp = 'Y'
                     while (inp.upper()[0] == 'Y' or inp.upper()[0] == 'N' or inp.upper()[0] == 'Q' or inp.upper()[0] == 'R') and not rospy.is_shutdown():
                         inp = raw_input(
@@ -441,6 +442,12 @@ class TOORAD_Dressing_PR2(object):
                         if len(inp) == 0:
                             break
                         elif inp.upper()[0] == 'Y':
+                            print 'Desired joint configuration',traj_path[0]
+                            print 'Current joint configuration', self.control.rightJointPositions
+                            print 'Difference:', np.array(self.control.rightJointPositions) - np.array(traj_path[0])
+                            print 'Max difference (degrees):', m.degrees(np.max(np.array(self.control.rightJointPositions) - np.array(traj_path[0])))
+                            if m.degrees(np.max(np.array(self.control.rightJointPositions) - np.array(traj_path[0]))) > 45.:
+                                print 'For some reason there is a large difference in desired configuration. Probably need to unroll some joints.'
                             left_arm_config = [1.6154592163751413, 0.9695424137001551, 0.027701832632584855, -1.9420723000482831, 
                                                -9.848582247506826, -2.011107760186859, -7.066408502690475]
                             self.control.moveToJointAngles(left_arm_config, rightArm=False, timeout=10.)
@@ -521,8 +528,8 @@ class TOORAD_Dressing_PR2(object):
         prev_distance_error = np.zeros(3)
 
         # Set gains for the controller
-        Kp = 0.2
-        Kd = 0.08
+        Kp = 0.1
+        Kd = 0.06
         Ki = 0.02
         Ki_max = 1.0
         error = np.array([10., 10., 10.])
@@ -534,6 +541,9 @@ class TOORAD_Dressing_PR2(object):
         self.plotTime = []
         self.plotX = []
         self.plotY = []
+
+        ik_failure_limit = 2*int(self.hz)
+        ik_solution_failure_counter = 0
 
         # Equilibrium point adjustment is used to alter the trajectory based on input from the capacitive sensor and
         # force-torque sensor.
@@ -557,7 +567,7 @@ class TOORAD_Dressing_PR2(object):
                 break
             print 'Now on end effector goal', current_goal+1, 'out of a total', len(traj)
             current_time = rospy.get_time()
-            # print 'Time since last control loop execution:', current_time - self.lastMoveTime
+            #print 'Time since last control loop execution:', current_time - self.lastMoveTime
             self.lastMoveTime = current_time
 
             if current_goal == len(traj):
@@ -590,8 +600,9 @@ class TOORAD_Dressing_PR2(object):
             angle_error, axis_error, discard_point = tft.rotation_from_matrix(error_matrix)
 
 #            current_goal = 0
-            if position_error_mag < 0.02 and current_goal < len(p_B_g)-1 and np.abs(angle_error) <= m.radians(5.):
-                print 'Current goal has been reached. Move on to next goal.'
+            if ((position_error_mag < 0.02 and np.abs(angle_error) <= m.radians(5.)) or ik_solution_failure_counter > ik_failure_limit) and current_goal < len(p_B_g)-1:
+                print 'Current goal has been reached (or ik failed for this goal too many times). Moving on to next goal.'
+                ik_solution_failure_counter = 0
                 current_goal += 1
                 target_matrix = p_B_g[current_goal]
                 target_matrix[0, 3] += x_adjustment
@@ -610,7 +621,8 @@ class TOORAD_Dressing_PR2(object):
                 # target_orientation = tft.quaternion_from_matrix(p_B_g[current_goal]*target_matrix.I * p_B_g[current_goal-1])
                 # target_position = new_position
                 # target_orientation = new_orientation
-            elif position_error_mag < 0.02 and current_goal == len(p_B_g)-1 and np.abs(angle_error) <= m.radians(5.):
+            elif ((position_error_mag < 0.02 and np.abs(angle_error) <= m.radians(5.)) or ik_solution_failure_counter > ik_failure_limit) and current_goal == len(p_B_g)-1:
+                ik_solution_failure_counter = 0
                 print 'Trajectory is complete!'
                 break
             if 3 < current_goal < 13 and self.distance_to_arm > 0.09 and False:
@@ -657,7 +669,7 @@ class TOORAD_Dressing_PR2(object):
             if 0.05 - self.distance_to_arm > 0.:
                 current_distance_error = 2.*dist_error_capped * np.array(pr2_B_current_gripper)[0:3, 2]
             #current_distance_error = np.zeros(3)
-            print 'force:', np.linalg.norm(self.force)
+            #print 'force:', np.linalg.norm(self.force)
             if np.linalg.norm(self.force) < 4.0:
                 force_adjustment *= 0.95
             else:
@@ -716,21 +728,30 @@ class TOORAD_Dressing_PR2(object):
             #            self.control.moveGripperTo(np.array(current_position) + u, useInitGuess=False, rightArm=True, timeout=5./(self.hz), this_frame='base_footprint')
             # self.control.setJointGuesses(rightGuess=self.control.rightJointPositions, leftGuess=None)
             #self.control.setJointGuesses(rightGuess=traj[current_goal-1], leftGuess=None)
-            if self.control.moveGripperTo(current_position_input, quaternion=new_goal_orientation, useInitGuess=False, rightArm=True, timeout=1./self.hz, this_frame='base_footprint') is None and not rospy.is_shutdown():
+            ik, timeout = self.control.moveGripperTo(current_position_input, quaternion=new_goal_orientation, useInitGuess=False, rightArm=True, timeout=1./self.hz, this_frame='base_footprint')
+            if ik is None and not rospy.is_shutdown():
                 print 'Using IK from simulation'
                 self.set_joint_guess(traj[current_goal])
-                if self.control.moveGripperTo(current_position_input, quaternion=new_goal_orientation, useInitGuess=True, rightArm=True, timeout=4., this_frame='base_footprint') is not None:
+                ik, timeout = self.control.moveGripperTo(current_position_input, quaternion=new_goal_orientation, useInitGuess=True, rightArm=True, timeout=1./self.hz, this_frame='base_footprint')
+                if ik is not None:
                     print 'IK from simulation succeeded'
-                    rospy.sleep(4.)
+                    print 'IK guess:', traj[current_goal]
+                    ik_solution_failure_counter = 0
+                    #rospy.sleep(4.)
+                    print 'Joints after movement:', self.control.rightJointPositions
                 else:
-                    print 'IK from simulation failed'
+                    ik_solution_failure_counter += 1
+                    print 'IK from simulation failed. Number of times:', ik_solution_failure_counter
+            else:
+                 ik_solution_failure_counter = 0
 #            self.control.moveGripperTo(np.array(new_goal), useInitGuess=False, rightArm=True, timeout=1. / self.hz,
 #                                       this_frame='base_footprint')
 #             current_goal_position = np.array(new_goal)
 #             current_goal_orientation = new_goal_orientation
             #current_goal_orientation = target_orientation
             current_goal_matrix = createBMatrix(current_position_input, new_goal_orientation)
-            self.control_rate.sleep()
+            #self.control_rate.sleep()
+            rospy.sleep(np.max([timeout, 1./self.hz]))
             #rospy.sleep(0.2)
             continue
 
@@ -782,10 +803,12 @@ class TOORAD_Dressing_PR2(object):
 
     def set_joint_guess(self, guess):
         with self.frame_lock:
-            while np.abs(self.control.rightJointPositions[4] - guess[4]) > 2.*m.pi and not rospy.is_shutdown():
+#            print 'guess', guess[4], guess[6]
+#            print 'current', self.control.rightJointPositions[4], self.control.rightJointPositions[6]
+            while np.abs(self.control.rightJointPositions[4] - guess[4]) > m.pi and not rospy.is_shutdown():
                 guess[4] += np.sign(self.control.rightJointPositions[4] - guess[4])*2.*m.pi
-            while np.abs(self.control.rightJointPositions[6] - guess[6]) > 2.*m.pi and not rospy.is_shutdown():
-                guess[4] += np.sign(self.control.rightJointPositions[4] - guess[4])*2.*m.pi
+            while np.abs(self.control.rightJointPositions[6] - guess[6]) > m.pi and not rospy.is_shutdown():
+                guess[6] += np.sign(self.control.rightJointPositions[6] - guess[6])*2.*m.pi
             self.control.setJointGuesses(rightGuess=guess, leftGuess=None)
 
     def estimate_arm_pose(self):
@@ -885,7 +908,7 @@ class TOORAD_Dressing_PR2(object):
                 self.last_capacitive_reading = rospy.get_time()
                 capacitance = max(-(raw_capacitance - self.capacitance_baseline), -3.5)
                 # capacitance = max(capacitance, -3.5)
-                self.distance_to_arm = self.estimate_distance_to_arm(capacitance)
+                self.distance_to_arm = 0.05#self.estimate_distance_to_arm(capacitance)
                 if not self.moving and self.ready_to_start and self.distance_to_arm <= 0.0545:
                     self.ready_to_start = False
                     self.moving = True

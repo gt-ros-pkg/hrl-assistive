@@ -1,6 +1,7 @@
 import os, sys, roslib, rospy, tf, actionlib, PyKDL
 
 import numpy as np
+import math as m
 from geometry_msgs.msg import PointStamped, PoseStamped, Pose
 from trajectory_msgs.msg import JointTrajectoryPoint
 from pr2_controllers_msgs.msg import JointTrajectoryGoal, JointTrajectoryAction, JointTrajectoryControllerState, JointControllerState, Pr2GripperCommandAction, Pr2GripperCommandGoal, PointHeadAction, PointHeadGoal
@@ -174,13 +175,23 @@ class Controller:
 
         if ikGoal is not None:
             if not ret:
+                #print 'current joints:', self.rightJointPositions
+                #print 'ikGoal:', ikGoal
+                #print 'diff:', ikGoal - self.rightJointPositions
+                # max_diff = np.degrees(np.max(np.abs(ikGoal - self.rightJointPositions)[[0,1,2,3,5]]))  # This is to ignore the infinite roll joints
+                max_diff = np.degrees(np.max(np.abs(ikGoal - self.rightJointPositions)))  # This considers all joints
+                #print 'max joint angle (degrees) change requested:', max_diff
+                #if max_diff > 5.:
+                #    if max_diff/20. > timeout:
+                #        print 'slowing down move'
+                timeout = np.max([timeout, max_diff/20.])
                 self.moveToJointAngles(ikGoal, timeout=timeout, wait=wait, rightArm=rightArm)
-                return ikGoal
+                return ikGoal, timeout
             else:
-                return ikGoal
+                return ikGoal, 0.
         else:
             print 'IK failed'
-            return None
+            return None, 0.
 
     def moveToJointAngles(self, jointStates, timeout=1, wait=False, rightArm=True):
         # Create and send trajectory message for new joint angles
