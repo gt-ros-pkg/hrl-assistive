@@ -17,8 +17,8 @@ class Controller:
         # Set all arm movement parameters
         self.rightJointLimitsMax = np.radians([32.349, 74.2725, 37.242, -0.01, 360.0, 0.01, 360.0])
         self.rightJointLimitsMin = np.radians([-122.349, -20.26, -214.859, -121.54, -360.0, -114.59, -360.0])
-        # self.rightJointLimitsMax = np.radians([26.0, 68.0, 41.0, 0.01, 180.0, 0.01, 180.0])
-        # self.rightJointLimitsMin = np.radians([-109.0, -24.0, -220.0, -132.0, -180.0, -120.0, -180.0])
+        #self.rightJointLimitsMax = np.radians([26.0, 68.0, 41.0, 0.01, 180.0, 0.01, 180.0])
+        #self.rightJointLimitsMin = np.radians([-109.0, -24.0, -220.0, -132.0, -180.0, -120.0, -180.0])
         self.leftJointLimitsMax = np.radians([122.349, 74.2725, 214.859, 0.01, 360.0, 0.01, 360.0]) # TODO: Update based on new soft limits for right arm
         self.leftJointLimitsMin = np.radians([-32.349, -20.26, -37.242, -121.54, -360.0, -114.59, -360.0]) # TODO: Update based on new soft limits for right arm
         # self.initRightJointGuess = np.array([-0.236, 0.556, -0.091, -1.913, -1.371, -1.538, -3.372])
@@ -165,6 +165,7 @@ class Controller:
         # Perform IK
         if rightArm:
             ikGoal = self.rightArmKdl.inverse(ps.pose, q_guess=self.initRightJointGuess if useInitGuess else self.rightJointPositions, min_joints=self.rightJointLimitsMin, max_joints=self.rightJointLimitsMax)
+            #print 'rightjointpositions\n', self.rightJointPositions
 #            print 'ikGoal1', ikGoal
 #            ikGoal = self.rightArmKdl.inverse_search(ps.pose, timeout=timeout)
 #            print 'ikgoal2:', ikGoal

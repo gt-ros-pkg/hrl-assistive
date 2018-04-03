@@ -10,7 +10,7 @@ from keras.models import load_model
 from keras.models import Sequential
 from keras.layers import LSTM, Dense, TimeDistributed
 
-import control.controller as controller
+import controller
 
 baseline = None
 forceBaseline = None
@@ -48,7 +48,7 @@ class CapacitivePR2:
         # self.initRightPos = np.array([0.65, -0.7, 0.2 + baseheight + height])
         height = {0: 0.05, 1: 0.1, 2: 0.15, 3: 0.2}[stage%4] if stage < 8 else 0.05 # success, success, catch, miss
         self.initRightPos = np.array([0.65, -0.8, -0.05 + height + baseheight])
-        self.initRightRPY = np.array([-np.pi, 0.0, 0.0])
+        self.initRightRPY = np.array([0.0, 0.0, 0.0])
         self.initLeftPos = np.array([0.5, 0.5, -0.3])
         self.initLeftRPY = np.array([0.0, 0.0, 0.0])
         self.position = np.copy(self.initRightPos)
@@ -158,13 +158,13 @@ class CapacitivePR2:
 
         # Zero out capacitance readings
         if baseline is None and zero:
-            self.control.moveGripperTo(np.array([0.65, -0.55, 0.05]) + np.array([-0.2, -0.2, 0]), self.initRightRPY, timeout=4.0, wait=True, rightArm=True, useInitGuess=True)
+            self.control.moveGripperTo(np.array([0.65, -0.55, 0.05]) + np.array([-0.2, -0.2, 0]), None, self.initRightRPY, timeout=4.0, wait=True, rightArm=True, useInitGuess=True)
             self.zeroData()
 
         # Move to starting locations
         print 'Grippers moving to starting positions'
-        self.control.moveGripperTo(self.position, self.initRightRPY, timeout=4.0, wait=False, rightArm=True, useInitGuess=True)
-        self.control.moveGripperTo(self.initLeftPos, self.initLeftRPY, timeout=4.0, wait=True, rightArm=False, useInitGuess=True)
+        self.control.moveGripperTo(self.position, None, self.initRightRPY, timeout=4.0, wait=False, rightArm=True, useInitGuess=True)
+        self.control.moveGripperTo(self.initLeftPos, None, self.initLeftRPY, timeout=4.0, wait=True, rightArm=False, useInitGuess=True)
         rospy.sleep(1.0)
         self.control.initJoints()
         # self.control.printJointStates()
@@ -220,7 +220,7 @@ class CapacitivePR2:
                     dist = self.capacitanceToMoveDistance()
                     if rospy.get_time() - self.lastMoveTime >= 1.0/self.hz - 0.001 or self.difference == 0:
                         self.lastMoveTime = rospy.get_time()
-                        x = self.control.moveGripperTo(self.position + dist*2, self.initRightRPY, timeout=1.0/self.hz*2, wait=False, rightArm=True)
+                        x = self.control.moveGripperTo(self.position + dist*2, None, self.initRightRPY, timeout=1.0/self.hz*2, wait=False, rightArm=True)
                         if x is not None:
                             self.position += dist
                     pos = self.control.getGripperPosition(rightArm=True)[0][1]
@@ -261,7 +261,7 @@ class CapacitivePR2:
             print 'Stage:', iteration
 
             # Zero out capacitance readings
-            self.control.moveGripperTo(self.initRightPos + np.array([-0.2, -0.2, 0]), self.initRightRPY, timeout=2.0, wait=True, rightArm=True, useInitGuess=True)
+            self.control.moveGripperTo(self.initRightPos + np.array([-0.2, -0.2, 0]), None, self.initRightRPY, timeout=2.0, wait=True, rightArm=True, useInitGuess=True)
             self.zeroData()
 
             # Data lists
@@ -269,17 +269,17 @@ class CapacitivePR2:
             verticalCapacitanceReadingsDown = {'capacitance': [], 'posDiff': [], 'pos': [], 'basePos': [], 'time': []}
 
             # Move to starting location
-            self.control.moveGripperTo(self.initRightPos, self.initRightRPY, timeout=4.0, wait=True, rightArm=True, useInitGuess=True)
+            self.control.moveGripperTo(self.initRightPos, None, self.initRightRPY, timeout=4.0, wait=True, rightArm=True, useInitGuess=True)
             rospy.sleep(2.0)
 
             # Find zero by touching the person
-            self.control.moveGripperTo(self.initRightPos + np.array([0, 0, -0.2]), self.initRightRPY, timeout=5.0, wait=False, rightArm=True)
+            self.control.moveGripperTo(self.initRightPos + np.array([0, 0, -0.2]), None, self.initRightRPY, timeout=5.0, wait=False, rightArm=True)
             while self.capacitance < 300:
                 self.recordRate.sleep()
             baseHeight = self.control.getGripperPosition(rightArm=True)[0][2]
             basePos = np.array([self.initRightPos[0], self.initRightPos[1], baseHeight])
             # relativeBasePos = np.array([self.initRightPos[0], self.initRightPos[1], baseHeight])
-            self.control.moveGripperTo(basePos, self.initRightRPY, timeout=0.1, wait=True, rightArm=True)
+            self.control.moveGripperTo(basePos, None, self.initRightRPY, timeout=0.1, wait=True, rightArm=True)
 
             # Move upwards and collect data
             print 'Beginning to collect vertical data'
@@ -295,7 +295,7 @@ class CapacitivePR2:
                 while (pos[2] < basePos[2] + 0.15) if j == 0 else (pos[2] > basePos[2]):
                     if rospy.get_time() - lastMoveTime >= 1.0/self.hz - 0.001:
                         lastMoveTime = rospy.get_time()
-                        x = self.control.moveGripperTo(posGoal + action*2, self.initRightRPY, timeout=1.0/self.hz*2, wait=False, rightArm=True)
+                        x = self.control.moveGripperTo(posGoal + action*2, None, self.initRightRPY, timeout=1.0/self.hz*2, wait=False, rightArm=True)
                         if x is not None:
                             posGoal += action
                     pos = self.control.getGripperPosition(rightArm=True)[0]
@@ -330,7 +330,7 @@ class CapacitivePR2:
                 scipy.io.savemat('calibration/participant_%d_armmount_newholder_%.1f_up' % (self.participant, iteration*0.1), verticalCapacitanceReadingsUp)
                 scipy.io.savemat('calibration/participant_%d_armmount_newholder_%.1f_down' % (self.participant, iteration*0.1), verticalCapacitanceReadingsDown)
                 # Move to starting location
-                self.control.moveGripperTo(self.initRightPos, self.initRightRPY, timeout=4.0, wait=True, rightArm=True, useInitGuess=True)
+                self.control.moveGripperTo(self.initRightPos, None, self.initRightRPY, timeout=4.0, wait=True, rightArm=True, useInitGuess=True)
 
 if __name__ == '__main__':
     rospy.init_node('cappr2')
@@ -338,9 +338,9 @@ if __name__ == '__main__':
     # pr2 = CapacitivePR2(forcetorqueEnabled=True, participant=21, stage=4, baseheight=0.01, armlength=0.71, save=True)
     # pr2.begin()
 
-    # pr2 = CapacitivePR2(forcetorqueEnabled=False, participant=0, stage=0, baseheight=0, armlength=0)
-    # pr2.capacitiveToProximity()
-    # exit()
+    pr2 = CapacitivePR2(forcetorqueEnabled=False, participant=0, stage=0, baseheight=0, armlength=0)
+    pr2.capacitiveToProximity()
+    exit()
 
     parser = argparse.ArgumentParser(description='Capacitive sensing for dressing.')
     parser.add_argument('-p', '--participant', help='Participant number', type=int, required=True)
@@ -384,7 +384,7 @@ if __name__ == '__main__':
         while not success:
             pr2 = CapacitivePR2(forcetorqueEnabled=True, participant=args.participant, stage=stage, baseheight=args.baseheight, armlength=args.armlength)
             # Zero out capacitance readings
-            pr2.control.moveGripperTo(np.array([0.65, -0.55, 0.05]) + np.array([-0.2, -0.2, 0]), pr2.initRightRPY, timeout=4.0, wait=True, rightArm=True, useInitGuess=True)
+            pr2.control.moveGripperTo(np.array([0.65, -0.55, 0.05]) + np.array([-0.2, -0.2, 0]), None, pr2.initRightRPY, timeout=4.0, wait=True, rightArm=True, useInitGuess=True)
             raw_input('Press enter to begin zeroing data')
             pr2.zeroData()
             success = pr2.begin()
@@ -392,7 +392,7 @@ if __name__ == '__main__':
     # Collect calibration data for the participant
     pr2 = CapacitivePR2(forcetorqueEnabled=True, participant=args.participant, stage=0, baseheight=args.baseheight, armlength=args.armlength, save=False)
     # Zero out capacitance readings
-    pr2.control.moveGripperTo(np.array([0.65, -0.55, 0.05]) + np.array([-0.2, -0.2, 0]), pr2.initRightRPY, timeout=4.0, wait=True, rightArm=True, useInitGuess=True)
+    pr2.control.moveGripperTo(np.array([0.65, -0.55, 0.05]) + np.array([-0.2, -0.2, 0]), None, pr2.initRightRPY, timeout=4.0, wait=True, rightArm=True, useInitGuess=True)
     pr2.zeroData()
     # Run data collection
     pr2.capacitiveToProximity(participantStudy=True)
