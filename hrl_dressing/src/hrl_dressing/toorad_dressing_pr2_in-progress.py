@@ -428,14 +428,12 @@ class TOORAD_Dressing_PR2(object):
                     torso_lift_msg.position = z
                     torso_client.send_goal(torso_lift_msg)
 
-                    # Find first pose from TOORAD trajectory and move robot arms to start configuration.
-                    self.set_joint_guess(traj_path[0])
-
                     pr2_B_goal = pr2_B_goals[0]
                     pos, quat = Bmat_to_pos_quat(pr2_B_goal)
+                    first_joint_config = copy.copy(traj_path[0])
 
                     inp = 'Y'
-                    while (inp.upper()[0] == 'Y' or inp.upper()[0] == 'N' or inp.upper()[0] == 'Q' or inp.upper()[0] == 'R') and not rospy.is_shutdown():
+                    while (inp.upper()[0] == 'Y' or inp.upper()[0] == 'N'or inp.upper()[0] == 'F' or inp.upper()[0] == 'Q' or inp.upper()[0] == 'R') and not rospy.is_shutdown():
                         inp = raw_input(
                             '\nEnter Y (y) to move arms to start configuration. Will attempt movement for up to 10 '
                             'seconds. N or Q ends. Otherwise continues without movement.\n')
@@ -451,9 +449,22 @@ class TOORAD_Dressing_PR2(object):
                             left_arm_config = [1.6154592163751413, 0.9695424137001551, 0.027701832632584855, -1.9420723000482831, 
                                                -9.848582247506826, -2.011107760186859, -7.066408502690475]
                             self.control.moveToJointAngles(left_arm_config, rightArm=False, timeout=10.)
+                            # Find first pose from TOORAD trajectory and move robot arms to start configuration.
+                            self.set_joint_guess(first_joint_config)
+                            self.set_joint_guess([-1.9532910592198229, -0.35250658878735863, -2.600000000000001, -1.5856465099395791, -4.9826982407074789, -1.1345767374094513, -0.16148958213088216])
                             self.control.moveGripperTo(pos, quaternion=quat, useInitGuess=True, rightArm=True, timeout=5., this_frame='base_footprint')
                         elif inp.upper()[0] == 'R':
                             self.control.moveToJointAngles(traj_path[0], timeout=10.)
+                            #self.control.moveToJointAngles([-1.9532910592198229, -0.35250658878735863, -2.600000000000001, -1.5856465099395791, -4.9826982407074789, -1.1345767374094513, -0.16148958213088216], timeout=10.)
+                        elif inp.upper()[0] == 'F':
+                            diff = np.array(traj_path[0]) - np.array(self.control.rightJointPositions) 
+                            for j in [4,6]:
+                                if np.abs(diff[j])> m.pi: 
+                                    for i in xrange(6):
+                                        target_config = copy.copy(self.rightJointPositions)
+                                        target_config[j] += np.sign(diff[j])*m.radians(60.)
+                                        self.control.moveToJointAngles(target_config, timeout=3.)
+                                        rospy.sleep(3.)
                         elif inp.upper()[0] == 'N' or inp.upper()[0] == 'Q':
                             return
                         else:
@@ -490,7 +501,7 @@ class TOORAD_Dressing_PR2(object):
                         if visually_estimate_arm_pose:
                             self.begin_dressing_trajectory_from_vision(visually_estimate_arm_pose)
                         else:
-                            self.begin_dressing_trajectory_no_vision(trial, participant, pr2_B_goals, traj_path)
+                            self.begin_dressing_trajectory_no_vision(trial, participant, pr2_B_goals, traj_path, h_arm)
                     elif inp.upper()[0] == 'R':
                         # Re-zero sensors.
                         self.zero_sensor_data()
@@ -501,6 +512,10 @@ class TOORAD_Dressing_PR2(object):
                 while not self.subtask_complete and not rospy.is_shutdown():
                     rospy.sleep(1)
                 print 'Task complete for', h_arm
+                inp = raw_input('\nEnter Y (y) to increment the trial number.\n')
+                if inp.upper()[0] == 'Y':
+                    trial += 1
+                
         else:
             print 'I do not recognize the machine type. Try again!'
             return
@@ -509,8 +524,8 @@ class TOORAD_Dressing_PR2(object):
         # TODO Execute trajectory following the pose estimated using vision
         pass
 
-    def begin_dressing_trajectory_no_vision(self, trial_number, participant_number, p_B_g, traj):
-        save_file_name = self.save_file_path + 'dressing_data/participant'+str(participant_number)+'/' + 'p'+str(participant_number)+'_t'+str(trial_number)+'.log'
+    def begin_dressing_trajectory_no_vision(self, trial_number, participant_number, p_B_g, traj, this_arm):
+        save_file_name = self.save_file_path + 'dressing_data/participant'+str(participant_number)+'/' + 'p'+str(participant_number)+'_t'+str(trial_number)+'_'+this_arm+'.log'
         open(save_file_name, 'w').close()
 
         # Waits to actually begin moving until the participant puts their hand under the capacitive sensor.
@@ -664,10 +679,15 @@ class TOORAD_Dressing_PR2(object):
             #target_matrix = createBMatrix(target_position, target_orientation)
             #print 'position_error:', position_error
             print 'distance to arm:', self.distance_to_arm
-            dist_error_capped = max(0.05 - self.distance_to_arm, -0.05)
+            if np.abs(0.05 - self.distance_to_arm) < 0.005:
+                dist_error_capped = 0.
+            else:
+                dist_error_capped = max(0.05 - self.distance_to_arm, -0.05)
             current_distance_error = dist_error_capped * np.array(pr2_B_current_gripper)[0:3, 2]
-            if 0.05 - self.distance_to_arm > 0.:
-                current_distance_error = 2.*dist_error_capped * np.array(pr2_B_current_gripper)[0:3, 2]
+            if current_goal == 13:
+                current_distance_error = 0.
+            #if 0.05 - self.distance_to_arm > 0.:
+            #    current_distance_error = dist_error_capped * np.array(pr2_B_current_gripper)[0:3, 2]
             #current_distance_error = np.zeros(3)
             #print 'force:', np.linalg.norm(self.force)
             if np.linalg.norm(self.force) < 4.0:
@@ -678,8 +698,8 @@ class TOORAD_Dressing_PR2(object):
 
             # target_posture = traj[current_goal]
             # height_input = Kp*current_distance_error + Kd*(current_distance_error - prev_distance_error)
-            if position_error_mag > 0.04 or True:
-               position_error = position_error/position_error_mag*0.04
+            if position_error_mag > 0.03 or True:
+               position_error = position_error/position_error_mag*0.03
             #if global_position_error_mag > 0.03:
             #    global_position_error = global_position_error/global_position_error_mag*0.03
             x_error = position_error[0] * np.array(pr2_B_current_gripper)[0:3, 0]
@@ -751,9 +771,9 @@ class TOORAD_Dressing_PR2(object):
             #current_goal_orientation = target_orientation
             current_goal_matrix = createBMatrix(current_position_input, new_goal_orientation)
             #self.control_rate.sleep()
-            rospy.sleep(np.max([timeout, 1./self.hz]))
+            
             #rospy.sleep(0.2)
-            continue
+            #continue
 
             if self.record_data:
                     with open(save_file_name, 'a') as myfile:
@@ -767,8 +787,8 @@ class TOORAD_Dressing_PR2(object):
                                      + ',' + str("{:.5f}".format(self.distance_to_arm))
                                      + ',' + self.hmm_prediction
                                      + '\n')
-
-            self.control_rate.sleep()
+            rospy.sleep(np.max([timeout, 1./self.hz]))
+            #self.control_rate.sleep()
             # rospy.sleep(1.)
         # print rospy.is_shutdown()
         # print 'still moving?', self.moving
@@ -869,9 +889,10 @@ class TOORAD_Dressing_PR2(object):
             if self.force_baseline is not None:
                 self.last_ft_reading = rospy.get_time()
                 self.force = np.array([msg.wrench.force.x, msg.wrench.force.y, msg.wrench.force.z]) - self.force_baseline
+#                print 'forces:', self.force
                 self.torque = np.array([msg.wrench.torque.x, msg.wrench.torque.y, msg.wrench.torque.z]) - self.torque_baseline
-                if np.linalg.norm(self.force) >= 10.0:
-                    print 'Forces exceeded 10 Newtons! Stopping movement!'
+                if np.linalg.norm(self.force) >= 20.0:
+                    print 'Forces exceeded 20 Newtons! Stopping movement!'
                     self.moving = False
                 if self.moving:
                     self.time_series_forces[self.array_line] = [msg.header.stamp.to_sec(), self.force[0],
@@ -908,13 +929,14 @@ class TOORAD_Dressing_PR2(object):
                 self.last_capacitive_reading = rospy.get_time()
                 capacitance = max(-(raw_capacitance - self.capacitance_baseline), -3.5)
                 # capacitance = max(capacitance, -3.5)
-                self.distance_to_arm = 0.05#self.estimate_distance_to_arm(capacitance)
+                self.distance_to_arm = self.estimate_distance_to_arm(capacitance)
                 if not self.moving and self.ready_to_start and self.distance_to_arm <= 0.0545:
                     self.ready_to_start = False
                     self.moving = True
 
     def estimate_distance_to_arm(self, cap):
-        return 0.8438 / (cap + 4.681)
+        return 1.101 / (cap + 6.187)  # For new, slim tool for dressing in Ari's TOORAD dissertation experiments
+        # return 0.8438 / (cap + 4.681)  # For old tool for dressing in Zackory's capacitive sensing and mpc experiments
 
     def zero_sensor_data(self):
         self.capacitance_baseline = None
