@@ -322,7 +322,7 @@ class TOORAD_Dressing_PR2(object):
 
 
             self.moving = False
-            self.hz = 20.
+            self.hz = 10.
             self.control_rate = rospy.Rate(self.hz)
 
             self.hmm_prediction = ''
@@ -448,13 +448,13 @@ class TOORAD_Dressing_PR2(object):
                                 print 'For some reason there is a large difference in desired configuration. Probably need to unroll some joints.'
                             left_arm_config = [1.6154592163751413, 0.9695424137001551, 0.027701832632584855, -1.9420723000482831, 
                                                -9.848582247506826, -2.011107760186859, -7.066408502690475]
-                            self.control.moveToJointAngles(left_arm_config, rightArm=False, timeout=10.)
+                            self.control.moveToJointAngles(left_arm_config, rightArm=False, timeout=1.)
                             # Find first pose from TOORAD trajectory and move robot arms to start configuration.
                             self.set_joint_guess(first_joint_config)
                             #self.set_joint_guess([-1.9532910592198229, -0.35250658878735863, -2.600000000000001, -1.5856465099395791, -4.9826982407074789, -1.1345767374094513, -0.16148958213088216])
                             self.control.moveGripperTo(pos, quaternion=quat, useInitGuess=True, rightArm=True, timeout=5., this_frame='base_footprint')
                         elif inp.upper()[0] == 'R':
-                            self.control.moveToJointAngles(traj_path[0], timeout=10.)
+                            self.control.moveToJointAngles(traj_path[0], timeout=1.)
                             #self.control.moveToJointAngles([-1.9532910592198229, -0.35250658878735863, -2.600000000000001, -1.5856465099395791, -4.9826982407074789, -1.1345767374094513, -0.16148958213088216], timeout=10.)
                         elif inp.upper()[0] == 'F':
                             diff = np.array(traj_path[0]) - np.array(self.control.rightJointPositions) 
@@ -545,8 +545,8 @@ class TOORAD_Dressing_PR2(object):
         prev_distance_error = np.zeros(3)
 
         # Set gains for the controller
-        Kp = 0.1
-        Kd = 0.04
+        Kp = 0.14
+        Kd = 0.1
         Ki = 0.02
         Ki_max = 1.0
         error = np.array([10., 10., 10.])
@@ -620,7 +620,21 @@ class TOORAD_Dressing_PR2(object):
             if ((position_error_mag < 0.02 and np.abs(angle_error) <= m.radians(5.)) or ik_solution_failure_counter > ik_failure_limit) and current_goal < len(p_B_g)-1:
                 print 'Current goal has been reached (or ik failed for this goal too many times). Moving on to next goal.'
                 ik_solution_failure_counter = 0
-                current_goal += 1
+                if current_goal == 0:
+                    current_goal = 12
+                elif current_goal == 6:
+                    current_goal = 12
+                elif current_goal == 12:
+                    current_goal = 13
+                elif current_goal == 13:
+                    current_goal = 21
+                elif current_goal == 21:
+                    current_goal = 22
+                elif current_goal == 22:
+                    current_goal = 23
+                else:
+                    print 'not sure how current goal is not one of these values'
+                #current_goal += 1
                 target_matrix = p_B_g[current_goal]
                 target_matrix[0, 3] += x_adjustment
                 target_position, target_orientation = Bmat_to_pos_quat(target_matrix)
@@ -628,6 +642,10 @@ class TOORAD_Dressing_PR2(object):
                 position_error, orientation_error = Bmat_to_pos_quat(error_matrix)
                 position_error[2] = 0.
                 position_error_mag = np.linalg.norm(position_error)
+                prev_error = copy.copy(position_error)
+                if np.linalg.norm(prev_error) > 0.04:
+                   prev_error = prev_error/np.linalg.norm(prev_error)*0.04
+
                 #global_position_error = np.array(target_matrix)[0:3,3] - current_position
                 #global_position_error_mag = np.linalg.norm(global_position_error)
                 angle_error, axis_error, discard_point = tft.rotation_from_matrix(error_matrix)
@@ -701,17 +719,19 @@ class TOORAD_Dressing_PR2(object):
 
             # target_posture = traj[current_goal]
             # height_input = Kp*current_distance_error + Kd*(current_distance_error - prev_distance_error)
-            if position_error_mag > 0.03 or True:
-               position_error = position_error/position_error_mag*0.03
+            if position_error_mag > 0.04:
+               position_error = position_error/position_error_mag*0.04
             #if global_position_error_mag > 0.03:
             #    global_position_error = global_position_error/global_position_error_mag*0.03
-            #x_error = position_error[0] * np.array(pr2_B_current_gripper)[0:3, 0]
-            #y_error = position_error[1] * np.array(pr2_B_current_gripper)[0:3, 1]
-            #z_error = position_error[2] * np.array(pr2_B_current_gripper)[0:3, 2]
-            x_error = position_error[0] * np.array(target_matrix)[0:3, 0]
-            y_error = position_error[1] * np.array(target_matrix)[0:3, 1]
-            z_error = position_error[2] * np.array(target_matrix)[0:3, 2]
-            z_error = 0.
+            #if 0.0 < position_error[1] < 0.02:
+            #    position_error[1] = 0.02
+            x_error = position_error[0] * np.array(pr2_B_current_gripper)[0:3, 0]
+            y_error = position_error[1] * np.array(pr2_B_current_gripper)[0:3, 1]
+            z_error = position_error[2] * np.array(pr2_B_current_gripper)[0:3, 2]
+            #x_error = position_error[0] * np.array(target_matrix)[0:3, 0]
+            #y_error = position_error[1] * np.array(target_matrix)[0:3, 1]
+            #z_error = position_error[2] * np.array(target_matrix)[0:3, 2]
+            #z_error = 0.
 
             #error = global_position_error
             #print 'x_error', x_error
@@ -759,16 +779,16 @@ class TOORAD_Dressing_PR2(object):
             while not ik_solution and not rospy.is_shutdown() and self.moving and not ik_solution_failure_counter > ik_failure_limit:
                 added_control_input = error * Kp + (error - prev_error) * Kd
                 new_position_input = current_position_input + added_control_input
-                junk_position, new_goal_orientation = Bmat_to_pos_quat(np.matrix(current_goal_matrix)*np.matrix(tft.rotation_matrix(angle_error*Kp, axis_error)))
+                junk_position, new_goal_orientation = Bmat_to_pos_quat(np.matrix(current_goal_matrix)*np.matrix(tft.rotation_matrix(angle_error*Kp*0.35, axis_error)))
                 new_goal_matrix = createBMatrix(new_position_input, new_goal_orientation)
-                ik, timeout = self.control.moveGripperTo(new_position_input, quaternion=new_goal_orientation, useInitGuess=False, rightArm=True, timeout=1./self.hz, this_frame='base_footprint')
+                ik, timeout = self.control.moveGripperTo(current_position_input+1.*added_control_input, quaternion=new_goal_orientation, useInitGuess=False, rightArm=True, timeout=1./self.hz, this_frame='base_footprint')
                 if ik is None and not rospy.is_shutdown():
                     print 'current pose\n', pr2_B_current_gripper
                     print 'target_pose\n', new_goal_matrix
                     print 'change:\n', pr2_B_current_gripper.I*new_goal_matrix
                     print 'Using IK from simulation'
                     self.set_joint_guess(traj[current_goal])
-                    ik, timeout = self.control.moveGripperTo(new_position_input, quaternion=new_goal_orientation, useInitGuess=True, rightArm=True, timeout=1./self.hz, this_frame='base_footprint')
+                    ik, timeout = self.control.moveGripperTo(current_position_input+1.*added_control_input, quaternion=new_goal_orientation, useInitGuess=True, rightArm=True, timeout=1./self.hz, this_frame='base_footprint')
                     if ik is not None:
                         print 'IK from simulation succeeded'
                         print 'IK guess:', traj[current_goal]
@@ -792,7 +812,8 @@ class TOORAD_Dressing_PR2(object):
             #current_goal_orientation = target_orientation
             current_position_input = new_position_input
             current_goal_matrix = createBMatrix(current_position_input, new_goal_orientation)
-            prev_error = error
+            prev_error = copy.copy(error)
+            
             #self.control_rate.sleep()
             
             #rospy.sleep(0.2)
