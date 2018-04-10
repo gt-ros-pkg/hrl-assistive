@@ -372,7 +372,7 @@ class DressingMultiProcessOptimization(object):
         #                                                                m.radians(5.))
         #                                                      )
         #                                          ])
-        reso = m.radians(5.)
+        reso = m.radians(2.5)
         coarse_configs = [t for t in (([arm1, arm2, arm3, arm4])
                                       for arm1 in np.arange(amin[0], amax[0] + 0.0001,
                                                             reso)
@@ -2807,7 +2807,7 @@ if __name__ == "__main__":
     # pkg_path = rospack.get_path('hrl_base_selection')
     # skel_file = pkg_path + '/models/' + filename
 
-    optimizer = DressingMultiProcessOptimization(number_of_processes=1, visualize=True)
+    optimizer = DressingMultiProcessOptimization(number_of_processes=0, visualize=False)
     optimizer.optimize_entire_dressing_task(reset_file=False)
     # outer_elapsed_time = rospy.Time.now()-outer_start_time
     print 'Everything is complete!'
