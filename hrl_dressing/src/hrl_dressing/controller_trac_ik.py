@@ -6,6 +6,7 @@ from geometry_msgs.msg import PointStamped, PoseStamped, Pose
 from trajectory_msgs.msg import JointTrajectoryPoint
 from pr2_controllers_msgs.msg import JointTrajectoryGoal, JointTrajectoryAction, JointTrajectoryControllerState, JointControllerState, Pr2GripperCommandAction, Pr2GripperCommandGoal, PointHeadAction, PointHeadGoal
 from pykdl_utils.kdl_kinematics import create_kdl_kin # TODO: Remove this dependency
+from trac_ik_python.trac_ik import IK
 
 
 class Controller:
@@ -40,14 +41,16 @@ class Controller:
         self.pointHeadClient = actionlib.SimpleActionClient('/head_traj_controller/point_head_action', PointHeadAction)
         self.pointHeadClient.wait_for_server()
 
-        # Initialize KDL for inverse kinematics
-        self.rightArmKdl = create_kdl_kin(self.frame, 'r_gripper_tool_frame')
-        self.rightArmKdl.joint_safety_lower = self.rightJointLimitsMin
-        self.rightArmKdl.joint_safety_upper = self.rightJointLimitsMax
+        # Initialize KDL for inverse kinematics       
+        #self.rightArmKdl.joint_safety_lower = self.rightJointLimitsMin
+        #self.rightArmKdl.joint_safety_upper = self.rightJointLimitsMax
+        self.rightArmKdl_dist = IK(self.frame, "r_gripper_tool_frame", timeout=0.04, solve_type='Distance')
+        self.rightArmKdl_speed = IK(self.frame, "r_gripper_tool_frame", timeout=0.01, solve_type='Speed')
 
-        self.leftArmKdl = create_kdl_kin(self.frame, 'l_gripper_tool_frame')
-        self.leftArmKdl.joint_safety_lower = self.leftJointLimitsMin
-        self.leftArmKdl.joint_safety_upper = self.leftJointLimitsMax
+        #self.leftArmKdl.joint_safety_lower = self.leftJointLimitsMin
+        #self.leftArmKdl.joint_safety_upper = self.leftJointLimitsMax
+        self.leftArmKdl_dist = IK(self.frame, "l_gripper_tool_frame", timeout=0.04, solve_type='Distance')
+        self.leftArmKdl_speed = IK(self.frame, "l_gripper_tool_frame", timeout=0.01, solve_type='Speed')
 
         self.rightJointPositions = None
         self.leftJointPositions = None
@@ -162,16 +165,39 @@ class Controller:
         ps = self.tf.transformPose(self.frame, ps)
         #print 'ps after transform\n', ps
         
+               # get_ik(qinit,
+               #        x, y, z,
+               #        rx, ry, rz, rw,
+               #        bx=1e-5, by=1e-5, bz=1e-5,
+               #        brx=1e-3, bry=1e-3, brz=1e-3)
 
         # Perform IK
         if rightArm:
-            ikGoal = self.rightArmKdl.inverse(ps.pose, q_guess=self.initRightJointGuess if useInitGuess else self.rightJointPositions, min_joints=self.rightJointLimitsMin, max_joints=self.rightJointLimitsMax)
+            ikGoal = self.rightArmKdl_dist.get_ik(self.initRightJointGuess if useInitGuess else self.rightJointPositions,
+                                                  ps.pose.position.x, ps.pose.position.y, ps.pose.position.z,
+                                                  ps.pose.orientation.x, ps.pose.orientation.y, ps.pose.orientation.z, ps.pose.orientation.w,
+                                                  0.00001, 0.00001, 0.00001, 0.001, 0.001, 0.001            )
+            if ikGoal is None and False:
+                print 'using speed'
+                ikGoal = self.rightArmKdl_speed.get_ik(self.initRightJointGuess if useInitGuess else self.rightJointPositions,
+                                                       ps.pose.position.x, ps.pose.position.y, ps.pose.position.z,
+                                                       ps.pose.orientation.x, ps.pose.orientation.y, ps.pose.orientation.z, ps.pose.orientation.w)
+
+            # ikGoal = self.rightArmKdl.inverse(ps.pose, q_guess=self.initRightJointGuess if useInitGuess else self.rightJointPositions, min_joints=self.rightJointLimitsMin, max_joints=self.rightJointLimitsMax)
             #print 'rightjointpositions\n', self.rightJointPositions
 #            print 'ikGoal1', ikGoal
 #            ikGoal = self.rightArmKdl.inverse_search(ps.pose, timeout=timeout)
 #            print 'ikgoal2:', ikGoal
         else:
-            ikGoal = self.leftArmKdl.inverse(ps.pose, q_guess=self.initLeftJointGuess if useInitGuess else self.leftJointPositions, min_joints=self.leftJointLimitsMin, max_joints=self.leftJointLimitsMax)
+            ikGoal = self.leftArmKdl_dist.get_ik(self.initLeftJointGuess if useInitGuess else self.rightJointPositions,
+                                                 ps.pose.position.x, ps.pose.position.y, ps.pose.position.z,
+                                                 ps.pose.orientation.x, ps.pose.orientation.y, ps.pose.orientation.z, ps.pose.orientation.w)
+            if ikGoal is None and False:
+                ikGoal = self.leftArmKdl_speed.get_ik(self.initLeftJointGuess if useInitGuess else self.rightJointPositions,
+                                                      ps.pose.position.x, ps.pose.position.y, ps.pose.position.z,
+                                                      ps.pose.orientation.x, ps.pose.orientation.y, ps.pose.orientation.z, ps.pose.orientation.w)
+            
+            # ikGoal = self.leftArmKdl.inverse(ps.pose, q_guess=self.initLeftJointGuess if useInitGuess else self.leftJointPositions, min_joints=self.leftJointLimitsMin, max_joints=self.leftJointLimitsMax)
 
         if ikGoal is not None:
             if not ret:
@@ -179,16 +205,16 @@ class Controller:
                 #print 'ikGoal:', ikGoal
                 #print 'diff:', ikGoal - self.rightJointPositions
                 # max_diff = np.degrees(np.max(np.abs(ikGoal - self.rightJointPositions)[[0,1,2,3,5]]))  # This is to ignore the infinite roll joints
-                max_diff = np.degrees(np.max(np.abs(ikGoal - self.rightJointPositions)))  # This considers all joints
+                max_diff = np.degrees(np.max(np.abs(np.array(ikGoal) - np.array(self.rightJointPositions))))  # This considers all joints
                 #print 'max joint angle (degrees) change requested:', max_diff
                 #if max_diff > 5.:
                 #    if max_diff/20. > timeout:
                 #        print 'slowing down move'
                 timeout = np.max([timeout, max_diff/20.])
                 self.moveToJointAngles(ikGoal, timeout=timeout, wait=wait, rightArm=rightArm)
-                return ikGoal, timeout
+                return list(ikGoal), timeout
             else:
-                return ikGoal, 0.
+                return list(ikGoal), 0.
         else:
             print 'IK failed'
             return None, 0.

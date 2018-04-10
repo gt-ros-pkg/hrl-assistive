@@ -8,8 +8,8 @@
         <!--args="192.168.0.125 &#45;&#45;rate 100" respawn="false">-->
     <!--<remap from='netft_data' to='/force_torque_pr2_sleeve' />-->
   <!--</node>-->
-  <node pkg="netft_rdt_driver" name="ft8" type="netft_node"
-        args="192.168.0.124 --rate 100" respawn="false">
+  <node pkg="netft_rdt_driver" name="ft9" type="netft_node"
+        args="192.168.0.125 --rate 100" respawn="false">
     <remap from='netft_data' to='/force_torque_pr2_sleeve' />
   </node>
 
@@ -18,7 +18,7 @@
         output="screen" respawn="false">
   </node>
   
-  <node pkg="hrl_dressing" name="toorad_dressing_pr2" type="toorad_dressing_pr2.py"
+  <node pkg="hrl_dressing" name="toorad_dressing_pr2" type="toorad_dressing_pr2_in-progress.py"
         args="-p 0 -t 0 -m PR2"
         output="screen" respawn="false">
   </node>
