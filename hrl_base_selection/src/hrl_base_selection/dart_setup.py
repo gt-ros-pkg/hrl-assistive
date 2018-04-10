@@ -21,6 +21,7 @@ from matplotlib.cbook import flatten
 
 class DartDressingWorld(pydart.World):
     def __init__(self, skel_file_name):
+        print skel_file_name
         rospack = rospkg.RosPack()
         self.pkg_path = rospack.get_path('hrl_base_selection')
 
@@ -100,20 +101,34 @@ class DartDressingWorld(pydart.World):
             raw_xml_dict = xmltodict.parse(fd.read())
         self.skel_bodies = raw_xml_dict['skel']['world']['skeleton'][1]['body']
         self.skel_joints = raw_xml_dict['skel']['world']['skeleton'][1]['joint']
-        for joint in self.skel_joints:
-            if joint['@name'] == 'j_toe_left':
-                self.lowest_reference_joint_index = self.skel_joints.index(joint)
-            elif joint['@name'] == 'j_pelvis':
-                self.center_reference_joint_index = self.skel_joints.index(joint)
+        if 'fullbody_participant0_capsule.skel' in skel_file_name:
+            'participant0 model being used'
+            for joint in self.skel_joints:
+                if joint['@name'] == 'j_bicep_left':
+                    self.lowest_reference_joint_index = self.skel_joints.index(joint)
+                elif joint['@name'] == 'j_pelvis':
+                    self.center_reference_joint_index = self.skel_joints.index(joint)
+            self.joint_to_floor_z = 0.
+            self.estimate_center_floor_point()
+            positions = self.human.positions()
+            positions['j_pelvis1_x'] -= self.human_reference_center_floor_point[0]
+            positions['j_pelvis1_y'] -= self.human_reference_center_floor_point[1]
+            positions['j_pelvis1_z'] += (1.0 - self.human_reference_center_floor_point[2])
+        else:
+            for joint in self.skel_joints:
+                if joint['@name'] == 'j_toe_left':
+                    self.lowest_reference_joint_index = self.skel_joints.index(joint)
+                elif joint['@name'] == 'j_pelvis':
+                    self.center_reference_joint_index = self.skel_joints.index(joint)
 
-        for bodypart in self.skel_bodies:
-            if bodypart['@name'] == self.skel_joints[self.lowest_reference_joint_index]['child']:
-                self.joint_to_floor_z = float(bodypart['visualization_shape']['geometry']['multi_sphere']['sphere'][0]['radius'])
-        self.estimate_center_floor_point()
-        positions = self.human.positions()
-        positions['j_pelvis1_x'] -= self.human_reference_center_floor_point[0]
-        positions['j_pelvis1_y'] -= self.human_reference_center_floor_point[1]
-        positions['j_pelvis1_z'] -= self.human_reference_center_floor_point[2]
+            for bodypart in self.skel_bodies:
+                if bodypart['@name'] == self.skel_joints[self.lowest_reference_joint_index]['child']:
+                    self.joint_to_floor_z = float(bodypart['visualization_shape']['geometry']['multi_sphere']['sphere'][0]['radius'])
+            self.estimate_center_floor_point()
+            positions = self.human.positions()
+            positions['j_pelvis1_x'] -= self.human_reference_center_floor_point[0]
+            positions['j_pelvis1_y'] -= self.human_reference_center_floor_point[1]
+            positions['j_pelvis1_z'] -= self.human_reference_center_floor_point[2]
         self.human.set_positions(positions)
         self.estimate_center_floor_point()
 
@@ -190,7 +205,7 @@ class DartDressingWorld(pydart.World):
         z_position = self.human.joint(self.skel_joints[self.lowest_reference_joint_index]['@name']).position_in_world_frame()[2] - self.joint_to_floor_z
 
         self.human_reference_center_floor_point = np.array([x_position, y_position, z_position])
-        #print 'Position of the floor center of the human body with respect to the floor: ', self.human_reference_center_floor_point
+        print 'Position of the floor center of the human body with respect to the floor: ', self.human_reference_center_floor_point
 
     # def on_key_press(self, key):
     #     if key == 'J':

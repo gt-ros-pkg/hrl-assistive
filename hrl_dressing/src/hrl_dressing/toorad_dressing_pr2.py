@@ -148,7 +148,7 @@ class TOORAD_Dressing_PR2(object):
             pydart.init()
             print('pydart initialization OK')
 
-            self.setup_dart(filename='fullbody_50percentile_capsule.skel', visualize=True)
+            self.setup_dart(filename=model, visualize=True)
 
             # rospy.sleep(20)
             arm = raw_input('\nEnter R (r) for right arm (should be done first. Enter L (l) for left arm (should be '
@@ -213,6 +213,18 @@ class TOORAD_Dressing_PR2(object):
                 v['torso_lift_joint'] = pr2_params[3]
                 self.robot.set_positions(v)
                 rospy.sleep(0.1)
+
+                origin_B_pr2 = np.matrix([[m.cos(th), -m.sin(th), 0., x],
+                                          [m.sin(th), m.cos(th), 0., y],
+                                          [0., 0., 1., 0.],
+                                          [0., 0., 0., 1.]])
+
+                origin_B_wheel = np.matrix([[m.cos(0.), -m.sin(0.), 0., -0.1],
+                                          [m.sin(0.), m.cos(0.), 0., 0.26],
+                                          [0., 0., 1., 0.],
+                                          [0., 0., 0., 1.]])
+                print 'pr2_B_wheel\n', origin_B_pr2.I*origin_B_wheel
+                print 'angle:', m.degrees(m.acos((origin_B_pr2.I*origin_B_wheel)[0, 0]))
 
                 self.set_human_model_dof_dart(params, h_arm)
                 self.set_human_model_dof_dart([0., 0., 0., 0.], h_opposite_arm)
@@ -946,5 +958,5 @@ if __name__ == '__main__':
     toorad_dressing = TOORAD_Dressing_PR2(participant=opt.participant, trial=opt.participant,
                                           enable_realtime_HMM=False, visualize=opt.visualize,
                                           visually_estimate_arm_pose=False, adjust_arm_pose_visually=False,
-                                          machine=opt.machine)
+                                          machine=opt.machine, model='fullbody_participant0_capsule.skel')
 
