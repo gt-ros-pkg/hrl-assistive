@@ -10,6 +10,7 @@ import roslib
 
 import rospy, rospkg
 import tf
+import tf.transformations as tft
 from geometry_msgs.msg import PoseStamped, Pose, PoseArray
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
@@ -82,8 +83,8 @@ class BaseEmptySimulationProcess(object):
 
     def start_dressing_simulation_process(self):
         self.optimizer = DressingSimulationProcess(process_number=self.process_number,
-                                                   visualize=self.visualize)
-        self.optimizer.save_all_results = True
+                                                   visualize=self.visualize, model='fullbody_participant0_capsule.skel')
+        self.optimizer.save_all_results = False
         self.simulator_started = True
         return True
 
@@ -130,6 +131,7 @@ def brute_force_func(input):
     subtask_number, stretch_allowable, \
     fixed_points_to_use, fixed_points = input
     global current_simulator
+    # print 'x', x
     pn = current_simulator.process_number
     if not current_simulator.simulator_started:
         current_simulator.start_dressing_simulation_process()
@@ -253,6 +255,11 @@ class DressingMultiProcessOptimization(object):
         self.save_file_name_coarse_feasible = 'arm_configs_coarse_feasible.log'
         self.save_file_name_fine_output = 'arm_configs_fine_output.log'
         self.save_file_name_final_output = 'arm_configs_final_output.log'
+
+        # self.model = 'fullbody_50percentile_capsule.skel'
+        self.model = 'fullbody_participant0_capsule.skel'
+
+
         self.arm_config_min = np.array([m.radians(-5.), m.radians(-10.), m.radians(-10.),
                                         0.])
         self.arm_config_max = np.array([m.radians(100.), m.radians(100.), m.radians(100),
@@ -279,6 +286,7 @@ class DressingMultiProcessOptimization(object):
             open(self.save_file_path + self.save_file_name_final_output, 'w').close()
 
         subtask_list = ['rightarm', 'leftarm']
+        # subtask_list = ['leftarm', 'leftarm']
         # subtask_list = ['leftarm']
         robot_arm_to_use = ['rightarm', 'rightarm']
         all_fixed_points_to_use = [[], [0]]
@@ -611,7 +619,8 @@ class DressingMultiProcessOptimization(object):
 
 
 class DressingSimulationProcess(object):
-    def __init__(self, process_number=0, robot_arm='rightarm', human_arm='rightarm', visualize=False):
+    def __init__(self, process_number=0, robot_arm='rightarm', human_arm='rightarm',
+                 model='fullbody_50percentile_capsule.skel', visualize=False):
         self.process_number = process_number
         rospack = rospkg.RosPack()
         self.pkg_path = rospack.get_path('hrl_base_selection')
@@ -642,6 +651,8 @@ class DressingSimulationProcess(object):
 
         self.axis = []
         self.angle = None
+
+        self.model = model
 
         self.stretch_allowable = []
 
@@ -695,7 +706,9 @@ class DressingSimulationProcess(object):
         self.set_robot_arm(robot_arm)
         self.set_human_arm(human_arm)
 
-        self.setup_dart(filename='fullbody_50percentile_capsule.skel')
+        self.model = 'fullbody_participant0_capsule.skel'
+        # self.setup_dart(filename='fullbody_50percentile_capsule.skel')
+        self.setup_dart(filename=self.model)
 
         self.arm_configs_eval = load_pickle(rospack.get_path('hrl_dressing') +
                                             '/data/forearm_trajectory_evaluation/entire_results_list.pkl')
@@ -980,7 +993,12 @@ class DressingSimulationProcess(object):
         origin_B_reference_coordinates[0:3, 3] = np.array(origin_B_forearm_world)[0:3, 3]
         origin_B_reference_coordinates = np.matrix(origin_B_reference_coordinates)
         horizontal_B_forearm_pointed_down = origin_B_reference_coordinates.I * origin_B_forearm_pointed_down_arm
-        angle_from_horizontal = m.degrees(m.acos(horizontal_B_forearm_pointed_down[0, 0]))
+        # angle_forearm_from_horizontal = m.degrees(m.acos(horizontal_B_forearm_pointed_down[0, 0]))
+        angle_forearm_from_horizontal, axis, junk_point = tft.rotation_from_matrix(horizontal_B_forearm_pointed_down)
+        if axis[np.argmax(np.abs(axis))] < 0:
+            angle_forearm_from_horizontal *= -1.
+        # print 'angle_forearm_from_horizontal', np.degrees(angle_forearm_from_horizontal)
+        # print 'angle, axis', np.degrees(angle), axis
 
         forearm_pointed_down_arm_B_traj_end_pos = np.eye(4)
         forearm_pointed_down_arm_B_traj_end_pos[0:3, 3] = [-0.05, traj_y_offset, traj_z_offset]
@@ -1015,6 +1033,28 @@ class DressingSimulationProcess(object):
         origin_B_upperarm_pointed_down_shoulder[0:3, 2] = z_orth
         origin_B_upperarm_pointed_down_shoulder[0:3, 3] = np.array(origin_B_upperarm_world)[0:3, 3]
         origin_B_rotated_pointed_down_shoulder = np.matrix(origin_B_upperarm_pointed_down_shoulder)
+
+        origin_B_reference_coordinates = np.eye(4)
+        x_horizontal = np.cross(y_orth, z_origin)
+        x_horizontal /= np.linalg.norm(x_horizontal)
+        origin_B_reference_coordinates[0:3, 0] = x_horizontal
+        origin_B_reference_coordinates[0:3, 1] = y_orth
+        origin_B_reference_coordinates[0:3, 2] = z_origin
+        origin_B_reference_coordinates[0:3, 3] = np.array(origin_B_upperarm_pointed_down_shoulder)[0:3, 3]
+        origin_B_reference_coordinates = np.matrix(origin_B_reference_coordinates)
+        horizontal_B_upperarm_pointed_down = origin_B_reference_coordinates.I * origin_B_upperarm_pointed_down_shoulder
+        # angle_upperarm_from_horizontal = m.degrees(m.acos(horizontal_B_upperarm_pointed_down[0, 0]))
+        # angle_upperarm_from_straight_ahead = m.degrees(m.acos(origin_B_reference_coordinates[0, 0]))
+
+        angle_upperarm_from_horizontal, axis, junk_point = tft.rotation_from_matrix(horizontal_B_upperarm_pointed_down)
+        if axis[np.argmax(np.abs(axis))] < 0:
+            angle_upperarm_from_horizontal *= -1.
+        # print 'angle_upperarm_from_horizontal', np.degrees(angle_upperarm_from_horizontal)
+        #
+        angle_upperarm_from_straight_ahead, axis, junk_point = tft.rotation_from_matrix(origin_B_reference_coordinates)
+        if axis[np.argmax(np.abs(axis))] < 0:
+            angle_upperarm_from_straight_ahead *= -1.
+        # print 'angle_upperarm_from_straight_ahead', np.degrees(angle_upperarm_from_straight_ahead)
 
         upperarm_pointed_down_shoulder_B_traj_end_pos = np.eye(4)
         upperarm_pointed_down_shoulder_B_traj_end_pos[0:3, 3] = [-0.05, traj_y_offset, traj_z_offset]
@@ -1129,13 +1169,14 @@ class DressingSimulationProcess(object):
         return goals, np.matrix(origin_B_forearm_pointed_down_arm), np.matrix(origin_B_upperarm_pointed_down_shoulder), \
                np.matrix(origin_B_hand), np.matrix(origin_B_wrist), \
                np.matrix(origin_B_traj_start), np.matrix(origin_B_traj_forearm_end), np.matrix(origin_B_traj_upper_end), \
-               np.matrix(origin_B_traj_final_end), angle_from_horizontal, \
-               np.matrix(forearm_B_upper_arm), fixed_point_exceeded_amount
+               np.matrix(origin_B_traj_final_end), np.degrees(angle_forearm_from_horizontal), \
+               np.matrix(forearm_B_upper_arm), fixed_point_exceeded_amount, \
+               np.degrees(angle_upperarm_from_horizontal), np.degrees(angle_upperarm_from_straight_ahead)
+
 
     def objective_function_coarse(self, params):
         self.save_file_name_coarse_raw = 'arm_configs_coarse_raw_p'+str(self.process_number)+'_t'+str(self.subtask_step)+'.log'
         self.save_file_name_coarse_feasible = 'arm_configs_coarse_feasible_p'+str(self.process_number)+'_t'+str(self.subtask_step)+'.log'
-
         # params = [m.radians(90.0),  m.radians(0.), m.radians(45.), m.radians(0.)]
         # print 'doing subtask', self.subtask_step
         # print 'params:\n', params
@@ -1150,6 +1191,7 @@ class DressingSimulationProcess(object):
             #params = [1.5707963267948966, -0.17453292519943295, 1.3962634015954636, 1.5707963267948966]
             params = [1.48353,0.43633,1.48353,1.30900]
             # self.visualize = True
+
         # Check if all arm configurations within a ball in configuration space of the current configuration are 'good'
         #neigh_distances, neighbors = self.arm_knn.kneighbors([params], 16)
         neigh_distances, neighbors = self.arm_knn.radius_neighbors([params]) 
@@ -1158,14 +1200,15 @@ class DressingSimulationProcess(object):
             if not self.arm_configs_eval[neighbor][5] == 'good':
                 # print 'arm evaluation found this configuration to be bad'
                 this_score = 10. + 10. + 4. + random.random()
-                with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
-                    myfile.write(str(self.subtask_step)
-                                 + ',' + str("{:.5f}".format(params[0]))
-                                 + ',' + str("{:.5f}".format(params[1]))
-                                 + ',' + str("{:.5f}".format(params[2]))
-                                 + ',' + str("{:.5f}".format(params[3]))
-                                 + ',' + str("{:.5f}".format(this_score))
-                                 + '\n')
+                if self.save_all_results:
+                    with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
+                        myfile.write(str(self.subtask_step)
+                                     + ',' + str("{:.5f}".format(params[0]))
+                                     + ',' + str("{:.5f}".format(params[1]))
+                                     + ',' + str("{:.5f}".format(params[2]))
+                                     + ',' + str("{:.5f}".format(params[3]))
+                                     + ',' + str("{:.5f}".format(this_score))
+                                     + '\n')
                 return this_score
         # print 'arm config is not bad'
         arm = self.human_arm.split('a')[0]
@@ -1176,6 +1219,7 @@ class DressingSimulationProcess(object):
         # dressed is set to the values of this objective function evaluation.
         self.set_human_model_dof_dart([0, 0, 0, 0], self.human_opposite_arm)
         self.set_human_model_dof_dart([params[0], params[1], params[2], params[3]], self.human_arm)
+
 
         # Check if the person is in self collision, which means parts of the arm are in collision with anything other
         # than the shoulder or itself.
@@ -1211,9 +1255,16 @@ class DressingSimulationProcess(object):
         origin_B_traj_forearm_end, \
         origin_B_traj_upper_end, \
         origin_B_traj_final_end, \
-        angle_from_horizontal, \
+        angle_forearm_from_horizontal, \
         forearm_B_upper_arm, \
-        fixed_points_exceeded_amount = self.find_reference_coordinate_frames_and_goals(arm)
+        fixed_points_exceeded_amount, \
+        angle_upperarm_from_horizontal, \
+        angle_upperarm_from_straight_ahead = self.find_reference_coordinate_frames_and_goals(arm)
+
+        # print 'angle_upperarm_from_horizontal', angle_upperarm_from_horizontal
+        # print 'angle_upperarm_from_straight_ahead', angle_upperarm_from_straight_ahead
+        # rospy.sleep(0.5)
+        # return
         #if self.subtask_step ==1:
         #    print 'here 3', self.process_number
 
@@ -1223,6 +1274,103 @@ class DressingSimulationProcess(object):
         #elif self.subtask_step ==1:
         #    pass
              #print 'fixed points exceeded: ', fixed_points_exceeded_amount
+
+        if self.model == 'fullbody_participant0_capsule.skel':
+            if self.subtask_step == 0:
+                if params[3] < m.radians(30.):
+                    this_score = 10. + 10. + 1. + 10. * (m.radians(30.) - params[3])
+                    if self.save_all_results:
+                        with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
+                            myfile.write(str(self.subtask_step)
+                                         + ',' + str("{:.5f}".format(params[0]))
+                                         + ',' + str("{:.5f}".format(params[1]))
+                                         + ',' + str("{:.5f}".format(params[2]))
+                                         + ',' + str("{:.5f}".format(params[3]))
+                                         + ',' + str("{:.5f}".format(this_score))
+                                         + '\n')
+                    return this_score
+
+                if angle_upperarm_from_horizontal < 0.:
+                    this_score = 10. + 10. + 1. + 10. * (0. - angle_upperarm_from_horizontal)
+                    if self.save_all_results:
+                        with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
+                            myfile.write(str(self.subtask_step)
+                                         + ',' + str("{:.5f}".format(params[0]))
+                                         + ',' + str("{:.5f}".format(params[1]))
+                                         + ',' + str("{:.5f}".format(params[2]))
+                                         + ',' + str("{:.5f}".format(params[3]))
+                                         + ',' + str("{:.5f}".format(this_score))
+                                         + '\n')
+                if angle_upperarm_from_straight_ahead > -10.:
+                    this_score = 10. + 10. + 1. + 1. * (-10. - angle_upperarm_from_horizontal)
+                    if self.save_all_results:
+                        with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
+                            myfile.write(str(self.subtask_step)
+                                         + ',' + str("{:.5f}".format(params[0]))
+                                         + ',' + str("{:.5f}".format(params[1]))
+                                         + ',' + str("{:.5f}".format(params[2]))
+                                         + ',' + str("{:.5f}".format(params[3]))
+                                         + ',' + str("{:.5f}".format(this_score))
+                                         + '\n')
+                if angle_upperarm_from_straight_ahead < -93.:
+                    this_score = 10. + 10. + 1. + 1. * (angle_upperarm_from_horizontal + 93.)
+                    if self.save_all_results:
+                        with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
+                            myfile.write(str(self.subtask_step)
+                                         + ',' + str("{:.5f}".format(params[0]))
+                                         + ',' + str("{:.5f}".format(params[1]))
+                                         + ',' + str("{:.5f}".format(params[2]))
+                                         + ',' + str("{:.5f}".format(params[3]))
+                                         + ',' + str("{:.5f}".format(this_score))
+                                         + '\n')
+
+            else:
+                if params[3] < m.radians(10.):
+                    this_score = 10. + 10. + 1. + 10. * (m.radians(10.) - params[3])
+                    if self.save_all_results:
+                        with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
+                            myfile.write(str(self.subtask_step)
+                                         + ',' + str("{:.5f}".format(params[0]))
+                                         + ',' + str("{:.5f}".format(params[1]))
+                                         + ',' + str("{:.5f}".format(params[2]))
+                                         + ',' + str("{:.5f}".format(params[3]))
+                                         + ',' + str("{:.5f}".format(this_score))
+                                         + '\n')
+                    return this_score
+
+                if angle_upperarm_from_horizontal < 0.:
+                    this_score = 10. + 10. + 1. + 10. * (0. - angle_upperarm_from_horizontal)
+                    if self.save_all_results:
+                        with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
+                            myfile.write(str(self.subtask_step)
+                                         + ',' + str("{:.5f}".format(params[0]))
+                                         + ',' + str("{:.5f}".format(params[1]))
+                                         + ',' + str("{:.5f}".format(params[2]))
+                                         + ',' + str("{:.5f}".format(params[3]))
+                                         + ',' + str("{:.5f}".format(this_score))
+                                         + '\n')
+                if angle_upperarm_from_straight_ahead > 30.:
+                    this_score = 10. + 10. + 1. + 1. * (angle_upperarm_from_horizontal - 30.)
+                    if self.save_all_results:
+                        with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
+                            myfile.write(str(self.subtask_step)
+                                         + ',' + str("{:.5f}".format(params[0]))
+                                         + ',' + str("{:.5f}".format(params[1]))
+                                         + ',' + str("{:.5f}".format(params[2]))
+                                         + ',' + str("{:.5f}".format(params[3]))
+                                         + ',' + str("{:.5f}".format(this_score))
+                                         + '\n')
+                if angle_upperarm_from_straight_ahead < -93.:
+                    this_score = 10. + 10. + 1. + 1. * (angle_upperarm_from_horizontal + 93.)
+                    if self.save_all_results:
+                        with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
+                            myfile.write(str(self.subtask_step)
+                                         + ',' + str("{:.5f}".format(params[0]))
+                                         + ',' + str("{:.5f}".format(params[1]))
+                                         + ',' + str("{:.5f}".format(params[2]))
+                                         + ',' + str("{:.5f}".format(params[3]))
+                                         + ',' + str("{:.5f}".format(this_score))
+                                         + '\n')
 
         if fixed_points_exceeded_amount > 0.:
             # print 'The gown is being stretched too much to try to do the next part of the task.'
@@ -1244,10 +1392,10 @@ class DressingSimulationProcess(object):
         # We also have calculated when generating the trajectories, the angle from horizontal of the forearm. We have
         # previous simulation that gives a range of angles for which dressing can succeed. We apply that constraint
         # here
-        # print 'angle from horizontal = ', angle_from_horizontal
-        if abs(angle_from_horizontal) > 30.:
+        # print 'angle from horizontal = ', angle_forearm_from_horizontal
+        if abs(angle_forearm_from_horizontal) > 30.:
             # print 'Angle of forearm is too high for success'
-            this_score = 10. + 10. + 10. * (abs(angle_from_horizontal) - 30.)
+            this_score = 10. + 10. + 10. * (abs(angle_forearm_from_horizontal) - 30.)
             if self.save_all_results:
                 with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
                     myfile.write(str(self.subtask_step)
@@ -1259,7 +1407,8 @@ class DressingSimulationProcess(object):
                                  + '\n')
             return this_score
 
-
+        # print 'ok'
+        # rospy.sleep(1.)
 
         # Here we calculate the torque on the shoulder of the person based on average limb weights. We scale that
         # torque by an estimated maximum torque, which is the torque with the arm fully extended. This gives us a
@@ -1403,9 +1552,11 @@ class DressingSimulationProcess(object):
         origin_B_traj_forearm_end, \
         origin_B_traj_upper_end, \
         origin_B_traj_final_end, \
-        angle_from_horizontal, \
+        angle_forearm_from_horizontal, \
         forearm_B_upper_arm, \
-        fixed_points_exceeded_amount = self.find_reference_coordinate_frames_and_goals(arm, high_res_interpolation=high_res)
+        fixed_points_exceeded_amount, \
+        angle_upperarm_from_horizontal, \
+        angle_upperarm_from_straight_ahead = self.find_reference_coordinate_frames_and_goals(arm, high_res_interpolation=high_res)
 
 #        if fixed_points_exceeded_amount <= 0:
 #            pass
@@ -1429,10 +1580,10 @@ class DressingSimulationProcess(object):
                                  + '\n')
             return this_score
 
-        # print 'angle from horizontal = ', angle_from_horizontal
-        if abs(angle_from_horizontal) > 30.:
+        # print 'angle from horizontal = ', angle_forearm_from_horizontal
+        if abs(angle_forearm_from_horizontal) > 30.:
             # print 'Angle of forearm is too high for success'
-            this_score = 10. + 10. + 10. * (abs(angle_from_horizontal) - 30.)
+            this_score = 10. + 10. + 10. * (abs(angle_forearm_from_horizontal) - 30.)
             if self.save_all_results:
                 with open(self.save_file_path + self.save_file_name_fine_raw, 'a') as myfile:
                     myfile.write(str(self.subtask_step)
@@ -1735,9 +1886,11 @@ class DressingSimulationProcess(object):
         origin_B_traj_forearm_end, \
         origin_B_traj_upper_end, \
         origin_B_traj_final_end, \
-        angle_from_horizontal, \
+        angle_forearm_from_horizontal, \
         forearm_B_upper_arm, \
-        fixed_points_exceeded_amount = self.find_reference_coordinate_frames_and_goals(arm)
+        fixed_points_exceeded_amount, \
+        angle_upperarm_from_horizontal, \
+        angle_upperarm_from_straight_ahead = self.find_reference_coordinate_frames_and_goals(arm)
         self.set_goals()
 
         return self.objective_function_pr2_config(parameters)
@@ -2374,9 +2527,11 @@ class DressingSimulationProcess(object):
         origin_B_traj_forearm_end, \
         origin_B_traj_upper_end, \
         origin_B_traj_final_end, \
-        angle_from_horizontal, \
+        angle_forearm_from_horizontal, \
         forearm_B_upper_arm, \
-        fixed_points_exceeded_amount = self.find_reference_coordinate_frames_and_goals(arm, high_res_interpolation=False)
+        fixed_points_exceeded_amount, \
+        angle_upperarm_from_horizontal, \
+        angle_upperarm_from_straight_ahead = self.find_reference_coordinate_frames_and_goals(arm, high_res_interpolation=False)
         self.set_goals()
 
         all_sols = []
@@ -2652,7 +2807,7 @@ if __name__ == "__main__":
     # pkg_path = rospack.get_path('hrl_base_selection')
     # skel_file = pkg_path + '/models/' + filename
 
-    optimizer = DressingMultiProcessOptimization(number_of_processes=0, visualize=False)
+    optimizer = DressingMultiProcessOptimization(number_of_processes=1, visualize=True)
     optimizer.optimize_entire_dressing_task(reset_file=False)
     # outer_elapsed_time = rospy.Time.now()-outer_start_time
     print 'Everything is complete!'
