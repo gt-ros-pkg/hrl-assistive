@@ -954,9 +954,10 @@ if __name__ == '__main__':
         import pydart2 as pydart
         import openravepy as op
         from openravepy.misc import InitOpenRAVELogging
+    model_choices = ['fullbody_50percentile_capsule.skel','fullbody_participant0_capsule.skel','fullbody_henryclever_capsule.skel']
 
     toorad_dressing = TOORAD_Dressing_PR2(participant=opt.participant, trial=opt.participant,
                                           enable_realtime_HMM=False, visualize=opt.visualize,
                                           visually_estimate_arm_pose=False, adjust_arm_pose_visually=False,
-                                          machine=opt.machine, model='fullbody_participant0_capsule.skel')
+                                          machine=opt.machine, model=model_choices[2])
 

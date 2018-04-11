@@ -546,8 +546,8 @@
                 <position>0 0 0</position>
               </sphere>
               <sphere>
-                <radius>0.053</radius>
-                <position>0.0 -0.053 -0.179</position>
+                <radius>0.06</radius>
+                <position>0.0 -0.06 -0.19</position>
               </sphere>
             </multi_sphere>
           </geometry>
@@ -560,18 +560,18 @@
                 <position>0 0 0</position>
               </sphere>
               <sphere>
-                <radius>0.053</radius>
-                <position>0.0 -0.053 -0.179</position>
+                <radius>0.06</radius>
+                <position>0.0 -0.06 -0.19</position>
               </sphere>
             </multi_sphere>
           </geometry>
         </collision_shape>
       </body>
       <body name="h_bicep_left_midjoint">
-        <transformation>0.0 0.361 -0.179 0.0 0.0 0.0</transformation>
+        <transformation>0.0 0.354 -0.19 0.0 0.0 0.0</transformation>
       </body>
       <body name="h_bicep_left">
-        <transformation>0.0 0.361 -0.179 0.0 0.0 0.0</transformation>
+        <transformation>0.0 0.354 -0.19 0.0 0.0 0.0</transformation>
         <inertia>
           <mass>1.6219</mass>
           <offset>0.0 -0.135034780445 0.0</offset>
@@ -580,12 +580,12 @@
           <geometry>
             <multi_sphere>
               <sphere>
-                <radius>0.053</radius>
+                <radius>0.06</radius>
                 <position>0 0 0</position>
               </sphere>
               <sphere>
-                <radius>0.033</radius>
-                <position>0.0 -0.279 0.0</position>
+                <radius>0.045</radius>
+                <position>0.0 -0.32 0.0</position>
               </sphere>
             </multi_sphere>
           </geometry>
@@ -594,19 +594,19 @@
           <geometry>
             <multi_sphere>
               <sphere>
-                <radius>0.053</radius>
+                <radius>0.06</radius>
                 <position>0 0 0</position>
               </sphere>
               <sphere>
-                <radius>0.033</radius>
-                <position>0.0 -0.279 0.0</position>
+                <radius>0.045</radius>
+                <position>0.0 -0.32 0.0</position>
               </sphere>
             </multi_sphere>
           </geometry>
         </collision_shape>
       </body>
       <body name="h_forearm_left">
-        <transformation>0.0 0.082 -0.179 0.0 0.0 0.0</transformation>
+        <transformation>0.0 0.034 -0.19 0.0 0.0 0.0</transformation>
         <inertia>
           <mass>0.6909</mass>
           <offset>0.0 -0.125939382865 0.0</offset>
@@ -615,12 +615,12 @@
           <geometry>
             <multi_sphere>
               <sphere>
-                <radius>0.033</radius>
+                <radius>0.045</radius>
                 <position>0 0 0</position>
               </sphere>
               <sphere>
-                <radius>0.0215</radius>
-                <position>0.0 -0.257 0.0</position>
+                <radius>0.03</radius>
+                <position>0.0 -0.30 0.0</position>
               </sphere>
             </multi_sphere>
           </geometry>
@@ -629,19 +629,19 @@
           <geometry>
             <multi_sphere>
               <sphere>
-                <radius>0.033</radius>
+                <radius>0.045</radius>
                 <position>0 0 0</position>
               </sphere>
               <sphere>
-                <radius>0.0215</radius>
-                <position>0.0 -0.257 0.0</position>
+                <radius>0.03</radius>
+                <position>0.0 -0.30 0.0</position>
               </sphere>
             </multi_sphere>
           </geometry>
         </collision_shape>
       </body>
       <body name="h_hand_left">
-        <transformation>0.0 -0.175 -0.179 0.0 0.0 0.0</transformation>
+        <transformation>0.0 -0.266 -0.19 0.0 0.0 0.0</transformation>
         <inertia>
           <mass>0.175</mass>
           <offset>0.0 -0.0465904094283 0.0</offset>
@@ -650,12 +650,12 @@
           <geometry>
             <multi_sphere>
               <sphere>
-                <radius>0.0215</radius>
+                <radius>0.03</radius>
                 <position>0 0 0</position>
               </sphere>
               <sphere>
-                <radius>0.042</radius>
-                <position>0.0 -0.074 0.0</position>
+                <radius>0.05</radius>
+                <position>0.0 -0.065 0.0</position>
               </sphere>
             </multi_sphere>
           </geometry>
@@ -664,19 +664,19 @@
           <geometry>
             <multi_sphere>
               <sphere>
-                <radius>0.0215</radius>
+                <radius>0.03</radius>
                 <position>0 0 0</position>
               </sphere>
               <sphere>
-                <radius>0.042</radius>
-                <position>0.0 -0.074 0.0</position>
+                <radius>0.05</radius>
+                <position>0.0 -0.065 0.0</position>
               </sphere>
             </multi_sphere>
           </geometry>
         </collision_shape>
       </body>
       <body name="h_hand_left2">
-        <transformation>0.0 -0.249 -0.179 0.0 0.0 0.0</transformation>
+        <transformation>0.0 -0.331 -0.19 0.0 0.0 0.0</transformation>
         <inertia>
           <mass>0.12</mass>
           <offset>0.0 -0.0383070599423 0.0</offset>
@@ -684,14 +684,14 @@
         <visualization_shape>
           <geometry>
               <sphere>
-                <radius>0.042</radius>
+                <radius>0.05</radius>
               </sphere>
           </geometry>
         </visualization_shape>
         <collision_shape>
           <geometry>
               <sphere>
-                <radius>0.042</radius>
+                <radius>0.05</radius>
               </sphere>
           </geometry>
         </collision_shape>
@@ -710,8 +710,8 @@
                 <position>0 0 0</position>
               </sphere>
               <sphere>
-                <radius>0.053</radius>
-                <position>0.0 -0.053 0.179</position>
+                <radius>0.06</radius>
+                <position>0.0 -0.06 0.19</position>
               </sphere>
             </multi_sphere>
           </geometry>
@@ -724,18 +724,18 @@
                 <position>0 0 0</position>
               </sphere>
               <sphere>
-                <radius>0.053</radius>
-                <position>0.0 -0.053 0.179</position>
+                <radius>0.06</radius>
+                <position>0.0 -0.06 0.19</position>
               </sphere>
             </multi_sphere>
           </geometry>
         </collision_shape>
       </body>
       <body name="h_bicep_right_midjoint">
-        <transformation>0.0 0.361 0.179 0.0 0.0 0.0</transformation>
+        <transformation>0.0 0.354 0.19 0.0 0.0 0.0</transformation>
       </body>
       <body name="h_bicep_right">
-        <transformation>0.0 0.361 0.179 0.0 0.0 0.0</transformation>
+        <transformation>0.0 0.354 0.19 0.0 0.0 0.0</transformation>
         <inertia>
           <mass>1.6219</mass>
           <offset>0.0 -0.135034780445 0.0</offset>
@@ -744,12 +744,12 @@
           <geometry>
             <multi_sphere>
               <sphere>
-                <radius>0.053</radius>
+                <radius>0.06</radius>
                 <position>0 0 0</position>
               </sphere>
               <sphere>
-                <radius>0.033</radius>
-                <position>0.0 -0.279 00.0</position>
+                <radius>0.045</radius>
+                <position>0.0 -0.32 00.0</position>
               </sphere>
             </multi_sphere>
           </geometry>
@@ -758,19 +758,19 @@
           <geometry>
             <multi_sphere>
               <sphere>
-                <radius>0.053</radius>
+                <radius>0.06</radius>
                 <position>0 0 0</position>
               </sphere>
               <sphere>
-                <radius>0.033</radius>
-                <position>0.0 -0.279 0.0</position>
+                <radius>0.045</radius>
+                <position>0.0 -0.32 0.0</position>
               </sphere>
             </multi_sphere>
           </geometry>
         </collision_shape>
       </body>
       <body name="h_forearm_right">
-        <transformation>0.0 0.082 0.179 0.0 0.0 0.0</transformation>
+        <transformation>0.0 0.034 0.19 0.0 0.0 0.0</transformation>
         <inertia>
           <mass>0.6909</mass>
           <offset>0.0 -0.125939382865 0.0</offset>
@@ -779,12 +779,12 @@
           <geometry>
             <multi_sphere>
               <sphere>
-                <radius>0.033</radius>
+                <radius>0.045</radius>
                 <position>0 0 0</position>
               </sphere>
               <sphere>
-                <radius>0.0215</radius>
-                <position>0.0 -0.257 0.0</position>
+                <radius>0.03</radius>
+                <position>0.0 -0.30 0.0</position>
               </sphere>
             </multi_sphere>
           </geometry>
@@ -793,19 +793,19 @@
           <geometry>
             <multi_sphere>
               <sphere>
-                <radius>0.033</radius>
+                <radius>0.045</radius>
                 <position>0 0 0</position>
               </sphere>
               <sphere>
-                <radius>0.0215</radius>
-                <position>0.0 -0.257 0.0</position>
+                <radius>0.03</radius>
+                <position>0.0 -0.3 0.0</position>
               </sphere>
             </multi_sphere>
           </geometry>
         </collision_shape>
       </body>
       <body name="h_hand_right">
-        <transformation>0.0 -0.175 0.179 0.0 0.0 0.0</transformation>
+        <transformation>0.0 -0.266 0.19 0.0 0.0 0.0</transformation>
         <inertia>
           <mass>0.175</mass>
           <offset>0.0 -0.0465904094283 0.0</offset>
@@ -814,12 +814,12 @@
           <geometry>
             <multi_sphere>
               <sphere>
-                <radius>0.0215</radius>
+                <radius>0.03</radius>
                 <position>0 0 0</position>
               </sphere>
               <sphere>
-                <radius>0.042</radius>
-                <position>0.0 -0.074 0.0</position>
+                <radius>0.05</radius>
+                <position>0.0 -0.065 0.0</position>
               </sphere>
             </multi_sphere>
           </geometry>
@@ -828,19 +828,19 @@
           <geometry>
             <multi_sphere>
               <sphere>
-                <radius>0.0215</radius>
+                <radius>0.03</radius>
                 <position>0 0 0</position>
               </sphere>
               <sphere>
-                <radius>0.042</radius>
-                <position>0.0 -0.074 0.0</position>
+                <radius>0.05</radius>
+                <position>0.0 -0.065 0.0</position>
               </sphere>
             </multi_sphere>
           </geometry>
         </collision_shape>
       </body>
       <body name="h_hand_right2">
-        <transformation>0.0 -0.249 0.179 0.0 0.0 0.0</transformation>
+        <transformation>0.0 -0.331 0.19 0.0 0.0 0.0</transformation>
         <inertia>
           <mass>0.12</mass>
           <offset>0.0 -0.0383070599423 0.0</offset>
@@ -848,14 +848,14 @@
         <visualization_shape>
           <geometry>
               <sphere>
-                <radius>0.042</radius>
+                <radius>0.05</radius>
               </sphere>
           </geometry>
         </visualization_shape>
         <collision_shape>
           <geometry>
               <sphere>
-                <radius>0.042</radius>
+                <radius>0.05</radius>
               </sphere>
           </geometry>
         </collision_shape>
@@ -1529,6 +1529,54 @@
 					</geometry>
 				</collision_shape>
       </body>
+      <joint name="j_base_left_handle" type="translational">
+        <transformation>0.0 0.0 0.0 0.0 0.0 0.0</transformation>
+        <parent>chair_base</parent>
+        <child>left_handle</child>
+        <init_pos>0 0 0</init_pos>
+        <init_vel>0 0 0</init_vel>
+      </joint>
+      <body name="left_handle">
+        <transformation>-0.17 0.245 0.91 0 0 0</transformation>
+        <visualization_shape>
+					<geometry>
+						<box>
+							<size>0.14 0.03 0.03</size>
+						</box>
+					</geometry>
+				</visualization_shape>
+				<collision_shape>
+					<geometry>
+						<box>
+							<size>0.14 0.03 0.03</size>
+						</box>
+					</geometry>
+				</collision_shape>
+      </body>
+      <joint name="j_base_right_handle" type="translational">
+        <transformation>0.0 0.0 0.0 0.0 0.0 0.0</transformation>
+        <parent>chair_base</parent>
+        <child>right_handle</child>
+        <init_pos>0 0 0</init_pos>
+        <init_vel>0 0 0</init_vel>
+      </joint>
+      <body name="right_handle">
+        <transformation>-0.17 -0.245 0.91 0 0 0</transformation>
+        <visualization_shape>
+					<geometry>
+						<box>
+							<size>0.14 0.03 0.03</size>
+						</box>
+					</geometry>
+				</visualization_shape>
+				<collision_shape>
+					<geometry>
+						<box>
+							<size>0.14 0.03 0.03</size>
+						</box>
+					</geometry>
+				</collision_shape>
+      </body>
     </skeleton>
   </world>
-</skel>seat
+</skel>
