@@ -92,7 +92,7 @@
               </sphere>
               <sphere>
                 <radius>0.089</radius>
-                <position>0.0 -0.089 -0.089</position>
+                <position>0.0 -0.139 -0.089</position>
               </sphere>
             </multi_sphere>
           </geometry>
@@ -106,7 +106,7 @@
               </sphere>
               <sphere>
                 <radius>0.089</radius>
-                <position>0.0 -0.089 -0.089</position>
+                <position>0.0 -0.139 -0.089</position>
               </sphere>
             </multi_sphere>
           </geometry>
@@ -127,7 +127,7 @@
               </sphere>
               <sphere>
                 <radius>0.089</radius>
-                <position>0.0 -0.089 0.089</position>
+                <position>0.0 -0.139 0.089</position>
               </sphere>
             </multi_sphere>
           </geometry>
@@ -141,14 +141,14 @@
 							</sphere>
 							<sphere>
 								<radius>0.089</radius>
-								<position>0.0 -0.089 0.089</position>
+								<position>0.0 -0.139 0.089</position>
 							</sphere>
 						</multi_sphere>
 					</geometry>
 				</collision_shape>
       </body>
       <body name="h_thigh_left">
-        <transformation>0.0 -0.089 -0.089 0.0 0.0 0.0</transformation>
+        <transformation>0.0 -0.139 -0.089 0.0 0.0 0.0</transformation>
         <inertia>
           <mass>6.5709</mass>
           <offset>0.0 -0.202931032736 0.0</offset>
@@ -183,7 +183,7 @@
         </collision_shape>
       </body>
       <body name="h_shin_left">
-        <transformation>0.0 -0.523 -0.089 0.0 0.0 0.0</transformation>
+        <transformation>0.0 -0.573 -0.089 0.0 0.0 0.0</transformation>
         <inertia>
           <mass>1.7738</mass>
           <offset>0.0 -0.184045446424 0.0</offset>
@@ -218,7 +218,7 @@
         </collision_shape>
       </body>
       <body name="h_heel_left">
-        <transformation>0.0 -0.945 -0.089 0.0 0.0 0.0</transformation>
+        <transformation>0.0 -0.995 -0.089 0.0 0.0 0.0</transformation>
         <inertia>
           <mass>0.5831</mass>
           <offset>0.0216 0.0 0.0</offset>
@@ -253,7 +253,7 @@
         </collision_shape>
       </body>
       <body name="h_toe_left">
-        <transformation>-0.029 -0.991 -0.089 0.0 0.0 0.0</transformation>
+        <transformation>-0.029 -1.041 -0.089 0.0 0.0 0.0</transformation>
         <inertia>
           <mass>0.50</mass>
           <offset>0.02 0.0 0.0</offset>
@@ -288,7 +288,7 @@
         </collision_shape>
       </body>
       <body name="h_thigh_right">
-        <transformation>0. -0.089 0.089 0.0 0.0 0.0</transformation>
+        <transformation>0. -0.139 0.089 0.0 0.0 0.0</transformation>
         <inertia>
           <mass>6.5709</mass>
           <offset>0.0 -0.202931032736 0.0</offset>
@@ -323,7 +323,7 @@
         </collision_shape>
       </body>
       <body name="h_shin_right">
-        <transformation>0.0 -0.523 0.089 0.0 0.0 0.0</transformation>
+        <transformation>0.0 -0.573 0.089 0.0 0.0 0.0</transformation>
         <inertia>
           <mass>1.7738</mass>
           <offset>0.0 -0.184045446424 0.0</offset>
@@ -358,7 +358,7 @@
         </collision_shape>
       </body>
       <body name="h_heel_right">
-        <transformation>0.0 -0.945 0.089 0.0 0.0 0.0</transformation>
+        <transformation>0.0 -0.995 0.089 0.0 0.0 0.0</transformation>
         <inertia>
           <mass>0.5831</mass>
           <offset>0.0216 0.0 0.0</offset>
@@ -393,7 +393,7 @@
         </collision_shape>
       </body>
       <body name="h_toe_right">
-        <transformation>-0.029 -0.991 0.089 0.0 0.0 0.0</transformation>
+        <transformation>-0.029 -1.041 0.089 0.0 0.0 0.0</transformation>
         <inertia>
           <mass>0.50</mass>
           <offset>0.02 0.0 0.0</offset>
