@@ -79,7 +79,7 @@ class BaseEmptySimulationProcess(object):
         self.visualize = visualize
         self.optimizer = None
         self.simulator_started = False
-        self.arm_fixed = [False, False]
+        self.arm_fixed = [False, False, False, False]
 
     def start_dressing_simulation_process(self):
         self.optimizer = DressingSimulationProcess(process_number=self.process_number,
@@ -128,19 +128,22 @@ def set_arms(input):
     return True
 
 def brute_force_func(input):
-    x, human_arm, robot_arm, \
+    x, subtask, robot_arm, \
     subtask_number, stretch_allowable, \
     fixed_points_to_use, fixed_points = input
     global current_simulator
     # print 'x', x
     pn = current_simulator.process_number
+    arm = subtask.split('_')[0]
     if not current_simulator.simulator_started:
         current_simulator.start_dressing_simulation_process()
         print 'Simulator all set up.', pn
+    if not subtask == current_simulator.optimizer.subtask:
+        current_simulator.optimizer.subtask = subtask
     if not subtask_number == current_simulator.optimizer.subtask_step:
         current_simulator.optimizer.subtask_step = subtask_number
-    if not human_arm == current_simulator.optimizer.human_arm:
-        current_simulator.optimizer.set_human_arm(human_arm)
+    if not arm == current_simulator.optimizer.human_arm:
+        current_simulator.optimizer.set_human_arm(arm)
     if not robot_arm == current_simulator.optimizer.robot_arm:
         current_simulator.optimizer.set_robot_arm(robot_arm)
     if not stretch_allowable == current_simulator.optimizer.stretch_allowable:
@@ -153,19 +156,22 @@ def brute_force_func(input):
     return res
 
 def fine_func(input):
-    x, human_arm, robot_arm, \
+    x, subtask, robot_arm, \
     subtask_number, stretch_allowable, \
     fixed_points_to_use, fixed_points = input
     global current_simulator
     pn = current_simulator.process_number
+    arm = subtask.split('_')[0]
     #print 'input',pn,input
     if not current_simulator.simulator_started:
         current_simulator.start_dressing_simulation_process()
         print 'Simulator all set up.', pn
+    if not subtask == current_simulator.optimizer.subtask:
+        current_simulator.optimizer.subtask = subtask
     if not subtask_number == current_simulator.optimizer.subtask_step:
         current_simulator.optimizer.subtask_step = subtask_number
-    if not human_arm == current_simulator.optimizer.human_arm:
-        current_simulator.optimizer.set_human_arm(human_arm)
+    if not arm == current_simulator.optimizer.human_arm:
+        current_simulator.optimizer.set_human_arm(arm)
     if not robot_arm == current_simulator.optimizer.robot_arm:
         current_simulator.optimizer.set_robot_arm(robot_arm)
     if not stretch_allowable == current_simulator.optimizer.stretch_allowable:
@@ -179,18 +185,21 @@ def fine_func(input):
     return res
 
 def fine_pr2_func(input):
-    x, human_arm, robot_arm, \
+    x, subtask, robot_arm, \
     subtask_number, stretch_allowable, \
     fixed_points_to_use, fixed_points, pr2_guess = input
     global current_simulator
     pn = current_simulator.process_number
+    arm = subtask.split('_')[0]
     if not current_simulator.simulator_started:
         current_simulator.start_dressing_simulation_process()
         print 'Simulator all set up.', pn
+    if not subtask == current_simulator.optimizer.subtask:
+        current_simulator.optimizer.subtask = subtask
     if not subtask_number == current_simulator.optimizer.subtask_step:
         current_simulator.optimizer.subtask_step = subtask_number
-    if not human_arm == current_simulator.optimizer.human_arm:
-        current_simulator.optimizer.set_human_arm(human_arm)
+    if not arm == current_simulator.optimizer.human_arm:
+        current_simulator.optimizer.set_human_arm(arm)
     if not robot_arm == current_simulator.optimizer.robot_arm:
         current_simulator.optimizer.set_robot_arm(robot_arm)
     if not stretch_allowable == current_simulator.optimizer.stretch_allowable:
@@ -212,19 +221,21 @@ def fine_pr2_func(input):
     return res
 
 def find_fixed_points(input):
-    human_arm, robot_arm, \
+    subtask, robot_arm, \
     subtask_number, stretch_allowable, \
     fixed_points_to_use = input
     global current_simulator
     pn = current_simulator.process_number
-    arm = human_arm.split('a')[0]
+    arm = subtask.split('_')[0]
     if not current_simulator.simulator_started:
         current_simulator.start_dressing_simulation_process()
         print 'Simulator all set up.', pn
+    if not subtask == current_simulator.optimizer.subtask:
+        current_simulator.optimizer.subtask = subtask
     if not subtask_number == current_simulator.optimizer.subtask_step:
         current_simulator.optimizer.subtask_step = subtask_number
-    if not human_arm == current_simulator.optimizer.human_arm:
-        current_simulator.optimizer.set_human_arm(human_arm)
+    if not arm == current_simulator.optimizer.human_arm:
+        current_simulator.optimizer.set_human_arm(arm)
     if not robot_arm == current_simulator.optimizer.robot_arm:
         current_simulator.optimizer.set_robot_arm(robot_arm)
     if not stretch_allowable == current_simulator.optimizer.stretch_allowable:
@@ -232,7 +243,7 @@ def find_fixed_points(input):
     if not fixed_points_to_use == current_simulator.optimizer.fixed_points_to_use:
         current_simulator.optimizer.fixed_points_to_use = fixed_points_to_use
     current_simulator.optimizer.add_new_fixed_point = True
-    current_simulator.optimizer.find_reference_coordinate_frames_and_goals(arm)
+    current_simulator.optimizer.find_reference_coordinate_frames_and_goals(arm, subtask='all')
     return current_simulator.optimizer.fixed_points
 
 def set_process_subtask(subtask_number):
@@ -285,12 +296,12 @@ class DressingMultiProcessOptimization(object):
             open(self.save_file_path + self.save_file_name_fine_output, 'w').close()
             open(self.save_file_path + self.save_file_name_final_output, 'w').close()
 
-        subtask_list = ['rightarm', 'leftarm']
+        subtask_list = ['right_forearm', 'right_upperarm', 'left_forearm', 'left_upperarm']
         # subtask_list = ['leftarm', 'rightarm']
         # subtask_list = ['leftarm']
-        robot_arm_to_use = ['rightarm', 'rightarm']
-        all_fixed_points_to_use = [[], [0]]
-        all_stretch_allowable = [[], [0.46]]
+        robot_arm_to_use = ['rightarm', 'rightarm', 'rightarm', 'rightarm']
+        all_fixed_points_to_use = [[], [], [0], [0]]
+        all_stretch_allowable = [[], [], [0.46], [0.46]]
         # all_fixed_points_to_use = [[0], [0]]
         # all_stretch_allowable = [[0.5], [0.5]]
         all_fixed_points = self.pool.apply(find_fixed_points, [[subtask_list[0],
@@ -345,7 +356,7 @@ class DressingMultiProcessOptimization(object):
                                                all_fixed_points)
                 print 'completed fine optimization for ', subtask
 
-    def run_coarse_optimization(self, human_arm, robot_arm, subtask_n,
+    def run_coarse_optimization(self, subtask, robot_arm, subtask_n,
                                 stretch, fixed_point_index, fixed_p):
         print 'Running coarse optimization (using brute-force) to find arm ' \
               'configurations that are reasonable'
@@ -386,7 +397,7 @@ class DressingMultiProcessOptimization(object):
                           ]
         for chunk in chunker(coarse_configs, self.processCnt):
             chunksize = len(chunk)
-            self.pool.map_async(brute_force_func, zip(chunk, [human_arm]*chunksize, [robot_arm]*chunksize,
+            self.pool.map_async(brute_force_func, zip(chunk, [subtask]*chunksize, [robot_arm]*chunksize,
                                                       [subtask_n]*chunksize, [stretch]*chunksize,
                                                       [fixed_point_index]*chunksize, [fixed_p]*chunksize)).get()
         gc.collect()
@@ -406,7 +417,7 @@ class DressingMultiProcessOptimization(object):
         print 'Files combined into: ', output_file_name
         return True
 
-    def run_fine_optimization(self, human_arm, robot_arm, subtask_n,
+    def run_fine_optimization(self, subtask, robot_arm, subtask_n,
                               stretch, fixed_point_index, fixed_p,
                               popsize=20, maxiter=50):
         print 'Running fine optimization (using cma) to find a good arm configuration that has ' \
@@ -450,7 +461,7 @@ class DressingMultiProcessOptimization(object):
                 for chunk in chunker(X, self.processCnt*2):
                     chunksize = len(chunk)
                     #print 'chunksize', chunksize
-                    batchFit = self.pool.map(fine_func, zip(chunk, [human_arm]*chunksize, [robot_arm]*chunksize,
+                    batchFit = self.pool.map(fine_func, zip(chunk, [subtask]*chunksize, [robot_arm]*chunksize,
                                                                   [subtask_n]*chunksize, [stretch]*chunksize,
                                                                   [fixed_point_index]*chunksize, [fixed_p]*chunksize))
                     #print 'batchfit', batchFit
@@ -480,7 +491,7 @@ class DressingMultiProcessOptimization(object):
                          + '\n')
         return best_result
 
-    def run_fine_pr2_optimization(self,  human_arm, robot_arm, subtask_n,
+    def run_fine_pr2_optimization(self,  subtask, robot_arm, subtask_n,
                                   stretch, fixed_point_index, fixed_p, popsize=40, maxiter=200):
         print 'Running fine optimization (using cma) to find a good pr2 configuration for ' \
               'the good arm configuration'
@@ -492,11 +503,14 @@ class DressingMultiProcessOptimization(object):
             best_arm_configs[j] = [float(i) for i in best_arm_configs[j]]
         best_arm_configs = np.array(best_arm_configs)
         best_arm_configs = np.array([x for x in best_arm_configs if int(x[0]) == subtask_n])
+        if len(best_arm_configs) == 0:
+            print 'No configs exist for this subtask!'
+            return
         # print best_arm_configs
         best_config_i = np.argmin(best_arm_configs[:, 5])
         best_arm_config = best_arm_configs[best_config_i]
         print '\n best_arm_config:', best_arm_config, '\n'
-        self.pool.apply(fine_pr2_func, [[best_arm_config[1:5], human_arm, robot_arm,
+        self.pool.apply(fine_pr2_func, [[best_arm_config[1:5], subtask, robot_arm,
                                         subtask_n, stretch,
                                         fixed_point_index,
                                         fixed_p, best_arm_config[6:-1]]])
@@ -619,7 +633,7 @@ class DressingMultiProcessOptimization(object):
 
 
 class DressingSimulationProcess(object):
-    def __init__(self, process_number=0, robot_arm='rightarm', human_arm='rightarm',
+    def __init__(self, process_number=0, robot_arm='rightarm', human_arm='right',
                  model='fullbody_50percentile_capsule.skel', visualize=False):
         self.process_number = process_number
         rospack = rospkg.RosPack()
@@ -635,6 +649,7 @@ class DressingSimulationProcess(object):
         self.visualize = visualize
 
         self.subtask_step = None
+        self.subtask = None
 
         self.robot_arm = None
         self.robot_opposite_arm = None
@@ -718,213 +733,7 @@ class DressingSimulationProcess(object):
         #print 'Simulator process init completed', self.process_number
         # print 'I GOT HERE'
 
-    def optimize_entire_dressing_task(self, reset_file=False):
-        if reset_file:
-            open(self.save_file_path + self.save_file_name, 'w').close()
-            open(self.save_file_path + self.save_file_name_only_good, 'w').close()
-            open(self.save_file_path + self.save_file_name_per_human_initialization, 'w').close()
-
-        self.arm_configs_eval = load_pickle(rospack.get_path('hrl_dressing') +
-                                            '/data/forearm_trajectory_evaluation/entire_results_list.pkl')
-        # print 'Loaded forearm trajectory pickle file'
-
-        self.arm_configs_checked = []
-        for line in self.arm_configs_eval:
-            self.arm_configs_checked.append(line[0:4])
-        self.arm_knn = NearestNeighbors(8, m.radians(15.))
-        self.arm_knn.fit(self.arm_configs_checked)
-
-        self.set_robot_arm('rightarm')
-        subtask_list = ['rightarm', 'leftarm']
-
-        self.fixed_points = []
-
-        self.final_results = []
-        self.final_results.append(['subtask', 'overall_score', 'arm_config', 'physx_score', 'pr2_config', 'kinematics_score'])
-        for subtask_number, subtask in enumerate(subtask_list):
-            self.final_results.append([subtask, '', '', '', '', ''])
-            if 'right' in subtask or 'left' in subtask:
-                self.set_human_arm(subtask)
-            # self.best_pr2_results[subtask_number] = [[], []]
-            if subtask_number == 0:
-                self.fixed_points_to_use = []
-                self.stretch_allowable = []
-                self.add_new_fixed_point = True
-                self.run_interleaving_optimization_outer_level(subtask=subtask, subtask_step=subtask_number,
-                                                               maxiter=2, popsize=2, mode='fine')
-            else:
-                if subtask_number == 1:
-                    self.fixed_points_to_use = [0]
-                    self.stretch_allowable = [0.5]
-                    self.add_new_fixed_point = True
-                # self.run_interleaving_optimization_outer_level(subtask=subtask, subtask_step=subtask_number,
-                #                                                maxiter=500, popsize=40, mode='coarse')
-                self.run_interleaving_optimization_outer_level(subtask=subtask, subtask_step=subtask_number,
-                                                               maxiter=50, popsize=20, mode='fine')
-                                                               # maxiter=500, popsize=50)
-
-    def run_interleaving_optimization_outer_level(self, maxiter=1000, popsize=40,
-                                                  subtask='', subtask_step=0, mode='fine'):
-        self.mode = mode
-        self.subtask_step = subtask_step
-        # self.best_overall_score = dict()
-        self.best_overall_score = 10000.
-        # self.best_physx_config = dict()
-        self.best_physx_config = None
-        self.best_physx_score = 10000.
-        # self.best_kinematics_config = dict()
-        self.best_kinematics_config = None
-        self.best_kinematics_score = 10000.
-
-        # maxiter = 30/
-        # popsize = m.pow(5, 2)*100
-        # maxiter = 8
-        # popsize = 40
-
-        ### Current: Two positions, first with respect to the fist, second with respect to the upper arm, centered at
-        # the shoulder and pointing X down the upper arm
-        # cma parameters: [human_upper_arm_quaternion(euler:xzy): r, y, p
-        #                  human_arm_elbow_angle]
-
-        parameters_min = np.array([m.radians(-5.), m.radians(-10.), m.radians(-10.),
-                                   0.])
-        parameters_max = np.array([m.radians(100.), m.radians(100.), m.radians(100),
-                                   m.radians(135.)])
-        parameters_scaling = (parameters_max - parameters_min) / 8.
-        parameters_scaling = np.array([m.radians(5.)]*4)
-        # parameters_initialization = (parameters_max + parameters_min) / 2.
-        init_start_arm_configs = [[m.radians(0.), m.radians(0.), m.radians(0.), m.radians(0.)],
-                                  [m.radians(45.), m.radians(0.), m.radians(0.), m.radians(0.)],
-                                  [m.radians(0.), m.radians(45.), m.radians(0.), m.radians(0.)],
-                                  [m.radians(0.), m.radians(0.), m.radians(45.), m.radians(0.)],
-                                  [m.radians(0.), m.radians(0.), m.radians(0.), m.radians(45.)],
-                                  [m.radians(25.), m.radians(10.), m.radians(10.), m.radians(45.)],
-                                  [0.9679925, 0.18266905, 0.87995157, 0.77562143],
-                                  (parameters_max + parameters_min) / 2.]
-        # init_start_arm_configs = [(parameters_max + parameters_min) / 2.]
-        opts1 = {'seed': 1234, 'ftarget': -1., 'popsize': popsize, 'maxiter': maxiter,
-                 'maxfevals': 1e8, 'CMA_cmean': 0.25, 'tolfun': 1e-3,
-                 'tolfunhist': 1e-12, 'tolx': 5e-4,
-                 'maxstd': 4.0, 'tolstagnation': 100,
-                 'verb_filenameprefix': 'outcma_arm_and_trajectory',
-                 'scaling_of_variables': list(parameters_scaling),
-                 'bounds': [list(parameters_min), list(parameters_max)]}
-        regular = False
-        if mode == 'fine':
-            self.save_all_results = False
-            if subtask_step == 1:
-                feasible_configs = [line.rstrip('\n').split(',')
-                                    for line in open(self.save_file_path + self.save_file_name_only_good)]
-
-                for j in xrange(len(feasible_configs)):
-                    feasible_configs[j] = [float(i) for i in feasible_configs[j]]
-                feasible_configs = np.array(feasible_configs)
-                feasible_configs = np.array([x for x in feasible_configs if int(x[0]) == subtask_step])
-
-                cluster_count = 0
-                clusters = [[]]
-                while len(feasible_configs) > 0:
-                    if len(clusters) < cluster_count + 1:
-                        clusters.append([])
-                    queue = []
-                    visited = []
-                    queue.append(list(feasible_configs[0][1:5]))
-                    delete_list = []
-                    while len(queue) > 0:
-                        # print 'queue:\n',queue
-                        # print 'visited:\n',visited
-                        current_node = list(queue.pop(0))
-                        # print 'current node:\n',current_node
-                        # print 'visited:\n',visited
-                        if current_node not in visited:
-                            visited.append(list(current_node))
-                            clusters[cluster_count].append(current_node)
-                            delete_list.append(0)
-                        for node_i in xrange(len(feasible_configs)):
-                            if np.max(np.abs(np.array(current_node) - np.array(feasible_configs[node_i])[1:5])) < m.radians(
-                                    5.1) and list(feasible_configs[node_i][1:5]) not in visited:
-                                close_node = list(feasible_configs[node_i][1:5])
-                                queue.append(list(close_node))
-                                delete_list.append(node_i)
-                                # clusters[cluster_count.append(close_node)]
-                    feasible_configs = np.delete(feasible_configs, delete_list, axis=0)
-                    cluster_count += 1
-                clusters = np.array(clusters)
-                print 'Number of clusters:', len(clusters)
-                init_start_arm_configs = []
-                for cluster in clusters:
-                    init_start_arm_configs.append(np.array(cluster).mean(axis=0))
-            elif subtask_step==0 or False:
-                init_start_arm_configs = [(parameters_max + parameters_min) / 2.]
-            for init_start_arm_config in init_start_arm_configs:
-                parameters_initialization = init_start_arm_config
-                # parameters_initialization[0] = m.radians(0.)
-                # parameters_initialization[1] = m.radians(70.)
-                # parameters_initialization[2] = m.radians(0.)
-                # parameters_initialization[3] = m.radians(0.)
-
-                # optimization_results[<model>, <number_of_configs>, <head_rest_angle>, <headx>, <heady>, <allow_bed_movement>]
-                self.optimization_results = cma.fmin(self.objective_function_traj_and_arm_config,
-                                                              list(parameters_initialization),
-                                                              1.,
-                                                              options=opts1)
-                print 'raw cma optimization results:\n',self.optimization_results
-                # self.optimization_results = [self.best_config, self.best_score]
-                # print '1',self.save_file_path
-                # print '2',self.save_file_name_per_human_initialization
-                # print '3',self.best_physx_config
-                # print '4',self.best_overall_score
-                # print '5',self.best_kinematics_config
-                # print '6',self.best_kinematics_score
-                with open(self.save_file_path + self.save_file_name_per_human_initialization, 'a') as myfile:
-                    myfile.write(str(self.subtask_step)
-                                 + ',' + str("{:.5f}".format(self.best_physx_config[0]))
-                                 + ',' + str("{:.5f}".format(self.best_physx_config[1]))
-                                 + ',' + str("{:.5f}".format(self.best_physx_config[2]))
-                                 + ',' + str("{:.5f}".format(self.best_physx_config[3]))
-                                 + ',' + str("{:.5f}".format(self.best_overall_score))
-                                 + ',' + str("{:.5f}".format(self.best_kinematics_config[0]))
-                                 + ',' + str("{:.5f}".format(self.best_kinematics_config[1]))
-                                 + ',' + str("{:.5f}".format(self.best_kinematics_config[2]))
-                                 + ',' + str("{:.5f}".format(self.best_kinematics_config[3]))
-                                 + ',' + str("{:.5f}".format(self.best_kinematics_score))
-                                 + '\n')
-        else:
-            self.save_all_results = True
-            [t for t in ((self.objective_function_traj_and_arm_config([arm1, arm2, arm3, arm4]))
-                         for arm1 in np.arange(parameters_min[0], parameters_max[0]+0.0001, m.radians(5.))
-                         for arm2 in np.arange(parameters_min[1], parameters_max[1]+0.0001, m.radians(5.))
-                         for arm3 in np.arange(parameters_min[2], parameters_max[2]+0.0001, m.radians(5.))
-                         for arm4 in np.arange(parameters_min[3], parameters_max[3]+0.0001, m.radians(5.))
-                         )
-             ]
-        # print 'Outcome is: '
-        # print self.optimization_results
-        # print 'Best arm config for ',subtask, 'subtask: \n', self.optimization_results[self.subtask_step][0]
-        # print 'Associated score: ', self.optimization_results[self.subtask_step][1]
-        # print 'Best PR2 configuration: \n', self.best_pr2_results[self.subtask_step][0]
-        # print 'Associated score: ', self.best_pr2_results[self.subtask_step][1]
-        print 'Best overall score for ', subtask, 'subtask: \n', self.best_overall_score
-        print 'Best arm config for ', subtask, 'subtask: \n', self.best_physx_config
-        print 'Associated score: ', self.best_physx_score
-        print 'Best PR2 configuration: \n', self.best_kinematics_config
-        print 'Associated score: ', self.best_kinematics_score
-        self.final_results[subtask_step+1] = [subtask, self.best_overall_score,
-                                              self.best_physx_config,
-                                              self.best_physx_score,
-                                              self.best_kinematics_config,
-                                              self.best_kinematics_score]
-        # optimized_traj_arm_output = []
-        # for key in self.optimization_results.keys():
-        #     optimized_traj_arm_output.append([self.optimization_results[key][0], self.optimization_results[key][1]])
-        # optimized_pr2_output = []
-        # for key in self.best_pr2_results.keys():
-        #     optimized_pr2_output.append([self.best_pr2_results[key][0], self.best_pr2_results[key][1]])
-
-        # save_pickle(self.final_results, self.pkg_path+'/data/best_trajectory_and_arm_config.pkl')
-        save_pickle(self.final_results, self.pkg_path+'/data/dressing_results.pkl')
-
-    def find_reference_coordinate_frames_and_goals(self, arm, high_res_interpolation=False):
+    def find_reference_coordinate_frames_and_goals(self, arm, subtask='all', high_res_interpolation=False):
         if high_res_interpolation:
             interpolation = 8.
         else:
@@ -1111,33 +920,34 @@ class DressingSimulationProcess(object):
         # Find the transforms from the origin to the goal poses.
         goals = []
         # Goals along forearm
-        path_distance = np.linalg.norm(np.array(origin_B_traj_start)[0:3, 3] -
-                                       np.array(origin_B_traj_forearm_end)[0:3, 3])
-
-        path_waypoints = np.arange(0., path_distance + path_distance * 0.01, (path_distance) / interpolation)
-        for goal in path_waypoints:
-            traj_start_B_traj_waypoint = np.matrix(np.eye(4))
-            traj_start_B_traj_waypoint[0, 3] = goal
-            origin_B_traj_waypoint = copy.copy(np.matrix(origin_B_traj_start) *
-                                               np.matrix(traj_start_B_traj_waypoint))
-            goals.append(copy.copy(origin_B_traj_waypoint))
+        if 'forearm' in subtask or 'all' in subtask:
+            path_distance = np.linalg.norm(np.array(origin_B_traj_start)[0:3, 3] -
+                                           np.array(origin_B_traj_forearm_end)[0:3, 3])
+            path_waypoints = np.arange(0., path_distance + path_distance * 0.01, (path_distance) / interpolation)
+            for goal in path_waypoints:
+                traj_start_B_traj_waypoint = np.matrix(np.eye(4))
+                traj_start_B_traj_waypoint[0, 3] = goal
+                origin_B_traj_waypoint = copy.copy(np.matrix(origin_B_traj_start) *
+                                                   np.matrix(traj_start_B_traj_waypoint))
+                goals.append(copy.copy(origin_B_traj_waypoint))
 
         # Goals along upper arm
-        path_distance = np.linalg.norm(np.array(origin_B_traj_forearm_end)[0:3, 3] -
-                                       np.array(origin_B_traj_upper_end)[0:3, 3])
-        path_waypoints = np.arange(path_distance, 0.0 - path_distance *0.01, -path_distance / interpolation)
-        for goal in path_waypoints:
-            traj_start_B_traj_waypoint = np.matrix(np.eye(4))
-            traj_start_B_traj_waypoint[0, 3] = -goal
-            origin_B_traj_waypoint = copy.copy(np.matrix(origin_B_traj_upper_end) *
-                                               np.matrix(traj_start_B_traj_waypoint))
-            goals.append(copy.copy(origin_B_traj_waypoint))
+        if 'upperarm' in subtask or 'all' in subtask:
+            path_distance = np.linalg.norm(np.array(origin_B_traj_forearm_end)[0:3, 3] -
+                                           np.array(origin_B_traj_upper_end)[0:3, 3])
+            path_waypoints = np.arange(path_distance, 0.0 - path_distance *0.01, -path_distance / interpolation)
+            for goal in path_waypoints:
+                traj_start_B_traj_waypoint = np.matrix(np.eye(4))
+                traj_start_B_traj_waypoint[0, 3] = -goal
+                origin_B_traj_waypoint = copy.copy(np.matrix(origin_B_traj_upper_end) *
+                                                   np.matrix(traj_start_B_traj_waypoint))
+                goals.append(copy.copy(origin_B_traj_waypoint))
 
-        # Goals at the top of the shoulder
-        origin_B_traj_final_end = np.matrix(origin_B_traj_final_end)
-        origin_B_traj_waypoint[0:3, 0:3] = origin_B_traj_final_end[0:3, 0:3]
-        goals.append(copy.copy(origin_B_traj_waypoint))
-        goals.append(copy.copy(origin_B_traj_final_end))
+            # Goals at the top of the shoulder
+            origin_B_traj_final_end = np.matrix(origin_B_traj_final_end)
+            origin_B_traj_waypoint[0:3, 0:3] = origin_B_traj_final_end[0:3, 0:3]
+            goals.append(copy.copy(origin_B_traj_waypoint))
+            goals.append(copy.copy(origin_B_traj_final_end))
 
         # for goal in goals:
         #     print goal
@@ -1179,9 +989,8 @@ class DressingSimulationProcess(object):
                np.matrix(forearm_B_upper_arm), fixed_point_exceeded_amount, \
                np.degrees(angle_upperarm_from_horizontal), np.degrees(angle_upperarm_from_straight_ahead)
 
-
     def objective_function_coarse(self, params):
-        self.save_file_name_coarse_raw = 'arm_configs_coarse_raw_p'+str(self.process_number)+'_t'+str(self.subtask_step)+'.log'
+        self.save_file_name_coarse_raw = 'arm_configs_coarse_raw_p'+str(self.process_number)+'_t'+str(self.subtask_step)+'_'+self.subtask+'.log'
         self.save_file_name_coarse_feasible = 'arm_configs_coarse_feasible_p'+str(self.process_number)+'_t'+str(self.subtask_step)+'.log'
         # params = [m.radians(90.0),  m.radians(0.), m.radians(45.), m.radians(0.)]
         # print 'doing subtask', self.subtask_step
@@ -1217,7 +1026,7 @@ class DressingSimulationProcess(object):
                                      + '\n')
                 return this_score
         # print 'arm config is not bad'
-        arm = self.human_arm.split('a')[0]
+        # arm = self.human_arm.split('_')[0]
         #if self.subtask_step ==1:
         #    print 'config has good neighbors', self.process_number,'\nStretch allowable:',self.stretch_allowable
             
@@ -1265,7 +1074,7 @@ class DressingSimulationProcess(object):
         forearm_B_upper_arm, \
         fixed_points_exceeded_amount, \
         angle_upperarm_from_horizontal, \
-        angle_upperarm_from_straight_ahead = self.find_reference_coordinate_frames_and_goals(arm)
+        angle_upperarm_from_straight_ahead = self.find_reference_coordinate_frames_and_goals(self.human_arm, subtask=self.subtask)
 
         # print 'angle_upperarm_from_horizontal', angle_upperarm_from_horizontal
         # print 'angle_upperarm_from_straight_ahead', angle_upperarm_from_straight_ahead
@@ -1381,7 +1190,7 @@ class DressingSimulationProcess(object):
         if fixed_points_exceeded_amount > 0.:
             # print 'The gown is being stretched too much to try to do the next part of the task.'
             # return 10. + 1. + 10. * fixed_points_exceeded_amount
-            if fixed_points_exceeded > 0.04:
+            if fixed_points_exceeded_amount > 0.04:
                 this_score = 10. + 10. + 1. + 10. * fixed_points_exceeded_amount
                 if self.save_all_results:
                     with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
@@ -1529,7 +1338,7 @@ class DressingSimulationProcess(object):
                                      + '\n')
                 return this_score
         # print 'arm config is not bad'
-        arm = self.human_arm.split('a')[0]
+        # arm = self.human_arm.split('a')[0]
 
         self.set_human_model_dof_dart([0, 0, 0, 0], self.human_opposite_arm)
         self.set_human_model_dof_dart([params[0], params[1], params[2], params[3]], self.human_arm)
@@ -1553,7 +1362,7 @@ class DressingSimulationProcess(object):
         else:
             high_res = False
         self.goals, \
-        origin_B_forearm_pointed_down_arm, \
+        origin_B_foreself.human_arm_pointed_down_arm, \
         origin_B_upperarm_pointed_down_shoulder, \
         origin_B_hand, \
         origin_B_wrist, \
@@ -1565,7 +1374,7 @@ class DressingSimulationProcess(object):
         forearm_B_upper_arm, \
         fixed_points_exceeded_amount, \
         angle_upperarm_from_horizontal, \
-        angle_upperarm_from_straight_ahead = self.find_reference_coordinate_frames_and_goals(arm, high_res_interpolation=high_res)
+        angle_upperarm_from_straight_ahead = self.find_reference_coordinate_frames_and_goals(self.human_arm, subtask=self.subtask, high_res_interpolation=high_res)
 
         if self.model == 'fullbody_participant0_capsule.skel':
             if self.subtask_step == 0:
@@ -1939,11 +1748,11 @@ class DressingSimulationProcess(object):
             # Set robot arm for dressing
             print 'Setting the robot arm being used by base selection to ', arm
             if 'left' in arm:
-                self.robot_arm = 'leftarm'
-                self.robot_opposite_arm = 'rightarm'
+                self.robot_arm = 'left'
+                self.robot_opposite_arm = 'right'
             elif 'right' in arm:
-                self.robot_arm = 'rightarm'
-                self.robot_opposite_arm = 'leftarm'
+                self.robot_arm = 'right'
+                self.robot_opposite_arm = 'left'
             for robot_arm in [self.robot_opposite_arm, self.robot_arm]:
                 self.op_robot.SetActiveManipulator(robot_arm)
                 self.manip = self.op_robot.GetActiveManipulator()
@@ -1968,16 +1777,16 @@ class DressingSimulationProcess(object):
                                              [-1., 0., 0., 0.0],
                                              [0., 0., 1., -0.03875],
                                              [0., 0., 0., 1.]])
-            self.human_arm = 'leftarm'
-            self.human_opposite_arm = 'rightarm'
+            self.human_arm = 'left'
+            self.human_opposite_arm = 'right'
             return True
         elif 'right' in arm:
             self.gripper_B_tool = np.matrix([[0., -1., 0., 0.0303],
                                              [1., 0., 0., 0.0],
                                              [0., 0., 1., -0.03875],
                                              [0., 0., 0., 1.]])
-            self.human_arm = 'rightarm'
-            self.human_opposite_arm = 'leftarm'
+            self.human_arm = 'right'
+            self.human_opposite_arm = 'left'
             return True
         else:
             print 'ERROR'
@@ -1985,7 +1794,7 @@ class DressingSimulationProcess(object):
             return False
 
     def objective_function_fine_pr2(self, parameters):
-        arm = self.human_arm.split('a')[0]
+        # arm = self.human_arm
         self.goals, \
         origin_B_forearm_pointed_down_arm, \
         origin_B_upperarm_pointed_down_shoulder, \
@@ -1999,7 +1808,7 @@ class DressingSimulationProcess(object):
         forearm_B_upper_arm, \
         fixed_points_exceeded_amount, \
         angle_upperarm_from_horizontal, \
-        angle_upperarm_from_straight_ahead = self.find_reference_coordinate_frames_and_goals(arm)
+        angle_upperarm_from_straight_ahead = self.find_reference_coordinate_frames_and_goals(self.human_arm, subtask=self.subtask)
         self.set_goals()
 
         return self.objective_function_pr2_config(parameters)
@@ -2409,11 +2218,11 @@ class DressingSimulationProcess(object):
         return False
 
     def is_dart_in_collision(self, check_gown_chair=True):
-        arm = self.human_arm.split('a')[0]
+        # arm = self.human_arm.split('a')[0]
         arm_parts = [#self.human.bodynode('h_bicep_'+arm),
-                     self.human.bodynode('h_forearm_'+arm),
-                     self.human.bodynode('h_hand_'+arm),
-                     self.human.bodynode('h_hand_'+arm+'2')]
+                     self.human.bodynode('h_forearm_'+self.human_arm),
+                     self.human.bodynode('h_hand_'+self.human_arm),
+                     self.human.bodynode('h_hand_'+self.human_arm+'2')]
         self.dart_world.check_collision()
         # collided_bodies = self.dart_world.collision_result.contacted_bodies
         for contact in self.dart_world.collision_result.contacts:
@@ -2456,18 +2265,18 @@ class DressingSimulationProcess(object):
     def is_human_in_self_collision(self):
         self.dart_world.human.set_self_collision_check(True)
         self.dart_world.check_collision()
-        arm = self.human_arm.split('a')[0]
-        arm_parts = [self.human.bodynode('h_bicep_'+arm),
-                     self.human.bodynode('h_forearm_'+arm),
-                     self.human.bodynode('h_hand_'+arm),
-                     self.human.bodynode('h_hand_'+arm+'2')]
+        #arm = self.human_arm.split('a')[0]
+        arm_parts = [self.human.bodynode('h_bicep_'+self.human_arm),
+                     self.human.bodynode('h_forearm_'+self.human_arm),
+                     self.human.bodynode('h_hand_'+self.human_arm),
+                     self.human.bodynode('h_hand_'+self.human_arm+'2')]
         for contact in self.dart_world.collision_result.contacts:
             contacts = [contact.bodynode1, contact.bodynode2]
             for arm_part in arm_parts:
                 if arm_part in contacts and self.human == contact.skel1 and self.human == contact.skel2:
                     contacts.remove(arm_part)
                     if contacts:
-                        if contacts[0] not in arm_parts and not contacts[0] == self.human.bodynode('h_scapula_'+arm):
+                        if contacts[0] not in arm_parts and not contacts[0] == self.human.bodynode('h_scapula_'+self.human_arm):
                             return True
         self.human.set_self_collision_check(False)
         return False
@@ -2655,7 +2464,7 @@ class DressingSimulationProcess(object):
         forearm_B_upper_arm, \
         fixed_points_exceeded_amount, \
         angle_upperarm_from_horizontal, \
-        angle_upperarm_from_straight_ahead = self.find_reference_coordinate_frames_and_goals(arm, high_res_interpolation=False)
+        angle_upperarm_from_straight_ahead = self.find_reference_coordinate_frames_and_goals(arm, subtask=self.subtask, high_res_interpolation=False)
         self.set_goals()
 
         all_sols = []
@@ -2856,14 +2665,14 @@ class DressingSimulationProcess(object):
         # j_bicep_left_x,y,z are euler angles applied in xyz order. x is forward, y is opposite direction of
         # upper arm, z is to the right.
         # j_forearm_left_1 is bend in elbow.
-        if human_arm == 'leftarm':
+        if 'left' in human_arm:
             q['j_bicep_left_x'] = dof[0]
             q['j_bicep_left_y'] = -1*dof[1]
             q['j_bicep_left_z'] = dof[2]
             # q['j_bicep_left_roll'] = -1*0.
             q['j_forearm_left_1'] = dof[3]
             q['j_forearm_left_2'] = 0.
-        elif human_arm == 'rightarm':
+        elif 'right' in human_arm:
             q['j_bicep_right_x'] = -1*dof[0]
             q['j_bicep_right_y'] = dof[1]
             q['j_bicep_right_z'] = dof[2]
