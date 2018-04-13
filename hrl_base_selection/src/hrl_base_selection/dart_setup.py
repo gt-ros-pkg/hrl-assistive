@@ -37,7 +37,8 @@ class DartDressingWorld(pydart.World):
         self.ground = self.skeletons[0]
 
         self.human = self.skeletons[1]
-        self.chair = self.skeletons[2]
+        if not 'nochair' in skel_file_name:
+            self.chair = self.skeletons[2]
         self.set_collision_detector(pydart.World.BULLET_COLLISION_DETECTOR)
         #print("detector = %s" % self.collision_detector_string())
 
@@ -65,20 +66,21 @@ class DartDressingWorld(pydart.World):
         self.robot.set_positions(positions)
 
         q = self.human.q
-        q['j_thigh_right_z'] = m.radians(90.)
-        q['j_thigh_right_y'] = m.radians(0.)
-        q['j_thigh_right_x'] = m.radians(0.)
-        q['j_thigh_left_z'] = m.radians(90.)
-        q['j_thigh_left_y'] = m.radians(0.)
-        q['j_thigh_left_x'] = m.radians(0.)
+        if not 'nolegs' in skel_file_name:
+            q['j_thigh_right_z'] = m.radians(90.)
+            q['j_thigh_right_y'] = m.radians(0.)
+            q['j_thigh_right_x'] = m.radians(0.)
+            q['j_thigh_left_z'] = m.radians(90.)
+            q['j_thigh_left_y'] = m.radians(0.)
+            q['j_thigh_left_x'] = m.radians(0.)
 
-        q['j_shin_right'] = m.radians(-100.)
-        q['j_shin_left'] = m.radians(-100.)
+            q['j_shin_right'] = m.radians(-100.)
+            q['j_shin_left'] = m.radians(-100.)
 
-        q['j_heel_right_1'] = m.radians(10.)
-        q['j_heel_right_2'] = m.radians(00.)
-        q['j_heel_left_1'] = m.radians(10.)
-        q['j_heel_left_2'] = m.radians(00.)
+            q['j_heel_right_1'] = m.radians(10.)
+            q['j_heel_right_2'] = m.radians(00.)
+            q['j_heel_left_1'] = m.radians(10.)
+            q['j_heel_left_2'] = m.radians(00.)
         self.human.set_positions(q)
 
         # self.world_B_gripper = self.robot.bodynode('r_gripper_tool_frame').world_transform()
@@ -131,9 +133,13 @@ class DartDressingWorld(pydart.World):
             positions['j_pelvis1_z'] += (1.01 - self.human_reference_center_floor_point[2])
         else:
             for joint in self.skel_joints:
-                if joint['@name'] == 'j_toe_left':
-                    self.z_reference_joint_index = self.skel_joints.index(joint)
-                elif joint['@name'] == 'j_pelvis':
+                if not 'nolegs' in skel_file_name:
+                    if joint['@name'] == 'j_toe_left':
+                        self.z_reference_joint_index = self.skel_joints.index(joint)
+                else:
+                    if joint['@name'] == 'j_pelvis':
+                        self.z_reference_joint_index = self.skel_joints.index(joint)
+                if joint['@name'] == 'j_pelvis':
                     self.x_reference_joint_index = self.skel_joints.index(joint)
                     self.y_reference_joint_index = self.skel_joints.index(joint)
 
@@ -147,6 +153,21 @@ class DartDressingWorld(pydart.World):
             positions['j_pelvis1_z'] -= self.human_reference_center_floor_point[2]
         self.human.set_positions(positions)
         self.estimate_center_floor_point()
+
+    def load_new_object(self, filename):
+        self.new_object = self.add_skeleton(self.pkg_path + '/models/' + filename)
+
+    def move_new_object(self, world_B_object):
+        positions = self.new_object.q
+        positions['rootJoint_pos_x'] = world_B_object[0, 3]
+        positions['rootJoint_pos_y'] = world_B_object[1, 3]
+        positions['rootJoint_pos_z'] = world_B_object[2, 3]
+
+        object_euler = tft.euler_from_matrix(world_B_object, 'sxyz')
+        positions['rootJoint_rot_x'] = object_euler[0]
+        positions['rootJoint_rot_y'] = object_euler[1]
+        positions['rootJoint_rot_z'] = object_euler[2]
+        self.new_object.set_positions(positions)
 
     def displace_gown(self):
         for arm in ['leftarm', 'rightarm']:

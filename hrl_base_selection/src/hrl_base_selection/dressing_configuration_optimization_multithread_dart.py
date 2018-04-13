@@ -84,7 +84,7 @@ class BaseEmptySimulationProcess(object):
     def start_dressing_simulation_process(self):
         self.optimizer = DressingSimulationProcess(process_number=self.process_number,
                                                    visualize=self.visualize, model='fullbody_participant0_capsule.skel')
-        self.optimizer.save_all_results = False
+        self.optimizer.save_all_results = True
         self.simulator_started = True
         return True
 
@@ -706,19 +706,10 @@ class DressingSimulationProcess(object):
         self.set_robot_arm(robot_arm)
         self.set_human_arm(human_arm)
 
-        self.model = 'fullbody_participant0_capsule.skel'
+        self.model = model
         # self.setup_dart(filename='fullbody_50percentile_capsule.skel')
         self.setup_dart(filename=self.model)
 
-        self.arm_configs_eval = load_pickle(rospack.get_path('hrl_dressing') +
-                                            '/data/forearm_trajectory_evaluation/entire_results_list.pkl')
-        #print 'Loaded forearm trajectory pickle file'
-
-        self.arm_configs_checked = []
-        for line in self.arm_configs_eval:
-            self.arm_configs_checked.append(line[0:4])
-        self.arm_knn = NearestNeighbors(8, m.radians(15.))
-        self.arm_knn.fit(self.arm_configs_checked)
         #print 'Simulator process init completed', self.process_number
         # print 'I GOT HERE'
 
@@ -727,6 +718,16 @@ class DressingSimulationProcess(object):
             open(self.save_file_path + self.save_file_name, 'w').close()
             open(self.save_file_path + self.save_file_name_only_good, 'w').close()
             open(self.save_file_path + self.save_file_name_per_human_initialization, 'w').close()
+
+        self.arm_configs_eval = load_pickle(rospack.get_path('hrl_dressing') +
+                                            '/data/forearm_trajectory_evaluation/entire_results_list.pkl')
+        # print 'Loaded forearm trajectory pickle file'
+
+        self.arm_configs_checked = []
+        for line in self.arm_configs_eval:
+            self.arm_configs_checked.append(line[0:4])
+        self.arm_knn = NearestNeighbors(8, m.radians(15.))
+        self.arm_knn.fit(self.arm_configs_checked)
 
         self.set_robot_arm('rightarm')
         subtask_list = ['rightarm', 'leftarm']
@@ -2360,6 +2361,9 @@ class DressingSimulationProcess(object):
 
     def setup_dart(self, filename='fullbody_alex_capsule.skel'):
         # Setup Dart ENV
+        pydart.init()
+        print('pydart initialization OK')
+
         skel_file = self.pkg_path+'/models/'+filename
         self.dart_world = DartDressingWorld(skel_file)
 
@@ -2370,7 +2374,8 @@ class DressingSimulationProcess(object):
 
         self.robot = self.dart_world.robot
         self.human = self.dart_world.human
-        self.chair = self.dart_world.chair
+        if not 'nochair' in filename:
+            self.chair = self.dart_world.chair
         self.gown_leftarm = self.dart_world.gown_box_leftarm
         self.gown_rightarm = self.dart_world.gown_box_rightarm
 
@@ -2795,9 +2800,6 @@ if __name__ == "__main__":
     # rospy.init_node('score_generator')
     # start_time = time.time()
     # outer_start_time = rospy.Time.now()
-
-    pydart.init()
-    print('pydart initialization OK')
 
     op.RaveSetDebugLevel(op.DebugLevel.Error)
     InitOpenRAVELogging()
