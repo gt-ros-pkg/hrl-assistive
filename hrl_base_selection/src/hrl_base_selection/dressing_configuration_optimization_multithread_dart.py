@@ -1091,7 +1091,7 @@ class DressingSimulationProcess(object):
              #print 'fixed points exceeded: ', fixed_points_exceeded_amount
 
         if self.model == 'fullbody_participant0_capsule.skel':
-            if self.subtask_step == 0:
+            if 'right' in self.subtask:
                 if params[3] < m.radians(30.):
                     this_score = 10. + 10. + 1. + 10. * (m.radians(30.) - params[3])
                     if self.save_all_results:
@@ -1139,7 +1139,7 @@ class DressingSimulationProcess(object):
                                          + ',' + str("{:.5f}".format(this_score))
                                          + '\n')
 
-            else:
+            elif 'left' in self.subtask:
                 if params[3] < m.radians(10.):
                     this_score = 10. + 10. + 1. + 10. * (m.radians(10.) - params[3])
                     if self.save_all_results:
@@ -1377,7 +1377,7 @@ class DressingSimulationProcess(object):
         angle_upperarm_from_straight_ahead = self.find_reference_coordinate_frames_and_goals(self.human_arm, subtask=self.subtask, high_res_interpolation=high_res)
 
         if self.model == 'fullbody_participant0_capsule.skel':
-            if self.subtask_step == 0:
+            if 'right' in self.subtask:
                 if params[3] < m.radians(30.):
                     this_score = 10. + 10. + 1. + 10. * (m.radians(30.) - params[3])
                     if self.save_all_results:
@@ -1425,7 +1425,7 @@ class DressingSimulationProcess(object):
                                          + ',' + str("{:.5f}".format(this_score))
                                          + '\n')
 
-            else:
+            elif 'left' in self.subtask:
                 if params[3] < m.radians(10.):
                     this_score = 10. + 10. + 1. + 10. * (m.radians(10.) - params[3])
                     if self.save_all_results:
