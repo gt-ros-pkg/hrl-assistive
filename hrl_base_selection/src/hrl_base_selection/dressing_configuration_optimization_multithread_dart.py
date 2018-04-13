@@ -634,7 +634,7 @@ class DressingMultiProcessOptimization(object):
 
 class DressingSimulationProcess(object):
     def __init__(self, process_number=0, robot_arm='rightarm', human_arm='right',
-                 model='fullbody_50percentile_capsule.skel', visualize=False):
+                 model='fullbody_50percentile_capsule.skel', visualize=False, mode='normal'):
         self.process_number = process_number
         rospack = rospkg.RosPack()
         self.pkg_path = rospack.get_path('hrl_base_selection')
@@ -723,6 +723,17 @@ class DressingSimulationProcess(object):
 
 
         self.model = model
+
+        self.arm_knn = None
+
+        if mode == 'normal':
+            self.arm_configs_eval = load_pickle(rospack.get_path('hrl_dressing') +
+                                                '/data/forearm_trajectory_evaluation/entire_results_list.pkl')
+            self.arm_configs_checked = []
+            for line in self.arm_configs_eval:
+                self.arm_configs_checked.append(line[0:4])
+            self.arm_knn = NearestNeighbors(n_neighbors=8, radius=m.radians(15.))
+            self.arm_knn.fit(self.arm_configs_checked)
 
         #self.model = 'fullbody_participant0_capsule.skel'
         #self.model = 'fullbody_henryclever_capsule.skel'
