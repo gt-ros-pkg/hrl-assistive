@@ -83,7 +83,8 @@ class BaseEmptySimulationProcess(object):
 
     def start_dressing_simulation_process(self):
         self.optimizer = DressingSimulationProcess(process_number=self.process_number,
-                                                   visualize=self.visualize, model='fullbody_participant0_capsule.skel')
+#                                                   visualize=self.visualize, model='fullbody_participant0_capsule.skel')
+                                                   visualize=self.visualize, model='fullbody_henryclever_capsule.skel')
         self.optimizer.save_all_results = True
         self.simulator_started = True
         return True
@@ -257,8 +258,7 @@ class DressingMultiProcessOptimization(object):
         self.save_file_name_final_output = 'arm_configs_final_output.log'
 
         # self.model = 'fullbody_50percentile_capsule.skel'
-        self.model = 'fullbody_participant0_capsule.skel'
-
+        self.model = 'fullbody_henryclever_capsule.skel'
 
         self.arm_config_min = np.array([m.radians(-5.), m.radians(-10.), m.radians(-10.),
                                         0.])
@@ -286,11 +286,11 @@ class DressingMultiProcessOptimization(object):
             open(self.save_file_path + self.save_file_name_final_output, 'w').close()
 
         subtask_list = ['rightarm', 'leftarm']
-        # subtask_list = ['leftarm', 'leftarm']
+        # subtask_list = ['leftarm', 'rightarm']
         # subtask_list = ['leftarm']
         robot_arm_to_use = ['rightarm', 'rightarm']
         all_fixed_points_to_use = [[], [0]]
-        all_stretch_allowable = [[], [0.5]]
+        all_stretch_allowable = [[], [0.46]]
         # all_fixed_points_to_use = [[0], [0]]
         # all_stretch_allowable = [[0.5], [0.5]]
         all_fixed_points = self.pool.apply(find_fixed_points, [[subtask_list[0],
@@ -706,7 +706,12 @@ class DressingSimulationProcess(object):
         self.set_robot_arm(robot_arm)
         self.set_human_arm(human_arm)
 
+
         self.model = model
+
+        #self.model = 'fullbody_participant0_capsule.skel'
+        #self.model = 'fullbody_henryclever_capsule.skel'
+
         # self.setup_dart(filename='fullbody_50percentile_capsule.skel')
         self.setup_dart(filename=self.model)
 
@@ -1109,7 +1114,7 @@ class DressingSimulationProcess(object):
         path_distance = np.linalg.norm(np.array(origin_B_traj_start)[0:3, 3] -
                                        np.array(origin_B_traj_forearm_end)[0:3, 3])
 
-        path_waypoints = np.arange(0., path_distance + path_distance * 0.01, (path_distance - 0.15) / interpolation)
+        path_waypoints = np.arange(0., path_distance + path_distance * 0.01, (path_distance) / interpolation)
         for goal in path_waypoints:
             traj_start_B_traj_waypoint = np.matrix(np.eye(4))
             traj_start_B_traj_waypoint[0, 3] = goal
@@ -1376,17 +1381,20 @@ class DressingSimulationProcess(object):
         if fixed_points_exceeded_amount > 0.:
             # print 'The gown is being stretched too much to try to do the next part of the task.'
             # return 10. + 1. + 10. * fixed_points_exceeded_amount
-            this_score = 10. + 10. + 1. + 10. * fixed_points_exceeded_amount
-            if self.save_all_results:
-                with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
-                    myfile.write(str(self.subtask_step)
-                                 + ',' + str("{:.5f}".format(params[0]))
-                                 + ',' + str("{:.5f}".format(params[1]))
-                                 + ',' + str("{:.5f}".format(params[2]))
-                                 + ',' + str("{:.5f}".format(params[3]))
-                                 + ',' + str("{:.5f}".format(this_score))
-                                 + '\n')
-            return this_score
+            if fixed_points_exceeded > 0.04:
+                this_score = 10. + 10. + 1. + 10. * fixed_points_exceeded_amount
+                if self.save_all_results:
+                    with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
+                        myfile.write(str(self.subtask_step)
+                                     + ',' + str("{:.5f}".format(params[0]))
+                                     + ',' + str("{:.5f}".format(params[1]))
+                                     + ',' + str("{:.5f}".format(params[2]))
+                                     + ',' + str("{:.5f}".format(params[3]))
+                                     + ',' + str("{:.5f}".format(this_score))
+                                     + '\n')
+                return this_score
+            #else:
+            #   point_exceeded_cost = 10.*fixed_points_exceeded
         #if self.subtask_step ==1:
         #    print 'fixed points not exceeded for subtask 1', self.process_number
 
@@ -1458,9 +1466,9 @@ class DressingSimulationProcess(object):
         self.force_cost = 0.
 
         alpha = 1.  # cost on forces
-        beta = 1.  # cost on manipulability
-        zeta = 0.5  # cost on torque
-        physx_score = self.force_cost * alpha + torque_cost * zeta
+        beta = 1.  # cost on torque
+        eta = 10.  # cost on exceeding gown stretch limit by a small amount
+        physx_score = self.force_cost * alpha + torque_cost * beta + fixed_points_exceeded_amount * eta
         this_score = physx_score
 
         # print 'Physx score was: ', physx_score
@@ -1559,6 +1567,104 @@ class DressingSimulationProcess(object):
         angle_upperarm_from_horizontal, \
         angle_upperarm_from_straight_ahead = self.find_reference_coordinate_frames_and_goals(arm, high_res_interpolation=high_res)
 
+        if self.model == 'fullbody_participant0_capsule.skel':
+            if self.subtask_step == 0:
+                if params[3] < m.radians(30.):
+                    this_score = 10. + 10. + 1. + 10. * (m.radians(30.) - params[3])
+                    if self.save_all_results:
+                        with open(self.save_file_path + self.save_file_name_fine_raw, 'a') as myfile:
+                            myfile.write(str(self.subtask_step)
+                                         + ',' + str("{:.5f}".format(params[0]))
+                                         + ',' + str("{:.5f}".format(params[1]))
+                                         + ',' + str("{:.5f}".format(params[2]))
+                                         + ',' + str("{:.5f}".format(params[3]))
+                                         + ',' + str("{:.5f}".format(this_score))
+                                         + '\n')
+                    return this_score
+
+                if angle_upperarm_from_horizontal < 0.:
+                    this_score = 10. + 10. + 1. + 10. * (0. - angle_upperarm_from_horizontal)
+                    if self.save_all_results:
+                        with open(self.save_file_path + self.save_file_name_fine_raw, 'a') as myfile:
+                            myfile.write(str(self.subtask_step)
+                                         + ',' + str("{:.5f}".format(params[0]))
+                                         + ',' + str("{:.5f}".format(params[1]))
+                                         + ',' + str("{:.5f}".format(params[2]))
+                                         + ',' + str("{:.5f}".format(params[3]))
+                                         + ',' + str("{:.5f}".format(this_score))
+                                         + '\n')
+                if angle_upperarm_from_straight_ahead > -10.:
+                    this_score = 10. + 10. + 1. + 1. * (-10. - angle_upperarm_from_horizontal)
+                    if self.save_all_results:
+                        with open(self.save_file_path + self.save_file_name_fine_raw, 'a') as myfile:
+                            myfile.write(str(self.subtask_step)
+                                         + ',' + str("{:.5f}".format(params[0]))
+                                         + ',' + str("{:.5f}".format(params[1]))
+                                         + ',' + str("{:.5f}".format(params[2]))
+                                         + ',' + str("{:.5f}".format(params[3]))
+                                         + ',' + str("{:.5f}".format(this_score))
+                                         + '\n')
+                if angle_upperarm_from_straight_ahead < -93.:
+                    this_score = 10. + 10. + 1. + 1. * (angle_upperarm_from_horizontal + 93.)
+                    if self.save_all_results:
+                        with open(self.save_file_path + self.save_file_name_fine_raw, 'a') as myfile:
+                            myfile.write(str(self.subtask_step)
+                                         + ',' + str("{:.5f}".format(params[0]))
+                                         + ',' + str("{:.5f}".format(params[1]))
+                                         + ',' + str("{:.5f}".format(params[2]))
+                                         + ',' + str("{:.5f}".format(params[3]))
+                                         + ',' + str("{:.5f}".format(this_score))
+                                         + '\n')
+
+            else:
+                if params[3] < m.radians(10.):
+                    this_score = 10. + 10. + 1. + 10. * (m.radians(10.) - params[3])
+                    if self.save_all_results:
+                        with open(self.save_file_path + self.save_file_name_fine_raw, 'a') as myfile:
+                            myfile.write(str(self.subtask_step)
+                                         + ',' + str("{:.5f}".format(params[0]))
+                                         + ',' + str("{:.5f}".format(params[1]))
+                                         + ',' + str("{:.5f}".format(params[2]))
+                                         + ',' + str("{:.5f}".format(params[3]))
+                                         + ',' + str("{:.5f}".format(this_score))
+                                         + '\n')
+                    return this_score
+
+                if angle_upperarm_from_horizontal < 0.:
+                    this_score = 10. + 10. + 1. + 10. * (0. - angle_upperarm_from_horizontal)
+                    if self.save_all_results:
+                        with open(self.save_file_path + self.save_file_name_fine_raw, 'a') as myfile:
+                            myfile.write(str(self.subtask_step)
+                                         + ',' + str("{:.5f}".format(params[0]))
+                                         + ',' + str("{:.5f}".format(params[1]))
+                                         + ',' + str("{:.5f}".format(params[2]))
+                                         + ',' + str("{:.5f}".format(params[3]))
+                                         + ',' + str("{:.5f}".format(this_score))
+                                         + '\n')
+                if angle_upperarm_from_straight_ahead > 30.:
+                    this_score = 10. + 10. + 1. + 1. * (angle_upperarm_from_horizontal - 30.)
+                    if self.save_all_results:
+                        with open(self.save_file_path + self.save_file_name_fine_raw, 'a') as myfile:
+                            myfile.write(str(self.subtask_step)
+                                         + ',' + str("{:.5f}".format(params[0]))
+                                         + ',' + str("{:.5f}".format(params[1]))
+                                         + ',' + str("{:.5f}".format(params[2]))
+                                         + ',' + str("{:.5f}".format(params[3]))
+                                         + ',' + str("{:.5f}".format(this_score))
+                                         + '\n')
+                if angle_upperarm_from_straight_ahead < -93.:
+                    this_score = 10. + 10. + 1. + 1. * (angle_upperarm_from_horizontal + 93.)
+                    if self.save_all_results:
+                        with open(self.save_file_path + self.save_file_name_fine_raw, 'a') as myfile:
+                            myfile.write(str(self.subtask_step)
+                                         + ',' + str("{:.5f}".format(params[0]))
+                                         + ',' + str("{:.5f}".format(params[1]))
+                                         + ',' + str("{:.5f}".format(params[2]))
+                                         + ',' + str("{:.5f}".format(params[3]))
+                                         + ',' + str("{:.5f}".format(this_score))
+                                         + '\n')
+
+
 #        if fixed_points_exceeded_amount <= 0:
 #            pass
 #            # print 'arm does not break fixed_points requirement'
@@ -1569,17 +1675,18 @@ class DressingSimulationProcess(object):
         if fixed_points_exceeded_amount > 0.:
             # print 'The gown is being stretched too much to try to do the next part of the task.'
             # return 10. + 1. + 10. * fixed_points_exceeded_amount
-            this_score = 10. + 10. + 1. + 10. * fixed_points_exceeded_amount
-            if self.save_all_results:
-                with open(self.save_file_path + self.save_file_name_fine_raw, 'a') as myfile:
-                    myfile.write(str(self.subtask_step)
-                                 + ',' + str("{:.5f}".format(params[0]))
-                                 + ',' + str("{:.5f}".format(params[1]))
-                                 + ',' + str("{:.5f}".format(params[2]))
-                                 + ',' + str("{:.5f}".format(params[3]))
-                                 + ',' + str("{:.5f}".format(this_score))
-                                 + '\n')
-            return this_score
+            if fixed_points_exceeded_amount > 0.04:
+                this_score = 10. + 10. + 1. + 10. * fixed_points_exceeded_amount
+                if self.save_all_results:
+                    with open(self.save_file_path + self.save_file_name_fine_raw, 'a') as myfile:
+                        myfile.write(str(self.subtask_step)
+                                     + ',' + str("{:.5f}".format(params[0]))
+                                     + ',' + str("{:.5f}".format(params[1]))
+                                     + ',' + str("{:.5f}".format(params[2]))
+                                     + ',' + str("{:.5f}".format(params[3]))
+                                     + ',' + str("{:.5f}".format(this_score))
+                                     + '\n')
+                return this_score
 
         # print 'angle from horizontal = ', angle_forearm_from_horizontal
         if abs(angle_forearm_from_horizontal) > 30.:
@@ -1729,11 +1836,12 @@ class DressingSimulationProcess(object):
         # print self.kinematics_optimization_results
         self.force_cost = 0.
         alpha = 1.  # cost on forces
-        beta = 1.  # cost on manipulability
+        beta = 1.  # cost on kinematics
+        eta = 10.  # Cost on exceeded garment stretch by a small amount
         zeta = 0.5  # cost on torque
         if self.this_best_pr2_score < 0.:
             physx_score = self.force_cost*alpha + torque_cost*zeta
-            this_score = physx_score + self.this_best_pr2_score*beta
+            this_score = physx_score + self.this_best_pr2_score*beta + fixed_points_exceeded_amount*eta
             # print 'Force cost was: ', self.force_cost
             # print 'Torque score was: ', torque_cost
             # print 'Physx score was: ', physx_score
@@ -2093,6 +2201,10 @@ class DressingSimulationProcess(object):
             graph.value['end'] = 0
             for goal_i in xrange(len(all_sols)):
                 for sol_i in xrange(len(all_sols[goal_i])):
+                    if goal_i <=1:
+                        check_gown_chair_collision = True
+                    else: 
+                        check_gown_chair_collision = False
                     v = self.robot.q
                     v[self.robot_arm[0] + '_shoulder_pan_joint'] = all_sols[goal_i][sol_i][0]
                     v[self.robot_arm[0] + '_shoulder_lift_joint'] = all_sols[goal_i][sol_i][1]
@@ -2103,7 +2215,7 @@ class DressingSimulationProcess(object):
                     v[self.robot_arm[0] + '_wrist_roll_joint'] = all_sols[goal_i][sol_i][6]
                     self.robot.set_positions(v)
                     self.dart_world.set_gown([self.robot_arm])
-                    if not self.is_dart_in_collision():
+                    if not self.is_dart_in_collision(check_gown_chair=check_gown_chair_collision):
                         graph.edges[str(goal_i)+'-'+str(sol_i)] = []
                         J = np.matrix(all_jacobians[goal_i][sol_i])
                         joint_limit_weight = self.gen_joint_limit_weight(all_sols[goal_i][sol_i], self.robot_arm)
@@ -2296,7 +2408,12 @@ class DressingSimulationProcess(object):
                 return True
         return False
 
-    def is_dart_in_collision(self):
+    def is_dart_in_collision(self, check_gown_chair=True):
+        arm = self.human_arm.split('a')[0]
+        arm_parts = [#self.human.bodynode('h_bicep_'+arm),
+                     self.human.bodynode('h_forearm_'+arm),
+                     self.human.bodynode('h_hand_'+arm),
+                     self.human.bodynode('h_hand_'+arm+'2')]
         self.dart_world.check_collision()
         # collided_bodies = self.dart_world.collision_result.contacted_bodies
         for contact in self.dart_world.collision_result.contacts:
@@ -2306,10 +2423,12 @@ class DressingSimulationProcess(object):
                          (self.gown_leftarm == contact.skel1 or self.gown_leftarm == contact.skel2)) or \
                     ((self.robot == contact.skel1 or self.robot == contact.skel2) and
                          (self.gown_rightarm == contact.skel1 or self.gown_rightarm == contact.skel2)) or \
-                    ((self.chair == contact.skel1 or self.chair == contact.skel2) and
+                    ((self.chair == contact.skel1 or self.chair == contact.skel2) and check_gown_chair and 
                          (self.gown_leftarm == contact.skel1 or self.gown_leftarm == contact.skel2)) or \
-                    ((self.chair == contact.skel1 or self.chair == contact.skel2) and
+                    ((self.chair == contact.skel1 or self.chair == contact.skel2) and check_gown_chair and 
                          (self.gown_rightarm == contact.skel1 or self.gown_rightarm == contact.skel2)) or \
+                    ((self.chair == contact.skel1 or self.chair == contact.skel2) and 
+                         (self.human == contact.skel1 or self.human == contact.skel2) and (contact.bodynode1 in arm_parts or contact.bodynode2 in arm_parts)) or \
                     ((self.robot == contact.skel1 or self.robot == contact.skel2) and
                          (self.chair == contact.skel1 or self.chair == contact.skel2)):
                 return True
