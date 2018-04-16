@@ -320,26 +320,27 @@ class DressingMultiProcessOptimization(object):
 
         for subtask_number, subtask in enumerate(subtask_list):
             print 'starting coarse optimization for ', subtask
-            self.run_coarse_optimization(subtask_list[subtask_number],
-                                         robot_arm_to_use[subtask_number],
-                                         subtask_number,
-                                         all_stretch_allowable[subtask_number],
-                                         all_fixed_points_to_use[subtask_number],
-                                         all_fixed_points)
+            if False:
+                self.run_coarse_optimization(subtask_list[subtask_number],
+                                             robot_arm_to_use[subtask_number],
+                                             subtask_number,
+                                             all_stretch_allowable[subtask_number],
+                                             all_fixed_points_to_use[subtask_number],
+                                             all_fixed_points)
             print 'completed coarse optimization for ', subtask
 
-        self.combine_process_files(self.save_file_path + 'arm_configs_coarse_feasible',
-                                   self.save_file_path + self.save_file_name_coarse_feasible)
+        #self.combine_process_files(self.save_file_path + 'arm_configs_coarse_feasible',
+        #                           self.save_file_path + self.save_file_name_coarse_feasible)
 
         for subtask_number, subtask in enumerate(subtask_list):
             print 'starting fine optimization for ', subtask
-
-            self.run_fine_optimization(subtask_list[subtask_number],
-                                       robot_arm_to_use[subtask_number],
-                                       subtask_number,
-                                       all_stretch_allowable[subtask_number],
-                                       all_fixed_points_to_use[subtask_number],
-                                       all_fixed_points)
+            if subtask_number >= 2:
+                self.run_fine_optimization(subtask_list[subtask_number],
+                                           robot_arm_to_use[subtask_number],
+                                           subtask_number,
+                                           all_stretch_allowable[subtask_number],
+                                           all_fixed_points_to_use[subtask_number],
+                                           all_fixed_points)
             print 'completed fine optimization for ', subtask
 
         self.combine_process_files(self.save_file_path + 'arm_configs_fine',
@@ -383,7 +384,7 @@ class DressingMultiProcessOptimization(object):
         #                                                                m.radians(5.))
         #                                                      )
         #                                          ])
-        reso = m.radians(2.5)
+        reso = m.radians(5.)
         coarse_configs = [t for t in (([arm1, arm2, arm3, arm4])
                                       for arm1 in np.arange(amin[0], amax[0] + 0.0001,
                                                             reso)
@@ -583,14 +584,14 @@ class DressingMultiProcessOptimization(object):
     # all connected clusters of configurations and the center of each cluster.
     # The cluster center is used as initialization of the more fine optimizations.
     def find_clusters(self, load_file_name, subtask_number):
-
         feasible_configs = [line.rstrip('\n').split(',')
                             for line in open(self.save_file_path + load_file_name)]
         for j in xrange(len(feasible_configs)):
-            feasible_configs[j] = [float(i) for i in feasible_configs[j][1:5]]
+            feasible_configs[j] = [float(i) for i in feasible_configs[j][0:5]]
         
         feasible_configs = np.array(feasible_configs)
-        feasible_configs = np.array([x for x in feasible_configs if int(x[0]) == subtask_number])
+        feasible_configs = np.array([x[1:5] for x in feasible_configs if int(x[0]) == subtask_number])
+        print 'Number of feasible configs\n', len(feasible_configs), 'for subtask', subtask_number
         kmeans = KMeans(n_clusters=3).fit(feasible_configs)
         '''
         cluster_count = 0
@@ -633,7 +634,7 @@ class DressingMultiProcessOptimization(object):
 
 
 class DressingSimulationProcess(object):
-    def __init__(self, process_number=0, robot_arm='rightarm', human_arm='right',
+    def __init__(self, process_number=0, robot_arm='right', human_arm='right',
                  model='fullbody_50percentile_capsule.skel', visualize=False, mode='normal'):
         self.process_number = process_number
         rospack = rospkg.RosPack()
@@ -720,7 +721,6 @@ class DressingSimulationProcess(object):
 
         self.set_robot_arm(robot_arm)
         self.set_human_arm(human_arm)
-
 
         self.model = model
 
@@ -1024,7 +1024,7 @@ class DressingSimulationProcess(object):
         for neigh_dist, neighbor in zip(neigh_distances[0], neighbors[0]):
             #if np.max(np.abs(np.array(self.arm_configs_checked[neighbor] - np.array(params)))) <= m.radians(15.):
             if not self.arm_configs_eval[neighbor][5] == 'good':
-                # print 'arm evaluation found this configuration to be bad'
+                #print 'arm evaluation found this configuration to be bad'
                 this_score = 10. + 10. + 4. + random.random()
                 if self.save_all_results:
                     with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
@@ -1050,6 +1050,7 @@ class DressingSimulationProcess(object):
         # Check if the person is in self collision, which means parts of the arm are in collision with anything other
         # than the shoulder or itself.
         if self.is_human_in_self_collision():
+            # print 'human is in self collision'
             this_score = 10. + 10. + 2. + random.random()
             if self.save_all_results:
                 with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
@@ -1202,6 +1203,7 @@ class DressingSimulationProcess(object):
             # print 'The gown is being stretched too much to try to do the next part of the task.'
             # return 10. + 1. + 10. * fixed_points_exceeded_amount
             if fixed_points_exceeded_amount > 0.04:
+                # print 'gown being stretched too much'
                 this_score = 10. + 10. + 1. + 10. * fixed_points_exceeded_amount
                 if self.save_all_results:
                     with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
@@ -1282,12 +1284,13 @@ class DressingSimulationProcess(object):
         torque_cost = torque_magnitude / max_possible_torque
 
         ############################################
-
+        
+        # print 'arm config is alright!'
         self.force_cost = 0.
 
         alpha = 1.  # cost on forces
         beta = 1.  # cost on torque
-        eta = 10.  # cost on exceeding gown stretch limit by a small amount
+        eta = 5.  # cost on exceeding gown stretch limit by a small amount
         physx_score = self.force_cost * alpha + torque_cost * beta + fixed_points_exceeded_amount * eta
         this_score = physx_score
 
@@ -1373,7 +1376,7 @@ class DressingSimulationProcess(object):
         else:
             high_res = False
         self.goals, \
-        origin_B_foreself.human_arm_pointed_down_arm, \
+        origin_B_forearm_pointed_down_arm, \
         origin_B_upperarm_pointed_down_shoulder, \
         origin_B_hand, \
         origin_B_wrist, \
@@ -1657,7 +1660,7 @@ class DressingSimulationProcess(object):
         self.force_cost = 0.
         alpha = 1.  # cost on forces
         beta = 1.  # cost on kinematics
-        eta = 10.  # Cost on exceeded garment stretch by a small amount
+        eta = 5.  # Cost on exceeded garment stretch by a small amount
         zeta = 0.5  # cost on torque
         if self.this_best_pr2_score < 0.:
             physx_score = self.force_cost*alpha + torque_cost*zeta
@@ -1759,11 +1762,11 @@ class DressingSimulationProcess(object):
             # Set robot arm for dressing
             print 'Setting the robot arm being used by base selection to ', arm
             if 'left' in arm:
-                self.robot_arm = 'left'
-                self.robot_opposite_arm = 'right'
+                self.robot_arm = 'leftarm'
+                self.robot_opposite_arm = 'rightarm'
             elif 'right' in arm:
-                self.robot_arm = 'right'
-                self.robot_opposite_arm = 'left'
+                self.robot_arm = 'rightarm'
+                self.robot_opposite_arm = 'leftarm'
             for robot_arm in [self.robot_opposite_arm, self.robot_arm]:
                 self.op_robot.SetActiveManipulator(robot_arm)
                 self.manip = self.op_robot.GetActiveManipulator()
@@ -2189,7 +2192,7 @@ class DressingSimulationProcess(object):
         # Set the weights for the different scores.
         #beta = 10.  # Weight on number of reachable goals is set at top of function
         gamma = 1.  # Weight on manipulability of arm at each reachable goal
-        zeta = 0.05  # Weight on torques
+        zeta = 0.5  # Weight on torques
         if reach_score == 0.:
             this_pr2_score = baseline + 1.+ 2*random.random()
             if this_pr2_score < self.this_best_pr2_score:

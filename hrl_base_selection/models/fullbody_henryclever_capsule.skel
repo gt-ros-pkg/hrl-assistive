@@ -52,11 +52,11 @@
 					<geometry>
 						<multi_sphere>
 							<sphere>
-								<radius>0.1335</radius>
+								<radius>0.1</radius>
 								<position>0 0 0</position>
 							</sphere>
 							<sphere>
-								<radius>0.127</radius>
+								<radius>0.09</radius>
 								<position>0.01278 0.25556 0.0</position>
 							</sphere>
 						</multi_sphere>
@@ -66,11 +66,11 @@
 					<geometry>
 						<multi_sphere>
 							<sphere>
-								<radius>0.1335</radius>
+								<radius>0.1</radius>
 								<position>0 0 0</position>
 							</sphere>
 							<sphere>
-								<radius>0.127</radius>
+								<radius>0.09</radius>
 								<position>0.01278 0.25556 0.0</position>
 							</sphere>
 						</multi_sphere>
@@ -87,7 +87,7 @@
           <geometry>
             <multi_sphere>
               <sphere>
-                <radius>0.1335</radius>
+                <radius>0.1</radius>
                 <position>0 0 0</position>
               </sphere>
               <sphere>
@@ -437,11 +437,11 @@
           <geometry>
             <multi_sphere>
               <sphere>
-                <radius>0.127</radius>
+                <radius>0.09</radius>
                 <position>0 0 0</position>
               </sphere>
               <sphere>
-                <radius>0.07667</radius>
+                <radius>0.06</radius>
                 <position>-0.01278 0.15844 0.0</position>
               </sphere>
             </multi_sphere>
@@ -451,11 +451,11 @@
           <geometry>
             <multi_sphere>
               <sphere>
-                <radius>0.127</radius>
+                <radius>0.09</radius>
                 <position>0 0 0</position>
               </sphere>
               <sphere>
-                <radius>0.07667</radius>
+                <radius>0.06</radius>
                 <position>-0.01278 0.15844 0.0</position>
               </sphere>
             </multi_sphere>
@@ -472,11 +472,11 @@
           <geometry>
             <multi_sphere>
               <sphere>
-                <radius>0.07667</radius>
+                <radius>0.06</radius>
                 <position>0 0 0</position>
               </sphere>
               <sphere>
-                <radius>0.0585</radius>
+                <radius>0.05</radius>
                 <position>0.0 0.130 0.0</position>
               </sphere>
             </multi_sphere>
@@ -507,7 +507,7 @@
           <geometry>
             <multi_sphere>
               <sphere>
-                <radius>0.0585</radius>
+                <radius>0.05</radius>
                 <position>0 0 0</position>
               </sphere>
               <sphere>
@@ -521,7 +521,7 @@
           <geometry>
             <multi_sphere>
               <sphere>
-                <radius>0.0585</radius>
+                <radius>0.05</radius>
                 <position>0 0 0</position>
               </sphere>
               <sphere>
@@ -542,7 +542,7 @@
           <geometry>
             <multi_sphere>
               <sphere>
-                <radius>0.07667</radius>
+                <radius>0.06</radius>
                 <position>0 0 0</position>
               </sphere>
               <sphere>
@@ -556,7 +556,7 @@
           <geometry>
             <multi_sphere>
               <sphere>
-                <radius>0.07667</radius>
+                <radius>0.06</radius>
                 <position>0 0 0</position>
               </sphere>
               <sphere>
