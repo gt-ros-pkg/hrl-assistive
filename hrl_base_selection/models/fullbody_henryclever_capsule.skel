@@ -101,7 +101,7 @@
           <geometry>
             <multi_sphere>
               <sphere>
-                <radius>0.1335</radius>
+                <radius>0.1</radius>
                 <position>0 0 0</position>
               </sphere>
               <sphere>
@@ -122,7 +122,7 @@
           <geometry>
             <multi_sphere>
               <sphere>
-                <radius>0.1335</radius>
+                <radius>0.1</radius>
                 <position>0 0 0</position>
               </sphere>
               <sphere>
@@ -136,7 +136,7 @@
 					<geometry>
 						<multi_sphere>
 							<sphere>
-								<radius>0.1335</radius>
+								<radius>0.1</radius>
 								<position>0 0 0</position>
 							</sphere>
 							<sphere>
@@ -706,7 +706,7 @@
           <geometry>
             <multi_sphere>
               <sphere>
-                <radius>0.07667</radius>
+                <radius>0.06</radius>
                 <position>0 0 0</position>
               </sphere>
               <sphere>
@@ -720,7 +720,7 @@
           <geometry>
             <multi_sphere>
               <sphere>
-                <radius>0.07667</radius>
+                <radius>0.06</radius>
                 <position>0 0 0</position>
               </sphere>
               <sphere>
@@ -1437,7 +1437,7 @@
         <init_vel>0 0 0</init_vel>
       </joint>
       <body name="left_wheel">
-        <transformation>-0.1 0.26 0.305 1.5707963 0 0</transformation>
+        <transformation>-0.1 0.265 0.305 1.5707963 0 0</transformation>
         <visualization_shape>
 					<geometry>
 						<cylinder>
@@ -1463,7 +1463,7 @@
         <init_vel>0 0 0</init_vel>
       </joint>
       <body name="right_wheel">
-        <transformation>-0.1 -0.26 0.305 1.5707963 0 0</transformation>
+        <transformation>-0.1 -0.265 0.305 1.5707963 0 0</transformation>
         <visualization_shape>
 					<geometry>
 						<cylinder>
@@ -1489,18 +1489,18 @@
         <init_vel>0 0 0</init_vel>
       </joint>
       <body name="front_left_wheel">
-        <transformation>0.33 0.26 0.22 0 0 0</transformation>
+        <transformation>0.37 0.26 0.22 0 0 0</transformation>
         <visualization_shape>
 					<geometry>
 						<box>
-							<size>0.15 0.06 0.44</size>
+							<size>0.23 0.06 0.44</size>
 						</box>
 					</geometry>
 				</visualization_shape>
 				<collision_shape>
 					<geometry>
 						<box>
-							<size>0.15 0.06 0.44</size>
+							<size>0.23 0.06 0.44</size>
 						</box>
 					</geometry>
 				</collision_shape>
@@ -1513,18 +1513,18 @@
         <init_vel>0 0 0</init_vel>
       </joint>
       <body name="front_right_wheel">
-        <transformation>0.33 -0.26 0.22 0 0 0</transformation>
+        <transformation>0.37 -0.26 0.22 0 0 0</transformation>
         <visualization_shape>
 					<geometry>
 						<box>
-							<size>0.15 0.06 0.44</size>
+							<size>0.23 0.06 0.44</size>
 						</box>
 					</geometry>
 				</visualization_shape>
 				<collision_shape>
 					<geometry>
 						<box>
-							<size>0.15 0.06 0.44</size>
+							<size>0.23 0.06 0.44</size>
 						</box>
 					</geometry>
 				</collision_shape>

@@ -58,6 +58,18 @@ class TOORAD_Dressing_PR2(object):
         self.trajectory_pickle_file_name = 'trajectory_data_a'
         # configs = self.load_configs(self.save_file_path+self.save_file_name_final_output)
 
+        skel_model_choices = ['fullbody_50percentile_capsule.skel', 'fullbody_participant0_capsule.skel',
+         'fullbody_henryclever_capsule.skel']
+        if '50percentile' in model:
+            self.dart_skel_model = skel_model_choices[0]
+        elif 'participant0' in model:
+            self.dart_skel_model = skel_model_choices[1]
+        elif 'henryclever' in model:
+            self.dart_skel_model = skel_model_choices[2]
+        else:
+            print 'Not sure what model to use!'
+            exit()
+
         self.enable_realtime_HMM = enable_realtime_HMM
 
         self.robot_arm = 'rightarm'
@@ -96,7 +108,7 @@ class TOORAD_Dressing_PR2(object):
                 self.toorad.set_pr2_model_dof_dart(r_config)
 
                 # Calculate the trajectories based on the configuration in the simulator
-                s_arm = self.toorad.human_arm.split('a')[0]
+                s_arm = self.toorad.human_arm.split('_')[0]
                 origin_B_goals, \
                 origin_B_forearm_pointed_down_arm, \
                 origin_B_upperarm_pointed_down_shoulder, \
@@ -148,31 +160,35 @@ class TOORAD_Dressing_PR2(object):
             pydart.init()
             print('pydart initialization OK')
 
-            self.setup_dart(filename=model, visualize=True)
+            self.setup_dart(filename=self.dart_skel_model, visualize=True)
 
             # rospy.sleep(20)
-            arm = raw_input('\nEnter R (r) for right arm (should be done first. Enter L (l) for left arm (should be '
-                            'done second). Otherwise ends.\n')
+            arm = raw_input('\nEnter 0 for right forearm (should be done first. 1 for right upper arm. 2 for left '
+                            'forearm. 3 for left upper arm. Otherwise ends.\n')
             while (not arm.upper() == 'Q' and not arm.upper() == 'N') and not rospy.is_shutdown():
                 if len(arm) == 0:
                     return
-                elif arm.upper()[0] == 'R':
+                elif arm.upper()[0] == '0':
                     subtask = 0
-                    h_arm = 'rightarm'
+                    h_arm = 'right_forearm'
                     h_opposite_arm = 'leftarm'
+                elif arm.upper()[0] == '1':
+                    subtask = 1
+                    h_arm = 'right_upperarm'
+                    h_opposite_arm = 'leftarm'
+                elif arm.upper()[0] == '2':
+                    subtask = 2
+                    h_arm = 'left_forearm'
+                    h_opposite_arm = 'rightarm'
+                elif arm.upper()[0] == '3':
+                    subtask = 3
+                    h_arm = 'left_upperarm'
+                    h_opposite_arm = 'rightarm'
 
                     # h_config = configs[0][0]
                     # r_config = configs[0][1]
                     # self.toorad.set_robot_arm('rightarm')
                     # self.toorad.set_human_arm('rightarm')
-                elif arm.upper()[0] == 'L':
-                    subtask=1
-                    h_arm = 'leftarm'
-                    h_opposite_arm = 'rightarm'
-                    # h_config = configs[1][0]
-                    # r_config = configs[1][1]
-                    # self.toorad.set_robot_arm('rightarm')
-                    # self.toorad.set_human_arm('leftarm')
                 else:
                     return
                 print self.save_file_path + self.trajectory_pickle_file_name+str(subtask)+'.pkl'
@@ -204,13 +220,43 @@ class TOORAD_Dressing_PR2(object):
                 th = pr2_params[2]
                 z = pr2_params[3]
 
-                v = self.robot.positions()
+                v = self.robot.q
                 v['rootJoint_pos_x'] = x
                 v['rootJoint_pos_y'] = y
                 v['rootJoint_pos_z'] = 0.
                 v['rootJoint_rot_z'] = th
                 self.dart_world.displace_gown()
                 v['torso_lift_joint'] = pr2_params[3]
+                path_step = traj_path[0]
+                v[self.robot_arm[0] + '_shoulder_pan_joint'] = path_step[0]
+                v[self.robot_arm[0] + '_shoulder_lift_joint'] = path_step[1]
+                v[self.robot_arm[0] + '_upper_arm_roll_joint'] = path_step[2]
+                v[self.robot_arm[0] + '_elbow_flex_joint'] = path_step[3]
+                v[self.robot_arm[0] + '_forearm_roll_joint'] = path_step[4]
+                v[self.robot_arm[0] + '_wrist_flex_joint'] = path_step[5]
+                v[self.robot_arm[0] + '_wrist_roll_joint'] = path_step[6]
+
+                if self.robot_arm == 'rightarm':
+                    v['l_shoulder_pan_joint'] = 1. * 3.14 / 2
+                    v['l_shoulder_lift_joint'] = -0.52
+                    v['l_upper_arm_roll_joint'] = 0.
+                    v['l_elbow_flex_joint'] = -3.14 * 2 / 3
+                    v['l_forearm_roll_joint'] = 0.
+                    v['l_wrist_flex_joint'] = 0.
+                    v['l_wrist_roll_joint'] = 0.
+                    v['l_gripper_l_finger_joint'] = .15
+                    v['l_gripper_r_finger_joint'] = .15
+                else:
+                    v['r_shoulder_pan_joint'] = -1. * 3.14 / 2
+                    v['r_shoulder_lift_joint'] = -0.52
+                    v['r_upper_arm_roll_joint'] = 0.
+                    v['r_elbow_flex_joint'] = -3.14 * 2 / 3
+                    v['r_forearm_roll_joint'] = 0.
+                    v['r_wrist_flex_joint'] = 0.
+                    v['r_wrist_roll_joint'] = 0.
+                    v['r_gripper_l_finger_joint'] = .15
+                    v['r_gripper_r_finger_joint'] = .15
+
                 self.robot.set_positions(v)
                 rospy.sleep(0.1)
 
@@ -220,7 +266,7 @@ class TOORAD_Dressing_PR2(object):
                                           [0., 0., 0., 1.]])
 
                 origin_B_wheel = np.matrix([[m.cos(0.), -m.sin(0.), 0., -0.1],
-                                          [m.sin(0.), m.cos(0.), 0., 0.26],
+                                          [m.sin(0.), m.cos(0.), 0., 0.265],
                                           [0., 0., 1., 0.],
                                           [0., 0., 0., 1.]])
                 print 'pr2_B_wheel\n', origin_B_pr2.I*origin_B_wheel
@@ -305,8 +351,8 @@ class TOORAD_Dressing_PR2(object):
                                      'Otherwise visualizes again.\n')
                     if len(cont) == 0:
                         cont = ' '
-                arm = raw_input('\nEnter R (r) for right arm (should be done first. Enter L (l) for left arm (should be '
-                                'done second). Otherwise ends.\n')
+                arm = raw_input('\nEnter 0 for right forearm (should be done first. 1 for right upper arm. '
+                                '2 for left forearm. 3 for left upper arm. Otherwise ends.\n')
 
         # If this is on the PR2, ask for arm to dress (left or right). If wrong input received, ends.
         elif self.machine.upper() == 'PR2':
@@ -914,14 +960,14 @@ class TOORAD_Dressing_PR2(object):
         # j_bicep_left_x,y,z are euler angles applied in xyz order. x is forward, y is opposite direction of
         # upper arm, z is to the right.
         # j_forearm_left_1 is bend in elbow.
-        if human_arm == 'leftarm':
+        if 'left' in human_arm:
             q['j_bicep_left_x'] = dof[0]
             q['j_bicep_left_y'] = -1*dof[1]
             q['j_bicep_left_z'] = dof[2]
             # q['j_bicep_left_roll'] = -1*0.
             q['j_forearm_left_1'] = dof[3]
             q['j_forearm_left_2'] = 0.
-        elif human_arm == 'rightarm':
+        elif 'right' in human_arm:
             q['j_bicep_right_x'] = -1*dof[0]
             q['j_bicep_right_y'] = dof[1]
             q['j_bicep_right_z'] = dof[2]
@@ -955,9 +1001,10 @@ if __name__ == '__main__':
         import openravepy as op
         from openravepy.misc import InitOpenRAVELogging
     model_choices = ['fullbody_50percentile_capsule.skel','fullbody_participant0_capsule.skel','fullbody_henryclever_capsule.skel']
+    model_choices = ['50-percentile-wheelchair', '50-percentile-no-chair', 'participant0', 'henryclever']
 
     toorad_dressing = TOORAD_Dressing_PR2(participant=opt.participant, trial=opt.participant,
                                           enable_realtime_HMM=False, visualize=opt.visualize,
                                           visually_estimate_arm_pose=False, adjust_arm_pose_visually=False,
-                                          machine=opt.machine, model=model_choices[2])
+                                          machine=opt.machine, model=model_choices[3])
 
