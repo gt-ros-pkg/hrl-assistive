@@ -437,7 +437,7 @@
           <geometry>
             <multi_sphere>
               <sphere>
-                <radius>0.1</radius>
+                <radius>0.09</radius>
                 <position>0 0 0</position>
               </sphere>
               <sphere>
@@ -451,7 +451,7 @@
           <geometry>
             <multi_sphere>
               <sphere>
-                <radius>0.1</radius>
+                <radius>0.09</radius>
                 <position>0 0 0</position>
               </sphere>
               <sphere>

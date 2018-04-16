@@ -1006,5 +1006,5 @@ if __name__ == '__main__':
     toorad_dressing = TOORAD_Dressing_PR2(participant=opt.participant, trial=opt.participant,
                                           enable_realtime_HMM=False, visualize=opt.visualize,
                                           visually_estimate_arm_pose=False, adjust_arm_pose_visually=False,
-                                          machine=opt.machine, model=model_choices[3])
+                                          machine=opt.machine, model=model_choices[2])
 
