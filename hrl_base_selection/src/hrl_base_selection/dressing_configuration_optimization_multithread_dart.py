@@ -83,8 +83,8 @@ class BaseEmptySimulationProcess(object):
 
     def start_dressing_simulation_process(self):
         self.optimizer = DressingSimulationProcess(process_number=self.process_number,
-#                                                   visualize=self.visualize, model='fullbody_participant0_capsule.skel')
-                                                   visualize=self.visualize, model='fullbody_henryclever_capsule.skel')
+                                                   visualize=self.visualize, model='fullbody_participant0_capsule.skel')
+#                                                   visualize=self.visualize, model='fullbody_henryclever_capsule.skel')
         self.optimizer.save_all_results = True
         self.simulator_started = True
         return True
@@ -269,7 +269,8 @@ class DressingMultiProcessOptimization(object):
         self.save_file_name_final_output = 'arm_configs_final_output.log'
 
         # self.model = 'fullbody_50percentile_capsule.skel'
-        self.model = 'fullbody_henryclever_capsule.skel'
+        # self.model = 'fullbody_henryclever_capsule.skel'
+        self.model = 'fullbody_participant0_capsule.skel'
 
         self.arm_config_min = np.array([m.radians(-5.), m.radians(-10.), m.radians(-10.),
                                         0.])
@@ -334,7 +335,7 @@ class DressingMultiProcessOptimization(object):
 
         for subtask_number, subtask in enumerate(subtask_list):
             print 'starting fine optimization for ', subtask
-            if subtask_number >= 2:
+            if False:
                 self.run_fine_optimization(subtask_list[subtask_number],
                                            robot_arm_to_use[subtask_number],
                                            subtask_number,
@@ -343,8 +344,8 @@ class DressingMultiProcessOptimization(object):
                                            all_fixed_points)
             print 'completed fine optimization for ', subtask
 
-        self.combine_process_files(self.save_file_path + 'arm_configs_fine',
-                                   self.save_file_path + 'arm_configs_fine_combined.log')
+        #self.combine_process_files(self.save_file_path + 'arm_configs_fine',
+        #                           self.save_file_path + 'arm_configs_fine_combined.log')
 
         for subtask_number, subtask in enumerate(subtask_list):
             if True:
@@ -1717,7 +1718,7 @@ class DressingSimulationProcess(object):
         # print 'Kinematics score was: ', self.this_best_pr2_score
         # print 'Torque score was: ', torque_cost
         physx_score = self.force_cost*alpha + torque_cost*zeta
-        this_score = 10. + physx_score + self.this_best_pr2_score*beta
+        this_score = 10. + physx_score + self.this_best_pr2_score*beta + fixed_points_exceeded_amount*eta
         # print 'Total score was: ', this_score
         if self.save_all_results:
             with open(self.save_file_path + self.save_file_name_fine_raw, 'a') as myfile:
