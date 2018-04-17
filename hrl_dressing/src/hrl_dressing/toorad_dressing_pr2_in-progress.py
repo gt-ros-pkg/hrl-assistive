@@ -42,7 +42,7 @@ from sensor_msgs.msg import JointState
 class TOORAD_Dressing_PR2(object):
     def __init__(self, machine='desktop', visualize=False, participant=0, trial=0, model='50-percentile-wheelchair',
                  enable_realtime_HMM=False,
-                 visually_estimate_arm_pose=False, adjust_arm_pose_visually=False):
+                 visually_estimate_arm_pose=False, adjust_robot_pose_visually=False):
         # machine is whether this is run on the PR2 or desktop for visualization.
         self.machine = machine
         # trial number sets what number to use to save data.
@@ -320,15 +320,17 @@ class TOORAD_Dressing_PR2(object):
                     # Will assume the arm pose matches the request arm pose and will execute the trajectory selected by
                     # TOORAD on that arm pose. Will still use capacitance and force to modify trajectory as needed.
 
-                    if adjust_arm_pose_visually:
-                        print '\nPlease adopt the requested arm pose for a moment while the robot estimates your ' \
-                              'arm pose. See the pose estimation for how the pose should be adjusted\n'
+                    if adjust_robot_pose_visually:
+                        print '\nPlease move PR2 now to appropriate location using joystick or servoing.'
                         inp = raw_input('\nEnter Y (y) when complete. Otherwise ends.\n')
                         if len(inp) == 0:
                             return
                         elif inp.upper()[0] == 'Y':
                             # Grab arm pose from pose estimator
-                            pass
+                            self.pr2_pose_subscriber = rospy.Subscriber('/ar_tag', PoseStamped, self.robot_pose_cb)
+                            self.pose_correct = False
+                            while not self.pose_correct:
+                                rospy.sleep(0.1)
                         else:
                             return
 
@@ -571,6 +573,8 @@ class TOORAD_Dressing_PR2(object):
                 if current_goal == 0 and 'forearm' in this_arm:
                     current_goal = len(p_B_g)-1
                 elif current_goal == 0 and 'upperarm' in this_arm:
+                    current_goal = len(p_B_g)-3 
+                elif current_goal == len(p_B_g)-3 and 'upperarm' in this_arm:
                     current_goal = len(p_B_g)-2
                 elif current_goal == len(p_B_g)-2 and 'upperarm' in this_arm:
                     current_goal = len(p_B_g)-1
@@ -961,7 +965,7 @@ class TOORAD_Dressing_PR2(object):
                             for line in open(zeroed_data_save_file_path)]
         for j in xrange(len(baseline_data)):
             baseline_data[j] = [float(i) for i in baseline_data[j]]
-        cap_baseline, f_baseline, t_baseline = baseline_data[0], baseline_data[1], baseline_data[2]
+        cap_baseline, f_baseline, t_baseline = baseline_data[0][0], np.array(baseline_data[1]), np.array(baseline_data[2])
         return cap_baseline, f_baseline, t_baseline
 
     def save_baseline_values(self, subtask):
@@ -971,11 +975,11 @@ class TOORAD_Dressing_PR2(object):
         with open(zeroed_data_save_file_path, 'a') as myfile:
             myfile.write(str("{:.8f}".format(self.capacitance_baseline))
                          + '\n'
-                         + ',' + str("{:.8f}".format(self.force_baseline[0]))
+                         + str("{:.8f}".format(self.force_baseline[0]))
                          + ',' + str("{:.8f}".format(self.force_baseline[1]))
                          + ',' + str("{:.8f}".format(self.torque_baseline[2]))
                          + '\n'
-                         + ',' + str("{:.8f}".format(self.torque_baseline[0]))
+                         + str("{:.8f}".format(self.torque_baseline[0]))
                          + ',' + str("{:.8f}".format(self.torque_baseline[1]))
                          + ',' + str("{:.8f}".format(self.torque_baseline[2]))
                          + '\n')
@@ -1150,7 +1154,7 @@ if __name__ == '__main__':
 
     toorad_dressing = TOORAD_Dressing_PR2(participant=opt.participant, trial=opt.participant,
                                           enable_realtime_HMM=False, visualize=opt.visualize,
-                                          visually_estimate_arm_pose=False, adjust_arm_pose_visually=False,
+                                          visually_estimate_arm_pose=False, adjust_robot_pose_visually=True,
                                           machine=opt.machine, model=model_choices[3])
 
 
