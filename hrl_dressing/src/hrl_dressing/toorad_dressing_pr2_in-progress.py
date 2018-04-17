@@ -65,85 +65,7 @@ class TOORAD_Dressing_PR2(object):
         self.robot_arm = 'rightarm'
         self.robot_opposite_arm = 'leftarm'
 
-        if self.machine == 'generate_trajectory':
-            from hrl_base_selection.dressing_configuration_optimization_multithread_dart import DressingSimulationProcess
-            # Generates the trajectory and saves all relevant info to a pickle file.
-            pydart.init()
-            print('pydart initialization OK')
-            self.toorad = DressingSimulationProcess(visualize=False)
-            print 'Starting to generate the dressing trajectories from the saved configurations. This will then ' \
-                  'be used by the PR2 for execution or by another machine for visualization.'
-            save_data = []
-            for arm in ['right', 'left']:
-                if arm.upper()[0] == 'R':
-                    h_config = configs[0][0]
-                    r_config = configs[0][1]
-                    self.toorad.set_robot_arm('rightarm')
-                    self.toorad.set_human_arm('rightarm')
-                elif arm.upper()[0] == 'L':
-                    h_config = configs[1][0]
-                    r_config = configs[1][1]
-                    self.toorad.set_robot_arm('rightarm')
-                    self.toorad.set_human_arm('leftarm')
-                else:
-                    print 'HOW DID THIS GO WRONG?? '
-                    return
-
-                # print 'objective_function_fine =', self.toorad.objective_function_fine(h_config)
-
-                # Set up the simulator for the configuration loaded
-
-                self.toorad.set_human_model_dof_dart([0, 0, 0, 0], self.toorad.human_opposite_arm)
-                self.toorad.set_human_model_dof_dart(h_config, self.toorad.human_arm)
-                self.toorad.set_pr2_model_dof_dart(r_config)
-
-                # Calculate the trajectories based on the configuration in the simulator
-                s_arm = self.toorad.human_arm.split('a')[0]
-                origin_B_goals, \
-                origin_B_forearm_pointed_down_arm, \
-                origin_B_upperarm_pointed_down_shoulder, \
-                origin_B_hand, \
-                origin_B_wrist, \
-                origin_B_traj_start, \
-                origin_B_traj_forearm_end, \
-                origin_B_traj_upper_end, \
-                origin_B_traj_final_end, \
-                forearm_B_upper_arm, traj_path, all_sols = self.toorad.generate_dressing_trajectory(s_arm,
-                                                                                                    visualize=False)
-                print arm
-                print not traj_path
-                print traj_path
-
-                # print 'robot positions',self.toorad.robot.positions()
-                # print 'robot q', self.toorad.robot.q
-                # print 'human q', self.toorad.human.q
-                # print 'human pose'
-                # print self.toorad.human.q['j_bicep_' + arm + '_x']
-                # print self.toorad.human.q['j_bicep_' + arm + '_y']
-                # print self.toorad.human.q['j_bicep_' + arm + '_z']
-                # print self.toorad.human.q['j_forearm_' + arm + '_1']
-                # print 'robot pose'
-                # print self.toorad.robot.q['rootJoint_pos_x']
-                # print self.toorad.robot.q['rootJoint_pos_y']
-                # print self.toorad.robot.q['rootJoint_pos_z']
-                # print self.toorad.robot.q['rootJoint_rot_z']
-                # print self.toorad.robot.q['torso_lift_joint']
-
-                save_data.append([arm, origin_B_goals,
-                                  origin_B_forearm_pointed_down_arm,
-                                  origin_B_upperarm_pointed_down_shoulder,
-                                  origin_B_hand,
-                                  origin_B_wrist,
-                                  origin_B_traj_start,
-                                  origin_B_traj_forearm_end,
-                                  origin_B_traj_upper_end,
-                                  origin_B_traj_final_end,
-                                  forearm_B_upper_arm, traj_path, all_sols])
-
-            save_pickle(save_data, self.save_file_path+self.trajectory_pickle_file_name)
-            print 'File saved successfully!'
-
-        elif self.machine == 'desktop':
+        if self.machine == 'desktop':
 
             # If this is on desktop for visualization, run the visualization
             # Set up TOORAD process that includes DART simulation environment
@@ -320,7 +242,6 @@ class TOORAD_Dressing_PR2(object):
             self.time_series_forces = np.zeros([20000, 4])
             self.array_line = 0
 
-
             self.moving = False
             self.hz = 20.
             self.control_rate = rospy.Rate(self.hz)
@@ -482,12 +403,28 @@ class TOORAD_Dressing_PR2(object):
                           '/r_arm_controller/state and rolling it to within limits'
                     return
 
-                inp = raw_input('\nEnter Y (y) to zero sensors. Otherwise ends.\n')
+                inp = raw_input('\nEnter Y (y) to zero sensors and save results. Enter L (l) to load previously saved '
+                                'values. Enter F (f) to only zero the force-torque sensor and load values for the '
+                                'capacitive sensor.Press N (n) to just skip zeroing. Otherwise ends.\n')
                 if len(inp) == 0:
                     return
                 elif inp.upper()[0] == 'Y':
                     # Zero sensors
                     self.zero_sensor_data()
+                    self.save_baseline_values(h_arm)
+                elif inp.upper()[0] == 'F':
+                    c_b, f_b, t_b = self.load_baseline_values(h_arm)
+                    self.force_baseline = f_b
+                    self.torque_baseline = t_b
+                    self.zero_sensor_data(only_zero_ft=True)
+                    self.save_baseline_values(h_arm)
+                elif inp.upper()[0] == 'L':
+                    c_b, f_b, t_b = self.load_baseline_values(h_arm)
+                    self.capacitance_baseline = c_b
+                    self.force_baseline = f_b
+                    self.torque_baseline = t_b
+                elif inp.upper()[0] == 'N':
+                    pass
                 else:
                     return
 
@@ -513,6 +450,7 @@ class TOORAD_Dressing_PR2(object):
                     elif inp.upper()[0] == 'R':
                         # Re-zero sensors.
                         self.zero_sensor_data()
+                        self.save_baseline_values(h_arm)
                     elif inp.upper()[0] == 'N' or inp.upper()[0] == 'Q':
                         return
 
@@ -993,23 +931,54 @@ class TOORAD_Dressing_PR2(object):
         return 1.101 / (cap + 6.187)  # For new, slim tool for dressing in Ari's TOORAD dissertation experiments
         # return 0.8438 / (cap + 4.681)  # For old tool for dressing in Zackory's capacitive sensing and mpc experiments
 
-    def zero_sensor_data(self):
-        self.capacitance_baseline = None
+    def zero_sensor_data(self, only_zero_ft=False, do_not_zero=False):
         self.force = np.zeros(3)
-        self.force_baseline = None
-        self.torque_baseline = None
-        self.capacitance_baseline_values = []
-        self.force_baseline_values = []
-        self.torque_baseline_values = []
+        if not do_not_zero:
+            self.force_baseline = None
+            self.torque_baseline = None
+            self.force_baseline_values = []
+            self.torque_baseline_values = []
+            self.zeroing = True
+            print 'Zeroing data'
+
+        if not only_zero_ft and not do_not_zero:
+            self.capacitance_baseline = None
+            self.capacitance_baseline_values = []
+
         self.time_series_forces = np.zeros([20000, 4])
         self.array_line = 0
-        self.zeroing = True
-        print 'Zeroing data'
-        while self.capacitance_baseline is None:# or self.force_baseline is None:
+
+        while self.capacitance_baseline is None or self.force_baseline is None:
             rospy.sleep(0.1)
         self.zeroing = False
         print 'Capacitance and force readings have been zeroed'
         rospy.sleep(1.0)
+
+    def load_baseline_values(self, subtask):
+        arm = subtask.split('_')[0]
+        zeroed_data_save_file_path = self.save_file_path + str(arm) + '_baseline_values.log'
+        baseline_data = [line.rstrip('\n').split(',')
+                            for line in open(zeroed_data_save_file_path)]
+        for j in xrange(len(baseline_data)):
+            baseline_data[j] = [float(i) for i in baseline_data[j]]
+        cap_baseline, f_baseline, t_baseline = baseline_data[0], baseline_data[1], baseline_data[2]
+        return cap_baseline, f_baseline, t_baseline
+
+    def save_baseline_values(self, subtask):
+        arm = subtask.split('_')[0]
+        zeroed_data_save_file_path = self.save_file_path + str(arm) + '_baseline_values.log'
+        open(zeroed_data_save_file_path, 'w').close()
+        with open(zeroed_data_save_file_path, 'a') as myfile:
+            myfile.write(str("{:.8f}".format(self.capacitance_baseline))
+                         + '\n'
+                         + ',' + str("{:.8f}".format(self.force_baseline[0]))
+                         + ',' + str("{:.8f}".format(self.force_baseline[1]))
+                         + ',' + str("{:.8f}".format(self.torque_baseline[2]))
+                         + '\n'
+                         + ',' + str("{:.8f}".format(self.torque_baseline[0]))
+                         + ',' + str("{:.8f}".format(self.torque_baseline[1]))
+                         + ',' + str("{:.8f}".format(self.torque_baseline[2]))
+                         + '\n')
 
     def run_HMM_realtime(self, test_data):
         # temp = np.dstack([(test_data[:, 1]), (test_data[:, 3])])[0]
@@ -1136,14 +1105,14 @@ class TOORAD_Dressing_PR2(object):
         # j_bicep_left_x,y,z are euler angles applied in xyz order. x is forward, y is opposite direction of
         # upper arm, z is to the right.
         # j_forearm_left_1 is bend in elbow.
-        if human_arm == 'leftarm':
+        if 'left' in human_arm:
             q['j_bicep_left_x'] = dof[0]
             q['j_bicep_left_y'] = -1*dof[1]
             q['j_bicep_left_z'] = dof[2]
             # q['j_bicep_left_roll'] = -1*0.
             q['j_forearm_left_1'] = dof[3]
             q['j_forearm_left_2'] = 0.
-        elif human_arm == 'rightarm':
+        elif 'right' in human_arm:
             q['j_bicep_right_x'] = -1*dof[0]
             q['j_bicep_right_y'] = dof[1]
             q['j_bicep_right_z'] = dof[2]
@@ -1176,9 +1145,13 @@ if __name__ == '__main__':
         import pydart2 as pydart
         import openravepy as op
         from openravepy.misc import InitOpenRAVELogging
+    model_choices = ['fullbody_50percentile_capsule.skel','fullbody_participant0_capsule.skel','fullbody_henryclever_capsule.skel']
+    model_choices = ['50-percentile-wheelchair', '50-percentile-no-chair', 'participant0', 'henryclever']
 
     toorad_dressing = TOORAD_Dressing_PR2(participant=opt.participant, trial=opt.participant,
                                           enable_realtime_HMM=False, visualize=opt.visualize,
                                           visually_estimate_arm_pose=False, adjust_arm_pose_visually=False,
-                                          machine=opt.machine, model='henryclever')
+                                          machine=opt.machine, model=model_choices[3])
+
+
 
