@@ -322,7 +322,7 @@ class TOORAD_Dressing_PR2(object):
 
 
             self.moving = False
-            self.hz = 10.
+            self.hz = 20.
             self.control_rate = rospy.Rate(self.hz)
 
             self.hmm_prediction = ''
@@ -340,17 +340,25 @@ class TOORAD_Dressing_PR2(object):
             while not arm.upper() == 'Y' and not rospy.is_shutdown():
                 print 'Will moving PR2 to initial configuration for the desired dressing task. First select the arm ' \
                       'to be dressed'
-                arm = raw_input('\nEnter R (r) for right arm (should be done first). Enter L (l) for left arm (should be '
-                                'done second). Otherwise ends.\n')
+                arm = raw_input('\nEnter 0 for right forearm. 1 for right upper arm. 2 for left forearm. 3 for left upperarm. '
+                                'Otherwise ends.\n')
                 if len(arm) == 0:
                     return
-                elif arm.upper()[0] == 'R':
+                elif arm.upper()[0] == '0':
                     subtask = 0
-                    h_arm = 'rightarm'
+                    h_arm = 'right_forearm'
                     h_opposite_arm = 'leftarm'
-                elif arm.upper()[0] == 'L':
+                elif arm.upper()[0] == '1':
                     subtask = 1
-                    h_arm = 'leftarm'
+                    h_arm = 'right_upperarm'
+                    h_opposite_arm = 'leftarm'
+                elif arm.upper()[0] == '2':
+                    subtask = 2
+                    h_arm = 'left_forearm'
+                    h_opposite_arm = 'rightarm'
+                elif arm.upper()[0] == '3':
+                    subtask = 3
+                    h_arm = 'left_upperarm'
                     h_opposite_arm = 'rightarm'
                 else:
                     return
@@ -554,6 +562,8 @@ class TOORAD_Dressing_PR2(object):
         prev_distance_error = np.zeros(3)
         integral_error = 0.
         x_adjustment = 0.
+        
+        using_saved_ik = False
 
         self.plotTime = []
         self.plotX = []
@@ -590,7 +600,7 @@ class TOORAD_Dressing_PR2(object):
             if current_goal == len(traj):
                 print 'Movement has finished!'
                 break
-            if current_time - self.last_capacitive_reading > 0.1 or current_time - self.last_ft_reading > 0.1:
+            if current_time - self.last_capacitive_reading > 0.1:# or current_time - self.last_ft_reading > 0.1:
                 print 'Stopping movement because too much time has passed since the last data reading from the capacitive ' \
                 'sensor or the force-torque sensor.'
                 break
@@ -620,21 +630,16 @@ class TOORAD_Dressing_PR2(object):
             if ((position_error_mag < 0.02 and np.abs(angle_error) <= m.radians(5.)) or ik_solution_failure_counter > ik_failure_limit) and current_goal < len(p_B_g)-1:
                 print 'Current goal has been reached (or ik failed for this goal too many times). Moving on to next goal.'
                 ik_solution_failure_counter = 0
-                if current_goal == 0:
-                    current_goal = 12
-                elif current_goal == 6:
-                    current_goal = 12
-                elif current_goal == 12:
-                    current_goal = 13
-                elif current_goal == 13:
-                    current_goal = 21
-                elif current_goal == 21:
-                    current_goal = 22
-                elif current_goal == 22:
-                    current_goal = 23
+                if current_goal == 0 and 'forearm' in this_arm:
+                    current_goal = len(p_B_g)-1
+                elif current_goal == 0 and 'upperarm' in this_arm:
+                    current_goal = len(p_B_g)-2
+                elif current_goal == len(p_B_g)-2 and 'upperarm' in this_arm:
+                    current_goal = len(p_B_g)-1
                 else:
                     print 'not sure how current goal is not one of these values'
                 #current_goal += 1
+                using_saved_ik = False
                 target_matrix = p_B_g[current_goal]
                 target_matrix[0, 3] += x_adjustment
                 target_position, target_orientation = Bmat_to_pos_quat(target_matrix)
@@ -657,6 +662,7 @@ class TOORAD_Dressing_PR2(object):
                 # target_position = new_position
                 # target_orientation = new_orientation
             elif ((position_error_mag < 0.02 and np.abs(angle_error) <= m.radians(5.)) or ik_solution_failure_counter > ik_failure_limit) and current_goal == len(p_B_g)-1:
+                using_saved_ik = False
                 ik_solution_failure_counter = 0
                 print 'Trajectory is complete!'
                 break
@@ -705,10 +711,10 @@ class TOORAD_Dressing_PR2(object):
                 dist_error_capped = max(0.05 - self.distance_to_arm, -0.05)
             #current_distance_error = dist_error_capped * np.array(pr2_B_current_gripper)[0:3, 2]
             current_distance_error = dist_error_capped * np.array(target_matrix)[0:3, 2]
-            if current_goal == 13:
-                current_distance_error = 0.
-            #if 0.05 - self.distance_to_arm > 0.:
-            #    current_distance_error = dist_error_capped * np.array(pr2_B_current_gripper)[0:3, 2]
+            #if current_goal == 13:
+            #    current_distance_error = 0.
+            if 0.05 - self.distance_to_arm > 0.:
+                current_distance_error = 2.*dist_error_capped * np.array(pr2_B_current_gripper)[0:3, 2]
             #current_distance_error = np.zeros(3)
             #print 'force:', np.linalg.norm(self.force)
             if np.linalg.norm(self.force) < 4.0:
@@ -779,16 +785,20 @@ class TOORAD_Dressing_PR2(object):
             while not ik_solution and not rospy.is_shutdown() and self.moving and not ik_solution_failure_counter > ik_failure_limit:
                 added_control_input = error * Kp + (error - prev_error) * Kd
                 new_position_input = current_position_input + added_control_input
-                junk_position, new_goal_orientation = Bmat_to_pos_quat(np.matrix(current_goal_matrix)*np.matrix(tft.rotation_matrix(angle_error*Kp*0.35, axis_error)))
+                junk_position, new_goal_orientation = Bmat_to_pos_quat(np.matrix(current_goal_matrix)*np.matrix(tft.rotation_matrix(angle_error*Kp*0.5, axis_error)))
                 new_goal_matrix = createBMatrix(new_position_input, new_goal_orientation)
-                ik, timeout = self.control.moveGripperTo(current_position_input+1.*added_control_input, quaternion=new_goal_orientation, useInitGuess=False, rightArm=True, timeout=1./self.hz, this_frame='base_footprint')
+                if not using_saved_ik:
+                    ik, timeout = self.control.moveGripperTo(current_position_input+1.*added_control_input, quaternion=new_goal_orientation, useInitGuess=False, rightArm=True, timeout=2./self.hz, this_frame='base_footprint')
+                else:
+                    ik = None
                 if ik is None and not rospy.is_shutdown():
+                    using_saved_ik = False
                     print 'current pose\n', pr2_B_current_gripper
                     print 'target_pose\n', new_goal_matrix
                     print 'change:\n', pr2_B_current_gripper.I*new_goal_matrix
                     print 'Using IK from simulation'
                     self.set_joint_guess(traj[current_goal])
-                    ik, timeout = self.control.moveGripperTo(current_position_input+1.*added_control_input, quaternion=new_goal_orientation, useInitGuess=True, rightArm=True, timeout=1./self.hz, this_frame='base_footprint')
+                    ik, timeout = self.control.moveGripperTo(current_position_input+1.*added_control_input, quaternion=new_goal_orientation, useInitGuess=True, rightArm=True, timeout=2./self.hz, this_frame='base_footprint')
                     if ik is not None:
                         print 'IK from simulation succeeded'
                         print 'IK guess:', traj[current_goal]
@@ -831,7 +841,8 @@ class TOORAD_Dressing_PR2(object):
                                      + ',' + str("{:.5f}".format(self.distance_to_arm))
                                      + ',' + self.hmm_prediction
                                      + '\n')
-            rospy.sleep(np.max([timeout, 1./self.hz]))
+            rospy.sleep(np.min([np.max([timeout, 1./self.hz]),3.0]))
+
             #self.control_rate.sleep()
             # rospy.sleep(1.)
         # print rospy.is_shutdown()
@@ -984,6 +995,7 @@ class TOORAD_Dressing_PR2(object):
 
     def zero_sensor_data(self):
         self.capacitance_baseline = None
+        self.force = np.zeros(3)
         self.force_baseline = None
         self.torque_baseline = None
         self.capacitance_baseline_values = []
@@ -993,7 +1005,7 @@ class TOORAD_Dressing_PR2(object):
         self.array_line = 0
         self.zeroing = True
         print 'Zeroing data'
-        while self.capacitance_baseline is None or self.force_baseline is None:
+        while self.capacitance_baseline is None:# or self.force_baseline is None:
             rospy.sleep(0.1)
         self.zeroing = False
         print 'Capacitance and force readings have been zeroed'
@@ -1168,5 +1180,5 @@ if __name__ == '__main__':
     toorad_dressing = TOORAD_Dressing_PR2(participant=opt.participant, trial=opt.participant,
                                           enable_realtime_HMM=False, visualize=opt.visualize,
                                           visually_estimate_arm_pose=False, adjust_arm_pose_visually=False,
-                                          machine=opt.machine)
+                                          machine=opt.machine, model='henryclever')
 

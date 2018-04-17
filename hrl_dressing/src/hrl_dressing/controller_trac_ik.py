@@ -44,7 +44,7 @@ class Controller:
         # Initialize KDL for inverse kinematics       
         #self.rightArmKdl.joint_safety_lower = self.rightJointLimitsMin
         #self.rightArmKdl.joint_safety_upper = self.rightJointLimitsMax
-        self.rightArmKdl_dist = IK(self.frame, "r_gripper_tool_frame", timeout=0.04, solve_type='Distance')
+        self.rightArmKdl_dist = IK(self.frame, "r_gripper_tool_frame", timeout=0.02, solve_type='Distance')
         self.rightArmKdl_speed = IK(self.frame, "r_gripper_tool_frame", timeout=0.01, solve_type='Speed')
 
         #self.leftArmKdl.joint_safety_lower = self.leftJointLimitsMin
@@ -176,7 +176,7 @@ class Controller:
             ikGoal = self.rightArmKdl_dist.get_ik(self.initRightJointGuess if useInitGuess else self.rightJointPositions,
                                                   ps.pose.position.x, ps.pose.position.y, ps.pose.position.z,
                                                   ps.pose.orientation.x, ps.pose.orientation.y, ps.pose.orientation.z, ps.pose.orientation.w,
-                                                  0.00001, 0.00001, 0.00001, 0.001, 0.001, 0.001            )
+                                                  0.000001, 0.000001, 0.000001, 0.0001, 0.0001, 0.0001            )
             if ikGoal is None and False:
                 print 'using speed'
                 ikGoal = self.rightArmKdl_speed.get_ik(self.initRightJointGuess if useInitGuess else self.rightJointPositions,
