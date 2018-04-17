@@ -297,7 +297,8 @@ class DressingMultiProcessOptimization(object):
             open(self.save_file_path + self.save_file_name_fine_output, 'w').close()
             open(self.save_file_path + self.save_file_name_final_output, 'w').close()
 
-        subtask_list = ['right_forearm', 'right_upperarm', 'left_forearm', 'left_upperarm']
+        # subtask_list = ['right_forearm', 'right_upperarm', 'left_forearm', 'left_upperarm']
+        subtask_list = ['left_forearm', 'left_upperarm', 'right_forearm', 'right_upperarm']
         # subtask_list = ['leftarm', 'rightarm']
         # subtask_list = ['leftarm']
         robot_arm_to_use = ['rightarm', 'rightarm', 'rightarm', 'rightarm']
@@ -321,7 +322,7 @@ class DressingMultiProcessOptimization(object):
 
         for subtask_number, subtask in enumerate(subtask_list):
             print 'starting coarse optimization for ', subtask
-            if False:
+            if False or subtask == 'left_forearm':
                 self.run_coarse_optimization(subtask_list[subtask_number],
                                              robot_arm_to_use[subtask_number],
                                              subtask_number,
@@ -822,7 +823,7 @@ class DressingSimulationProcess(object):
         horizontal_B_forearm_pointed_down = origin_B_reference_coordinates.I * origin_B_forearm_pointed_down_arm
         # angle_forearm_from_horizontal = m.degrees(m.acos(horizontal_B_forearm_pointed_down[0, 0]))
         angle_forearm_from_horizontal, axis, junk_point = tft.rotation_from_matrix(horizontal_B_forearm_pointed_down)
-        if axis[np.argmax(np.abs(axis))] < 0:
+        if axis[np.argmax(np.abs(axis))] < 0.:
             angle_forearm_from_horizontal *= -1.
         # print 'angle_forearm_from_horizontal', np.degrees(angle_forearm_from_horizontal)
         # print 'angle, axis', np.degrees(angle), axis
@@ -874,12 +875,12 @@ class DressingSimulationProcess(object):
         # angle_upperarm_from_straight_ahead = m.degrees(m.acos(origin_B_reference_coordinates[0, 0]))
 
         angle_upperarm_from_horizontal, axis, junk_point = tft.rotation_from_matrix(horizontal_B_upperarm_pointed_down)
-        if axis[np.argmax(np.abs(axis))] < 0:
+        if axis[np.argmax(np.abs(axis))] < 0.:
             angle_upperarm_from_horizontal *= -1.
         # print 'angle_upperarm_from_horizontal', np.degrees(angle_upperarm_from_horizontal)
         #
         angle_upperarm_from_straight_ahead, axis, junk_point = tft.rotation_from_matrix(origin_B_reference_coordinates)
-        if axis[np.argmax(np.abs(axis))] < 0:
+        if axis[np.argmax(np.abs(axis))] < 0.:
             angle_upperarm_from_straight_ahead *= -1.
         # print 'angle_upperarm_from_straight_ahead', np.degrees(angle_upperarm_from_straight_ahead)
 
@@ -1007,6 +1008,8 @@ class DressingSimulationProcess(object):
         # params = [m.radians(90.0),  m.radians(0.), m.radians(45.), m.radians(0.)]
         # print 'doing subtask', self.subtask_step
         # print 'params:\n', params
+        # params = [ 1.67933,  0.22117,  0.84653,  2.34132]
+        params = [ 1.55547, -0.17411,  1.72985,  1.57907]
         if self.subtask_step == 0 and False:  # for right arm
             # params = [1.41876758,  0.13962405,  1.47350044,  0.95524629]  # old solution with joint jump
             # params = [1.73983062, -0.13343737,  0.42208647,  0.26249355]  # solution with arm snaking
@@ -1046,7 +1049,7 @@ class DressingSimulationProcess(object):
         # dressed is set to the values of this objective function evaluation.
         self.set_human_model_dof_dart([0, 0, 0, 0], self.human_opposite_arm)
         self.set_human_model_dof_dart([params[0], params[1], params[2], params[3]], self.human_arm)
-
+        rospy.sleep(0.5)
 
         # Check if the person is in self collision, which means parts of the arm are in collision with anything other
         # than the shoulder or itself.
@@ -1102,7 +1105,6 @@ class DressingSimulationProcess(object):
         #elif self.subtask_step ==1:
         #    pass
              #print 'fixed points exceeded: ', fixed_points_exceeded_amount
-
         if self.model == 'fullbody_participant0_capsule.skel':
             if 'right' in self.subtask:
                 if params[3] < m.radians(30.):
@@ -1177,7 +1179,7 @@ class DressingSimulationProcess(object):
                                          + ',' + str("{:.5f}".format(params[3]))
                                          + ',' + str("{:.5f}".format(this_score))
                                          + '\n')
-                if angle_upperarm_from_straight_ahead > 30.:
+                if angle_upperarm_from_straight_ahead < 30.:
                     this_score = 10. + 10. + 1. + 1. * (angle_upperarm_from_horizontal - 30.)
                     if self.save_all_results:
                         with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
@@ -1188,7 +1190,7 @@ class DressingSimulationProcess(object):
                                          + ',' + str("{:.5f}".format(params[3]))
                                          + ',' + str("{:.5f}".format(this_score))
                                          + '\n')
-                if angle_upperarm_from_straight_ahead < -93.:
+                if angle_upperarm_from_straight_ahead > 93.:
                     this_score = 10. + 10. + 1. + 1. * (angle_upperarm_from_horizontal + 93.)
                     if self.save_all_results:
                         with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
@@ -1465,7 +1467,7 @@ class DressingSimulationProcess(object):
                                          + ',' + str("{:.5f}".format(params[3]))
                                          + ',' + str("{:.5f}".format(this_score))
                                          + '\n')
-                if angle_upperarm_from_straight_ahead > 30.:
+                if angle_upperarm_from_straight_ahead < 30.:
                     this_score = 10. + 10. + 1. + 1. * (angle_upperarm_from_horizontal - 30.)
                     if self.save_all_results:
                         with open(self.save_file_path + self.save_file_name_fine_raw, 'a') as myfile:
@@ -1476,7 +1478,7 @@ class DressingSimulationProcess(object):
                                          + ',' + str("{:.5f}".format(params[3]))
                                          + ',' + str("{:.5f}".format(this_score))
                                          + '\n')
-                if angle_upperarm_from_straight_ahead < -93.:
+                if angle_upperarm_from_straight_ahead > 93.:
                     this_score = 10. + 10. + 1. + 1. * (angle_upperarm_from_horizontal + 93.)
                     if self.save_all_results:
                         with open(self.save_file_path + self.save_file_name_fine_raw, 'a') as myfile:
