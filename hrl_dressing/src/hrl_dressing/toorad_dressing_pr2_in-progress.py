@@ -32,9 +32,12 @@ import tf.transformations as tft
 from hrl_base_selection.helper_functions import createBMatrix, Bmat_to_pos_quat
 from hrl_geom.pose_converter import rot_mat_to_axis_angle
 
-from geometry_msgs.msg import PoseArray, Pose, PoseStamped, Point, Quaternion, PoseWithCovarianceStamped, Twist
+from geometry_msgs.msg import PoseArray, PointStamped, Pose, PoseStamped, Point, Quaternion, PoseWithCovarianceStamped, Twist
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from sensor_msgs.msg import JointState
+from ar_track_alvar_msgs.msg import AlvarMarkers
+from pr2_controllers_msgs.msg import PointHeadGoal, PointHeadActionGoal
+from hrl_msgs.msg import FloatArrayBare
 
 
 # Class that runs the performance of the dressing task on a person using a PR2.
@@ -232,6 +235,8 @@ class TOORAD_Dressing_PR2(object):
             # This flag is used to check when the subtask is completed so it can ask about starting the next task.
             self.subtask_complete = False
 
+            self.start_tracking_ar_tag = False
+
             self.capacitance_baseline = None
             self.force_baseline = None
             self.torque_baseline = None
@@ -319,20 +324,8 @@ class TOORAD_Dressing_PR2(object):
                 else:
                     # Will assume the arm pose matches the request arm pose and will execute the trajectory selected by
                     # TOORAD on that arm pose. Will still use capacitance and force to modify trajectory as needed.
+                    self.start_tracking_ar_tag = False
 
-                    if adjust_robot_pose_visually:
-                        print '\nPlease move PR2 now to appropriate location using joystick or servoing.'
-                        inp = raw_input('\nEnter Y (y) when complete. Otherwise ends.\n')
-                        if len(inp) == 0:
-                            return
-                        elif inp.upper()[0] == 'Y':
-                            # Grab arm pose from pose estimator
-                            self.pr2_pose_subscriber = rospy.Subscriber('/ar_tag', PoseStamped, self.robot_pose_cb)
-                            self.pose_correct = False
-                            while not self.pose_correct:
-                                rospy.sleep(0.1)
-                        else:
-                            return
 
                     params, \
                     z, \
@@ -348,6 +341,41 @@ class TOORAD_Dressing_PR2(object):
                     pr2_B_traj_final_end, \
                     traj_path = loaded_data
                     # print 'length of trajectory:', len(traj_path)
+
+                    if adjust_robot_pose_visually:
+                        print '\nPlease move PR2 now to appropriate location using joystick or servoing.'
+                        inp = raw_input('\nEnter Y (y) to start tracking the AR tag with the head. Will also start '
+                                        'printing the error between current robot pose and desired pose for this task.'
+                                        'Otherwise ends.\n')
+                        if len(inp) == 0 and False:
+                            return
+                        elif True:
+                            x = pr2_params[0]
+                            y = pr2_params[1]
+                            th = pr2_params[2]
+                            z = pr2_params[3]
+                            ang = m.radians(0.)
+                            self.wheelchair_B_ar_ground = np.matrix([[m.cos(ang), -m.sin(ang), 0., -0.4],
+                                                                     [m.sin(ang), m.cos(ang), 0., 0.],
+                                                                     [0., 0., 1., 0.],
+                                                                     [0., 0., 0., 1.]])
+
+                            self.wheelchair_B_pr2 = np.matrix([[m.cos(th), -m.sin(th), 0., x],
+                                                               [m.sin(th), m.cos(th), 0., y],
+                                                               [0., 0., 1., 0.],
+                                                               [0., 0., 0., 1.]])
+                            self.goal_pr2_pose_pub = rospy.Publisher('/dressing_pr2_pose',
+                                                                     FloatArrayBare, queue_size=1)
+                            self.ar_tracking_trigger_pub = rospy.Publisher('/dressing_ar_tracking_start',
+                                                                     Bool, queue_size=1)
+                            rospy.sleep(0.3)
+                            pr2_pose_out = FloatArrayBare()
+                            pr2_pose_out.data = [x, y, th]
+                            self.goal_pr2_pose_pub.publish(pr2_pose_out)
+                            start_tracking = Bool()
+                            start_tracking.data = True
+                            self.ar_tracking_trigger_pub.publish(start_tracking)
+
                     import actionlib
                     from pr2_controllers_msgs.msg import SingleJointPositionActionGoal, SingleJointPositionAction, SingleJointPositionGoal
 
