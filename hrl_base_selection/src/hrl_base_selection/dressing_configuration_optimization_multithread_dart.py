@@ -285,7 +285,7 @@ class DressingMultiProcessOptimization(object):
             self.processCnt = mp.cpu_count()
         else:
             self.processCnt = number_of_processes
-        simulatorPool = SimulatorPool(self.processCnt, visualize=visualize).simulatorPool
+        simulatorPool = SimulatorPool(self.processCnt, model=self.model, visualize=visualize).simulatorPool
         self.pool = mp.Pool(self.processCnt, _init, (simulatorPool,))
         # self.pool.map(test_process_function, ['here']*self.processCnt)
         # self.pool.map(test_process_function, ['here'] * self.processCnt)
@@ -308,7 +308,7 @@ class DressingMultiProcessOptimization(object):
             subtask_list = ['left_all', 'right_all']
             robot_arm_to_use = ['rightarm', 'rightarm']
             all_fixed_points_to_use = [[], [0]]
-            all_stretch_allowable = [[0.46], [0.5]]
+            all_stretch_allowable = [[], [0.46]]
         all_fixed_points = self.pool.apply(find_fixed_points, [[subtask_list[0],
                                                                robot_arm_to_use[0],
                                                                0,
@@ -348,8 +348,8 @@ class DressingMultiProcessOptimization(object):
                                            all_fixed_points)
             print 'completed fine optimization for ', subtask
 
-        #self.combine_process_files(self.save_file_path + 'arm_configs_fine',
-        #                           self.save_file_path + 'arm_configs_fine_combined.log')
+        self.combine_process_files(self.save_file_path + 'arm_configs_fine',
+                                   self.save_file_path + 'arm_configs_fine_combined.log')
 
         for subtask_number, subtask in enumerate(subtask_list):
             if True:
@@ -2777,8 +2777,8 @@ if __name__ == "__main__":
 
     model_choices = ['fullbody_50percentile_capsule.skel', 'fullbody_henryclever_capsule.skel', 'fullbody_participant0_capsule.skel']
 
-    optimizer = DressingMultiProcessOptimization( number_of_processes=0, visualize=False, model=model_choices[2])
-    optimizer.optimize_entire_dressing_task(reset_file=False, break_arm_tasks_into_two_subtasks=True)
+    optimizer = DressingMultiProcessOptimization( number_of_processes=0, visualize=False, model=model_choices[1])
+    optimizer.optimize_entire_dressing_task(reset_file=False, break_arm_tasks_into_two_subtasks=False)
     # outer_elapsed_time = rospy.Time.now()-outer_start_time
     print 'Everything is complete!'
     # print 'Done with optimization. Total time elapsed:', outer_elapsed_time.to_sec()
