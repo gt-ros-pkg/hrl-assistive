@@ -322,7 +322,7 @@ class DressingMultiProcessOptimization(object):
 
         for subtask_number, subtask in enumerate(subtask_list):
             print 'starting coarse optimization for ', subtask
-            if False or subtask == 'left_forearm':
+            if True:
                 self.run_coarse_optimization(subtask_list[subtask_number],
                                              robot_arm_to_use[subtask_number],
                                              subtask_number,
@@ -331,12 +331,12 @@ class DressingMultiProcessOptimization(object):
                                              all_fixed_points)
             print 'completed coarse optimization for ', subtask
 
-        #self.combine_process_files(self.save_file_path + 'arm_configs_coarse_feasible',
-        #                           self.save_file_path + self.save_file_name_coarse_feasible)
+        self.combine_process_files(self.save_file_path + 'arm_configs_coarse_feasible',
+                                   self.save_file_path + self.save_file_name_coarse_feasible)
 
         for subtask_number, subtask in enumerate(subtask_list):
             print 'starting fine optimization for ', subtask
-            if False:
+            if True:
                 self.run_fine_optimization(subtask_list[subtask_number],
                                            robot_arm_to_use[subtask_number],
                                            subtask_number,
@@ -1009,7 +1009,7 @@ class DressingSimulationProcess(object):
         # print 'doing subtask', self.subtask_step
         # print 'params:\n', params
         # params = [ 1.67933,  0.22117,  0.84653,  2.34132]
-        params = [ 1.55547, -0.17411,  1.72985,  1.57907]
+        #params = [ 1.55547, -0.17411,  1.72985,  1.57907]
         if self.subtask_step == 0 and False:  # for right arm
             # params = [1.41876758,  0.13962405,  1.47350044,  0.95524629]  # old solution with joint jump
             # params = [1.73983062, -0.13343737,  0.42208647,  0.26249355]  # solution with arm snaking
@@ -1049,7 +1049,8 @@ class DressingSimulationProcess(object):
         # dressed is set to the values of this objective function evaluation.
         self.set_human_model_dof_dart([0, 0, 0, 0], self.human_opposite_arm)
         self.set_human_model_dof_dart([params[0], params[1], params[2], params[3]], self.human_arm)
-        rospy.sleep(0.5)
+        if self.visualize:
+            rospy.sleep(0.5)
 
         # Check if the person is in self collision, which means parts of the arm are in collision with anything other
         # than the shoulder or itself.
