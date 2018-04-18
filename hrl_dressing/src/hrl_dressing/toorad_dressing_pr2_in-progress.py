@@ -347,18 +347,9 @@ class TOORAD_Dressing_PR2(object):
                         inp = raw_input('\nEnter Y (y) to start tracking the AR tag with the head. Will also start '
                                         'printing the error between current robot pose and desired pose for this task.'
                                         'Otherwise ends.\n')
-                        if len(inp) == 0:
+                        if len(inp) == 0 and False:
                             return
-                        elif inp.upper()[0] == 'Y':
-                            self.start_tracking_ar_tag = True
-                            self.tag_id = 4
-                            self.action_goal = PointHeadActionGoal()
-                            self.goal = PointHeadGoal()
-                            self.point = PointStamped()
-                            self.goal.pointing_frame = 'head_mount_kinect_ir_link'
-                            self.point.header.frame_id = 'base_link'
-                            self.goal.min_duration = rospy.Duration(0.25)
-
+                        elif True:
                             x = pr2_params[0]
                             y = pr2_params[1]
                             th = pr2_params[2]
@@ -384,15 +375,6 @@ class TOORAD_Dressing_PR2(object):
                             start_tracking = Bool()
                             start_tracking.data = True
                             self.ar_tracking_trigger_pub.publish(start_tracking)
-                        inp = raw_input('\nPress enter when complete. Head will stop tracking. Or enter Y (y) to '
-                                        'continue with the task while keeping tracking on\n')
-                        if len(inp) == 0:
-                            self.start_tracking_ar_tag = False
-                            self.ar_tag_subscriber.unregister()
-                        elif inp.upper()[0] == 'Y':
-                            pass
-
-
 
                     import actionlib
                     from pr2_controllers_msgs.msg import SingleJointPositionActionGoal, SingleJointPositionAction, SingleJointPositionGoal

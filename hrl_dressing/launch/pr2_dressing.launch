@@ -13,13 +13,13 @@
     <remap from='netft_data' to='/force_torque_pr2_sleeve' />
   </node>
   
-  <arg name="marker_size" default="15.0" />
+  <arg name="marker_size" default="14.5" />
     <!--<arg name="marker_size" default="13.3" />-->
     <arg name="max_new_marker_error" default="0.05" />
-    <arg name="max_track_error" default="0.2" />
+    <arg name="max_track_error" default="0.1" />
 
     <arg name="cam_image_topic" default="/head_mount_kinect/qhd/image_color" />
-    <!--<arg name="cam_image_topic" default="/head_mount_kinect/qhd/points" />-->
+    <arg name="cam_image_topic_points" default="/head_mount_kinect/qhd/points" />
     <arg name="cam_info_topic" default="/head_mount_kinect/qhd/camera_info" />
     <!--<arg name="cam_image_topic" default="/camera/depth_registered/points" /> -->
     <!--<arg name="cam_info_topic" default="/camera/rgb/camera_info" /> -->

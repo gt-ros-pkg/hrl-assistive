@@ -52,10 +52,12 @@ class AR_Tracking_for_Dressing(object):
         self.point.header.frame_id = 'base_link'
         self.goal.min_duration = rospy.Duration(0.25)
 
-        self.hist_size = 9
+        self.hist_size = 17
         self.ar_count = 0
         self.pos_buf = cb.CircularBuffer(self.hist_size, (3,))
         self.quat_buf = cb.CircularBuffer(self.hist_size, (4,))
+
+        self.frame_lock = threading.RLock()
 
         ang = m.radians(0.)
         if model == 'lab_wheelchair':
@@ -70,7 +72,7 @@ class AR_Tracking_for_Dressing(object):
                                                  PointHeadActionGoal, queue_size=1)
         rospy.sleep(0.3)
         self.goal_pose_subscriber = rospy.Subscriber("dressing_pr2_pose", FloatArrayBare, self.goal_pose_cb)
-        self.tracking_trigger_subscriber = rospy.Subscriber("dressing_ar_tracking_start", Bool, self.tracking_trigger_subscriber)
+        self.tracking_trigger_subscriber = rospy.Subscriber("dressing_ar_tracking_start", Bool, self.trigger_tracking_ar_tag_cb)
         self.ar_tag_subscriber = rospy.Subscriber("/ar_pose_marker", AlvarMarkers, self.arTagCallback)
         rospy.sleep(0.1)
         print 'AR Tracking is Ready!'
@@ -151,7 +153,7 @@ class AR_Tracking_for_Dressing(object):
                             quat /= float(len(quat_int))
                         current_pr2_B_ar = createBMatrix(pos, quat)
                         current_pr2_B_ar_ground = self.shift_to_ground(current_pr2_B_ar)
-                        current_pr2_B_wheelchair = Bmat_to_pos_quat(current_pr2_B_ar_ground * self.wheelchair_B_ar_ground.I)
+                        current_pr2_B_wheelchair = current_pr2_B_ar_ground * self.wheelchair_B_ar_ground.I
 
                         self.point.point.x = pos[0]
                         self.point.point.y = pos[1]
@@ -170,7 +172,7 @@ class AR_Tracking_for_Dressing(object):
                         if axis[np.argmax(np.abs(axis))] < 0.:
                             angle *= -1.
 
-                        print 'Error (x, y, theta(z)):', current_B_target[0, 3], current_B_target[1, 3], angle
+                        print 'Error (x, y, theta(z)):', current_B_target[0, 3], current_B_target[1, 3], m.degrees(angle)
 
     def shift_to_ground(self, this_map_B_ar):
         with self.frame_lock:
@@ -178,33 +180,22 @@ class AR_Tracking_for_Dressing(object):
             # self.listener.waitForTransform('/torso_lift_link', '/base_footprint', now, rospy.Duration(5))
             # (trans, rot) = self.listener.lookupTransform('/torso_lift_link', '/base_footprint', now)
 
-            ar_rotz_B = np.eye(4)
-            ar_rotz_B[0:2, 0:2] = np.array([[-1, 0], [0, -1]])
-
-            ar_roty_B = np.eye(4)
-            ar_roty_B[0:3, 0:3] = np.array([[0, 0, 1], [0, 1, 0], [-1, 0, 0]])
-            ar_rotx_B = np.eye(4)
-            # ar_rotx_B[1:3, 1:3] = np.array([[0,1],[-1,0]])
-            orig_B_properly_oriented = np.matrix(ar_roty_B) * np.matrix(ar_rotz_B)
-
-            this_map_B_ar = this_map_B_ar * orig_B_properly_oriented.I
-
             z_origin = np.array([0, 0, 1])
-            x_bed = np.array([this_map_B_ar[0, 0], this_map_B_ar[1, 0], this_map_B_ar[2, 0]])
+            x_bed = np.array([this_map_B_ar[0, 2], this_map_B_ar[1, 2], this_map_B_ar[2, 2]])
             y_bed_project = np.cross(z_origin, x_bed)
             y_bed_project = y_bed_project / np.linalg.norm(y_bed_project)
             x_bed_project = np.cross(y_bed_project, z_origin)
             x_bed_project = x_bed_project / np.linalg.norm(x_bed_project)
             map_B_ar_project = np.eye(4)
-            for i in xrange(3):
-                map_B_ar_project[i, 0] = x_bed_project[i]
-                map_B_ar_project[i, 1] = y_bed_project[i]
-                map_B_ar_project[i, 3] = this_map_B_ar[i, 3]
+            #for i in xrange(3):
+            map_B_ar_project[0:3, 0] = x_bed_project
+            map_B_ar_project[0:3, 1] = y_bed_project
+            map_B_ar_project[0:3, 2] = z_origin
+            map_B_ar_project[0, 3] = this_map_B_ar[0, 3]
+            map_B_ar_project[1, 3] = this_map_B_ar[1, 3]
             # liftlink_B_footprint = createBMatrix(trans, rot)
 
-            map_B_ar_floor = copy.deepcopy(np.matrix(map_B_ar_project))
-            map_B_ar_floor[2, 3] = 0.
-            return map_B_ar_floor
+            return map_B_ar_project
 
 if __name__ == '__main__':
     rospy.init_node('dressing_ar_tag_tracking')
@@ -214,6 +205,6 @@ if __name__ == '__main__':
     p.add_option('--model', action='store', dest='model', default='lab_wheelchair', type='string',
                  help='Select what AR tag to look for (e.g. head, autobed)')
     opt, args = p.parse_args()
-    tracker = AR_Tracking_for_Dressing(opt.mode)
+    tracker = AR_Tracking_for_Dressing(opt.model)
     rospy.spin()
 
