@@ -12,6 +12,24 @@
         args="192.168.0.123 --rate 100" respawn="false">
     <remap from='netft_data' to='/force_torque_pr2_sleeve' />
   </node>
+  
+  <arg name="marker_size" default="15.0" />
+    <!--<arg name="marker_size" default="13.3" />-->
+    <arg name="max_new_marker_error" default="0.05" />
+    <arg name="max_track_error" default="0.2" />
+
+    <arg name="cam_image_topic" default="/head_mount_kinect/qhd/image_color" />
+    <!--<arg name="cam_image_topic" default="/head_mount_kinect/qhd/points" />-->
+    <arg name="cam_info_topic" default="/head_mount_kinect/qhd/camera_info" />
+    <!--<arg name="cam_image_topic" default="/camera/depth_registered/points" /> -->
+    <!--<arg name="cam_info_topic" default="/camera/rgb/camera_info" /> -->
+    <arg name="output_frame" default="base_link" />
+
+
+    <!-- Vision sensor -->
+    <node name="ar_track_alvar" pkg="ar_track_alvar" type="individualMarkersNoKinect"
+          respawn="false"
+          args="$(arg marker_size) $(arg max_new_marker_error) $(arg max_track_error) $(arg cam_image_topic) $(arg cam_info_topic) $(arg output_frame)" />
 
   
   <node pkg="hrl_dressing" name="capacitive_sensor" type="capacitancepublisher.py"
