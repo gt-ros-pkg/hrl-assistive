@@ -37,6 +37,7 @@ from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from sensor_msgs.msg import JointState
 from ar_track_alvar_msgs.msg import AlvarMarkers
 from pr2_controllers_msgs.msg import PointHeadGoal, PointHeadActionGoal
+from hrl_msgs.msg import FloatArrayBare
 
 
 # Class that runs the performance of the dressing task on a person using a PR2.
@@ -372,12 +373,17 @@ class TOORAD_Dressing_PR2(object):
                                                                [m.sin(th), m.cos(th), 0., y],
                                                                [0., 0., 1., 0.],
                                                                [0., 0., 0., 1.]])
-
-                            self.head_track_AR_pub = rospy.Publisher('/head_traj_controller/point_head_action/goal',
-                                                                     PointHeadActionGoal, queue_size=1)
+                            self.goal_pr2_pose_pub = rospy.Publisher('/dressing_pr2_pose',
+                                                                     FloatArrayBare, queue_size=1)
+                            self.ar_tracking_trigger_pub = rospy.Publisher('/dressing_ar_tracking_start',
+                                                                     Bool, queue_size=1)
                             rospy.sleep(0.3)
-                            self.ar_tag_subscriber = rospy.Subscriber("/ar_pose_marker", AlvarMarkers,
-                                                                      self.arTagCallback)
+                            pr2_pose_out = FloatArrayBare()
+                            pr2_pose_out.data = [x, y, th]
+                            self.goal_pr2_pose_pub.publish(pr2_pose_out)
+                            start_tracking = Bool()
+                            start_tracking.data = True
+                            self.ar_tracking_trigger_pub.publish(start_tracking)
                         inp = raw_input('\nPress enter when complete. Head will stop tracking. Or enter Y (y) to '
                                         'continue with the task while keeping tracking on\n')
                         if len(inp) == 0:
@@ -509,76 +515,6 @@ class TOORAD_Dressing_PR2(object):
         else:
             print 'I do not recognize the machine type. Try again!'
             return
-
-    def arTagCallback(self, msg):
-        with self.frame_lock:
-            if self.start_tracking_ar_tag:
-                markers = msg.markers
-                for i in xrange(len(markers)):
-                    if markers[i].id == self.tag_id:
-                        cur_p = np.array([markers[i].pose.pose.position.x,
-                                          markers[i].pose.pose.position.y,
-                                          markers[i].pose.pose.position.z])
-                        cur_q = np.array([markers[i].pose.pose.orientation.x,
-                                          markers[i].pose.pose.orientation.y,
-                                          markers[i].pose.pose.orientation.z,
-                                          markers[i].pose.pose.orientation.w])
-                current_pr2_B_ar = createBMatrix(cur_p, cur_q)
-                current_pr2_B_ar_ground = self.shift_to_ground(current_pr2_B_ar)
-                current_pr2_B_wheelchair = Bmat_to_pos_quat(current_pr2_B_ar_ground * self.wheelchair_B_ar_ground.I)
-
-                self.point.point.x = cur_p[0]
-                self.point.point.y = cur_p[1]
-                self.point.point.z = cur_p[2]
-                self.goal.target = self.point
-
-                self.goal.pointing_axis.x = 1
-                self.goal.pointing_axis.y = 0
-                self.goal.pointing_axis.z = 0
-
-                self.action_goal.goal = self.goal
-                self.head_track_AR_pub.publish(self.action_goal)
-
-                current_B_target = current_pr2_B_wheelchair*self.wheelchair_B_pr2
-                angle, axis, junk_point = tft.rotation_from_matrix(current_B_target)
-                if axis[np.argmax(np.abs(axis))] < 0.:
-                    angle *= -1.
-
-                print 'Error (x, y, theta(z)):', current_B_target[0, 3], current_B_target[1, 3], angle
-
-    def shift_to_ground(self, this_map_B_ar):
-        with self.frame_lock:
-            # now = rospy.Time.now()
-            # self.listener.waitForTransform('/torso_lift_link', '/base_footprint', now, rospy.Duration(5))
-            # (trans, rot) = self.listener.lookupTransform('/torso_lift_link', '/base_footprint', now)
-
-            ar_rotz_B = np.eye(4)
-            ar_rotz_B[0:2, 0:2] = np.array([[-1, 0], [0, -1]])
-
-            ar_roty_B = np.eye(4)
-            ar_roty_B[0:3, 0:3] = np.array([[0, 0, 1], [0, 1, 0], [-1, 0, 0]])
-            ar_rotx_B = np.eye(4)
-            # ar_rotx_B[1:3, 1:3] = np.array([[0,1],[-1,0]])
-            orig_B_properly_oriented = np.matrix(ar_roty_B) * np.matrix(ar_rotz_B)
-
-            this_map_B_ar = this_map_B_ar * orig_B_properly_oriented.I
-
-            z_origin = np.array([0, 0, 1])
-            x_bed = np.array([this_map_B_ar[0, 0], this_map_B_ar[1, 0], this_map_B_ar[2, 0]])
-            y_bed_project = np.cross(z_origin, x_bed)
-            y_bed_project = y_bed_project / np.linalg.norm(y_bed_project)
-            x_bed_project = np.cross(y_bed_project, z_origin)
-            x_bed_project = x_bed_project / np.linalg.norm(x_bed_project)
-            map_B_ar_project = np.eye(4)
-            for i in xrange(3):
-                map_B_ar_project[i, 0] = x_bed_project[i]
-                map_B_ar_project[i, 1] = y_bed_project[i]
-                map_B_ar_project[i, 3] = this_map_B_ar[i, 3]
-            # liftlink_B_footprint = createBMatrix(trans, rot)
-
-            map_B_ar_floor = copy.deepcopy(np.matrix(map_B_ar_project))
-            map_B_ar_floor[2, 3] = 0.
-            return map_B_ar_floor
 
     def begin_dressing_trajectory_from_vision(self):
         # TODO Execute trajectory following the pose estimated using vision
