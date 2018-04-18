@@ -1437,6 +1437,7 @@ class DressingSimulationProcess(object):
                                          + ',' + str("{:.5f}".format(params[3]))
                                          + ',' + str("{:.5f}".format(this_score))
                                          + '\n')
+                    return this_score
                 if angle_upperarm_from_straight_ahead > -10.:
                     this_score = 10. + 10. + 1. + 1. * (-10. - angle_upperarm_from_horizontal)
                     if self.save_all_results:
@@ -1448,6 +1449,7 @@ class DressingSimulationProcess(object):
                                          + ',' + str("{:.5f}".format(params[3]))
                                          + ',' + str("{:.5f}".format(this_score))
                                          + '\n')
+                    return this_score
                 if angle_upperarm_from_straight_ahead < -93.:
                     this_score = 10. + 10. + 1. + 1. * (angle_upperarm_from_horizontal + 93.)
                     if self.save_all_results:
@@ -1459,6 +1461,7 @@ class DressingSimulationProcess(object):
                                          + ',' + str("{:.5f}".format(params[3]))
                                          + ',' + str("{:.5f}".format(this_score))
                                          + '\n')
+                    return this_score
 
             elif 'left' in self.subtask:
                 if params[3] < m.radians(10.):
@@ -1485,6 +1488,7 @@ class DressingSimulationProcess(object):
                                          + ',' + str("{:.5f}".format(params[3]))
                                          + ',' + str("{:.5f}".format(this_score))
                                          + '\n')
+                    return this_score
                 if angle_upperarm_from_straight_ahead < 30.:
                     this_score = 10. + 10. + 1. + 1. * (angle_upperarm_from_horizontal - 30.)
                     if self.save_all_results:
@@ -1496,6 +1500,7 @@ class DressingSimulationProcess(object):
                                          + ',' + str("{:.5f}".format(params[3]))
                                          + ',' + str("{:.5f}".format(this_score))
                                          + '\n')
+                    return this_score
                 if angle_upperarm_from_straight_ahead > 93.:
                     this_score = 10. + 10. + 1. + 1. * (angle_upperarm_from_horizontal + 93.)
                     if self.save_all_results:
@@ -1507,6 +1512,7 @@ class DressingSimulationProcess(object):
                                          + ',' + str("{:.5f}".format(params[3]))
                                          + ',' + str("{:.5f}".format(this_score))
                                          + '\n')
+                    return this_score
 
 
 #        if fixed_points_exceeded_amount <= 0:
