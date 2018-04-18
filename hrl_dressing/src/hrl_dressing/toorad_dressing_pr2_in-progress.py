@@ -378,9 +378,15 @@ class TOORAD_Dressing_PR2(object):
                             rospy.sleep(0.3)
                             self.ar_tag_subscriber = rospy.Subscriber("/ar_pose_marker", AlvarMarkers,
                                                                       self.arTagCallback)
-                        inp = raw_input('\nPress enter when complete. Head will stop tracking. \n')
-                        self.start_tracking_ar_tag = False
-                        self.ar_tag_subscriber.unregister()
+                        inp = raw_input('\nPress enter when complete. Head will stop tracking. Or enter Y (y) to '
+                                        'continue with the task while keeping tracking on\n')
+                        if len(inp) == 0:
+                            self.start_tracking_ar_tag = False
+                            self.ar_tag_subscriber.unregister()
+                        elif inp.upper()[0] == 'Y':
+                            pass
+
+
 
                     import actionlib
                     from pr2_controllers_msgs.msg import SingleJointPositionActionGoal, SingleJointPositionAction, SingleJointPositionGoal
