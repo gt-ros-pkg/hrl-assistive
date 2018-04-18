@@ -1191,7 +1191,7 @@ class DressingSimulationProcess(object):
                                          + '\n')
                     return this_score
                 if angle_upperarm_from_horizontal < 0.:
-                    this_score = 10. + 10. + 1. + 10. * (0. - angle_upperarm_from_horizontal)
+                    this_score = 10. + 10. + 1. + 1. * (0. - angle_upperarm_from_horizontal)
                     if self.save_all_results:
                         with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
                             myfile.write(str(self.subtask_step)
@@ -2065,7 +2065,7 @@ class DressingSimulationProcess(object):
             graph.value['end'] = 0
             for goal_i in xrange(len(all_sols)):
                 for sol_i in xrange(len(all_sols[goal_i])):
-                    if goal_i <=1:
+                    if goal_i <=1 and ('forearm' in self.subtask or 'all' in self.subtask):
                         check_gown_chair_collision = True
                     else: 
                         check_gown_chair_collision = False
@@ -2795,7 +2795,7 @@ if __name__ == "__main__":
     model_choices = ['fullbody_50percentile_capsule.skel', 'fullbody_henryclever_capsule.skel', 'fullbody_participant0_capsule.skel']
 
     optimizer = DressingMultiProcessOptimization( number_of_processes=0, visualize=False, model=model_choices[2])
-    optimizer.optimize_entire_dressing_task(reset_file=False, break_arm_tasks_into_two_subtasks=False)
+    optimizer.optimize_entire_dressing_task(reset_file=False, break_arm_tasks_into_two_subtasks=True)
     # outer_elapsed_time = rospy.Time.now()-outer_start_time
     print 'Everything is complete!'
     # print 'Done with optimization. Total time elapsed:', outer_elapsed_time.to_sec()
