@@ -65,17 +65,18 @@ NUM_RESTART = 1
 
 
 class SimulatorPool(object):
-    def __init__(self, population, visualize=False):
+    def __init__(self, population, model, visualize=False):
         self.simulatorPool = mp.Manager().Queue()
         print 'SIMULATOR POOL SIZE IS', population
         for _ in xrange(population):
-            simulator_process = BaseEmptySimulationProcess(process_number=_, visualize=visualize)
+            simulator_process = BaseEmptySimulationProcess(process_number=_, visualize=visualize, model=model)
             self.simulatorPool.put(simulator_process)
 
 
 class BaseEmptySimulationProcess(object):
-    def __init__(self, process_number=0, visualize=False):
+    def __init__(self, process_number=0, visualize=False, model='fullbody_participant0_capsule.skel'):
         self.process_number = process_number
+        self.model = model
         self.visualize = visualize
         self.optimizer = None
         self.simulator_started = False
@@ -83,7 +84,7 @@ class BaseEmptySimulationProcess(object):
 
     def start_dressing_simulation_process(self):
         self.optimizer = DressingSimulationProcess(process_number=self.process_number,
-                                                   visualize=self.visualize, model='fullbody_participant0_capsule.skel')
+                                                   visualize=self.visualize, model=self.model)
 #                                                   visualize=self.visualize, model='fullbody_henryclever_capsule.skel')
         self.optimizer.save_all_results = True
         self.simulator_started = True
@@ -260,7 +261,7 @@ def chunker(seq, size):
     return (seq[pos:pos + size] for pos in xrange(0, len(seq), size))
 
 class DressingMultiProcessOptimization(object):
-    def __init__(self, number_of_processes=0, visualize=False):
+    def __init__(self, number_of_processes=0, visualize=False, model='fullbody_participant0_capsule.skel'):
         rospack = rospkg.RosPack()
         self.pkg_path = rospack.get_path('hrl_base_selection')
         self.save_file_path = self.pkg_path + '/data/'
@@ -270,7 +271,7 @@ class DressingMultiProcessOptimization(object):
 
         # self.model = 'fullbody_50percentile_capsule.skel'
         # self.model = 'fullbody_henryclever_capsule.skel'
-        self.model = 'fullbody_participant0_capsule.skel'
+        self.model = model
 
         self.arm_config_min = np.array([m.radians(-5.), m.radians(-10.), m.radians(-10.),
                                         0.])
@@ -284,28 +285,30 @@ class DressingMultiProcessOptimization(object):
             self.processCnt = mp.cpu_count()
         else:
             self.processCnt = number_of_processes
-        simulatorPool = SimulatorPool(self.processCnt, visualize=visualize).simulatorPool
+        simulatorPool = SimulatorPool(self.processCnt, model=self.model, visualize=visualize).simulatorPool
         self.pool = mp.Pool(self.processCnt, _init, (simulatorPool,))
         # self.pool.map(test_process_function, ['here']*self.processCnt)
         # self.pool.map(test_process_function, ['here'] * self.processCnt)
         # self.pool.map_async(initialize_process, [0]*self.processCnt)
         # time.sleep(0.1)
 
-    def optimize_entire_dressing_task(self, reset_file=False):
+    def optimize_entire_dressing_task(self, model=None, break_arm_tasks_into_two_subtasks=True, reset_file=False):
         if reset_file:
             open(self.save_file_path + self.save_file_name_coarse_feasible, 'w').close()
             open(self.save_file_path + self.save_file_name_fine_output, 'w').close()
             open(self.save_file_path + self.save_file_name_final_output, 'w').close()
 
+        if break_arm_tasks_into_two_subtasks:
         # subtask_list = ['right_forearm', 'right_upperarm', 'left_forearm', 'left_upperarm']
-        subtask_list = ['left_forearm', 'left_upperarm', 'right_forearm', 'right_upperarm']
-        # subtask_list = ['leftarm', 'rightarm']
-        # subtask_list = ['leftarm']
-        robot_arm_to_use = ['rightarm', 'rightarm', 'rightarm', 'rightarm']
-        all_fixed_points_to_use = [[], [], [0], [0]]
-        all_stretch_allowable = [[], [], [0.46], [0.46]]
-        # all_fixed_points_to_use = [[0], [0]]
-        # all_stretch_allowable = [[0.5], [0.5]]
+            subtask_list = ['left_forearm', 'left_upperarm', 'right_forearm', 'right_upperarm']
+            robot_arm_to_use = ['rightarm', 'rightarm', 'rightarm', 'rightarm']
+            all_fixed_points_to_use = [[], [], [0], [0]]
+            all_stretch_allowable = [[], [], [0.46], [0.46]]
+        else:
+            subtask_list = ['left_all', 'right_all']
+            robot_arm_to_use = ['rightarm', 'rightarm']
+            all_fixed_points_to_use = [[], [0]]
+            all_stretch_allowable = [[], [0.46]]
         all_fixed_points = self.pool.apply(find_fixed_points, [[subtask_list[0],
                                                                robot_arm_to_use[0],
                                                                0,
@@ -345,8 +348,8 @@ class DressingMultiProcessOptimization(object):
                                            all_fixed_points)
             print 'completed fine optimization for ', subtask
 
-        #self.combine_process_files(self.save_file_path + 'arm_configs_fine',
-        #                           self.save_file_path + 'arm_configs_fine_combined.log')
+        self.combine_process_files(self.save_file_path + 'arm_configs_fine',
+                                   self.save_file_path + 'arm_configs_fine_combined.log')
 
         for subtask_number, subtask in enumerate(subtask_list):
             if True:
@@ -943,6 +946,16 @@ class DressingSimulationProcess(object):
                 origin_B_traj_waypoint = copy.copy(np.matrix(origin_B_traj_start) *
                                                    np.matrix(traj_start_B_traj_waypoint))
                 goals.append(copy.copy(origin_B_traj_waypoint))
+
+        if 'upperarm' in subtask and not 'forearm' in subtask and not 'all' in subtask:
+            path_distance = np.linalg.norm(np.array(origin_B_traj_start)[0:3, 3] -
+                                           np.array(origin_B_traj_forearm_end)[0:3, 3])
+            traj_start_B_traj_waypoint = np.matrix(np.eye(4))
+            traj_start_B_traj_waypoint[0, 3] = path_distance
+            origin_B_traj_waypoint = copy.copy(np.matrix(origin_B_traj_start) *
+                                               np.matrix(traj_start_B_traj_waypoint))
+            goals.append(copy.copy(origin_B_traj_waypoint))
+
 
         # Goals along upper arm
         if 'upperarm' in subtask or 'all' in subtask:
@@ -1623,34 +1636,7 @@ class DressingSimulationProcess(object):
             #     if self.final_pr2_optimization:
             #         this_path = self.this_path_traj
                     # this_sols = self.this_sols
-        if self.final_pr2_optimization:
-            x = self.this_best_pr2_config[0]
-            y = self.this_best_pr2_config[1]
-            th = self.this_best_pr2_config[2]
-            z = self.this_best_pr2_config[3]
-            origin_B_pr2 = np.matrix([[ m.cos(th), -m.sin(th),     0.,         x],
-                                      [ m.sin(th),  m.cos(th),     0.,         y],
-                                      [        0.,         0.,     1.,        0.],
-                                      [        0.,         0.,     0.,        1.]])
-            pr2_B_goals = []
-            for goal in self.goals:
-                pr2_B_goals.append(origin_B_pr2.I*np.matrix(goal)*self.gripper_B_tool.I)
-            self.trajectory_pickle_output.extend([params,
-                                                  z,
-                                                  self.this_best_pr2_config,
-                                                  pr2_B_goals,
-                                                  origin_B_pr2.I*origin_B_forearm_pointed_down_arm,
-                                                  origin_B_pr2.I*origin_B_upperarm_pointed_down_shoulder,
-                                                  origin_B_pr2.I*origin_B_hand,
-                                                  origin_B_pr2.I*origin_B_wrist,
-                                                  origin_B_pr2.I*origin_B_traj_start,
-                                                  origin_B_pr2.I*origin_B_traj_forearm_end,
-                                                  origin_B_pr2.I*origin_B_traj_upper_end,
-                                                  origin_B_pr2.I*origin_B_traj_final_end,
-                                                  #forearm_B_upper_arm,
-                                                  self.this_path_traj])
-            print 'Final path trajectory:\n', self.this_path_traj
-            print 'Final path:\n', self.this_path
+
         #print 'This arm config is:\n',params
         #print 'Best PR2 configuration for this arm config so far: \n', self.this_best_pr2_config
         #print 'Associated score: ', self.this_best_pr2_score
@@ -1666,6 +1652,40 @@ class DressingSimulationProcess(object):
         beta = 1.  # cost on kinematics
         eta = 5.  # Cost on exceeded garment stretch by a small amount
         zeta = 0.5  # cost on torque
+
+        if self.final_pr2_optimization:
+            x = self.this_best_pr2_config[0]
+            y = self.this_best_pr2_config[1]
+            th = self.this_best_pr2_config[2]
+            z = self.this_best_pr2_config[3]
+            origin_B_pr2 = np.matrix([[ m.cos(th), -m.sin(th),     0.,         x],
+                                      [ m.sin(th),  m.cos(th),     0.,         y],
+                                      [        0.,         0.,     1.,        0.],
+                                      [        0.,         0.,     0.,        1.]])
+            pr2_B_goals = []
+            for goal in self.goals:
+                pr2_B_goals.append(origin_B_pr2.I*np.matrix(goal)*self.gripper_B_tool.I)
+
+            physx_score = self.force_cost * alpha + torque_cost * zeta
+            this_score = physx_score + self.this_best_pr2_score * beta + fixed_points_exceeded_amount * eta
+            self.trajectory_pickle_output.extend([params,
+                                                  z,
+                                                  self.this_best_pr2_config,self.this_best_pr2_score,
+                                                  physx_score, this_score,
+                                                  pr2_B_goals,
+                                                  origin_B_pr2.I*origin_B_forearm_pointed_down_arm,
+                                                  origin_B_pr2.I*origin_B_upperarm_pointed_down_shoulder,
+                                                  origin_B_pr2.I*origin_B_hand,
+                                                  origin_B_pr2.I*origin_B_wrist,
+                                                  origin_B_pr2.I*origin_B_traj_start,
+                                                  origin_B_pr2.I*origin_B_traj_forearm_end,
+                                                  origin_B_pr2.I*origin_B_traj_upper_end,
+                                                  origin_B_pr2.I*origin_B_traj_final_end,
+                                                  #forearm_B_upper_arm,
+                                                  self.this_path_traj])
+            print 'Final path trajectory:\n', self.this_path_traj
+            print 'Final path:\n', self.this_path
+
         if self.this_best_pr2_score < 0.:
             physx_score = self.force_cost*alpha + torque_cost*zeta
             this_score = physx_score + self.this_best_pr2_score*beta + fixed_points_exceeded_amount*eta
@@ -2755,8 +2775,10 @@ if __name__ == "__main__":
     # pkg_path = rospack.get_path('hrl_base_selection')
     # skel_file = pkg_path + '/models/' + filename
 
-    optimizer = DressingMultiProcessOptimization(number_of_processes=0, visualize=False)
-    optimizer.optimize_entire_dressing_task(reset_file=False)
+    model_choices = ['fullbody_50percentile_capsule.skel', 'fullbody_henryclever_capsule.skel', 'fullbody_participant0_capsule.skel']
+
+    optimizer = DressingMultiProcessOptimization( number_of_processes=0, visualize=False, model=model_choices[1])
+    optimizer.optimize_entire_dressing_task(reset_file=False, break_arm_tasks_into_two_subtasks=False)
     # outer_elapsed_time = rospy.Time.now()-outer_start_time
     print 'Everything is complete!'
     # print 'Done with optimization. Total time elapsed:', outer_elapsed_time.to_sec()
