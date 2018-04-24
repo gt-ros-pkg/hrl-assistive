@@ -454,6 +454,9 @@ class DressingMultiProcessOptimization(object):
         OPTIONS['CMA_stds'] = list(parameters_scaling)
 
         init_start_arm_configs = self.find_clusters(self.save_file_name_coarse_feasible, subtask_n)
+        if init_start_arm_configs is None:
+            print 'There are no clusters to initialize optimization because there are no feasible configs found in the grid search'
+            return
         print 'found arm configuration clusters'
         #print init_start_arm_configs
         best_result = [[], 10000.]
@@ -597,7 +600,11 @@ class DressingMultiProcessOptimization(object):
         feasible_configs = np.array(feasible_configs)
         feasible_configs = np.array([x[1:5] for x in feasible_configs if int(x[0]) == subtask_number])
         print 'Number of feasible configs\n', len(feasible_configs), 'for subtask', subtask_number
-        kmeans = KMeans(n_clusters=3).fit(feasible_configs)
+        if len(feasible_configs)>0:
+            kmeans = KMeans(n_clusters=3).fit(feasible_configs)
+            return kmeans.cluster_centers_
+        else:
+            return None
         '''
         cluster_count = 0
         clusters = [[]]
@@ -635,7 +642,7 @@ class DressingMultiProcessOptimization(object):
         
         return cluster_means
         '''
-        return kmeans.cluster_centers_
+
 
 
 class DressingSimulationProcess(object):
@@ -1135,7 +1142,7 @@ class DressingSimulationProcess(object):
                     return this_score
 
                 if angle_upperarm_from_horizontal < 0.:
-                    this_score = 10. + 10. + 1. + 10. * (0. - angle_upperarm_from_horizontal)
+                    this_score = 10. + 10. + 1. + 1. * (0. - angle_upperarm_from_horizontal)
                     if self.save_all_results:
                         with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
                             myfile.write(str(self.subtask_step)
@@ -1145,6 +1152,7 @@ class DressingSimulationProcess(object):
                                          + ',' + str("{:.5f}".format(params[3]))
                                          + ',' + str("{:.5f}".format(this_score))
                                          + '\n')
+                    return this_score
                 if angle_upperarm_from_straight_ahead > -10.:
                     this_score = 10. + 10. + 1. + 1. * (-10. - angle_upperarm_from_horizontal)
                     if self.save_all_results:
@@ -1156,6 +1164,7 @@ class DressingSimulationProcess(object):
                                          + ',' + str("{:.5f}".format(params[3]))
                                          + ',' + str("{:.5f}".format(this_score))
                                          + '\n')
+                    return this_score
                 if angle_upperarm_from_straight_ahead < -93.:
                     this_score = 10. + 10. + 1. + 1. * (angle_upperarm_from_horizontal + 93.)
                     if self.save_all_results:
@@ -1167,7 +1176,7 @@ class DressingSimulationProcess(object):
                                          + ',' + str("{:.5f}".format(params[3]))
                                          + ',' + str("{:.5f}".format(this_score))
                                          + '\n')
-
+                    return this_score
             elif 'left' in self.subtask:
                 if params[3] < m.radians(10.):
                     this_score = 10. + 10. + 1. + 10. * (m.radians(10.) - params[3])
@@ -1181,9 +1190,8 @@ class DressingSimulationProcess(object):
                                          + ',' + str("{:.5f}".format(this_score))
                                          + '\n')
                     return this_score
-
                 if angle_upperarm_from_horizontal < 0.:
-                    this_score = 10. + 10. + 1. + 10. * (0. - angle_upperarm_from_horizontal)
+                    this_score = 10. + 10. + 1. + 1. * (0. - angle_upperarm_from_horizontal)
                     if self.save_all_results:
                         with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
                             myfile.write(str(self.subtask_step)
@@ -1193,6 +1201,7 @@ class DressingSimulationProcess(object):
                                          + ',' + str("{:.5f}".format(params[3]))
                                          + ',' + str("{:.5f}".format(this_score))
                                          + '\n')
+                    return this_score
                 if angle_upperarm_from_straight_ahead < 30.:
                     this_score = 10. + 10. + 1. + 1. * (angle_upperarm_from_horizontal - 30.)
                     if self.save_all_results:
@@ -1204,6 +1213,7 @@ class DressingSimulationProcess(object):
                                          + ',' + str("{:.5f}".format(params[3]))
                                          + ',' + str("{:.5f}".format(this_score))
                                          + '\n')
+                    return this_score
                 if angle_upperarm_from_straight_ahead > 93.:
                     this_score = 10. + 10. + 1. + 1. * (angle_upperarm_from_horizontal + 93.)
                     if self.save_all_results:
@@ -1215,6 +1225,7 @@ class DressingSimulationProcess(object):
                                          + ',' + str("{:.5f}".format(params[3]))
                                          + ',' + str("{:.5f}".format(this_score))
                                          + '\n')
+                    return this_score
 
         if fixed_points_exceeded_amount > 0.:
             # print 'The gown is being stretched too much to try to do the next part of the task.'
@@ -1423,7 +1434,7 @@ class DressingSimulationProcess(object):
                     return this_score
 
                 if angle_upperarm_from_horizontal < 0.:
-                    this_score = 10. + 10. + 1. + 10. * (0. - angle_upperarm_from_horizontal)
+                    this_score = 10. + 10. + 1. + 1. * (0. - angle_upperarm_from_horizontal)
                     if self.save_all_results:
                         with open(self.save_file_path + self.save_file_name_fine_raw, 'a') as myfile:
                             myfile.write(str(self.subtask_step)
@@ -1433,6 +1444,7 @@ class DressingSimulationProcess(object):
                                          + ',' + str("{:.5f}".format(params[3]))
                                          + ',' + str("{:.5f}".format(this_score))
                                          + '\n')
+                    return this_score
                 if angle_upperarm_from_straight_ahead > -10.:
                     this_score = 10. + 10. + 1. + 1. * (-10. - angle_upperarm_from_horizontal)
                     if self.save_all_results:
@@ -1444,6 +1456,7 @@ class DressingSimulationProcess(object):
                                          + ',' + str("{:.5f}".format(params[3]))
                                          + ',' + str("{:.5f}".format(this_score))
                                          + '\n')
+                    return this_score
                 if angle_upperarm_from_straight_ahead < -93.:
                     this_score = 10. + 10. + 1. + 1. * (angle_upperarm_from_horizontal + 93.)
                     if self.save_all_results:
@@ -1455,6 +1468,7 @@ class DressingSimulationProcess(object):
                                          + ',' + str("{:.5f}".format(params[3]))
                                          + ',' + str("{:.5f}".format(this_score))
                                          + '\n')
+                    return this_score
 
             elif 'left' in self.subtask:
                 if params[3] < m.radians(10.):
@@ -1471,7 +1485,7 @@ class DressingSimulationProcess(object):
                     return this_score
 
                 if angle_upperarm_from_horizontal < 0.:
-                    this_score = 10. + 10. + 1. + 10. * (0. - angle_upperarm_from_horizontal)
+                    this_score = 10. + 10. + 1. + 1. * (0. - angle_upperarm_from_horizontal)
                     if self.save_all_results:
                         with open(self.save_file_path + self.save_file_name_fine_raw, 'a') as myfile:
                             myfile.write(str(self.subtask_step)
@@ -1481,6 +1495,7 @@ class DressingSimulationProcess(object):
                                          + ',' + str("{:.5f}".format(params[3]))
                                          + ',' + str("{:.5f}".format(this_score))
                                          + '\n')
+                    return this_score
                 if angle_upperarm_from_straight_ahead < 30.:
                     this_score = 10. + 10. + 1. + 1. * (angle_upperarm_from_horizontal - 30.)
                     if self.save_all_results:
@@ -1492,6 +1507,7 @@ class DressingSimulationProcess(object):
                                          + ',' + str("{:.5f}".format(params[3]))
                                          + ',' + str("{:.5f}".format(this_score))
                                          + '\n')
+                    return this_score
                 if angle_upperarm_from_straight_ahead > 93.:
                     this_score = 10. + 10. + 1. + 1. * (angle_upperarm_from_horizontal + 93.)
                     if self.save_all_results:
@@ -1503,6 +1519,7 @@ class DressingSimulationProcess(object):
                                          + ',' + str("{:.5f}".format(params[3]))
                                          + ',' + str("{:.5f}".format(this_score))
                                          + '\n')
+                    return this_score
 
 
 #        if fixed_points_exceeded_amount <= 0:
@@ -2048,7 +2065,7 @@ class DressingSimulationProcess(object):
             graph.value['end'] = 0
             for goal_i in xrange(len(all_sols)):
                 for sol_i in xrange(len(all_sols[goal_i])):
-                    if goal_i <=1:
+                    if goal_i <=1 and ('forearm' in self.subtask or 'all' in self.subtask):
                         check_gown_chair_collision = True
                     else: 
                         check_gown_chair_collision = False
@@ -2777,8 +2794,8 @@ if __name__ == "__main__":
 
     model_choices = ['fullbody_50percentile_capsule.skel', 'fullbody_henryclever_capsule.skel', 'fullbody_participant0_capsule.skel']
 
-    optimizer = DressingMultiProcessOptimization( number_of_processes=0, visualize=False, model=model_choices[1])
-    optimizer.optimize_entire_dressing_task(reset_file=False, break_arm_tasks_into_two_subtasks=False)
+    optimizer = DressingMultiProcessOptimization( number_of_processes=0, visualize=False, model=model_choices[2])
+    optimizer.optimize_entire_dressing_task(reset_file=False, break_arm_tasks_into_two_subtasks=True)
     # outer_elapsed_time = rospy.Time.now()-outer_start_time
     print 'Everything is complete!'
     # print 'Done with optimization. Total time elapsed:', outer_elapsed_time.to_sec()

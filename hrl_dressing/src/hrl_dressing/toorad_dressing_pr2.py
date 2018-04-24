@@ -170,20 +170,20 @@ class TOORAD_Dressing_PR2(object):
                     return
                 elif arm.upper()[0] == '0':
                     subtask = 0
-                    h_arm = 'right_forearm'
-                    h_opposite_arm = 'leftarm'
-                elif arm.upper()[0] == '1':
-                    subtask = 1
-                    h_arm = 'right_upperarm'
-                    h_opposite_arm = 'leftarm'
-                elif arm.upper()[0] == '2':
-                    subtask = 2
                     h_arm = 'left_forearm'
                     h_opposite_arm = 'rightarm'
-                elif arm.upper()[0] == '3':
-                    subtask = 3
+                elif arm.upper()[0] == '1':
+                    subtask = 1
                     h_arm = 'left_upperarm'
                     h_opposite_arm = 'rightarm'
+                elif arm.upper()[0] == '2':
+                    subtask = 2
+                    h_arm = 'right_forearm'
+                    h_opposite_arm = 'leftarm'
+                elif arm.upper()[0] == '3':
+                    subtask = 3
+                    h_arm = 'right_upperarm'
+                    h_opposite_arm = 'leftarm'
 
                     # h_config = configs[0][0]
                     # r_config = configs[0][1]
@@ -1006,5 +1006,5 @@ if __name__ == '__main__':
     toorad_dressing = TOORAD_Dressing_PR2(participant=opt.participant, trial=opt.participant,
                                           enable_realtime_HMM=False, visualize=opt.visualize,
                                           visually_estimate_arm_pose=False, adjust_arm_pose_visually=False,
-                                          machine=opt.machine, model=model_choices[3])
+                                          machine=opt.machine, model=model_choices[2])
 
