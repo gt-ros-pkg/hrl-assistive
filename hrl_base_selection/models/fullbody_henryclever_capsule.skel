@@ -1389,18 +1389,18 @@
         <init_vel>0 0 0</init_vel>
       </joint>
       <body name="left_armrest">
-        <transformation>0.1 -0.255 0.5875 0 0 0</transformation>
+        <transformation>0.12 -0.26 0.5875 0 0 0</transformation>
         <visualization_shape>
 					<geometry>
 						<box>
-							<size>0.4 0.05 0.295</size>
+							<size>0.44 0.06 0.385</size>
 						</box>
 					</geometry>
 				</visualization_shape>
 				<collision_shape>
 					<geometry>
 						<box>
-							<size>0.4 0.05 0.295</size>
+							<size>0.44 0.06 0.385</size>
 						</box>
 					</geometry>
 				</collision_shape>
@@ -1413,18 +1413,18 @@
         <init_vel>0 0 0</init_vel>
       </joint>
       <body name="right_armrest">
-        <transformation>0.1 0.255 0.5875 0 0 0</transformation>
+        <transformation>0.12 0.26 0.5875 0 0 0</transformation>
         <visualization_shape>
 					<geometry>
 						<box>
-							<size>0.4 0.05 0.295</size>
+							<size>0.44 0.06 0.385</size>
 						</box>
 					</geometry>
 				</visualization_shape>
 				<collision_shape>
 					<geometry>
 						<box>
-							<size>0.4 0.05 0.295</size>
+							<size>0.44 0.06 0.385</size>
 						</box>
 					</geometry>
 				</collision_shape>
@@ -1437,11 +1437,11 @@
         <init_vel>0 0 0</init_vel>
       </joint>
       <body name="left_wheel">
-        <transformation>-0.1 0.265 0.305 1.5707963 0 0</transformation>
+        <transformation>-0.1 0.275 0.305 1.5707963 0 0</transformation>
         <visualization_shape>
 					<geometry>
 						<cylinder>
-							<height>0.06</height>
+							<height>0.08</height>
               <radius>0.305</radius>
 						</cylinder>
 					</geometry>
@@ -1449,7 +1449,7 @@
 				<collision_shape>
 					<geometry>
 						<cylinder>
-							<height>0.06</height>
+							<height>0.08</height>
               <radius>0.305</radius>
 						</cylinder>
 					</geometry>
@@ -1463,11 +1463,11 @@
         <init_vel>0 0 0</init_vel>
       </joint>
       <body name="right_wheel">
-        <transformation>-0.1 -0.265 0.305 1.5707963 0 0</transformation>
+        <transformation>-0.1 -0.275 0.305 1.5707963 0 0</transformation>
         <visualization_shape>
 					<geometry>
 						<cylinder>
-							<height>0.06</height>
+							<height>0.08</height>
               <radius>0.305</radius>
 						</cylinder>
 					</geometry>
@@ -1475,7 +1475,7 @@
 				<collision_shape>
 					<geometry>
 						<cylinder>
-							<height>0.06</height>
+							<height>0.08</height>
               <radius>0.305</radius>
 						</cylinder>
 					</geometry>
@@ -1489,18 +1489,18 @@
         <init_vel>0 0 0</init_vel>
       </joint>
       <body name="front_left_wheel">
-        <transformation>0.37 0.26 0.22 0 0 0</transformation>
+        <transformation>0.39 0.26 0.22 0 0 0</transformation>
         <visualization_shape>
 					<geometry>
 						<box>
-							<size>0.23 0.06 0.44</size>
+							<size>0.27 0.06 0.44</size>
 						</box>
 					</geometry>
 				</visualization_shape>
 				<collision_shape>
 					<geometry>
 						<box>
-							<size>0.23 0.06 0.44</size>
+							<size>0.27 0.06 0.44</size>
 						</box>
 					</geometry>
 				</collision_shape>
@@ -1513,18 +1513,18 @@
         <init_vel>0 0 0</init_vel>
       </joint>
       <body name="front_right_wheel">
-        <transformation>0.37 -0.26 0.22 0 0 0</transformation>
+        <transformation>0.39 -0.26 0.22 0 0 0</transformation>
         <visualization_shape>
 					<geometry>
 						<box>
-							<size>0.23 0.06 0.44</size>
+							<size>0.27 0.06 0.44</size>
 						</box>
 					</geometry>
 				</visualization_shape>
 				<collision_shape>
 					<geometry>
 						<box>
-							<size>0.23 0.06 0.44</size>
+							<size>0.27 0.06 0.44</size>
 						</box>
 					</geometry>
 				</collision_shape>
