@@ -454,6 +454,9 @@ class DressingMultiProcessOptimization(object):
         OPTIONS['CMA_stds'] = list(parameters_scaling)
 
         init_start_arm_configs = self.find_clusters(self.save_file_name_coarse_feasible, subtask_n)
+        if init_start_arm_configs is None:
+            print 'There are no clusters to initialize optimization because there are no feasible configs found in the grid search'
+            return
         print 'found arm configuration clusters'
         #print init_start_arm_configs
         best_result = [[], 10000.]
@@ -597,7 +600,11 @@ class DressingMultiProcessOptimization(object):
         feasible_configs = np.array(feasible_configs)
         feasible_configs = np.array([x[1:5] for x in feasible_configs if int(x[0]) == subtask_number])
         print 'Number of feasible configs\n', len(feasible_configs), 'for subtask', subtask_number
-        kmeans = KMeans(n_clusters=3).fit(feasible_configs)
+        if len(feasible_configs)>0:
+            kmeans = KMeans(n_clusters=3).fit(feasible_configs)
+            return kmeans.cluster_centers_
+        else:
+            return None
         '''
         cluster_count = 0
         clusters = [[]]
@@ -635,7 +642,7 @@ class DressingMultiProcessOptimization(object):
         
         return cluster_means
         '''
-        return kmeans.cluster_centers_
+
 
 
 class DressingSimulationProcess(object):
