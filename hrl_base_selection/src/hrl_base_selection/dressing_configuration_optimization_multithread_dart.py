@@ -1064,18 +1064,18 @@ class DressingSimulationProcess(object):
         # arm = self.human_arm.split('_')[0]
         #if self.subtask_step ==1:
         #    print 'config has good neighbors', self.process_number,'\nStretch allowable:',self.stretch_allowable
-            
+        # print params
         # Set both of the human's arms in DART. The opposite arm is held by the side of the body. The arm that will be
         # dressed is set to the values of this objective function evaluation.
         self.set_human_model_dof_dart([0, 0, 0, 0], self.human_opposite_arm)
         self.set_human_model_dof_dart([params[0], params[1], params[2], params[3]], self.human_arm)
         if self.visualize:
-            rospy.sleep(0.5)
+            rospy.sleep(0.001)
 
         # Check if the person is in self collision, which means parts of the arm are in collision with anything other
         # than the shoulder or itself.
         if self.is_human_in_self_collision():
-            # print 'human is in self collision'
+            #print 'human is in self collision'
             this_score = 10. + 10. + 2. + random.random()
             if self.save_all_results:
                 with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
@@ -1129,6 +1129,7 @@ class DressingSimulationProcess(object):
         if self.model == 'fullbody_participant0_capsule.skel':
             if 'right' in self.subtask:
                 if params[3] < m.radians(30.):
+                    # print 'angle bad'
                     this_score = 10. + 10. + 1. + 10. * (m.radians(30.) - params[3])
                     if self.save_all_results:
                         with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
@@ -1142,6 +1143,7 @@ class DressingSimulationProcess(object):
                     return this_score
 
                 if angle_upperarm_from_horizontal < 0.:
+                    # print 'angle bad'
                     this_score = 10. + 10. + 1. + 1. * (0. - angle_upperarm_from_horizontal)
                     if self.save_all_results:
                         with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
@@ -1154,6 +1156,7 @@ class DressingSimulationProcess(object):
                                          + '\n')
                     return this_score
                 if angle_upperarm_from_straight_ahead > -10.:
+                    # print 'angle bad'
                     this_score = 10. + 10. + 1. + 1. * (-10. - angle_upperarm_from_horizontal)
                     if self.save_all_results:
                         with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
@@ -1166,6 +1169,7 @@ class DressingSimulationProcess(object):
                                          + '\n')
                     return this_score
                 if angle_upperarm_from_straight_ahead < -93.:
+                    # print 'angle bad'
                     this_score = 10. + 10. + 1. + 1. * (angle_upperarm_from_horizontal + 93.)
                     if self.save_all_results:
                         with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
@@ -1179,6 +1183,7 @@ class DressingSimulationProcess(object):
                     return this_score
             elif 'left' in self.subtask:
                 if params[3] < m.radians(10.):
+                    # print 'angle bad'
                     this_score = 10. + 10. + 1. + 10. * (m.radians(10.) - params[3])
                     if self.save_all_results:
                         with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
@@ -1191,6 +1196,7 @@ class DressingSimulationProcess(object):
                                          + '\n')
                     return this_score
                 if angle_upperarm_from_horizontal < 0.:
+                    # print 'angle bad'
                     this_score = 10. + 10. + 1. + 1. * (0. - angle_upperarm_from_horizontal)
                     if self.save_all_results:
                         with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
@@ -1203,6 +1209,7 @@ class DressingSimulationProcess(object):
                                          + '\n')
                     return this_score
                 if angle_upperarm_from_straight_ahead < 30.:
+                    # print 'angle bad'
                     this_score = 10. + 10. + 1. + 1. * (angle_upperarm_from_horizontal - 30.)
                     if self.save_all_results:
                         with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
@@ -1215,6 +1222,7 @@ class DressingSimulationProcess(object):
                                          + '\n')
                     return this_score
                 if angle_upperarm_from_straight_ahead > 93.:
+                    # print 'angle bad'
                     this_score = 10. + 10. + 1. + 1. * (angle_upperarm_from_horizontal + 93.)
                     if self.save_all_results:
                         with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
@@ -2065,7 +2073,7 @@ class DressingSimulationProcess(object):
             graph.value['end'] = 0
             for goal_i in xrange(len(all_sols)):
                 for sol_i in xrange(len(all_sols[goal_i])):
-                    if goal_i <=1 and ('forearm' in self.subtask or 'all' in self.subtask):
+                    if goal_i <=2 and ('forearm' in self.subtask or 'all' in self.subtask):
                         check_gown_chair_collision = True
                     else: 
                         check_gown_chair_collision = False
@@ -2794,7 +2802,7 @@ if __name__ == "__main__":
 
     model_choices = ['fullbody_50percentile_capsule.skel', 'fullbody_henryclever_capsule.skel', 'fullbody_participant0_capsule.skel']
 
-    optimizer = DressingMultiProcessOptimization( number_of_processes=0, visualize=False, model=model_choices[2])
+    optimizer = DressingMultiProcessOptimization( number_of_processes=0, visualize=False, model=model_choices[1])
     optimizer.optimize_entire_dressing_task(reset_file=False, break_arm_tasks_into_two_subtasks=True)
     # outer_elapsed_time = rospy.Time.now()-outer_start_time
     print 'Everything is complete!'
