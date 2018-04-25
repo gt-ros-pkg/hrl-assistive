@@ -86,7 +86,7 @@ class BaseEmptySimulationProcess(object):
         self.optimizer = DressingSimulationProcess(process_number=self.process_number,
                                                    visualize=self.visualize, model=self.model)
 #                                                   visualize=self.visualize, model='fullbody_henryclever_capsule.skel')
-        self.optimizer.save_all_results = False
+        self.optimizer.save_all_results = True
         self.simulator_started = True
         return True
 
@@ -325,7 +325,7 @@ class DressingMultiProcessOptimization(object):
 
         for subtask_number, subtask in enumerate(subtask_list):
             print 'starting coarse optimization for ', subtask
-            if True and 'right' in subtask:
+            if True:
                 self.run_coarse_optimization(subtask_list[subtask_number],
                                              robot_arm_to_use[subtask_number],
                                              subtask_number,
@@ -1129,7 +1129,7 @@ class DressingSimulationProcess(object):
         if self.model == 'fullbody_participant0_capsule.skel':
             if 'right' in self.subtask:
                 if params[3] < m.radians(30.):
-                    print 'angle bad'
+                    # print 'angle bad'
                     this_score = 10. + 10. + 1. + 10. * (m.radians(30.) - params[3])
                     if self.save_all_results:
                         with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
@@ -1143,7 +1143,7 @@ class DressingSimulationProcess(object):
                     return this_score
 
                 if angle_upperarm_from_horizontal < 0.:
-                    print 'angle bad'
+                    # print 'angle bad'
                     this_score = 10. + 10. + 1. + 1. * (0. - angle_upperarm_from_horizontal)
                     if self.save_all_results:
                         with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
@@ -1156,7 +1156,7 @@ class DressingSimulationProcess(object):
                                          + '\n')
                     return this_score
                 if angle_upperarm_from_straight_ahead > -10.:
-                    print 'angle bad'
+                    # print 'angle bad'
                     this_score = 10. + 10. + 1. + 1. * (-10. - angle_upperarm_from_horizontal)
                     if self.save_all_results:
                         with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
@@ -1169,7 +1169,7 @@ class DressingSimulationProcess(object):
                                          + '\n')
                     return this_score
                 if angle_upperarm_from_straight_ahead < -93.:
-                    print 'angle bad'
+                    # print 'angle bad'
                     this_score = 10. + 10. + 1. + 1. * (angle_upperarm_from_horizontal + 93.)
                     if self.save_all_results:
                         with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
@@ -1183,7 +1183,7 @@ class DressingSimulationProcess(object):
                     return this_score
             elif 'left' in self.subtask:
                 if params[3] < m.radians(10.):
-                    print 'angle bad'
+                    # print 'angle bad'
                     this_score = 10. + 10. + 1. + 10. * (m.radians(10.) - params[3])
                     if self.save_all_results:
                         with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
@@ -1196,7 +1196,7 @@ class DressingSimulationProcess(object):
                                          + '\n')
                     return this_score
                 if angle_upperarm_from_horizontal < 0.:
-                    print 'angle bad'
+                    # print 'angle bad'
                     this_score = 10. + 10. + 1. + 1. * (0. - angle_upperarm_from_horizontal)
                     if self.save_all_results:
                         with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
@@ -1209,7 +1209,7 @@ class DressingSimulationProcess(object):
                                          + '\n')
                     return this_score
                 if angle_upperarm_from_straight_ahead < 30.:
-                    print 'angle bad'
+                    # print 'angle bad'
                     this_score = 10. + 10. + 1. + 1. * (angle_upperarm_from_horizontal - 30.)
                     if self.save_all_results:
                         with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
@@ -1222,7 +1222,7 @@ class DressingSimulationProcess(object):
                                          + '\n')
                     return this_score
                 if angle_upperarm_from_straight_ahead > 93.:
-                    print 'angle bad'
+                    # print 'angle bad'
                     this_score = 10. + 10. + 1. + 1. * (angle_upperarm_from_horizontal + 93.)
                     if self.save_all_results:
                         with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
@@ -1239,7 +1239,7 @@ class DressingSimulationProcess(object):
             # print 'The gown is being stretched too much to try to do the next part of the task.'
             # return 10. + 1. + 10. * fixed_points_exceeded_amount
             if fixed_points_exceeded_amount > 0.04:
-                print 'gown being stretched too much'
+                # print 'gown being stretched too much'
                 this_score = 10. + 10. + 1. + 10. * fixed_points_exceeded_amount
                 if self.save_all_results:
                     with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
@@ -1261,7 +1261,7 @@ class DressingSimulationProcess(object):
         # here
         # print 'angle from horizontal = ', angle_forearm_from_horizontal
         if abs(angle_forearm_from_horizontal) > 30.:
-            print 'Angle of forearm is too high for success'
+            # print 'Angle of forearm is too high for success'
             this_score = 10. + 10. + 10. * (abs(angle_forearm_from_horizontal) - 30.)
             if self.save_all_results:
                 with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
@@ -1321,7 +1321,7 @@ class DressingSimulationProcess(object):
 
         ############################################
         
-        print 'arm config is alright!'
+        # print 'arm config is alright!'
         self.force_cost = 0.
 
         alpha = 1.  # cost on forces
@@ -2073,7 +2073,7 @@ class DressingSimulationProcess(object):
             graph.value['end'] = 0
             for goal_i in xrange(len(all_sols)):
                 for sol_i in xrange(len(all_sols[goal_i])):
-                    if goal_i <=1 and ('forearm' in self.subtask or 'all' in self.subtask):
+                    if goal_i <=2 and ('forearm' in self.subtask or 'all' in self.subtask):
                         check_gown_chair_collision = True
                     else: 
                         check_gown_chair_collision = False
