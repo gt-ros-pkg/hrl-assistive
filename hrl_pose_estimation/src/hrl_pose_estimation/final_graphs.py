@@ -157,26 +157,36 @@ class DataVisualizer():
     def final_error(self):
         flat_errors = {}
 
-        #for modeltype in ['direct','anglesSTVL', 'anglesCL']:
-        for modeltype in ['anglesSTVL']:
+        for modeltype in ['anglesSTVL']:#,'anglesSTVL', 'anglesCL']: #'KNN','LRR','KRR',
+        #for modeltype in ['anglesCL']:
             error_norm_flat = None
             for posture in ['seated']:
-                for subject in [9]:#, 10, 11, 12, 13, 14, 15, 16, 17, 18]:
+                for subject in [9,10,11,12,13, 14, 15, 16, 17, 18]:#, 10, 11, 12, 13, 14, 15, 16, 17, 18]:
                     if modeltype == 'anglesCL' or modeltype == 'anglesSTVL' or modeltype == 'direct':
+                        #if posture == 'supine':
+                        error_avg, error_std, _, _ = load_pickle(
+                            self.dump_path + '/Final_Data_V2/error_avg_std_T25_subject' + str(
+                                subject) + '_anglesSTVLsupine.p')
 
-                        if posture == 'supine':
-                            _, _, targets, targets_est = load_pickle(self.dump_path + '/Final_Data_V2/error_avg_std_T25_subject' + str(subject) + '_' + str(modeltype) + 'supine.p')
-                        elif posture == 'seated':
-                            _, _, targets, targets_est = load_pickle(self.dump_path + '/Final_Data_V2/error_avg_std_T25_subject' + str(subject) + '_' + str(modeltype) + 'seated.p')
+                        _, _, targets, targets_est = load_pickle(self.dump_path + '/Final_Data_V2/error_avg_std_T25_subject' + str(subject) + '_' + str(modeltype) + 'supine.p')
+                        #elif posture == 'seated':
+                        _, _, targets_sit, targets_est_sit = load_pickle(self.dump_path + '/Final_Data_V2/error_avg_std_T25_subject' + str(subject) + '_' + str(modeltype) + 'seated.p')
                         # size (P x N) each: number of images, number of joints
 
 
                         targets = np.array(targets)
                         targets_est = np.array(targets_est)
+                        print targets.shape
+                        #print targets_sit.shape
+
+                        #targets = np.concatenate((targets, targets_sit), axis = 0)
+                        #targets_est = np.concatenate((targets_est, targets_est_sit), axis = 0)
+
+
                         #print np.reshape(targets, (targets.shape[0], self.output_size[0], self.output_size[1]))[0, :, :]
                         #print np.reshape(targets,(targets.shape[0],self.output_size[0], self.output_size[1]))[0, :, :] - np.reshape(targets_est, (targets.shape[0],self.output_size[0], self.output_size[1]))[0, :, :]
 
-
+                        print subject, 'subject'
                         error_norm, _, _ = VisualizationLib().print_error(targets, targets_est, self.output_size, modeltype, data=str(subject), printerror=True)
 
                         #error_norm = error_norm[:, 2:4]
@@ -191,8 +201,10 @@ class DataVisualizer():
 
 
                     elif modeltype == 'KNN' or modeltype == 'LRR' or modeltype == 'KRR':
-                        error_avg = load_pickle(
-                            self.dump_path + '/Final_Data/error_avg_subject' + str(subject) + '_' + str(modeltype) + '.p')
+                        error_avg = load_pickle(self.dump_path + '/Final_Data/error_avg_subject' + str(subject) + '_' + str(modeltype) + '.p')
+
+
+
                         try:
                             error_avg_flat = np.concatenate((error_avg_flat, np.array(error_avg).flatten() / 10), axis=0)
                         except:
@@ -227,11 +239,18 @@ class DataVisualizer():
             for subject in [9, 10, 11, 12, 13, 14, 15, 16, 17, 18]:
                 if modeltype == 'anglesCL' or modeltype == 'anglesSTVL' or modeltype == 'direct':
 
-                    _, error_std_airR, _, _ = load_pickle(self.dump_path + '/Feet_Variance/error_avg_std_T25_subject' + str(subject) + '_' + str(modeltype) + '_RLair_only.p')
-                    _, error_std_gndR, _, _ = load_pickle(self.dump_path + '/Feet_Variance/error_avg_std_T25_subject' + str(subject) + '_' + str(modeltype) + '_RLgnd_only.p')
+                    _, error_std_air, _, _ = load_pickle(self.dump_path + '/Feet_Variance2/error_avg_std_T25_subject' + str(subject) + '_' + str(modeltype) + 'air.p')
+                    _, error_std_gnd, _, _ = load_pickle(self.dump_path + '/Feet_Variance2/error_avg_std_T25_subject' + str(subject) + '_' + str(modeltype) + 'snow.p')
 
-                    _, error_std_airL, _, _ = load_pickle(self.dump_path + '/Feet_Variance/error_avg_std_T25_subject' + str(subject) + '_' + str(modeltype) + '_LLair_only.p')
-                    _, error_std_gndL, _, _ = load_pickle(self.dump_path + '/Feet_Variance/error_avg_std_T25_subject' + str(subject) + '_' + str(modeltype) + '_LLgnd_only.p')
+                    print np.shape(error_std_air), 'shape!'
+
+                    error_std_airR = np.array(error_std_air)[0:25, :]
+                    error_std_airL = np.array(error_std_air)[25:50, :]
+                    error_std_gndR = np.array(error_std_gnd)[0:25, :]
+                    error_std_gndL = np.array(error_std_gnd)[25:50, :]
+                    #_, error_std_gndR, _, _ = load_pickle(self.dump_path + '/Feet_Variance/error_avg_std_T25_subject' + str(subject) + '_' + str(modeltype) + '_RLgnd_only.p')
+                    #_, error_std_airL, _, _ = load_pickle(self.dump_path + '/Feet_Variance/error_avg_std_T25_subject' + str(subject) + '_' + str(modeltype) + '_LLair_only.p')
+                    #_, error_std_gndL, _, _ = load_pickle(self.dump_path + '/Feet_Variance/error_avg_std_T25_subject' + str(subject) + '_' + str(modeltype) + '_LLgnd_only.p')
 
                     error_std_airR = np.concatenate((np.array(error_std_airR)[:,6:7], np.array(error_std_airR)[:,8:9]), axis = 1)
                     error_std_gndR = np.concatenate((np.array(error_std_gndR)[:,6:7], np.array(error_std_gndR)[:,8:9]), axis = 1)
@@ -288,13 +307,34 @@ class DataVisualizer():
         threshold_error = {}
         joint_percent = {}
         joint_percent_keep = {}
-        for modeltype in ['KNNseated','Ridgeseated','KRidgeseated','anglesSTVLseated','anglesCLseated','directseated']:
-        #for modeltype in ['anglesSTVLseated']:
+        for modeltype in ['KNN','Ridge','KRidge','anglesSTVL','anglesCL','direct']:
+        #for modeltype in ['anglesSTVL']:
             error_avg_flat = None
-            for subject in [9]:#,10,11,12,13,14,15,16,17,18]:
-                if modeltype == 'anglesSTVLseated' or modeltype == 'anglesCLseated' or modeltype == 'directseated':
-                    error_avg, _, _, _ = load_pickle(self.dump_path+'/Final_Data_V2/error_avg_std_T25_subject'+str(subject)+'_'+str(modeltype)+'.p')
-                    print np.shape(error_avg)
+            for subject in [9,10,11,12,13,14,15,16,17,18]:
+                if modeltype == 'anglesSTVL' or modeltype == 'anglesCL' or modeltype == 'direct':
+                    _, _, targets, targets_est = load_pickle(self.dump_path+'/Final_Data_V2/error_avg_std_T25_subject'+str(subject)+'_'+str(modeltype)+'seated.p')
+                    _, _, targets_sit, targets_est_sit = load_pickle(self.dump_path+'/Final_Data_V2/error_avg_std_T25_subject'+str(subject)+'_'+str(modeltype)+'supine.p')
+
+                    targets = np.array(targets)
+                    targets_sit = np.array(targets_sit)
+                    targets_est = np.array(targets_est)
+                    targets_est_sit = np.array(targets_est_sit)
+
+                    # print targets.shape
+
+                    targets = np.concatenate((targets, targets_sit), axis=0)
+                    # print targets.shape
+                    #targets_est = np.concatenate((targets_est, targets_est_sit), axis=0)
+
+                    targets = np.reshape(targets, (targets.shape[0], 10, 3))
+                    targets_est = np.array(targets_est)
+                    targets_est = np.reshape(targets_est, (targets_est.shape[0], 10, 3))
+                    error_avg = np.linalg.norm((targets_est - targets), axis=2)
+
+
+
+
+
                     # size (P x N) each: number of images, number of joints
                     try:
                         error_avg_flat = np.concatenate((error_avg_flat, np.array(error_avg).flatten()), axis=0)
@@ -302,8 +342,10 @@ class DataVisualizer():
                         error_avg_flat = np.array(error_avg).flatten()
                     print np.shape(error_avg_flat), subject, modeltype
 
-                elif modeltype == 'KNNseated' or modeltype == 'Ridgeseated' or modeltype == 'KRidgeseated':
+                elif modeltype == 'KNN' or modeltype == 'Ridge' or modeltype == 'KRidge':
                     error_avg = load_pickle(self.dump_path+'/Final_Data/error_avg_subject'+str(subject)+'_'+str(modeltype)+'.p')
+                    print np.shape(error_avg)
+
                     try:
                         error_avg_flat = np.concatenate((error_avg_flat, np.array(error_avg).flatten()/10), axis=0)
                     except:
@@ -341,33 +383,34 @@ class DataVisualizer():
 
         xlim = [0, 300]
         ylim1 = [0, 1.]
-        fig, (ax1, ax2) = plt.subplots(1, 2)
+        fig, ax1 = plt.subplots()
         #plt.suptitle('Subject '+str(subject)+ ' Error Thresholding.  All joints.', fontsize=16)
-        plt.subplot(1,2,1)
         ax1.set_xlim(xlim)
         ax1.set_ylim(ylim1)
         ax1.set_xlabel('Error Threshold (mm)', fontsize=16)
         ax1.set_ylabel('Fraction of joints \n below the error threshold', color='k', fontsize=16)
-        ratioKNN = ax1.plot(threshold_error['KNNseated']*10000, joint_percent['KNNseated'], 'c-', lw=3, label='KNN')
-        ratioLRR = ax1.plot(threshold_error['Ridgeseated']*10000, joint_percent['Ridgeseated'], 'm-', lw=3, label='LRR')
-        ratioKRR = ax1.plot(threshold_error['KRidgeseated']*10000, joint_percent['KRidgeseated'], 'y-', lw=3, label='KRR')
-        ratiodirect = ax1.plot(threshold_error['directseated'] * 10, joint_percent['directseated'], 'r-', lw=3, label='CNN direct')
-        ratiokincL = ax1.plot(threshold_error['anglesCLseated'] * 10, joint_percent['anglesCLseated'], 'g-', lw=3, label='CNN kin. avg. '+r"$\boldsymbol{l}$")
-        ratiokinvL = ax1.plot(threshold_error['anglesSTVLseated'] * 10, joint_percent['anglesSTVLseated'], 'b-', lw=3, label='CNN kin. regr. '+r"$\boldsymbol{l}$")
+        ratioKNN = ax1.plot(threshold_error['KNN']*10000, joint_percent['KNN'], 'c-', lw=2, label='KNN')
+        ratioLRR = ax1.plot(threshold_error['Ridge']*10000, joint_percent['Ridge'], 'm--', lw=2, label='LRR')
+        ratioKRR = ax1.plot(threshold_error['KRidge']*10000, joint_percent['KRidge'], 'y-', lw=2, label='KRR')
+        ratiodirect = ax1.plot(threshold_error['direct'], joint_percent['direct'], 'r--', lw=2, label='CNN direct')
+        ratiokincL = ax1.plot(threshold_error['anglesCL'], joint_percent['anglesCL'], 'g-', lw=2, label='CNN kin. avg. '+r"$\boldsymbol{l}$")
+        ratiokinvL = ax1.plot(threshold_error['anglesSTVL'], joint_percent['anglesSTVL'], 'b--', lw=2, label='CNN kin. regr. '+r"$\boldsymbol{l}$")
         lns = ratioKNN+ratioLRR+ratioKRR+ratiodirect+ratiokincL+ratiokinvL
         labs = [l.get_label() for l in lns]
+        ax1.legend(lns, labs, loc=0)
+        plt.show()
 
         plt.subplot(1,2,2)
         ax2.set_xlim(xlim)
         ax2.set_ylim(ylim1)
         ax2.set_xlabel('Error Threshold (mm)', fontsize=16)
         ax2.set_ylabel('Fraction of joints \n below the error threshold', color='k', fontsize=16)
-        ratioKNN = ax2.plot(threshold_error['KNNseated']*10000, joint_percent['KNNseated'], 'c-', lw=3, label='KNN')
-        ratioLRR = ax2.plot(threshold_error['Ridgeseated']*10000, joint_percent['Ridgeseated'], 'm-', lw=3, label='LRR')
-        ratioKRR = ax2.plot(threshold_error['KRidgeseated']*10000, joint_percent['KRidgeseated'], 'y-', lw=3, label='KRR')
-        ratiodirect = ax2.plot(threshold_error['directseated'] * 10, joint_percent['directseated'], 'r-', lw=3, label='CNN direct')
-        ratiokincL = ax2.plot(threshold_error['anglesCLseated'] * 10, joint_percent['anglesCLseated'], 'g-', lw=3, label='CNN kin. avg. '+r"$\boldsymbol{l}$")
-        ratiokinvL = ax2.plot(threshold_error['anglesSTVLseated'] * 10, joint_percent['anglesSTVLseated'], 'b-', lw=3, label='CNN kin. regr. '+r"$\boldsymbol{l}$")
+        ratioKNN = ax2.plot(threshold_error['KNN']*10000, joint_percent['KNN'], 'c-', lw=3, label='KNN')
+        ratioLRR = ax2.plot(threshold_error['Ridge']*10000, joint_percent['Ridge'], 'm-', lw=3, label='LRR')
+        ratioKRR = ax2.plot(threshold_error['KRidge']*10000, joint_percent['KRidge'], 'y-', lw=3, label='KRR')
+        ratiodirect = ax2.plot(threshold_error['direct'] * 10, joint_percent['direct'], 'r-', lw=3, label='CNN direct')
+        ratiokincL = ax2.plot(threshold_error['anglesCL'] * 10, joint_percent['anglesCL'], 'g-', lw=3, label='CNN kin. avg. '+r"$\boldsymbol{l}$")
+        ratiokinvL = ax2.plot(threshold_error['anglesSTVL'] * 10, joint_percent['anglesSTVL'], 'b-', lw=3, label='CNN kin. regr. '+r"$\boldsymbol{l}$")
         lns = ratioKNN+ratioLRR+ratioKRR+ratiodirect+ratiokincL+ratiokinvL
         labs = [l.get_label() for l in lns]
         ax2.legend(lns, labs, loc=0)
@@ -401,10 +444,39 @@ class DataVisualizer():
 
 
     def dropout_std_threshold(self):
-        for subject in [9]:
-            error_avg, error_std, _, _ = load_pickle(self.dump_path + '/Final_Data_V2/error_avg_std_T25_subject'+str(subject)+'_anglesSTVLseated.p')
-            print np.shape(error_avg)
-            print np.shape(error_std)
+        for subject in [9, 10, 11, 12, 13, 14, 15, 16, 17, 18]:#,10,11,12,13,14,15,16,17,18]:
+            _, error_std,targets, targets_est = load_pickle(self.dump_path + '/Final_Data_V2/error_avg_std_T25_subject'+str(subject)+'_anglesSTVLsupine.p')
+            _, error_std_sit, targets_sit, targets_est_sit = load_pickle(self.dump_path + '/Final_Data_V2/error_avg_std_T25_subject'+str(subject)+'_anglesSTVLseated.p')
+            #print np.shape(error_avg)
+            #print np.shape(error_std)
+
+            #error_avg = np.concatenate((error_avg, error_avg_sit), axis = 0)
+            error_std = np.concatenate((error_std, error_std_sit), axis = 0)
+
+            targets =np.array(targets)
+            targets_sit = np.array(targets_sit)
+            targets_est = np.array(targets_est)
+            targets_est_sit = np.array(targets_est_sit)
+
+            #print targets.shape
+
+            targets = np.concatenate((targets, targets_sit), axis = 0)
+            #print targets.shape
+            targets_est = np.concatenate((targets_est, targets_est_sit), axis = 0)
+
+            targets = np.reshape(targets, (targets.shape[0], 10, 3))
+            targets_est = np.array(targets_est)
+            targets_est = np.reshape(targets_est, (targets_est.shape[0], 10 ,3))
+            error_avg = np.linalg.norm((targets_est - targets), axis = 2)
+
+            print error_avg[0, :]
+            #print targets_est.shape
+            #print error_avg.shape
+
+            #print targets.shape
+            #print np.reshape(targets_est.numpy(), axis=0) - targets[0, :].numpy(), self.output_size)
+            #print np.linalg.norm(np.reshape(np.mean(targets_est.numpy(), axis=0) - targets[0, :].numpy(), self.output_size), axis=1)
+
             try:
                 error_avg_flat = np.concatenate((error_avg_flat, np.array(error_avg).flatten()), axis = 0)
                 error_std_flat = np.concatenate((error_std_flat, np.array(error_std).flatten()), axis = 0)
@@ -461,24 +533,27 @@ class DataVisualizer():
         ylim2 = [0, 100]
         fig, ax1 = plt.subplots()
         ax2 = ax1.twinx()
-        plt.suptitle('Subject 10 Std. Dev. Thresholding for removing points.  All joints.',fontsize=16)
+        #plt.suptitle('Subject 10 Std. Dev. Thresholding for removing points.  All joints.',fontsize=16)
         ax1.set_xlim(xlim)
         ax1.set_ylim(ylim1)
-        ax1.set_xlabel('Std. dev. threshold (mm) for discarding data, T=25 MC dropout passes',fontsize=16)
+        ax1.tick_params(labelsize=16)
+        ax2.tick_params(labelsize=16)
+        ax1.set_xlabel('Std. dev. threshold (mm) for discarding data \n $V=25$ MC dropout passes',fontsize=16)
         ax1.set_ylabel('Fraction of joints remaining',color='g',fontsize=16)
 
         #ax1.set_title('Right Elbow')
 
         ax2.set_xlim(xlim)
         ax2.set_ylim(ylim2)
-        ax2.set_xlabel('Std. dev. threshold (mm) for discarding data, T=25 MC dropout passes',fontsize=16)
-        ax2.set_ylabel('GMPJPE error across remaining joints',color='b',fontsize=16)
-        ratio = ax1.plot(threshold_variance, joint_percent, 'g-', lw=4, label='Ratio of Joints Remaining')
-        gmpjpe = ax2.plot(threshold_variance, GMPJPE * 10, 'b-', lw = 4, label = 'GMPJPE of Remaining Joints')
+        ax2.set_xlabel('Std. dev. threshold (mm) for discarding data \n $V=25$ MC dropout passes',fontsize=16)
+        ax2.set_ylabel('MPJPE error across remaining joints',color='b',fontsize=16)
+        ratio = ax1.plot(threshold_variance, joint_percent, 'g--', lw=4, label='Fraction of Joints Remaining')
+        gmpjpe = ax2.plot(threshold_variance, GMPJPE, 'b-', lw = 4, label = 'MPJPE of Remaining Joints')
 
         lns = ratio + gmpjpe
         labs = [l.get_label() for l in lns]
         plt.legend(lns, labs, loc=4)
+        plt.gcf().subplots_adjust(bottom=0.15)
         #ax2.set_title('Left Elbow')
 
         plt.show()
@@ -491,21 +566,25 @@ class DataVisualizer():
         #plt.suptitle('Subject 10 Std. Dev. Thresholding for keeping points.  All joints.',fontsize=16)
         ax1.set_xlim(xlim)
         ax1.set_ylim(ylim1)
-        ax1.set_xlabel('Std. dev. threshold (mm) for discarding data, T=25 MC dropout passes',fontsize=16)
+        ax1.tick_params(labelsize=16)
+        ax2.tick_params(labelsize=16)
+        ax1.set_xlabel('Std. dev. threshold (mm) for discarding data \n $V=25$ MC dropout passes',fontsize=16)
         ax1.set_ylabel('Fraction of joints discarded',color='g',fontsize=16)
-        ratio = ax1.plot(threshold_variance, joint_percent_keep, 'g-',lw=4, label='Ratio of Joints Discarded')
+        ratio = ax1.plot(threshold_variance, joint_percent_keep, 'g--',lw=4, label='Fraction of Joints Discarded')
         #ax1.set_title('Right Elbow')
 
         ax2.set_xlim(xlim)
         ax2.set_ylim(ylim2)
-        ax2.set_xlabel('Std. dev. threshold (mm) for discarding data, T=25 MC dropout passes',fontsize=16)
-        ax2.set_ylabel('GMPJPE error across discarded joints',color='b',fontsize=16)
-        gmpjpe = ax2.plot(threshold_variance, GMPJPE_keep*10, 'b-',lw=4, label = 'GMPJPE of Discarded Joints')
+        ax2.set_xlabel('Std. dev. threshold (mm) for discarding data \n $V=25$ MC dropout passes',fontsize=16)
+        ax2.set_ylabel('MPJPE error across discarded joints',color='b',fontsize=16)
+        gmpjpe = ax2.plot(threshold_variance, GMPJPE_keep, 'b-',lw=4, label = 'MPJPE of Discarded Joints')
         #ax2.set_title('Left Elbow')
 
         lns = ratio + gmpjpe
         labs = [l.get_label() for l in lns]
         plt.legend(lns, labs, loc=0)
+
+        plt.gcf().subplots_adjust(bottom=0.15)
         plt.show()
 
         xlim = [0, np.max(error_std_flat)*10]
@@ -516,16 +595,16 @@ class DataVisualizer():
         #plt.suptitle('Subject 10 Std. Dev. Thresholding for keeping points.  All joints.',fontsize=16)
         ax1.set_xlim(xlim)
         ax1.set_ylim(ylim1)
-        ax1.set_xlabel('Std. dev. threshold (mm) for discarding data, T=25 MC dropout passes',fontsize=16)
+        ax1.set_xlabel('Std. dev. threshold (mm) for discarding data, $V=25$ MC dropout passes',fontsize=16)
         ax1.set_ylabel('Fraction of joints discarded',color='g',fontsize=16)
-        ratio = ax1.plot(threshold_variance, joint_percent_keep, 'g-',lw=4, label='Ratio of Joints Discarded')
+        ratio = ax1.plot(threshold_variance, joint_percent_keep, 'g--',lw=4, label='Fraction of Joints Discarded')
         #ax1.set_title('Right Elbow')
 
         ax2.set_xlim(xlim)
         ax2.set_ylim(ylim2)
-        ax2.set_xlabel('Std. dev. threshold (mm) for discarding data, T=25 MC dropout passes',fontsize=16)
-        ax2.set_ylabel('GMPJPE error across discarded joints',color='b',fontsize=16)
-        gmpjpe = ax2.plot(threshold_variance, GMPJPE_keep*10, 'b-',lw=4, label = 'GMPJPE of Discarded Joints')
+        ax2.set_xlabel('Std. dev. threshold (mm) for discarding data, $V=25$ MC dropout passes',fontsize=16)
+        ax2.set_ylabel('MPJPE error across discarded joints',color='b',fontsize=16)
+        gmpjpe = ax2.plot(threshold_variance, GMPJPE_keep*10, 'b-',lw=4, label = 'MPJPE of Discarded Joints')
         #ax2.set_title('Left Elbow')
 
         lns = ratio + gmpjpe
@@ -581,11 +660,11 @@ class DataVisualizer():
 
 
         # Setting the positions and width for the bars
-        pos = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        pos = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
         width = 0.13
 
         # Plotting the bars
-        fig, ax = plt.subplots(figsize=(11,4),dpi = 110)
+        fig, ax = plt.subplots(figsize=(10,3),dpi = 110)
 
         #############ALL
         #KNN     = [87.63,52.54,103.07,105.55,187.81,189.33,83.39,94.20,80.36,72.86]
@@ -595,34 +674,37 @@ class DataVisualizer():
 
 
         if posture == 'supine':   ##############SUPINE
-            KNN = [59.28,50.51,108.37,111.02,200.77,202.19,81.73,85.26,82.19,68.48,104.98]
-            Std_KNN = [27.77,12.95,88.57,99.09,157.01,170.84,44.91,42.59,52.72,51.55,0]
-            LRR = [126.94,56.92,107.02,115.50,192.14,207.40,100.43,103.73,75.67,74.60,116.04]
-            Std_LRR = [60.83,24.44,57.08,61.06,102.56,110.31,30.30,36.69,36.66,33.51,0]
-            KRR = [109.93,50.85,88.28,93.71,162.74,165.14,85.90,90.91,65.99,62.04,97.55]
-            Std_KRR = [50.21,17.44,55.54,62.49,103.94,112.84,25.28,29.67,31.08,28.45,0]
-            DirectCNN  = [60.43,47.80,53.04,62.11,93.74,108.37,58.79,80.23,62.64,51.95,67.91]
-            Std_DirectCNN = [21.28,14.57,46.13,48.66,94.90,101.16,20.21,25.31,23.88,23.431,0]
-            KinCNNcL  = [66.60,47.45,70.97,71.62,125.92,122.52,74.30,82.91,71.99,57.10,79.14]
-            Std_KinCNNcL = [21.93,15.54,58.56,63.22,120.55,114.32,25.17,24.72,32.71,27.06,0]
-            KinCNNvL  = [61.72,46.72,59.81,66.99,108.99,116.04,68.03,79.50,68.01,49.97,72.58]
-            Std_KinCNNvL = [19.31,14.11,46.43,58.37,98.78,120.66,24.64,24.91,26.80,24.66,0]
-            ax.set_ylabel('Supine Posture: GMPJPE (mm)')
+            KNN = [61.11,62.56,100.10,97.28,170.97,172.12,81.18,101.55,102.27,70.97]
+            Std_KNN = [32.23,17.27,80.11,80.74,149.21,147.87,33.44,34.41,57.77,59.93]
+            LRR = [129.33,60.72,105.37,105.38,181.24,189.00,93.87,117.35,96.15,91.69]
+            Std_LRR = [57.18,21.38,51.86,52.17,94.37,93.75,30.92,33.35,52.84,50.83]
+            KRR = [110.91,57.09,87.25,90.23,156.71,158.92,84.33,98.20,74.68,74.15]
+            Std_KRR = [46.31,17.56,61.51,64.63,111.10,117.26,28.73,30.71,59.11,57.35]
+            DirectCNN = [66.52,53.15,54.02,64.24,97.93,111.55,61.13,90.57,74.21,61.55]
+            Std_DirectCNN = [17.77,12.66,38.89,42.21,82.03,90.62,20.82,21.95,35.85,41.64]
+            KinCNNcL = [83.98,57.32,84.95,90.66,155.10,158.79,91.71,104.12,83.17,87.57]
+            Std_KinCNNcL = [25.42,19.14,63.63,78.40,114.66,125.56,34.00,45.93,50.05,63.34]
+            KinCNNvL = [68.36,48.82,59.12,66.81,107.95,122.88,63.19,87.78,73.51,55.85]
+            Std_KinCNNvL = [18.01,9.80,42.16,49.46,81.55,98.28,21.08,21.23,34.20,43.96]
+            ax.set_ylabel('Supine Posture\n Joint Position Error (mm)')
+
+
+
 
         elif posture == 'sitting':  ##############SITTING
-            KNN = [139.83, 56.88, 94.51, 95.29, 164.75, 165.57, 86.91, 109.91, 76.44,80.05,107.01]
-            Std_KNN = [64.83,18.20,63.62,63.33,109.18,99.20,44.78,41.30,56.19,52.56,0]
-            LRR = [150.14,55.82,114.56,122.39,203.13,209.41,90.89,118.15,85.28,81.02,123.08]
-            Std_LRR = [59.78,20.69,54.60,58.90,95.87,103.69,35.61,37.51,34.09,38.14,0]
-            KRR = [125.49,52.81,92.56,97.32,159.14,158.83,83.35,103.60,76.38,72.34,102.18]
-            Std_KRR = [45.83,15.17,49.90,52.99,86.88,89.51,30.07,28.53,31.62,32.57,0]
-            DirectCNN = [80.01,43.62,65.55,62.20,110.98,102.38,62.78,83.67,75.03,70.20,75.64]
-            Std_DirectCNN = [34.36,9.66,50.45,44.90,93.93,85.01,23.89,23.79,23.40,23.59,0]
-            KinCNNcL = [82.23,52.12,72.47,65.63,123.63,116.01,99.39,110.78,71.29,74.06,86.76]
-            Std_KinCNNcL = [34.98,13.90,53.12,65.57,104.36,103.51,25.83,23.15,29.04,28.55,0]
-            KinCNNvL = [84.63,50.06,69.18,60.21,119.44,100.02,85.51,98.70,70.13,66.01,80.39]
-            Std_KinCNNvL = [32.60,12.54,51.54,45.89,94.74,87.94,26.97,22.69,23.46,24.11,0]
-            ax.set_ylabel('Sitting Posture: GMPJPE (mm)')
+            KNN = [96.84,54.31,86.68,84.30,145.73,139.11,80.53,107.48,68.77,70.43]
+            Std_KNN = [45.48,12.46,62.98,67.10,117.35,113.52,33.11,33.58,40.79,42.65]
+            LRR = [141.47,58.64,105.84,108.83,182.52,186.27,94.86,120.07,92.50,88.00]
+            Std_LRR = [53.69,22.06,52.89,50.11,90.75,87.13,35.57,33.28,35.17,33.96]
+            KRR = [123.62,50.30,88.22,84.68,149.81,141.67,80.65,104.80,74.38,72.89]
+            Std_KRR = [45.30,15.26,48.61,59.54,85.05,98.86,29.74,30.90,37.10,38.58]
+            DirectCNN = [82.95,50.18,67.41,68.00,116.50,110.99,67.80,91.93,88.31,80.37]
+            Std_DirectCNN = [31.45,10.58,43.80,36.22,86.77,75.75,23.18,22.03,25.35,25.41]
+            KinCNNcL = [84.95,59.05,94.89,84.52,140.84,140.24,82.18,103.06,110.36,96.87]
+            Std_KinCNNcL = [31.52,19.68,52.94,70.53,87.65,110.83,37.09,44.03,47.34,53.56]
+            KinCNNvL = [84.79,41.81,74.18,56.91,128.03,102.27,67.01,86.49,79.51,70.94]
+            Std_KinCNNvL = [30.65,9.04,44.43,39.16,78.86,76.69,24.02,22.96,32.38,33.10]
+            ax.set_ylabel('Sitting Posture \n Joint Position Error (mm)')
 
         plt.bar(pos, KNN, width,
                          alpha=0.5,
@@ -688,19 +770,19 @@ class DataVisualizer():
 
         # Setting the x-axis and y-axis limits
         plt.xlim(min(pos)-width, max(pos)+width*4+0.4)
-        plt.ylim([0, max(KNN + LRR + KRR + DirectCNN + KinCNNcL + KinCNNvL) * 1.07])
+        plt.ylim([0, max(KNN + LRR + KRR + DirectCNN + KinCNNcL + KinCNNvL) * 1.2])
 
-        ax.text(max(pos)+0.13*0+0.015, KNN[10]+25, str(np.round(KNN[10],2)), color='black', fontweight = 'normal',rotation = 'vertical',fontsize=8)
-        ax.text(max(pos)+0.13*1+0.015, LRR[10]+25, str(np.round(LRR[10],2)), color='black', fontweight = 'normal',rotation = 'vertical',fontsize=8)
-        ax.text(max(pos)+0.13*2+0.015, KRR[10]+25, str(np.round(KRR[10],2)), color='black', fontweight = 'normal',rotation = 'vertical',fontsize=8)
-        ax.text(max(pos)+0.13*3+0.02, DirectCNN[10]+20, str(format(DirectCNN[10], '.2f')), color='black', fontweight='heavy', rotation = 'vertical',fontsize=9)
-        ax.text(max(pos)+0.13*4+0.02, KinCNNcL[10]+20, str(format(KinCNNcL[10], '.2f')), color='black', fontweight = 'normal', rotation = 'vertical',fontsize=8)
-        ax.text(max(pos)+0.13*5+0.02, KinCNNvL[10]+20, str(np.round(KinCNNvL[10],2)), color='black', fontweight='heavy', rotation = 'vertical',fontsize=9)
+        #ax.text(max(pos)+0.13*0+0.015, KNN[9]+25, str(np.round(KNN[9],2)), color='black', fontweight = 'normal',rotation = 'vertical',fontsize=8)
+        #ax.text(max(pos)+0.13*1+0.015, LRR[9]+25, str(np.round(LRR[9],2)), color='black', fontweight = 'normal',rotation = 'vertical',fontsize=8)
+        #ax.text(max(pos)+0.13*2+0.015, KRR[9]+25, str(np.round(KRR[9],2)), color='black', fontweight = 'normal',rotation = 'vertical',fontsize=8)
+        #ax.text(max(pos)+0.13*3+0.02, DirectCNN[9]+20, str(format(DirectCNN[9], '.2f')), color='black', fontweight='heavy', rotation = 'vertical',fontsize=9)
+        #ax.text(max(pos)+0.13*4+0.02, KinCNNcL[9]+20, str(format(KinCNNcL[9], '.2f')), color='black', fontweight = 'normal', rotation = 'vertical',fontsize=8)
+        #ax.text(max(pos)+0.13*5+0.02, KinCNNvL[9]+20, str(np.round(KinCNNvL[9],2)), color='black', fontweight='heavy', rotation = 'vertical',fontsize=9)
 
         # Adding the legend and showing the plot
         if posture == 'supine':
-            plt.legend(['KNN', 'LRR', 'KRR', 'CNN direct ' + r"$\boldsymbol{s}_{j=1..N}$",
-                        'CNN kin. avg. ' + r"$\boldsymbol{l}$", 'CNN kin. regr. ' + r"$\boldsymbol{l}$"], loc=9,
+            plt.legend(['KNN', 'LRR', 'KRR', 'Direct ConvNet ',
+                        'Kin. ConvNet const. len.', 'Kin. ConvNet regr. len.'], loc=9,
                        bbox_to_anchor=(0., 1.032, 1., .102), ncol=6)  # +r"$\boldsymbol{l}$"
 
         plt.grid()
@@ -729,9 +811,10 @@ if __name__ == "__main__":
     p = DataVisualizer(pkl_directory=Path, opt = opt)
 
     #p.all_joint_error()
-    p.dropout_std_threshold()
+    #p.dropout_std_threshold()
     #p.error_threshold()
     #p.p_information_std()
     #p.final_foot_variance()
+    p.all_joint_error()
     #p.final_error()
     sys.exit()

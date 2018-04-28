@@ -347,7 +347,7 @@ class VisualizationLib():
             else:
                 if joint == 1:
                     Smarker.color.r = 1.0
-                    Smarker.color.g = 0.0
+                    Smarker.color.g = 1.0
                 else:
                     Smarker.color.r = 1.0
                     Smarker.color.g = 1.0
@@ -401,9 +401,9 @@ class VisualizationLib():
 
 
     def rviz_publish_output_limbs(self, targets, scores, pseudotargets = None, LimbArray = None, count = 0):
-
-        if LimbArray == None or count <= 2:
-            LimbArray = MarkerArray()
+        print 'publishing for kinematics model!'
+        #if LimbArray == None or count <= 2:
+        LimbArray = MarkerArray()
 
         limbs = {}
         limbs['right_forearm'] = [scores[2,0], scores[2,1], scores[2,2], scores[4,0], scores[4,1], scores[4,2]]
@@ -486,8 +486,8 @@ class VisualizationLib():
         return LimbArray
     def rviz_publish_output_limbs_direct(self, targets, scores, LimbArray = None, count = 0):
 
-        if LimbArray == None or count <= 2:
-            LimbArray = MarkerArray()
+        #if LimbArray == None or count <= 2:
+        LimbArray = MarkerArray()
 
         limbs = {}
         limbs['right_forearm'] = [scores[2,0], scores[2,1], scores[2,2], scores[4,0], scores[4,1], scores[4,2]]

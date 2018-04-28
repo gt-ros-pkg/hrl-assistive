@@ -681,12 +681,11 @@ class DatabaseCreator():
         angle_i = []
         #for subject in [2,3,4,5,6,7,8]:
 
-        for subject in [9]:
+        for subject in [13, 14, 15, 16, 17, 18]:
         #for subject in [18]:#13, 14, 15, 16, 17, 18]:
 
             self.final_dataset = {}
             self.final_dataset['joint_lengths_L_m'] = []
-
             self.final_dataset['images'] = []
             self.final_dataset['markers_xyz_m'] = []
             self.final_dataset['pseudomarkers_xyz_m'] = []
@@ -699,9 +698,10 @@ class DatabaseCreator():
             #if prev == None: movement = 'LL_air_only'
             #else: movement = 'LL'
 
-            for movement in ['B']:#'RH1','LH1','RH2','LH2','RH3','LH3','RL_air','LL_air','RL_sitting','LH_sitting','RL_sitting','LL_sitting']:#,
+            for movement in ['RL', 'LL']:#'RH1','LH1','RH2','LH2','RH3','LH3','RL_air','LL_air','RL_sitting','LH_sitting','RL_sitting','LL_sitting']:#,
             #for movement in [movement]:
-
+                counter = 25
+                accept_more = True
         # ,'RL']:
 
             #for movement in ['RL_sitting']:#'LH_sitting','RL_sitting','LL_sitting']:
@@ -713,7 +713,9 @@ class DatabaseCreator():
 
 
 
-                indexlist = self.rand_index_p_length(p_file, shuffle = False)
+
+                indexlist = self.rand_index_p_length(p_file, shuffle = True)
+
 
 
                 if movement == 'head':
@@ -733,7 +735,7 @@ class DatabaseCreator():
                 elif movement == 'RL_air' or movement == 'LL_air':
                     num_samp = 175
                 elif movement == 'RL_air_only' or movement == 'LL_air_only':
-                    num_samp = 100
+                    num_samp = 40
                 elif movement == 'B':
                     num_samp = 500
 
@@ -751,7 +753,7 @@ class DatabaseCreator():
 
 
                 for i in np.arange(num_samp):
-
+                    #print i
 
                 #for [p_map_raw, target_raw, _] in p_file:
                     #print len(LH_sup) #100+, this is a list
@@ -772,6 +774,8 @@ class DatabaseCreator():
                         print 'resetting index list'
                         indexlist = self.rand_index_p_length(p_file)
                         index = indexlist.pop()
+
+                    print 'Theres, ', 40-i, 'left to empty, ',np.shape(indexlist), 'shape of list, I need', counter, 'more'
 
                     #print subject, 'subject', count, 'count', index, 'index', np.shape(indexlist), 'length of list'
 
@@ -900,18 +904,23 @@ class DatabaseCreator():
 
                     sleep(0.01)
 
-                    if movement == 'LL_air_only':#i < 100:
-                        self.visualize_single_pressure_map(rot_p_map, rot_target_mat)
-                        if self.keep_image == True:
-                            self.final_dataset['images'].append(list(rot_p_map.flatten()))
-                            self.final_dataset['markers_xyz_m'].append(rot_target_mat.flatten())
-                            self.final_dataset['pseudomarkers_xyz_m'].append(pseudotargets.flatten())
-                            self.final_dataset['marker_bed_euclideans_m'].append(bed_distances[0])
-                            self.final_dataset['bed_angle_deg'].append(angle)
-                            self.final_dataset['joint_lengths_U_m'].append(arm_joint_lengths)
-                            self.final_dataset['joint_lengths_L_m'].append(leg_joint_lengths)
-                            self.final_dataset['joint_angles_U_deg'].append(arm_joint_angles)
-                            self.final_dataset['joint_angles_L_deg'].append(leg_joint_angles)
+                    if movement == 'LL' or movement == 'RL':#i < 100:
+                        if accept_more == True:
+                            self.visualize_single_pressure_map(rot_p_map, rot_target_mat)
+                            if self.keep_image == True:
+                                self.final_dataset['images'].append(list(rot_p_map.flatten()))
+                                self.final_dataset['markers_xyz_m'].append(rot_target_mat.flatten())
+                                self.final_dataset['pseudomarkers_xyz_m'].append(pseudotargets.flatten())
+                                self.final_dataset['marker_bed_euclideans_m'].append(bed_distances[0])
+                                self.final_dataset['bed_angle_deg'].append(angle)
+                                self.final_dataset['joint_lengths_U_m'].append(arm_joint_lengths)
+                                self.final_dataset['joint_lengths_L_m'].append(leg_joint_lengths)
+                                self.final_dataset['joint_angles_U_deg'].append(arm_joint_angles)
+                                self.final_dataset['joint_angles_L_deg'].append(leg_joint_angles)
+                                counter -= 1
+                                print counter
+                                if counter == 0:
+                                    accept_more = False
 
                     elif self.select == True:
                         self.visualize_single_pressure_map(rot_p_map, rot_target_mat)
@@ -978,7 +987,7 @@ class DatabaseCreator():
             print "Saving final_dataset"
             print (self.training_dump_path+str(subject)+'/p_files/trainval'+movement+'.p')
 
-            pkl.dump(self.final_dataset, open(os.path.join(self.training_dump_path+str(subject)+'/p_files/trainval_B500.p'), 'wb')) #_trainval_200rlh1_115rlh2_75rlh3_175rllair_sit175rlh_sit120rll #200rlh1_115rlh2_75rlh3_175rllair_sit175rlh_sit120rll
+            pkl.dump(self.final_dataset, open(os.path.join(self.training_dump_path+str(subject)+'/p_files/trainval_50rllsnow.p'), 'wb')) #_trainval_200rlh1_115rlh2_75rlh3_175rllair_sit175rlh_sit120rll #200rlh1_115rlh2_75rlh3_175rllair_sit175rlh_sit120rll
 
             print len(self.final_dataset['images']), num_samp
             print 'Done.'
