@@ -1075,7 +1075,7 @@ class DressingSimulationProcess(object):
         # Check if the person is in self collision, which means parts of the arm are in collision with anything other
         # than the shoulder or itself.
         if self.is_human_in_self_collision():
-            print 'human is in self collision'
+            #print 'human is in self collision'
             this_score = 10. + 10. + 2. + random.random()
             if self.save_all_results:
                 with open(self.save_file_path + self.save_file_name_coarse_raw, 'a') as myfile:
@@ -2802,7 +2802,7 @@ if __name__ == "__main__":
 
     model_choices = ['fullbody_50percentile_capsule.skel', 'fullbody_henryclever_capsule.skel', 'fullbody_participant0_capsule.skel']
 
-    optimizer = DressingMultiProcessOptimization( number_of_processes=1, visualize=True, model=model_choices[2])
+    optimizer = DressingMultiProcessOptimization( number_of_processes=0, visualize=False, model=model_choices[1])
     optimizer.optimize_entire_dressing_task(reset_file=False, break_arm_tasks_into_two_subtasks=True)
     # outer_elapsed_time = rospy.Time.now()-outer_start_time
     print 'Everything is complete!'
