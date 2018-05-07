@@ -305,12 +305,12 @@ class DressingMultiProcessOptimization(object):
             all_fixed_points_to_use = [[], [], [0], [0]]
             all_stretch_allowable = [[], [], [0.46], [0.46]]
         elif break_arm_tasks_into_two_subtasks and 'participant3' in self.model:
-            subtask_list = ['right_forearm', 'right_upperarm']
+            subtask_list = ['left_forearm', 'left_upperarm']
             robot_arm_to_use = ['rightarm', 'rightarm']
             all_fixed_points_to_use = [[0], [0]]
             all_stretch_allowable = [[0.46], [0.46]]
         elif not break_arm_tasks_into_two_subtasks and 'participant3' in self.model:
-            subtask_list = ['right_all']
+            subtask_list = ['left_all']
             robot_arm_to_use = ['rightarm']
             all_fixed_points_to_use = [[0]]
             all_stretch_allowable = [[0.46]]
@@ -326,7 +326,7 @@ class DressingMultiProcessOptimization(object):
                                                                    all_stretch_allowable[0],
                                                                    all_fixed_points_to_use[0]]])
         else:
-            all_fixed_points = self.pool.apply(find_fixed_points, [['left_all',
+            all_fixed_points = self.pool.apply(find_fixed_points, [['right_all',
                                                                    'rightarm',
                                                                    0,
                                                                    [],
