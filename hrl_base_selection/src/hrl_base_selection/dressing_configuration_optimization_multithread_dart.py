@@ -407,7 +407,7 @@ class DressingMultiProcessOptimization(object):
         #                                                                m.radians(5.))
         #                                                      )
         #                                          ])
-        reso = m.radians(5.)
+        reso = m.radians(2.5)
         coarse_configs = [t for t in (([arm1, arm2, arm3, arm4])
                                       for arm1 in np.arange(amin[0], amax[0] + 0.0001,
                                                             reso)
@@ -757,12 +757,14 @@ class DressingSimulationProcess(object):
         self.arm_knn = None
 
         if mode == 'normal':
+            #self.arm_configs_eval = load_pickle(rospack.get_path('hrl_dressing') +
+            #                                    '/data/forearm_trajectory_evaluation/entire_results_list.pkl')
             self.arm_configs_eval = load_pickle(rospack.get_path('hrl_dressing') +
-                                                '/data/forearm_trajectory_evaluation/entire_results_list.pkl')
+                                                '/data/upper_arm_configuration_evaluation/entire_results_list.pkl')
             self.arm_configs_checked = []
             for line in self.arm_configs_eval:
                 self.arm_configs_checked.append(line[0:4])
-            self.arm_knn = NearestNeighbors(n_neighbors=8, radius=m.radians(15.))
+            self.arm_knn = NearestNeighbors(n_neighbors=20, radius=m.radians(7.5))
             self.arm_knn.fit(self.arm_configs_checked)
 
         #self.model = 'fullbody_participant0_capsule.skel'
@@ -1332,7 +1334,10 @@ class DressingSimulationProcess(object):
         # forearm_mass*np.linalg.norm(shoulder_to_forearm_midpoint[0:2]) + \
         # hand_mass*np.linalg.norm(shoulder_to_hand_midpoint[0:2])
         torque_magnitude = np.linalg.norm(torque_at_shoulder)  # + np.linalg.norm(torque_at_elbow)
-        max_possible_torque = 12.376665  # found manually with arm straight out from arm
+        max_possible_torque = np.linalg.norm(np.linalg.norm(shoulder_to_upper_arm_midpoint) * upper_arm_force + \
+                              np.linalg.norm(shoulder_to_forearm) * forearm_force + \
+                              np.linalg.norm(shoulder_to_hand_midpoint) * hand_force)
+        # max_possible_torque = 12.376665  # found manually with arm straight out from arm
         # print 'torque_at_shoulder\n', torque_at_shoulder
         # print 'torque_magnitude\n', torque_magnitude
         torque_cost = torque_magnitude / max_possible_torque
@@ -1620,7 +1625,10 @@ class DressingSimulationProcess(object):
         # forearm_mass*np.linalg.norm(shoulder_to_forearm_midpoint[0:2]) + \
         # hand_mass*np.linalg.norm(shoulder_to_hand_midpoint[0:2])
         torque_magnitude = np.linalg.norm(torque_at_shoulder)  # + np.linalg.norm(torque_at_elbow)
-        max_possible_torque = 12.376665  # found manually with arm straight out from arm
+        max_possible_torque = np.linalg.norm(np.linalg.norm(shoulder_to_upper_arm_midpoint) * upper_arm_force + \
+                              np.linalg.norm(shoulder_to_forearm) * forearm_force + \
+                              np.linalg.norm(shoulder_to_hand_midpoint) * hand_force)
+        # max_possible_torque = 12.376665  # found manually with arm straight out from arm
         # print 'torque_at_shoulder\n', torque_at_shoulder
         # print 'torque_magnitude\n', torque_magnitude
         torque_cost = torque_magnitude / max_possible_torque
