@@ -298,22 +298,40 @@ class DressingMultiProcessOptimization(object):
             open(self.save_file_path + self.save_file_name_fine_output, 'w').close()
             open(self.save_file_path + self.save_file_name_final_output, 'w').close()
 
-        if break_arm_tasks_into_two_subtasks:
+        if break_arm_tasks_into_two_subtasks and not 'participant3' in self.model:
         # subtask_list = ['right_forearm', 'right_upperarm', 'left_forearm', 'left_upperarm']
             subtask_list = ['left_forearm', 'left_upperarm', 'right_forearm', 'right_upperarm']
             robot_arm_to_use = ['rightarm', 'rightarm', 'rightarm', 'rightarm']
             all_fixed_points_to_use = [[], [], [0], [0]]
             all_stretch_allowable = [[], [], [0.46], [0.46]]
+        elif break_arm_tasks_into_two_subtasks and 'participant3' in self.model:
+            subtask_list = ['left_forearm', 'left_upperarm']
+            robot_arm_to_use = ['rightarm', 'rightarm']
+            all_fixed_points_to_use = [[0], [0]]
+            all_stretch_allowable = [[0.46], [0.46]]
+        elif not break_arm_tasks_into_two_subtasks and 'participant3' in self.model:
+            subtask_list = ['left_all']
+            robot_arm_to_use = ['rightarm']
+            all_fixed_points_to_use = [[0]]
+            all_stretch_allowable = [[0.46]]
         else:
             subtask_list = ['left_all', 'right_all']
             robot_arm_to_use = ['rightarm', 'rightarm']
             all_fixed_points_to_use = [[], [0]]
             all_stretch_allowable = [[], [0.46]]
-        all_fixed_points = self.pool.apply(find_fixed_points, [[subtask_list[0],
-                                                               robot_arm_to_use[0],
-                                                               0,
-                                                               all_stretch_allowable[0],
-                                                               all_fixed_points_to_use[0]]])
+        if not 'participant3' in self.model:
+            all_fixed_points = self.pool.apply(find_fixed_points, [[subtask_list[0],
+                                                                   robot_arm_to_use[0],
+                                                                   0,
+                                                                   all_stretch_allowable[0],
+                                                                   all_fixed_points_to_use[0]]])
+        else:
+            all_fixed_points = self.pool.apply(find_fixed_points, [['right_all',
+                                                                   'rightarm',
+                                                                   0,
+                                                                   [],
+                                                                   []]])
+
         print 'all fixed points', all_fixed_points
         # time.sleep(0.5)
         # self.pool.map(set_new_fixed_point, [0]*self.processCnt)
@@ -389,7 +407,7 @@ class DressingMultiProcessOptimization(object):
         #                                                                m.radians(5.))
         #                                                      )
         #                                          ])
-        reso = m.radians(5.)
+        reso = m.radians(2.5)
         coarse_configs = [t for t in (([arm1, arm2, arm3, arm4])
                                       for arm1 in np.arange(amin[0], amax[0] + 0.0001,
                                                             reso)
@@ -739,12 +757,14 @@ class DressingSimulationProcess(object):
         self.arm_knn = None
 
         if mode == 'normal':
+            #self.arm_configs_eval = load_pickle(rospack.get_path('hrl_dressing') +
+            #                                    '/data/forearm_trajectory_evaluation/entire_results_list.pkl')
             self.arm_configs_eval = load_pickle(rospack.get_path('hrl_dressing') +
-                                                '/data/forearm_trajectory_evaluation/entire_results_list.pkl')
+                                                '/data/upper_arm_configuration_evaluation/entire_results_list.pkl')
             self.arm_configs_checked = []
             for line in self.arm_configs_eval:
                 self.arm_configs_checked.append(line[0:4])
-            self.arm_knn = NearestNeighbors(n_neighbors=8, radius=m.radians(15.))
+            self.arm_knn = NearestNeighbors(n_neighbors=20, radius=m.radians(7.5))
             self.arm_knn.fit(self.arm_configs_checked)
 
         #self.model = 'fullbody_participant0_capsule.skel'
@@ -1314,7 +1334,10 @@ class DressingSimulationProcess(object):
         # forearm_mass*np.linalg.norm(shoulder_to_forearm_midpoint[0:2]) + \
         # hand_mass*np.linalg.norm(shoulder_to_hand_midpoint[0:2])
         torque_magnitude = np.linalg.norm(torque_at_shoulder)  # + np.linalg.norm(torque_at_elbow)
-        max_possible_torque = 12.376665  # found manually with arm straight out from arm
+        max_possible_torque = np.linalg.norm(np.linalg.norm(shoulder_to_upper_arm_midpoint) * upper_arm_force + \
+                              np.linalg.norm(shoulder_to_forearm) * forearm_force + \
+                              np.linalg.norm(shoulder_to_hand_midpoint) * hand_force)
+        # max_possible_torque = 12.376665  # found manually with arm straight out from arm
         # print 'torque_at_shoulder\n', torque_at_shoulder
         # print 'torque_magnitude\n', torque_magnitude
         torque_cost = torque_magnitude / max_possible_torque
@@ -1602,7 +1625,10 @@ class DressingSimulationProcess(object):
         # forearm_mass*np.linalg.norm(shoulder_to_forearm_midpoint[0:2]) + \
         # hand_mass*np.linalg.norm(shoulder_to_hand_midpoint[0:2])
         torque_magnitude = np.linalg.norm(torque_at_shoulder)  # + np.linalg.norm(torque_at_elbow)
-        max_possible_torque = 12.376665  # found manually with arm straight out from arm
+        max_possible_torque = np.linalg.norm(np.linalg.norm(shoulder_to_upper_arm_midpoint) * upper_arm_force + \
+                              np.linalg.norm(shoulder_to_forearm) * forearm_force + \
+                              np.linalg.norm(shoulder_to_hand_midpoint) * hand_force)
+        # max_possible_torque = 12.376665  # found manually with arm straight out from arm
         # print 'torque_at_shoulder\n', torque_at_shoulder
         # print 'torque_magnitude\n', torque_magnitude
         torque_cost = torque_magnitude / max_possible_torque
@@ -2800,9 +2826,9 @@ if __name__ == "__main__":
     # pkg_path = rospack.get_path('hrl_base_selection')
     # skel_file = pkg_path + '/models/' + filename
 
-    model_choices = ['fullbody_50percentile_capsule.skel', 'fullbody_henryclever_capsule.skel', 'fullbody_participant0_capsule.skel']
+    model_choices = ['fullbody_50percentile_capsule.skel', 'fullbody_henryclever_capsule.skel', 'fullbody_participant0_capsule.skel','fullbody_participant1_capsule.skel','fullbody_participant2_capsule.skel','fullbody_participant3_capsule.skel']
 
-    optimizer = DressingMultiProcessOptimization( number_of_processes=0, visualize=False, model=model_choices[1])
+    optimizer = DressingMultiProcessOptimization( number_of_processes=0, visualize=False, model=model_choices[5])
     optimizer.optimize_entire_dressing_task(reset_file=False, break_arm_tasks_into_two_subtasks=True)
     # outer_elapsed_time = rospy.Time.now()-outer_start_time
     print 'Everything is complete!'
