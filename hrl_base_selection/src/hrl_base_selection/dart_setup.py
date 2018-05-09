@@ -66,7 +66,7 @@ class DartDressingWorld(pydart.World):
         self.robot.set_positions(positions)
 
         q = self.human.q
-        if not 'nolegs' in skel_file_name and not 'participant0' in skel_file_name:
+        if not 'nolegs' in skel_file_name and not 'participant0' in skel_file_name and not 'participant1' in skel_file_name:
             q['j_thigh_right_z'] = m.radians(90.)
             q['j_thigh_right_y'] = m.radians(0.)
             q['j_thigh_right_x'] = m.radians(0.)
@@ -81,7 +81,7 @@ class DartDressingWorld(pydart.World):
             q['j_heel_right_2'] = m.radians(00.)
             q['j_heel_left_1'] = m.radians(10.)
             q['j_heel_left_2'] = m.radians(00.)
-        elif 'participant0' in skel_file_name:
+        elif 'participant0' in skel_file_name or 'participant1' in skel_file_name:
             q['j_thigh_right_z'] = m.radians(90.)
             q['j_thigh_right_y'] = m.radians(0.)
             q['j_thigh_right_x'] = m.radians(0.)
@@ -147,6 +147,20 @@ class DartDressingWorld(pydart.World):
             positions['j_pelvis1_x'] += (-0.08 - self.human_reference_center_floor_point[0])
             positions['j_pelvis1_y'] += (0. - self.human_reference_center_floor_point[1])
             positions['j_pelvis1_z'] += (1.01 - self.human_reference_center_floor_point[2])
+        elif 'fullbody_participant1_capsule.skel' in skel_file_name:
+            print 'participant1 model being used'
+            for joint in self.skel_joints:
+                if joint['@name'] == 'j_bicep_left':
+                    self.x_reference_joint_index = self.skel_joints.index(joint)
+                    self.z_reference_joint_index = self.skel_joints.index(joint)
+                elif joint['@name'] == 'j_pelvis':
+                    self.y_reference_joint_index = self.skel_joints.index(joint)
+            self.joint_to_floor_z = 0.
+            self.estimate_center_floor_point()
+            positions = self.human.positions()
+            positions['j_pelvis1_x'] += (0.0 - self.human_reference_center_floor_point[0])
+            positions['j_pelvis1_y'] += (0. - self.human_reference_center_floor_point[1])
+            positions['j_pelvis1_z'] += (1.0 - self.human_reference_center_floor_point[2])
         elif 'fullbody_participant3_capsule.skel' in skel_file_name:
             print 'participant3 model being used'
             for joint in self.skel_joints:
