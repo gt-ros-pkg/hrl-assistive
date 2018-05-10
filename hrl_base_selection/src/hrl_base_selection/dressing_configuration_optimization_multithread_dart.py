@@ -2828,8 +2828,8 @@ if __name__ == "__main__":
 
     model_choices = ['fullbody_50percentile_capsule.skel', 'fullbody_henryclever_capsule.skel', 'fullbody_participant0_capsule.skel','fullbody_participant1_capsule.skel','fullbody_participant2_capsule.skel','fullbody_participant3_capsule.skel']
 
-    optimizer = DressingMultiProcessOptimization( number_of_processes=0, visualize=False, model=model_choices[5])
-    optimizer.optimize_entire_dressing_task(reset_file=False, break_arm_tasks_into_two_subtasks=True)
+    optimizer = DressingMultiProcessOptimization( number_of_processes=0, visualize=False, model=model_choices[2])
+    optimizer.optimize_entire_dressing_task(reset_file=False, break_arm_tasks_into_two_subtasks=False)
     # outer_elapsed_time = rospy.Time.now()-outer_start_time
     print 'Everything is complete!'
     # print 'Done with optimization. Total time elapsed:', outer_elapsed_time.to_sec()
