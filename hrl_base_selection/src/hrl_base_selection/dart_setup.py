@@ -66,6 +66,7 @@ class DartDressingWorld(pydart.World):
         self.robot.set_positions(positions)
 
         q = self.human.q
+
         if not 'nolegs' in skel_file_name and not 'participant0' in skel_file_name and not 'participant1' in skel_file_name:
             q['j_thigh_right_z'] = m.radians(90.)
             q['j_thigh_right_y'] = m.radians(0.)
@@ -175,6 +176,20 @@ class DartDressingWorld(pydart.World):
             positions['j_pelvis1_x'] += (-0.05 - self.human_reference_center_floor_point[0])
             positions['j_pelvis1_y'] += (0. - self.human_reference_center_floor_point[1])
             positions['j_pelvis1_z'] += (0.99 - self.human_reference_center_floor_point[2])
+        elif 'fullbody_participant5_capsule.skel' in skel_file_name:
+            print 'participant5 model being used'
+            for joint in self.skel_joints:
+                if joint['@name'] == 'j_bicep_left':
+                    self.x_reference_joint_index = self.skel_joints.index(joint)
+                    self.z_reference_joint_index = self.skel_joints.index(joint)
+                elif joint['@name'] == 'j_pelvis':
+                    self.y_reference_joint_index = self.skel_joints.index(joint)
+            self.joint_to_floor_z = 0.
+            self.estimate_center_floor_point()
+            positions = self.human.positions()
+            positions['j_pelvis1_x'] += (0.04 - self.human_reference_center_floor_point[0])
+            positions['j_pelvis1_y'] += (0. - self.human_reference_center_floor_point[1])
+            positions['j_pelvis1_z'] += (0.97 - self.human_reference_center_floor_point[2])
         else:
             print 'other file being used'
             for joint in self.skel_joints:

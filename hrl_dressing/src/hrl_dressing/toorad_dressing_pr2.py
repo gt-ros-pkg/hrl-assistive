@@ -59,13 +59,23 @@ class TOORAD_Dressing_PR2(object):
         # configs = self.load_configs(self.save_file_path+self.save_file_name_final_output)
 
         skel_model_choices = ['fullbody_50percentile_capsule.skel', 'fullbody_participant0_capsule.skel',
-         'fullbody_henryclever_capsule.skel']
+                              'fullbody_participant1_capsule.skel', 'fullbody_participant2_capsule.skel',
+                              'fullbody_participant3_capsule.skel', 'fullbody_participant5_capsule.skel',
+                              'fullbody_henryclever_capsule.skel']
         if '50percentile' in model:
             self.dart_skel_model = skel_model_choices[0]
         elif 'participant0' in model:
             self.dart_skel_model = skel_model_choices[1]
-        elif 'henryclever' in model:
+        elif 'participant1' in model:
             self.dart_skel_model = skel_model_choices[2]
+        elif 'participant2' in model:
+            self.dart_skel_model = skel_model_choices[3]
+        elif 'participant3' in model:
+            self.dart_skel_model = skel_model_choices[4]
+        elif 'participant5' in model:
+            self.dart_skel_model = skel_model_choices[5]
+        elif 'henryclever' in model:
+            self.dart_skel_model = skel_model_choices[6]
         else:
             print 'Not sure what model to use!'
             exit()
@@ -168,10 +178,19 @@ class TOORAD_Dressing_PR2(object):
             while (not arm.upper() == 'Q' and not arm.upper() == 'N') and not rospy.is_shutdown():
                 if len(arm) == 0:
                     return
+                
+                elif arm.upper() == '00':
+                    subtask = 0
+                    h_arm = 'left_all'
+                    h_opposite_arm = 'rightarm'
                 elif arm.upper()[0] == '0':
                     subtask = 0
                     h_arm = 'left_forearm'
                     h_opposite_arm = 'rightarm'
+                elif arm.upper() == '11':
+                    subtask = 1
+                    h_arm = 'right_all'
+                    h_opposite_arm = 'leftarm'
                 elif arm.upper()[0] == '1':
                     subtask = 1
                     h_arm = 'left_upperarm'
@@ -194,22 +213,27 @@ class TOORAD_Dressing_PR2(object):
                 print self.save_file_path + self.trajectory_pickle_file_name+str(subtask)+'.pkl'
                 loaded_data = load_pickle(self.save_file_path + self.trajectory_pickle_file_name+str(subtask)+'.pkl')
 
-                params,\
-                z,\
-                pr2_params,\
-                pr2_B_goals,\
-                pr2_B_forearm_pointed_down_arm,\
-                pr2_B_upperarm_pointed_down_shoulder,\
-                pr2_B_hand,\
-                pr2_B_wrist,\
-                pr2_B_traj_start,\
-                pr2_B_traj_forearm_end,\
-                pr2_B_traj_upper_end,\
-                pr2_B_traj_final_end,\
+                params, \
+                z, \
+                pr2_params, \
+                pr2_score, \
+                physx_score, \
+                total_score, \
+                pr2_B_goals, \
+                pr2_B_forearm_pointed_down_arm, \
+                pr2_B_upperarm_pointed_down_shoulder, \
+                pr2_B_hand, \
+                pr2_B_wrist, \
+                pr2_B_traj_start, \
+                pr2_B_traj_forearm_end, \
+                pr2_B_traj_upper_end, \
+                pr2_B_traj_final_end, \
                 traj_path = loaded_data
                 print 'Trajectory data loaded succesfully!'
 
                 print 'pr2_params', pr2_params
+
+                print 'total score:', total_score
 
                 # self.toorad = DressingSimulationProcess(visualize=False)
                 print 'Starting visualization of the desired configuration for the dressing task. First select the arm ' \
@@ -285,7 +309,7 @@ class TOORAD_Dressing_PR2(object):
                     cont = ' '
                 while not cont.upper()[0] == 'Q' and not cont.upper()[0] == 'N' and not rospy.is_shutdown():
                     count = 0
-                    while count < 2 and not rospy.is_shutdown():
+                    while count < 1 and not rospy.is_shutdown():
                         count += 1
                         # print 'robot pose'
                         # print self.robot.q['rootJoint_pos_x']
@@ -414,10 +438,13 @@ class TOORAD_Dressing_PR2(object):
                 # Calculate the trajectories based on the configuration in the simulator
                 print self.save_file_path + self.trajectory_pickle_file_name + str(subtask) + '.pkl'
                 loaded_data = load_pickle(self.save_file_path + self.trajectory_pickle_file_name + str(subtask) + '.pkl')
-
+                print len(loaded_data)
                 params, \
                 z, \
                 pr2_params, \
+                pr2_score, \
+                physx_score, \
+                total_score, \
                 pr2_B_goals, \
                 pr2_B_forearm_pointed_down_arm, \
                 pr2_B_upperarm_pointed_down_shoulder, \
@@ -1001,10 +1028,11 @@ if __name__ == '__main__':
         import openravepy as op
         from openravepy.misc import InitOpenRAVELogging
     model_choices = ['fullbody_50percentile_capsule.skel','fullbody_participant0_capsule.skel','fullbody_henryclever_capsule.skel']
-    model_choices = ['50-percentile-wheelchair', '50-percentile-no-chair', 'participant0', 'henryclever']
+    model_choices = ['50-percentile-wheelchair', '50-percentile-no-chair', 'participant0', 'participant1',
+                     'participant2', 'participant3', 'participant5' 'henryclever']
 
     toorad_dressing = TOORAD_Dressing_PR2(participant=opt.participant, trial=opt.participant,
                                           enable_realtime_HMM=False, visualize=opt.visualize,
                                           visually_estimate_arm_pose=False, adjust_arm_pose_visually=False,
-                                          machine=opt.machine, model=model_choices[2])
+                                          machine=opt.machine, model=model_choices[6])
 
