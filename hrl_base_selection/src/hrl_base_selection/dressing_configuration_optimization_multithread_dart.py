@@ -2826,9 +2826,9 @@ if __name__ == "__main__":
     # pkg_path = rospack.get_path('hrl_base_selection')
     # skel_file = pkg_path + '/models/' + filename
 
-    model_choices = ['fullbody_50percentile_capsule.skel', 'fullbody_henryclever_capsule.skel', 'fullbody_participant0_capsule.skel','fullbody_participant1_capsule.skel','fullbody_participant2_capsule.skel','fullbody_participant3_capsule.skel']
+    model_choices = ['fullbody_50percentile_capsule.skel', 'fullbody_henryclever_capsule.skel', 'fullbody_participant0_capsule.skel','fullbody_participant1_capsule.skel','fullbody_participant2_capsule.skel','fullbody_participant3_capsule.skel', 'fullbody_participant5_capsule.skel']
 
-    optimizer = DressingMultiProcessOptimization( number_of_processes=0, visualize=False, model=model_choices[2])
+    optimizer = DressingMultiProcessOptimization( number_of_processes=0, visualize=False, model=model_choices[6])
     optimizer.optimize_entire_dressing_task(reset_file=False, break_arm_tasks_into_two_subtasks=False)
     # outer_elapsed_time = rospy.Time.now()-outer_start_time
     print 'Everything is complete!'
