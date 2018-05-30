@@ -298,18 +298,18 @@ class DressingMultiProcessOptimization(object):
             open(self.save_file_path + self.save_file_name_fine_output, 'w').close()
             open(self.save_file_path + self.save_file_name_final_output, 'w').close()
 
-        if break_arm_tasks_into_two_subtasks and not 'participant3' in self.model:
+        if break_arm_tasks_into_two_subtasks and not 'participant3' in self.model and not 'participant6' in self.model:
         # subtask_list = ['right_forearm', 'right_upperarm', 'left_forearm', 'left_upperarm']
             subtask_list = ['left_forearm', 'left_upperarm', 'right_forearm', 'right_upperarm']
             robot_arm_to_use = ['rightarm', 'rightarm', 'rightarm', 'rightarm']
             all_fixed_points_to_use = [[], [], [0], [0]]
             all_stretch_allowable = [[], [], [0.46], [0.46]]
-        elif break_arm_tasks_into_two_subtasks and 'participant3' in self.model:
+        elif break_arm_tasks_into_two_subtasks and ('participant3' in self.model or 'participant6' in self.model):
             subtask_list = ['left_forearm', 'left_upperarm']
             robot_arm_to_use = ['rightarm', 'rightarm']
             all_fixed_points_to_use = [[0], [0]]
             all_stretch_allowable = [[0.46], [0.46]]
-        elif not break_arm_tasks_into_two_subtasks and 'participant3' in self.model:
+        elif not break_arm_tasks_into_two_subtasks and ('participant3' in self.model or 'participant6' in self.model):
             subtask_list = ['left_all']
             robot_arm_to_use = ['rightarm']
             all_fixed_points_to_use = [[0]]
@@ -319,7 +319,7 @@ class DressingMultiProcessOptimization(object):
             robot_arm_to_use = ['rightarm', 'rightarm']
             all_fixed_points_to_use = [[], [0]]
             all_stretch_allowable = [[], [0.46]]
-        if not 'participant3' in self.model:
+        if not 'participant3' in self.model and not 'participant6' in self.model:
             all_fixed_points = self.pool.apply(find_fixed_points, [[subtask_list[0],
                                                                    robot_arm_to_use[0],
                                                                    0,
@@ -2826,9 +2826,9 @@ if __name__ == "__main__":
     # pkg_path = rospack.get_path('hrl_base_selection')
     # skel_file = pkg_path + '/models/' + filename
 
-    model_choices = ['fullbody_50percentile_capsule.skel', 'fullbody_henryclever_capsule.skel', 'fullbody_participant0_capsule.skel','fullbody_participant1_capsule.skel','fullbody_participant2_capsule.skel','fullbody_participant3_capsule.skel', 'fullbody_participant5_capsule.skel', 'fullbody_50percentile_capsule_thinner_torso.skel']
+    model_choices = ['fullbody_50percentile_capsule.skel', 'fullbody_henryclever_capsule.skel', 'fullbody_participant0_capsule.skel','fullbody_participant1_capsule.skel','fullbody_participant2_capsule.skel','fullbody_participant3_capsule.skel', 'fullbody_participant5_capsule.skel', 'fullbody_participant6_capsule.skel', 'fullbody_50percentile_capsule_thinner_torso.skel']
 
-    optimizer = DressingMultiProcessOptimization( number_of_processes=0, visualize=False, model=model_choices[-1])
+    optimizer = DressingMultiProcessOptimization( number_of_processes=0, visualize=False, model=model_choices[-2])
     optimizer.optimize_entire_dressing_task(reset_file=False, break_arm_tasks_into_two_subtasks=False)
     # outer_elapsed_time = rospy.Time.now()-outer_start_time
     print 'Everything is complete!'
