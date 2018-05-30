@@ -1,5 +1,8 @@
 <?xml version="1.0" ?>
 <robot name="gown_box">
+  <material name="grey">
+    <color rgba="0.82745098 0.82745098 0.82745098 1"/>
+  </material>
   <link name ="gown">
     <!--<inertial>
         <mass value="3.92"/>
@@ -8,12 +11,14 @@
                 rpy="0 0 0" />
     </inertial>-->
     <visual name="visual">
+      
       <origin
         xyz="0.0 0.0 -0.15"
         rpy="0 0 0" />
       <geometry>
         <box size="0.08 0.12 0.3"/>
       </geometry>
+      <material name="grey"/>
       <!--<color>1.0 0.5 0.0</color>-->
     </visual>
     <collision name="collision">

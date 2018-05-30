@@ -61,6 +61,7 @@ class TOORAD_Dressing_PR2(object):
         skel_model_choices = ['fullbody_50percentile_capsule.skel', 'fullbody_participant0_capsule.skel',
                               'fullbody_participant1_capsule.skel', 'fullbody_participant2_capsule.skel',
                               'fullbody_participant3_capsule.skel', 'fullbody_participant5_capsule.skel',
+                              'fullbody_participant6_capsule.skel',
                               'fullbody_henryclever_capsule.skel',  'fullbody_50percentile_capsule_thinner_torso.skel']
         if '50-percentile-wheelchair-thin-torso' in model:
             self.dart_skel_model = skel_model_choices[-1]
@@ -76,8 +77,10 @@ class TOORAD_Dressing_PR2(object):
             self.dart_skel_model = skel_model_choices[4]
         elif 'participant5' in model:
             self.dart_skel_model = skel_model_choices[5]
-        elif 'henryclever' in model:
+        elif 'participant6' in model:
             self.dart_skel_model = skel_model_choices[6]
+        elif 'henryclever' in model:
+            self.dart_skel_model = skel_model_choices[7]
         else:
             print 'Not sure what model to use!'
             exit()
@@ -1032,10 +1035,10 @@ if __name__ == '__main__':
         from openravepy.misc import InitOpenRAVELogging
     model_choices = ['fullbody_50percentile_capsule.skel','fullbody_participant0_capsule.skel','fullbody_henryclever_capsule.skel']
     model_choices = ['50-percentile-wheelchair', '50-percentile-no-chair', 'participant0', 'participant1',
-                     'participant2', 'participant3', 'participant5', 'henryclever', '50-percentile-wheelchair-thin-torso']
+                     'participant2', 'participant3', 'participant5','participant6', 'henryclever', '50-percentile-wheelchair-thin-torso']
 
     toorad_dressing = TOORAD_Dressing_PR2(participant=opt.participant, trial=opt.participant,
                                           enable_realtime_HMM=False, visualize=opt.visualize,
                                           visually_estimate_arm_pose=False, adjust_arm_pose_visually=False,
-                                          machine=opt.machine, model=model_choices[-1])
+                                          machine=opt.machine, model=model_choices[-3])
 
