@@ -283,11 +283,11 @@ class CNN(nn.Module):
 
         )
 
+        self.VGG_fc1 = nn.Sequential(
+            nn.Linear(2048, 2048),
+            nn.Linear(2048, out_size),
 
-        #self.CNN_pack4 = nn.Sequential(
-        # torch.nn.MaxPool2d(2, 2),  # this cuts the height and width down by 2
-        #
-        #)
+        )
 
 
         print 'x'
@@ -363,6 +363,8 @@ class CNN(nn.Module):
         # TODO: Implement the forward pass. This should take few lines of code.
         #############################################################################
         #print images.size(), 'CNN input size'
+
+
         scores = self.CNN_pack1(images)
         scores_size = scores.size()
         #print scores_size, 'scores conv1'
@@ -379,6 +381,74 @@ class CNN(nn.Module):
 
         #print scores.size(), 'scores fc1'
         scores = self.CNN_fc1(scores)
+
+        scores[:, 0] = torch.add(scores[:, 0], 0.6)
+        scores[:, 1] = torch.add(scores[:, 1], 1.3)
+        scores[:, 2] = torch.add(scores[:, 2], 0.1)
+        scores[:, 3] = torch.add(scores[:, 3], 0.6)
+        scores[:, 4] = torch.add(scores[:, 4], 1.3)
+        scores[:, 5] = torch.add(scores[:, 5], 0.1)
+        scores[:, 6] = torch.add(scores[:, 6], 0.6)
+        scores[:, 7] = torch.add(scores[:, 7], 1.3)
+        scores[:, 8] = torch.add(scores[:, 8], 0.1)
+        scores[:, 9] = torch.add(scores[:, 9], 0.6)
+        scores[:, 10] = torch.add(scores[:, 10], 1.3)
+        scores[:, 11] = torch.add(scores[:, 11], 0.1)
+        scores[:, 12] = torch.add(scores[:, 12], 0.6)
+        scores[:, 13] = torch.add(scores[:, 13], 1.3)
+        scores[:, 14] = torch.add(scores[:, 14], 0.1)
+        scores[:, 15] = torch.add(scores[:, 15], 0.6)
+        scores[:, 16] = torch.add(scores[:, 16], 1.3)
+        scores[:, 17] = torch.add(scores[:, 17], 0.1)
+        scores[:, 18] = torch.add(scores[:, 18], 0.6)
+        scores[:, 19] = torch.add(scores[:, 19], 1.3)
+        scores[:, 20] = torch.add(scores[:, 20], 0.1)
+        scores[:, 21] = torch.add(scores[:, 21], 0.6)
+        scores[:, 22] = torch.add(scores[:, 22], 1.3)
+        scores[:, 23] = torch.add(scores[:, 23], 0.1)
+        scores[:, 24] = torch.add(scores[:, 24], 0.6)
+        scores[:, 25] = torch.add(scores[:, 25], 1.3)
+        scores[:, 26] = torch.add(scores[:, 26], 0.1)
+        scores[:, 27] = torch.add(scores[:, 27], 0.6)
+        scores[:, 28] = torch.add(scores[:, 28], 1.3)
+        scores[:, 29] = torch.add(scores[:, 29], 0.1)
+
+        #print scores[0, :]
+
+        targets_est = scores.clone().data*1000.
+
+        #print scores.size(), 'scores fc2'
+
+        #here we want to compute our score as the Euclidean distance between the estimated x,y,z points and the target.
+        scores = targets/1000. - scores
+        scores = scores.pow(2)
+        scores[:, 0] = scores[:, 0] + scores[:, 1] + scores[:, 2]
+        scores[:,1] = scores[:,3]+scores[:,4]+scores[:,5]
+        scores[:,2] = scores[:,6]+scores[:,7]+scores[:,8]
+        scores[:,3] = scores[:,9]+scores[:,10]+scores[:,11]
+        scores[:,4] = scores[:,12]+scores[:,13]+scores[:,14]
+        scores[:,5] = scores[:,15]+scores[:,16]+scores[:,17]
+        scores[:,6] = scores[:,18]+scores[:,19]+scores[:,20]
+        scores[:,7] = scores[:,21]+scores[:,22]+scores[:,23]
+        scores[:,8] = scores[:,24]+scores[:,25]+scores[:,26]
+        scores[:,9] = scores[:,27]+scores[:,28]+scores[:,29]
+        scores = scores[:, 0:10]
+        scores = scores.sqrt()
+
+
+        #############################################################################
+        #                             END OF YOUR CODE                              #
+        #############################################################################
+        return scores, targets_est
+
+
+    def forward_direct_vgg(self, vgg_image_features, targets):
+        #print vgg_image_features.shape
+        vgg_sz = vgg_image_features.size()
+        vgg_image_features = vgg_image_features.view(vgg_sz[0],vgg_sz[1]*vgg_sz[2]*vgg_sz[3])
+        #print vgg_image_features.shape
+
+        scores = self.VGG_fc1(vgg_image_features)
 
         scores[:, 0] = torch.add(scores[:, 0], 0.6)
         scores[:, 1] = torch.add(scores[:, 1], 1.3)

@@ -21,3 +21,8 @@ Steps for pose estimation:
     
 4. Test subjects on the model you've built.
   a. plot_loss.py: plots losses and prints errors/standard deviations for entire validation datasets
+
+
+Note: The kinematics convnet will ONLY work with Pytorch version 0.3.1. It will not work with Pytorch version 0.4.1.
+
+

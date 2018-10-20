@@ -55,6 +55,11 @@ from sklearn import metrics
 from sklearn.utils import shuffle
 from sklearn.multioutput import MultiOutputRegressor
 
+#keras stuff
+from keras.preprocessing import image
+from keras.applications.vgg16 import VGG16
+from keras.applications.vgg16 import preprocess_input
+
 
 np.set_printoptions(threshold='nan')
 
@@ -103,7 +108,7 @@ class PhysicalTrainer():
         #        self.opt.leave_out) + '.pt', map_location=lambda storage, loc: storage)
         #print 'LOADED!!!!!!!!!!!!!!!!!1'
 
-        self.num_epochs = 10
+        self.num_epochs = 300
         self.include_inter = True
         self.shuffle = True
 
@@ -132,6 +137,9 @@ class PhysicalTrainer():
         self.mat_size = (NUMOFTAXELS_X, NUMOFTAXELS_Y)
         self.output_size = (NUMOFOUTPUTNODES, NUMOFOUTPUTDIMS)
 
+        self.vgg_extractor = True
+        if self.vgg_extractor == True:
+            self.imagenet_model = VGG16(weights='imagenet', include_top=False)
 
         if self.tensor == True:
             #load in the training files.  This may take a while.
@@ -663,11 +671,23 @@ class PhysicalTrainer():
 
                 batch[0],batch[1], _ = SyntheticLib().synthetic_master(batch[0], batch[1], flip=True, shift=True, scale=True, bedangle=True, include_inter = self.include_inter, loss_vector_type = self.loss_vector_type)
 
-                images_up = Variable(torch.Tensor(PreprocessingLib().preprocessing_add_image_noise(np.array(PreprocessingLib().preprocessing_pressure_map_upsample(batch[0].numpy()[:, :, 10:74, 10:37])))).type(dtype), requires_grad=False)
-                images, targets, scores_zeros = Variable(batch[0].type(dtype), requires_grad = False), Variable(batch[1].type(dtype), requires_grad = False), Variable(torch.Tensor(np.zeros((batch[1].shape[0], batch[1].shape[1]/3))).type(dtype), requires_grad = False)
+                images_up_non_tensor = PreprocessingLib().preprocessing_add_image_noise(np.array(PreprocessingLib().preprocessing_pressure_map_upsample(batch[0].numpy()[:, :, 10:74, 10:37])))
 
-                self.optimizer.zero_grad()
-                scores, targets_est = self.model.forward_direct(images_up, targets)
+                if self.vgg_extractor == True:
+                    vgg_images_up_non_tensor = preprocess_input(np.transpose(images_up_non_tensor, (0,2,3,1)))
+                    vgg16_image_features_non_tensor = self.imagenet_model.predict(vgg_images_up_non_tensor)
+                    vgg16_image_features = Variable(torch.Tensor(vgg16_image_features_non_tensor).type(dtype), requires_grad=False)
+                    images, targets, scores_zeros = Variable(batch[0].type(dtype), requires_grad = False), Variable(batch[1].type(dtype), requires_grad=False), Variable(torch.Tensor(np.zeros((batch[1].shape[0], batch[1].shape[1] / 3))).type(dtype), requires_grad=False)
+
+                    self.optimizer.zero_grad()
+                    scores, targets_est = self.model.forward_direct_vgg(vgg16_image_features, targets)
+
+                else:
+                    images_up = Variable(torch.Tensor(images_up_non_tensor).type(dtype), requires_grad=False)
+                    images, targets, scores_zeros = Variable(batch[0].type(dtype), requires_grad = False), Variable(batch[1].type(dtype), requires_grad = False), Variable(torch.Tensor(np.zeros((batch[1].shape[0], batch[1].shape[1]/3))).type(dtype), requires_grad = False)
+
+                    self.optimizer.zero_grad()
+                    scores, targets_est = self.model.forward_direct(images_up, targets)
 
                 self.criterion = nn.L1Loss()
                 loss = self.criterion(scores, scores_zeros)
@@ -762,11 +782,22 @@ class PhysicalTrainer():
 
 
             elif self.loss_vector_type == 'direct':
+                images_up_non_tensor = np.array(PreprocessingLib().preprocessing_pressure_map_upsample(batch[0].numpy()[:, :, 10:74, 10:37]))
 
-                images_up = Variable(torch.Tensor(np.array(PreprocessingLib().preprocessing_pressure_map_upsample(batch[0].numpy()[:, :, 10:74, 10:37]))).type(dtype), requires_grad=False)
-                images, targets, scores_zeros = Variable(batch[0].type(dtype), requires_grad=False), Variable(batch[1].type(dtype), requires_grad=False), Variable(torch.Tensor(np.zeros((batch[1].shape[0], batch[1].shape[1] / 3))).type(dtype), requires_grad=False)
+                if self.vgg_extractor == True:
+                    vgg_images_up_non_tensor = preprocess_input(np.transpose(images_up_non_tensor, (0,2,3,1)))
+                    vgg16_image_features_non_tensor = self.imagenet_model.predict(vgg_images_up_non_tensor)
+                    vgg16_image_features = Variable(torch.Tensor(vgg16_image_features_non_tensor).type(dtype), requires_grad=False)
+                    images, targets, scores_zeros = Variable(batch[0].type(dtype), requires_grad = False), Variable(batch[1].type(dtype), requires_grad=False), Variable(torch.Tensor(np.zeros((batch[1].shape[0], batch[1].shape[1] / 3))).type(dtype), requires_grad=False)
 
-                scores, targets_est = self.model.forward_direct(images_up, targets)
+                    scores, targets_est = self.model.forward_direct_vgg(vgg16_image_features, targets)
+
+                else:
+                    images_up = Variable(torch.Tensor(images_up_non_tensor).type(dtype), requires_grad=False)
+                    images, targets, scores_zeros = Variable(batch[0].type(dtype), requires_grad=False), Variable(batch[1].type(dtype), requires_grad=False), Variable(torch.Tensor(np.zeros((batch[1].shape[0], batch[1].shape[1] / 3))).type(dtype), requires_grad=False)
+
+                    scores, targets_est = self.model.forward_direct(images_up, targets)
+
                 self.criterion = nn.L1Loss()
 
                 loss = self.criterion(scores, scores_zeros)
