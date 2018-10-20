@@ -51,7 +51,7 @@ from sklearn.cluster import KMeans
 from sklearn.preprocessing import scale
 from sklearn.preprocessing import normalize
 from sklearn import svm, linear_model, decomposition, kernel_ridge, neighbors
-from sklearn import metrics, cross_validation
+from sklearn import metrics
 from sklearn.utils import shuffle
 from sklearn.multioutput import MultiOutputRegressor
 
@@ -370,6 +370,10 @@ class PhysicalTrainer():
             pkl.dump(regr, open('/home/ubuntu/Autobed_OFFICIAL_Trials/subject_' + str(
                 self.opt.leave_out) + '/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p', 'wb'))
             print 'saved successfully'
+        elif self.opt.computer == 'baymax':
+            pkl.dump(regr, open('/home/henryclever/IROS_Data/subject_' + str(
+                self.opt.leave_out) + '/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p', 'wb'))
+            print 'saved successfully'
         #
         #
         print 'fitting Ridge'
@@ -397,6 +401,10 @@ class PhysicalTrainer():
             pkl.dump(regr, open('/home/ubuntu/Autobed_OFFICIAL_Trials/subject_' + str(
                 self.opt.leave_out) + '/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p', 'wb'))
             print 'saved successfully'
+        elif self.opt.computer == 'baymax':
+            pkl.dump(regr, open('/home/henryclever/IROS_Data/subject_' + str(
+                self.opt.leave_out) + '/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p', 'wb'))
+            print 'saved successfully'
 
 
 
@@ -419,6 +427,10 @@ class PhysicalTrainer():
             print 'saved successfully'
         elif self.opt.computer == 'aws':
             pkl.dump(regr, open('/home/ubuntu/Autobed_OFFICIAL_Trials/subject_' + str(
+                self.opt.leave_out) + '/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p', 'wb'))
+            print 'saved successfully'
+        elif self.opt.computer == 'baymax':
+            pkl.dump(regr, open('/home/henryclever/IROS_Data/subject_' + str(
                 self.opt.leave_out) + '/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p', 'wb'))
             print 'saved successfully'
 
@@ -571,6 +583,10 @@ class PhysicalTrainer():
         elif self.opt.computer == 'aws':
             torch.save(self.model, '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_'+str(self.opt.leave_out)+'/convnet'+self.save_name+'.pt')
             pkl.dump(self.train_val_losses,open('/home/ubuntu/Autobed_OFFICIAL_Trials/subject_'+str(self.opt.leave_out)+'/losses'+self.save_name+'.p', 'wb'))
+
+        elif self.opt.computer == 'baymax':
+            torch.save(self.model, '/home/henryclever/IROS_Data/subject_'+str(self.opt.leave_out)+'/convnet'+self.save_name+'.pt')
+            pkl.dump(self.train_val_losses,open('/home/henryclever/IROS_Data/subject_'+str(self.opt.leave_out)+'/losses'+self.save_name+'.p', 'wb'))
 
 
     def train_convnet(self, epoch):
@@ -849,79 +865,51 @@ if __name__ == "__main__":
     else: filetag = '_HOGshift'
 
     if opt.computer == 'lab_harddrive':
-
-        opt.subject2Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_2/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
-        opt.subject3Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_3/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
-        opt.subject4Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_4/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
-        opt.subject5Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_5/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
-        opt.subject6Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_6/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
-        opt.subject7Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_7/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
-        opt.subject8Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_8/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
-
-        opt.subject9Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_9/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
-        opt.subject10Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_10/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
-        opt.subject11Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_11/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
-        opt.subject12Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_12/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
-        opt.subject13Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_13/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
-        opt.subject14Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_14/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
-        opt.subject15Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_15/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
-        opt.subject16Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_16/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
-        opt.subject17Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_17/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
-        opt.subject18Path = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_18/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
-        opt.subject9PathB = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_9/p_files/trainval_sit175rlh_sit120rll'+filetag+'.p'
-        opt.subject10PathB = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_10/p_files/trainval_sit175rlh_sit120rll'+filetag+'.p'
-        opt.subject11PathB = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_11/p_files/trainval_sit175rlh_sit120rll'+filetag+'.p'
-        opt.subject12PathB = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_12/p_files/trainval_sit175rlh_sit120rll'+filetag+'.p'
-        opt.subject13PathB = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_13/p_files/trainval_sit175rlh_sit120rll'+filetag+'.p'
-        opt.subject14PathB = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_14/p_files/trainval_sit175rlh_sit120rll'+filetag+'.p'
-        opt.subject15PathB = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_15/p_files/trainval_sit175rlh_sit120rll'+filetag+'.p'
-        opt.subject16PathB = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_16/p_files/trainval_sit175rlh_sit120rll'+filetag+'.p'
-        opt.subject17PathB = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_17/p_files/trainval_sit175rlh_sit120rll'+filetag+'.p'
-        opt.subject18PathB = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials/subject_18/p_files/trainval_sit175rlh_sit120rll'+filetag+'.p'
-
-        #shortcut:
-
-        if opt.quick_test == True:
-            opt.subject4Path = '/home/henryclever/test/trainval4_150rh1_sit120rh.p'
-            opt.subject8Path = '/home/henryclever/test/trainval8_150rh1_sit120rh.p'
-
+        name_prefix = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials'
+        name_prefix_qt = '/home/henryclever/test'
 
     elif opt.computer == 'aws':
+        name_prefix = '/home/ubuntu/Autobed_OFFICIAL_Trials'
+        name_prefix_qt = '/home/ubuntu/test'
 
-        opt.subject2Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_2/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
-        opt.subject3Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_3/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
-        opt.subject4Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_4/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
-        opt.subject5Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_5/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
-        opt.subject6Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_6/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
-        opt.subject7Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_7/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
-        opt.subject8Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_8/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
-        opt.subject9Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_9/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
-        opt.subject10Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_10/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
-        opt.subject11Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_11/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
-        opt.subject12Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_12/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
-        opt.subject13Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_13/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
-        opt.subject14Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_14/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
-        opt.subject15Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_15/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
-        opt.subject16Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_16/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
-        opt.subject17Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_17/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
-        opt.subject18Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_18/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
-        opt.subject9PathB = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_9/trainval_sit175rlh_sit120rll'+filetag+'.p'
-        opt.subject10PathB = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_10/trainval_sit175rlh_sit120rll'+filetag+'.p'
-        opt.subject11PathB = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_11/trainval_sit175rlh_sit120rll'+filetag+'.p'
-        opt.subject12PathB = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_12/trainval_sit175rlh_sit120rll'+filetag+'.p'
-        opt.subject13PathB = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_13/trainval_sit175rlh_sit120rll'+filetag+'.p'
-        opt.subject14PathB = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_14/trainval_sit175rlh_sit120rll'+filetag+'.p'
-        opt.subject15PathB = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_15/trainval_sit175rlh_sit120rll'+filetag+'.p'
-        opt.subject16PathB = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_16/trainval_sit175rlh_sit120rll'+filetag+'.p'
-        opt.subject17PathB = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_17/trainval_sit175rlh_sit120rll'+filetag+'.p'
-        opt.subject18PathB = '/home/ubuntu/Autobed_OFFICIAL_Trials/subject_18/trainval_sit175rlh_sit120rll'+filetag+'.p'
+    elif opt.computer == 'baymax':
+        name_prefix = '/home/henryclever/IROS_Data'
+        name_prefix_qt = '/home/henryclever/test'
 
-        #shortcut:
 
-        if opt.quick_test == True:
-            opt.subject4Path = '/home/ubuntu/test/trainval4_150rh1_sit120rh.p'
-            opt.subject8Path = '/home/ubuntu/test/trainval8_150rh1_sit120rh.p'
+    opt.subject2Path = name_prefix+'/subject_2/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
+    opt.subject3Path = name_prefix+'/subject_3/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
+    opt.subject4Path = name_prefix+'/subject_4/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
+    opt.subject5Path = name_prefix+'/subject_5/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
+    opt.subject6Path = name_prefix+'/subject_6/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
+    opt.subject7Path = name_prefix+'/subject_7/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
+    opt.subject8Path = name_prefix+'/subject_8/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
+    opt.subject9Path = name_prefix+'/subject_9/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+    opt.subject10Path = name_prefix+'/subject_10/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+    opt.subject11Path = name_prefix+'/subject_11/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+    opt.subject12Path = name_prefix+'/subject_12/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+    opt.subject13Path = name_prefix+'/subject_13/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+    opt.subject14Path = name_prefix+'/subject_14/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+    opt.subject15Path = name_prefix+'/subject_15/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+    opt.subject16Path = name_prefix+'/subject_16/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+    opt.subject17Path = name_prefix+'/subject_17/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+    opt.subject18Path = name_prefix+'/subject_18/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+    opt.subject9PathB = name_prefix+'/subject_9/p_files/trainval_sit175rlh_sit120rll'+filetag+'.p'
+    opt.subject10PathB = name_prefix+'/subject_10/p_files/trainval_sit175rlh_sit120rll'+filetag+'.p'
+    opt.subject11PathB = name_prefix+'/subject_11/p_files/trainval_sit175rlh_sit120rll'+filetag+'.p'
+    opt.subject12PathB = name_prefix+'/subject_12/p_files/trainval_sit175rlh_sit120rll'+filetag+'.p'
+    opt.subject13PathB = name_prefix+'/subject_13/p_files/trainval_sit175rlh_sit120rll'+filetag+'.p'
+    opt.subject14PathB = name_prefix+'/subject_14/p_files/trainval_sit175rlh_sit120rll'+filetag+'.p'
+    opt.subject15PathB = name_prefix+'/subject_15/p_files/trainval_sit175rlh_sit120rll'+filetag+'.p'
+    opt.subject16PathB = name_prefix+'/subject_16/p_files/trainval_sit175rlh_sit120rll'+filetag+'.p'
+    opt.subject17PathB = name_prefix+'/subject_17/p_files/trainval_sit175rlh_sit120rll'+filetag+'.p'
+    opt.subject18PathB = name_prefix+'/subject_18/p_files/trainval_sit175rlh_sit120rll'+filetag+'.p'
 
+    #shortcut:
+
+    if opt.quick_test == True:
+        opt.subject4Path = name_prefix_qt+'/trainval4_150rh1_sit120rh.p'
+        opt.subject8Path = name_prefix_qt+'/trainval8_150rh1_sit120rh.p'
 
 
 

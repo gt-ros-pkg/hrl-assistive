@@ -22,7 +22,7 @@ from skimage import data, color, exposure
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import scale
 from sklearn import svm, linear_model, decomposition, kernel_ridge, neighbors
-from sklearn import metrics, cross_validation
+from sklearn import metrics
 from sklearn.utils import shuffle
 
 #ROS
