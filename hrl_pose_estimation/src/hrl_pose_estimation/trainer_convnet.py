@@ -690,9 +690,11 @@ class PhysicalTrainer():
                 images_up_non_tensor = PreprocessingLib().preprocessing_add_image_noise(np.array(PreprocessingLib().preprocessing_pressure_map_upsample(batch[0].numpy()[:, :, 10:74, 10:37])))
 
                 if self.vgg_extractor == True:
+                    prior = time.time()
                     vgg_images_up_non_tensor = preprocess_input(np.transpose(images_up_non_tensor, (0,2,3,1)))
                     vgg16_image_features_non_tensor = self.imagenet_model.predict(vgg_images_up_non_tensor)
                     vgg16_image_features = Variable(torch.Tensor(vgg16_image_features_non_tensor).type(dtype), requires_grad=False)
+                    print time.time() - prior, 'time to go fwd on vgg'
                     images, targets, scores_zeros = Variable(batch[0].type(dtype), requires_grad = False), Variable(batch[1].type(dtype), requires_grad=False), Variable(torch.Tensor(np.zeros((batch[1].shape[0], batch[1].shape[1] / 3))).type(dtype), requires_grad=False)
 
                     self.optimizer.zero_grad()
@@ -737,7 +739,7 @@ class PhysicalTrainer():
                 self.sc_sample = self.sc_sample[0, :].squeeze() / 1000
                 self.sc_sample = self.sc_sample.view(self.output_size)
 
-                val_loss = self.validate_convnet(n_batches=4)
+                #val_loss = self.validate_convnet(n_batches=4)
                 train_loss = loss.data[0]
                 examples_this_epoch = batch_idx * len(images)
                 epoch_progress = 100. * batch_idx / len(self.train_loader)
@@ -801,11 +803,12 @@ class PhysicalTrainer():
                 images_up_non_tensor = np.array(PreprocessingLib().preprocessing_pressure_map_upsample(batch[0].numpy()[:, :, 10:74, 10:37]))
 
                 if self.vgg_extractor == True:
+                    prior = time.time()
                     vgg_images_up_non_tensor = preprocess_input(np.transpose(images_up_non_tensor, (0,2,3,1)))
                     vgg16_image_features_non_tensor = self.imagenet_model.predict(vgg_images_up_non_tensor)
+                    print time.time() - prior, 'time to val vgg'
                     vgg16_image_features = Variable(torch.Tensor(vgg16_image_features_non_tensor).type(dtype), requires_grad=False)
                     images, targets, scores_zeros = Variable(batch[0].type(dtype), requires_grad = False), Variable(batch[1].type(dtype), requires_grad=False), Variable(torch.Tensor(np.zeros((batch[1].shape[0], batch[1].shape[1] / 3))).type(dtype), requires_grad=False)
-
                     scores, targets_est = self.model.forward_direct_vgg(vgg16_image_features, targets)
 
                 else:
