@@ -382,6 +382,10 @@ class PhysicalTrainer():
             pkl.dump(regr, open('/home/henryclever/IROS_Data/subject_' + str(
                 self.opt.leave_out) + '/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p', 'wb'))
             print 'saved successfully'
+        elif self.opt.computer == 'gorilla':
+            pkl.dump(regr, open('/home/henry/IROS_Data/subject_' + str(
+                self.opt.leave_out) + '/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p', 'wb'))
+            print 'saved successfully'
         #
         #
         print 'fitting Ridge'
@@ -413,6 +417,10 @@ class PhysicalTrainer():
             pkl.dump(regr, open('/home/henryclever/IROS_Data/subject_' + str(
                 self.opt.leave_out) + '/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p', 'wb'))
             print 'saved successfully'
+        elif self.opt.computer == 'gorilla':
+            pkl.dump(regr, open('/home/henry/IROS_Data/subject_' + str(
+                self.opt.leave_out) + '/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p', 'wb'))
+            print 'saved successfully'
 
 
 
@@ -439,6 +447,10 @@ class PhysicalTrainer():
             print 'saved successfully'
         elif self.opt.computer == 'baymax':
             pkl.dump(regr, open('/home/henryclever/IROS_Data/subject_' + str(
+                self.opt.leave_out) + '/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p', 'wb'))
+            print 'saved successfully'
+        elif self.opt.computer == 'gorilla':
+            pkl.dump(regr, open('/home/henry/IROS_Data/subject_' + str(
                 self.opt.leave_out) + '/HoG_' + baseline + '_p' + str(self.opt.leave_out) + '.p', 'wb'))
             print 'saved successfully'
 
@@ -595,6 +607,10 @@ class PhysicalTrainer():
         elif self.opt.computer == 'baymax':
             torch.save(self.model, '/home/henryclever/IROS_Data/subject_'+str(self.opt.leave_out)+'/convnet'+self.save_name+'.pt')
             pkl.dump(self.train_val_losses,open('/home/henryclever/IROS_Data/subject_'+str(self.opt.leave_out)+'/losses'+self.save_name+'.p', 'wb'))
+
+        elif self.opt.computer == 'gorilla':
+            torch.save(self.model, '/home/henry/IROS_Data/subject_'+str(self.opt.leave_out)+'/convnet'+self.save_name+'.pt')
+            pkl.dump(self.train_val_losses,open('/home/henry/IROS_Data/subject_'+str(self.opt.leave_out)+'/losses'+self.save_name+'.p', 'wb'))
 
 
     def train_convnet(self, epoch):
@@ -906,6 +922,10 @@ if __name__ == "__main__":
     elif opt.computer == 'baymax':
         name_prefix = '/home/henryclever/IROS_Data'
         name_prefix_qt = '/home/henryclever/test'
+
+    elif opt.computer == 'gorilla':
+        name_prefix = '/home/henry/IROS_Data'
+        name_prefix_qt = '/home/henry/test'
 
 
     opt.subject2Path = name_prefix+'/subject_2/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
