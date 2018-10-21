@@ -207,7 +207,7 @@ class PreprocessingLib():
         return p_map_dataset
 
 
-    def preprocessing_pressure_map_upsample(self, data, multiple=2, order=1):
+    def preprocessing_pressure_map_upsample(self, data, multiple=4, order=1):
         '''Will upsample an incoming pressure map dataset'''
         p_map_highres_dataset = []
 

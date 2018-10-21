@@ -55,12 +55,6 @@ from sklearn import metrics
 from sklearn.utils import shuffle
 from sklearn.multioutput import MultiOutputRegressor
 
-#keras stuff
-from keras.preprocessing import image
-from keras.applications.vgg16 import VGG16
-from keras.applications.vgg16 import preprocess_input
-
-
 np.set_printoptions(threshold='nan')
 
 MAT_WIDTH = 0.762 #metres
@@ -77,7 +71,7 @@ HIGH_TAXEL_THRESH_X = (NUMOFTAXELS_X - 1)
 HIGH_TAXEL_THRESH_Y = (NUMOFTAXELS_Y - 1)
 
 torch.set_num_threads(1)
-if torch.cuda.is_available():
+if False:#torch.cuda.is_available():
     # Use for GPU
     dtype = torch.cuda.FloatTensor
     print '######################### CUDA is available! #############################'
@@ -108,7 +102,7 @@ class PhysicalTrainer():
         #        self.opt.leave_out) + '.pt', map_location=lambda storage, loc: storage)
         #print 'LOADED!!!!!!!!!!!!!!!!!1'
 
-        self.num_epochs = 300
+        self.num_epochs = 30
         self.include_inter = True
         self.shuffle = True
 
@@ -137,9 +131,6 @@ class PhysicalTrainer():
         self.mat_size = (NUMOFTAXELS_X, NUMOFTAXELS_Y)
         self.output_size = (NUMOFOUTPUTNODES, NUMOFOUTPUTDIMS)
 
-        self.vgg_extractor = True
-        if self.vgg_extractor == True:
-            self.imagenet_model = VGG16(weights='imagenet', include_top=False)
 
         if self.tensor == True:
             #load in the training files.  This may take a while.
@@ -148,7 +139,7 @@ class PhysicalTrainer():
                 dat_curr = load_pickle(some_subject)
                 for key in dat_curr:
                     if np.array(dat_curr[key]).shape[0] != 0:
-                        for inputgoalset in np.arange(len(dat_curr['images'])):
+                        for inputgoalset in np.arange(len(dat_curr['markers_xyz_m'])):
                             try:
                                 dat[key].append(dat_curr[key][inputgoalset])
                             except:
@@ -167,30 +158,30 @@ class PhysicalTrainer():
             for key in dat:
                 print 'training set: ', key, np.array(dat[key]).shape
 
-            self.train_x_flat = []  # Initialize the testing pressure mat list
-            for entry in range(len(dat['images'])):
-                self.train_x_flat.append(dat['images'][entry])
-            # test_x = PreprocessingLib().preprocessing_pressure_array_resize(self.test_x_flat, self.mat_size, self.verbose)
-            # test_x = np.array(test_x)
+            if self.opt.vgg == False:
+                self.train_x_flat = []  # Initialize the testing pressure mat list
+                for entry in range(len(dat['images'])):
+                    self.train_x_flat.append(dat['images'][entry])
 
-            self.train_a_flat = []  # Initialize the testing pressure mat angle list
-            for entry in range(len(dat['images'])):
-                self.train_a_flat.append(dat['bed_angle_deg'][entry])
-            train_xa = PreprocessingLib().preprocessing_create_pressure_angle_stack(self.train_x_flat, self.train_a_flat, self.include_inter, self.mat_size, self.verbose)
-            train_xa = np.array(train_xa)
+                self.train_a_flat = []  # Initialize the testing pressure mat angle list
+                for entry in range(len(dat['images'])):
+                    self.train_a_flat.append(dat['bed_angle_deg'][entry])
+                train_xa = PreprocessingLib().preprocessing_create_pressure_angle_stack(self.train_x_flat, self.train_a_flat, self.include_inter, self.mat_size, self.verbose)
+                train_xa = np.array(train_xa)
 
-            # Standardize data to values between [0, 1]
-            # print 'Standardizing training data'
-            # mins = [np.min(train_xa[:, ii]) for ii in xrange(np.shape(train_xa)[1])]
-            # maxs = [np.max(train_xa[:, ii]) for ii in xrange(np.shape(train_xa)[1])]
-            # print 'mins:', mins, 'maxs:', maxs
-            # for ii in xrange(np.shape(train_xa)[1]):
-            #     train_xa[:, ii] = (train_xa[:, ii] - mins[ii]) / (maxs[ii] - mins[ii])
+                self.train_x_tensor = torch.Tensor(train_xa)
+            else:
+                train_f = []  # Initialize the testing pressure mat list
+                for entry in range(len(dat['features'])):
+                    train_f.append(dat['features'][entry])
+                train_f = np.array(train_f)
+                self.train_x_tensor = torch.Tensor(train_f)
 
-            self.train_x_tensor = torch.Tensor(train_xa)
+
+            print self.train_x_tensor.shape, 'tensor shape'
 
             self.train_y_flat = [] #Initialize the training ground truth list
-            for entry in range(len(dat['images'])):
+            for entry in range(len(dat['markers_xyz_m'])):
                 if self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL'  or self.loss_vector_type == 'anglesSTVL':
                     c = np.concatenate((dat['markers_xyz_m'][entry][0:30] * 1000,
                                         dat['joint_lengths_U_m'][entry][0:9] * 100,
@@ -209,7 +200,7 @@ class PhysicalTrainer():
                 dat_curr = load_pickle(some_subject)
                 for key in dat_curr:
                     if np.array(dat_curr[key]).shape[0] != 0:
-                        for inputgoalset in np.arange(len(dat_curr['images'])):
+                        for inputgoalset in np.arange(len(dat_curr['markers_xyz_m'])):
                             try:
                                 test_dat[key].append(dat_curr[key][inputgoalset])
                             except:
@@ -227,27 +218,28 @@ class PhysicalTrainer():
             for key in test_dat:
                 print 'testing set: ', key, np.array(test_dat[key]).shape
 
-            self.test_x_flat = []  # Initialize the testing pressure mat list
-            for entry in range(len(test_dat['images'])):
-                self.test_x_flat.append(test_dat['images'][entry])
-            # test_x = PreprocessingLib.preprocessing_pressure_array_resize(self.test_x_flat, self.mat_size, self.verbose)
-            # test_x = np.array(test_x)
 
-            self.test_a_flat = []  # Initialize the testing pressure mat angle list
-            for entry in range(len(test_dat['images'])):
-                self.test_a_flat.append(test_dat['bed_angle_deg'][entry])
-            test_xa = PreprocessingLib().preprocessing_create_pressure_angle_stack(self.test_x_flat, self.test_a_flat, self.include_inter, self.mat_size, self.verbose)
-            test_xa = np.array(test_xa)
+            if self.opt.vgg == False:
+                self.test_x_flat = []  # Initialize the testing pressure mat list
+                for entry in range(len(test_dat['images'])):
+                    self.test_x_flat.append(test_dat['images'][entry])
 
-            # Standardize data to values between [0, 1]
-            # print 'Standardizing test data'
-            # for ii in xrange(np.shape(test_xa)[1]):
-            #     test_xa[:, ii] = (test_xa[:, ii] - mins[ii]) / (maxs[ii] - mins[ii])
+                self.test_a_flat = []  # Initialize the testing pressure mat angle list
+                for entry in range(len(test_dat['images'])):
+                    self.test_a_flat.append(test_dat['bed_angle_deg'][entry])
+                test_xa = PreprocessingLib().preprocessing_create_pressure_angle_stack(self.test_x_flat, self.test_a_flat, self.include_inter, self.mat_size, self.verbose)
+                test_xa = np.array(test_xa)
+                self.test_x_tensor = torch.Tensor(test_xa)
+            else:
+                test_f = []  # Initialize the testing pressure mat list
+                for entry in range(len(dat['features'])):
+                    test_f.append(dat['features'][entry])
+                test_f = np.array(test_f)
+                self.test_x_tensor = torch.Tensor(test_f)
 
-            self.test_x_tensor = torch.Tensor(test_xa)
 
             self.test_y_flat = []  # Initialize the ground truth list
-            for entry in range(len(test_dat['images'])):
+            for entry in range(len(test_dat['markers_xyz_m'])):
                 if self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL' or self.loss_vector_type == 'anglesSTVL':
                     c = np.concatenate((test_dat['markers_xyz_m'][entry][0:30] * 1000,
                                         test_dat['joint_lengths_U_m'][entry][0:9] * 100,
@@ -558,7 +550,7 @@ class PhysicalTrainer():
             self.model = convnet.CNN(self.mat_size, fc_output_size, hidden_dim, kernel_size, self.loss_vector_type)
 
         # Run model on GPU if available
-        if torch.cuda.is_available():
+        if False:#torch.cuda.is_available():
             self.model = self.model.cuda()
 
 
@@ -571,7 +563,7 @@ class PhysicalTrainer():
         elif self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL' or self.loss_vector_type == 'anglesSTVL' or self.loss_vector_type == 'direct':
             self.optimizer2 = optim.Adam(self.model.parameters(), lr=0.00002, weight_decay=0.0005)  #0.000002 does not converge even after 100 epochs on subjects 2-8 kin cons. use .00001
         #self.optimizer = optim.RMSprop(self.model.parameters(), lr=0.000001, momentum=0.7, weight_decay=0.0005)
-        self.optimizer = optim.Adam(self.model.parameters(), lr=0.00002, weight_decay=0.0005) #start with .00005
+        self.optimizer = optim.Adam(self.model.parameters(), lr=0.000002, weight_decay=0.0005) #start with .00005
 
 
         # train the model one epoch at a time
@@ -685,22 +677,22 @@ class PhysicalTrainer():
 
             elif self.loss_vector_type == 'direct':
 
-                batch[0],batch[1], _ = SyntheticLib().synthetic_master(batch[0], batch[1], flip=True, shift=True, scale=True, bedangle=True, include_inter = self.include_inter, loss_vector_type = self.loss_vector_type)
 
-                images_up_non_tensor = PreprocessingLib().preprocessing_add_image_noise(np.array(PreprocessingLib().preprocessing_pressure_map_upsample(batch[0].numpy()[:, :, 10:74, 10:37])))
-
-                if self.vgg_extractor == True:
-                    prior = time.time()
-                    vgg_images_up_non_tensor = preprocess_input(np.transpose(images_up_non_tensor, (0,2,3,1)))
-                    vgg16_image_features_non_tensor = self.imagenet_model.predict(vgg_images_up_non_tensor)
-                    vgg16_image_features = Variable(torch.Tensor(vgg16_image_features_non_tensor).type(dtype), requires_grad=False)
-                    print time.time() - prior, 'time to go fwd on vgg'
-                    images, targets, scores_zeros = Variable(batch[0].type(dtype), requires_grad = False), Variable(batch[1].type(dtype), requires_grad=False), Variable(torch.Tensor(np.zeros((batch[1].shape[0], batch[1].shape[1] / 3))).type(dtype), requires_grad=False)
+                if self.opt.vgg == True:
+                    vgg16_image_features = Variable(batch[0].type(dtype), requires_grad=False)
+                    images, targets, scores_zeros = Variable(batch[0].type(dtype), requires_grad=False),  Variable(batch[1].type(dtype), requires_grad=False), Variable(torch.Tensor(np.zeros((batch[1].shape[0], batch[1].shape[1] / 3))).type(dtype), requires_grad=False)
 
                     self.optimizer.zero_grad()
                     scores, targets_est = self.model.forward_direct_vgg(vgg16_image_features, targets)
 
                 else:
+                    batch[0], batch[1], _ = SyntheticLib().synthetic_master(batch[0], batch[1], flip=True, shift=True,
+                                                                            scale=True, bedangle=True,
+                                                                            include_inter=self.include_inter,
+                                                                            loss_vector_type=self.loss_vector_type)
+
+                    images_up_non_tensor = PreprocessingLib().preprocessing_add_image_noise(np.array(PreprocessingLib().preprocessing_pressure_map_upsample(batch[0].numpy()[:, :, 10:74, 10:37])))
+
                     images_up = Variable(torch.Tensor(images_up_non_tensor).type(dtype), requires_grad=False)
                     images, targets, scores_zeros = Variable(batch[0].type(dtype), requires_grad = False), Variable(batch[1].type(dtype), requires_grad = False), Variable(torch.Tensor(np.zeros((batch[1].shape[0], batch[1].shape[1]/3))).type(dtype), requires_grad = False)
 
@@ -730,16 +722,18 @@ class PhysicalTrainer():
                     pass
 
                 VisualizationLib().print_error(targets.data, targets_est, self.output_size, self.loss_vector_type, data='train')
-                self.im_sample = images.data
-                #self.im_sample = self.im_sample[:,1, :, :]
-                self.im_sample = self.im_sample[0, :].squeeze()
-                self.tar_sample = targets.data
-                self.tar_sample = self.tar_sample[0, :].squeeze()/1000
-                self.sc_sample = targets_est.clone()
-                self.sc_sample = self.sc_sample[0, :].squeeze() / 1000
-                self.sc_sample = self.sc_sample.view(self.output_size)
 
-                #val_loss = self.validate_convnet(n_batches=4)
+                if self.opt.vgg == False:
+                    self.im_sample = images.data
+                    #self.im_sample = self.im_sample[:,1, :, :]
+                    self.im_sample = self.im_sample[0, :].squeeze()
+                    self.tar_sample = targets.data
+                    self.tar_sample = self.tar_sample[0, :].squeeze()/1000
+                    self.sc_sample = targets_est.clone()
+                    self.sc_sample = self.sc_sample[0, :].squeeze() / 1000
+                    self.sc_sample = self.sc_sample.view(self.output_size)
+
+                val_loss = self.validate_convnet(n_batches=4)
                 train_loss = loss.data[0]
                 examples_this_epoch = batch_idx * len(images)
                 epoch_progress = 100. * batch_idx / len(self.train_loader)
@@ -800,18 +794,14 @@ class PhysicalTrainer():
 
 
             elif self.loss_vector_type == 'direct':
-                images_up_non_tensor = np.array(PreprocessingLib().preprocessing_pressure_map_upsample(batch[0].numpy()[:, :, 10:74, 10:37]))
 
-                if self.vgg_extractor == True:
-                    prior = time.time()
-                    vgg_images_up_non_tensor = preprocess_input(np.transpose(images_up_non_tensor, (0,2,3,1)))
-                    vgg16_image_features_non_tensor = self.imagenet_model.predict(vgg_images_up_non_tensor)
-                    print time.time() - prior, 'time to val vgg'
-                    vgg16_image_features = Variable(torch.Tensor(vgg16_image_features_non_tensor).type(dtype), requires_grad=False)
-                    images, targets, scores_zeros = Variable(batch[0].type(dtype), requires_grad = False), Variable(batch[1].type(dtype), requires_grad=False), Variable(torch.Tensor(np.zeros((batch[1].shape[0], batch[1].shape[1] / 3))).type(dtype), requires_grad=False)
+                if self.opt.vgg == True:
+                    vgg16_image_features = Variable(batch[0].type(dtype), requires_grad=False)
+                    images, targets, scores_zeros = Variable(batch[0].type(dtype), requires_grad=False), Variable(batch[1].type(dtype), requires_grad=False), Variable(torch.Tensor(np.zeros((batch[1].shape[0], batch[1].shape[1] / 3))).type(dtype), requires_grad=False)
                     scores, targets_est = self.model.forward_direct_vgg(vgg16_image_features, targets)
 
                 else:
+                    images_up_non_tensor = np.array(PreprocessingLib().preprocessing_pressure_map_upsample(batch[0].numpy()[:, :, 10:74, 10:37]))
                     images_up = Variable(torch.Tensor(images_up_non_tensor).type(dtype), requires_grad=False)
                     images, targets, scores_zeros = Variable(batch[0].type(dtype), requires_grad=False), Variable(batch[1].type(dtype), requires_grad=False), Variable(torch.Tensor(np.zeros((batch[1].shape[0], batch[1].shape[1] / 3))).type(dtype), requires_grad=False)
 
@@ -840,18 +830,19 @@ class PhysicalTrainer():
             print angles_est[0, :], 'validation angles'
             print lengths_est[0, :], 'validation lengths'
 
-        print batch[0][0,2,10,10], 'validation bed angle'
-        self.im_sampleval = images.data
-        # #self.im_sampleval = self.im_sampleval[:,0,:,:]
-        self.im_sampleval = self.im_sampleval[0, :].squeeze()
-        self.tar_sampleval = targets.data
-        self.tar_sampleval = self.tar_sampleval[0, :].squeeze() / 1000
-        self.sc_sampleval = targets_est.clone()
-        self.sc_sampleval = self.sc_sampleval[0, :].squeeze() / 1000
-        self.sc_sampleval = self.sc_sampleval.view(self.output_size)
+        if self.opt.vgg == False:
+            print batch[0][0,2,10,10], 'validation bed angle'
+            self.im_sampleval = images.data
+            # #self.im_sampleval = self.im_sampleval[:,0,:,:]
+            self.im_sampleval = self.im_sampleval[0, :].squeeze()
+            self.tar_sampleval = targets.data
+            self.tar_sampleval = self.tar_sampleval[0, :].squeeze() / 1000
+            self.sc_sampleval = targets_est.clone()
+            self.sc_sampleval = self.sc_sampleval[0, :].squeeze() / 1000
+            self.sc_sampleval = self.sc_sampleval.view(self.output_size)
 
-        if self.opt.visualize == True:
-            VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample,self.im_sampleval, self.tar_sampleval, self.sc_sampleval, block=False)
+            if self.opt.visualize == True:
+                VisualizationLib().visualize_pressure_map(self.im_sample, self.tar_sample, self.sc_sample,self.im_sampleval, self.tar_sampleval, self.sc_sampleval, block=False)
 
 
         return loss
@@ -902,7 +893,11 @@ if __name__ == "__main__":
     p.add_option('--viz', action='store_true',
                  dest='visualize', \
                  default=False, \
-                 help='Train only on data from the arms, both sitting and laying.')
+                 help='Visualize.')
+    p.add_option('--vgg', action='store_true',
+                 dest='vgg', \
+                 default=False, \
+                 help='Train on VGG features.')
 
     p.add_option('--verbose', '--v',  action='store_true', dest='verbose',
                  default=False, help='Printout everything (under construction).')
@@ -960,10 +955,6 @@ if __name__ == "__main__":
     opt.subject18PathB = name_prefix+'/subject_18/p_files/trainval_sit175rlh_sit120rll'+filetag+'.p'
 
     #shortcut:
-
-    if opt.quick_test == True:
-        opt.subject4Path = name_prefix_qt+'/trainval4_150rh1_sit120rh.p'
-        opt.subject8Path = name_prefix_qt+'/trainval8_150rh1_sit120rh.p'
 
 
 
@@ -1222,6 +1213,16 @@ if __name__ == "__main__":
         training_database_file.append(opt.subject15PathB)
         training_database_file.append(opt.subject16PathB)
         training_database_file.append(opt.subject17PathB)
+
+
+    elif opt.quick_test == True:
+        if opt.vgg == True:
+            test_database_file.append(name_prefix_qt + '/testfeat4xup_s4_150rh1_sit120rh.p')
+            training_database_file.append(name_prefix_qt + '/trainfeat4xup_s8_150rh1_sit120rh.p')
+        else:
+            test_database_file.append(name_prefix_qt+'/trainval4_150rh1_sit120rh.p')
+            training_database_file.append(name_prefix_qt+'/trainval8_150rh1_sit120rh.p')
+
 
     else:
         print 'please specify which subject to leave out for validation using --leave_out _'
