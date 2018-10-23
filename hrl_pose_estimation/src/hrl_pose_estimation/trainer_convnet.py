@@ -191,6 +191,8 @@ class PhysicalTrainer():
                     self.train_y_flat.append(c)
                 else:
                     self.train_y_flat.append(dat['markers_xyz_m'][entry] * 1000)
+
+            print np.shape(self.train_y_flat), 'shape flat!'
             self.train_y_tensor = torch.Tensor(self.train_y_flat)
 
 
@@ -559,6 +561,8 @@ class PhysicalTrainer():
 
 
         if self.loss_vector_type == None:
+            #previously the learning rates were 0.00002, 0.00002, 0.000002.
+            #today I was running 0.00005, 0.00005, 0.000005.
             self.optimizer2 = optim.Adam(self.model.parameters(), lr=0.00002, weight_decay=0.0005)
         elif self.loss_vector_type == 'anglesCL' or self.loss_vector_type == 'anglesVL' or self.loss_vector_type == 'anglesSTVL' or self.loss_vector_type == 'direct':
             self.optimizer2 = optim.Adam(self.model.parameters(), lr=0.00002, weight_decay=0.0005)  #0.000002 does not converge even after 100 epochs on subjects 2-8 kin cons. use .00001
