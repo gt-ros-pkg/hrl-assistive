@@ -285,8 +285,10 @@ class CNN(nn.Module):
 
         self.VGG_fc1 = nn.Sequential(
             nn.Linear(12288, 2048),
-            nn.Linear(2048, out_size),
-
+            nn.ReLU(inplace=True),
+            nn.Linear(2048, 512),
+            nn.ReLU(inplace=True),
+            nn.Linear(512, out_size),
         )
 
 

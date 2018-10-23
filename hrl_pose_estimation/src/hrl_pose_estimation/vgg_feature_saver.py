@@ -100,7 +100,7 @@ class PhysicalTrainer():
 
         self.verbose = opt.verbose
         self.opt = opt
-        self.batch_size = 1130
+        self.batch_size = 1670
 
 
         self.num_epochs = 1
@@ -430,8 +430,8 @@ if __name__ == "__main__":
     pathSuffixSupine = 'trainval_200rlh1_115rlh2_75rlh3_175rllair.p'
     pathSuffixSitting = 'trainval_sit175rlh_sit120rll.p'
 
-    for subject in [10, 11, 12, 13, 14, 15, 16, 17, 18]:
-        opt.subjectPath = name_prefix+'/subject_'+str(subject)+'/p_files/'+pathSuffixSupine
+    for subject in [2,3,4,5,6,7,8]:
+        opt.subjectPath = name_prefix+'/subject_'+str(subject)+'/p_files/'+pathSuffixAll
 
 
         opt.subject4Path = name_prefix_qt+'/trainval4_150rh1_sit120rh.p'

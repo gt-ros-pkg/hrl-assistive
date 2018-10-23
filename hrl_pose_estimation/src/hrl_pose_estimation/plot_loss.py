@@ -99,28 +99,28 @@ class DataVisualizer():
         self.mat_size = (NUMOFTAXELS_X, NUMOFTAXELS_Y)
         self.output_size = (NUMOFOUTPUTNODES, NUMOFOUTPUTDIMS)
 
-        if self.opt.computer == 'lab_harddrive':
+        if self.opt.computer == 'lab_harddrive' or self.opt.computer == 'baymax':
 
 
-            train_val_lossdir = load_pickle(self.dump_path + '/subject_'+str(self.opt.leave_out)+'/convnets/losses_9to18_direct_sTrue_128b_300e_'+str(self.opt.leave_out)+'.p')
+            train_val_lossdir = load_pickle(self.dump_path + '/subject_'+str(self.opt.leave_out)+'/convnets/losses_9to18_direct_sTrue_128b_500e_'+str(self.opt.leave_out)+'.p')
             for key in train_val_lossdir:
                 print key
             print '###########################  done with subject ',str(self.opt.leave_out),', direct ##############################'
 
 
-            train_val_lossCL = load_pickle(self.dump_path + '/subject_'+str(self.opt.leave_out)+'/convnets/losses_9to18_anglesCL_sTrue_128b_300e_'+str(self.opt.leave_out)+'.p')
-            for key in train_val_lossCL:
-                print key
-            print '###########################  done with subject ',str(self.opt.leave_out),', anglesCL ##############################'
+            #train_val_lossCL = load_pickle(self.dump_path + '/subject_'+str(self.opt.leave_out)+'/convnets/losses_9to18_anglesCL_sTrue_128b_300e_'+str(self.opt.leave_out)+'.p')
+            #for key in train_val_lossCL:
+            #    print key
+            #print '###########################  done with subject ',str(self.opt.leave_out),', anglesCL ##############################'
 
-            train_val_lossSTVL = load_pickle(self.dump_path + '/subject_'+str(self.opt.leave_out)+'/convnets/losses_9to18_anglesSTVL_sTrue_128b_300e_'+str(self.opt.leave_out)+'.p')
-            for key in train_val_lossSTVL:
-                print key
-            print '###########################  done with subject ',str(self.opt.leave_out),', anglesSTVL ##############################'
+            #train_val_lossSTVL = load_pickle(self.dump_path + '/subject_'+str(self.opt.leave_out)+'/convnets/losses_9to18_anglesSTVL_sTrue_128b_300e_'+str(self.opt.leave_out)+'.p')
+            #for key in train_val_lossSTVL:
+            #    print key
+            #print '###########################  done with subject ',str(self.opt.leave_out),', anglesSTVL ##############################'
 
-            plt.plot(train_val_lossdir['epoch_9to18_direct_sTrue_128b_300e_' + str(self.opt.leave_out)],train_val_lossdir['val_9to18_direct_sTrue_128b_300e_' + str(self.opt.leave_out)], 'r',label='Direct CNN')
-            plt.plot(train_val_lossCL['epoch_9to18_anglesCL_sTrue_128b_300e_'+str(self.opt.leave_out)],train_val_lossCL['val_9to18_anglesCL_sTrue_128b_300e_'+str(self.opt.leave_out)],'g',label='Kinematic CNN, const L')
-            plt.plot(train_val_lossSTVL['epoch_9to18_anglesSTVL_sTrue_128b_300e_'+str(self.opt.leave_out)],train_val_lossSTVL['val_9to18_anglesSTVL_sTrue_128b_300e_'+str(self.opt.leave_out)],'b',label='Kinematic CNN, var L')
+            plt.plot(train_val_lossdir['epoch_9to18_direct_sTrue_128b_500e_' + str(self.opt.leave_out)],train_val_lossdir['val_9to18_direct_sTrue_128b_500e_' + str(self.opt.leave_out)], 'r',label='Direct CNN')
+            #plt.plot(train_val_lossCL['epoch_9to18_anglesCL_sTrue_128b_300e_'+str(self.opt.leave_out)],train_val_lossCL['val_9to18_anglesCL_sTrue_128b_300e_'+str(self.opt.leave_out)],'g',label='Kinematic CNN, const L')
+            #plt.plot(train_val_lossSTVL['epoch_9to18_anglesSTVL_sTrue_128b_300e_'+str(self.opt.leave_out)],train_val_lossSTVL['val_9to18_anglesSTVL_sTrue_128b_300e_'+str(self.opt.leave_out)],'b',label='Kinematic CNN, var L')
 
 
             if self.opt.leave_out == 1:
@@ -140,7 +140,7 @@ class DataVisualizer():
 
 
             #plt.axis([0,410,0,30000])
-            plt.axis([0, 300, 0, 30])
+            plt.axis([0, 500, 0, 30])
             if self.opt.visualize == True:
                 plt.show()
             plt.close()
@@ -618,6 +618,8 @@ if __name__ == "__main__":
         Path = '/home/ubuntu/Autobed_OFFICIAL_Trials/'
     elif opt.computer == 'hc_desktop':
         Path = '/home/henryclever/hrl_file_server/Autobed/'
+    elif opt.computer == 'baymax':
+        Path = '/home/henryclever/IROS_Data/'
     else:
         Path = None
 

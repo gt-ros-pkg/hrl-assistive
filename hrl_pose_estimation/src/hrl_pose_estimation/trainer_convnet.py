@@ -102,7 +102,7 @@ class PhysicalTrainer():
         #        self.opt.leave_out) + '.pt', map_location=lambda storage, loc: storage)
         #print 'LOADED!!!!!!!!!!!!!!!!!1'
 
-        self.num_epochs = 30
+        self.num_epochs = 200
         self.include_inter = True
         self.shuffle = True
 
@@ -232,8 +232,8 @@ class PhysicalTrainer():
                 self.test_x_tensor = torch.Tensor(test_xa)
             else:
                 test_f = []  # Initialize the testing pressure mat list
-                for entry in range(len(dat['features'])):
-                    test_f.append(dat['features'][entry])
+                for entry in range(len(test_dat['features'])):
+                    test_f.append(test_dat['features'][entry])
                 test_f = np.array(test_f)
                 self.test_x_tensor = torch.Tensor(test_f)
 
@@ -910,49 +910,84 @@ if __name__ == "__main__":
     else: filetag = '_HOGshift'
 
     if opt.computer == 'lab_harddrive':
-        name_prefix = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials'
-        name_prefix_qt = '/home/henryclever/test'
+        filepath_prefix = '/media/henryclever/Seagate Backup Plus Drive/Autobed_OFFICIAL_Trials'
+        filepath_prefix_qt = '/home/henryclever/test'
 
     elif opt.computer == 'aws':
-        name_prefix = '/home/ubuntu/Autobed_OFFICIAL_Trials'
-        name_prefix_qt = '/home/ubuntu/test'
+        filepath_prefix = '/home/ubuntu/Autobed_OFFICIAL_Trials'
+        filepath_prefix_qt = '/home/ubuntu/test'
 
     elif opt.computer == 'baymax':
-        name_prefix = '/home/henryclever/IROS_Data'
-        name_prefix_qt = '/home/henryclever/test'
+        filepath_prefix = '/home/henryclever/IROS_Data'
+        filepath_prefix_qt = '/home/henryclever/test'
 
     elif opt.computer == 'gorilla':
-        name_prefix = '/home/henry/IROS_Data'
-        name_prefix_qt = '/home/henry/test'
+        filepath_prefix = '/home/henry/IROS_Data'
+        filepath_prefix_qt = '/home/henry/test'
+
+    if opt.vgg == True:
+        name_prefix_train = 'trainfeat4xup'
+        name_prefix_test = 'testfeat4xup'
+    else:
+        name_prefix_train = 'train_val'
+        name_prefix_test = 'train_val'
 
 
-    opt.subject2Path = name_prefix+'/subject_2/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
-    opt.subject3Path = name_prefix+'/subject_3/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
-    opt.subject4Path = name_prefix+'/subject_4/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
-    opt.subject5Path = name_prefix+'/subject_5/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
-    opt.subject6Path = name_prefix+'/subject_6/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
-    opt.subject7Path = name_prefix+'/subject_7/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
-    opt.subject8Path = name_prefix+'/subject_8/p_files/trainval_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
-    opt.subject9Path = name_prefix+'/subject_9/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
-    opt.subject10Path = name_prefix+'/subject_10/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
-    opt.subject11Path = name_prefix+'/subject_11/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
-    opt.subject12Path = name_prefix+'/subject_12/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
-    opt.subject13Path = name_prefix+'/subject_13/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
-    opt.subject14Path = name_prefix+'/subject_14/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
-    opt.subject15Path = name_prefix+'/subject_15/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
-    opt.subject16Path = name_prefix+'/subject_16/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
-    opt.subject17Path = name_prefix+'/subject_17/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
-    opt.subject18Path = name_prefix+'/subject_18/p_files/trainval_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
-    opt.subject9PathB = name_prefix+'/subject_9/p_files/trainval_sit175rlh_sit120rll'+filetag+'.p'
-    opt.subject10PathB = name_prefix+'/subject_10/p_files/trainval_sit175rlh_sit120rll'+filetag+'.p'
-    opt.subject11PathB = name_prefix+'/subject_11/p_files/trainval_sit175rlh_sit120rll'+filetag+'.p'
-    opt.subject12PathB = name_prefix+'/subject_12/p_files/trainval_sit175rlh_sit120rll'+filetag+'.p'
-    opt.subject13PathB = name_prefix+'/subject_13/p_files/trainval_sit175rlh_sit120rll'+filetag+'.p'
-    opt.subject14PathB = name_prefix+'/subject_14/p_files/trainval_sit175rlh_sit120rll'+filetag+'.p'
-    opt.subject15PathB = name_prefix+'/subject_15/p_files/trainval_sit175rlh_sit120rll'+filetag+'.p'
-    opt.subject16PathB = name_prefix+'/subject_16/p_files/trainval_sit175rlh_sit120rll'+filetag+'.p'
-    opt.subject17PathB = name_prefix+'/subject_17/p_files/trainval_sit175rlh_sit120rll'+filetag+'.p'
-    opt.subject18PathB = name_prefix+'/subject_18/p_files/trainval_sit175rlh_sit120rll'+filetag+'.p'
+    opt.subject2Path = filepath_prefix+'/subject_2/p_files/'+name_prefix_train+'_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
+    opt.subject3Path = filepath_prefix+'/subject_3/p_files/'+name_prefix_train+'_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
+    opt.subject4Path = filepath_prefix+'/subject_4/p_files/'+name_prefix_train+'_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
+    opt.subject5Path = filepath_prefix+'/subject_5/p_files/'+name_prefix_train+'_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
+    opt.subject6Path = filepath_prefix+'/subject_6/p_files/'+name_prefix_train+'_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
+    opt.subject7Path = filepath_prefix+'/subject_7/p_files/'+name_prefix_train+'_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
+    opt.subject8Path = filepath_prefix+'/subject_8/p_files/'+name_prefix_train+'_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
+    opt.subject9Path = filepath_prefix+'/subject_9/p_files/'+name_prefix_train+'_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+    opt.subject10Path = filepath_prefix+'/subject_10/p_files/'+name_prefix_train+'_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+    opt.subject11Path = filepath_prefix+'/subject_11/p_files/'+name_prefix_train+'_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+    opt.subject12Path = filepath_prefix+'/subject_12/p_files/'+name_prefix_train+'_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+    opt.subject13Path = filepath_prefix+'/subject_13/p_files/'+name_prefix_train+'_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+    opt.subject14Path = filepath_prefix+'/subject_14/p_files/'+name_prefix_train+'_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+    opt.subject15Path = filepath_prefix+'/subject_15/p_files/'+name_prefix_train+'_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+    opt.subject16Path = filepath_prefix+'/subject_16/p_files/'+name_prefix_train+'_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+    opt.subject17Path = filepath_prefix+'/subject_17/p_files/'+name_prefix_train+'_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+    opt.subject18Path = filepath_prefix+'/subject_18/p_files/'+name_prefix_train+'_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+    opt.subject9PathB = filepath_prefix+'/subject_9/p_files/'+name_prefix_train+'_sit175rlh_sit120rll'+filetag+'.p'
+    opt.subject10PathB = filepath_prefix+'/subject_10/p_files/'+name_prefix_train+'_sit175rlh_sit120rll'+filetag+'.p'
+    opt.subject11PathB = filepath_prefix+'/subject_11/p_files/'+name_prefix_train+'_sit175rlh_sit120rll'+filetag+'.p'
+    opt.subject12PathB = filepath_prefix+'/subject_12/p_files/'+name_prefix_train+'_sit175rlh_sit120rll'+filetag+'.p'
+    opt.subject13PathB = filepath_prefix+'/subject_13/p_files/'+name_prefix_train+'_sit175rlh_sit120rll'+filetag+'.p'
+    opt.subject14PathB = filepath_prefix+'/subject_14/p_files/'+name_prefix_train+'_sit175rlh_sit120rll'+filetag+'.p'
+    opt.subject15PathB = filepath_prefix+'/subject_15/p_files/'+name_prefix_train+'_sit175rlh_sit120rll'+filetag+'.p'
+    opt.subject16PathB = filepath_prefix+'/subject_16/p_files/'+name_prefix_train+'_sit175rlh_sit120rll'+filetag+'.p'
+    opt.subject17PathB = filepath_prefix+'/subject_17/p_files/'+name_prefix_train+'_sit175rlh_sit120rll'+filetag+'.p'
+    opt.subject18PathB = filepath_prefix+'/subject_18/p_files/'+name_prefix_train+'_sit175rlh_sit120rll'+filetag+'.p'
+
+    opt.subject2PathTest = filepath_prefix+'/subject_2/p_files/'+name_prefix_test+'_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
+    opt.subject3PathTest = filepath_prefix+'/subject_3/p_files/'+name_prefix_test+'_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
+    opt.subject4PathTest = filepath_prefix+'/subject_4/p_files/'+name_prefix_test+'_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
+    opt.subject5PathTest = filepath_prefix+'/subject_5/p_files/'+name_prefix_test+'_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
+    opt.subject6PathTest = filepath_prefix+'/subject_6/p_files/'+name_prefix_test+'_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
+    opt.subject7PathTest = filepath_prefix+'/subject_7/p_files/'+name_prefix_test+'_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
+    opt.subject8PathTest = filepath_prefix+'/subject_8/p_files/'+name_prefix_test+'_200rlh1_115rlh2_75rlh3_150rll_sit175rlh_sit120rll.p'
+    opt.subject9PathTest = filepath_prefix+'/subject_9/p_files/'+name_prefix_test+'_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+    opt.subject10PathTest = filepath_prefix+'/subject_10/p_files/'+name_prefix_test+'_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+    opt.subject11PathTest = filepath_prefix+'/subject_11/p_files/'+name_prefix_test+'_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+    opt.subject12PathTest = filepath_prefix+'/subject_12/p_files/'+name_prefix_test+'_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+    opt.subject13PathTest = filepath_prefix+'/subject_13/p_files/'+name_prefix_test+'_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+    opt.subject14PathTest = filepath_prefix+'/subject_14/p_files/'+name_prefix_test+'_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+    opt.subject15PathTest = filepath_prefix+'/subject_15/p_files/'+name_prefix_test+'_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+    opt.subject16PathTest = filepath_prefix+'/subject_16/p_files/'+name_prefix_test+'_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+    opt.subject17PathTest = filepath_prefix+'/subject_17/p_files/'+name_prefix_test+'_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+    opt.subject18PathTest = filepath_prefix+'/subject_18/p_files/'+name_prefix_test+'_200rlh1_115rlh2_75rlh3_175rllair'+filetag+'.p'
+    opt.subject9PathBTest = filepath_prefix+'/subject_9/p_files/'+name_prefix_test+'_sit175rlh_sit120rll'+filetag+'.p'
+    opt.subject10PathBTest = filepath_prefix+'/subject_10/p_files/'+name_prefix_test+'_sit175rlh_sit120rll'+filetag+'.p'
+    opt.subject11PathBTest = filepath_prefix+'/subject_11/p_files/'+name_prefix_test+'_sit175rlh_sit120rll'+filetag+'.p'
+    opt.subject12PathBTest = filepath_prefix+'/subject_12/p_files/'+name_prefix_test+'_sit175rlh_sit120rll'+filetag+'.p'
+    opt.subject13PathBTest = filepath_prefix+'/subject_13/p_files/'+name_prefix_test+'_sit175rlh_sit120rll'+filetag+'.p'
+    opt.subject14PathBTest = filepath_prefix+'/subject_14/p_files/'+name_prefix_test+'_sit175rlh_sit120rll'+filetag+'.p'
+    opt.subject15PathBTest = filepath_prefix+'/subject_15/p_files/'+name_prefix_test+'_sit175rlh_sit120rll'+filetag+'.p'
+    opt.subject16PathBTest = filepath_prefix+'/subject_16/p_files/'+name_prefix_test+'_sit175rlh_sit120rll'+filetag+'.p'
+    opt.subject17PathBTest = filepath_prefix+'/subject_17/p_files/'+name_prefix_test+'_sit175rlh_sit120rll'+filetag+'.p'
+    opt.subject18PathBTest = filepath_prefix+'/subject_18/p_files/'+name_prefix_test+'_sit175rlh_sit120rll'+filetag+'.p'
 
     #shortcut:
 
@@ -961,41 +996,16 @@ if __name__ == "__main__":
     test_database_file = []
     training_database_file = []
     if opt.leave_out == 4:
-        test_database_file.append(opt.subject4Path)
-        #training_database_file.append(opt.subject1Path)
-        if opt.quick_test == True:
-            training_database_file.append(opt.subject8Path)
-        else:
-            training_database_file.append(opt.subject2Path)
-            training_database_file.append(opt.subject3Path)
-            training_database_file.append(opt.subject5Path)
-            training_database_file.append(opt.subject6Path)
-            training_database_file.append(opt.subject7Path)
-            training_database_file.append(opt.subject8Path)
-            #training_database_file.append(opt.subject9Path)
-            #training_database_file.append(opt.subject10Path)
-            #training_database_file.append(opt.subject11Path)
-            #training_database_file.append(opt.subject12Path)
-            #training_database_file.append(opt.subject13Path)
-            ##training_database_file.append(opt.subject14Path)
-            #training_database_file.append(opt.subject15Path)
-            #training_database_file.append(opt.subject16Path)
-            #training_database_file.append(opt.subject17Path)
-            #training_database_file.append(opt.subject18Path)
-
-    elif opt.leave_out == 1:
-        test_database_file.append(opt.subject1Path)
+        test_database_file.append(opt.subject4PathTest)
         training_database_file.append(opt.subject2Path)
         training_database_file.append(opt.subject3Path)
-        training_database_file.append(opt.subject4Path)
         training_database_file.append(opt.subject5Path)
         training_database_file.append(opt.subject6Path)
         training_database_file.append(opt.subject7Path)
         training_database_file.append(opt.subject8Path)
 
     elif opt.leave_out == 2:
-        test_database_file.append(opt.subject2Path)
-        training_database_file.append(opt.subject1Path)
+        test_database_file.append(opt.subject2PathTest)
         training_database_file.append(opt.subject3Path)
         training_database_file.append(opt.subject4Path)
         training_database_file.append(opt.subject5Path)
@@ -1004,8 +1014,8 @@ if __name__ == "__main__":
         training_database_file.append(opt.subject8Path)
 
     elif opt.leave_out == 9:
-        test_database_file.append(opt.subject9Path)
-        test_database_file.append(opt.subject9PathB)
+        test_database_file.append(opt.subject9PathTest)
+        test_database_file.append(opt.subject9PathBTest)
         training_database_file.append(opt.subject10Path)
         training_database_file.append(opt.subject11Path)
         training_database_file.append(opt.subject12Path)
@@ -1025,8 +1035,8 @@ if __name__ == "__main__":
         training_database_file.append(opt.subject17PathB)
         training_database_file.append(opt.subject18PathB)
     elif opt.leave_out == 10:
-        test_database_file.append(opt.subject10Path)
-        test_database_file.append(opt.subject10PathB)
+        test_database_file.append(opt.subject10PathTest)
+        test_database_file.append(opt.subject10PathBTest)
         training_database_file.append(opt.subject9Path)
         training_database_file.append(opt.subject11Path)
         training_database_file.append(opt.subject12Path)
@@ -1046,8 +1056,8 @@ if __name__ == "__main__":
         training_database_file.append(opt.subject17PathB)
         training_database_file.append(opt.subject18PathB)
     elif opt.leave_out == 11:
-        test_database_file.append(opt.subject11Path)
-        test_database_file.append(opt.subject11PathB)
+        test_database_file.append(opt.subject11PathTest)
+        test_database_file.append(opt.subject11PathBTest)
         training_database_file.append(opt.subject9Path)
         training_database_file.append(opt.subject10Path)
         training_database_file.append(opt.subject12Path)
@@ -1067,8 +1077,8 @@ if __name__ == "__main__":
         training_database_file.append(opt.subject17PathB)
         training_database_file.append(opt.subject18PathB)
     elif opt.leave_out == 12:
-        test_database_file.append(opt.subject12Path)
-        test_database_file.append(opt.subject12PathB)
+        test_database_file.append(opt.subject12PathTest)
+        test_database_file.append(opt.subject12PathBTest)
         training_database_file.append(opt.subject9Path)
         training_database_file.append(opt.subject10Path)
         training_database_file.append(opt.subject11Path)
@@ -1088,8 +1098,8 @@ if __name__ == "__main__":
         training_database_file.append(opt.subject17PathB)
         training_database_file.append(opt.subject18PathB)
     elif opt.leave_out == 13:
-        test_database_file.append(opt.subject13Path)
-        test_database_file.append(opt.subject13PathB)
+        test_database_file.append(opt.subject13PathTest)
+        test_database_file.append(opt.subject13PathBTest)
         training_database_file.append(opt.subject9Path)
         training_database_file.append(opt.subject10Path)
         training_database_file.append(opt.subject11Path)
@@ -1109,8 +1119,8 @@ if __name__ == "__main__":
         training_database_file.append(opt.subject17PathB)
         training_database_file.append(opt.subject18PathB)
     elif opt.leave_out == 14:
-        test_database_file.append(opt.subject14Path)
-        test_database_file.append(opt.subject14PathB)
+        test_database_file.append(opt.subject14PathTest)
+        test_database_file.append(opt.subject14PathBTest)
         training_database_file.append(opt.subject9Path)
         training_database_file.append(opt.subject10Path)
         training_database_file.append(opt.subject11Path)
@@ -1130,8 +1140,8 @@ if __name__ == "__main__":
         training_database_file.append(opt.subject17PathB)
         training_database_file.append(opt.subject18PathB)
     elif opt.leave_out == 15:
-        test_database_file.append(opt.subject15Path)
-        test_database_file.append(opt.subject15PathB)
+        test_database_file.append(opt.subject15PathTest)
+        test_database_file.append(opt.subject15PathBTest)
         training_database_file.append(opt.subject9Path)
         training_database_file.append(opt.subject10Path)
         training_database_file.append(opt.subject11Path)
@@ -1151,8 +1161,8 @@ if __name__ == "__main__":
         training_database_file.append(opt.subject17PathB)
         training_database_file.append(opt.subject18PathB)
     elif opt.leave_out == 16:
-        test_database_file.append(opt.subject16Path)
-        test_database_file.append(opt.subject16PathB)
+        test_database_file.append(opt.subject16PathTest)
+        test_database_file.append(opt.subject16PathBTest)
         training_database_file.append(opt.subject9Path)
         training_database_file.append(opt.subject10Path)
         training_database_file.append(opt.subject11Path)
@@ -1172,8 +1182,8 @@ if __name__ == "__main__":
         training_database_file.append(opt.subject17PathB)
         training_database_file.append(opt.subject18PathB)
     elif opt.leave_out == 17:
-        test_database_file.append(opt.subject17Path)
-        test_database_file.append(opt.subject17PathB)
+        test_database_file.append(opt.subject17PathTest)
+        test_database_file.append(opt.subject17PathBTest)
         training_database_file.append(opt.subject9Path)
         training_database_file.append(opt.subject10Path)
         training_database_file.append(opt.subject11Path)
@@ -1193,8 +1203,8 @@ if __name__ == "__main__":
         training_database_file.append(opt.subject16PathB)
         training_database_file.append(opt.subject18PathB)
     elif opt.leave_out == 18:
-        test_database_file.append(opt.subject18Path)
-        test_database_file.append(opt.subject18PathB)
+        test_database_file.append(opt.subject18PathTest)
+        test_database_file.append(opt.subject18PathBTest)
         training_database_file.append(opt.subject9Path)
         training_database_file.append(opt.subject10Path)
         training_database_file.append(opt.subject11Path)
@@ -1217,11 +1227,11 @@ if __name__ == "__main__":
 
     elif opt.quick_test == True:
         if opt.vgg == True:
-            test_database_file.append(name_prefix_qt + '/testfeat4xup_s4_150rh1_sit120rh.p')
-            training_database_file.append(name_prefix_qt + '/trainfeat4xup_s8_150rh1_sit120rh.p')
+            test_database_file.append(filepath_prefix_qt + '/testfeat4xup_s4_150rh1_sit120rh.p')
+            training_database_file.append(filepath_prefix_qt + '/trainfeat4xup_s8_150rh1_sit120rh.p')
         else:
-            test_database_file.append(name_prefix_qt+'/trainval4_150rh1_sit120rh.p')
-            training_database_file.append(name_prefix_qt+'/trainval8_150rh1_sit120rh.p')
+            test_database_file.append(filepath_prefix_qt+'/trainval4_150rh1_sit120rh.p')
+            training_database_file.append(filepath_prefix_qt+'/trainval8_150rh1_sit120rh.p')
 
 
     else:
