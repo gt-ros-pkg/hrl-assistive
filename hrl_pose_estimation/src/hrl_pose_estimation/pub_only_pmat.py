@@ -7,23 +7,30 @@ import rospy, roslib
 import sys, os
 import random, math
 import numpy as np
+import matplotlib
+matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
 import cPickle as pkl
 import tf
+
+
 from time import sleep
 from scipy import ndimage
 from scipy.stats import mode
-from skimage.feature import blob_doh
 from hrl_msgs.msg import FloatArrayBare
-from geometry_msgs.msg import TransformStamped
-from geometry_msgs.msg import PoseStamped
-from geometry_msgs.msg import Point
 import rosbag
 import copy
 
 
 from visualization_msgs.msg import Marker
 from visualization_msgs.msg import MarkerArray
+
+plt.ion()
+fig = plt.figure(num=None, figsize=(6, 10))
+plt.xlabel("Something on the X")
+plt.ylabel("Something on the Y")
+plt.show(block=False)
+
 
 
 
@@ -37,8 +44,8 @@ MAT = 'seat'
 MAT_WIDTH = 0.74#0.762 #metres
 MAT_HEIGHT = 1.75 #1.854 #metres
 MAT_HALF_WIDTH = MAT_WIDTH/2 
-NUMOFTAXELS_X = 21#64#73 #taxels
-NUMOFTAXELS_Y = 10#27#30 
+NUMOFTAXELS_X = 64#73 #taxels
+NUMOFTAXELS_Y = 27#30 
 INTER_SENSOR_DISTANCE = 0.0286#metres
 LOW_TAXEL_THRESH_X = 0
 LOW_TAXEL_THRESH_Y = 0
@@ -61,6 +68,7 @@ class RealTimePose():
 
         rospy.Subscriber("/fsascan", FloatArrayBare, self.pressure_map_callback)
         self.count = 0
+        self.colorbar = True
 
 
     def pressure_map_callback(self, data):
@@ -72,17 +80,28 @@ class RealTimePose():
         self.ok_to_read_pose = True
 
 
+    def mypause(self, interval):
+        backend= plt.rcParams['backend']
+        if backend in matplotlib.rcsetup.interactive_bk:
+            figManager = matplotlib._pylab_helpers.Gcf.get_active()
+            if figManager is not None:
+                canvas = figManager.canvas
+                if canvas.figure.stale:
+                    canvas.draw()
+                canvas.start_event_loop(interval)
+                return
+
 
 
     def rviz_publish_input(self, image, angle):
-        #mat_size = (84, 47)
-        mat_size = (41, 30)
+        mat_size = (84, 47)
+        #mat_size = (41, 30)
 
         image = np.reshape(image, mat_size)
 
-        print np.fliplr(image[10:30, 32:36])
+        #print np.fliplr(image[10:30, 32:36])
         image = np.clip(image*4, 0, 100)
-        print np.fliplr(image[10:30, 32:36])
+        #print np.fliplr(image[10:30, 32:36])
 
         markerArray = MarkerArray()
         for j in range(10, image.shape[0]-10):
@@ -156,7 +175,7 @@ class RealTimePose():
         sy = ndimage.sobel(p_map, axis=1, mode='constant')
         p_map_inter = np.hypot(sx, sy)
 
-        print np.shape(p_map_inter)
+        #print np.shape(p_map_inter)
         p_map_dataset.append([p_map, p_map_inter, a_map])
 
         return p_map_dataset
@@ -178,11 +197,23 @@ class RealTimePose():
                 input_stack = self.preprocessing_create_pressure_angle_stack_realtime(self.p_mat, self.bedangle, self.mat_size)
 
                 viz_image = np.array(input_stack)[0,:,:,:]
-                viz_image = np.pad(viz_image[0,:,:], 10, 'constant', constant_values=(0.))
+                #viz_image = np.pad(viz_image[0,:,:], 10, 'constant', constant_values=(0.))
+                
+                viz_image = viz_image[0, :, :]
+
+                #if True: #publish in rviz
+                #    self.rviz_publish_input(viz_image * 1.3, self.bedangle)
+
+                plt.gca().clear()
+                plt.imshow(viz_image, interpolation='nearest', vmin = 0, vmax = 100, cmap=plt.cm.jet, origin='upper')
+                if self.colorbar == True:
+                    plt.colorbar()
+                    self.colorbar = False
+                self.mypause(0.1)
 
 
-                if True: #publish in rviz
-                    self.rviz_publish_input(viz_image * 1.3, self.bedangle)
+                print np.shape(viz_image)
+                
                     
 
                 self.ok_to_read_pose = False
