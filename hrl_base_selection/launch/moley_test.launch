@@ -1,0 +1,9 @@
+<launch>
+    <arg name="visualize" default="False" />
+    <arg name="reset_save_file" default="False" />
+    <arg name="visualize_ignoring_collisions" default="False" />
+    <node name="moley_test_node" pkg="hrl_base_selection" type="moley_test.py" output="screen"
+    args="--visualize $(arg visualize) --reset_save_file $(arg reset_save_file)
+    --visualize_ignoring_collisions $(arg visualize_ignoring_collisions)" />
+</launch>
+

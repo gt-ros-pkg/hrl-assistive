@@ -40,20 +40,83 @@
       </geometry>
     </collision>
   </link>
+  <joint
+   name="wheelchair/body_x_move_joint"
+    type="prismatic">
+    <origin
+      xyz="0.332 0 1.25"
+      rpy="0 0 0" />
+    <parent
+      link="wheelchair/base_link" />
+    <child
+      link="wheelchair/body_x_move_link" />
+    <axis
+      xyz="1 0 0" />
+    <limit
+      lower="-1"
+      upper="1"
+      effort="0"
+      velocity="0" />
+  </joint>
   <link
-    name="wheelchair/neck_base_link">
+    name="wheelchair/body_x_move_link">
+  </link>
+  <joint
+   name="wheelchair/body_y_move_joint"
+    type="prismatic">
+    <origin
+      xyz="0.0 0.0 0.0"
+      rpy="0 0 0" />
+    <parent
+      link="wheelchair/body_x_move_link" />
+    <child
+      link="wheelchair/body_y_move_link" />
+    <axis
+      xyz="0 1 0" />
+    <limit
+      lower="-1"
+      upper="1"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="wheelchair/body_y_move_link">
+  </link>
+  <joint
+   name="wheelchair/body_theta_move_joint"
+    type="revolute">
+    <origin
+      xyz="0.0 0.0 0.0"
+      rpy="0 0 0" />
+    <parent
+      link="wheelchair/body_y_move_link" />
+    <child
+      link="wheelchair/body_theta_move_link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-3"
+      upper="3"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="wheelchair/body_theta_move_link">
   </link>
   <joint
     name="wheelchair/origin_to_neck_base_joint"
     type="fixed">
     <origin
-      xyz="0.332 0 1.25"
+      xyz="0.0 0.0 0.0"
       rpy="1.570795 1.570795 0" />
     <parent
-      link="wheelchair/base_link" />
+      link="wheelchair/body_theta_move_link" />
     <child
       link="wheelchair/neck_base_link" />
   </joint>
+  <link
+    name="wheelchair/neck_base_link">
+  </link>
   <link
     name="wheelchair/neck_twist_link">
   </link>

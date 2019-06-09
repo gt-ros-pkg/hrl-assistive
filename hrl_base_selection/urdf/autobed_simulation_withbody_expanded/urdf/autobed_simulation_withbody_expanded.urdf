@@ -1,0 +1,309 @@
+<?xml version="1.0"?>
+<robot
+  name="autobed_simulation_withbody_expanded">
+  <link
+    name="base_link">
+    <inertial>
+      <origin
+        xyz="1.07 4.72284190743032E-16 0.0688099292742302"
+        rpy="0 0 0" />
+      <mass
+        value="9.40300815810475" />
+      <inertia
+        ixx="1.75076724572588"
+        ixy="-3.5527136788005E-15"
+        ixz="2.87399852308586E-15"
+        iyy="10.7655040402141"
+        iyz="1.17307726617688E-15"
+        izz="12.51627128594" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://autobed_simulation_withbody_expanded/meshes/base_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://autobed_simulation_withbody_expanded/meshes/base_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <link
+    name="bed_frame_link">
+    <inertial>
+      <origin
+        xyz="1.22522476678325 -6.50373074686086E-16 0.0224747837410592"
+        rpy="0 0 0" />
+      <mass
+        value="318.893538737685" />
+      <inertia
+        ixx="0.744245293463257"
+        ixy="4.32817281650944E-15"
+        ixz="2.21479556786015"
+        iyy="7.3352435174314"
+        iyz="-1.45441064391102E-15"
+        izz="6.59099822396815" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://autobed_simulation_withbody_expanded/meshes/bed_frame_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://autobed_simulation_withbody_expanded/meshes/bed_frame_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="tele_legs_joint"
+    type="prismatic">
+    <origin
+      xyz="-0.0400000000000005 0 0.320000000000001"
+      rpy="0 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="bed_frame_link" />
+    <axis
+      xyz="0 1 0" />
+  </joint>
+  <link
+    name="leg_rest_upper">
+    <inertial>
+      <origin
+        xyz="0.185000000000001 0.12 4.4967181463725E-16"
+        rpy="0 0 0" />
+      <mass
+        value="83.0280000000001" />
+      <inertia
+        ixx="0"
+        ixy="0"
+        ixz="0"
+        iyy="0"
+        iyz="0"
+        izz="0" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://autobed_simulation_withbody_expanded/meshes/leg_rest_upper.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://autobed_simulation_withbody_expanded/meshes/leg_rest_upper.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="leg_rest_upper_hinge"
+    type="revolute">
+    <origin
+      xyz="1.075 0 0"
+      rpy="1.5707963267949 -1.84377299293392E-16 7.65430446472183E-16" />
+    <parent
+      link="bed_frame_link" />
+    <child
+      link="leg_rest_upper" />
+    <axis
+      xyz="0 0 -1" />
+  </joint>
+  <link
+    name="leg_rest_lower">
+    <inertial>
+      <origin
+        xyz="0.325 0.12 -6.13160788110384E-17"
+        rpy="0 0 0" />
+      <mass
+        value="145.86" />
+      <inertia
+        ixx="0"
+        ixy="0"
+        ixz="0"
+        iyy="0"
+        iyz="0"
+        izz="0" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://autobed_simulation_withbody_expanded/meshes/leg_rest_lower.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://autobed_simulation_withbody_expanded/meshes/leg_rest_lower.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="leg_rest_lower_hinge"
+    type="revolute">
+    <origin
+      xyz="0.370000000000001 0 0"
+      rpy="8.46545056276682E-16 -2.4743657509036E-16 -1.8315782125782E-16" />
+    <parent
+      link="leg_rest_upper" />
+    <child
+      link="leg_rest_lower" />
+    <axis
+      xyz="0 0 -1" />
+  </joint>
+  <link
+    name="head_rest_link">
+    <inertial>
+      <origin
+        xyz="0.347272691920946 0.135063125133331 -1.64028417501908E-16"
+        rpy="0 0 0" />
+      <mass
+        value="170.497171165562" />
+      <inertia
+        ixx="0"
+        ixy="0"
+        ixz="0"
+        iyy="0"
+        iyz="0"
+        izz="0" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://autobed_simulation_withbody_expanded/meshes/head_rest_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://autobed_simulation_withbody_expanded/meshes/head_rest_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="head_rest_hinge"
+    type="revolute">
+    <origin
+      xyz="0.795 0 0"
+      rpy="1.5707963267949 2.84158644671567E-16 -3.14159265358979" />
+    <parent
+      link="bed_frame_link" />
+    <child
+      link="head_rest_link" />
+    <axis
+      xyz="0 0 1" />
+  </joint>
+  <link
+    name="wall_link">
+    <inertial>
+      <origin
+        xyz="-0.749087397953268 0.0565005843533512 0.648196106542827"
+        rpy="0 0 0" />
+      <mass
+        value="524.999999999997" />
+      <inertia
+        ixx="0"
+        ixy="0"
+        ixz="0"
+        iyy="0"
+        iyz="0"
+        izz="0" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://autobed_simulation_withbody_expanded/meshes/wall_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://autobed_simulation_withbody_expanded/meshes/wall_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="origin_wall_joint"
+    type="prismatic">
+    <origin
+      xyz="0.610627419320058 -0.185260000000017 0.574890377092537"
+      rpy="-0.00650994084197508 0.0370393769946504 -0.174021765425405" />
+    <parent
+      link="base_link" />
+    <child
+      link="wall_link" />
+    <axis
+      xyz="0.984220866265583 0.172903665695305 0.0375979892620764" />
+  </joint>
+</robot>

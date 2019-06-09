@@ -3,8 +3,8 @@
 		<contributor>
 			<authoring_tool>URDF Collada Writer</authoring_tool>
 		</contributor>
-		<created>2016-09-08T15:02:33.000000</created>
-		<modified>2016-09-08T15:02:33.000000</modified>
+		<created>2017-11-08T16:03:50.000000</created>
+		<modified>2017-11-08T16:03:50.000000</modified>
 		<unit/>
 		<up_axis>Z_UP</up_axis>
 	</asset>
@@ -21,324 +21,351 @@
 							</technique_common>
 						</bind_material>
 					</instance_geometry>
-					<node id="vkmodel0_node16" name="wheelchair/neck_base_link" sid="node16">
+					<node id="vkmodel0_node4" name="wheelchair/body_x_move_link" sid="node4">
 						<translate>-0.0 -0.0 -0.0</translate>
 						<rotate>1.0 0.0 0.0 0.0</rotate>
 						<translate>0.332 0.0 1.25</translate>
-						<rotate>0.577 0.577 -0.577 120.0</rotate>
-						<rotate sid="node_wheelchair_origin_to_neck_base_joint_axis0">0.0 0.0 0.0 0.0</rotate>
+						<rotate>1.0 0.0 0.0 0.0</rotate>
+						<translate sid="node_wheelchair_body_x_move_joint_axis0">0.0 0.0 0.0</translate>
 						<translate>0.0 0.0 0.0</translate>
 						<rotate>1.0 0.0 0.0 0.0</rotate>
-						<node id="vkmodel0_node23" name="wheelchair/upper_body_link" sid="node23">
+						<node id="vkmodel0_node5" name="wheelchair/body_y_move_link" sid="node5">
 							<translate>-0.0 -0.0 -0.0</translate>
 							<rotate>1.0 0.0 0.0 0.0</rotate>
 							<translate>0.0 0.0 0.0</translate>
 							<rotate>1.0 0.0 0.0 0.0</rotate>
-							<rotate sid="node_wheelchair_neck_body_joint_axis0">0.0 0.0 -1.0 0.0</rotate>
+							<translate sid="node_wheelchair_body_y_move_joint_axis0">0.0 0.0 0.0</translate>
 							<translate>0.0 0.0 0.0</translate>
 							<rotate>1.0 0.0 0.0 0.0</rotate>
-							<instance_geometry url="#gkmodel0_wheelchair_upper_body_link_geom0">
-								<bind_material>
-									<technique_common>
-										<instance_material symbol="mat0" target="#gkmodel0_wheelchair_upper_body_link_geom0_mat"/>
-									</technique_common>
-								</bind_material>
-							</instance_geometry>
-							<node id="vkmodel0_node0" name="wheelchair/arm_left_link" sid="node0">
+							<node id="vkmodel0_node3" name="wheelchair/body_theta_move_link" sid="node3">
 								<translate>-0.0 -0.0 -0.0</translate>
 								<rotate>1.0 0.0 0.0 0.0</rotate>
-								<translate>0.097 0.0 -0.175</translate>
-								<rotate>1.0 0.0 0.0 0.0</rotate>
-								<rotate sid="node_wheelchair_body_arm_left_joint_axis0">0.0 0.0 1.0 0.0</rotate>
 								<translate>0.0 0.0 0.0</translate>
 								<rotate>1.0 0.0 0.0 0.0</rotate>
-								<instance_geometry url="#gkmodel0_wheelchair_arm_left_link_geom0">
-									<bind_material>
-										<technique_common>
-											<instance_material symbol="mat0" target="#gkmodel0_wheelchair_arm_left_link_geom0_mat"/>
-										</technique_common>
-									</bind_material>
-								</instance_geometry>
-								<node id="vkmodel0_node7" name="wheelchair/forearm_left_link" sid="node7">
+								<rotate sid="node_wheelchair_body_theta_move_joint_axis0">0.0 0.0 1.0 0.0</rotate>
+								<translate>0.0 0.0 0.0</translate>
+								<rotate>1.0 0.0 0.0 0.0</rotate>
+								<node id="vkmodel0_node19" name="wheelchair/neck_base_link" sid="node19">
 									<translate>-0.0 -0.0 -0.0</translate>
 									<rotate>1.0 0.0 0.0 0.0</rotate>
-									<translate>0.282 -0.011 -0.05</translate>
-									<rotate>1.0 0.0 0.0 0.0</rotate>
-									<rotate sid="node_wheelchair_arm_forearm_left_joint_axis0">0.0 0.0 1.0 0.0</rotate>
+									<translate>0.0 0.0 0.0</translate>
+									<rotate>0.577 0.577 -0.577 120.0</rotate>
+									<rotate sid="node_wheelchair_origin_to_neck_base_joint_axis0">0.0 0.0 0.0 0.0</rotate>
 									<translate>0.0 0.0 0.0</translate>
 									<rotate>1.0 0.0 0.0 0.0</rotate>
-									<instance_geometry url="#gkmodel0_wheelchair_forearm_left_link_geom0">
-										<bind_material>
-											<technique_common>
-												<instance_material symbol="mat0" target="#gkmodel0_wheelchair_forearm_left_link_geom0_mat"/>
-											</technique_common>
-										</bind_material>
-									</instance_geometry>
-									<node id="vkmodel0_node9" name="wheelchair/hand_left_link" sid="node9">
+									<node id="vkmodel0_node26" name="wheelchair/upper_body_link" sid="node26">
 										<translate>-0.0 -0.0 -0.0</translate>
 										<rotate>1.0 0.0 0.0 0.0</rotate>
-										<translate>0.251 0.0 0.0</translate>
-										<rotate>1.0 0.0 0.0 0.0</rotate>
-										<rotate sid="node_wheelchair_forearm_hand_left_joint_axis0">0.0 0.0 1.0 0.0</rotate>
 										<translate>0.0 0.0 0.0</translate>
 										<rotate>1.0 0.0 0.0 0.0</rotate>
-										<instance_geometry url="#gkmodel0_wheelchair_hand_left_link_geom0">
+										<rotate sid="node_wheelchair_neck_body_joint_axis0">0.0 0.0 -1.0 0.0</rotate>
+										<translate>0.0 0.0 0.0</translate>
+										<rotate>1.0 0.0 0.0 0.0</rotate>
+										<instance_geometry url="#gkmodel0_wheelchair_upper_body_link_geom0">
 											<bind_material>
 												<technique_common>
-													<instance_material symbol="mat0" target="#gkmodel0_wheelchair_hand_left_link_geom0_mat"/>
+													<instance_material symbol="mat0" target="#gkmodel0_wheelchair_upper_body_link_geom0_mat"/>
 												</technique_common>
 											</bind_material>
 										</instance_geometry>
-									</node>
-								</node>
-							</node>
-							<node id="vkmodel0_node1" name="wheelchair/arm_right_link" sid="node1">
-								<translate>-0.0 -0.0 -0.0</translate>
-								<rotate>1.0 0.0 0.0 0.0</rotate>
-								<translate>0.097 0.0 0.175</translate>
-								<rotate>1.0 0.0 0.0 0.0</rotate>
-								<rotate sid="node_wheelchair_body_arm_right_joint_axis0">0.0 0.0 1.0 0.0</rotate>
-								<translate>0.0 0.0 0.0</translate>
-								<rotate>1.0 0.0 0.0 0.0</rotate>
-								<instance_geometry url="#gkmodel0_wheelchair_arm_right_link_geom0">
-									<bind_material>
-										<technique_common>
-											<instance_material symbol="mat0" target="#gkmodel0_wheelchair_arm_right_link_geom0_mat"/>
-										</technique_common>
-									</bind_material>
-								</instance_geometry>
-								<node id="vkmodel0_node8" name="wheelchair/forearm_right_link" sid="node8">
-									<translate>-0.0 -0.0 -0.0</translate>
-									<rotate>1.0 0.0 0.0 0.0</rotate>
-									<translate>0.282 0.0 0.05</translate>
-									<rotate>1.0 0.0 0.0 0.0</rotate>
-									<rotate sid="node_wheelchair_arm_forearm_right_joint_axis0">0.0 0.0 1.0 0.0</rotate>
-									<translate>0.0 0.0 0.0</translate>
-									<rotate>1.0 0.0 0.0 0.0</rotate>
-									<instance_geometry url="#gkmodel0_wheelchair_forearm_right_link_geom0">
-										<bind_material>
-											<technique_common>
-												<instance_material symbol="mat0" target="#gkmodel0_wheelchair_forearm_right_link_geom0_mat"/>
-											</technique_common>
-										</bind_material>
-									</instance_geometry>
-									<node id="vkmodel0_node10" name="wheelchair/hand_right_link" sid="node10">
-										<translate>-0.0 -0.0 -0.0</translate>
-										<rotate>1.0 0.0 0.0 0.0</rotate>
-										<translate>0.251 0.0 0.0</translate>
-										<rotate>1.0 0.0 0.0 0.0</rotate>
-										<rotate sid="node_wheelchair_forearm_hand_right_joint_axis0">0.0 0.0 1.0 0.0</rotate>
-										<translate>0.0 0.0 0.0</translate>
-										<rotate>1.0 0.0 0.0 0.0</rotate>
-										<instance_geometry url="#gkmodel0_wheelchair_hand_right_link_geom0">
-											<bind_material>
-												<technique_common>
-													<instance_material symbol="mat0" target="#gkmodel0_wheelchair_hand_right_link_geom0_mat"/>
-												</technique_common>
-											</bind_material>
-										</instance_geometry>
-									</node>
-								</node>
-							</node>
-							<node id="vkmodel0_node15" name="wheelchair/mid_body_link" sid="node15">
-								<translate>-0.0 -0.0 -0.0</translate>
-								<rotate>1.0 0.0 0.0 0.0</rotate>
-								<translate>0.351 0.0 0.0</translate>
-								<rotate>1.0 0.0 0.0 0.0</rotate>
-								<rotate sid="node_wheelchair_upper_mid_body_joint_axis0">0.0 0.0 1.0 0.0</rotate>
-								<translate>0.0 0.0 0.0</translate>
-								<rotate>1.0 0.0 0.0 0.0</rotate>
-								<instance_geometry url="#gkmodel0_wheelchair_mid_body_link_geom0">
-									<bind_material>
-										<technique_common>
-											<instance_material symbol="mat0" target="#gkmodel0_wheelchair_mid_body_link_geom0_mat"/>
-										</technique_common>
-									</bind_material>
-								</instance_geometry>
-								<node id="vkmodel0_node14" name="wheelchair/lower_body_link" sid="node14">
-									<translate>-0.0 -0.0 -0.0</translate>
-									<rotate>1.0 0.0 0.0 0.0</rotate>
-									<translate>0.151 0.0 0.0</translate>
-									<rotate>1.0 0.0 0.0 0.0</rotate>
-									<rotate sid="node_wheelchair_mid_lower_body_joint_axis0">0.0 0.0 1.0 0.0</rotate>
-									<translate>0.0 0.0 0.0</translate>
-									<rotate>1.0 0.0 0.0 0.0</rotate>
-									<instance_geometry url="#gkmodel0_wheelchair_lower_body_link_geom0">
-										<bind_material>
-											<technique_common>
-												<instance_material symbol="mat0" target="#gkmodel0_wheelchair_lower_body_link_geom0_mat"/>
-											</technique_common>
-										</bind_material>
-									</instance_geometry>
-									<node id="vkmodel0_node21" name="wheelchair/quad_left_link" sid="node21">
-										<translate>-0.0 -0.0 -0.0</translate>
-										<rotate>1.0 0.0 0.0 0.0</rotate>
-										<translate>0.052 0.0 -0.086</translate>
-										<rotate>0.0 0.0 -1.0 14.324</rotate>
-										<rotate sid="node_wheelchair_body_quad_left_joint_axis0">0.0 0.0 1.0 0.0</rotate>
-										<translate>0.0 0.0 0.0</translate>
-										<rotate>1.0 0.0 0.0 0.0</rotate>
-										<instance_geometry url="#gkmodel0_wheelchair_quad_left_link_geom0">
-											<bind_material>
-												<technique_common>
-													<instance_material symbol="mat0" target="#gkmodel0_wheelchair_quad_left_link_geom0_mat"/>
-												</technique_common>
-											</bind_material>
-										</instance_geometry>
-										<node id="vkmodel0_node3" name="wheelchair/calf_left_link" sid="node3">
+										<node id="vkmodel0_node0" name="wheelchair/arm_left_link" sid="node0">
 											<translate>-0.0 -0.0 -0.0</translate>
 											<rotate>1.0 0.0 0.0 0.0</rotate>
-											<translate>0.412 0.11 0.0</translate>
-											<rotate>0.144 -0.99 -0.0 180.0</rotate>
-											<rotate sid="node_wheelchair_quad_calf_left_joint_axis0">0.0 0.0 1.0 0.0</rotate>
+											<translate>0.097 0.0 -0.175</translate>
+											<rotate>1.0 0.0 0.0 0.0</rotate>
+											<rotate sid="node_wheelchair_body_arm_left_joint_axis0">0.0 0.0 1.0 0.0</rotate>
 											<translate>0.0 0.0 0.0</translate>
 											<rotate>1.0 0.0 0.0 0.0</rotate>
-											<instance_geometry url="#gkmodel0_wheelchair_calf_left_link_geom0">
+											<instance_geometry url="#gkmodel0_wheelchair_arm_left_link_geom0">
 												<bind_material>
 													<technique_common>
-														<instance_material symbol="mat0" target="#gkmodel0_wheelchair_calf_left_link_geom0_mat"/>
+														<instance_material symbol="mat0" target="#gkmodel0_wheelchair_arm_left_link_geom0_mat"/>
 													</technique_common>
 												</bind_material>
 											</instance_geometry>
-											<node id="vkmodel0_node5" name="wheelchair/foot_left_link" sid="node5">
+											<node id="vkmodel0_node10" name="wheelchair/forearm_left_link" sid="node10">
 												<translate>-0.0 -0.0 -0.0</translate>
 												<rotate>1.0 0.0 0.0 0.0</rotate>
-												<translate>-0.413 -0.032 0.0</translate>
-												<rotate>0.0 0.0 1.0 5.157</rotate>
-												<rotate sid="node_wheelchair_calf_foot_left_joint_axis0">0.0 0.0 1.0 0.0</rotate>
+												<translate>0.282 -0.011 -0.05</translate>
+												<rotate>1.0 0.0 0.0 0.0</rotate>
+												<rotate sid="node_wheelchair_arm_forearm_left_joint_axis0">0.0 0.0 1.0 0.0</rotate>
 												<translate>0.0 0.0 0.0</translate>
 												<rotate>1.0 0.0 0.0 0.0</rotate>
-												<instance_geometry url="#gkmodel0_wheelchair_foot_left_link_geom0">
+												<instance_geometry url="#gkmodel0_wheelchair_forearm_left_link_geom0">
 													<bind_material>
 														<technique_common>
-															<instance_material symbol="mat0" target="#gkmodel0_wheelchair_foot_left_link_geom0_mat"/>
+															<instance_material symbol="mat0" target="#gkmodel0_wheelchair_forearm_left_link_geom0_mat"/>
 														</technique_common>
 													</bind_material>
 												</instance_geometry>
-											</node>
-										</node>
-									</node>
-									<node id="vkmodel0_node22" name="wheelchair/quad_right_link" sid="node22">
-										<translate>-0.0 -0.0 -0.0</translate>
-										<rotate>1.0 0.0 0.0 0.0</rotate>
-										<translate>0.052 0.0 0.086</translate>
-										<rotate>0.0 0.0 -1.0 14.324</rotate>
-										<rotate sid="node_wheelchair_body_quad_right_joint_axis0">0.0 0.0 1.0 0.0</rotate>
-										<translate>0.0 0.0 0.0</translate>
-										<rotate>1.0 0.0 0.0 0.0</rotate>
-										<instance_geometry url="#gkmodel0_wheelchair_quad_right_link_geom0">
-											<bind_material>
-												<technique_common>
-													<instance_material symbol="mat0" target="#gkmodel0_wheelchair_quad_right_link_geom0_mat"/>
-												</technique_common>
-											</bind_material>
-										</instance_geometry>
-										<node id="vkmodel0_node4" name="wheelchair/calf_right_link" sid="node4">
-											<translate>-0.0 -0.0 -0.0</translate>
-											<rotate>1.0 0.0 0.0 0.0</rotate>
-											<translate>0.412 0.11 0.0</translate>
-											<rotate>0.144 -0.99 -0.0 180.0</rotate>
-											<rotate sid="node_wheelchair_quad_calf_right_joint_axis0">0.0 0.0 1.0 0.0</rotate>
-											<translate>0.0 0.0 0.0</translate>
-											<rotate>1.0 0.0 0.0 0.0</rotate>
-											<instance_geometry url="#gkmodel0_wheelchair_calf_right_link_geom0">
-												<bind_material>
-													<technique_common>
-														<instance_material symbol="mat0" target="#gkmodel0_wheelchair_calf_right_link_geom0_mat"/>
-													</technique_common>
-												</bind_material>
-											</instance_geometry>
-											<node id="vkmodel0_node6" name="wheelchair/foot_right_link" sid="node6">
-												<translate>-0.0 -0.0 -0.0</translate>
-												<rotate>1.0 0.0 0.0 0.0</rotate>
-												<translate>-0.413 -0.032 0.0</translate>
-												<rotate>0.0 0.0 1.0 5.157</rotate>
-												<rotate sid="node_wheelchair_calf_foot_right_joint_axis0">0.0 0.0 1.0 0.0</rotate>
-												<translate>0.0 0.0 0.0</translate>
-												<rotate>1.0 0.0 0.0 0.0</rotate>
-												<instance_geometry url="#gkmodel0_wheelchair_foot_right_link_geom0">
-													<bind_material>
-														<technique_common>
-															<instance_material symbol="mat0" target="#gkmodel0_wheelchair_foot_right_link_geom0_mat"/>
-														</technique_common>
-													</bind_material>
-												</instance_geometry>
-											</node>
-										</node>
-									</node>
-								</node>
-							</node>
-						</node>
-						<node id="vkmodel0_node20" name="wheelchair/neck_twist_link" sid="node20">
-							<translate>-0.0 -0.0 -0.0</translate>
-							<rotate>1.0 0.0 0.0 0.0</rotate>
-							<translate>0.0 0.0 0.0</translate>
-							<rotate>1.0 0.0 0.0 0.0</rotate>
-							<rotate sid="node_wheelchair_neck_twist_joint_axis0">1.0 0.0 0.0 0.0</rotate>
-							<translate>0.0 0.0 0.0</translate>
-							<rotate>1.0 0.0 0.0 0.0</rotate>
-							<node id="vkmodel0_node18" name="wheelchair/neck_tilt_link" sid="node18">
-								<translate>-0.0 -0.0 -0.0</translate>
-								<rotate>1.0 0.0 0.0 0.0</rotate>
-								<translate>0.0 0.0 0.0</translate>
-								<rotate>1.0 0.0 0.0 0.0</rotate>
-								<rotate sid="node_wheelchair_neck_tilt_joint_axis0">0.0 0.0 -1.0 0.0</rotate>
-								<translate>0.0 0.0 0.0</translate>
-								<rotate>1.0 0.0 0.0 0.0</rotate>
-								<node id="vkmodel0_node17" name="wheelchair/neck_link" sid="node17">
-									<translate>-0.0 -0.0 -0.0</translate>
-									<rotate>1.0 0.0 0.0 0.0</rotate>
-									<translate>-0.072 0.0 0.0</translate>
-									<rotate>1.0 0.0 0.0 0.0</rotate>
-									<rotate sid="node_wheelchair_neck_to_neck_top_joint_axis0">0.0 0.0 0.0 0.0</rotate>
-									<translate>0.0 0.0 0.0</translate>
-									<rotate>1.0 0.0 0.0 0.0</rotate>
-									<instance_geometry url="#gkmodel0_wheelchair_neck_link_geom0">
-										<bind_material>
-											<technique_common>
-												<instance_material symbol="mat0" target="#gkmodel0_wheelchair_neck_link_geom0_mat"/>
-											</technique_common>
-										</bind_material>
-									</instance_geometry>
-									<node id="vkmodel0_node19" name="wheelchair/neck_top_rotated_link" sid="node19">
-										<translate>-0.0 -0.0 -0.0</translate>
-										<rotate>1.0 0.0 0.0 0.0</rotate>
-										<translate>0.0 0.0 0.0</translate>
-										<rotate>-0.577 -0.577 0.577 120.0</rotate>
-										<rotate sid="node_wheelchair_neck_rotation_fixed_joint_axis0">0.0 0.0 0.0 0.0</rotate>
-										<translate>0.0 0.0 0.0</translate>
-										<rotate>1.0 0.0 0.0 0.0</rotate>
-										<node id="vkmodel0_node12" name="wheelchair/head_roty_link" sid="node12">
-											<translate>-0.0 -0.0 -0.0</translate>
-											<rotate>1.0 0.0 0.0 0.0</rotate>
-											<translate>0.015 0.0 0.078</translate>
-											<rotate>1.0 0.0 0.0 0.0</rotate>
-											<rotate sid="node_wheelchair_neck_head_roty_joint_axis0">0.0 1.0 0.0 0.0</rotate>
-											<translate>0.0 0.0 0.0</translate>
-											<rotate>1.0 0.0 0.0 0.0</rotate>
-											<node id="vkmodel0_node13" name="wheelchair/head_rotz_link" sid="node13">
-												<translate>-0.0 -0.0 -0.0</translate>
-												<rotate>1.0 0.0 0.0 0.0</rotate>
-												<translate>0.0 0.0 0.0</translate>
-												<rotate>1.0 0.0 0.0 0.0</rotate>
-												<rotate sid="node_wheelchair_neck_head_rotz_joint_axis0">0.0 0.0 1.0 0.0</rotate>
-												<translate>0.0 0.0 0.0</translate>
-												<rotate>1.0 0.0 0.0 0.0</rotate>
-												<node id="vkmodel0_node11" name="wheelchair/head_link" sid="node11">
+												<node id="vkmodel0_node12" name="wheelchair/hand_left_link" sid="node12">
 													<translate>-0.0 -0.0 -0.0</translate>
 													<rotate>1.0 0.0 0.0 0.0</rotate>
+													<translate>0.251 0.0 0.0</translate>
+													<rotate>1.0 0.0 0.0 0.0</rotate>
+													<rotate sid="node_wheelchair_forearm_hand_left_joint_axis0">0.0 0.0 1.0 0.0</rotate>
 													<translate>0.0 0.0 0.0</translate>
 													<rotate>1.0 0.0 0.0 0.0</rotate>
-													<rotate sid="node_wheelchair_neck_head_rotx_joint_axis0">1.0 0.0 0.0 0.0</rotate>
-													<translate>0.0 0.0 0.0</translate>
-													<rotate>1.0 0.0 0.0 0.0</rotate>
-													<instance_geometry url="#gkmodel0_wheelchair_head_link_geom0">
+													<instance_geometry url="#gkmodel0_wheelchair_hand_left_link_geom0">
 														<bind_material>
 															<technique_common>
-																<instance_material symbol="mat0" target="#gkmodel0_wheelchair_head_link_geom0_mat"/>
+																<instance_material symbol="mat0" target="#gkmodel0_wheelchair_hand_left_link_geom0_mat"/>
 															</technique_common>
 														</bind_material>
 													</instance_geometry>
+												</node>
+											</node>
+										</node>
+										<node id="vkmodel0_node1" name="wheelchair/arm_right_link" sid="node1">
+											<translate>-0.0 -0.0 -0.0</translate>
+											<rotate>1.0 0.0 0.0 0.0</rotate>
+											<translate>0.097 0.0 0.175</translate>
+											<rotate>1.0 0.0 0.0 0.0</rotate>
+											<rotate sid="node_wheelchair_body_arm_right_joint_axis0">0.0 0.0 1.0 0.0</rotate>
+											<translate>0.0 0.0 0.0</translate>
+											<rotate>1.0 0.0 0.0 0.0</rotate>
+											<instance_geometry url="#gkmodel0_wheelchair_arm_right_link_geom0">
+												<bind_material>
+													<technique_common>
+														<instance_material symbol="mat0" target="#gkmodel0_wheelchair_arm_right_link_geom0_mat"/>
+													</technique_common>
+												</bind_material>
+											</instance_geometry>
+											<node id="vkmodel0_node11" name="wheelchair/forearm_right_link" sid="node11">
+												<translate>-0.0 -0.0 -0.0</translate>
+												<rotate>1.0 0.0 0.0 0.0</rotate>
+												<translate>0.282 0.0 0.05</translate>
+												<rotate>1.0 0.0 0.0 0.0</rotate>
+												<rotate sid="node_wheelchair_arm_forearm_right_joint_axis0">0.0 0.0 1.0 0.0</rotate>
+												<translate>0.0 0.0 0.0</translate>
+												<rotate>1.0 0.0 0.0 0.0</rotate>
+												<instance_geometry url="#gkmodel0_wheelchair_forearm_right_link_geom0">
+													<bind_material>
+														<technique_common>
+															<instance_material symbol="mat0" target="#gkmodel0_wheelchair_forearm_right_link_geom0_mat"/>
+														</technique_common>
+													</bind_material>
+												</instance_geometry>
+												<node id="vkmodel0_node13" name="wheelchair/hand_right_link" sid="node13">
+													<translate>-0.0 -0.0 -0.0</translate>
+													<rotate>1.0 0.0 0.0 0.0</rotate>
+													<translate>0.251 0.0 0.0</translate>
+													<rotate>1.0 0.0 0.0 0.0</rotate>
+													<rotate sid="node_wheelchair_forearm_hand_right_joint_axis0">0.0 0.0 1.0 0.0</rotate>
+													<translate>0.0 0.0 0.0</translate>
+													<rotate>1.0 0.0 0.0 0.0</rotate>
+													<instance_geometry url="#gkmodel0_wheelchair_hand_right_link_geom0">
+														<bind_material>
+															<technique_common>
+																<instance_material symbol="mat0" target="#gkmodel0_wheelchair_hand_right_link_geom0_mat"/>
+															</technique_common>
+														</bind_material>
+													</instance_geometry>
+												</node>
+											</node>
+										</node>
+										<node id="vkmodel0_node18" name="wheelchair/mid_body_link" sid="node18">
+											<translate>-0.0 -0.0 -0.0</translate>
+											<rotate>1.0 0.0 0.0 0.0</rotate>
+											<translate>0.351 0.0 0.0</translate>
+											<rotate>1.0 0.0 0.0 0.0</rotate>
+											<rotate sid="node_wheelchair_upper_mid_body_joint_axis0">0.0 0.0 1.0 0.0</rotate>
+											<translate>0.0 0.0 0.0</translate>
+											<rotate>1.0 0.0 0.0 0.0</rotate>
+											<instance_geometry url="#gkmodel0_wheelchair_mid_body_link_geom0">
+												<bind_material>
+													<technique_common>
+														<instance_material symbol="mat0" target="#gkmodel0_wheelchair_mid_body_link_geom0_mat"/>
+													</technique_common>
+												</bind_material>
+											</instance_geometry>
+											<node id="vkmodel0_node17" name="wheelchair/lower_body_link" sid="node17">
+												<translate>-0.0 -0.0 -0.0</translate>
+												<rotate>1.0 0.0 0.0 0.0</rotate>
+												<translate>0.151 0.0 0.0</translate>
+												<rotate>1.0 0.0 0.0 0.0</rotate>
+												<rotate sid="node_wheelchair_mid_lower_body_joint_axis0">0.0 0.0 1.0 0.0</rotate>
+												<translate>0.0 0.0 0.0</translate>
+												<rotate>1.0 0.0 0.0 0.0</rotate>
+												<instance_geometry url="#gkmodel0_wheelchair_lower_body_link_geom0">
+													<bind_material>
+														<technique_common>
+															<instance_material symbol="mat0" target="#gkmodel0_wheelchair_lower_body_link_geom0_mat"/>
+														</technique_common>
+													</bind_material>
+												</instance_geometry>
+												<node id="vkmodel0_node24" name="wheelchair/quad_left_link" sid="node24">
+													<translate>-0.0 -0.0 -0.0</translate>
+													<rotate>1.0 0.0 0.0 0.0</rotate>
+													<translate>0.052 0.0 -0.086</translate>
+													<rotate>0.0 0.0 -1.0 14.324</rotate>
+													<rotate sid="node_wheelchair_body_quad_left_joint_axis0">0.0 0.0 1.0 0.0</rotate>
+													<translate>0.0 0.0 0.0</translate>
+													<rotate>1.0 0.0 0.0 0.0</rotate>
+													<instance_geometry url="#gkmodel0_wheelchair_quad_left_link_geom0">
+														<bind_material>
+															<technique_common>
+																<instance_material symbol="mat0" target="#gkmodel0_wheelchair_quad_left_link_geom0_mat"/>
+															</technique_common>
+														</bind_material>
+													</instance_geometry>
+													<node id="vkmodel0_node6" name="wheelchair/calf_left_link" sid="node6">
+														<translate>-0.0 -0.0 -0.0</translate>
+														<rotate>1.0 0.0 0.0 0.0</rotate>
+														<translate>0.412 0.11 0.0</translate>
+														<rotate>0.144 -0.99 -0.0 180.0</rotate>
+														<rotate sid="node_wheelchair_quad_calf_left_joint_axis0">0.0 0.0 1.0 0.0</rotate>
+														<translate>0.0 0.0 0.0</translate>
+														<rotate>1.0 0.0 0.0 0.0</rotate>
+														<instance_geometry url="#gkmodel0_wheelchair_calf_left_link_geom0">
+															<bind_material>
+																<technique_common>
+																	<instance_material symbol="mat0" target="#gkmodel0_wheelchair_calf_left_link_geom0_mat"/>
+																</technique_common>
+															</bind_material>
+														</instance_geometry>
+														<node id="vkmodel0_node8" name="wheelchair/foot_left_link" sid="node8">
+															<translate>-0.0 -0.0 -0.0</translate>
+															<rotate>1.0 0.0 0.0 0.0</rotate>
+															<translate>-0.413 -0.032 0.0</translate>
+															<rotate>0.0 0.0 1.0 5.157</rotate>
+															<rotate sid="node_wheelchair_calf_foot_left_joint_axis0">0.0 0.0 1.0 0.0</rotate>
+															<translate>0.0 0.0 0.0</translate>
+															<rotate>1.0 0.0 0.0 0.0</rotate>
+															<instance_geometry url="#gkmodel0_wheelchair_foot_left_link_geom0">
+																<bind_material>
+																	<technique_common>
+																		<instance_material symbol="mat0" target="#gkmodel0_wheelchair_foot_left_link_geom0_mat"/>
+																	</technique_common>
+																</bind_material>
+															</instance_geometry>
+														</node>
+													</node>
+												</node>
+												<node id="vkmodel0_node25" name="wheelchair/quad_right_link" sid="node25">
+													<translate>-0.0 -0.0 -0.0</translate>
+													<rotate>1.0 0.0 0.0 0.0</rotate>
+													<translate>0.052 0.0 0.086</translate>
+													<rotate>0.0 0.0 -1.0 14.324</rotate>
+													<rotate sid="node_wheelchair_body_quad_right_joint_axis0">0.0 0.0 1.0 0.0</rotate>
+													<translate>0.0 0.0 0.0</translate>
+													<rotate>1.0 0.0 0.0 0.0</rotate>
+													<instance_geometry url="#gkmodel0_wheelchair_quad_right_link_geom0">
+														<bind_material>
+															<technique_common>
+																<instance_material symbol="mat0" target="#gkmodel0_wheelchair_quad_right_link_geom0_mat"/>
+															</technique_common>
+														</bind_material>
+													</instance_geometry>
+													<node id="vkmodel0_node7" name="wheelchair/calf_right_link" sid="node7">
+														<translate>-0.0 -0.0 -0.0</translate>
+														<rotate>1.0 0.0 0.0 0.0</rotate>
+														<translate>0.412 0.11 0.0</translate>
+														<rotate>0.144 -0.99 -0.0 180.0</rotate>
+														<rotate sid="node_wheelchair_quad_calf_right_joint_axis0">0.0 0.0 1.0 0.0</rotate>
+														<translate>0.0 0.0 0.0</translate>
+														<rotate>1.0 0.0 0.0 0.0</rotate>
+														<instance_geometry url="#gkmodel0_wheelchair_calf_right_link_geom0">
+															<bind_material>
+																<technique_common>
+																	<instance_material symbol="mat0" target="#gkmodel0_wheelchair_calf_right_link_geom0_mat"/>
+																</technique_common>
+															</bind_material>
+														</instance_geometry>
+														<node id="vkmodel0_node9" name="wheelchair/foot_right_link" sid="node9">
+															<translate>-0.0 -0.0 -0.0</translate>
+															<rotate>1.0 0.0 0.0 0.0</rotate>
+															<translate>-0.413 -0.032 0.0</translate>
+															<rotate>0.0 0.0 1.0 5.157</rotate>
+															<rotate sid="node_wheelchair_calf_foot_right_joint_axis0">0.0 0.0 1.0 0.0</rotate>
+															<translate>0.0 0.0 0.0</translate>
+															<rotate>1.0 0.0 0.0 0.0</rotate>
+															<instance_geometry url="#gkmodel0_wheelchair_foot_right_link_geom0">
+																<bind_material>
+																	<technique_common>
+																		<instance_material symbol="mat0" target="#gkmodel0_wheelchair_foot_right_link_geom0_mat"/>
+																	</technique_common>
+																</bind_material>
+															</instance_geometry>
+														</node>
+													</node>
+												</node>
+											</node>
+										</node>
+									</node>
+									<node id="vkmodel0_node23" name="wheelchair/neck_twist_link" sid="node23">
+										<translate>-0.0 -0.0 -0.0</translate>
+										<rotate>1.0 0.0 0.0 0.0</rotate>
+										<translate>0.0 0.0 0.0</translate>
+										<rotate>1.0 0.0 0.0 0.0</rotate>
+										<rotate sid="node_wheelchair_neck_twist_joint_axis0">1.0 0.0 0.0 0.0</rotate>
+										<translate>0.0 0.0 0.0</translate>
+										<rotate>1.0 0.0 0.0 0.0</rotate>
+										<node id="vkmodel0_node21" name="wheelchair/neck_tilt_link" sid="node21">
+											<translate>-0.0 -0.0 -0.0</translate>
+											<rotate>1.0 0.0 0.0 0.0</rotate>
+											<translate>0.0 0.0 0.0</translate>
+											<rotate>1.0 0.0 0.0 0.0</rotate>
+											<rotate sid="node_wheelchair_neck_tilt_joint_axis0">0.0 0.0 -1.0 0.0</rotate>
+											<translate>0.0 0.0 0.0</translate>
+											<rotate>1.0 0.0 0.0 0.0</rotate>
+											<node id="vkmodel0_node20" name="wheelchair/neck_link" sid="node20">
+												<translate>-0.0 -0.0 -0.0</translate>
+												<rotate>1.0 0.0 0.0 0.0</rotate>
+												<translate>-0.072 0.0 0.0</translate>
+												<rotate>1.0 0.0 0.0 0.0</rotate>
+												<rotate sid="node_wheelchair_neck_to_neck_top_joint_axis0">0.0 0.0 0.0 0.0</rotate>
+												<translate>0.0 0.0 0.0</translate>
+												<rotate>1.0 0.0 0.0 0.0</rotate>
+												<instance_geometry url="#gkmodel0_wheelchair_neck_link_geom0">
+													<bind_material>
+														<technique_common>
+															<instance_material symbol="mat0" target="#gkmodel0_wheelchair_neck_link_geom0_mat"/>
+														</technique_common>
+													</bind_material>
+												</instance_geometry>
+												<node id="vkmodel0_node22" name="wheelchair/neck_top_rotated_link" sid="node22">
+													<translate>-0.0 -0.0 -0.0</translate>
+													<rotate>1.0 0.0 0.0 0.0</rotate>
+													<translate>0.0 0.0 0.0</translate>
+													<rotate>-0.577 -0.577 0.577 120.0</rotate>
+													<rotate sid="node_wheelchair_neck_rotation_fixed_joint_axis0">0.0 0.0 0.0 0.0</rotate>
+													<translate>0.0 0.0 0.0</translate>
+													<rotate>1.0 0.0 0.0 0.0</rotate>
+													<node id="vkmodel0_node15" name="wheelchair/head_roty_link" sid="node15">
+														<translate>-0.0 -0.0 -0.0</translate>
+														<rotate>1.0 0.0 0.0 0.0</rotate>
+														<translate>0.015 0.0 0.078</translate>
+														<rotate>1.0 0.0 0.0 0.0</rotate>
+														<rotate sid="node_wheelchair_neck_head_roty_joint_axis0">0.0 1.0 0.0 0.0</rotate>
+														<translate>0.0 0.0 0.0</translate>
+														<rotate>1.0 0.0 0.0 0.0</rotate>
+														<node id="vkmodel0_node16" name="wheelchair/head_rotz_link" sid="node16">
+															<translate>-0.0 -0.0 -0.0</translate>
+															<rotate>1.0 0.0 0.0 0.0</rotate>
+															<translate>0.0 0.0 0.0</translate>
+															<rotate>1.0 0.0 0.0 0.0</rotate>
+															<rotate sid="node_wheelchair_neck_head_rotz_joint_axis0">0.0 0.0 1.0 0.0</rotate>
+															<translate>0.0 0.0 0.0</translate>
+															<rotate>1.0 0.0 0.0 0.0</rotate>
+															<node id="vkmodel0_node14" name="wheelchair/head_link" sid="node14">
+																<translate>-0.0 -0.0 -0.0</translate>
+																<rotate>1.0 0.0 0.0 0.0</rotate>
+																<translate>0.0 0.0 0.0</translate>
+																<rotate>1.0 0.0 0.0 0.0</rotate>
+																<rotate sid="node_wheelchair_neck_head_rotx_joint_axis0">1.0 0.0 0.0 0.0</rotate>
+																<translate>0.0 0.0 0.0</translate>
+																<rotate>1.0 0.0 0.0 0.0</rotate>
+																<instance_geometry url="#gkmodel0_wheelchair_head_link_geom0">
+																	<bind_material>
+																		<technique_common>
+																			<instance_material symbol="mat0" target="#gkmodel0_wheelchair_head_link_geom0_mat"/>
+																		</technique_common>
+																	</bind_material>
+																</instance_geometry>
+															</node>
+														</node>
+													</node>
 												</node>
 											</node>
 										</node>
@@ -1404,6 +1431,33 @@
 						</limits>
 					</revolute>
 				</joint>
+				<joint name="wheelchair/body_theta_move_joint" sid="wheelchair_body_theta_move_joint">
+					<revolute sid="axis0">
+						<axis>0 0 1</axis>
+						<limits>
+							<min>-171.887</min>
+							<max>171.887</max>
+						</limits>
+					</revolute>
+				</joint>
+				<joint name="wheelchair/body_x_move_joint" sid="wheelchair_body_x_move_joint">
+					<prismatic sid="axis0">
+						<axis>1 0 0</axis>
+						<limits>
+							<min>-1.0</min>
+							<max>1.0</max>
+						</limits>
+					</prismatic>
+				</joint>
+				<joint name="wheelchair/body_y_move_joint" sid="wheelchair_body_y_move_joint">
+					<prismatic sid="axis0">
+						<axis>0 1 0</axis>
+						<limits>
+							<min>-1.0</min>
+							<max>1.0</max>
+						</limits>
+					</prismatic>
+				</joint>
 				<joint name="wheelchair/calf_foot_left_joint" sid="wheelchair_calf_foot_left_joint">
 					<revolute sid="axis0">
 						<axis>0 0 1</axis>
@@ -1558,124 +1612,142 @@
 					</revolute>
 				</joint>
 				<link sid="wheelchair_base_link" name="wheelchair/base_link">
-					<attachment_full joint="kmodel0/wheelchair_origin_to_neck_base_joint">
+					<attachment_full joint="kmodel0/wheelchair_body_x_move_joint">
 						<translate>0.332 0.0 1.25</translate>
-						<rotate>0.577 0.577 -0.577 120.0</rotate>
-						<link sid="wheelchair_neck_base_link" name="wheelchair/neck_base_link">
-							<attachment_full joint="kmodel0/wheelchair_neck_body_joint">
+						<rotate>1.0 0.0 0.0 0.0</rotate>
+						<link sid="wheelchair_body_x_move_link" name="wheelchair/body_x_move_link">
+							<attachment_full joint="kmodel0/wheelchair_body_y_move_joint">
 								<translate>0.0 0.0 0.0</translate>
 								<rotate>1.0 0.0 0.0 0.0</rotate>
-								<link sid="wheelchair_upper_body_link" name="wheelchair/upper_body_link">
-									<attachment_full joint="kmodel0/wheelchair_body_arm_left_joint">
-										<translate>0.097 0.0 -0.175</translate>
-										<rotate>1.0 0.0 0.0 0.0</rotate>
-										<link sid="wheelchair_arm_left_link" name="wheelchair/arm_left_link">
-											<attachment_full joint="kmodel0/wheelchair_arm_forearm_left_joint">
-												<translate>0.282 -0.011 -0.05</translate>
-												<rotate>1.0 0.0 0.0 0.0</rotate>
-												<link sid="wheelchair_forearm_left_link" name="wheelchair/forearm_left_link">
-													<attachment_full joint="kmodel0/wheelchair_forearm_hand_left_joint">
-														<translate>0.251 0.0 0.0</translate>
-														<rotate>1.0 0.0 0.0 0.0</rotate>
-														<link sid="wheelchair_hand_left_link" name="wheelchair/hand_left_link"/>
-													</attachment_full>
-												</link>
-											</attachment_full>
-										</link>
-									</attachment_full>
-									<attachment_full joint="kmodel0/wheelchair_body_arm_right_joint">
-										<translate>0.097 0.0 0.175</translate>
-										<rotate>1.0 0.0 0.0 0.0</rotate>
-										<link sid="wheelchair_arm_right_link" name="wheelchair/arm_right_link">
-											<attachment_full joint="kmodel0/wheelchair_arm_forearm_right_joint">
-												<translate>0.282 0.0 0.05</translate>
-												<rotate>1.0 0.0 0.0 0.0</rotate>
-												<link sid="wheelchair_forearm_right_link" name="wheelchair/forearm_right_link">
-													<attachment_full joint="kmodel0/wheelchair_forearm_hand_right_joint">
-														<translate>0.251 0.0 0.0</translate>
-														<rotate>1.0 0.0 0.0 0.0</rotate>
-														<link sid="wheelchair_hand_right_link" name="wheelchair/hand_right_link"/>
-													</attachment_full>
-												</link>
-											</attachment_full>
-										</link>
-									</attachment_full>
-									<attachment_full joint="kmodel0/wheelchair_upper_mid_body_joint">
-										<translate>0.351 0.0 0.0</translate>
-										<rotate>1.0 0.0 0.0 0.0</rotate>
-										<link sid="wheelchair_mid_body_link" name="wheelchair/mid_body_link">
-											<attachment_full joint="kmodel0/wheelchair_mid_lower_body_joint">
-												<translate>0.151 0.0 0.0</translate>
-												<rotate>1.0 0.0 0.0 0.0</rotate>
-												<link sid="wheelchair_lower_body_link" name="wheelchair/lower_body_link">
-													<attachment_full joint="kmodel0/wheelchair_body_quad_left_joint">
-														<translate>0.052 0.0 -0.086</translate>
-														<rotate>0.0 0.0 -1.0 14.324</rotate>
-														<link sid="wheelchair_quad_left_link" name="wheelchair/quad_left_link">
-															<attachment_full joint="kmodel0/wheelchair_quad_calf_left_joint">
-																<translate>0.412 0.11 0.0</translate>
-																<rotate>0.144 -0.99 -0.0 180.0</rotate>
-																<link sid="wheelchair_calf_left_link" name="wheelchair/calf_left_link">
-																	<attachment_full joint="kmodel0/wheelchair_calf_foot_left_joint">
-																		<translate>-0.413 -0.032 0.0</translate>
-																		<rotate>0.0 0.0 1.0 5.157</rotate>
-																		<link sid="wheelchair_foot_left_link" name="wheelchair/foot_left_link"/>
-																	</attachment_full>
-																</link>
-															</attachment_full>
-														</link>
-													</attachment_full>
-													<attachment_full joint="kmodel0/wheelchair_body_quad_right_joint">
-														<translate>0.052 0.0 0.086</translate>
-														<rotate>0.0 0.0 -1.0 14.324</rotate>
-														<link sid="wheelchair_quad_right_link" name="wheelchair/quad_right_link">
-															<attachment_full joint="kmodel0/wheelchair_quad_calf_right_joint">
-																<translate>0.412 0.11 0.0</translate>
-																<rotate>0.144 -0.99 -0.0 180.0</rotate>
-																<link sid="wheelchair_calf_right_link" name="wheelchair/calf_right_link">
-																	<attachment_full joint="kmodel0/wheelchair_calf_foot_right_joint">
-																		<translate>-0.413 -0.032 0.0</translate>
-																		<rotate>0.0 0.0 1.0 5.157</rotate>
-																		<link sid="wheelchair_foot_right_link" name="wheelchair/foot_right_link"/>
-																	</attachment_full>
-																</link>
-															</attachment_full>
-														</link>
-													</attachment_full>
-												</link>
-											</attachment_full>
-										</link>
-									</attachment_full>
-								</link>
-							</attachment_full>
-							<attachment_full joint="kmodel0/wheelchair_neck_twist_joint">
-								<translate>0.0 0.0 0.0</translate>
-								<rotate>1.0 0.0 0.0 0.0</rotate>
-								<link sid="wheelchair_neck_twist_link" name="wheelchair/neck_twist_link">
-									<attachment_full joint="kmodel0/wheelchair_neck_tilt_joint">
+								<link sid="wheelchair_body_y_move_link" name="wheelchair/body_y_move_link">
+									<attachment_full joint="kmodel0/wheelchair_body_theta_move_joint">
 										<translate>0.0 0.0 0.0</translate>
 										<rotate>1.0 0.0 0.0 0.0</rotate>
-										<link sid="wheelchair_neck_tilt_link" name="wheelchair/neck_tilt_link">
-											<attachment_full joint="kmodel0/wheelchair_neck_to_neck_top_joint">
-												<translate>-0.072 0.0 0.0</translate>
-												<rotate>1.0 0.0 0.0 0.0</rotate>
-												<link sid="wheelchair_neck_link" name="wheelchair/neck_link">
-													<attachment_full joint="kmodel0/wheelchair_neck_rotation_fixed_joint">
+										<link sid="wheelchair_body_theta_move_link" name="wheelchair/body_theta_move_link">
+											<attachment_full joint="kmodel0/wheelchair_origin_to_neck_base_joint">
+												<translate>0.0 0.0 0.0</translate>
+												<rotate>0.577 0.577 -0.577 120.0</rotate>
+												<link sid="wheelchair_neck_base_link" name="wheelchair/neck_base_link">
+													<attachment_full joint="kmodel0/wheelchair_neck_body_joint">
 														<translate>0.0 0.0 0.0</translate>
-														<rotate>-0.577 -0.577 0.577 120.0</rotate>
-														<link sid="wheelchair_neck_top_rotated_link" name="wheelchair/neck_top_rotated_link">
-															<attachment_full joint="kmodel0/wheelchair_neck_head_roty_joint">
-																<translate>0.015 0.0 0.078</translate>
+														<rotate>1.0 0.0 0.0 0.0</rotate>
+														<link sid="wheelchair_upper_body_link" name="wheelchair/upper_body_link">
+															<attachment_full joint="kmodel0/wheelchair_body_arm_left_joint">
+																<translate>0.097 0.0 -0.175</translate>
 																<rotate>1.0 0.0 0.0 0.0</rotate>
-																<link sid="wheelchair_head_roty_link" name="wheelchair/head_roty_link">
-																	<attachment_full joint="kmodel0/wheelchair_neck_head_rotz_joint">
-																		<translate>0.0 0.0 0.0</translate>
+																<link sid="wheelchair_arm_left_link" name="wheelchair/arm_left_link">
+																	<attachment_full joint="kmodel0/wheelchair_arm_forearm_left_joint">
+																		<translate>0.282 -0.011 -0.05</translate>
 																		<rotate>1.0 0.0 0.0 0.0</rotate>
-																		<link sid="wheelchair_head_rotz_link" name="wheelchair/head_rotz_link">
-																			<attachment_full joint="kmodel0/wheelchair_neck_head_rotx_joint">
-																				<translate>0.0 0.0 0.0</translate>
+																		<link sid="wheelchair_forearm_left_link" name="wheelchair/forearm_left_link">
+																			<attachment_full joint="kmodel0/wheelchair_forearm_hand_left_joint">
+																				<translate>0.251 0.0 0.0</translate>
 																				<rotate>1.0 0.0 0.0 0.0</rotate>
-																				<link sid="wheelchair_head_link" name="wheelchair/head_link"/>
+																				<link sid="wheelchair_hand_left_link" name="wheelchair/hand_left_link"/>
+																			</attachment_full>
+																		</link>
+																	</attachment_full>
+																</link>
+															</attachment_full>
+															<attachment_full joint="kmodel0/wheelchair_body_arm_right_joint">
+																<translate>0.097 0.0 0.175</translate>
+																<rotate>1.0 0.0 0.0 0.0</rotate>
+																<link sid="wheelchair_arm_right_link" name="wheelchair/arm_right_link">
+																	<attachment_full joint="kmodel0/wheelchair_arm_forearm_right_joint">
+																		<translate>0.282 0.0 0.05</translate>
+																		<rotate>1.0 0.0 0.0 0.0</rotate>
+																		<link sid="wheelchair_forearm_right_link" name="wheelchair/forearm_right_link">
+																			<attachment_full joint="kmodel0/wheelchair_forearm_hand_right_joint">
+																				<translate>0.251 0.0 0.0</translate>
+																				<rotate>1.0 0.0 0.0 0.0</rotate>
+																				<link sid="wheelchair_hand_right_link" name="wheelchair/hand_right_link"/>
+																			</attachment_full>
+																		</link>
+																	</attachment_full>
+																</link>
+															</attachment_full>
+															<attachment_full joint="kmodel0/wheelchair_upper_mid_body_joint">
+																<translate>0.351 0.0 0.0</translate>
+																<rotate>1.0 0.0 0.0 0.0</rotate>
+																<link sid="wheelchair_mid_body_link" name="wheelchair/mid_body_link">
+																	<attachment_full joint="kmodel0/wheelchair_mid_lower_body_joint">
+																		<translate>0.151 0.0 0.0</translate>
+																		<rotate>1.0 0.0 0.0 0.0</rotate>
+																		<link sid="wheelchair_lower_body_link" name="wheelchair/lower_body_link">
+																			<attachment_full joint="kmodel0/wheelchair_body_quad_left_joint">
+																				<translate>0.052 0.0 -0.086</translate>
+																				<rotate>0.0 0.0 -1.0 14.324</rotate>
+																				<link sid="wheelchair_quad_left_link" name="wheelchair/quad_left_link">
+																					<attachment_full joint="kmodel0/wheelchair_quad_calf_left_joint">
+																						<translate>0.412 0.11 0.0</translate>
+																						<rotate>0.144 -0.99 -0.0 180.0</rotate>
+																						<link sid="wheelchair_calf_left_link" name="wheelchair/calf_left_link">
+																							<attachment_full joint="kmodel0/wheelchair_calf_foot_left_joint">
+																								<translate>-0.413 -0.032 0.0</translate>
+																								<rotate>0.0 0.0 1.0 5.157</rotate>
+																								<link sid="wheelchair_foot_left_link" name="wheelchair/foot_left_link"/>
+																							</attachment_full>
+																						</link>
+																					</attachment_full>
+																				</link>
+																			</attachment_full>
+																			<attachment_full joint="kmodel0/wheelchair_body_quad_right_joint">
+																				<translate>0.052 0.0 0.086</translate>
+																				<rotate>0.0 0.0 -1.0 14.324</rotate>
+																				<link sid="wheelchair_quad_right_link" name="wheelchair/quad_right_link">
+																					<attachment_full joint="kmodel0/wheelchair_quad_calf_right_joint">
+																						<translate>0.412 0.11 0.0</translate>
+																						<rotate>0.144 -0.99 -0.0 180.0</rotate>
+																						<link sid="wheelchair_calf_right_link" name="wheelchair/calf_right_link">
+																							<attachment_full joint="kmodel0/wheelchair_calf_foot_right_joint">
+																								<translate>-0.413 -0.032 0.0</translate>
+																								<rotate>0.0 0.0 1.0 5.157</rotate>
+																								<link sid="wheelchair_foot_right_link" name="wheelchair/foot_right_link"/>
+																							</attachment_full>
+																						</link>
+																					</attachment_full>
+																				</link>
+																			</attachment_full>
+																		</link>
+																	</attachment_full>
+																</link>
+															</attachment_full>
+														</link>
+													</attachment_full>
+													<attachment_full joint="kmodel0/wheelchair_neck_twist_joint">
+														<translate>0.0 0.0 0.0</translate>
+														<rotate>1.0 0.0 0.0 0.0</rotate>
+														<link sid="wheelchair_neck_twist_link" name="wheelchair/neck_twist_link">
+															<attachment_full joint="kmodel0/wheelchair_neck_tilt_joint">
+																<translate>0.0 0.0 0.0</translate>
+																<rotate>1.0 0.0 0.0 0.0</rotate>
+																<link sid="wheelchair_neck_tilt_link" name="wheelchair/neck_tilt_link">
+																	<attachment_full joint="kmodel0/wheelchair_neck_to_neck_top_joint">
+																		<translate>-0.072 0.0 0.0</translate>
+																		<rotate>1.0 0.0 0.0 0.0</rotate>
+																		<link sid="wheelchair_neck_link" name="wheelchair/neck_link">
+																			<attachment_full joint="kmodel0/wheelchair_neck_rotation_fixed_joint">
+																				<translate>0.0 0.0 0.0</translate>
+																				<rotate>-0.577 -0.577 0.577 120.0</rotate>
+																				<link sid="wheelchair_neck_top_rotated_link" name="wheelchair/neck_top_rotated_link">
+																					<attachment_full joint="kmodel0/wheelchair_neck_head_roty_joint">
+																						<translate>0.015 0.0 0.078</translate>
+																						<rotate>1.0 0.0 0.0 0.0</rotate>
+																						<link sid="wheelchair_head_roty_link" name="wheelchair/head_roty_link">
+																							<attachment_full joint="kmodel0/wheelchair_neck_head_rotz_joint">
+																								<translate>0.0 0.0 0.0</translate>
+																								<rotate>1.0 0.0 0.0 0.0</rotate>
+																								<link sid="wheelchair_head_rotz_link" name="wheelchair/head_rotz_link">
+																									<attachment_full joint="kmodel0/wheelchair_neck_head_rotx_joint">
+																										<translate>0.0 0.0 0.0</translate>
+																										<rotate>1.0 0.0 0.0 0.0</rotate>
+																										<link sid="wheelchair_head_link" name="wheelchair/head_link"/>
+																									</attachment_full>
+																								</link>
+																							</attachment_full>
+																						</link>
+																					</attachment_full>
+																				</link>
 																			</attachment_full>
 																		</link>
 																	</attachment_full>
@@ -1737,6 +1809,24 @@
 					</newparam>
 					<newparam sid="robot0_motion_robot0_kinematics_kmodel0_inst_wheelchair_body_quad_right_joint_axis0_value">
 						<SIDREF>robot0_kinematics/robot0_kinematics_kmodel0_inst_wheelchair_body_quad_right_joint_axis0_value</SIDREF>
+					</newparam>
+					<newparam sid="robot0_motion_robot0_kinematics_kmodel0_inst_wheelchair_body_theta_move_joint_axis0">
+						<SIDREF>robot0_kinematics/robot0_kinematics_kmodel0_inst_wheelchair_body_theta_move_joint_axis0</SIDREF>
+					</newparam>
+					<newparam sid="robot0_motion_robot0_kinematics_kmodel0_inst_wheelchair_body_theta_move_joint_axis0_value">
+						<SIDREF>robot0_kinematics/robot0_kinematics_kmodel0_inst_wheelchair_body_theta_move_joint_axis0_value</SIDREF>
+					</newparam>
+					<newparam sid="robot0_motion_robot0_kinematics_kmodel0_inst_wheelchair_body_x_move_joint_axis0">
+						<SIDREF>robot0_kinematics/robot0_kinematics_kmodel0_inst_wheelchair_body_x_move_joint_axis0</SIDREF>
+					</newparam>
+					<newparam sid="robot0_motion_robot0_kinematics_kmodel0_inst_wheelchair_body_x_move_joint_axis0_value">
+						<SIDREF>robot0_kinematics/robot0_kinematics_kmodel0_inst_wheelchair_body_x_move_joint_axis0_value</SIDREF>
+					</newparam>
+					<newparam sid="robot0_motion_robot0_kinematics_kmodel0_inst_wheelchair_body_y_move_joint_axis0">
+						<SIDREF>robot0_kinematics/robot0_kinematics_kmodel0_inst_wheelchair_body_y_move_joint_axis0</SIDREF>
+					</newparam>
+					<newparam sid="robot0_motion_robot0_kinematics_kmodel0_inst_wheelchair_body_y_move_joint_axis0_value">
+						<SIDREF>robot0_kinematics/robot0_kinematics_kmodel0_inst_wheelchair_body_y_move_joint_axis0_value</SIDREF>
 					</newparam>
 					<newparam sid="robot0_motion_robot0_kinematics_kmodel0_inst_wheelchair_calf_foot_left_joint_axis0">
 						<SIDREF>robot0_kinematics/robot0_kinematics_kmodel0_inst_wheelchair_calf_foot_left_joint_axis0</SIDREF>
@@ -1978,7 +2068,14 @@
 							<float>0.0</float>
 						</acceleration>
 					</axis_info>
-					<axis_info axis="robot0_kinematics/axis_info_inst17"/>
+					<axis_info axis="robot0_kinematics/axis_info_inst17">
+						<speed>
+							<float>0.0</float>
+						</speed>
+						<acceleration>
+							<float>0.0</float>
+						</acceleration>
+					</axis_info>
 					<axis_info axis="robot0_kinematics/axis_info_inst18">
 						<speed>
 							<float>0.0</float>
@@ -1987,8 +2084,7 @@
 							<float>0.0</float>
 						</acceleration>
 					</axis_info>
-					<axis_info axis="robot0_kinematics/axis_info_inst19"/>
-					<axis_info axis="robot0_kinematics/axis_info_inst20">
+					<axis_info axis="robot0_kinematics/axis_info_inst19">
 						<speed>
 							<float>0.0</float>
 						</speed>
@@ -1996,6 +2092,7 @@
 							<float>0.0</float>
 						</acceleration>
 					</axis_info>
+					<axis_info axis="robot0_kinematics/axis_info_inst20"/>
 					<axis_info axis="robot0_kinematics/axis_info_inst21">
 						<speed>
 							<float>0.0</float>
@@ -2004,7 +2101,24 @@
 							<float>0.0</float>
 						</acceleration>
 					</axis_info>
-					<axis_info axis="robot0_kinematics/axis_info_inst22">
+					<axis_info axis="robot0_kinematics/axis_info_inst22"/>
+					<axis_info axis="robot0_kinematics/axis_info_inst23">
+						<speed>
+							<float>0.0</float>
+						</speed>
+						<acceleration>
+							<float>0.0</float>
+						</acceleration>
+					</axis_info>
+					<axis_info axis="robot0_kinematics/axis_info_inst24">
+						<speed>
+							<float>0.0</float>
+						</speed>
+						<acceleration>
+							<float>0.0</float>
+						</acceleration>
+					</axis_info>
+					<axis_info axis="robot0_kinematics/axis_info_inst25">
 						<speed>
 							<float>0.0</float>
 						</speed>
@@ -2055,6 +2169,24 @@
 						<SIDREF>robot0_kinematics/kmodel0_inst/wheelchair_body_quad_right_joint/axis0</SIDREF>
 					</newparam>
 					<newparam sid="robot0_kinematics_kmodel0_inst_wheelchair_body_quad_right_joint_axis0_value">
+						<float>0.0</float>
+					</newparam>
+					<newparam sid="robot0_kinematics_kmodel0_inst_wheelchair_body_theta_move_joint_axis0">
+						<SIDREF>robot0_kinematics/kmodel0_inst/wheelchair_body_theta_move_joint/axis0</SIDREF>
+					</newparam>
+					<newparam sid="robot0_kinematics_kmodel0_inst_wheelchair_body_theta_move_joint_axis0_value">
+						<float>0.0</float>
+					</newparam>
+					<newparam sid="robot0_kinematics_kmodel0_inst_wheelchair_body_x_move_joint_axis0">
+						<SIDREF>robot0_kinematics/kmodel0_inst/wheelchair_body_x_move_joint/axis0</SIDREF>
+					</newparam>
+					<newparam sid="robot0_kinematics_kmodel0_inst_wheelchair_body_x_move_joint_axis0_value">
+						<float>0.0</float>
+					</newparam>
+					<newparam sid="robot0_kinematics_kmodel0_inst_wheelchair_body_y_move_joint_axis0">
+						<SIDREF>robot0_kinematics/kmodel0_inst/wheelchair_body_y_move_joint/axis0</SIDREF>
+					</newparam>
+					<newparam sid="robot0_kinematics_kmodel0_inst_wheelchair_body_y_move_joint_axis0_value">
 						<float>0.0</float>
 					</newparam>
 					<newparam sid="robot0_kinematics_kmodel0_inst_wheelchair_calf_foot_left_joint_axis0">
@@ -2245,7 +2377,7 @@
 							</max>
 						</limits>
 					</axis_info>
-					<axis_info sid="axis_info_inst6" axis="kmodel0/wheelchair_calf_foot_left_joint/axis0">
+					<axis_info sid="axis_info_inst6" axis="kmodel0/wheelchair_body_theta_move_joint/axis0">
 						<active>
 							<bool>true</bool>
 						</active>
@@ -2259,7 +2391,35 @@
 							</max>
 						</limits>
 					</axis_info>
-					<axis_info sid="axis_info_inst7" axis="kmodel0/wheelchair_calf_foot_right_joint/axis0">
+					<axis_info sid="axis_info_inst7" axis="kmodel0/wheelchair_body_x_move_joint/axis0">
+						<active>
+							<bool>true</bool>
+						</active>
+						<locked>
+							<bool>false</bool>
+						</locked>
+						<limits>
+							<min><float>-1.0</float>
+							</min>
+							<max><float>1.0</float>
+							</max>
+						</limits>
+					</axis_info>
+					<axis_info sid="axis_info_inst8" axis="kmodel0/wheelchair_body_y_move_joint/axis0">
+						<active>
+							<bool>true</bool>
+						</active>
+						<locked>
+							<bool>false</bool>
+						</locked>
+						<limits>
+							<min><float>-1.0</float>
+							</min>
+							<max><float>1.0</float>
+							</max>
+						</limits>
+					</axis_info>
+					<axis_info sid="axis_info_inst9" axis="kmodel0/wheelchair_calf_foot_left_joint/axis0">
 						<active>
 							<bool>true</bool>
 						</active>
@@ -2273,7 +2433,7 @@
 							</max>
 						</limits>
 					</axis_info>
-					<axis_info sid="axis_info_inst8" axis="kmodel0/wheelchair_forearm_hand_left_joint/axis0">
+					<axis_info sid="axis_info_inst10" axis="kmodel0/wheelchair_calf_foot_right_joint/axis0">
 						<active>
 							<bool>true</bool>
 						</active>
@@ -2287,7 +2447,7 @@
 							</max>
 						</limits>
 					</axis_info>
-					<axis_info sid="axis_info_inst9" axis="kmodel0/wheelchair_forearm_hand_right_joint/axis0">
+					<axis_info sid="axis_info_inst11" axis="kmodel0/wheelchair_forearm_hand_left_joint/axis0">
 						<active>
 							<bool>true</bool>
 						</active>
@@ -2301,7 +2461,21 @@
 							</max>
 						</limits>
 					</axis_info>
-					<axis_info sid="axis_info_inst10" axis="kmodel0/wheelchair_mid_lower_body_joint/axis0">
+					<axis_info sid="axis_info_inst12" axis="kmodel0/wheelchair_forearm_hand_right_joint/axis0">
+						<active>
+							<bool>true</bool>
+						</active>
+						<locked>
+							<bool>false</bool>
+						</locked>
+						<limits>
+							<min><float>-171.887</float>
+							</min>
+							<max><float>171.887</float>
+							</max>
+						</limits>
+					</axis_info>
+					<axis_info sid="axis_info_inst13" axis="kmodel0/wheelchair_mid_lower_body_joint/axis0">
 						<active>
 							<bool>true</bool>
 						</active>
@@ -2315,7 +2489,7 @@
 							</max>
 						</limits>
 					</axis_info>
-					<axis_info sid="axis_info_inst11" axis="kmodel0/wheelchair_neck_body_joint/axis0">
+					<axis_info sid="axis_info_inst14" axis="kmodel0/wheelchair_neck_body_joint/axis0">
 						<active>
 							<bool>true</bool>
 						</active>
@@ -2329,7 +2503,7 @@
 							</max>
 						</limits>
 					</axis_info>
-					<axis_info sid="axis_info_inst12" axis="kmodel0/wheelchair_neck_head_rotx_joint/axis0">
+					<axis_info sid="axis_info_inst15" axis="kmodel0/wheelchair_neck_head_rotx_joint/axis0">
 						<active>
 							<bool>true</bool>
 						</active>
@@ -2343,7 +2517,7 @@
 							</max>
 						</limits>
 					</axis_info>
-					<axis_info sid="axis_info_inst13" axis="kmodel0/wheelchair_neck_head_roty_joint/axis0">
+					<axis_info sid="axis_info_inst16" axis="kmodel0/wheelchair_neck_head_roty_joint/axis0">
 						<active>
 							<bool>true</bool>
 						</active>
@@ -2357,7 +2531,7 @@
 							</max>
 						</limits>
 					</axis_info>
-					<axis_info sid="axis_info_inst14" axis="kmodel0/wheelchair_neck_head_rotz_joint/axis0">
+					<axis_info sid="axis_info_inst17" axis="kmodel0/wheelchair_neck_head_rotz_joint/axis0">
 						<active>
 							<bool>true</bool>
 						</active>
@@ -2371,7 +2545,7 @@
 							</max>
 						</limits>
 					</axis_info>
-					<axis_info sid="axis_info_inst15" axis="kmodel0/wheelchair_neck_rotation_fixed_joint/axis0">
+					<axis_info sid="axis_info_inst18" axis="kmodel0/wheelchair_neck_rotation_fixed_joint/axis0">
 						<active>
 							<bool>true</bool>
 						</active>
@@ -2385,7 +2559,7 @@
 							</max>
 						</limits>
 					</axis_info>
-					<axis_info sid="axis_info_inst16" axis="kmodel0/wheelchair_neck_tilt_joint/axis0">
+					<axis_info sid="axis_info_inst19" axis="kmodel0/wheelchair_neck_tilt_joint/axis0">
 						<active>
 							<bool>true</bool>
 						</active>
@@ -2399,7 +2573,7 @@
 							</max>
 						</limits>
 					</axis_info>
-					<axis_info sid="axis_info_inst17" axis="kmodel0/wheelchair_neck_to_neck_top_joint/axis0">
+					<axis_info sid="axis_info_inst20" axis="kmodel0/wheelchair_neck_to_neck_top_joint/axis0">
 						<active>
 							<bool>false</bool>
 						</active>
@@ -2413,7 +2587,7 @@
 							</max>
 						</limits>
 					</axis_info>
-					<axis_info sid="axis_info_inst18" axis="kmodel0/wheelchair_neck_twist_joint/axis0">
+					<axis_info sid="axis_info_inst21" axis="kmodel0/wheelchair_neck_twist_joint/axis0">
 						<active>
 							<bool>true</bool>
 						</active>
@@ -2427,7 +2601,7 @@
 							</max>
 						</limits>
 					</axis_info>
-					<axis_info sid="axis_info_inst19" axis="kmodel0/wheelchair_origin_to_neck_base_joint/axis0">
+					<axis_info sid="axis_info_inst22" axis="kmodel0/wheelchair_origin_to_neck_base_joint/axis0">
 						<active>
 							<bool>false</bool>
 						</active>
@@ -2441,7 +2615,7 @@
 							</max>
 						</limits>
 					</axis_info>
-					<axis_info sid="axis_info_inst20" axis="kmodel0/wheelchair_quad_calf_left_joint/axis0">
+					<axis_info sid="axis_info_inst23" axis="kmodel0/wheelchair_quad_calf_left_joint/axis0">
 						<active>
 							<bool>true</bool>
 						</active>
@@ -2455,7 +2629,7 @@
 							</max>
 						</limits>
 					</axis_info>
-					<axis_info sid="axis_info_inst21" axis="kmodel0/wheelchair_quad_calf_right_joint/axis0">
+					<axis_info sid="axis_info_inst24" axis="kmodel0/wheelchair_quad_calf_right_joint/axis0">
 						<active>
 							<bool>true</bool>
 						</active>
@@ -2469,7 +2643,7 @@
 							</max>
 						</limits>
 					</axis_info>
-					<axis_info sid="axis_info_inst22" axis="kmodel0/wheelchair_upper_mid_body_joint/axis0">
+					<axis_info sid="axis_info_inst25" axis="kmodel0/wheelchair_upper_mid_body_joint/axis0">
 						<active>
 							<bool>true</bool>
 						</active>
@@ -2528,6 +2702,24 @@
 				</bind>
 				<bind symbol="kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_body_quad_right_joint_axis0_value">
 					<param ref="robot0_motion/robot0_motion_robot0_kinematics_kmodel0_inst_wheelchair_body_quad_right_joint_axis0_value"/>
+				</bind>
+				<bind symbol="kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_body_theta_move_joint_axis0">
+					<param ref="robot0_motion/robot0_motion_robot0_kinematics_kmodel0_inst_wheelchair_body_theta_move_joint_axis0"/>
+				</bind>
+				<bind symbol="kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_body_theta_move_joint_axis0_value">
+					<param ref="robot0_motion/robot0_motion_robot0_kinematics_kmodel0_inst_wheelchair_body_theta_move_joint_axis0_value"/>
+				</bind>
+				<bind symbol="kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_body_x_move_joint_axis0">
+					<param ref="robot0_motion/robot0_motion_robot0_kinematics_kmodel0_inst_wheelchair_body_x_move_joint_axis0"/>
+				</bind>
+				<bind symbol="kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_body_x_move_joint_axis0_value">
+					<param ref="robot0_motion/robot0_motion_robot0_kinematics_kmodel0_inst_wheelchair_body_x_move_joint_axis0_value"/>
+				</bind>
+				<bind symbol="kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_body_y_move_joint_axis0">
+					<param ref="robot0_motion/robot0_motion_robot0_kinematics_kmodel0_inst_wheelchair_body_y_move_joint_axis0"/>
+				</bind>
+				<bind symbol="kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_body_y_move_joint_axis0_value">
+					<param ref="robot0_motion/robot0_motion_robot0_kinematics_kmodel0_inst_wheelchair_body_y_move_joint_axis0_value"/>
 				</bind>
 				<bind symbol="kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_calf_foot_left_joint_axis0">
 					<param ref="robot0_motion/robot0_motion_robot0_kinematics_kmodel0_inst_wheelchair_calf_foot_left_joint_axis0"/>
@@ -2661,6 +2853,9 @@
 				<instance_rigid_body body="rigid21" target="#vkmodel0_node21"/>
 				<instance_rigid_body body="rigid22" target="#vkmodel0_node22"/>
 				<instance_rigid_body body="rigid23" target="#vkmodel0_node23"/>
+				<instance_rigid_body body="rigid24" target="#vkmodel0_node24"/>
+				<instance_rigid_body body="rigid25" target="#vkmodel0_node25"/>
+				<instance_rigid_body body="rigid26" target="#vkmodel0_node26"/>
 			</instance_physics_model>
 			<technique_common>
 				<gravity>0 0 0</gravity>
@@ -2686,67 +2881,76 @@
 					<inertia>29.85887255190019 41.52110206170474 44.03702538639507</inertia>
 				</technique_common>
 			</rigid_body>
-			<rigid_body sid="rigid3" name="wheelchair/calf_left_link">
+			<rigid_body sid="rigid3" name="wheelchair/body_theta_move_link">
 				<technique_common/>
 			</rigid_body>
-			<rigid_body sid="rigid4" name="wheelchair/calf_right_link">
+			<rigid_body sid="rigid4" name="wheelchair/body_x_move_link">
 				<technique_common/>
 			</rigid_body>
-			<rigid_body sid="rigid5" name="wheelchair/foot_left_link">
+			<rigid_body sid="rigid5" name="wheelchair/body_y_move_link">
 				<technique_common/>
 			</rigid_body>
-			<rigid_body sid="rigid6" name="wheelchair/foot_right_link">
+			<rigid_body sid="rigid6" name="wheelchair/calf_left_link">
 				<technique_common/>
 			</rigid_body>
-			<rigid_body sid="rigid7" name="wheelchair/forearm_left_link">
+			<rigid_body sid="rigid7" name="wheelchair/calf_right_link">
 				<technique_common/>
 			</rigid_body>
-			<rigid_body sid="rigid8" name="wheelchair/forearm_right_link">
+			<rigid_body sid="rigid8" name="wheelchair/foot_left_link">
 				<technique_common/>
 			</rigid_body>
-			<rigid_body sid="rigid9" name="wheelchair/hand_left_link">
+			<rigid_body sid="rigid9" name="wheelchair/foot_right_link">
 				<technique_common/>
 			</rigid_body>
-			<rigid_body sid="rigid10" name="wheelchair/hand_right_link">
+			<rigid_body sid="rigid10" name="wheelchair/forearm_left_link">
 				<technique_common/>
 			</rigid_body>
-			<rigid_body sid="rigid11" name="wheelchair/head_link">
+			<rigid_body sid="rigid11" name="wheelchair/forearm_right_link">
 				<technique_common/>
 			</rigid_body>
-			<rigid_body sid="rigid12" name="wheelchair/head_roty_link">
+			<rigid_body sid="rigid12" name="wheelchair/hand_left_link">
 				<technique_common/>
 			</rigid_body>
-			<rigid_body sid="rigid13" name="wheelchair/head_rotz_link">
+			<rigid_body sid="rigid13" name="wheelchair/hand_right_link">
 				<technique_common/>
 			</rigid_body>
-			<rigid_body sid="rigid14" name="wheelchair/lower_body_link">
+			<rigid_body sid="rigid14" name="wheelchair/head_link">
 				<technique_common/>
 			</rigid_body>
-			<rigid_body sid="rigid15" name="wheelchair/mid_body_link">
+			<rigid_body sid="rigid15" name="wheelchair/head_roty_link">
 				<technique_common/>
 			</rigid_body>
-			<rigid_body sid="rigid16" name="wheelchair/neck_base_link">
+			<rigid_body sid="rigid16" name="wheelchair/head_rotz_link">
 				<technique_common/>
 			</rigid_body>
-			<rigid_body sid="rigid17" name="wheelchair/neck_link">
+			<rigid_body sid="rigid17" name="wheelchair/lower_body_link">
 				<technique_common/>
 			</rigid_body>
-			<rigid_body sid="rigid18" name="wheelchair/neck_tilt_link">
+			<rigid_body sid="rigid18" name="wheelchair/mid_body_link">
 				<technique_common/>
 			</rigid_body>
-			<rigid_body sid="rigid19" name="wheelchair/neck_top_rotated_link">
+			<rigid_body sid="rigid19" name="wheelchair/neck_base_link">
 				<technique_common/>
 			</rigid_body>
-			<rigid_body sid="rigid20" name="wheelchair/neck_twist_link">
+			<rigid_body sid="rigid20" name="wheelchair/neck_link">
 				<technique_common/>
 			</rigid_body>
-			<rigid_body sid="rigid21" name="wheelchair/quad_left_link">
+			<rigid_body sid="rigid21" name="wheelchair/neck_tilt_link">
 				<technique_common/>
 			</rigid_body>
-			<rigid_body sid="rigid22" name="wheelchair/quad_right_link">
+			<rigid_body sid="rigid22" name="wheelchair/neck_top_rotated_link">
 				<technique_common/>
 			</rigid_body>
-			<rigid_body sid="rigid23" name="wheelchair/upper_body_link">
+			<rigid_body sid="rigid23" name="wheelchair/neck_twist_link">
+				<technique_common/>
+			</rigid_body>
+			<rigid_body sid="rigid24" name="wheelchair/quad_left_link">
+				<technique_common/>
+			</rigid_body>
+			<rigid_body sid="rigid25" name="wheelchair/quad_right_link">
+				<technique_common/>
+			</rigid_body>
+			<rigid_body sid="rigid26" name="wheelchair/upper_body_link">
 				<technique_common/>
 			</rigid_body>
 		</physics_model>
@@ -2758,7 +2962,7 @@
 			<bind_kinematics_model node="visual0/node2">
 				<param>kscene_kmodel0_inst</param>
 			</bind_kinematics_model>
-			<bind_joint_axis target="node2/node16/node23/node7/node_wheelchair_arm_forearm_left_joint_axis0">
+			<bind_joint_axis target="node2/node4/node5/node3/node19/node26/node10/node_wheelchair_arm_forearm_left_joint_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_arm_forearm_left_joint_axis0</param>
 				</axis>
@@ -2766,7 +2970,7 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_arm_forearm_left_joint_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node2/node16/node23/node8/node_wheelchair_arm_forearm_right_joint_axis0">
+			<bind_joint_axis target="node2/node4/node5/node3/node19/node26/node11/node_wheelchair_arm_forearm_right_joint_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_arm_forearm_right_joint_axis0</param>
 				</axis>
@@ -2774,7 +2978,7 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_arm_forearm_right_joint_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node2/node16/node0/node_wheelchair_body_arm_left_joint_axis0">
+			<bind_joint_axis target="node2/node4/node5/node3/node19/node0/node_wheelchair_body_arm_left_joint_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_body_arm_left_joint_axis0</param>
 				</axis>
@@ -2782,7 +2986,7 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_body_arm_left_joint_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node2/node16/node1/node_wheelchair_body_arm_right_joint_axis0">
+			<bind_joint_axis target="node2/node4/node5/node3/node19/node1/node_wheelchair_body_arm_right_joint_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_body_arm_right_joint_axis0</param>
 				</axis>
@@ -2790,7 +2994,7 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_body_arm_right_joint_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node2/node16/node23/node15/node21/node_wheelchair_body_quad_left_joint_axis0">
+			<bind_joint_axis target="node2/node4/node5/node3/node19/node26/node18/node24/node_wheelchair_body_quad_left_joint_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_body_quad_left_joint_axis0</param>
 				</axis>
@@ -2798,7 +3002,7 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_body_quad_left_joint_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node2/node16/node23/node15/node22/node_wheelchair_body_quad_right_joint_axis0">
+			<bind_joint_axis target="node2/node4/node5/node3/node19/node26/node18/node25/node_wheelchair_body_quad_right_joint_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_body_quad_right_joint_axis0</param>
 				</axis>
@@ -2806,7 +3010,31 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_body_quad_right_joint_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node2/node16/node23/node15/node14/node21/node5/node_wheelchair_calf_foot_left_joint_axis0">
+			<bind_joint_axis target="node2/node4/node3/node_wheelchair_body_theta_move_joint_axis0">
+				<axis>
+					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_body_theta_move_joint_axis0</param>
+				</axis>
+				<value>
+					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_body_theta_move_joint_axis0_value</param>
+				</value>
+			</bind_joint_axis>
+			<bind_joint_axis target="node4/node_wheelchair_body_x_move_joint_axis0">
+				<axis>
+					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_body_x_move_joint_axis0</param>
+				</axis>
+				<value>
+					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_body_x_move_joint_axis0_value</param>
+				</value>
+			</bind_joint_axis>
+			<bind_joint_axis target="node2/node5/node_wheelchair_body_y_move_joint_axis0">
+				<axis>
+					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_body_y_move_joint_axis0</param>
+				</axis>
+				<value>
+					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_body_y_move_joint_axis0_value</param>
+				</value>
+			</bind_joint_axis>
+			<bind_joint_axis target="node2/node4/node5/node3/node19/node26/node18/node17/node24/node8/node_wheelchair_calf_foot_left_joint_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_calf_foot_left_joint_axis0</param>
 				</axis>
@@ -2814,7 +3042,7 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_calf_foot_left_joint_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node2/node16/node23/node15/node14/node22/node6/node_wheelchair_calf_foot_right_joint_axis0">
+			<bind_joint_axis target="node2/node4/node5/node3/node19/node26/node18/node17/node25/node9/node_wheelchair_calf_foot_right_joint_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_calf_foot_right_joint_axis0</param>
 				</axis>
@@ -2822,7 +3050,7 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_calf_foot_right_joint_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node2/node16/node23/node0/node9/node_wheelchair_forearm_hand_left_joint_axis0">
+			<bind_joint_axis target="node2/node4/node5/node3/node19/node26/node0/node12/node_wheelchair_forearm_hand_left_joint_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_forearm_hand_left_joint_axis0</param>
 				</axis>
@@ -2830,7 +3058,7 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_forearm_hand_left_joint_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node2/node16/node23/node1/node10/node_wheelchair_forearm_hand_right_joint_axis0">
+			<bind_joint_axis target="node2/node4/node5/node3/node19/node26/node1/node13/node_wheelchair_forearm_hand_right_joint_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_forearm_hand_right_joint_axis0</param>
 				</axis>
@@ -2838,7 +3066,7 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_forearm_hand_right_joint_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node2/node16/node23/node14/node_wheelchair_mid_lower_body_joint_axis0">
+			<bind_joint_axis target="node2/node4/node5/node3/node19/node26/node17/node_wheelchair_mid_lower_body_joint_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_mid_lower_body_joint_axis0</param>
 				</axis>
@@ -2846,7 +3074,7 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_mid_lower_body_joint_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node2/node23/node_wheelchair_neck_body_joint_axis0">
+			<bind_joint_axis target="node2/node4/node5/node3/node26/node_wheelchair_neck_body_joint_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_neck_body_joint_axis0</param>
 				</axis>
@@ -2854,7 +3082,7 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_neck_body_joint_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node2/node16/node20/node18/node17/node19/node12/node11/node_wheelchair_neck_head_rotx_joint_axis0">
+			<bind_joint_axis target="node2/node4/node5/node3/node19/node23/node21/node20/node22/node15/node14/node_wheelchair_neck_head_rotx_joint_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_neck_head_rotx_joint_axis0</param>
 				</axis>
@@ -2862,7 +3090,7 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_neck_head_rotx_joint_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node2/node16/node20/node18/node17/node12/node_wheelchair_neck_head_roty_joint_axis0">
+			<bind_joint_axis target="node2/node4/node5/node3/node19/node23/node21/node20/node15/node_wheelchair_neck_head_roty_joint_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_neck_head_roty_joint_axis0</param>
 				</axis>
@@ -2870,7 +3098,7 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_neck_head_roty_joint_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node2/node16/node20/node18/node17/node19/node13/node_wheelchair_neck_head_rotz_joint_axis0">
+			<bind_joint_axis target="node2/node4/node5/node3/node19/node23/node21/node20/node22/node16/node_wheelchair_neck_head_rotz_joint_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_neck_head_rotz_joint_axis0</param>
 				</axis>
@@ -2878,7 +3106,7 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_neck_head_rotz_joint_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node2/node16/node20/node18/node19/node_wheelchair_neck_rotation_fixed_joint_axis0">
+			<bind_joint_axis target="node2/node4/node5/node3/node19/node23/node21/node22/node_wheelchair_neck_rotation_fixed_joint_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_neck_rotation_fixed_joint_axis0</param>
 				</axis>
@@ -2886,7 +3114,7 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_neck_rotation_fixed_joint_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node2/node16/node18/node_wheelchair_neck_tilt_joint_axis0">
+			<bind_joint_axis target="node2/node4/node5/node3/node19/node21/node_wheelchair_neck_tilt_joint_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_neck_tilt_joint_axis0</param>
 				</axis>
@@ -2894,7 +3122,7 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_neck_tilt_joint_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node2/node16/node20/node17/node_wheelchair_neck_to_neck_top_joint_axis0">
+			<bind_joint_axis target="node2/node4/node5/node3/node19/node23/node20/node_wheelchair_neck_to_neck_top_joint_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_neck_to_neck_top_joint_axis0</param>
 				</axis>
@@ -2902,7 +3130,7 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_neck_to_neck_top_joint_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node2/node20/node_wheelchair_neck_twist_joint_axis0">
+			<bind_joint_axis target="node2/node4/node5/node3/node23/node_wheelchair_neck_twist_joint_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_neck_twist_joint_axis0</param>
 				</axis>
@@ -2910,7 +3138,7 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_neck_twist_joint_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node16/node_wheelchair_origin_to_neck_base_joint_axis0">
+			<bind_joint_axis target="node2/node4/node5/node19/node_wheelchair_origin_to_neck_base_joint_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_origin_to_neck_base_joint_axis0</param>
 				</axis>
@@ -2918,7 +3146,7 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_origin_to_neck_base_joint_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node2/node16/node23/node15/node14/node3/node_wheelchair_quad_calf_left_joint_axis0">
+			<bind_joint_axis target="node2/node4/node5/node3/node19/node26/node18/node17/node6/node_wheelchair_quad_calf_left_joint_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_quad_calf_left_joint_axis0</param>
 				</axis>
@@ -2926,7 +3154,7 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_quad_calf_left_joint_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node2/node16/node23/node15/node14/node4/node_wheelchair_quad_calf_right_joint_axis0">
+			<bind_joint_axis target="node2/node4/node5/node3/node19/node26/node18/node17/node7/node_wheelchair_quad_calf_right_joint_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_quad_calf_right_joint_axis0</param>
 				</axis>
@@ -2934,7 +3162,7 @@
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_quad_calf_right_joint_axis0_value</param>
 				</value>
 			</bind_joint_axis>
-			<bind_joint_axis target="node2/node16/node15/node_wheelchair_upper_mid_body_joint_axis0">
+			<bind_joint_axis target="node2/node4/node5/node3/node19/node18/node_wheelchair_upper_mid_body_joint_axis0">
 				<axis>
 					<param>kscene_kmodel0_inst_robot0_kinematics_kmodel0_inst_wheelchair_upper_mid_body_joint_axis0</param>
 				</axis>

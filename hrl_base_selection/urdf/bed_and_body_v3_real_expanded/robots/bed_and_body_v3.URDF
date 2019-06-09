@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <robot
-  name="bed_and_body_v3">
+  name="bed_and_body_v3_real_expanded_no_wall">
   <link
     name="base_link">
     <inertial>
@@ -116,7 +116,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/bed_frame_real_expanded.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/bed_frame_link.STL"/>
       </geometry>
       <material
         name="">
@@ -130,7 +130,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/bed_frame_link.STL" />
+          filename="package://hrl_base_selection/urdf/bed_and_body_v3_real_expanded/meshes/bed_frame_link.STL"/>
       </geometry>
     </collision>
   </link>

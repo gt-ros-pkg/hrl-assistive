@@ -55,15 +55,15 @@ import fileinput
 import glob
 
 
+# Here we set up some universal options for CMA. We never actually use them, but we could!
+# Instead we define them for each time we run CMA.
 general_option = {'maxiter': 50, 'popsize': 20}
-
 DURATION = 5
 OPTIONS = general_option
-# SIMULATOR_PROCESS = DressingSimulationProcess
 CMA_STEP_SIZE = 0.6
 NUM_RESTART = 1
 
-
+## This is the class for the simulator pool. On init the simulators do very little.
 class SimulatorPool(object):
     def __init__(self, population, model, visualize=False):
         self.simulatorPool = mp.Manager().Queue()
@@ -72,7 +72,16 @@ class SimulatorPool(object):
             simulator_process = BaseEmptySimulationProcess(process_number=_, visualize=visualize, model=model)
             self.simulatorPool.put(simulator_process)
 
-
+## This is the class for each process in the pool that runs a simulator.
+# On init, it sets some parameters, but does not actually start the simulator.
+# If the simulator is started on process start-up, it tries to start the simulator on the thread that is starting the
+# new thread. You can't have more than one simulator in a single process, so that crashes. With this setup, first the
+# new process is started and then that new process starts up a simulator.
+# Input:
+# process_number: the reference number for this process
+# visualize: whether the process should attempt to visualize DART. Visualization does not work when you have multiple
+# processes because pyDART does not appear to do multi-threaded visualization well.
+# model: the file name for the skel model to use in DART
 class BaseEmptySimulationProcess(object):
     def __init__(self, process_number=0, visualize=False, model='fullbody_participant0_capsule.skel'):
         self.process_number = process_number
@@ -82,18 +91,35 @@ class BaseEmptySimulationProcess(object):
         self.simulator_started = False
         self.arm_fixed = [False, False, False, False]
 
+    # Function to start the simulator.
+    # Visualization generally does not work when you have multiple processes because pyDART does not appear to do
+    # multi-threaded visualization well. Once the simulator is started sets the internal variable started_simulator to
+    # True.
+    # Set save_all_results to False to not save results of running simulator (e.g. for visualization and/or
+    # troubleshooting)
     def start_dressing_simulation_process(self):
         self.optimizer = DressingSimulationProcess(process_number=self.process_number,
                                                    visualize=self.visualize, model=self.model)
-#                                                   visualize=self.visualize, model='fullbody_henryclever_capsule.skel')
         self.optimizer.save_all_results = True
         self.simulator_started = True
         return True
 
+## Init function for creating simulators in the pool.
 def _init(queue):
     global current_simulator
     current_simulator = queue.get()
 
+#######################################
+# Various functions to command the individual processes.
+# Each takes the form of:
+# Inputs: input is a single item. To send in multiple things they are put into a list.
+# global current_simulator grabs the simulator in the process. This is 'global' to that specific process only.
+# Then does various things
+# Return: whatever you want it to return. Some functions you might only want them to run some things in the process
+# without caring about what it returns.
+#######################################
+
+## Function to test out making these functions for the processes.
 def test_process_function(x):
     global current_simulator
     print current_simulator.process_number
@@ -101,16 +127,25 @@ def test_process_function(x):
     print 'ok'
     return True
 
+#### These functions are not used. When using a process pool you can't guarantee what process will run each task.
+# For example, if you have 10 processes, you can't just run initialize_process 10 times in order for each process to
+# run the function once. You only know that the function will run in total 10 times. So some processes might run the
+# function twice. For that reason, these functions (e.g., set_arms, set_new_fixed_point, initialize_process) were
+# moved into the optimization functions (e.g., brute_force_func, fine_func).
+
+## Not used
 def initialize_process(dummy_input):
     global current_simulator
     current_simulator.start_dressing_simulation_process()
     return True
 
+## Not used
 def set_new_fixed_point(dummy_input):
     global current_simulator
     current_simulator.optimizer.add_new_fixed_point = True
     return True
 
+## Not used
 def set_stretch_allowable(input):
     stretch_allowable, fixed_points_to_use = input
     global current_simulator
@@ -118,6 +153,7 @@ def set_stretch_allowable(input):
     current_simulator.optimizer.fixed_points_to_use = fixed_points_to_use
     return True
 
+## Not used
 def set_arms(input):
     human_arm, robot_arm, subtask_number = input
     global current_simulator
@@ -128,6 +164,31 @@ def set_arms(input):
     current_simulator.optimizer.subtask_step = subtask_number
     return True
 
+## Not used
+def set_process_subtask(subtask_number):
+    global current_simulator
+    current_simulator.optimizer.subtask_step = subtask_number
+    return True
+
+## Not used
+def set_arm_config(config):
+    global current_simulator
+    current_simulator.optimizer.set_human_arm(config)
+    return True
+
+### These next functions are used
+## Function to find candidate arm configurations for the CMA optimization in the fine_func function.
+# Function: Checks that each of these inputs (other than x)  are set in the process. If not, sets them. Then finds the
+# objective function value for the human configuration x. Saves the results into files.
+# Input: a list: [x, subtask, robot_arm, subtask_number, stretch_allowable, fixed_points_to_use, fixed_points]
+# x: the human configuration to test.
+# subtask: the human arm to use (with forearm or upper_arm specified.
+# robot_arm: the arm of the robot to use (e.g., rightarm).
+# subtask_number: the step in the task. Because later subtasks may have constraints that earlier subtasks did not have.
+# stretch_allowable: the amount the garment is allowed to stretch
+# fixed_points_to_use: which saved fixed points to test for stretching constraints for that subtask
+# fixed_points: the 3D location of the fixed points
+# Return: the value of the objective function
 def brute_force_func(input):
     x, subtask, robot_arm, \
     subtask_number, stretch_allowable, \
@@ -156,6 +217,19 @@ def brute_force_func(input):
     res = current_simulator.optimizer.objective_function_coarse(x)
     return res
 
+## Function to find the objective function value for a human arm configuration. Performs an optimization of the robot
+# configuration to find that objective function value.
+# Function: Checks that each of these inputs (other than x) are set in the process. If not, sets them. Then finds the
+# objective function value for the human configuration x.  Saves the results into files.
+# Input: a list: [x, subtask, robot_arm, subtask_number, stretch_allowable, fixed_points_to_use, fixed_points]
+# x: the human configuration to test.
+# subtask: the human arm to use (with forearm or upper_arm specified.
+# robot_arm: the arm of the robot to use (e.g., rightarm).
+# subtask_number: the step in the task. Because later subtasks may have constraints that earlier subtasks did not have.
+# stretch_allowable: the amount the garment is allowed to stretch
+# fixed_points_to_use: which saved fixed points to test for stretching constraints for that subtask
+# fixed_points: the 3D location of the fixed points
+# Return: the value of the objective function
 def fine_func(input):
     x, subtask, robot_arm, \
     subtask_number, stretch_allowable, \
@@ -185,6 +259,20 @@ def fine_func(input):
     #print 'objective function response', res
     return res
 
+## Function to find the optimal robot configuration for the previously found human configuration.
+# Function: Checks that each of these inputs are set in the process. If not, sets them. Then finds the objective
+# function value for the human configuration x. Saves the results into files.
+# Input: a list: [x, subtask, robot_arm, subtask_number,
+#                 stretch_allowable, fixed_points_to_use, fixed_points, pr2_guess]
+# x: the human configuration that was previously found.
+# subtask: the human arm to use (with forearm or upper_arm specified.
+# robot_arm: the arm of the robot to use (e.g., rightarm).
+# subtask_number: the step in the task. Because later subtasks may have constraints that earlier subtasks did not have.
+# stretch_allowable: the amount the garment is allowed to stretch
+# fixed_points_to_use: which saved fixed points to test for stretching constraints for that subtask
+# fixed_points: the 3D location of the fixed points
+# pr2_guess: the initial guess for the robot configuration
+# Return: the value of the objective function
 def fine_pr2_func(input):
     x, subtask, robot_arm, \
     subtask_number, stretch_allowable, \
@@ -221,6 +309,20 @@ def fine_pr2_func(input):
     # res = current_simulator.optimizer.objective_function_fine_pr2(x)
     return res
 
+## Function to find fixed points for the optimization by generating the trajectory for the garment for the first
+# subtask. It saves the fixed location (where the garment stops at the top of the shoulder).
+# Function: Checks that each of these inputs are set in the process. If not, sets them. Then finds the fixed points
+# for the optimization.
+# Input: a list: [subtask, robot_arm, subtask_number,
+#                 stretch_allowable, fixed_points_to_use, fixed_points, pr2_guess]
+# subtask: the human arm to use (with forearm or upper_arm specified.
+# robot_arm: the arm of the robot to use (e.g., rightarm).
+# subtask_number: the step in the task. Because later subtasks may have constraints that earlier subtasks did not have.
+# stretch_allowable: the amount the garment is allowed to stretch
+# fixed_points_to_use: which saved fixed points to test for stretching constraints for that subtask
+# fixed_points: the 3D location of the fixed points
+# pr2_guess: the initial guess for the robot configuration
+# Return: the fixed points from the simulator
 def find_fixed_points(input):
     subtask, robot_arm, \
     subtask_number, stretch_allowable, \
@@ -247,21 +349,20 @@ def find_fixed_points(input):
     current_simulator.optimizer.find_reference_coordinate_frames_and_goals(arm, subtask='all')
     return current_simulator.optimizer.fixed_points
 
-def set_process_subtask(subtask_number):
-    global current_simulator
-    current_simulator.optimizer.subtask_step = subtask_number
-    return True
 
-def set_arm_config(config):
-    global current_simulator
-    current_simulator.optimizer.set_human_arm(config)
-    return True
-
+## A function to split a large sequence into segments of at most some size. The last segment may be shorter.
 def chunker(seq, size):
     return (seq[pos:pos + size] for pos in xrange(0, len(seq), size))
 
+## Class for the multiprocess optimization. Makes the process pool, runs the overall optimization.
 class DressingMultiProcessOptimization(object):
+    # Options are:
+    # number_of_processes: the number of processes to put in the pool. If 0, uses the number that the machine has.
+    # visualize: whether or not to try to visualize DART in the process. If you have multiple processes, this will not
+    # work.
+    # model: the person, wheelchair, environment, etc model to use.
     def __init__(self, number_of_processes=0, visualize=False, model='fullbody_participant0_capsule.skel'):
+        # Set file names
         rospack = rospkg.RosPack()
         self.pkg_path = rospack.get_path('hrl_base_selection')
         self.save_file_path = self.pkg_path + '/data/'
@@ -269,10 +370,11 @@ class DressingMultiProcessOptimization(object):
         self.save_file_name_fine_output = 'arm_configs_fine_output.log'
         self.save_file_name_final_output = 'arm_configs_final_output.log'
 
-        # self.model = 'fullbody_50percentile_capsule.skel'
-        # self.model = 'fullbody_henryclever_capsule.skel'
+        # Set the model
         self.model = model
 
+        # Set some constraints on the optimization search space for the person and robot configurations. The person's
+        # physical constraints may be put here, but I put them later within the objective functions.
         self.arm_config_min = np.array([m.radians(-5.), m.radians(-10.), m.radians(-10.),
                                         0.])
         self.arm_config_max = np.array([m.radians(100.), m.radians(100.), m.radians(100),
@@ -287,17 +389,26 @@ class DressingMultiProcessOptimization(object):
             self.processCnt = number_of_processes
         simulatorPool = SimulatorPool(self.processCnt, model=self.model, visualize=visualize).simulatorPool
         self.pool = mp.Pool(self.processCnt, _init, (simulatorPool,))
-        # self.pool.map(test_process_function, ['here']*self.processCnt)
-        # self.pool.map(test_process_function, ['here'] * self.processCnt)
-        # self.pool.map_async(initialize_process, [0]*self.processCnt)
-        # time.sleep(0.1)
 
+
+    # Function to perform the whole optimization. I would comment out various parts if I do not want
+    # things run (e.g., if I already ran the coarse optimization and do not want to re-run it. Results of the
+    # optimizations are saved to files, so things don't have to be run from start to finish always.
+    # Inputs:
+    # model: the model to use
+    # break_arm_tasks_into_two_subtasks: whether or not to use two subtasks for dressing each arm (forearm and
+    # upper_arm split
+    # reset_file: the main save files are cleared. This is not sufficient. The individual save files must be deleted.
+    # Returns: Nothing
     def optimize_entire_dressing_task(self, model=None, break_arm_tasks_into_two_subtasks=True, reset_file=False):
+        # The main save files are cleared. This is not sufficient. The individual save files must be deleted.
         if reset_file:
             open(self.save_file_path + self.save_file_name_coarse_feasible, 'w').close()
             open(self.save_file_path + self.save_file_name_fine_output, 'w').close()
             open(self.save_file_path + self.save_file_name_final_output, 'w').close()
 
+        # Define the tasks as different subtasks. Some participants only received assistance with 1 arm, so here
+        # we set the optimization to only optimize the appropriate arm.
         if break_arm_tasks_into_two_subtasks and not 'participant3' in self.model and not 'participant6' in self.model:
         # subtask_list = ['right_forearm', 'right_upperarm', 'left_forearm', 'left_upperarm']
             subtask_list = ['left_forearm', 'left_upperarm', 'right_forearm', 'right_upperarm']
@@ -319,6 +430,9 @@ class DressingMultiProcessOptimization(object):
             robot_arm_to_use = ['rightarm', 'rightarm']
             all_fixed_points_to_use = [[], [0]]
             all_stretch_allowable = [[], [0.46]]
+
+        # Finds and saves the fixed points. For some participants that is based on the first arm the robot dressed. For
+        # others it is based on the arm that the participants dressed themselves.
         if not 'participant3' in self.model and not 'participant6' in self.model:
             all_fixed_points = self.pool.apply(find_fixed_points, [[subtask_list[0],
                                                                    robot_arm_to_use[0],
@@ -334,13 +448,10 @@ class DressingMultiProcessOptimization(object):
 
         print 'all fixed points', all_fixed_points
         # time.sleep(0.5)
-        # self.pool.map(set_new_fixed_point, [0]*self.processCnt)
 
-        # time.sleep(0.5)
-        # self.pool.map(set_stretch_allowable, [[stretch_allowable, fixed_points_to_use]] * self.processCnt)
-
-        # time.sleep(0.5)
-
+        # Run the coarse optimization (exhaustive search to find candidate human configurations for the optimization
+        # that uses CMA. Runs for each subtask. The coarse optimization is run on many different processes
+        # asyncronously for maximum speed. Each process writes its results to a different file
         for subtask_number, subtask in enumerate(subtask_list):
             print 'starting coarse optimization for ', subtask
             if True:
@@ -352,9 +463,13 @@ class DressingMultiProcessOptimization(object):
                                              all_fixed_points)
             print 'completed coarse optimization for ', subtask
 
+        # Combines the files from the exhaustive/coarse optimization into a single file
         self.combine_process_files(self.save_file_path + 'arm_configs_coarse_feasible',
                                    self.save_file_path + self.save_file_name_coarse_feasible)
 
+        # Run the optimization (CMA that finds human and robot configurations and their respective objective function
+        # value). The optimization is run on many different processes
+        # asyncronously for maximum speed. Each process writes its results to a different file
         for subtask_number, subtask in enumerate(subtask_list):
             print 'starting fine optimization for ', subtask
             if True:
@@ -366,9 +481,12 @@ class DressingMultiProcessOptimization(object):
                                            all_fixed_points)
             print 'completed fine optimization for ', subtask
 
+        # Combines the files from the fine/CMA optimization into a single file
         self.combine_process_files(self.save_file_path + 'arm_configs_fine',
                                    self.save_file_path + 'arm_configs_fine_combined.log')
 
+        # Run the optimization (CMA) to fine-tune the robot configuration for the previously selected human
+        # configuration
         for subtask_number, subtask in enumerate(subtask_list):
             if True:
                 print 'starting fine optimization of pr2 configuration for ', subtask
@@ -380,33 +498,27 @@ class DressingMultiProcessOptimization(object):
                                                all_fixed_points)
                 print 'completed fine optimization for ', subtask
 
+    # Function to find candidate arm configurations for the CMA optimization in the fine_func function.
+    # Function: Checks the coarse optimization objective function for each configuration in a discretized space of
+    # configurations.
+    # Input: subtask, robot_arm, subtask_number, stretch, fixed_point_index, fixed_p
+    # subtask: the human arm to use (with forearm or upper_arm specified.
+    # robot_arm: the arm of the robot to use (e.g., rightarm).
+    # subtask_n: the step in the task. Because later subtasks may have constraints that earlier subtasks did not have.
+    # stretch: the amount the garment is allowed to stretch
+    # fixed_point_index: which saved fixed points to test for stretching constraints for that subtask
+    # fixed_p: the 3D location of the fixed points
+    # Return: True if it completes.
     def run_coarse_optimization(self, subtask, robot_arm, subtask_n,
                                 stretch, fixed_point_index, fixed_p):
         print 'Running coarse optimization (using brute-force) to find arm ' \
               'configurations that are reasonable'
 
-        # self.pool.map(set_process_subtask,[subtask_number]*self.processCnt)
-
+        # Uses previous set arm configuration limits
         amin = self.arm_config_min
         amax = self.arm_config_max
-        # [t for t in ((self.pool.apply_async(brute_force_func, [arm1, arm2, arm3, arm4]))
-        #              for arm1 in np.arange(parameters_min[0], parameters_max[0] + 0.0001, m.radians(5.))
-        #              for arm2 in np.arange(parameters_min[1], parameters_max[1] + 0.0001, m.radians(5.))
-        #              for arm3 in np.arange(parameters_min[2], parameters_max[2] + 0.0001, m.radians(5.))
-        #              for arm4 in np.arange(parameters_min[3], parameters_max[3] + 0.0001, m.radians(5.))
-        #              )
-        #  ]
-        # self.pool.map(brute_force_func, [t for t in (([arm1, arm2, arm3, arm4])
-        #                                                      for arm1 in np.arange(amin[0], amax[0] + 0.0001,
-        #                                                                m.radians(5.))
-        #                                                      for arm2 in np.arange(amin[1], amax[1] + 0.0001,
-        #                                                                m.radians(5.))
-        #                                                      for arm3 in np.arange(amin[2], amax[2] + 0.0001,
-        #                                                                m.radians(5.))
-        #                                                      for arm4 in np.arange(amin[3], amax[3] + 0.0001,
-        #                                                                m.radians(5.))
-        #                                                      )
-        #                                          ])
+
+        # First uses generators to make a list that is all the configurations to check in this exhaustive search
         reso = m.radians(2.5)
         coarse_configs = [t for t in (([arm1, arm2, arm3, arm4])
                                       for arm1 in np.arange(amin[0], amax[0] + 0.0001,
@@ -419,11 +531,17 @@ class DressingMultiProcessOptimization(object):
                                                             reso)
                                       )
                           ]
+
+        # Then splits the list into chunks the size of the number of processes and has the processes run through chunks
+        # one at a time. The simulator pool did not like being given overly large chunks (would cause it to
+        # occasionally crash.
         for chunk in chunker(coarse_configs, self.processCnt):
             chunksize = len(chunk)
             self.pool.map_async(brute_force_func, zip(chunk, [subtask]*chunksize, [robot_arm]*chunksize,
                                                       [subtask_n]*chunksize, [stretch]*chunksize,
                                                       [fixed_point_index]*chunksize, [fixed_p]*chunksize)).get()
+        # Do a garbage collection just in case (occasionally would end up with memory issues if this were not done.
+        # OPENRave has some memory leak issues already, so anything to mitigate was useful.
         gc.collect()
         return True
 
@@ -441,17 +559,25 @@ class DressingMultiProcessOptimization(object):
         print 'Files combined into: ', output_file_name
         return True
 
+    ## Function to find the objective function value for a human arm configuration. Performs an optimization of the
+    # robot configuration to find that objective function value.
+    # Function: Optimizes the human configuration. For each human configuration, optimizes the robot configuration.
+    # Uses CMA for the optimization.
+    # Input: subtask, robot_arm, subtask_number, stretch, fixed_point_index, fixed_p
+    # subtask: the human arm to use (with forearm or upper_arm specified.
+    # robot_arm: the arm of the robot to use (e.g., rightarm).
+    # subtask_n: the step in the task. Because later subtasks may have constraints that earlier subtasks did not have.
+    # stretch: the amount the garment is allowed to stretch
+    # fixed_point_index: which saved fixed points to test for stretching constraints for that subtask
+    # fixed_p: the 3D location of the fixed points
+    # Return: True if it completes.
     def run_fine_optimization(self, subtask, robot_arm, subtask_n,
                               stretch, fixed_point_index, fixed_p,
                               popsize=20, maxiter=50):
         print 'Running fine optimization (using cma) to find a good arm configuration that has ' \
               'a reasonable pr2 configuration'
 
-        # self.pool.map(set_process_subtask, [subtask_number] * self.processCnt)
-        if subtask_n == 0 and False:
-            popsize = 20
-            maxiter = 10
-
+        # Sets the options for the CMA-ES optimization
         parameters_scaling = np.array([m.radians(10.)] * 4)
         OPTIONS = dict()
         #OPTIONS['boundary_handling'] = cma.BoundTransform  # cma version on obie3 uses this
@@ -471,43 +597,54 @@ class DressingMultiProcessOptimization(object):
         OPTIONS['tolstagnation'] = 100
         OPTIONS['CMA_stds'] = list(parameters_scaling)
 
+        # From the saved file of the results of the coarse optimization, find clusters to use as candidate
+        # configurations for the human configuration optimziation.
         init_start_arm_configs = self.find_clusters(self.save_file_name_coarse_feasible, subtask_n)
         if init_start_arm_configs is None:
             print 'There are no clusters to initialize optimization because there are no feasible configs found in the grid search'
             return
         print 'found arm configuration clusters'
-        #print init_start_arm_configs
+
+        # CMA-ES optimization
         best_result = [[], 10000.]
+        # Run for each candidate human configuration
         for x0 in init_start_arm_configs:
+            # Run garbage collector (used to mitigate some memory issues)
             gc.collect()
-            #print 'x0', x0
+
+            # Initialize CMA for the initialization, x0
             es = cma.CMAEvolutionStrategy(x0, 1.0, OPTIONS)
             while not es.stop():
+                # Have CMA give a population, X
                 X = es.ask()
                 fit = []
+                # Split the population into chunks the size of the number of processes and has the processes run
+                # through chunks one at a time. The simulator pool did not like being given overly large chunks
+                # (would cause it to occasionally crash. These are run syncronously, so the next chunk cannot start
+                # until the previous chunk is complete. The results of each entry in the chunk must be associated
+                # correctly with the objective function result of that entry.
                 for chunk in chunker(X, self.processCnt*2):
                     chunksize = len(chunk)
-                    #print 'chunksize', chunksize
+                    # Finds the objective function for each entry in the chunk
                     batchFit = self.pool.map(fine_func, zip(chunk, [subtask]*chunksize, [robot_arm]*chunksize,
-                                                                  [subtask_n]*chunksize, [stretch]*chunksize,
-                                                                  [fixed_point_index]*chunksize, [fixed_p]*chunksize))
-                    #print 'batchfit', batchFit
+                                                            [subtask_n]*chunksize, [stretch]*chunksize,
+                                                            [fixed_point_index]*chunksize, [fixed_p]*chunksize))
                     fit.extend(batchFit)
-                    #print 'fit is currently:\n',fit
-                #print 'about to tell cma', len(fit)
+                # Tells CMA the objective function values associated with each x and prints a line with the current
+                # state of the CMA optimization
                 es.tell(X, fit)
                 es.disp()
                 es.logger.add()
-            #print 'GOT PAST CMA'
-            #print 'GOT PAST CMA'
-            #print 'GOT PAST CMA'
-            #print 'GOT PAST CMA'
+
+            # One machine had a different version of the CMA package. The versions have slightly different
+            # commands/functions
             #this_res = es.result()  # This is for running on machine in obie3 lab (cma version)
             this_res = es.result  # This is for running on amazon machine (cma version)
-            #print 'GOT PAST CMA-RESULT'
-            #print 'this_res:',this_res
+
             if this_res[1] < best_result[1]:
                 best_result = [this_res[0], this_res[1]]
+
+        # Save result to file in csv format, as an addendum to the end of a log file.
         with open(self.save_file_path + self.save_file_name_fine_output, 'a') as myfile:
             myfile.write(str(subtask_n)
                          + ',' + str("{:.5f}".format(best_result[0][0]))
@@ -518,14 +655,26 @@ class DressingMultiProcessOptimization(object):
                          + '\n')
         return best_result
 
+
+    ## Function to more finely optimize the robot configuration for the human configuration selected by the previous
+    # optimization.
+    # Function: Optimizes the robot configuration from the human configuration selected in the previous optimization.
+    # Input: subtask, robot_arm, subtask_number, stretch, fixed_point_index, fixed_p
+    # subtask: the human arm to use (with forearm or upper_arm specified.
+    # robot_arm: the arm of the robot to use (e.g., rightarm).
+    # subtask_n: the step in the task. Because later subtasks may have constraints that earlier subtasks did not have.
+    # stretch: the amount the garment is allowed to stretch
+    # fixed_point_index: which saved fixed points to test for stretching constraints for that subtask
+    # fixed_p: the 3D location of the fixed points
+    # Return: True if it completes.
     def run_fine_pr2_optimization(self,  subtask, robot_arm, subtask_n,
-                                  stretch, fixed_point_index, fixed_p, popsize=40, maxiter=200):
+                                  stretch, fixed_point_index, fixed_p):
         print 'Running fine optimization (using cma) to find a good pr2 configuration for ' \
               'the good arm configuration'
 
+        # Loads the arm configuration saved from the previous optimization for this subtask
         best_arm_configs = [line.rstrip('\n').split(',')
                             for line in open(self.save_file_path + 'arm_configs_fine_combined.log')]
-
         for j in xrange(len(best_arm_configs)):
             best_arm_configs[j] = [float(i) for i in best_arm_configs[j]]
         best_arm_configs = np.array(best_arm_configs)
@@ -533,82 +682,19 @@ class DressingMultiProcessOptimization(object):
         if len(best_arm_configs) == 0:
             print 'No configs exist for this subtask!'
             return
-        # print best_arm_configs
         best_config_i = np.argmin(best_arm_configs[:, 5])
         best_arm_config = best_arm_configs[best_config_i]
         print '\n best_arm_config:', best_arm_config, '\n'
+
+        # Optimization of the robot configuration in a single process.
         self.pool.apply(fine_pr2_func, [[best_arm_config[1:5], subtask, robot_arm,
                                         subtask_n, stretch,
                                         fixed_point_index,
                                         fixed_p, best_arm_config[6:-1]]])
-        # parameters_scaling = [0.1, 0.1, m.radians(10.), 0.02  ]#(self.pr2_config_max - self.pr2_config_min) / 8.
-        # OPTIONS = dict()
-        # #OPTIONS['boundary_handling'] = cma.BoundTransform  # cma version on obie3 uses this
-        # OPTIONS['BoundaryHandler'] = cma.BoundTransform  # cma version on aws uses this
-        # OPTIONS['bounds'] = [self.pr2_config_min, self.pr2_config_max]
-        # OPTIONS['verb_filenameprefix'] = 'outcma_pr2_final_opt_config_' + str(subtask_n) + '_'
-        # OPTIONS['seed'] = 12345
-        # OPTIONS['ftarget'] = -1.
-        # OPTIONS['popsize'] = popsize
-        # OPTIONS['maxiter'] = maxiter
-        # OPTIONS['maxfevals'] = 1e8
-        # OPTIONS['CMA_cmean'] = 0.5
-        # OPTIONS['tolfun'] = 1e-3
-        # OPTIONS['tolfunhist'] = 1e-12
-        # OPTIONS['tolx'] = 5e-4
-        # OPTIONS['maxstd'] = 4.0
-        # OPTIONS['tolstagnation'] = 100
-        # OPTIONS['CMA_stds'] = list(parameters_scaling)
-        # final_results = []
-        # # self.pool.map(set_arm_config, [best_arm_config]*self.processCnt)
-        # # self.pool.map(set_process_subtask, [subtask_n] * self.processCnt)
-        # init_start_pr2_configs = [[0.1, 0.6, m.radians(215.), 0.3],
-        #                           [0.1, -0.6, m.radians(35.), 0.3],
-        #                           [0.8, -0.3, m.radians(45.), 0.3],
-        #                           [0.8, 0.3, m.radians(-115.), 0.3],
-        #                           [0.8, 0.0, m.radians(135.), 0.3]]
-        # best_result = [[], 10000.]
-        # for x0 in init_start_pr2_configs:
-
-        #     es = cma.CMAEvolutionStrategy(x0, 1.0, OPTIONS)
-        #     while not es.stop():
-        #         X = es.ask()
-        #         fit = []
-        #         for chunk in chunker(X, self.processCnt):
-        #             chunksize = len(chunk)
-        #             batchFit = self.pool.map(fine_pr2_func,
-        #                                            zip(chunk, [human_arm] * chunksize, [robot_arm] * chunksize,
-        #                                                [subtask_n] * chunksize, [stretch] * chunksize,
-        #                                                [fixed_point_index] * chunksize,
-        #                                                [fixed_p] * chunksize, [best_arm_config[:-1]]*chunksize))
-        #             fit.extend(batchFit)
-        #         es.tell(X, fit)
-        #         es.disp()
-        #         es.logger.add()
-        #     #this_res = es.result()  # This is for running on machine in lab (cma version)
-        #     this_res = es.result  # This is for running on amazon machine (cma version)
-        #     #print 'Optimization finished with x0:', x0
-        #     if this_res[1] < best_result[1]:
-        #         best_result = [this_res[0], this_res[1]]
-        # with open(self.save_file_path + self.save_file_name_final_output, 'a') as myfile:
-        #     myfile.write(str(subtask_n)
-        #                  + ',' + str("{:.5f}".format(best_arm_config[0]))
-        #                  + ',' + str("{:.5f}".format(best_arm_config[1]))
-        #                  + ',' + str("{:.5f}".format(best_arm_config[2]))
-        #                  + ',' + str("{:.5f}".format(best_arm_config[3]))
-        #                  + ',' + str("{:.5f}".format(best_arm_config[4]))
-        #                  + ',' + str("{:.5f}".format(best_result[0][0]))
-        #                  + ',' + str("{:.5f}".format(best_result[0][1]))
-        #                  + ',' + str("{:.5f}".format(best_result[0][2]))
-        #                  + ',' + str("{:.5f}".format(best_result[0][3]))
-        #                  + ',' + str("{:.5f}".format(best_result[1]))
-        #                  + '\n')
-        # final_results.append([best_arm_config, best_result])
-        return
+        return True
 
     # From data saved previously (typically from the coarse optimization) find
-    # all connected clusters of configurations and the center of each cluster.
-    # The cluster center is used as initialization of the more fine optimizations.
+    # candidate configurations using K-means. We chose K=3 because that is the number of clusters we often found.
     def find_clusters(self, load_file_name, subtask_number):
         feasible_configs = [line.rstrip('\n').split(',')
                             for line in open(self.save_file_path + load_file_name)]
@@ -623,50 +709,17 @@ class DressingMultiProcessOptimization(object):
             return kmeans.cluster_centers_
         else:
             return None
-        '''
-        cluster_count = 0
-        clusters = [[]]
-        while len(feasible_configs) > 0:
-            if len(clusters) < cluster_count + 1:
-                clusters.append([])
-            queue = []
-            visited = []
-            queue.append(list(feasible_configs[0][1:5]))
-            delete_list = []
-            while len(queue) > 0:
-                # print 'queue:\n',queue
-                # print 'visited:\n',visited
-                current_node = list(queue.pop(0))
-                # print 'current node:\n',current_node
-                # print 'visited:\n',visited
-                if current_node not in visited:
-                    visited.append(list(current_node))
-                    clusters[cluster_count].append(current_node)
-                    delete_list.append(0)
-                for node_i in xrange(len(feasible_configs)):
-                    if np.max(np.abs(np.array(current_node) - np.array(feasible_configs[node_i])[1:5])) < m.radians(
-                            5.1) and list(feasible_configs[node_i][1:5]) not in visited:
-                        close_node = list(feasible_configs[node_i][1:5])
-                        queue.append(list(close_node))
-                        delete_list.append(node_i)
-                        # clusters[cluster_count.append(close_node)]
-            feasible_configs = np.delete(feasible_configs, delete_list, axis=0)
-            cluster_count += 1
-        clusters = np.array(clusters)
-        print 'Number of clusters:', len(clusters)
-        cluster_means = []
-        for cluster in clusters:
-            cluster_means.append(np.array(cluster).mean(axis=0))
-        
-        return cluster_means
-        '''
 
-
-
+# Class for run by each process. Runs the simulator.
 class DressingSimulationProcess(object):
+    # Some inputs that can be set. Non-normal mode is for getting a visualization without having the pickle file
+    # with the results of the dressing policy. Process number is important for saving results to the correct file name.
+    # Remember that each process saves results into separate files that are later combined.
     def __init__(self, process_number=0, robot_arm='right', human_arm='right',
                  model='fullbody_50percentile_capsule.skel', visualize=False, mode='normal'):
         self.process_number = process_number
+
+        # Set various file names
         rospack = rospkg.RosPack()
         self.pkg_path = rospack.get_path('hrl_base_selection')
         self.save_file_path = self.pkg_path + '/data/'
@@ -677,8 +730,11 @@ class DressingSimulationProcess(object):
         self.save_file_name_super_fine = 'arm_configs_super_fine_p'+str(process_number)+'.log'
         self.save_file_name_final = 'arm_configs_final.log'
         # self.save_file_name_per_human_initialization = 'arm_configs_per_human_initialization.log'
+
+        # Set if we want to visualize. Does not work if we are running multiple processes.
         self.visualize = visualize
 
+        # Initialization of various variables
         self.subtask_step = None
         self.subtask = None
 
@@ -714,7 +770,6 @@ class DressingSimulationProcess(object):
         self.this_sols = []
         self.this_path = []
 
-        # self.model = None
         self.force_cost = 0.
 
         self.frame_lock = threading.RLock()
@@ -727,9 +782,9 @@ class DressingSimulationProcess(object):
         self.reference_names = None
 
         self.distance = 0.
-        # self.score_length = {}
-        # self.sorted_scores = {}
 
+        # Homogeneous transfrom from the robot gripper to the tool. It is initialized here, but set again whenever the
+        # robot arm changes.
         self.gripper_B_tool = np.matrix([[0., -1., 0., 0.0303],
                                          [1., 0., 0., 0.0],
                                          [0., 0., 1., -0.03875],
@@ -737,7 +792,7 @@ class DressingSimulationProcess(object):
 
         # Gripper coordinate system has z in direction of the gripper, x is the axis of the gripper opening and closing.
         # This transform corrects that to make x in the direction of the gripper, z the axis of the gripper open.
-        # Centered at the very tip of the gripper.
+        # Centered at the very tip of the gripper. This is defined as well in setup_openrave
         self.goal_B_gripper = np.matrix([[0.,  0.,   1.,   0.0],
                                          [0.,  1.,   0.,   0.0],
                                          [-1.,  0.,   0.,  0.0],
@@ -745,10 +800,10 @@ class DressingSimulationProcess(object):
         self.origin_B_grasps = []
         self.goals = []
 
-        self.optimal_z_offset = 0.05
-
+        # Set up OPENRave and its ikfast.
         self.setup_openrave()
 
+        # Set the robot arms.
         self.set_robot_arm(robot_arm)
         self.set_human_arm(human_arm)
 
@@ -2444,6 +2499,7 @@ class DressingSimulationProcess(object):
         # self.dart_world.set_gown()
         print 'Dart is ready!'
 
+    # Sets up the OPENRave environment with which we run ikfast to get IK solutions.
     def setup_openrave(self):
         # Setup Openrave ENV
 
@@ -2451,33 +2507,37 @@ class DressingSimulationProcess(object):
 
         self.check_self_collision = True
 
+        # Uncomment to visualize Openrave. Not really a need to if it is synced with DART.
         # if self.visualize:
         #     self.env.SetViewer('qtcoin')
 
+        # Load the PR2 model
         self.env.Load('robots/pr2-beta-static.zae')
         self.op_robot = self.env.GetRobots()[0]
         self.op_robot.CheckLimitsAction = 2
-
         robot_start = np.matrix([[m.cos(0.), -m.sin(0.), 0., 0.],
                                  [m.sin(0.), m.cos(0.), 0., 0.],
                                  [0., 0., 1., 0.],
                                  [0., 0., 0., 1.]])
         self.op_robot.SetTransform(np.array(robot_start))
 
-        self.goal_B_gripper = np.matrix([[0., 0., 1., 0.0],
-                                         [0., 1., 0., 0.0],
-                                         [-1., 0., 0., 0.0],
-                                         [0., 0., 0., 1.0]])
-
+        # Homogeneous transfrom from the robot gripper to the tool. It is initialized here, but set again whenever the
+        # robot arm changes.
         self.gripper_B_tool = np.matrix([[0., -1., 0., 0.0303],
                                          [1., 0., 0., 0.0],
                                          [0., 0., 1., -0.03875],
                                          [0., 0., 0., 1.]])
 
-        self.origin_B_grasp = None
+        # Gripper coordinate system has z in direction of the gripper, x is the axis of the gripper opening and closing.
+        # This transform corrects that to make x in the direction of the gripper, z the axis of the gripper open.
+        # Centered at the very tip of the gripper. This is defined as well in setup_openrave
+        self.goal_B_gripper = np.matrix([[0., 0., 1., 0.0],
+                                         [0., 1., 0., 0.0],
+                                         [-1., 0., 0., 0.0],
+                                         [0., 0., 0., 1.0]])
 
-        # self.set_openrave_arm(self.robot_opposite_arm)
-        # self.set_openrave_arm(self.robot_arm)
+        # origin_B_grasp is a transform from the origin to goal grasp poses.
+        self.origin_B_grasp = None
         print 'Openrave IK is now ready'
 
     def ik_request(self, pr2_B_grasp, spine_height=None):

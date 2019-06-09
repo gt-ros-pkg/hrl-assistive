@@ -1,0 +1,1 @@
+controller_joint_names: ['tele_legs_joint', 'leg_rest_upper_hinge', 'leg_rest_lower_hinge', 'head_rest_hinge', 'origin_wall_joint', ]
